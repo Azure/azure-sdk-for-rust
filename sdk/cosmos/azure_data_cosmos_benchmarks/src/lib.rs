@@ -272,7 +272,6 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
             .execute_operation(
                 CosmosOperation::create_database(account.clone()).with_body(db_body.into_bytes()),
                 OperationOptions::default(),
-                None,
             )
             .await,
     )
@@ -291,7 +290,6 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
                 CosmosOperation::create_container(database_ref)
                     .with_body(container_body.into_bytes()),
                 OperationOptions::default(),
-                None,
             )
             .await,
     )
@@ -315,7 +313,6 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
             .execute_operation(
                 CosmosOperation::create_item(item_ref).with_body(item_body.into_bytes()),
                 OperationOptions::default(),
-                None,
             )
             .await,
     )

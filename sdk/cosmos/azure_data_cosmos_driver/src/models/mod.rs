@@ -21,7 +21,7 @@ mod cosmos_status;
 mod etag;
 mod finite_f64;
 pub(crate) use finite_f64::FiniteF64;
-mod partition_key;
+pub(crate) mod partition_key;
 mod request_charge;
 pub(crate) mod resource_id;
 mod resource_reference;
@@ -349,14 +349,6 @@ impl ResourceType {
         }
     }
 
-    /// Returns true if this resource type is partitioned (requires a partition key to access it).
-    pub fn is_partitioned(self) -> bool {
-        matches!(
-            self,
-            ResourceType::Document // Attachment/Conflict not yet supported
-        )
-    }
-
     /// Returns true if this resource type is metadata (not data plane items).
     pub fn is_metadata(self) -> bool {
         matches!(
@@ -413,6 +405,21 @@ impl ResourceType {
                     OperationTarget::None | OperationTarget::PartitionKey(_)
                 )
             }
+        }
+    }
+
+    /// Returns true if this resource type supports partition-level failover.
+    ///
+    /// Documents are partitioned for all operations except [`OperationType::QueryPlan`],
+    /// which is a gateway-only metadata operation that is not scoped to a specific
+    /// physical partition. Stored procedures are only partitioned when the operation
+    /// is [`OperationType::Execute`] (i.e. executing the sproc against a specific
+    /// partition). CRUD operations on stored procedure metadata are not partition-scoped.
+    pub fn is_partitioned(self, operation_type: OperationType) -> bool {
+        match self {
+            ResourceType::Document => operation_type != OperationType::QueryPlan,
+            ResourceType::StoredProcedure => operation_type == OperationType::Execute,
+            _ => false,
         }
     }
 

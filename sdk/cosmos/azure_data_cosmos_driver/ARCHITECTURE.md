@@ -6,37 +6,24 @@ This document provides a comprehensive overview of the `azure_data_cosmos_driver
 
 The Azure Cosmos DB Rust ecosystem consists of three distinct layers:
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ Layer 3: Language-Specific SDKs                                             │
-│                                                                             │
-│ ┌─────────────────────────────────────────────────────────────────────────┐ │
-│ │ azure_data_cosmos (Rust SDK)                                            │ │
-│ │ - Idiomatic Rust API with serde serialization                           │ │
-│ │ - Microsoft 24x7 support                                                │ │
-│ └──────────────────────────────┬──────────────────────────────────────────┘ │
-│                                │  DIRECT dependency (does NOT use native)   │
-│                                ▼                                            │
-│                      ┌─────────────────────────────────────────────────┐    │
-│                      │ Layer 1: azure_data_cosmos_driver               │    │
-│                      │ - Transport, routing, protocol handling         │    │
-│                      │ - raw-byte payloads                             │    │
-│                      │ - Community support only                        │    │
-│                      └─────────────────────────────────────────────────┘    │
-│                                      ▲                                      │
-│ ┌──────────────────────┐             │            ┌───────────────────────┐ │
-│ │ Java SDK (via JNI)   │             │            │ .NET / Python SDKs    │ │
-│ │ - Jackson types      │             │            │ - native interop      │ │
-│ └──────────┬───────────┘             │            └───────────┬───────────┘ │
-│            │                         │                        │             │
-│            ▼                         │                        ▼             │
-│ ┌─────────────────────────────────────────────────────────────────────────┐ │
-│ │ Layer 2: azure_data_cosmos_native (C-FFI, non-Rust interop only)        │ │
-│ │ - Stable C ABI for cross-language interop                               │ │
-│ │ - Memory-safe wrappers around driver                                    │ │
-│ └─────────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph L3["Layer 3: Language-Specific SDKs"]
+        direction TB
+        Rust["azure_data_cosmos (Rust SDK)<br/>• Idiomatic Rust API with serde serialization<br/>• Microsoft 24x7 support"]
+        Java["Java SDK (via JNI)<br/>• Jackson types"]
+        Other[".NET / Python SDKs<br/>• native interop"]
+    end
+    subgraph L2["Layer 2: azure_data_cosmos_native (C-FFI, non-Rust interop only)"]
+        Native["• Stable C ABI for cross-language interop<br/>• Memory-safe wrappers around driver"]
+    end
+    subgraph L1["Layer 1: azure_data_cosmos_driver"]
+        Driver["• Transport, routing, protocol handling<br/>• raw-byte payloads<br/>• Community support only"]
+    end
+    Rust -- "DIRECT dependency<br/>(does NOT use native)" --> Driver
+    Java --> Native
+    Other --> Native
+    Native --> Driver
 ```
 
 ### Layer Responsibilities
@@ -53,37 +40,17 @@ The Azure Cosmos DB Rust ecosystem consists of three distinct layers:
 
 ## High-Level Type Overview
 
-```text
-  CosmosDriverRuntime                    (Entry point - singleton per process)
-          │
-          │ get_or_create_driver()
-          ▼
-    CosmosDriver                         (Per-account driver instance)
-          │
-          │ execute_operation()
-          │
-          ▼
-    CosmosOperation                      (Built via factory methods)
-          │
-          │ CosmosOperation::create(resource_ref)
-          │ CosmosOperation::read(resource_ref)
-          │ CosmosOperation::query(resource_ref)
-          │ etc.
-          │
-          ▼
-    CosmosResourceReference              (Typed resource targeting)
-          │
-          │ Built from typed references:
-          │ - ContainerReference::from_name(...)
-          │ - ItemReference::from_name(...)
-          │ - DatabaseReference::from_name(...)
-          │
-          ▼
-    CosmosResponse                       (Response with diagnostics)
-          │
-          ├── response_bytes: Vec<u8>
-          ├── headers: ResponseHeaders
-          └── diagnostics: CosmosDiagnostics
+```mermaid
+flowchart TD
+    Runtime["<b>CosmosDriverRuntime</b><br/>(Entry point — singleton per process)"]
+    Driver["<b>CosmosDriver</b><br/>(Per-account driver instance)"]
+    Op["<b>CosmosOperation</b><br/>(Built via factory methods)<br/>CosmosOperation::create(resource_ref)<br/>CosmosOperation::read(resource_ref)<br/>CosmosOperation::query(resource_ref)<br/>etc."]
+    Ref["<b>CosmosResourceReference</b><br/>(Typed resource targeting)<br/>Built from typed references:<br/>• ContainerReference::from_name(...)<br/>• ItemReference::from_name(...)<br/>• DatabaseReference::from_name(...)"]
+    Resp["<b>CosmosResponse</b><br/>(Response with diagnostics)<br/>• response_bytes: Vec&lt;u8&gt;<br/>• headers: ResponseHeaders<br/>• diagnostics: CosmosDiagnostics"]
+    Runtime -- "get_or_create_driver()" --> Driver
+    Driver -- "execute_operation()" --> Op
+    Op --> Ref
+    Ref --> Resp
 ```
 
 ### Core Flow
@@ -284,17 +251,13 @@ async fn main() -> azure_core::Result<()> {
 
 Configuration cascades from most general to most specific:
 
-```text
-Environment Variables (AZURE_COSMOS_*)
-        │
-        ▼
-Runtime-Level Options (DriverOptions on runtime)
-        │
-        ▼
-Driver-Level Options (per-account overrides)
-        │
-        ▼
-Operation-Level Options (per-request overrides)
+```mermaid
+flowchart TD
+    Env["Environment Variables (AZURE_COSMOS_*)"]
+    Runtime["Runtime-Level Options (DriverOptions on runtime)"]
+    Driver["Driver-Level Options (per-account overrides)"]
+    Op["Operation-Level Options (per-request overrides)"]
+    Env --> Runtime --> Driver --> Op
 ```
 
 Each level can selectively override settings from the level above.
@@ -307,47 +270,19 @@ The `DiagnosticsContext` provides comprehensive visibility into operation execut
 
 ### Type Structure
 
-```text
-DiagnosticsContext                       (Immutable, per-operation)
-    │
-    ├── activity_id: ActivityId          (Unique identifier for the operation)
-    ├── duration: Duration               (Total operation time)
-    ├── status_code: StatusCode          (Final HTTP status after retries)
-    ├── sub_status_code: SubStatusCode   (Cosmos-specific error classification)
-    │
-    └── requests: Arc<Vec<RequestDiagnostics>>
-                    │
-                    └── RequestDiagnostics   (Per-HTTP-request details)
-                            │
-                            ├── execution_context: ExecutionContext
-                            │       ├── Initial        (First attempt)
-                            │       ├── Retry          (Retry after 429/503/etc.)
-                            │       ├── Hedging        (Speculative request)
-                            │       ├── RegionFailover (Cross-region retry)
-                            │       └── CircuitBreakerProbe (Recovery check)
-                            │
-                            ├── region: Region
-                            ├── endpoint: String
-                            ├── status_code: StatusCode
-                            ├── sub_status_code: Option<SubStatusCode>
-                            ├── request_charge: f64
-                            ├── duration_ms: u64
-                            ├── request_sent: RequestSentStatus
-                            │       ├── Sent     (Definitely transmitted)
-                            │       ├── NotSent  (Definitely NOT transmitted)
-                            │       └── Unknown  (Cannot determine)
-                            │
-                            └── events: Vec<RequestEvent>
-                                    │
-                                    └── RequestEvent
-                                            ├── event_type: RequestEventType
-                                            │       ├── TransportStart
-                                            │       ├── ResponseHeadersReceived
-                                            │       ├── TransportComplete
-                                            │       └── TransportFailed
-                                            ├── timestamp: Instant
-                                            ├── duration_ms: Option<u64>
-                                            └── details: Option<String>
+```mermaid
+flowchart TD
+    DC["<b>DiagnosticsContext</b> (Immutable, per-operation)<br/>• activity_id: ActivityId — unique identifier for the operation<br/>• duration: Duration — total operation time<br/>• status_code: StatusCode — final HTTP status after retries<br/>• sub_status_code: SubStatusCode — Cosmos-specific error classification<br/>• requests: Arc&lt;Vec&lt;RequestDiagnostics&gt;&gt;"]
+    RD["<b>RequestDiagnostics</b> (per-HTTP-request details)<br/>• region: Region<br/>• endpoint: String<br/>• status_code: StatusCode<br/>• sub_status_code: Option&lt;SubStatusCode&gt;<br/>• request_charge: f64<br/>• duration_ms: u64"]
+    EC["execution_context: <b>ExecutionContext</b><br/>• Initial — first attempt<br/>• Retry — retry after 429/503/etc.<br/>• Hedging — speculative request<br/>• RegionFailover — cross-region retry<br/>• CircuitBreakerProbe — recovery check"]
+    RSS["request_sent: <b>RequestSentStatus</b><br/>• Sent — definitely transmitted<br/>• NotSent — definitely NOT transmitted<br/>• Unknown — cannot determine"]
+    RE["events: Vec&lt;<b>RequestEvent</b>&gt;<br/>• timestamp: Instant<br/>• duration_ms: Option&lt;u64&gt;<br/>• details: Option&lt;String&gt;"]
+    RET["event_type: <b>RequestEventType</b><br/>• TransportStart<br/>• ResponseHeadersReceived<br/>• TransportComplete<br/>• TransportFailed"]
+    DC --> RD
+    RD --> EC
+    RD --> RSS
+    RD --> RE
+    RE --> RET
 ```
 
 ### Pipeline Events & Reqwest Limitations

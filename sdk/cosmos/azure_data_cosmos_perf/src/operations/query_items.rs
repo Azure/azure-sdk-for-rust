@@ -38,7 +38,9 @@ impl Operation for QueryItemsOperation {
         let query =
             Query::from("SELECT * FROM c WHERE c.partition_key = @pk").with_parameter("@pk", pk)?;
 
-        let mut stream = container.query_items::<serde_json::Value>(query, pk, None)?;
+        let mut stream = container
+            .query_items::<serde_json::Value>(query, pk, None)
+            .await?;
         while let Some(result) = stream.next().await {
             result?;
         }

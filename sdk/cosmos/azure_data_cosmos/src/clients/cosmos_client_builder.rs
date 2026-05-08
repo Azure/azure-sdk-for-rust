@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore behaviour
 //! Builder for creating [`CosmosClient`] instances.
 
 use crate::{
@@ -93,6 +94,17 @@ pub struct CosmosClientBuilder {
     fault_injection_builder: Option<crate::fault_injection::FaultInjectionClientBuilder>,
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
+    /// Custom driver runtime builder for testing (e.g., in-memory emulator transport).
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    driver_runtime_builder: Option<CosmosDriverRuntimeBuilder>,
+    /// Custom HTTP client used as the SDK pipeline's transport when the
+    /// in-memory emulator is in play. Without this the SDK pipeline keeps a
+    /// real reqwest client even when the *driver* has been routed through
+    /// the emulator, so any code path that fires through `pipeline_core`
+    /// (account refreshes, future gateway hops, fault-injection short-
+    /// circuits) will silently reach the network.
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    emulator_http_client: Option<Arc<dyn azure_core::http::HttpClient>>,
 }
 
 impl CosmosClientBuilder {
@@ -106,11 +118,18 @@ impl CosmosClientBuilder {
 
     /// Sets a suffix to append to the User-Agent header for telemetry.
     ///
+    /// Construct the suffix explicitly via
+    /// [`UserAgentSuffix::new`](crate::UserAgentSuffix::new) for trusted
+    /// values, or [`UserAgentSuffix::try_new`](crate::UserAgentSuffix::try_new)
+    /// for untrusted input. Validation rules (max 25 characters,
+    /// HTTP-header-safe) are enforced at the construction site rather than
+    /// here, which keeps any panic local to the caller's input handling.
+    ///
     /// # Arguments
     ///
     /// * `suffix` - The suffix to append to the User-Agent header.
-    pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
-        self.options.user_agent_suffix = Some(suffix.into());
+    pub fn with_user_agent_suffix(mut self, suffix: crate::UserAgentSuffix) -> Self {
+        self.options.user_agent_suffix = Some(suffix);
         self
     }
 
@@ -207,6 +226,76 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Provides a pre-configured [`CosmosDriverRuntimeBuilder`] for the client to use.
+    ///
+    /// When set, the client uses this builder instead of creating a default one.
+    /// This enables testing with custom transports such as the
+    /// [`InMemoryEmulatorHttpClient`](azure_data_cosmos_driver::in_memory_emulator::InMemoryEmulatorHttpClient).
+    ///
+    /// # Field interactions
+    ///
+    /// After `build()` is invoked, the SDK forwards a small set of its own
+    /// settings into the supplied builder. These overwrite the corresponding
+    /// fields on the supplied builder (last-writer-wins):
+    ///
+    /// - **Connection pool** (`with_connection_pool`): always replaced by an
+    ///   SDK-derived pool that reflects `with_proxy_allowed` and
+    ///   `with_allow_emulator_invalid_certificates`. The pool is then passed
+    ///   to whatever `HttpClientFactory` is in effect — the default reqwest
+    ///   factory honors it, but the in-memory emulator transport supplied via
+    ///   `with_http_client_factory` ignores its argument since it does not
+    ///   perform real HTTP. Tests against the emulator therefore see no
+    ///   connection-pool behaviour regardless of what is configured here.
+    /// - **Fault injection rules** (`with_fault_injection_rules`): the SDK
+    ///   appends each rule from its own fault-injection builder to the
+    ///   rules already configured on the supplied builder (additive). Both
+    ///   sources contribute and neither is silently dropped. `build` returns
+    ///   an error if a rule on the SDK builder shares its `id` with one
+    ///   already registered on the supplied driver runtime builder, so
+    ///   callers wiring a runtime builder of their own are responsible for
+    ///   keeping rule ids globally unique.
+    /// - **Throughput control groups** (`register_throughput_control_group`):
+    ///   the SDK appends each group registered via
+    ///   `with_throughput_control_group` (additive — does not clear existing
+    ///   groups on the supplied builder).
+    ///
+    /// All other fields on the supplied builder — most importantly
+    /// `with_http_client_factory` (the in-memory emulator transport),
+    /// `with_cpu_refresh_interval`, and any future fields — are left
+    /// untouched and take effect as configured.
+    #[doc(hidden)]
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    pub fn with_driver_runtime_builder(mut self, builder: CosmosDriverRuntimeBuilder) -> Self {
+        self.driver_runtime_builder = Some(builder);
+        self
+    }
+
+    /// Replaces the SDK pipeline's HTTP transport with the supplied client
+    /// (typically the in-memory emulator). Without this, the pipeline keeps a
+    /// real reqwest transport even when the driver has been routed through
+    /// the emulator, leaving SDK-level requests (account refresh, etc.) free
+    /// to reach the network.
+    ///
+    /// # Interaction with `with_fault_injection`
+    ///
+    /// When both an emulator HTTP client and a fault-injection builder are
+    /// configured, the emulator is installed as the **inner** transport for
+    /// the SDK pipeline and the fault-injection wrapper is composed *around*
+    /// it (`fault_builder.with_inner_client(emulator)`). The emulator
+    /// therefore receives only requests that fault injection has not
+    /// short-circuited, and fault injection remains active for every request
+    /// flowing through the SDK pipeline — including SDK-pipeline-only paths
+    /// such as account-refresh — instead of being silently discarded.
+    #[doc(hidden)]
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    pub fn with_emulator_http_client(
+        mut self,
+        client: Arc<dyn azure_core::http::HttpClient>,
+    ) -> Self {
+        self.emulator_http_client = Some(client);
+        self
+    }
+
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
     /// The account reference bundles an endpoint and credential. You can create one using
@@ -282,6 +371,20 @@ impl CosmosClientBuilder {
         #[cfg(not(all(not(target_arch = "wasm32"), feature = "reqwest")))]
         let base_client: Option<Arc<dyn azure_core::http::HttpClient>> = None;
 
+        // When an in-memory emulator HTTP client is supplied, treat it as
+        // the *inner* transport for the SDK pipeline (replacing the real
+        // reqwest client). Doing this *before* fault injection wrapping
+        // means a fault-injection builder still wraps around the emulator
+        // — so SDK-pipeline-only paths (account refreshes, etc.) get both
+        // fault injection AND the emulator, instead of silently dropping
+        // the FI wrapper as the prior code did.
+        #[cfg(feature = "__internal_in_memory_emulator")]
+        let base_client: Option<Arc<dyn azure_core::http::HttpClient>> =
+            match self.emulator_http_client.as_ref() {
+                Some(emu) => Some(Arc::clone(emu)),
+                None => base_client,
+            };
+
         #[cfg(feature = "fault_injection")]
         let (transport, driver_fi_rules): (
             Option<azure_core::http::Transport>,
@@ -330,9 +433,11 @@ impl CosmosClientBuilder {
         // Create Cosmos headers policy to override User-Agent with Cosmos-specific value.
         // This runs as a per-call policy after azure_core's UserAgentPolicy.
         let crate_version = option_env!("CARGO_PKG_VERSION").unwrap_or("unknown");
-        let cosmos_headers_policy: Arc<dyn azure_core::http::policies::Policy> = Arc::new(
-            CosmosHeadersPolicy::new(crate_version, self.options.user_agent_suffix.as_deref()),
-        );
+        let cosmos_headers_policy: Arc<dyn azure_core::http::policies::Policy> =
+            Arc::new(CosmosHeadersPolicy::new(
+                crate_version,
+                self.options.user_agent_suffix.as_ref().map(|s| s.as_str()),
+            ));
 
         let pipeline_core = azure_core::http::Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
@@ -396,6 +501,12 @@ impl CosmosClientBuilder {
             },
         ));
 
+        // Forward the user-agent suffix to the driver so it appears in the
+        // User-Agent header for all data-plane requests issued by the driver
+        // transport pipeline (not just the SDK's account-metadata pipeline).
+        // Capture before `self.options` is moved into `GatewayPipeline` below.
+        let driver_user_agent_suffix = self.options.user_agent_suffix.clone();
+
         let pipeline = Arc::new(GatewayPipeline::new(
             endpoint.clone(),
             pipeline_core,
@@ -411,7 +522,9 @@ impl CosmosClientBuilder {
         // background tasks and connection pools. See https://github.com/Azure/azure-sdk-for-rust/issues/3908
         let driver_account =
             build_driver_account(endpoint, driver_credential, self.backup_endpoints);
-        #[allow(unused_mut)]
+        #[cfg(feature = "__internal_in_memory_emulator")]
+        let mut driver_runtime_builder = self.driver_runtime_builder.unwrap_or_default();
+        #[cfg(not(feature = "__internal_in_memory_emulator"))]
         let mut driver_runtime_builder = CosmosDriverRuntimeBuilder::new();
 
         // Forward SDK connection settings to the driver's connection pool.
@@ -427,10 +540,15 @@ impl CosmosClientBuilder {
         }
         driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
 
+        // Forward the user-agent suffix captured above to the driver runtime.
+        if let Some(suffix) = driver_user_agent_suffix {
+            driver_runtime_builder = driver_runtime_builder.with_user_agent_suffix(suffix);
+        }
+
         #[cfg(feature = "fault_injection")]
         if !driver_fi_rules.is_empty() {
             driver_runtime_builder =
-                driver_runtime_builder.with_fault_injection_rules(driver_fi_rules);
+                driver_runtime_builder.with_fault_injection_rules(driver_fi_rules)?;
         }
         for group in self.throughput_control_groups {
             driver_runtime_builder = driver_runtime_builder
@@ -452,12 +570,7 @@ impl CosmosClientBuilder {
             .await?;
 
         Ok(CosmosClient {
-            context: ClientContext {
-                pipeline,
-                driver,
-                global_endpoint_manager,
-                global_partition_endpoint_manager,
-            },
+            context: ClientContext { pipeline, driver },
         })
     }
 }
@@ -485,3 +598,53 @@ fn build_driver_account(
 // CosmosClient::builder().build() now eagerly creates a CosmosDriver,
 // which requires a real endpoint. Re-add once fault injection is linked
 // from the SDK to the driver.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::UserAgentSuffix;
+
+    /// Reproduces the bug where `CosmosClientBuilder::with_user_agent_suffix`
+    /// did not forward the suffix to the driver runtime, causing the
+    /// User-Agent header on data-plane requests to lack the configured suffix.
+    ///
+    /// Mirrors the relevant wiring from `CosmosClientBuilder::build()`:
+    /// the SDK options carry a `UserAgentSuffix`, which `build()` forwards
+    /// onto `CosmosDriverRuntimeBuilder::with_user_agent_suffix`.
+    #[tokio::test]
+    async fn user_agent_suffix_is_forwarded_to_driver_runtime() {
+        let suffix = UserAgentSuffix::new("myapp-westus2");
+
+        let options = CosmosClientOptions {
+            user_agent_suffix: Some(suffix.clone()),
+            ..Default::default()
+        };
+
+        let mut driver_builder = CosmosDriverRuntimeBuilder::new();
+        if let Some(s) = options.user_agent_suffix.clone() {
+            driver_builder = driver_builder.with_user_agent_suffix(s);
+        }
+        let runtime = driver_builder.build().await.expect("runtime builds");
+
+        assert_eq!(
+            runtime.user_agent_suffix(),
+            Some(&suffix),
+            "driver runtime did not receive the user-agent suffix"
+        );
+        assert!(
+            runtime.user_agent().as_str().contains(suffix.as_str()),
+            "computed driver user-agent {:?} does not contain suffix {:?}",
+            runtime.user_agent().as_str(),
+            suffix.as_str(),
+        );
+    }
+
+    #[tokio::test]
+    async fn no_user_agent_suffix_yields_no_driver_suffix() {
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .build()
+            .await
+            .expect("runtime builds");
+        assert!(runtime.user_agent_suffix().is_none());
+    }
+}

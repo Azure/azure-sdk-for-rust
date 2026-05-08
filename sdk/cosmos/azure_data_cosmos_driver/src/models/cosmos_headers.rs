@@ -39,6 +39,7 @@ pub(crate) mod request_header_names {
 }
 
 /// Standard Cosmos DB response header names.
+// cspell:ignore activityid acked llsn gatewayversion serviceversion
 pub(crate) mod response_header_names {
     pub const ACTIVITY_ID: &str = "x-ms-activity-id";
     pub const REQUEST_CHARGE: &str = "x-ms-request-charge";
@@ -55,8 +56,28 @@ pub(crate) mod response_header_names {
     pub const OWNER_FULL_NAME: &str = "x-ms-alt-content-path";
     pub const OWNER_ID: &str = "x-ms-content-path";
     pub const OFFER_REPLACE_PENDING: &str = "x-ms-offer-replace-pending";
+    pub const RETRY_AFTER_MS: &str = "x-ms-retry-after-ms";
+    pub const CORRELATED_ACTIVITY_ID: &str = "x-ms-cosmos-correlated-activityid";
+    pub const TRANSPORT_REQUEST_ID: &str = "x-ms-transport-request-id";
+    pub const GLOBAL_COMMITTED_LSN: &str = "x-ms-global-committed-lsn";
+    pub const QUORUM_ACKED_LSN: &str = "x-ms-quorum-acked-lsn";
+    pub const QUORUM_ACKED_LOCAL_LSN: &str = "x-ms-cosmos-quorum-acked-llsn";
+    pub const LOCAL_LSN: &str = "x-ms-cosmos-llsn";
+    pub const ITEM_LOCAL_LSN: &str = "x-ms-cosmos-item-llsn";
+    pub const NUMBER_OF_READ_REGIONS: &str = "x-ms-number-of-read-regions";
+    pub const LAST_STATE_CHANGE_UTC: &str = "x-ms-last-state-change-utc";
+    pub const GATEWAY_VERSION: &str = "x-ms-gatewayversion";
+    pub const SERVICE_VERSION: &str = "x-ms-serviceversion";
+    pub const RESOURCE_QUOTA: &str = "x-ms-resource-quota";
+    pub const RESOURCE_USAGE: &str = "x-ms-resource-usage";
+    pub const HAS_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
     pub const INTERNAL_PARTITION_ID: &str = "x-ms-cosmos-internal-partition-id";
+    pub const LOG_RESULTS: &str = "x-ms-documentdb-script-log-results";
+    pub const COLLECTION_INDEX_TRANSFORMATION_PROGRESS: &str =
+        "x-ms-documentdb-collection-index-transformation-progress";
+    pub const COLLECTION_LAZY_INDEXING_PROGRESS: &str =
+        "x-ms-documentdb-collection-lazy-indexing-progress";
 }
 
 pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
@@ -276,16 +297,79 @@ pub struct CosmosResponseHeaders {
     /// When `true`, a throughput change is still being processed asynchronously.
     pub offer_replace_pending: Option<bool>,
 
-    /// Partition key range ID that served this request (`x-ms-documentdb-partitionkeyrangeid`).
+    /// Retry-after duration in milliseconds (`x-ms-retry-after-ms`).
     ///
-    /// Identifies which physical partition handled the operation.
+    /// Returned on 429 (Too Many Requests) responses to indicate how long
+    /// the client should wait before retrying.
+    pub retry_after_ms: Option<u64>,
+
+    /// Correlated activity ID (`x-ms-cosmos-correlated-activityid`).
+    ///
+    /// Links related operations across service boundaries for distributed tracing.
+    pub correlated_activity_id: Option<String>,
+
+    /// Transport-level request ID (`x-ms-transport-request-id`).
+    pub transport_request_id: Option<u32>,
+
+    /// Global committed LSN across all regions (`x-ms-global-committed-lsn`).
+    pub global_committed_lsn: Option<i64>,
+
+    /// Quorum-acknowledged LSN (`x-ms-quorum-acked-lsn`).
+    pub quorum_acked_lsn: Option<i64>,
+
+    /// Quorum-acknowledged local LSN (`x-ms-cosmos-quorum-acked-llsn`).
+    pub quorum_acked_local_lsn: Option<i64>,
+
+    /// Local LSN of the partition (`x-ms-cosmos-llsn`).
+    pub local_lsn: Option<u64>,
+
+    /// Item-level local LSN (`x-ms-cosmos-item-llsn`).
+    pub item_local_lsn: Option<u64>,
+
+    /// Number of read regions (`x-ms-number-of-read-regions`).
+    pub number_of_read_regions: Option<u32>,
+
+    /// Timestamp of the last state change (`x-ms-last-state-change-utc`).
+    pub last_state_change_utc: Option<String>,
+
+    /// Gateway version (`x-ms-gatewayversion`).
+    pub gateway_version: Option<String>,
+
+    /// Service version (`x-ms-serviceversion`).
+    pub service_version: Option<String>,
+
+    /// Resource quota information (`x-ms-resource-quota`).
+    pub resource_quota: Option<String>,
+
+    /// Resource usage information (`x-ms-resource-usage`).
+    pub resource_usage: Option<String>,
+
+    /// Whether the region has tentative (not yet committed) writes (`x-ms-cosmos-allow-tentative-writes`).
+    pub has_tentative_writes: Option<bool>,
+
+    /// Partition key range ID for the responding partition
+    /// (`x-ms-documentdb-partitionkeyrangeid`).
+    ///
+    /// Identifies which physical partition handled the operation. For
+    /// informational and diagnostic purposes only — clients should not use
+    /// this value to route subsequent requests, as the topology may change
+    /// (split / merge) without notice.
     pub partition_key_range_id: Option<String>,
 
     /// Internal partition ID (`x-ms-cosmos-internal-partition-id`).
     ///
-    /// For informational purposes only. This value is an opaque identifier
-    /// assigned by the service and may change without notice.
+    /// Opaque identifier assigned by the service for diagnostic correlation.
+    /// May change without notice — do not depend on its format or stability.
     pub internal_partition_id: Option<String>,
+
+    /// Stored procedure log output (`x-ms-documentdb-script-log-results`).
+    pub log_results: Option<String>,
+
+    /// Collection index transformation progress percentage (`x-ms-documentdb-collection-index-transformation-progress`).
+    pub collection_index_transformation_progress: Option<i64>,
+
+    /// Collection lazy indexing progress percentage (`x-ms-documentdb-collection-lazy-indexing-progress`).
+    pub collection_lazy_indexing_progress: Option<i64>,
 }
 
 impl CosmosResponseHeaders {
@@ -374,11 +458,65 @@ impl CosmosResponseHeaders {
                 response_header_names::OFFER_REPLACE_PENDING => {
                     result.offer_replace_pending = value.as_str().parse::<bool>().ok();
                 }
+                response_header_names::RETRY_AFTER_MS => {
+                    result.retry_after_ms = value.as_str().parse().ok();
+                }
+                response_header_names::CORRELATED_ACTIVITY_ID => {
+                    result.correlated_activity_id = Some(value.as_str().to_owned());
+                }
+                response_header_names::TRANSPORT_REQUEST_ID => {
+                    result.transport_request_id = value.as_str().parse().ok();
+                }
+                response_header_names::GLOBAL_COMMITTED_LSN => {
+                    result.global_committed_lsn = value.as_str().parse().ok();
+                }
+                response_header_names::QUORUM_ACKED_LSN => {
+                    result.quorum_acked_lsn = value.as_str().parse().ok();
+                }
+                response_header_names::QUORUM_ACKED_LOCAL_LSN => {
+                    result.quorum_acked_local_lsn = value.as_str().parse().ok();
+                }
+                response_header_names::LOCAL_LSN => {
+                    result.local_lsn = value.as_str().parse().ok();
+                }
+                response_header_names::ITEM_LOCAL_LSN => {
+                    result.item_local_lsn = value.as_str().parse().ok();
+                }
+                response_header_names::NUMBER_OF_READ_REGIONS => {
+                    result.number_of_read_regions = value.as_str().parse().ok();
+                }
+                response_header_names::LAST_STATE_CHANGE_UTC => {
+                    result.last_state_change_utc = Some(value.as_str().to_owned());
+                }
+                response_header_names::GATEWAY_VERSION => {
+                    result.gateway_version = Some(value.as_str().to_owned());
+                }
+                response_header_names::SERVICE_VERSION => {
+                    result.service_version = Some(value.as_str().to_owned());
+                }
+                response_header_names::RESOURCE_QUOTA => {
+                    result.resource_quota = Some(value.as_str().to_owned());
+                }
+                response_header_names::RESOURCE_USAGE => {
+                    result.resource_usage = Some(value.as_str().to_owned());
+                }
+                response_header_names::HAS_TENTATIVE_WRITES => {
+                    result.has_tentative_writes = value.as_str().parse::<bool>().ok();
+                }
                 response_header_names::PARTITION_KEY_RANGE_ID => {
                     result.partition_key_range_id = Some(value.as_str().to_owned());
                 }
                 response_header_names::INTERNAL_PARTITION_ID => {
                     result.internal_partition_id = Some(value.as_str().to_owned());
+                }
+                response_header_names::LOG_RESULTS => {
+                    result.log_results = Some(value.as_str().to_owned());
+                }
+                response_header_names::COLLECTION_INDEX_TRANSFORMATION_PROGRESS => {
+                    result.collection_index_transformation_progress = value.as_str().parse().ok();
+                }
+                response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS => {
+                    result.collection_lazy_indexing_progress = value.as_str().parse().ok();
                 }
                 _ => {}
             }
@@ -415,8 +553,29 @@ mod tests {
         headers.insert("x-ms-request-duration-ms", "4.56");
         headers.insert("lsn", "42");
         headers.insert("x-ms-item-lsn", "37");
-        headers.insert("x-ms-documentdb-partitionkeyrangeid", "3");
-        headers.insert("x-ms-cosmos-internal-partition-id", "abc-internal-123");
+        headers.insert("x-ms-retry-after-ms", "1000");
+        headers.insert("x-ms-cosmos-correlated-activityid", "corr-456");
+        headers.insert("x-ms-transport-request-id", "99");
+        headers.insert("x-ms-global-committed-lsn", "50");
+        headers.insert("x-ms-quorum-acked-lsn", "48");
+        headers.insert("x-ms-cosmos-quorum-acked-llsn", "47");
+        headers.insert("x-ms-cosmos-llsn", "51");
+        headers.insert("x-ms-cosmos-item-llsn", "39");
+        headers.insert("x-ms-number-of-read-regions", "2");
+        headers.insert("x-ms-last-state-change-utc", "2024-01-01T00:00:00Z");
+        headers.insert("x-ms-gatewayversion", "2.18.0");
+        headers.insert("x-ms-serviceversion", "version 2.18.0");
+        headers.insert("x-ms-resource-quota", "documentSize=10240;");
+        headers.insert("x-ms-resource-usage", "documentSize=0;");
+        headers.insert("x-ms-cosmos-allow-tentative-writes", "true");
+        headers.insert("x-ms-documentdb-partitionkeyrangeid", "0");
+        // cspell:disable-next-line
+        headers.insert("x-ms-documentdb-script-log-results", "logoutput");
+        headers.insert(
+            "x-ms-documentdb-collection-index-transformation-progress",
+            "100",
+        );
+        headers.insert("x-ms-documentdb-collection-lazy-indexing-progress", "75");
 
         let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
 
@@ -453,11 +612,47 @@ mod tests {
         assert!((cosmos_headers.server_duration_ms.unwrap() - 4.56).abs() < f64::EPSILON);
         assert_eq!(cosmos_headers.lsn, Some(42));
         assert_eq!(cosmos_headers.item_lsn, Some(37));
-        assert_eq!(cosmos_headers.partition_key_range_id.as_deref(), Some("3"));
+        assert_eq!(cosmos_headers.retry_after_ms, Some(1000));
         assert_eq!(
-            cosmos_headers.internal_partition_id.as_deref(),
-            Some("abc-internal-123")
+            cosmos_headers.correlated_activity_id.as_deref(),
+            Some("corr-456")
         );
+        assert_eq!(cosmos_headers.transport_request_id, Some(99));
+        assert_eq!(cosmos_headers.global_committed_lsn, Some(50));
+        assert_eq!(cosmos_headers.quorum_acked_lsn, Some(48));
+        assert_eq!(cosmos_headers.quorum_acked_local_lsn, Some(47));
+        assert_eq!(cosmos_headers.local_lsn, Some(51));
+        assert_eq!(cosmos_headers.item_local_lsn, Some(39));
+        assert_eq!(cosmos_headers.number_of_read_regions, Some(2));
+        assert_eq!(
+            cosmos_headers.last_state_change_utc.as_deref(),
+            Some("2024-01-01T00:00:00Z")
+        );
+        assert_eq!(cosmos_headers.gateway_version.as_deref(), Some("2.18.0"));
+        assert_eq!(
+            cosmos_headers.service_version.as_deref(),
+            Some("version 2.18.0")
+        );
+        assert_eq!(
+            cosmos_headers.resource_quota.as_deref(),
+            Some("documentSize=10240;")
+        );
+        assert_eq!(
+            cosmos_headers.resource_usage.as_deref(),
+            Some("documentSize=0;")
+        );
+        assert_eq!(cosmos_headers.has_tentative_writes, Some(true));
+        assert_eq!(cosmos_headers.partition_key_range_id.as_deref(), Some("0"));
+        assert_eq!(
+            cosmos_headers.log_results.as_deref(),
+            // cspell:disable-next-line
+            Some("logoutput")
+        );
+        assert_eq!(
+            cosmos_headers.collection_index_transformation_progress,
+            Some(100)
+        );
+        assert_eq!(cosmos_headers.collection_lazy_indexing_progress, Some(75));
     }
 
     #[test]
@@ -499,8 +694,7 @@ mod tests {
             owner_full_name: Some("dbs/db1/colls/c1".to_string()),
             owner_id: Some("rid1".to_string()),
             offer_replace_pending: None,
-            partition_key_range_id: Some("3".to_string()),
-            internal_partition_id: Some("int-part-1".to_string()),
+            ..Default::default()
         };
 
         assert_eq!(
@@ -536,6 +730,24 @@ mod tests {
         assert!(headers.item_lsn.is_none());
         assert!(headers.partition_key_range_id.is_none());
         assert!(headers.internal_partition_id.is_none());
+        assert!(headers.retry_after_ms.is_none());
+        assert!(headers.correlated_activity_id.is_none());
+        assert!(headers.transport_request_id.is_none());
+        assert!(headers.global_committed_lsn.is_none());
+        assert!(headers.quorum_acked_lsn.is_none());
+        assert!(headers.quorum_acked_local_lsn.is_none());
+        assert!(headers.local_lsn.is_none());
+        assert!(headers.item_local_lsn.is_none());
+        assert!(headers.number_of_read_regions.is_none());
+        assert!(headers.last_state_change_utc.is_none());
+        assert!(headers.gateway_version.is_none());
+        assert!(headers.service_version.is_none());
+        assert!(headers.resource_quota.is_none());
+        assert!(headers.resource_usage.is_none());
+        assert!(headers.has_tentative_writes.is_none());
+        assert!(headers.log_results.is_none());
+        assert!(headers.collection_index_transformation_progress.is_none());
+        assert!(headers.collection_lazy_indexing_progress.is_none());
     }
 
     #[test]

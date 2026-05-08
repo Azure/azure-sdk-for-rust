@@ -31,10 +31,12 @@ rand = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
+time = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true
 url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
+percent-encoding = { workspace = true, optional = true }
 
 [dev-dependencies]
 azure_identity = { version = "0.35.0" }
@@ -69,10 +71,12 @@ reqwest = [
   "reqwest/http2",
   "azure_core/reqwest",
   "azure_core/tokio",
+  "tokio",
 ]
 rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
+__internal_in_memory_emulator = ["dep:tokio", "dep:time", "dep:percent-encoding"]
 __internal_mocking = []
 __tls = []
 

@@ -4,29 +4,31 @@
 //! Operation pipeline: the core loop for executing Cosmos DB operations.
 //!
 //! Implements the 7-stage operation loop with multi-region failover,
-//! session retry, endpoint unavailability tracking, and deadline
-//! enforcement. No hedging or circuit breaker yet (planned for later steps).
+//! session retry, endpoint unavailability tracking, partition-level failover
+//! (PPAF/PPCB), and deadline enforcement.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use azure_core::http::{
-    headers::{AsHeaders, HeaderName, HeaderValue},
-    request::options::ContentType,
-};
+use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
     driver::routing::{
-        session_manager::SessionManager, AccountEndpointState, CosmosEndpoint, LocationSnapshot,
-        LocationStateStore,
+        can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
+        partition_endpoint_state::HealthStatus, partition_key_range_id::PartitionKeyRangeId,
+        remove_probe_succeeded_entry, session_manager::SessionManager, AccountEndpointState,
+        CosmosEndpoint, LocationEffect, LocationSnapshot, LocationStateStore,
     },
+    driver::transport::CosmosTransport,
     models::{
         cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
         CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel, OperationType,
         SessionToken, SubStatusCode,
     },
-    options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
+    options::{
+        OperationOptionsView, ReadConsistencyStrategy, Region, ThroughputControlGroupSnapshot,
+    },
 };
 
 use super::{
@@ -34,12 +36,14 @@ use super::{
         OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
         TransportRequest, TransportResult,
     },
-    retry_evaluation::evaluate_transport_result,
+    retry_evaluation::{
+        evaluate_transport_result, is_region_confirming_status, partition_effects_for_deferral,
+    },
 };
 
 use crate::driver::transport::{
     transport_pipeline::{execute_transport_pipeline, TransportPipelineContext},
-    AuthorizationContext, CosmosTransport,
+    AuthorizationContext,
 };
 
 /// Per-request overrides that take precedence over values from [`CosmosOperation`].
@@ -112,6 +116,10 @@ impl OperationOverrides {
 ///
 /// This is the entry point called by `CosmosDriver::execute_operation`.
 /// It orchestrates the 7-stage operation loop described in the spec.
+///
+/// When `pre_resolved_pk_range_id` is `Some`, it is used to seed the
+/// `OperationRetryState` so that partition-level failover overrides (PPAF/PPCB)
+/// can take effect from the very first attempt.
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
@@ -130,6 +138,7 @@ pub(crate) async fn execute_operation_pipeline(
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<&ThroughputControlGroupSnapshot>,
+    pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
 ) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
@@ -174,6 +183,31 @@ pub(crate) async fn execute_operation_pipeline(
         max_session_retries,
     );
 
+    // Seed the partition key range ID from pre-resolution (PK range cache).
+    // This enables PPAF/PPCB partition-level overrides from the very first attempt
+    // instead of only after the first retry captures it from response headers.
+    retry_state.partition_key_range_id = pre_resolved_pk_range_id;
+
+    // PPAF write-retry: on single-master accounts with per-partition automatic
+    // failover enabled, only PPAF-eligible operations (partitioned writes) may
+    // be retried to a different region for write region discovery. This avoids
+    // enabling unsafe retries for non-partitioned writes such as database or
+    // container creates.
+    retry_state.ppaf_write_retry_allowed = location_snapshot
+        .partitions
+        .per_partition_automatic_failover_enabled
+        && !location_snapshot.account.multiple_write_locations_enabled
+        && operation
+            .resource_type()
+            .is_partitioned(operation.operation_type());
+
+    // PPCB: when circuit breaker is enabled, partition-level thresholds
+    // drive failover instead of marking the whole endpoint unavailable.
+    retry_state.ppcb_active = location_snapshot
+        .partitions
+        .per_partition_circuit_breaker_enabled
+        && location_snapshot.account.preferred_read_endpoints.len() > 1;
+
     let deadline = options
         .end_to_end_latency_policy()
         .map(|p| Instant::now() + p.timeout());
@@ -191,17 +225,16 @@ pub(crate) async fn execute_operation_pipeline(
             location_state_store.endpoint_unavailability_ttl(),
         );
 
-        // ── STAGE 3: Build transport request ───────────────────────────
-        let execution_context = if retry_state.failover_retry_count == 0
-            && retry_state.session_token_retry_count == 0
-        {
-            ExecutionContext::Initial
-        } else if retry_state.session_token_retry_count > 0 {
-            ExecutionContext::Retry
-        } else {
-            ExecutionContext::RegionFailover
-        };
+        // Emit one structured debug record per attempt with the chosen
+        // routing decision. Tests and SREs filter on this to verify which
+        // region/endpoint each operation actually went to. Keep the field
+        // name (`routing_decision`) and message (`routing decision made`)
+        // stable -- `azure_data_cosmos`'s multi-write integration tests grep
+        // for them.
         tracing::debug!(routing_decision = %routing, "routing decision made");
+
+        // ── STAGE 3: Build transport request ───────────────────────────
+        let execution_context = compute_execution_context(&retry_state);
 
         let ctx = TransportRequestContext {
             routing: &routing,
@@ -221,39 +254,12 @@ pub(crate) async fn execute_operation_pipeline(
         let mut transport_request =
             build_transport_request(operation, &overrides, custom_headers, &ctx)?;
 
-        // Apply content-response-on-write preference.
-        // By default, (None or Disabled), suppress the response body for write
-        // operations to reduce bandwidth. Only omit the header when Enabled.
-        // Only applies to write operations; reads always need the full body.
-        if !operation.operation_type().is_read_only()
-            && !matches!(
-                options.content_response_on_write(),
-                Some(&crate::options::ContentResponseOnWrite::Enabled)
-            )
-        {
-            transport_request.headers.insert(
-                request_header_names::PREFER,
-                HeaderValue::from_static("return=minimal"),
-            );
-        }
+        apply_optional_request_headers(&mut transport_request, operation, options);
 
-        // Apply custom headers from resolved options.
-        // Inserted conditionally so they don't override SDK-set headers.
-        if let Some(custom_headers) = options.custom_headers() {
-            for (name, value) in custom_headers {
-                if !transport_request.headers.iter().any(|(n, _)| n == name) {
-                    transport_request
-                        .headers
-                        .insert(name.clone(), value.clone());
-                }
-            }
-        }
         tracing::trace!(
             method = ?transport_request.method,
             url = %transport_request.url,
-            headers = ?transport_request.headers,
-            body = ?transport_request.body.as_ref().map(|b| std::str::from_utf8(b).unwrap_or("<non-UTF8 body>")),
-        "transport request created");
+            "transport request created");
 
         let selected_transport = match pipeline_type {
             PipelineType::DataPlane => {
@@ -278,6 +284,16 @@ pub(crate) async fn execute_operation_pipeline(
             &mut diagnostics,
         )
         .await;
+
+        // Capture partition key range ID from response headers (first time only).
+        if retry_state.partition_key_range_id.is_none() {
+            if let Some(headers) = result.cosmos_headers() {
+                if let Some(pk_range_id) = headers.partition_key_range_id.as_deref() {
+                    retry_state.partition_key_range_id =
+                        Some(PartitionKeyRangeId::from(pk_range_id.to_owned()));
+                }
+            }
+        }
 
         // ── STAGE 4b: Capture session token ─────────────────────────────
         // Capture session tokens from both successful and certain error
@@ -306,51 +322,58 @@ pub(crate) async fn execute_operation_pipeline(
             evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
 
         // ── STAGE 6: Apply location effects ────────────────────────────
-        location_state_store.apply(&effects).await;
+        // Single-master write effects are deferred into
+        // `retry_state.pending_write_effects` instead of being applied
+        // immediately. They are flushed only when the write definitively
+        // reaches a region (Complete, or Abort with a region-confirming
+        // status such as 409 Conflict). This prevents transient retry
+        // failures from polluting the routing state with unverified
+        // partition or endpoint outages — critical for PPAF on single-master
+        // accounts where prematurely marking the only known write region
+        // unavailable would force an unnecessary cross-region failover.
+        // Read-path and multi-master write effects are applied immediately
+        // so PPCB counters can drive threshold-based failover.
+        let (immediate_effects, deferred_effects) = partition_effects_for_deferral(
+            operation.is_read_only(),
+            retry_state.can_use_multiple_write_locations,
+            retry_state.ppaf_write_retry_allowed,
+            effects,
+        );
+        retry_state.pending_write_effects.extend(deferred_effects);
+        location_state_store.apply(&immediate_effects).await;
 
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
             OperationAction::Complete(result) => {
+                // Flush any deferred write-path effects now that the write
+                // has definitively succeeded. The current region is proven
+                // healthy, so the previously-failed regions can be safely
+                // marked unavailable for this partition (and endpoint, when
+                // PPAF is active).
+                flush_pending_write_effects(&mut retry_state, location_state_store).await;
+
+                // If a PPCB probe request succeeded, remove the ProbeCandidate entry.
+                try_cleanup_probe_candidate(&retry_state, location_state_store);
+
                 return build_cosmos_response(result, diagnostics);
             }
             OperationAction::FailoverRetry { new_state, delay } => {
-                if let Some(delay) = delay {
-                    if !delay.is_zero() {
-                        if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
-                            azure_core::sleep(duration).await;
-                        }
-                    }
-                }
-
-                let next_location = location_state_store.snapshot();
-                let endpoints_len = preferred_endpoints_for_attempt(
-                    next_location.account.as_ref(),
-                    &new_state,
+                tracing::debug!(
+                    activity_id = %activity_id,
+                    failover_attempt = new_state.failover_retry_count,
+                    delay = ?delay,
+                    effects = ?immediate_effects,
+                    deferred_effects = retry_state.pending_write_effects.len(),
+                    "failover retry triggered",
+                );
+                apply_failover_delay(delay).await;
+                advance_to_next_attempt(
+                    &mut retry_state,
+                    new_state,
+                    location_state_store,
                     operation.is_read_only(),
-                )
-                .len();
-
-                retry_state =
-                    new_state.advance_location(endpoints_len, next_location.account.generation);
-
-                // Check deadline before retrying
-                if let Some(d) = deadline {
-                    if Instant::now() >= d {
-                        let timeout_duration = options
-                            .end_to_end_latency_policy()
-                            .map(|p| p.timeout())
-                            .unwrap_or_default();
-
-                        diagnostics.set_operation_status(
-                            azure_core::http::StatusCode::RequestTimeout,
-                            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-                        );
-                        return Err(azure_core::Error::new(
-                            azure_core::error::ErrorKind::Other,
-                            format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-                        ));
-                    }
-                }
+                );
+                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
             }
             OperationAction::SessionRetry { new_state } => {
                 // Retry to a different region — the 404/1002 is likely a
@@ -359,37 +382,42 @@ pub(crate) async fn execute_operation_pipeline(
                 // guarantees. Container-recreation (RID change) handling
                 // will be addressed via deterministic RID comparison in
                 // a future change.
-
-                let next_location = location_state_store.snapshot();
-                let endpoints_len = preferred_endpoints_for_attempt(
-                    next_location.account.as_ref(),
-                    &new_state,
+                advance_to_next_attempt(
+                    &mut retry_state,
+                    new_state,
+                    location_state_store,
                     operation.is_read_only(),
-                )
-                .len();
-                retry_state =
-                    new_state.advance_location(endpoints_len, next_location.account.generation);
-
-                // Check deadline before retrying
-                if let Some(d) = deadline {
-                    if Instant::now() >= d {
-                        let timeout_duration = options
-                            .end_to_end_latency_policy()
-                            .map(|p| p.timeout())
-                            .unwrap_or_default();
-
-                        diagnostics.set_operation_status(
-                            azure_core::http::StatusCode::RequestTimeout,
-                            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-                        );
-                        return Err(azure_core::Error::new(
-                            azure_core::error::ErrorKind::Other,
-                            format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-                        ));
-                    }
-                }
+                );
+                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
             }
             OperationAction::Abort { error, status } => {
+                // Flush deferred write-path effects if the abort status
+                // confirms the region processed the request (e.g., 409
+                // Conflict, 412 Precondition Failed). On non-confirming
+                // aborts (503/429-3092/410/408/403-3/transport error/deadline)
+                // the buffered effects are discarded — we never proved any
+                // region was actually healthy, so polluting routing state
+                // would be wrong.
+                let confirming = status.as_ref().is_some_and(is_region_confirming_status);
+                if confirming {
+                    flush_pending_write_effects(&mut retry_state, location_state_store).await;
+                } else {
+                    retry_state.pending_write_effects.clear();
+                }
+
+                tracing::error!(
+                    activity_id = %activity_id,
+                    status = ?status,
+                    error = %error,
+                    operation_type = ?operation.operation_type(),
+                    resource_type = ?operation.resource_type(),
+                    is_read_only = operation.is_read_only(),
+                    is_idempotent = operation.is_idempotent(),
+                    failover_retries = retry_state.failover_retry_count,
+                    session_retries = retry_state.session_token_retry_count,
+                    pk_range_id = ?retry_state.partition_key_range_id,
+                    "operation aborted",
+                );
                 if let Some(cosmos_status) = status {
                     diagnostics.set_operation_status(
                         cosmos_status.status_code(),
@@ -399,6 +427,89 @@ pub(crate) async fn execute_operation_pipeline(
                 return Err(error);
             }
         }
+    }
+}
+
+/// Drains `retry_state.pending_write_effects` and applies the subset that is
+/// not already reflected in the current routing state.
+///
+/// Called when a write definitively reaches a region — either a successful
+/// completion (HTTP 2xx) or a region-confirming abort (e.g., 409 Conflict).
+/// At that point the previously-failed regions are proven to have been the
+/// unhealthy ones, and their accumulated effects (partition marks for all
+/// writes; endpoint marks too for PPAF on single-master) should be applied.
+///
+/// Once an override has been established for a partition (PPAF entry exists
+/// with the failed region rotated past) or an endpoint has already been
+/// marked unavailable, re-applying the same effect is a no-op semantically
+/// but still costs a CAS-loop clone of `PartitionEndpointState` /
+/// `AccountEndpointState`. We skip such effects here so the steady-state
+/// cost of a successful write that retried converges to a single snapshot
+/// read.
+async fn flush_pending_write_effects(
+    retry_state: &mut OperationRetryState,
+    location_state_store: &LocationStateStore,
+) {
+    if retry_state.pending_write_effects.is_empty() {
+        return;
+    }
+    let pending = std::mem::take(&mut retry_state.pending_write_effects);
+    let snapshot = location_state_store.snapshot();
+    let effects: Vec<LocationEffect> = pending
+        .into_iter()
+        .filter(|effect| !is_effect_already_applied(effect, &snapshot))
+        .collect();
+    if effects.is_empty() {
+        return;
+    }
+    location_state_store.apply(&effects).await;
+}
+
+/// Returns `true` when the given location effect would be a no-op against the
+/// current snapshot — i.e., the routing state has already converged on it.
+///
+/// This is a conservative check: false negatives (returning `false` when the
+/// effect is in fact a no-op) are safe (we just pay the redundant CAS once
+/// more). False positives (skipping an effect that would actually mutate
+/// state) would be a correctness bug.
+fn is_effect_already_applied(effect: &LocationEffect, snapshot: &LocationSnapshot) -> bool {
+    match effect {
+        LocationEffect::MarkEndpointUnavailable { endpoint, .. } => snapshot
+            .account
+            .unavailable_endpoints
+            .contains_key(endpoint.url()),
+        LocationEffect::MarkPartitionUnavailable(partition) => {
+            // Without a partition_key_range_id we cannot register an override
+            // anyway, so apply() would skip it — treat as already-applied.
+            let Some(pk_range_id) = partition.partition_key_range_id.as_ref() else {
+                return true;
+            };
+            let Some(failed_region) = partition.region.as_ref() else {
+                return false;
+            };
+            let partitions = snapshot.partitions.as_ref();
+            // Check both override maps. If an entry exists for this partition
+            // and its current_endpoint is already a different region than the
+            // failed one, the failover has already moved past — re-applying
+            // would just bump last_failure_time without changing routing.
+            let already_moved = |entry: &crate::driver::routing::partition_endpoint_state::PartitionFailoverEntry| -> bool {
+                entry
+                    .current_endpoint
+                    .region()
+                    .is_some_and(|r| r != failed_region)
+            };
+            partitions
+                .failover_overrides
+                .get(pk_range_id.as_str())
+                .is_some_and(already_moved)
+                || partitions
+                    .circuit_breaker_overrides
+                    .get(pk_range_id.as_str())
+                    .is_some_and(already_moved)
+        }
+        // RefreshAccountProperties is internally rate-limited by
+        // `refresh_account_properties_if_due` — let the store decide.
+        LocationEffect::RefreshAccountProperties => false,
     }
 }
 
@@ -414,45 +525,130 @@ fn resolve_endpoint(
     endpoint_unavailability_ttl: Duration,
 ) -> RoutingDecision {
     let account = location.account.as_ref();
-    let endpoints = preferred_endpoints_for_attempt(account, retry_state, operation.is_read_only());
-
-    let base_index = if retry_state.location.is_current(account.generation) {
-        retry_state.location.index()
+    let read_only = operation.is_read_only();
+    // Build an in-flight skip set from effects deferred during this
+    // operation. On retries this skips regions we've already failed against
+    // so the next attempt picks a different region. Both kinds of deferred
+    // effects contribute regions:
+    //   * `MarkPartitionUnavailable` — partition-level failure with a region
+    //   * `MarkEndpointUnavailable`  — endpoint-level failure (PPAF SM only)
+    //
+    // For PPAF writes on single-master accounts, `primary` is the full read
+    // endpoint list (all regions in preferred order) — see
+    // `preferred_endpoints_for_attempt`. That allows write region discovery:
+    // when the original write region fails, the next attempt naturally rolls
+    // over to the next region in the read list rather than retrying the same
+    // (potentially failed-over) write region.
+    let in_flight_failed: Vec<&Region> = if !read_only {
+        retry_state
+            .pending_write_effects
+            .iter()
+            .filter_map(|e| match e {
+                LocationEffect::MarkPartitionUnavailable(p) => p.region.as_ref(),
+                LocationEffect::MarkEndpointUnavailable { endpoint, .. } => endpoint.region(),
+                LocationEffect::RefreshAccountProperties => None,
+            })
+            .collect()
     } else {
-        0
+        Vec::new()
     };
 
-    let now = Instant::now();
-    let mut selected = None;
-    let len = endpoints.len();
-    for i in 0..len {
-        let candidate = &endpoints[(base_index + i) % len];
-        let excluded = candidate
-            .region()
-            .is_some_and(|r| retry_state.excluded_regions.iter().any(|e| e == r));
-        if excluded {
-            continue;
-        }
+    let primary = preferred_endpoints_for_attempt(account, retry_state, read_only);
+    let selected = try_select_endpoint(
+        operation,
+        retry_state,
+        account,
+        primary,
+        &in_flight_failed,
+        endpoint_unavailability_ttl,
+    );
 
-        if endpoint_is_available(
+    // If every region in the primary list has been attempted (or excluded),
+    // fall back to the standard selection ignoring the in-flight skip set so
+    // we always have an endpoint to call.
+    let selected = selected.unwrap_or_else(|| {
+        try_select_endpoint(
             operation,
-            candidate,
+            retry_state,
             account,
-            now,
+            primary,
+            &[],
             endpoint_unavailability_ttl,
-        ) {
-            selected = Some(candidate.clone());
-            break;
-        }
-    }
-
-    let selected = selected.unwrap_or_else(|| account.default_endpoint.clone());
+        )
+        .unwrap_or_else(|| account.default_endpoint.clone())
+    });
     let use_gateway20 = selected.uses_gateway20(prefer_gateway20);
     let transport_mode = if use_gateway20 {
         TransportMode::Gateway20
     } else {
         TransportMode::Gateway
     };
+
+    // Check for partition-level override (PPAF/PPCB).
+    if let Some(pk_range_id) = &retry_state.partition_key_range_id {
+        let partitions = location.partitions.as_ref();
+        let is_read = operation.is_read_only();
+        let is_partitioned = operation
+            .resource_type()
+            .is_partitioned(operation.operation_type());
+
+        // Helper: build a RoutingDecision from a partition override endpoint.
+        let make_partition_routing = |ep: CosmosEndpoint| -> RoutingDecision {
+            let ep_use_gw20 = ep.uses_gateway20(prefer_gateway20);
+            RoutingDecision {
+                selected_url: ep.selected_url(ep_use_gw20).clone(),
+                transport_mode: if ep_use_gw20 {
+                    TransportMode::Gateway20
+                } else {
+                    TransportMode::Gateway
+                },
+                endpoint: ep,
+            }
+        };
+
+        // Helper: returns true when the override endpoint's region has
+        // already been attempted in the current operation (i.e., its mark
+        // is sitting in the deferred-effect buffer). This bridges the gap
+        // between a stale PPAF/PPCB override entry and the in-flight skip
+        // set: PPAF defers `MarkPartitionUnavailable` until success, so
+        // `entry.current_endpoint` may still point at the freshly-failed
+        // region across retries within the same operation. Skipping the
+        // override here lets the primary selection (which already consulted
+        // `in_flight_failed`) pick a different region for the next attempt.
+        let override_region_already_failed = |ep: &CosmosEndpoint| -> bool {
+            ep.region().is_some_and(|r| in_flight_failed.contains(&r))
+        };
+
+        if is_eligible_for_ppcb(partitions, account, is_read, is_partitioned) {
+            if let Some(entry) = partitions.circuit_breaker_overrides.get(pk_range_id) {
+                if entry.health_status == HealthStatus::ProbeCandidate
+                    && !override_region_already_failed(&entry.first_failed_endpoint)
+                {
+                    // Route probe request to the original (first failed) endpoint.
+                    return make_partition_routing(entry.first_failed_endpoint.clone());
+                }
+                if can_circuit_breaker_trigger_failover(entry, is_read, &partitions.config)
+                    && !override_region_already_failed(&entry.current_endpoint)
+                {
+                    return make_partition_routing(entry.current_endpoint.clone());
+                }
+            }
+        } else if is_eligible_for_ppaf(partitions, account, is_read, is_partitioned) {
+            if let Some(entry) = partitions.failover_overrides.get(pk_range_id) {
+                // PPAF overrides do not use probe-based failback (no ProbeCandidate
+                // handling). The override persists until the backend signals a change.
+                //
+                // Skip the override when its `current_endpoint` is in the in-flight
+                // skip set: PPAF defers partition marks until success, so the
+                // persistent entry can lag the actual per-attempt failure history.
+                // Falling through to `selected` lets the next attempt cross-region
+                // retry rather than re-hitting the same failed override region.
+                if !override_region_already_failed(&entry.current_endpoint) {
+                    return make_partition_routing(entry.current_endpoint.clone());
+                }
+            }
+        }
+    }
 
     RoutingDecision {
         selected_url: selected.selected_url(use_gateway20).clone(),
@@ -468,9 +664,71 @@ fn preferred_endpoints_for_attempt<'a>(
 ) -> &'a [CosmosEndpoint] {
     if read_only && retry_state.route_reads_to_write_endpoints() {
         &account.preferred_write_endpoints
+    } else if !read_only && retry_state.ppaf_write_retry_allowed {
+        // PPAF on single-master accounts: writes iterate over the full read
+        // endpoint list (all regions in preferred order) so the client can
+        // probe other regions to discover the current write region after a
+        // backend-side failover. preferred_write_endpoints contains only the
+        // currently known write region, which would prevent cross-region
+        // write retry.
+        &account.preferred_read_endpoints
     } else {
         account.preferred_endpoints(read_only)
     }
+}
+
+/// Walks `endpoints` starting at the retry-state base index and returns the
+/// first endpoint that is not excluded, not in `skip_regions`, and currently
+/// available. Falls back to the first unavailable-but-not-skipped endpoint
+/// (mirrors SDK pattern: [available] → [unavailable regional]).
+///
+/// Returns `None` only when every endpoint is either excluded or in the
+/// skip set — the caller decides the next fallback list.
+fn try_select_endpoint(
+    operation: &CosmosOperation,
+    retry_state: &OperationRetryState,
+    account: &AccountEndpointState,
+    endpoints: &[CosmosEndpoint],
+    skip_regions: &[&Region],
+    endpoint_unavailability_ttl: Duration,
+) -> Option<CosmosEndpoint> {
+    if endpoints.is_empty() {
+        return None;
+    }
+    let base_index = if retry_state.location.is_current(account.generation) {
+        retry_state.location.index()
+    } else {
+        0
+    };
+    let now = Instant::now();
+    let len = endpoints.len();
+    let mut first_unavailable = None;
+    for i in 0..len {
+        let candidate = &endpoints[(base_index + i) % len];
+        let candidate_region = candidate.region();
+        let excluded =
+            candidate_region.is_some_and(|r| retry_state.excluded_regions.iter().any(|e| e == r));
+        if excluded {
+            continue;
+        }
+        let in_skip_set = candidate_region.is_some_and(|r| skip_regions.contains(&r));
+        if in_skip_set {
+            continue;
+        }
+        if endpoint_is_available(
+            operation,
+            candidate,
+            account,
+            now,
+            endpoint_unavailability_ttl,
+        ) {
+            return Some(candidate.clone());
+        }
+        if first_unavailable.is_none() {
+            first_unavailable = Some(candidate.clone());
+        }
+    }
+    first_unavailable
 }
 
 fn endpoint_is_available(
@@ -729,6 +987,195 @@ fn should_capture_session_token_from_status(
     }
 }
 
+// ── Pipeline stage helpers ────────────────────────────────────────────
+//
+// These pure (or narrowly-scoped) helpers carry the per-stage logic for
+// `execute_operation_pipeline` so the main loop body stays readable and
+// each stage can be unit-tested in isolation.
+
+/// Maps the current retry counts to the `ExecutionContext` value that the
+/// transport pipeline expects for diagnostics annotation.
+///
+/// - First attempt (no failover, no session retry) → `Initial`
+/// - Any session retry in progress → `Retry`
+/// - Otherwise (a failover retry) → `RegionFailover`
+///
+/// Session-retry takes precedence over failover-retry because in the rare
+/// case where both counters are non-zero, the most recent advance was the
+/// session retry (failover counters are not reset on session retry, but the
+/// session retry happens later in the loop).
+fn compute_execution_context(retry_state: &OperationRetryState) -> ExecutionContext {
+    if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
+        ExecutionContext::Initial
+    } else if retry_state.session_token_retry_count > 0 {
+        ExecutionContext::Retry
+    } else {
+        ExecutionContext::RegionFailover
+    }
+}
+
+/// Applies operation-options-driven request headers that are only known
+/// after the request has been built by `build_transport_request`.
+///
+/// Two concerns are layered here, in this order:
+///
+/// 1. **content-response-on-write**: For non-read operations whose
+///    `content_response_on_write` is `None` (default) or `Disabled`,
+///    inject `Prefer: return=minimal` so the service suppresses the
+///    response body. Reads always need the body and are unaffected.
+/// 2. **custom_headers**: Pass-through of caller-supplied headers, but
+///    only when no SDK-set header with the same name already exists —
+///    SDK headers always take precedence.
+fn apply_optional_request_headers(
+    transport_request: &mut TransportRequest,
+    operation: &CosmosOperation,
+    options: &OperationOptionsView<'_>,
+) {
+    if !operation.operation_type().is_read_only()
+        && !matches!(
+            options.content_response_on_write(),
+            Some(&crate::options::ContentResponseOnWrite::Enabled)
+        )
+    {
+        transport_request.headers.insert(
+            request_header_names::PREFER,
+            HeaderValue::from_static("return=minimal"),
+        );
+    }
+
+    if let Some(custom_headers) = options.custom_headers() {
+        for (name, value) in custom_headers {
+            if !transport_request.headers.iter().any(|(n, _)| n == name) {
+                transport_request
+                    .headers
+                    .insert(name.clone(), value.clone());
+            }
+        }
+    }
+}
+
+/// Sleeps for the failover-retry delay if one was requested.
+///
+/// Treats `None` and zero-duration delays as no-ops so callers don't have
+/// to repeat that guard themselves. Conversion to `azure_core::time::Duration`
+/// is performed once; if it fails (e.g., overflow) the sleep is silently
+/// skipped because a too-large delay is no worse than no delay at all.
+async fn apply_failover_delay(delay: Option<Duration>) {
+    let Some(delay) = delay else {
+        return;
+    };
+    if delay.is_zero() {
+        return;
+    }
+    if let Ok(duration) = azure_core::time::Duration::try_from(delay) {
+        azure_core::sleep(duration).await;
+    }
+}
+
+/// Advances `retry_state` to a fresh attempt against an updated location
+/// snapshot, preserving any deferred write-path effects.
+///
+/// `evaluate_transport_result` cloned `retry_state` BEFORE this attempt's
+/// deferred effects were appended, so `new_state.pending_write_effects` is
+/// the pre-extend snapshot. Without explicit transfer, every retry would
+/// start with an empty `pending_write_effects` — which means
+/// `in_flight_failed` (built from those effects in `resolve_endpoint`) would
+/// be empty, so the next attempt would not skip the region that just failed
+/// and may pick the same region again (or, when all regions are unavailable,
+/// fall back to the global default endpoint).
+fn advance_to_next_attempt(
+    retry_state: &mut OperationRetryState,
+    new_state: OperationRetryState,
+    location_state_store: &LocationStateStore,
+    is_read_only: bool,
+) {
+    let next_location = location_state_store.snapshot();
+    let endpoints_len =
+        preferred_endpoints_for_attempt(next_location.account.as_ref(), &new_state, is_read_only)
+            .len();
+    let pending = std::mem::take(&mut retry_state.pending_write_effects);
+    *retry_state = new_state.advance_location(endpoints_len, next_location.account.generation);
+    retry_state.pending_write_effects = pending;
+}
+
+/// Returns `Err` with a `RequestTimeout`-coded error if the end-to-end
+/// deadline has been reached, otherwise `Ok(())`.
+///
+/// On timeout, the diagnostics builder is updated with
+/// `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` so downstream telemetry
+/// can distinguish a client-side end-to-end timeout from a service 408.
+fn enforce_deadline_or_timeout(
+    deadline: Option<Instant>,
+    options: &OperationOptionsView<'_>,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> azure_core::Result<()> {
+    let Some(d) = deadline else {
+        return Ok(());
+    };
+    if Instant::now() < d {
+        return Ok(());
+    }
+
+    let timeout_duration = options
+        .end_to_end_latency_policy()
+        .map(|p| p.timeout())
+        .unwrap_or_default();
+
+    diagnostics.set_operation_status(
+        azure_core::http::StatusCode::RequestTimeout,
+        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+    );
+    Err(azure_core::Error::new(
+        azure_core::error::ErrorKind::Other,
+        format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
+    ))
+}
+
+/// On a successful PPCB probe request, removes the `ProbeCandidate` entry
+/// for this partition so subsequent requests resume default routing.
+///
+/// Only PPCB circuit-breaker overrides use probe-based failback. PPAF
+/// overrides persist until the backend signals a change organically, so
+/// this function is a no-op for them.
+///
+/// **Fast path**: skips the CAS loop entirely when no `ProbeCandidate`
+/// entry exists for this partition, avoiding an expensive full-state
+/// clone on every successful request (the overwhelmingly common case).
+///
+/// **TOCTOU guard**: re-checks the `ProbeCandidate` status inside the CAS
+/// closure. If another thread transitions the entry to `Unhealthy` between
+/// the snapshot check and the CAS, the unhealthy entry must not be removed.
+fn try_cleanup_probe_candidate(
+    retry_state: &OperationRetryState,
+    location_state_store: &LocationStateStore,
+) {
+    let Some(pk_range_id) = &retry_state.partition_key_range_id else {
+        return;
+    };
+
+    let snapshot = location_state_store.snapshot();
+    let needs_cleanup = snapshot
+        .partitions
+        .circuit_breaker_overrides
+        .get(pk_range_id.as_str())
+        .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
+    if !needs_cleanup {
+        return;
+    }
+
+    location_state_store.apply_partition(|current| {
+        let is_probe = current
+            .circuit_breaker_overrides
+            .get(pk_range_id.as_str())
+            .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
+        if is_probe {
+            remove_probe_succeeded_entry(current, pk_range_id)
+        } else {
+            current.clone()
+        }
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use std::{sync::Arc, time::Duration};
@@ -743,7 +1190,10 @@ mod tests {
         diagnostics::ExecutionContext,
         driver::{
             pipeline::components::{RoutingDecision, TransportMode},
-            routing::{AccountEndpointState, CosmosEndpoint, LocationIndex, LocationSnapshot},
+            routing::{
+                AccountEndpointState, CosmosEndpoint, LocationEffect, LocationIndex,
+                LocationSnapshot,
+            },
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
@@ -987,6 +1437,10 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
         };
 
         let routing = super::resolve_endpoint(
@@ -1000,7 +1454,7 @@ mod tests {
     }
 
     #[test]
-    fn resolve_endpoint_falls_back_to_default_when_all_unavailable() {
+    fn resolve_endpoint_deprioritizes_unavailable_over_global_fallback() {
         let operation = CosmosOperation::read_all_databases(test_account());
         let default_endpoint =
             CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
@@ -1020,7 +1474,7 @@ mod tests {
 
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
-            preferred_read_endpoints: vec![read_endpoint].into(),
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
             preferred_write_endpoints: vec![default_endpoint.clone()].into(),
             unavailable_endpoints: unavailable,
             multiple_write_locations_enabled: false,
@@ -1037,6 +1491,10 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
         };
 
         let routing = super::resolve_endpoint(
@@ -1046,7 +1504,9 @@ mod tests {
             false,
             Duration::from_secs(60),
         );
-        assert_eq!(routing.endpoint, default_endpoint);
+        // Unavailable regional endpoint is de-prioritized but still preferred
+        // over the global fallback.
+        assert_eq!(routing.endpoint, read_endpoint);
     }
 
     #[test]
@@ -1085,6 +1545,10 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
         };
 
         let routing = super::resolve_endpoint(
@@ -1142,6 +1606,10 @@ mod tests {
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
         };
 
         let first_routing = super::resolve_endpoint(
@@ -1369,9 +1837,693 @@ mod tests {
     }
 
     #[test]
+    fn resolve_endpoint_falls_back_to_global_when_all_excluded() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let default_endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![default_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: default_endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 3,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            excluded_regions: vec!["westus2".into()],
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
+        };
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        // When all endpoints are excluded, the global endpoint is the only option.
+        assert_eq!(routing.endpoint, default_endpoint);
+    }
+
+    #[test]
+    fn resolve_endpoint_picks_first_available_over_unavailable() {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let default_endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
+        let unavailable_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let available_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            unavailable_endpoint.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![
+                unavailable_endpoint.clone(),
+                available_endpoint.clone(),
+            ]
+            .into(),
+            preferred_write_endpoints: vec![default_endpoint.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: default_endpoint.clone(),
+        }));
+
+        let retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        // Available endpoint is preferred over the unavailable one.
+        assert_eq!(routing.endpoint, available_endpoint);
+    }
+
+    // ── PPAF write-retry cross-region fallback ─────────────────────────
+
+    fn make_pending_partition_mark_for_region(
+        region: &'static str,
+    ) -> crate::driver::routing::LocationEffect {
+        crate::driver::routing::LocationEffect::MarkPartitionUnavailable(
+            crate::driver::routing::UnavailablePartition {
+                partition_key_range_id: None,
+                region: Some(region.into()),
+                is_read: false,
+                is_partitioned_resource: true,
+            },
+        )
+    }
+
+    #[test]
+    fn resolve_endpoint_skips_in_flight_failed_write_region() {
+        // Multi-write account: writes can rotate across both write regions.
+        // After the first attempt to eastus fails, the in-flight skip set
+        // should route the next attempt to westus2 instead of repeating eastus.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let west = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
+            preferred_write_endpoints: vec![east.clone(), west.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: true,
+            default_endpoint: east.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            true,
+            Vec::new(),
+            3,
+            2,
+        );
+        // Simulate one prior failed attempt against eastus that deferred
+        // a partition mark for that region.
+        retry_state
+            .pending_write_effects
+            .push(make_pending_partition_mark_for_region("eastus"));
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            routing.endpoint, west,
+            "in-flight skip set must route the retry to westus2"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_ppaf_write_uses_read_endpoints_as_primary_list() {
+        // Single-master account with PPAF: preferred_write_endpoints = [eastus]
+        // only, but preferred_read_endpoints = [westus2, eastus] (different
+        // ordering — westus2 is the user's preferred region). With PPAF
+        // enabled, a write must iterate over the READ list so the first
+        // attempt targets westus2 (the user's preferred region) and probes for
+        // the actual write region, rather than blindly hitting the only entry
+        // in the write list.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let west = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![west.clone(), east.clone()].into(),
+            preferred_write_endpoints: vec![east.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: east.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.ppaf_write_retry_allowed = true;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            routing.endpoint, west,
+            "PPAF write must use the read endpoint list (preferred order) as the primary candidate set"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_ppaf_falls_back_to_read_region_when_write_exhausted() {
+        // Single-master account with PPAF: write_endpoints = [eastus] only.
+        // After eastus has failed, PPAF write retry should fall back to a
+        // read region (westus2) for cross-regional write region discovery.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let west = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
+            preferred_write_endpoints: vec![east.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: east.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.ppaf_write_retry_allowed = true;
+        retry_state
+            .pending_write_effects
+            .push(make_pending_partition_mark_for_region("eastus"));
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            routing.endpoint, west,
+            "PPAF write retry must fall back to a read region when all write regions are in the in-flight skip set"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_ppaf_override_skipped_when_current_endpoint_failed_in_flight() {
+        // Regression test for PPAF write failback infinite-retry bug.
+        //
+        // Scenario: an earlier successful PPAF discovery recorded an
+        // override pointing at `centralus`. A new write begins:
+        //   1. resolve_endpoint sees the PPAF override → routes to centralus.
+        //   2. centralus is failing back (returns 403/3) → the failure-path
+        //      effects are deferred into `pending_write_effects` because
+        //      PPAF SM defers writes until success/region-confirming abort.
+        //   3. The persistent `failover_overrides[pk_range_id].current_endpoint`
+        //      still says centralus (deferred effects haven't been flushed).
+        //   4. On retry, the PPAF override branch in resolve_endpoint MUST
+        //      consult the in-flight skip set and fall through to the primary
+        //      selection (which has already rotated past centralus) — otherwise
+        //      every retry hammers the same failed override region.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let north = CosmosEndpoint::regional(
+            "northcentralus".into(),
+            Url::parse("https://test-northcentralus.documents.azure.com:443/").unwrap(),
+        );
+        let central = CosmosEndpoint::regional(
+            "centralus".into(),
+            Url::parse("https://test-centralus.documents.azure.com:443/").unwrap(),
+        );
+
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![north.clone(), central.clone()].into(),
+            preferred_write_endpoints: vec![north.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: north.clone(),
+        });
+
+        // Build a partition state with PPAF enabled and a stale override
+        // entry that points at the now-failing centralus region.
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+        };
+        let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
+        let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
+        partitions.per_partition_automatic_failover_enabled = true;
+        partitions.failover_overrides.insert(
+            pk_range_id.clone(),
+            PartitionFailoverEntry {
+                current_endpoint: central.clone(),
+                first_failed_endpoint: central.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+        let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.ppaf_write_retry_allowed = true;
+        retry_state.partition_key_range_id = Some(pk_range_id);
+        // Simulate that the current operation already failed against centralus
+        // (override target) and the deferred mark is sitting in the buffer.
+        retry_state
+            .pending_write_effects
+            .push(make_pending_partition_mark_for_region("centralus"));
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            routing.endpoint, north,
+            "PPAF override pointing at a region already in the in-flight skip set must be skipped, \
+             so cross-region retry can rotate to a different region instead of looping on the failed override"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_ppaf_override_honored_when_current_endpoint_not_failed() {
+        // Counterpart to the regression test above: when the override's
+        // current_endpoint is NOT in the in-flight skip set, the PPAF
+        // override MUST be honored (otherwise prior failover decisions
+        // would be silently ignored on every retry).
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let north = CosmosEndpoint::regional(
+            "northcentralus".into(),
+            Url::parse("https://test-northcentralus.documents.azure.com:443/").unwrap(),
+        );
+        let central = CosmosEndpoint::regional(
+            "centralus".into(),
+            Url::parse("https://test-centralus.documents.azure.com:443/").unwrap(),
+        );
+
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![north.clone(), central.clone()].into(),
+            preferred_write_endpoints: vec![north.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: north.clone(),
+        });
+
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+        };
+        let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
+        let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
+        partitions.per_partition_automatic_failover_enabled = true;
+        partitions.failover_overrides.insert(
+            pk_range_id.clone(),
+            PartitionFailoverEntry {
+                current_endpoint: central.clone(),
+                first_failed_endpoint: north.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+        let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state.ppaf_write_retry_allowed = true;
+        retry_state.partition_key_range_id = Some(pk_range_id);
+        // pending_write_effects is empty — first attempt of the operation,
+        // so the override should be applied as-is.
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            routing.endpoint, central,
+            "PPAF override with a healthy current_endpoint must be honored"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_does_not_skip_for_reads() {
+        // The in-flight skip set is only consulted for writes — reads should
+        // continue to use the standard preferred-endpoint selection even when
+        // pending_write_effects is non-empty (which can never occur
+        // for a read in practice, but the invariant should hold defensively).
+        let operation = CosmosOperation::read_all_databases(test_account());
+
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone()].into(),
+            preferred_write_endpoints: vec![east.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: east.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            Vec::new(),
+            3,
+            2,
+        );
+        retry_state
+            .pending_write_effects
+            .push(make_pending_partition_mark_for_region("eastus"));
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.endpoint, east);
+    }
+
+    // ── flush_pending_write_effects: skip already-applied ──────────────
+
+    #[test]
+    fn already_applied_skips_endpoint_mark_when_endpoint_in_unavailable_set() {
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            east.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::TransportError,
+            ),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone()].into(),
+            preferred_write_endpoints: vec![east.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: east.clone(),
+        }));
+
+        let effect = LocationEffect::MarkEndpointUnavailable {
+            endpoint: east,
+            reason: crate::driver::routing::UnavailableReason::TransportError,
+        };
+        assert!(
+            super::is_effect_already_applied(&effect, &location),
+            "endpoint already in unavailable set must be considered already applied"
+        );
+    }
+
+    #[test]
+    fn already_applied_returns_false_when_endpoint_not_in_unavailable_set() {
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone()].into(),
+            preferred_write_endpoints: vec![east.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: east.clone(),
+        }));
+
+        let effect = LocationEffect::MarkEndpointUnavailable {
+            endpoint: east,
+            reason: crate::driver::routing::UnavailableReason::TransportError,
+        };
+        assert!(!super::is_effect_already_applied(&effect, &location));
+    }
+
+    #[test]
+    fn already_applied_skips_partition_mark_when_override_already_moved_past_failed_region() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+        use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
+
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let west = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+        let pk_range_id = PartitionKeyRangeId::from(String::from("0"));
+
+        let mut partitions = PartitionEndpointState {
+            per_partition_automatic_failover_enabled: true,
+            ..Default::default()
+        };
+        partitions.failover_overrides.insert(
+            pk_range_id.clone(),
+            PartitionFailoverEntry {
+                current_endpoint: west.clone(), // already moved off eastus
+                first_failed_endpoint: east.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let location = LocationSnapshot::for_tests_with_partitions(
+            Arc::new(AccountEndpointState {
+                generation: 0,
+                preferred_read_endpoints: vec![east.clone(), west.clone()].into(),
+                preferred_write_endpoints: vec![east.clone()].into(),
+                unavailable_endpoints: Default::default(),
+                multiple_write_locations_enabled: false,
+                default_endpoint: east.clone(),
+            }),
+            Arc::new(partitions),
+        );
+
+        let effect = LocationEffect::MarkPartitionUnavailable(
+            crate::driver::routing::UnavailablePartition {
+                partition_key_range_id: Some(pk_range_id),
+                region: Some("eastus".into()),
+                is_read: false,
+                is_partitioned_resource: true,
+            },
+        );
+        assert!(
+            super::is_effect_already_applied(&effect, &location),
+            "PPAF override that has already moved past the failed region must be considered already applied"
+        );
+    }
+
+    #[test]
+    fn already_applied_returns_false_when_partition_override_still_on_failed_region() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+        use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
+
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let pk_range_id = PartitionKeyRangeId::from(String::from("0"));
+
+        let mut partitions = PartitionEndpointState {
+            per_partition_automatic_failover_enabled: true,
+            ..Default::default()
+        };
+        partitions.failover_overrides.insert(
+            pk_range_id.clone(),
+            PartitionFailoverEntry {
+                current_endpoint: east.clone(), // still on the failed region
+                first_failed_endpoint: east.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let location = LocationSnapshot::for_tests_with_partitions(
+            Arc::new(AccountEndpointState {
+                generation: 0,
+                preferred_read_endpoints: vec![east.clone()].into(),
+                preferred_write_endpoints: vec![east.clone()].into(),
+                unavailable_endpoints: Default::default(),
+                multiple_write_locations_enabled: false,
+                default_endpoint: east.clone(),
+            }),
+            Arc::new(partitions),
+        );
+
+        let effect = LocationEffect::MarkPartitionUnavailable(
+            crate::driver::routing::UnavailablePartition {
+                partition_key_range_id: Some(pk_range_id),
+                region: Some("eastus".into()),
+                is_read: false,
+                is_partitioned_resource: true,
+            },
+        );
+        assert!(
+            !super::is_effect_already_applied(&effect, &location),
+            "override still pointing at the failed region must NOT be skipped"
+        );
+    }
+
+    #[test]
+    fn already_applied_returns_false_when_no_partition_override_exists() {
+        let east = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![east.clone()].into(),
+            preferred_write_endpoints: vec![east.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: east.clone(),
+        }));
+
+        let effect = LocationEffect::MarkPartitionUnavailable(
+            crate::driver::routing::UnavailablePartition {
+                partition_key_range_id: Some(
+                    crate::driver::routing::partition_key_range_id::PartitionKeyRangeId::from(
+                        String::from("0"),
+                    ),
+                ),
+                region: Some("eastus".into()),
+                is_read: false,
+                is_partitioned_resource: true,
+            },
+        );
+        assert!(!super::is_effect_already_applied(&effect, &location));
+    }
+
+    #[test]
     fn build_transport_request_sets_is_upsert_header() {
-        let container = test_container();
-        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::upsert_item(item).with_body(b"{}".to_vec());
 
         let routing = test_routing();
@@ -1404,8 +2556,7 @@ mod tests {
 
     #[test]
     fn build_transport_request_omits_is_upsert_header_for_create() {
-        let container = test_container();
-        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
         let routing = test_routing();
@@ -1645,6 +2796,126 @@ mod tests {
                 request_header_names::THROUGHPUT_BUCKET
             )),
             Some("100")
+        );
+    }
+
+    // ── compute_execution_context ─────────────────────────────────────
+
+    fn retry_state_with_counts(
+        failover_retry_count: u32,
+        session_token_retry_count: u32,
+    ) -> super::OperationRetryState {
+        let mut state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.failover_retry_count = failover_retry_count;
+        state.session_token_retry_count = session_token_retry_count;
+        state
+    }
+
+    #[test]
+    fn execution_context_initial_when_no_retries() {
+        let state = retry_state_with_counts(0, 0);
+        assert!(matches!(
+            super::compute_execution_context(&state),
+            ExecutionContext::Initial
+        ));
+    }
+
+    #[test]
+    fn execution_context_retry_when_session_retry_active() {
+        // Session-retry takes precedence over failover-retry: when both
+        // counters are non-zero, the most recent advance was the session
+        // retry, so the attempt is annotated as a `Retry`.
+        let state = retry_state_with_counts(1, 1);
+        assert!(matches!(
+            super::compute_execution_context(&state),
+            ExecutionContext::Retry
+        ));
+
+        let state = retry_state_with_counts(0, 1);
+        assert!(matches!(
+            super::compute_execution_context(&state),
+            ExecutionContext::Retry
+        ));
+    }
+
+    #[test]
+    fn execution_context_region_failover_when_only_failover_active() {
+        let state = retry_state_with_counts(1, 0);
+        assert!(matches!(
+            super::compute_execution_context(&state),
+            ExecutionContext::RegionFailover
+        ));
+    }
+
+    // ── apply_failover_delay ──────────────────────────────────────────
+
+    #[tokio::test]
+    async fn failover_delay_none_returns_immediately() {
+        let start = std::time::Instant::now();
+        super::apply_failover_delay(None).await;
+        // Allow generous slack for CI scheduling jitter; the goal is to
+        // confirm that `None` does not invoke the sleep path at all.
+        assert!(start.elapsed() < Duration::from_millis(50));
+    }
+
+    #[tokio::test]
+    async fn failover_delay_zero_returns_immediately() {
+        let start = std::time::Instant::now();
+        super::apply_failover_delay(Some(Duration::ZERO)).await;
+        assert!(start.elapsed() < Duration::from_millis(50));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn failover_delay_real_value_actually_sleeps() {
+        // Use tokio's pause-time to verify the sleep path is taken
+        // without making the test wall-clock-slow.
+        let start = tokio::time::Instant::now();
+        super::apply_failover_delay(Some(Duration::from_secs(5))).await;
+        assert!(start.elapsed() >= Duration::from_secs(5));
+    }
+
+    // ── enforce_deadline_or_timeout ───────────────────────────────────
+
+    fn empty_options_view() -> crate::options::OperationOptionsView<'static> {
+        crate::options::OperationOptionsView::new(None, None, None, None)
+    }
+
+    fn test_diagnostics() -> crate::diagnostics::DiagnosticsContextBuilder {
+        crate::diagnostics::DiagnosticsContextBuilder::new(
+            crate::models::ActivityId::from_string("test-deadline".to_owned()),
+            std::sync::Arc::new(crate::options::DiagnosticsOptions::default()),
+        )
+    }
+
+    #[test]
+    fn enforce_deadline_none_is_ok() {
+        let options = empty_options_view();
+        let mut diagnostics = test_diagnostics();
+        let result = super::enforce_deadline_or_timeout(None, &options, &mut diagnostics);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn enforce_deadline_in_future_is_ok() {
+        let options = empty_options_view();
+        let mut diagnostics = test_diagnostics();
+        let deadline = std::time::Instant::now() + Duration::from_secs(60);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn enforce_deadline_in_past_returns_timeout_error() {
+        let options = empty_options_view();
+        let mut diagnostics = test_diagnostics();
+        let deadline = std::time::Instant::now() - Duration::from_millis(1);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        let err = result.expect_err("past deadline should produce an error");
+        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
+        let msg = err.to_string();
+        assert!(
+            msg.contains("end-to-end operation timeout exceeded"),
+            "unexpected error message: {msg}"
         );
     }
 }

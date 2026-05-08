@@ -15,7 +15,7 @@ pub use azure_data_cosmos_driver::models::{
 pub use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
     OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
-    ThroughputControlGroupOptions,
+    ThroughputControlGroupOptions, UserAgentSuffix,
 };
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
@@ -29,13 +29,13 @@ pub struct CosmosClientOptions {
     /// Default [`OperationOptions`] applied to all requests made by this client,
     /// unless overridden by per-request options.
     pub(crate) operation: OperationOptions,
-    pub(crate) user_agent_suffix: Option<String>,
+    pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
     pub(crate) application_region: Option<Region>,
 }
 
 impl CosmosClientOptions {
-    pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
-        self.user_agent_suffix = Some(suffix.into());
+    pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
+        self.user_agent_suffix = Some(suffix);
         self
     }
 
