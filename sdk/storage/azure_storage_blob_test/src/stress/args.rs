@@ -172,11 +172,11 @@ impl From<FaultInjectionOverrideOptions> for crate::fault_injection::FaultInject
 }
 
 const STD_FAULT_PROBABILITIES: FaultInjectionProbabilities = FaultInjectionProbabilities {
-    partial_response_hang: 0.03,
-    partial_response_close: 0.03,
-    partial_response_abort: 0.03,
-    partial_response_normal: 0.03,
-    no_response_hang: 0.03,
-    no_response_close: 0.03,
-    no_response_abort: 0.03,
+    partial_response_hang: 0.006,
+    partial_response_close: 0.006,
+    partial_response_abort: 0.006,
+    partial_response_normal: 0.006,
+    no_response_hang: 0.006,
+    no_response_close: 0.006,
+    no_response_abort: 0.006,
 };
