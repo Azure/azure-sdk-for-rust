@@ -58,6 +58,14 @@ impl PageBlobClient {
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<PageBlobClientOptions>,
     ) -> Result<Self> {
+        // Storage endpoints must be base URLs.
+        if blob_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{blob_url} is not a valid base URL"),
+            ));
+        }
+
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
 

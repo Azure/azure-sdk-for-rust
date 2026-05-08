@@ -71,6 +71,14 @@ impl BlobClient {
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobClientOptions>,
     ) -> Result<Self> {
+        // Storage endpoints must be base URLs.
+        if blob_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{blob_url} is not a valid base URL"),
+            ));
+        }
+
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
 
@@ -186,7 +194,7 @@ impl BlobClient {
     /// This operation performs a managed (multi-part) download, splitting the blob into
     /// parallel range requests for better performance on large blobs. The returned
     /// [`BlobClientDownloadResult::body`] contains the complete blob data, while
-    /// [`BlobClientDownloadResult::properties`] and /// [`BlobClientDownloadResult::headers`]
+    /// [`BlobClientDownloadResult::properties`] and [`BlobClientDownloadResult::headers`]
     /// reflect only the initial response's metadata and properties.
     ///
     /// # Arguments

@@ -58,6 +58,14 @@ impl BlobContainerClient {
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
+        // Storage endpoints must be base URLs.
+        if container_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{container_url} is not a valid base URL"),
+            ));
+        }
+
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
 
@@ -133,5 +141,33 @@ impl BlobContainerClient {
             },
             Err(e) => Err(e),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_url_rejects_cannot_be_a_base_url() {
+        let url = Url::parse("data:text/plain,hello").unwrap();
+        assert!(BlobContainerClient::from_url(url, None, None).is_err());
+    }
+
+    #[test]
+    fn from_url_accepts_http_without_credential() {
+        let url = Url::parse("http://127.0.0.1:10000/devstoreaccount1/container").unwrap();
+        let container = BlobContainerClient::from_url(url, None, None).unwrap();
+        assert_eq!(
+            container.blob_client("blob").url().path(),
+            "/devstoreaccount1/container/blob"
+        );
+    }
+
+    #[test]
+    fn from_url_accepts_https_custom_hostname() {
+        // CDN / Front Door / private endpoint hostnames are still https URLs.
+        let url = Url::parse("https://cdn.contoso.com/container").unwrap();
+        assert!(BlobContainerClient::from_url(url, None, None).is_ok());
     }
 }
