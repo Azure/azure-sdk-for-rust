@@ -211,7 +211,7 @@ This example lists all the certificates in the specified Azure Key Vault.
 use azure_security_keyvault_certificates::ResourceExt;
 use futures::TryStreamExt;
 
-let mut pager = client.list_certificate_properties(None)?.into_stream();
+let mut pager = client.list_certificate_properties(None)?;
 while let Some(certificate) = pager.try_next().await? {
     // Get the certificate name from the ID.
     let name = certificate.resource_id()?.name;
