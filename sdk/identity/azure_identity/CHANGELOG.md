@@ -10,13 +10,7 @@
 
 - Added `#[non_exhaustive]` to `UserAssignedId`.
 
-## 0.35.0 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
+## 0.35.0 (2026-04-022)
 
 ### Other Changes
 
