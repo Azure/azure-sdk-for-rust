@@ -22,7 +22,7 @@ use azure_data_cosmos::fault_injection::{
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::Query;
-use framework::{TestClient, TestOptions, HUB_REGION};
+use framework::{assert_failover_to_region, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{borrow::Cow, error::Error};
@@ -114,7 +114,8 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
                 result.err()
             );
 
-            let _response = result.unwrap();
+            let response = result.unwrap();
+            assert_failover_to_region(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -440,7 +441,8 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
                 result.err()
             );
 
-            let _response = result.unwrap();
+            let response = result.unwrap();
+            assert_failover_to_region(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },

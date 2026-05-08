@@ -39,6 +39,14 @@ url.workspace = true
 # of `azure_data_cosmos` do NOT compile with this feature enabled — the driver's
 # `DiagnosticsContext::for_testing` constructor only exists when this crate's own
 # tests are being built.
+#
+# `default-features = false` is intentional: this declaration exists ONLY to opt
+# into `__internal_test_diagnostics_construction`. The "real" driver dependency
+# is declared in `[dependencies]` above with the production feature set; this
+# dev entry must NOT pull in additional default features that would silently
+# enable extra functionality only during tests. Cargo unions features across
+# dependency tables, so the production crate still gets its full feature set —
+# this entry only adds the internal test feature.
 azure_data_cosmos_driver = { workspace = true, default-features = false, features = ["__internal_test_diagnostics_construction"] }
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity = { version = "0.35.0" }

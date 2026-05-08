@@ -43,6 +43,54 @@ pub const SATELLITE_REGION: Region = Region::WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 pub const EMULATOR_HOST: &str = "127.0.0.1";
 
+/// Asserts that the operation completed via cross-region failover: at least
+/// one retry must have occurred AND the final tracked request must have
+/// landed on `expected_region`. Used by failover tests to validate routing
+/// behavior now that `request_url()` is gone.
+pub fn assert_failover_to_region(
+    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    expected_region: &Region,
+) {
+    let requests = diagnostics.requests();
+    assert!(
+        diagnostics.request_count() > 1,
+        "expected multiple requests indicating retry/failover, got {} (regions contacted: {:?})",
+        diagnostics.request_count(),
+        diagnostics.regions_contacted()
+    );
+    let last = requests
+        .last()
+        .expect("at least one tracked request after failover");
+    assert_eq!(
+        last.region(),
+        Some(expected_region),
+        "expected final request to land on region {:?}, but landed on {:?} (endpoint {})",
+        expected_region,
+        last.region(),
+        last.endpoint()
+    );
+}
+
+/// Asserts that no cross-region failover occurred: every tracked request
+/// must have stayed on `expected_region`. Used to validate scenarios where
+/// a transient fault clears via local retry without triggering failover.
+pub fn assert_no_failover_from_region(
+    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    expected_region: &Region,
+) {
+    let requests = diagnostics.requests();
+    for (i, req) in requests.iter().enumerate() {
+        assert_eq!(
+            req.region(),
+            Some(expected_region),
+            "request #{} landed on unexpected region {:?} (endpoint {})",
+            i,
+            req.region(),
+            req.endpoint()
+        );
+    }
+}
+
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 
