@@ -50,6 +50,7 @@ fn bench_point_read(c: &mut Criterion) {
                         .execute_operation(
                             CosmosOperation::read_item(item_ref.clone()),
                             OperationOptions::default(),
+                            None,
                         )
                         .await
                         .expect("execute_operation failed")
@@ -67,6 +68,7 @@ fn bench_point_read(c: &mut Criterion) {
                         .execute_operation(
                             CosmosOperation::read_item(item_ref.clone()),
                             OperationOptions::default(),
+                            None,
                         )
                         .await
                         .expect("execute_operation failed")

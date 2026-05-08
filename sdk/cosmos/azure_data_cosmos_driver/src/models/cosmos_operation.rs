@@ -49,7 +49,7 @@ use std::borrow::Cow;
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
 /// let result = driver
-///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
+///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default(), None)
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -347,6 +347,7 @@ impl CosmosOperation {
     ///     .execute_operation(
     ///         CosmosOperation::delete_container(container),
     ///         OperationOptions::default(),
+    ///         None,
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -433,6 +434,7 @@ impl CosmosOperation {
     ///         CosmosOperation::create_item(item)
     ///             .with_body(br#"{"id": "doc1", "pk": "pk-value", "data": "hello"}"#.to_vec()),
     ///         OperationOptions::default(),
+    ///         None,
     ///     )
     ///     .await?;
     /// # Ok(())
@@ -474,7 +476,7 @@ impl CosmosOperation {
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
+    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default(), None)
     ///     .await?;
     /// # Ok(())
     /// # }

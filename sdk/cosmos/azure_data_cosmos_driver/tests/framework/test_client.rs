@@ -255,11 +255,11 @@ impl DriverTestRunContext {
             .with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_operation(operation, OperationOptions::default(), None)
             .await?;
 
         // Check for success status (201 Created)
-        let status = result.diagnostics().status();
+        let status = result.as_ref().and_then(|r| r.diagnostics().status());
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to create database, status: {:?}", status).into());
         }
@@ -284,11 +284,11 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::delete_database(database.clone());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_operation(operation, OperationOptions::default(), None)
             .await?;
 
         // Check for success status (204 No Content)
-        let status = result.diagnostics().status();
+        let status = result.as_ref().and_then(|r| r.diagnostics().status());
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to delete database, status: {:?}", status).into());
         }
@@ -317,11 +317,11 @@ impl DriverTestRunContext {
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_operation(operation, OperationOptions::default(), None)
             .await?;
 
         // Check for success status (201 Created)
-        let status = result.diagnostics().status();
+        let status = result.as_ref().and_then(|r| r.diagnostics().status());
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to create container, status: {:?}", status).into());
         }
@@ -353,8 +353,9 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
-            .await?;
+            .execute_operation(operation, OperationOptions::default(), None)
+            .await?
+            .ok_or("create_item produced no response")?;
 
         Ok(result)
     }
@@ -377,8 +378,9 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
-            .await?;
+            .execute_operation(operation, OperationOptions::default(), None)
+            .await?
+            .ok_or("read_item produced no response")?;
 
         Ok(result)
     }

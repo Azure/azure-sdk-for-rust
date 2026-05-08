@@ -682,7 +682,7 @@ impl CosmosDriver {
         let options = OperationOptions::default();
 
         let db_result = self
-            .execute_operation(
+            .execute_point_operation(
                 CosmosOperation::read_database(db_ref.clone()),
                 options.clone(),
             )
@@ -697,7 +697,7 @@ impl CosmosDriver {
         })?;
 
         let container_result = self
-            .execute_operation(
+            .execute_point_operation(
                 CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
                 options,
             )
@@ -734,7 +734,7 @@ impl CosmosDriver {
         let options = OperationOptions::default();
 
         let db_result = self
-            .execute_operation(
+            .execute_point_operation(
                 CosmosOperation::read_database(db_ref.clone()),
                 options.clone(),
             )
@@ -748,7 +748,7 @@ impl CosmosDriver {
             .unwrap_or_else(|| db_rid.to_owned());
 
         let container_result = self
-            .execute_operation(
+            .execute_point_operation(
                 CosmosOperation::read_container_by_rid(db_ref, container_rid.to_owned()),
                 options,
             )
@@ -986,23 +986,30 @@ impl CosmosDriver {
 
     /// Executes a Cosmos DB operation.
     ///
-    /// This method computes effective options by merging the provided operation options
-    /// with driver and runtime defaults, then executes the operation.
+    /// This method advances the operation by one page. If a `plan` is provided,
+    /// the operation uses that plan's pipeline to execute the next page. If
+    /// `plan` is `None`, the operation is planned first (via
+    /// [`plan_operation`](Self::plan_operation)) and then the first page is
+    /// executed.
     ///
     /// # Parameters
     ///
-    /// - `operation`: The operation to execute
-    /// - `options`: Operation-specific options that override driver and runtime defaults
+    /// - `operation`: The operation to execute.
+    /// - `options`: Operation-specific options that override driver and runtime defaults.
+    /// - `plan`: An optional mutable reference to a pre-built [`OperationPlan`].
+    ///   Pass `Some` to advance a multi-page feed pipeline. Pass `None` to plan
+    ///   and execute in a single call (the common path for point operations).
     ///
     /// # Returns
     ///
-    /// Returns a [`crate::models::CosmosResponse`] on success.
+    /// Returns `Ok(Some(response))` when a page of results is produced, or
+    /// `Ok(None)` when the pipeline is fully drained (no more pages).
     ///
     /// # Errors
     ///
     /// Returns an error if:
-    /// - The account has no authentication configured
-    /// - The resource reference cannot produce a valid path
+    /// - The driver has not been initialized
+    /// - Planning fails (e.g. invalid operation target, backend query plan error)
     /// - The HTTP request fails
     ///
     /// # Example
@@ -1023,12 +1030,12 @@ impl CosmosDriver {
     ///
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     ///
-    /// // Execute operations with operation-specific options that override defaults
+    /// // Point operation: plan and execute in one call.
     /// let options = OperationOptionsBuilder::new()
     ///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
     ///     .build();
     ///
-    /// // let result = driver.execute_operation(operation, options).await?;
+    /// // let result = driver.execute_operation(operation, options, None).await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -1036,7 +1043,8 @@ impl CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
-    ) -> azure_core::Result<crate::models::CosmosResponse> {
+        plan: Option<&mut OperationPlan>,
+    ) -> azure_core::Result<Option<crate::models::CosmosResponse>> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
             return Err(azure_core::Error::with_message(
@@ -1049,22 +1057,81 @@ impl CosmosDriver {
         }
         tracing::debug!("operation started");
 
-        let mut pipeline = planner::build_trivial_pipeline(&operation)?;
-
         let mut executor = DriverRequestExecutor {
             driver: self,
             options: &options,
         };
-        let mut topology = StubTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
 
-        match pipeline.next_page(&mut context).await? {
-            Some(response) => Ok(response),
-            None => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "request dataflow pipeline completed without emitting a response",
-            )),
+        match plan {
+            Some(plan) => {
+                // Caller provided a pre-built plan: use its pipeline with a real
+                // topology provider for split recovery.
+                let container = operation.container();
+                match container {
+                    Some(container_ref) => {
+                        let mut topology = CachedTopologyProvider::new(
+                            &self.pk_range_cache,
+                            container_ref.clone(),
+                            |container, continuation| {
+                                self.fetch_partition_key_ranges(container, continuation)
+                            },
+                        );
+                        let mut context = PipelineContext::new(&mut executor, &mut topology);
+                        plan.pipeline.next_page(&mut context).await
+                    }
+                    None => {
+                        // Non-container operations (metadata, etc.) don't need topology.
+                        let mut topology = StubTopologyProvider;
+                        let mut context = PipelineContext::new(&mut executor, &mut topology);
+                        plan.pipeline.next_page(&mut context).await
+                    }
+                }
+            }
+            None => {
+                // No plan provided: plan the operation first, then execute one page.
+                let container = operation.container().cloned();
+                let mut owned_plan = self.plan_operation(operation, &options).await?;
+
+                match container {
+                    Some(container_ref) => {
+                        let mut topology = CachedTopologyProvider::new(
+                            &self.pk_range_cache,
+                            container_ref,
+                            |container, continuation| {
+                                self.fetch_partition_key_ranges(container, continuation)
+                            },
+                        );
+                        let mut context = PipelineContext::new(&mut executor, &mut topology);
+                        owned_plan.pipeline.next_page(&mut context).await
+                    }
+                    None => {
+                        let mut topology = StubTopologyProvider;
+                        let mut context = PipelineContext::new(&mut executor, &mut topology);
+                        owned_plan.pipeline.next_page(&mut context).await
+                    }
+                }
+            }
         }
+    }
+
+    /// Convenience helper for internal point operations.
+    ///
+    /// Plans and executes in one call, asserting that a response is produced.
+    /// Used by internal metadata-fetching helpers that always expect a single
+    /// response page.
+    async fn execute_point_operation(
+        &self,
+        operation: CosmosOperation,
+        options: OperationOptions,
+    ) -> azure_core::Result<CosmosResponse> {
+        self.execute_operation(operation, options, None)
+            .await?
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "point operation completed without producing a response",
+                )
+            })
     }
 
     async fn execute_operation_direct(
@@ -1206,7 +1273,7 @@ impl CosmosDriver {
     /// // Use the resolved container for item operations
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
+    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default(), None)
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -2111,7 +2178,7 @@ mod tests {
     fn _assert_execute_operation_future_is_send() {
         fn assert_send<T: Send>(_: T) {}
         let driver: &CosmosDriver = todo!();
-        assert_send(driver.execute_operation(todo!(), todo!()));
+        assert_send(driver.execute_operation(todo!(), todo!(), todo!()));
     }
 
     // Account properties with two readable locations for regional fallback tests.

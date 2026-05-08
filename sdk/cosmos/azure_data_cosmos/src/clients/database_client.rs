@@ -84,11 +84,12 @@ impl DatabaseClient {
     ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
         let operation = CosmosOperation::read_database(self.database_ref.clone());
 
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, OperationOptions::default())
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            OperationOptions::default(),
+        )
+        .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
@@ -169,11 +170,12 @@ impl DatabaseClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, operation_options)
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            operation_options,
+        )
+        .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
@@ -193,11 +195,12 @@ impl DatabaseClient {
     ) -> azure_core::Result<ResourceResponse<()>> {
         let operation = CosmosOperation::delete_database(self.database_ref.clone());
 
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, OperationOptions::default())
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            OperationOptions::default(),
+        )
+        .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),

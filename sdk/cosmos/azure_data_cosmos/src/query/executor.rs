@@ -118,7 +118,16 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         let op_options = self.base_options.clone().with_custom_headers(headers);
 
         // Execute through the driver
-        let driver_response = self.driver.execute_operation(operation, op_options).await?;
+        let driver_response = self
+            .driver
+            .execute_operation(operation, op_options, None)
+            .await?
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "query operation completed without producing a response",
+                )
+            })?;
 
         // Bridge driver response to SDK types
         let cosmos_response =

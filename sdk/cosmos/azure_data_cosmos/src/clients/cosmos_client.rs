@@ -170,11 +170,12 @@ impl CosmosClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, operation_options)
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            operation_options,
+        )
+        .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),

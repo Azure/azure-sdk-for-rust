@@ -101,11 +101,12 @@ impl ContainerClient {
     ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
         let operation = CosmosOperation::read_container(self.container_ref.clone());
 
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, OperationOptions::default())
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            OperationOptions::default(),
+        )
+        .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
@@ -155,11 +156,12 @@ impl ContainerClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, operation_options)
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            operation_options,
+        )
+        .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
@@ -247,11 +249,12 @@ impl ContainerClient {
     ) -> azure_core::Result<ResourceResponse<()>> {
         let operation = CosmosOperation::delete_container(self.container_ref.clone());
 
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, OperationOptions::default())
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            OperationOptions::default(),
+        )
+        .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
@@ -345,11 +348,12 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, options.operation)
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            options.operation,
+        )
+        .await?;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
@@ -443,11 +447,12 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, options.operation)
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            options.operation,
+        )
+        .await?;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
@@ -545,11 +550,12 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, options.operation)
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            options.operation,
+        )
+        .await?;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
@@ -605,11 +611,12 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, options.operation)
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            options.operation,
+        )
+        .await?;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
@@ -657,11 +664,12 @@ impl ContainerClient {
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver.
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, options.operation)
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            options.operation,
+        )
+        .await?;
 
         // Bridge the driver response to the SDK response type.
         Ok(ItemResponse::new(
@@ -811,11 +819,12 @@ impl ContainerClient {
             CosmosOperation::batch(self.container_ref.clone(), driver_pk).with_body(body);
         let operation = apply_batch_options(operation, &options);
 
-        let driver_response = self
-            .context
-            .driver
-            .execute_operation(operation, options.operation)
-            .await?;
+        let driver_response = crate::driver_bridge::execute_point_operation(
+            &self.context.driver,
+            operation,
+            options.operation,
+        )
+        .await?;
 
         Ok(BatchResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),

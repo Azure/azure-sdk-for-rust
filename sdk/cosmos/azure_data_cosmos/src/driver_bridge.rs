@@ -11,7 +11,32 @@ use azure_core::{
     http::{headers::Headers, response::Response, RawResponse, StatusCode},
     Bytes,
 };
-use azure_data_cosmos_driver::models::{CosmosResponse as DriverResponse, CosmosResponseHeaders};
+use azure_data_cosmos_driver::{
+    models::{CosmosOperation, CosmosResponse as DriverResponse, CosmosResponseHeaders},
+    options::OperationOptions as DriverOperationOptions,
+    CosmosDriver,
+};
+
+/// Executes a point operation through the driver, returning the response.
+///
+/// Convenience wrapper that plans and executes in one call, asserting that the
+/// pipeline produces exactly one response. Used for all single-response
+/// operations (reads, writes, metadata calls) in the SDK layer.
+pub(crate) async fn execute_point_operation(
+    driver: &CosmosDriver,
+    operation: CosmosOperation,
+    options: DriverOperationOptions,
+) -> azure_core::Result<DriverResponse> {
+    driver
+        .execute_operation(operation, options, None)
+        .await?
+        .ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "point operation completed without producing a response",
+            )
+        })
+}
 
 use crate::{
     constants::{
