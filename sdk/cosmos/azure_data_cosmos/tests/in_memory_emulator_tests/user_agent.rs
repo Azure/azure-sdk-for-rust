@@ -329,15 +329,19 @@ async fn no_user_agent_suffix_means_no_suffix_on_the_wire() {
     );
 
     for snap in &data_plane {
-        if let Some(ua) = snap.user_agent.as_deref() {
-            assert!(
-                !ua.contains(SUFFIX),
-                "data-plane request {:?} {} unexpectedly carried suffix {SUFFIX:?} \
-                 in User-Agent {ua:?}",
-                snap.method,
-                snap.url,
-            );
-        }
+        let ua = snap.user_agent.as_deref().unwrap_or_else(|| {
+            panic!(
+                "data-plane request {:?} {} reached the emulator without a User-Agent header",
+                snap.method, snap.url,
+            )
+        });
+        assert!(
+            !ua.contains(SUFFIX),
+            "data-plane request {:?} {} unexpectedly carried suffix {SUFFIX:?} \
+             in User-Agent {ua:?}",
+            snap.method,
+            snap.url,
+        );
     }
 }
 
