@@ -6,7 +6,7 @@
 
 //! Constants defining HTTP headers and other values relevant to Azure Cosmos DB APIs.
 
-use azure_core::http::{headers::HeaderName, request::options::ContentType, StatusCode};
+use azure_core::http::{headers::HeaderName, request::options::ContentType};
 
 /// Macro to define Cosmos DB header constants and the allowed headers list in one place.
 macro_rules! cosmos_headers {
@@ -199,38 +199,6 @@ pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("applicatio
 
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
-/// The Cosmos DB-specific 449 Retry With status code.
-///
-/// This status code indicates the client must retry with modified request parameters.
-/// It is non-retryable because automatic retry without parameter changes will not succeed.
-pub(crate) const RETRY_WITH: StatusCode = StatusCode::UnknownValue(449);
-
-// Default HTTP client timeouts.
-// See `next_generation_sdks_design_principles.md` for design rationale.
-
-/// Default TCP connection timeout (1s).
-/// After 1 second it times out locally.
-///
-/// Aggressive default per design doc: fast failure on downed nodes improves P9x latency.
-#[cfg(feature = "reqwest")]
-pub(crate) const DEFAULT_CONNECTION_TIMEOUT: std::time::Duration =
-    std::time::Duration::from_secs(1);
-
-/// Default overall request timeout (65s).
-///
-/// Chosen to balance fast failure with allowing multiple retry attempts and to
-/// remain just above typical 60s service timeouts.
-/// See `next_generation_sdks_design_principles.md` for detailed rationale.
-#[cfg(feature = "reqwest")]
-pub(crate) const DEFAULT_REQUEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(65);
-
-/// Default maximum idle connections per host (1000).
-///
-/// Limits connection pool growth to prevent resource exhaustion under high
-/// concurrency while still allowing ample connection reuse.
-#[cfg(feature = "reqwest")]
-pub(crate) const DEFAULT_MAX_CONNECTION_POOL_SIZE: usize = 1000;
-
 /// A newtype wrapper for Cosmos DB sub-status codes.
 ///
 /// Sub-status codes provide additional context for HTTP error responses from Cosmos DB.
@@ -278,7 +246,6 @@ impl SubStatusCode {
     pub(crate) const COMPLETING_SPLIT: SubStatusCode = SubStatusCode(1007);
     #[allow(dead_code)]
     pub(crate) const COMPLETING_PARTITION_MIGRATION: SubStatusCode = SubStatusCode(1008);
-    pub(crate) const LEASE_NOT_FOUND: SubStatusCode = SubStatusCode(1022);
     #[allow(dead_code)]
     pub(crate) const ARCHIVAL_PARTITION_NOT_PRESENT: SubStatusCode = SubStatusCode(1024);
 

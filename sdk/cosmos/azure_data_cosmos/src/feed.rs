@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{pin::Pin, task};
+use std::{pin::Pin, sync::Arc, task};
 
 use azure_core::http::{
     headers::Headers,
@@ -14,7 +14,7 @@ use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::{
     constants,
-    models::{CosmosDiagnostics, CosmosResponse},
+    models::{CosmosDiagnosticsContext, CosmosResponse},
     SessionToken,
 };
 
@@ -41,7 +41,7 @@ pub struct FeedPage<T> {
     headers: CosmosResponseHeaders,
 
     /// Diagnostics for this page.
-    diagnostics: CosmosDiagnostics,
+    diagnostics: Arc<CosmosDiagnosticsContext>,
 }
 
 impl<T> FeedPage<T> {
@@ -51,7 +51,7 @@ impl<T> FeedPage<T> {
         continuation: Option<String>,
         raw_headers: Headers,
         headers: CosmosResponseHeaders,
-        diagnostics: CosmosDiagnostics,
+        diagnostics: Arc<CosmosDiagnosticsContext>,
     ) -> Self {
         Self {
             items,
@@ -97,10 +97,11 @@ impl<T> FeedPage<T> {
 
     /// Returns the diagnostics for this page.
     ///
-    /// Provides access to the activity ID, server-side duration, and other
-    /// diagnostic information for debugging and performance analysis.
-    pub fn diagnostics(&self) -> &CosmosDiagnostics {
-        &self.diagnostics
+    /// The returned [`CosmosDiagnosticsContext`] surfaces the full per-operation
+    /// diagnostics produced by the driver pipeline (request tracking, retries,
+    /// regions contacted, RU charges, status, etc.).
+    pub fn diagnostics(&self) -> Arc<CosmosDiagnosticsContext> {
+        Arc::clone(&self.diagnostics)
     }
 }
 
@@ -125,7 +126,7 @@ impl<T: DeserializeOwned> FeedPage<T> {
         let raw_headers = response.headers().clone();
         let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
         let cosmos_headers = response.cosmos_headers().clone();
-        let diagnostics = response.diagnostics().clone();
+        let diagnostics = response.diagnostics();
         let body: FeedBody<T> = response.into_model()?;
 
         Ok(Self::new(
@@ -189,9 +190,10 @@ impl<T> QueryFeedPage<T> {
 
     /// Returns the diagnostics for this page.
     ///
-    /// Provides access to the activity ID, server-side duration, and other
-    /// diagnostic information for debugging and performance analysis.
-    pub fn diagnostics(&self) -> &CosmosDiagnostics {
+    /// The returned [`CosmosDiagnosticsContext`] surfaces the full per-operation
+    /// diagnostics produced by the driver pipeline (request tracking, retries,
+    /// regions contacted, RU charges, status, etc.).
+    pub fn diagnostics(&self) -> Arc<CosmosDiagnosticsContext> {
         self.page.diagnostics()
     }
 
@@ -244,7 +246,7 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
         let cosmos_headers = response.cosmos_headers().clone();
         let index_metrics = cosmos_headers.index_metrics.clone();
         let query_metrics = cosmos_headers.query_metrics.clone();
-        let diagnostics = response.diagnostics().clone();
+        let diagnostics = response.diagnostics();
         let body: FeedBody<T> = response.into_model()?;
 
         Ok(Self {
@@ -336,6 +338,7 @@ impl<T: Send> Stream for FeedPageIterator<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_data_cosmos_driver::models::ActivityId;
     use futures::StreamExt;
 
     fn create_test_page<T>(items: Vec<T>, continuation: Option<String>) -> QueryFeedPage<T> {
@@ -345,7 +348,7 @@ mod tests {
                 continuation,
                 Headers::new(),
                 CosmosResponseHeaders::default(),
-                CosmosDiagnostics::default(),
+                Arc::new(CosmosDiagnosticsContext::for_testing(ActivityId::new_uuid())),
             ),
             index_metrics: None,
             query_metrics: None,

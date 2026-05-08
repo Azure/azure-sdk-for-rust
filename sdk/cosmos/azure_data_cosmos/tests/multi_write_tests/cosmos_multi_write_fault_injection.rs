@@ -12,9 +12,7 @@ use azure_data_cosmos::fault_injection::{
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::{ExcludedRegions, ItemReadOptions, OperationOptions};
-use framework::{
-    get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
-};
+use framework::{TestClient, TestOptions, HUB_REGION, SATELLITE_REGION};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{borrow::Cow, error::Error};
@@ -257,10 +255,6 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
 
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
-            // request_url() returns None for driver-routed operations.
-            if let Some(url) = response.request_url() {
-                assert_eq!(url.host_str().unwrap(), get_effective_hub_endpoint());
-            }
 
             Ok(())
         },
@@ -333,15 +327,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await;
 
-            let response = result.unwrap();
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                println!("Request succeeded via failover, final URL: {}", request_url);
-                // Verify the request went to a different endpoint than the faulted one
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to secondary region"
-                );
-            }
+            let _response = result.unwrap();
 
             Ok(())
         },
@@ -512,15 +498,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
                 .read_item::<TestItem>(&pk, &item_id, None)
                 .await;
 
-            let response = result.unwrap();
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                println!("Request succeeded via failover, final URL: {}", request_url);
-                // Verify the request was retried on the hub region
-                assert!(
-                    request_url.contains(HUB_REGION.as_str()),
-                    "request should have failed over to hub region"
-                );
-            }
+            let _response = result.unwrap();
 
             Ok(())
         },
@@ -588,17 +566,10 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            let response = fault_container_client
+            let _response = fault_container_client
                 .create_item(&pk, &item_id, &item, None)
                 .await
                 .expect("write should succeed via failover to satellite");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to satellite region, got: {request_url}"
-                );
-            }
 
             Ok(())
         },
@@ -678,17 +649,10 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;
 
-            let response = run_context
+            let _response = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
                 .expect("read should succeed via failover to satellite");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to satellite region, got: {request_url}"
-                );
-            }
 
             Ok(())
         },
@@ -842,17 +806,10 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;
 
-            let response = run_context
+            let _response = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
                 .expect("read should succeed via failover after response timeout on hub");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to satellite region, got: {request_url}"
-                );
-            }
 
             Ok(())
         },
@@ -919,17 +876,10 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            let response = fault_container_client
+            let _response = fault_container_client
                 .create_item(&pk, &item_id, &item, None)
                 .await
                 .expect("write should succeed via reverse failover to hub");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                assert!(
-                    request_url.contains(HUB_REGION.as_str()),
-                    "request should have failed over to hub region, got: {request_url}"
-                );
-            }
 
             Ok(())
         },
@@ -1001,18 +951,10 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
-            let response = run_context
+            let _response = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
                 .expect("read should succeed on hub after transient fault clears");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                // The fault cleared before MAX_RETRY_COUNT, so no failover — still on hub.
-                assert!(
-                    request_url.contains(HUB_REGION.as_str()),
-                    "request should have succeeded on hub without failover, got: {request_url}"
-                );
-            }
 
             Ok(())
         },

@@ -1524,6 +1524,29 @@ pub struct DiagnosticsContext {
 }
 
 impl DiagnosticsContext {
+    /// **Internal escape hatch — do not call.**
+    ///
+    /// Synthesizes a placeholder [`DiagnosticsContext`] for legacy SDK code
+    /// paths that have not yet been routed through the driver pipeline and
+    /// therefore have no real per-operation diagnostics to surface. The
+    /// returned context contains only the supplied [`ActivityId`]; all
+    /// per-request diagnostics are empty and the operation duration is zero.
+    ///
+    /// New code MUST obtain its [`DiagnosticsContext`] from a driver
+    /// [`CosmosResponse`](crate::models::CosmosResponse). This constructor is
+    /// gated behind the `__internal_test_diagnostics_construction` Cargo
+    /// feature, which is enabled only by the wrapper SDK
+    /// (`azure_data_cosmos`) and is `#[doc(hidden)]` to keep it off the
+    /// public surface. It exists solely so the wrapper SDK can finish
+    /// migrating its remaining non-driver code paths and will be removed
+    /// once that migration is complete.
+    #[cfg(feature = "__internal_test_diagnostics_construction")]
+    #[doc(hidden)]
+    pub fn for_testing(activity_id: ActivityId) -> Self {
+        DiagnosticsContextBuilder::new(activity_id, Arc::new(DiagnosticsOptions::default()))
+            .complete()
+    }
+
     /// Returns the operation's activity ID.
     pub fn activity_id(&self) -> &ActivityId {
         &self.activity_id

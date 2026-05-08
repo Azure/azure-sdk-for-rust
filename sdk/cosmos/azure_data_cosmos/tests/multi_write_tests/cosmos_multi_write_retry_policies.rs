@@ -22,7 +22,7 @@ use azure_data_cosmos::fault_injection::{
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::Query;
-use framework::{TestClient, TestOptions, HUB_REGION, SATELLITE_REGION};
+use framework::{TestClient, TestOptions, HUB_REGION};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{borrow::Cow, error::Error};
@@ -114,16 +114,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
                 result.err()
             );
 
-            let response = result.unwrap();
-            // request_url() returns None for driver-routed operations.
-            if let Some(request_url) = response.request_url() {
-                let request_url = request_url.to_string();
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "read should have failed over to satellite region, but URL was: {}",
-                    request_url
-                );
-            }
+            let _response = result.unwrap();
 
             Ok(())
         },
@@ -449,16 +440,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
                 result.err()
             );
 
-            let response = result.unwrap();
-            // request_url() returns None for driver-routed operations.
-            if let Some(request_url) = response.request_url() {
-                let request_url = request_url.to_string();
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "read should have failed over to satellite region, but URL was: {}",
-                    request_url
-                );
-            }
+            let _response = result.unwrap();
 
             Ok(())
         },

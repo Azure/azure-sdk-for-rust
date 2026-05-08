@@ -98,7 +98,7 @@ impl CosmosClient {
 
     /// Gets the endpoint of the database account this client is connected to.
     pub fn endpoint(&self) -> &Url {
-        &self.context.pipeline.endpoint
+        self.context.driver.account().endpoint()
     }
 
     /// Executes a query against databases in the account.

@@ -34,6 +34,12 @@ url.workspace = true
 # footprint becomes a concern, move those tests to a dedicated crate gated on
 # the same feature instead of trying to gate the dev-dep here.
 [dev-dependencies]
+# Re-declare the driver here with the internal test-only diagnostics-construction feature.
+# Putting it in dev-dependencies (instead of [dependencies]) means downstream consumers
+# of `azure_data_cosmos` do NOT compile with this feature enabled — the driver's
+# `DiagnosticsContext::for_testing` constructor only exists when this crate's own
+# tests are being built.
+azure_data_cosmos_driver = { workspace = true, default-features = false, features = ["__internal_test_diagnostics_construction"] }
 azure_core_test = { workspace = true, features = ["tracing"] }
 azure_identity = { version = "0.35.0" }
 clap.workspace = true
