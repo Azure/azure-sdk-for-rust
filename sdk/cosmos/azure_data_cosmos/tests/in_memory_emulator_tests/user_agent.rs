@@ -99,14 +99,14 @@ fn build_emulator(observer: Arc<RecordingObserver>) -> Arc<InMemoryEmulatorHttpC
     Arc::new(InMemoryEmulatorHttpClient::new(config).with_request_observer(observer))
 }
 
-/// Pre-provisions a database + container in the emulator store, builds a
-/// `CosmosClient` (optionally with a `UserAgentSuffix`), and performs one
-/// `create_item` + `read_item` round-trip so the observer captures both
-/// control-plane and data-plane requests.
-async fn perform_create_and_read(
+/// Pre-provisions a database + container in the emulator store and builds a
+/// `CosmosClient` (optionally with a `UserAgentSuffix`).
+///
+/// Returns `(client, db_name, container_name)`.
+async fn build_client_with_provisioned_container(
     emulator: Arc<InMemoryEmulatorHttpClient>,
     suffix: Option<UserAgentSuffix>,
-) {
+) -> (azure_data_cosmos::CosmosClient, &'static str, &'static str) {
     let store = emulator.store();
     let db_name = "ua_db";
     let container_name = "ua_coll";
@@ -140,6 +140,18 @@ async fn perform_create_and_read(
         .await
         .expect("client builds");
 
+    (client, db_name, container_name)
+}
+
+/// Builds a client and performs one `create_item` + `read_item` round-trip
+/// so the observer captures the full data-plane path.
+async fn perform_create_and_read(
+    emulator: Arc<InMemoryEmulatorHttpClient>,
+    suffix: Option<UserAgentSuffix>,
+) {
+    let (client, db_name, container_name) =
+        build_client_with_provisioned_container(emulator, suffix).await;
+
     let container = client
         .database_client(db_name)
         .container_client(container_name)
@@ -163,6 +175,71 @@ async fn perform_create_and_read(
         .expect("read_item");
 }
 
+/// Builds a client and performs container + database metadata reads so the
+/// observer captures requests on both `/dbs/{db}` and
+/// `/dbs/{db}/colls/{coll}` paths.
+async fn perform_metadata_reads(
+    emulator: Arc<InMemoryEmulatorHttpClient>,
+    suffix: Option<UserAgentSuffix>,
+) {
+    let (client, db_name, container_name) =
+        build_client_with_provisioned_container(emulator, suffix).await;
+
+    let database = client.database_client(db_name);
+    let container = database
+        .container_client(container_name)
+        .await
+        .expect("container client");
+
+    database.read(None).await.expect("database read");
+    container.read(None).await.expect("container read");
+}
+
+/// Returns `true` for captured requests targeting Cosmos DB **data-plane**
+/// item operations.
+///
+/// In the Cosmos REST contract, item operations route through the
+/// `/dbs/{db}/colls/{coll}/docs[/{id}]` path; control-plane operations
+/// (database/container CRUD, throughput, etc.) target other paths. Filtering
+/// on this segment lets the assertion narrow to the operations the test
+/// actually invokes (`create_item`, `read_item`) instead of accepting any
+/// request the SDK pipeline emits — the latter would mask a regression where
+/// only SDK-pipeline / control-plane requests carried the suffix while item
+/// operations did not.
+fn is_item_data_plane_request(snap: &RequestSnapshot) -> bool {
+    let mut segments = match snap.url.path_segments() {
+        Some(s) => s,
+        None => return false,
+    };
+    // Expect `dbs / {db} / colls / {coll} / docs [/ {id}]`.
+    segments.next() == Some("dbs")
+        && segments.next().is_some()
+        && segments.next() == Some("colls")
+        && segments.next().is_some()
+        && segments.next() == Some("docs")
+}
+
+/// Returns `true` for captured requests targeting Cosmos DB **container or
+/// database metadata reads** — i.e. `GET /dbs/{db}` or
+/// `GET /dbs/{db}/colls/{coll}`.
+///
+/// These paths cover [`DatabaseClient::read`] and [`ContainerClient::read`]
+/// (and the implicit container metadata fetch that
+/// [`DatabaseClient::container_client`] performs to populate partition-key
+/// info). Item operations under `/docs` and child resources like
+/// `/colls/{coll}/sprocs` are deliberately excluded so the assertion stays
+/// focused on metadata-only operations.
+fn is_metadata_read_request(snap: &RequestSnapshot) -> bool {
+    if snap.method != Method::Get {
+        return false;
+    }
+    let Some(segments) = snap.url.path_segments() else {
+        return false;
+    };
+    let segments: Vec<&str> = segments.filter(|s| !s.is_empty()).collect();
+    matches!(segments.as_slice(), ["dbs", _] | ["dbs", _, "colls", _])
+}
+
 /// Verifies that a configured [`UserAgentSuffix`] actually appears in the
 /// `User-Agent` header on data-plane requests emitted by the SDK pipeline.
 ///
@@ -181,36 +258,48 @@ async fn user_agent_suffix_appears_on_data_plane_requests() {
     perform_create_and_read(emulator, Some(UserAgentSuffix::new(SUFFIX))).await;
 
     let snapshots = observer.snapshots();
-    assert!(
-        !snapshots.is_empty(),
-        "observer should have captured at least one request"
-    );
-
-    let with_suffix = snapshots
+    let data_plane: Vec<&RequestSnapshot> = snapshots
         .iter()
-        .filter(|s| {
-            s.user_agent
-                .as_deref()
-                .is_some_and(|ua| ua.contains(SUFFIX))
-        })
-        .count();
+        .filter(|s| is_item_data_plane_request(s))
+        .collect();
 
+    // The test invoked `create_item` (POST /docs) and `read_item`
+    // (GET /docs/{id}); both must reach the emulator, otherwise the
+    // assertion below would be vacuously true.
     assert!(
-        with_suffix > 0,
-        "expected at least one captured request to carry the user-agent suffix {SUFFIX:?}; \
-         captured user-agents: {:?}",
+        data_plane.len() >= 2,
+        "expected at least one create_item POST and one read_item GET to reach the emulator; \
+         captured requests: {:?}",
         snapshots
             .iter()
             .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
             .collect::<Vec<_>>(),
     );
+
+    // Every data-plane item request must carry the suffix. Asserting on all
+    // (rather than at least one) catches regressions where only some code
+    // paths forward the suffix.
+    let missing: Vec<_> = data_plane
+        .iter()
+        .filter(|s| {
+            !s.user_agent
+                .as_deref()
+                .is_some_and(|ua| ua.contains(SUFFIX))
+        })
+        .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "expected every data-plane item request to carry user-agent suffix {SUFFIX:?}; \
+         requests missing the suffix: {missing:?}",
+    );
 }
 
 /// Negative control: without
-/// [`CosmosClientBuilder::with_user_agent_suffix`], no captured request
-/// should carry the suffix. This ensures the positive test above is not
-/// passing because the suffix string happens to appear in some unrelated
-/// part of the default `User-Agent`.
+/// [`CosmosClientBuilder::with_user_agent_suffix`], no captured data-plane
+/// request should carry the suffix. This ensures the positive test above is
+/// not passing because the suffix string happens to appear in some
+/// unrelated part of the default `User-Agent` produced by the SDK.
 #[tokio::test]
 async fn no_user_agent_suffix_means_no_suffix_on_the_wire() {
     const SUFFIX: &str = "myapp-westus2";
@@ -221,19 +310,86 @@ async fn no_user_agent_suffix_means_no_suffix_on_the_wire() {
     perform_create_and_read(emulator, None).await;
 
     let snapshots = observer.snapshots();
+    let data_plane: Vec<&RequestSnapshot> = snapshots
+        .iter()
+        .filter(|s| is_item_data_plane_request(s))
+        .collect();
+
+    // Sanity-check that the test actually exercised the data plane. If
+    // `create_item`/`read_item` never reach the emulator the assertion
+    // below is vacuously satisfied and would not catch a regression.
     assert!(
-        !snapshots.is_empty(),
-        "observer should have captured at least one request"
+        data_plane.len() >= 2,
+        "expected at least one create_item POST and one read_item GET to reach the emulator; \
+         captured requests: {:?}",
+        snapshots
+            .iter()
+            .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
+            .collect::<Vec<_>>(),
     );
 
-    for snap in &snapshots {
+    for snap in &data_plane {
         if let Some(ua) = snap.user_agent.as_deref() {
             assert!(
                 !ua.contains(SUFFIX),
-                "request {:?} {} unexpectedly carried suffix {SUFFIX:?} in User-Agent {ua:?}",
+                "data-plane request {:?} {} unexpectedly carried suffix {SUFFIX:?} \
+                 in User-Agent {ua:?}",
                 snap.method,
                 snap.url,
             );
         }
     }
+}
+
+/// Verifies that the configured [`UserAgentSuffix`] also reaches **metadata**
+/// requests (database / container `read`), not just data-plane item
+/// operations. The PR #4368 wiring bug affected the driver runtime's
+/// `User-Agent` plumbing, which sits below every request type the SDK
+/// pipeline emits — metadata reads are therefore an independent
+/// observation point that prevents a future regression where the suffix
+/// reaches data-plane requests but is dropped on metadata requests (or
+/// vice-versa).
+#[tokio::test]
+async fn user_agent_suffix_appears_on_metadata_requests() {
+    const SUFFIX: &str = "myapp-westus2";
+
+    let observer = RecordingObserver::new();
+    let emulator = build_emulator(observer.clone());
+
+    perform_metadata_reads(emulator, Some(UserAgentSuffix::new(SUFFIX))).await;
+
+    let snapshots = observer.snapshots();
+    let metadata: Vec<&RequestSnapshot> = snapshots
+        .iter()
+        .filter(|s| is_metadata_read_request(s))
+        .collect();
+
+    // The test invoked `database.read()` (GET /dbs/{db}) and
+    // `container.read()` (GET /dbs/{db}/colls/{coll}); both must reach
+    // the emulator, otherwise the assertion below would be vacuously
+    // true.
+    assert!(
+        metadata.len() >= 2,
+        "expected at least one database read and one container read to reach the emulator; \
+         captured requests: {:?}",
+        snapshots
+            .iter()
+            .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
+            .collect::<Vec<_>>(),
+    );
+
+    let missing: Vec<_> = metadata
+        .iter()
+        .filter(|s| {
+            !s.user_agent
+                .as_deref()
+                .is_some_and(|ua| ua.contains(SUFFIX))
+        })
+        .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "expected every metadata request to carry user-agent suffix {SUFFIX:?}; \
+         requests missing the suffix: {missing:?}",
+    );
 }
