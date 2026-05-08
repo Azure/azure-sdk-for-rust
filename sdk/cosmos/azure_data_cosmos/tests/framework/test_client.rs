@@ -71,6 +71,30 @@ pub fn assert_failover_to_region(
     );
 }
 
+/// Asserts that the operation contacted `expected_region` at least once and
+/// that more than one request was tracked (i.e. some form of retry or
+/// failover happened). Unlike `assert_failover_to_region`, this does **not**
+/// require the *final* request to land on `expected_region` — the driver may
+/// probe an alternate region and successfully retry on the original. Used
+/// for read-path failover scenarios where either landing is valid.
+pub fn assert_region_contacted_with_retry(
+    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    expected_region: &Region,
+) {
+    assert!(
+        diagnostics.request_count() > 1,
+        "expected multiple requests indicating retry/failover, got {} (regions contacted: {:?})",
+        diagnostics.request_count(),
+        diagnostics.regions_contacted()
+    );
+    assert!(
+        diagnostics.regions_contacted().contains(expected_region),
+        "expected at least one tracked request on region {:?}, but only contacted {:?}",
+        expected_region,
+        diagnostics.regions_contacted()
+    );
+}
+
 /// Asserts that local retry was attempted on `expected_region` before any
 /// cross-region failover: at least one tracked request must have landed on
 /// the expected region. Used to validate scenarios where a transient fault

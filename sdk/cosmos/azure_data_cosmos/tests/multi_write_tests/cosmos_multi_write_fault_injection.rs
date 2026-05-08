@@ -13,8 +13,8 @@ use azure_data_cosmos::fault_injection::{
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::{ExcludedRegions, ItemReadOptions, OperationOptions};
 use framework::{
-    assert_failover_to_region, assert_local_retry_attempted_on_region, TestClient, TestOptions,
-    HUB_REGION, SATELLITE_REGION,
+    assert_failover_to_region, assert_local_retry_attempted_on_region,
+    assert_region_contacted_with_retry, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -817,7 +817,11 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
                 .expect("read should succeed via failover after response timeout on hub");
-            assert_failover_to_region(&_response.diagnostics(), &SATELLITE_REGION);
+            // The driver may probe satellite then succeed back on hub, or land
+            // the final read on satellite — both are valid outcomes for this
+            // failover scenario. We only assert the satellite was contacted at
+            // least once (proving the failover path was exercised).
+            assert_region_contacted_with_retry(&_response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
