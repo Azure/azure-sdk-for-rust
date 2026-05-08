@@ -20,9 +20,9 @@ cargo add azure_security_keyvault_keys
 
 ### Prerequisites
 
-- An [Azure subscription].
-- An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
-- Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
+* An [Azure subscription].
+* An existing Azure Key Vault. If you need to create an Azure Key Vault, you can use the Azure Portal or [Azure CLI].
+* Authorization to an existing Azure Key Vault using either [RBAC] (recommended) or [access control].
 
 If you use the Azure CLI, replace `<your-resource-group-name>` and `<your-key-vault-name>` with your own, unique names:
 
@@ -58,8 +58,8 @@ This section only applies if you are creating a Managed HSM. All data plane comm
 
 To activate your HSM you need:
 
-- Minimum 3 RSA key-pairs (maximum 10)
-- Specify minimum number of keys required to decrypt the security domain (quorum)
+* Minimum 3 RSA key-pairs (maximum 10)
+* Specify minimum number of keys required to decrypt the security domain (quorum)
 
 To activate the HSM you send at least 3 (maximum 10) RSA public keys to the HSM. The HSM encrypts the security domain with these keys and sends it back. Once this security domain is successfully downloaded, your HSM is ready to use. You also need to specify quorum, which is the minimum number of private keys required to decrypt the security domain.
 
@@ -122,12 +122,12 @@ We guarantee that all client instance methods are thread-safe and independent of
 
 The following section provides several code snippets using a `KeyClient` like we [instantiated above](#instantiate-a-client):
 
-- [Create a key](#create-a-key)
-- [Retrieve a key](#retrieve-a-key)
-- [Update an existing key](#update-an-existing-key)
-- [Delete a key](#delete-a-key)
-- [List keys](#list-keys)
-- [Encrypt and decrypt](#encrypt-and-decrypt)
+* [Create a key](#create-a-key)
+* [Retrieve a key](#retrieve-a-key)
+* [Update an existing key](#update-an-existing-key)
+* [Delete a key](#delete-a-key)
+* [List keys](#list-keys)
+* [Encrypt and decrypt](#encrypt-and-decrypt)
 
 ### Create a key
 
