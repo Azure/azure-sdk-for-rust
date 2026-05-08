@@ -1,21 +1,23 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{pin::Pin, sync::Arc, task};
+use std::{pin::Pin, result, sync::Arc, task};
 
 use azure_core::http::{
     headers::Headers,
     pager::{PagerContinuation, PagerResult},
 };
 use azure_data_cosmos_driver::{
-    models::CosmosResponseHeaders, options::OperationOptions, CosmosDriver, OperationPlan,
+    models::{ContainerReference, CosmosResponseHeaders},
+    options::OperationOptions,
+    CosmosDriver, OperationPlan,
 };
 use futures::stream::BoxStream;
 use futures::Stream;
 use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::{
-    constants,
+    constants, driver_bridge,
     models::{CosmosDiagnostics, CosmosResponse},
     SessionToken,
 };
@@ -238,9 +240,7 @@ pub(crate) struct FeedBody<T> {
 }
 
 impl<T: DeserializeOwned> QueryFeedPage<T> {
-    pub(crate) async fn from_response(
-        response: CosmosResponse<FeedBody<T>>,
-    ) -> azure_core::Result<Self> {
+    pub(crate) fn from_response(response: CosmosResponse<FeedBody<T>>) -> azure_core::Result<Self> {
         let raw_headers = response.headers().clone();
         let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
         let cosmos_headers = response.cosmos_headers().clone();
@@ -263,6 +263,57 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
     }
 }
 
+fn create_pagination_stream<T: DeserializeOwned + Send + 'static>(
+    driver: Arc<CosmosDriver>,
+    container: Option<ContainerReference>,
+    plan: OperationPlan,
+    options: OperationOptions,
+) -> BoxStream<'static, azure_core::Result<QueryFeedPage<T>>> {
+    struct State {
+        driver: Arc<CosmosDriver>,
+        container: Option<ContainerReference>,
+        plan: OperationPlan,
+        options: OperationOptions,
+        continuation: Option<String>,
+    }
+    let initial_state = State {
+        driver,
+        container,
+        options,
+        plan,
+        continuation: None,
+    };
+    let stream = futures::stream::unfold(Some(initial_state), |state| async move {
+        let Some(mut state) = state else {
+            return None; // No more pages to fetch
+        };
+
+        let result = state
+            .driver
+            .execute_plan(
+                &mut state.plan,
+                state.container.clone(),
+                state.options.clone(),
+            )
+            .await;
+        let driver_response = match result {
+            Ok(None) => return None,                   // No more pages to fetch
+            Err(err) => return Some((Err(err), None)), // Propagate error, terminates the stream after this response.
+            Ok(Some(r)) => r,
+        };
+
+        // Parse the response into a page
+        let response =
+            driver_bridge::driver_response_to_cosmos_response::<FeedBody<T>>(driver_response);
+        let page = match QueryFeedPage::from_response(response) {
+            Ok(page) => page,
+            Err(err) => return Some((Err(err), None)), // Propagate error, terminates the stream after this response.
+        };
+        Some((Ok(page), Some(state)))
+    });
+    Box::pin(stream)
+}
+
 /// Represents a stream of items from a Cosmos DB query.
 ///
 /// See [`QueryFeedPage`] for more details on Cosmos DB feeds.
@@ -273,15 +324,24 @@ pub struct FeedItemIterator<T: Send> {
     current: Option<std::vec::IntoIter<T>>,
 }
 
-impl<T: Send> FeedItemIterator<T> {
+impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
     /// Creates a new `FeedItemIterator` from a stream of pages.
-    pub(crate) fn new(plan: OperationPlan) -> Self {
+    pub(crate) fn new(
+        driver: Arc<CosmosDriver>,
+        container: Option<ContainerReference>,
+        plan: OperationPlan,
+        options: OperationOptions,
+    ) -> Self {
         Self {
-            pages: Box::pin(stream),
+            pages: create_pagination_stream(driver, container, plan, options),
             current: None,
         }
     }
 
+    /// Converts this item iterator into a page iterator, yielding full pages instead of individual items.
+    ///
+    /// IMPORTANT: This will DISCARD any items from the current page that have not yet been yielded by the item iterator.
+    /// Use this method before consuming any items if you want to switch to page-based iteration.
     pub fn into_pages(self) -> FeedPageIterator<T> {
         FeedPageIterator(self.pages)
     }
@@ -322,12 +382,6 @@ impl<T: Send> Stream for FeedItemIterator<T> {
 
 pub struct FeedPageIterator<T: Send>(BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>);
 
-impl<T: Send> FeedPageIterator<T> {
-    pub fn new(driver: Arc<CosmosDriver>, options: OperationOptions, plan: OperationPlan) -> Self {
-        driver.execute_operation()
-    }
-}
-
 impl<T: Send> Stream for FeedPageIterator<T> {
     type Item = azure_core::Result<QueryFeedPage<T>>;
 
@@ -367,7 +421,10 @@ mod tests {
         ];
 
         let stream = futures::stream::iter(pages);
-        let item_iter = FeedItemIterator::new(stream);
+        let item_iter = FeedItemIterator {
+            pages: Box::pin(stream),
+            current: None,
+        };
 
         let items: Vec<_> = item_iter
             .collect::<Vec<_>>()
@@ -386,7 +443,11 @@ mod tests {
         ];
 
         let stream = futures::stream::iter(pages);
-        let page_iter = FeedItemIterator::new(stream).into_pages();
+        let page_iter = FeedItemIterator {
+            pages: Box::pin(stream),
+            current: None,
+        }
+        .into_pages();
 
         let page_items: Vec<_> = page_iter
             .collect::<Vec<_>>()
@@ -408,7 +469,10 @@ mod tests {
         ];
 
         let stream = futures::stream::iter(pages);
-        let mut item_iter = FeedItemIterator::new(stream);
+        let mut item_iter = FeedItemIterator {
+            pages: Box::pin(stream),
+            current: None,
+        };
 
         // First two items should succeed
         assert_eq!(item_iter.next().await.unwrap().unwrap(), 1);
@@ -427,7 +491,10 @@ mod tests {
         ];
 
         let stream = futures::stream::iter(pages);
-        let item_iter = FeedItemIterator::new(stream);
+        let item_iter = FeedItemIterator {
+            pages: Box::pin(stream),
+            current: None,
+        };
 
         let items: Vec<_> = item_iter
             .collect::<Vec<_>>()

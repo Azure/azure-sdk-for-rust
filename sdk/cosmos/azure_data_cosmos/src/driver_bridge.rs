@@ -17,27 +17,6 @@ use azure_data_cosmos_driver::{
     CosmosDriver,
 };
 
-/// Executes a point operation through the driver, returning the response.
-///
-/// Convenience wrapper that plans and executes in one call, asserting that the
-/// pipeline produces exactly one response. Used for all single-response
-/// operations (reads, writes, metadata calls) in the SDK layer.
-pub(crate) async fn execute_point_operation(
-    driver: &CosmosDriver,
-    operation: CosmosOperation,
-    options: DriverOperationOptions,
-) -> azure_core::Result<DriverResponse> {
-    driver
-        .execute_operation(operation, options, None)
-        .await?
-        .ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "point operation completed without producing a response",
-            )
-        })
-}
-
 use crate::{
     constants::{
         ACTIVITY_ID, CONTINUATION, COSMOS_INTERNAL_PARTITION_ID, INDEX_METRICS, ITEM_COUNT,
@@ -355,11 +334,7 @@ mod tests {
         );
 
         let rt = tokio::runtime::Runtime::new().unwrap();
-        let page = rt
-            .block_on(QueryFeedPage::<serde_json::Value>::from_response(
-                cosmos_response,
-            ))
-            .unwrap();
+        let page = QueryFeedPage::<serde_json::Value>::from_response(cosmos_response).unwrap();
         assert_eq!(
             page.index_metrics(),
             Some(r#"{"UtilizedSingleIndexes":[]}"#)

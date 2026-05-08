@@ -49,7 +49,7 @@ pub(crate) fn build_trivial_pipeline(operation: &CosmosOperation) -> azure_core:
                 "operation target {target_desc} is not valid for resource type {resource_type}",
                 target_desc = target_description(target),
             ),
-        ));
+        ))?;
     }
 
     let request_target = match target {
@@ -64,7 +64,7 @@ pub(crate) fn build_trivial_pipeline(operation: &CosmosOperation) -> azure_core:
         }
     };
 
-    let root = Request::new(operation.clone(), request_target);
+    let root = Request::new(operation.clone(), request_target, None);
     Ok(Pipeline::new(Box::new(root)))
 }
 
@@ -104,7 +104,7 @@ pub(crate) async fn build_sequential_drain(
                 range: resolved_range.range,
                 partition_key_range_id: resolved_range.partition_key_range_id,
             };
-            request_nodes.push(Box::new(Request::new(operation.clone(), target)));
+            request_nodes.push(Box::new(Request::new(operation.clone(), target, None)));
         }
     }
 

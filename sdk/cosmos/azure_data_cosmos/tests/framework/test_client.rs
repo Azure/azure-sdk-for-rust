@@ -639,7 +639,10 @@ impl TestRunContext {
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
         loop {
-            match container.query_items::<T>(query.clone(), partition_key.clone(), None) {
+            match container
+                .query_items::<T>(query.clone(), partition_key.clone(), None)
+                .await
+            {
                 Ok(pager) => match pager.try_collect::<Vec<T>>().await {
                     Ok(items) => return Ok(items),
                     Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
@@ -854,7 +857,7 @@ impl TestRunContext {
             "SELECT * FROM root r WHERE r.id LIKE 'auto-test-{}'",
             self.run_id
         ));
-        let mut pager = self.client().query_databases(query, None)?;
+        let mut pager = self.client().query_databases(query, None).await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             ids.push(db.id);

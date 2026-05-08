@@ -40,31 +40,43 @@ impl RequestTarget {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum RequestState {
+    /// No request has been sent yet. The next page will trigger the initial request.
+    Initial,
+
+    /// A request has been sent and a server continuation token has been received, but not all pages have been drained yet. The next page will trigger a request with the continuation token.
+    Continuing { continuation: String },
+
+    /// All pages have been drained. No further requests will be sent.
+    Drained,
+}
+
 /// Leaf node that executes one Cosmos DB request per page.
 pub(crate) struct Request {
     operation: CosmosOperation,
     target: RequestTarget,
-    latest_server_continuation: Option<String>,
-    logical_partition_topology_retry_used: bool,
+    state: RequestState,
 }
 
 impl Request {
     /// Creates a request node.
-    pub(crate) fn new(operation: CosmosOperation, target: RequestTarget) -> Self {
-        Self::with_continuation(operation, target, None)
-    }
-
-    /// Creates a request node restored with the latest server-issued continuation.
-    pub(crate) fn with_continuation(
+    pub(crate) fn new(
         operation: CosmosOperation,
         target: RequestTarget,
-        latest_server_continuation: Option<String>,
+        initial_continuation: Option<String>,
     ) -> Self {
+        let initial_state = if let Some(token) = initial_continuation {
+            RequestState::Continuing {
+                continuation: token,
+            }
+        } else {
+            RequestState::Initial
+        };
         Self {
             operation,
             target,
-            latest_server_continuation,
-            logical_partition_topology_retry_used: false,
+            state: initial_state,
         }
     }
 
@@ -77,11 +89,6 @@ impl Request {
     pub(crate) fn target(&self) -> &RequestTarget {
         &self.target
     }
-
-    /// Returns the latest server-issued continuation for this request's partition.
-    pub(crate) fn latest_server_continuation(&self) -> Option<&str> {
-        self.latest_server_continuation.as_deref()
-    }
 }
 
 #[async_trait]
@@ -90,20 +97,31 @@ impl PipelineNode for Request {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> azure_core::Result<PageResult> {
+        tracing::trace!(
+            target = ?self.target,
+            state = ?self.state,
+            "executing request node"
+        );
+
+        let continuation = match &self.state {
+            RequestState::Initial => None,
+            RequestState::Continuing { continuation } => Some(continuation.clone()),
+            RequestState::Drained => return Ok(PageResult::Drained),
+        };
+
         match context
             .execute_request(
                 &self.operation,
                 self.target.clone(),
                 PartitionRoutingRefresh::UseCached,
-                self.latest_server_continuation.clone(),
+                continuation.clone(),
             )
             .await
         {
-            Ok(response) => Ok(PageResult::Page(
-                self.record_response_continuation(response),
-            )),
+            Ok(response) => Ok(self.handle_response(response)),
             Err(error) if is_partition_topology_change(&error) => {
-                self.handle_partition_topology_change(context, error).await
+                self.handle_partition_topology_change(context, error, continuation)
+                    .await
             }
             Err(error) => Err(error),
         }
@@ -118,10 +136,30 @@ impl PipelineNode for Request {
     }
 }
 impl Request {
+    fn handle_response(&mut self, response: CosmosResponse) -> PageResult {
+        let continuation = response.headers().continuation.clone();
+        tracing::trace!(
+            target = ?self.target,
+            status = ?response.status(),
+            output_continuation = ?continuation,
+            "request completed"
+        );
+        self.state = if let Some(token) = continuation {
+            RequestState::Continuing {
+                continuation: token,
+            }
+        } else {
+            RequestState::Drained
+        };
+        tracing::trace!(target = ?self.target, state = ?self.state, "updated request state after response");
+        PageResult::Page(response)
+    }
+
     async fn handle_partition_topology_change(
         &mut self,
         context: &mut PipelineContext<'_>,
         error: azure_core::Error,
+        continuation: Option<String>,
     ) -> azure_core::Result<PageResult> {
         match &self.target {
             RequestTarget::NonPartitioned => {
@@ -129,25 +167,27 @@ impl Request {
                 Err(error)
             }
             RequestTarget::LogicalPartitionKey(_) => {
-                if self.logical_partition_topology_retry_used {
-                    return Err(error);
-                }
-
                 // This shouldn't really happen, but it's been observed.
                 // Since the original request had a logical partition key,
                 // the gateway should have been able to route the request
                 // to the correct partition even if it has split.
                 // But we can do a single retry without forcing a topology refresh to see if it succeeds.
-                self.logical_partition_topology_retry_used = true;
                 context
                     .execute_request(
                         &self.operation,
                         self.target.clone(),
                         PartitionRoutingRefresh::ForceRefresh,
-                        self.latest_server_continuation.clone(),
+                        continuation,
                     )
                     .await
-                    .map(|response| PageResult::Page(self.record_response_continuation(response)))
+                    .map(|response| {
+                        tracing::trace!(
+                            target = ?self.target,
+                            status = ?response.status(),
+                            "retry after logical partition key topology change succeeded"
+                        );
+                        self.handle_response(response)
+                    })
             }
             RequestTarget::EffectivePartitionKeyRange { range, .. } => {
                 let range = range.clone();
@@ -178,25 +218,21 @@ impl Request {
                 // covers the same starting EPK. For a split, only the left-most child
                 // inherits the continuation since it resumes where this node left off.
                 // TODO: When we support streaming ordered merges, we'll need to augment this a bit.
-                let continuation = if target.covers_start_of(range) {
-                    self.latest_server_continuation.clone()
-                } else {
-                    None
+                let continuation = match (target.covers_start_of(range), &self.state) {
+                    (
+                        true,
+                        RequestState::Continuing {
+                            continuation: latest_server_continuation,
+                        },
+                    ) => Some(latest_server_continuation.clone()),
+                    _ => None,
                 };
-                Box::new(Request::with_continuation(
-                    self.operation.clone(),
-                    target,
-                    continuation,
-                )) as Box<dyn PipelineNode>
+                Box::new(Request::new(self.operation.clone(), target, continuation))
+                    as Box<dyn PipelineNode>
             })
             .collect();
 
         Ok(PageResult::SplitRequired { replacement_nodes })
-    }
-
-    fn record_response_continuation(&mut self, response: CosmosResponse) -> CosmosResponse {
-        self.latest_server_continuation = response.headers().continuation.clone();
-        response
     }
 }
 
@@ -233,7 +269,7 @@ mod tests {
 
     #[tokio::test]
     async fn request_retries_logical_partition_key_topology_change_once() {
-        let mut request = Request::new(operation(), logical_partition_target());
+        let mut request = Request::new(operation(), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Ok(response(b"ok"))]);
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, &mut topology);
@@ -253,7 +289,7 @@ mod tests {
 
     #[tokio::test]
     async fn request_returns_second_logical_partition_key_topology_change() {
-        let mut request = Request::new(operation(), logical_partition_target());
+        let mut request = Request::new(operation(), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Err(gone_error())]);
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, &mut topology);
@@ -273,7 +309,7 @@ mod tests {
 
     #[tokio::test]
     async fn request_does_not_retry_non_topology_gone() {
-        let mut request = Request::new(operation(), logical_partition_target());
+        let mut request = Request::new(operation(), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(non_topology_gone_error())]);
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, &mut topology);
@@ -290,7 +326,7 @@ mod tests {
 
     #[tokio::test]
     async fn request_tracks_server_continuation_for_next_page() {
-        let mut request = Request::new(operation(), logical_partition_target());
+        let mut request = Request::new(operation(), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![
             Ok(response_with_continuation(b"page1", Some("token-1"))),
             Ok(response_with_continuation(b"page2", Some("token-2"))),
@@ -307,12 +343,17 @@ mod tests {
             executor.continuation_calls,
             vec![None, Some("token-1".to_string())]
         );
-        assert_eq!(request.latest_server_continuation(), Some("token-2"));
+        assert_eq!(
+            request.state,
+            RequestState::Continuing {
+                continuation: "token-2".to_string()
+            }
+        );
     }
 
     #[tokio::test]
     async fn request_uses_restored_continuation_on_first_page() {
-        let mut request = Request::with_continuation(
+        let mut request = Request::new(
             operation(),
             logical_partition_target(),
             Some("restored-token".to_string()),
@@ -328,14 +369,14 @@ mod tests {
             executor.continuation_calls,
             vec![Some("restored-token".to_string())]
         );
-        assert_eq!(request.latest_server_continuation(), None);
+        assert_eq!(request.state, RequestState::Drained);
     }
 
     // ── Split recovery tests ──────────────────────────────────────────────
 
     #[tokio::test]
     async fn epk_range_topology_change_returns_split_required() {
-        let mut request = Request::new(operation(), epk_range_target());
+        let mut request = Request::new(operation(), epk_range_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
             ResolvedRange {
@@ -390,7 +431,7 @@ mod tests {
 
     #[tokio::test]
     async fn split_left_child_inherits_continuation() {
-        let mut request = Request::with_continuation(
+        let mut request = Request::new(
             operation(),
             epk_range_target(),
             Some("server-token".to_string()),
@@ -419,15 +460,17 @@ mod tests {
             PageResult::SplitRequired { replacement_nodes } => {
                 let left = replacement_nodes[0].downcast_ref::<Request>().unwrap();
                 assert_eq!(
-                    left.latest_server_continuation(),
-                    Some("server-token"),
+                    left.state,
+                    RequestState::Continuing {
+                        continuation: "server-token".to_string()
+                    },
                     "left-most child should inherit the server continuation"
                 );
 
                 let right = replacement_nodes[1].downcast_ref::<Request>().unwrap();
                 assert_eq!(
-                    right.latest_server_continuation(),
-                    None,
+                    right.state,
+                    RequestState::Initial,
                     "non-left children should have no continuation"
                 );
             }
@@ -441,7 +484,7 @@ mod tests {
             EffectivePartitionKey::from("10"),
             EffectivePartitionKey::from("90"),
         );
-        let mut request = Request::with_continuation(
+        let mut request = Request::new(
             operation(),
             RequestTarget::EffectivePartitionKeyRange {
                 range: range.clone(),
@@ -480,11 +523,16 @@ mod tests {
             PageResult::SplitRequired { replacement_nodes } => {
                 assert_eq!(replacement_nodes.len(), 3);
                 let left = replacement_nodes[0].downcast_ref::<Request>().unwrap();
-                assert_eq!(left.latest_server_continuation(), Some("ct"));
+                assert_eq!(
+                    left.state,
+                    RequestState::Continuing {
+                        continuation: "ct".to_string()
+                    }
+                );
                 let mid = replacement_nodes[1].downcast_ref::<Request>().unwrap();
-                assert_eq!(mid.latest_server_continuation(), None);
+                assert_eq!(mid.state, RequestState::Initial);
                 let right = replacement_nodes[2].downcast_ref::<Request>().unwrap();
-                assert_eq!(right.latest_server_continuation(), None);
+                assert_eq!(right.state, RequestState::Initial);
             }
             other => panic!("expected SplitRequired, got {:?}", other),
         }
@@ -492,7 +540,7 @@ mod tests {
 
     #[tokio::test]
     async fn topology_provider_error_propagates() {
-        let mut request = Request::new(operation(), epk_range_target());
+        let mut request = Request::new(operation(), epk_range_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
         let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
@@ -506,7 +554,7 @@ mod tests {
 
     #[tokio::test]
     async fn non_partitioned_topology_change_not_retried() {
-        let mut request = Request::new(operation(), RequestTarget::NonPartitioned);
+        let mut request = Request::new(operation(), RequestTarget::NonPartitioned, None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, &mut topology);

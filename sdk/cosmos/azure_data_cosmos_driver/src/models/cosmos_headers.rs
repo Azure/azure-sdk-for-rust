@@ -20,6 +20,9 @@ pub(crate) mod request_header_names {
     pub const IF_MATCH: &str = "if-match";
     pub const IF_NONE_MATCH: &str = "if-none-match";
     pub const PREFER: &str = "prefer";
+    pub const IS_QUERY: &str = "x-ms-documentdb-isquery";
+    pub const IS_QUERY_PLAN_REQUEST: &str = "x-ms-cosmos-is-query-plan-request";
+    pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
     pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const IS_BATCH_REQUEST: &str = "x-ms-cosmos-is-batch-request";
     pub const BATCH_ATOMIC: &str = "x-ms-cosmos-batch-atomic";
@@ -33,7 +36,6 @@ pub(crate) mod request_header_names {
     pub const END_EPK: &str = "x-ms-end-epk";
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
-    pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
 }
 
 /// Standard Cosmos DB response header names.
@@ -56,6 +58,8 @@ pub(crate) mod response_header_names {
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
     pub const INTERNAL_PARTITION_ID: &str = "x-ms-cosmos-internal-partition-id";
 }
+
+pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
 
 /// Header names used by the fault injection framework.
 #[cfg(feature = "fault_injection")]

@@ -10,7 +10,10 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
+use azure_core::http::{
+    headers::{AsHeaders, HeaderName, HeaderValue},
+    request::options::ContentType,
+};
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
@@ -19,8 +22,9 @@ use crate::{
         LocationStateStore,
     },
     models::{
-        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
+        cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
+        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel, OperationType,
+        SessionToken, SubStatusCode,
     },
     options::{OperationOptionsView, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
 };
@@ -247,6 +251,8 @@ pub(crate) async fn execute_operation_pipeline(
         tracing::trace!(
             method = ?transport_request.method,
             url = %transport_request.url,
+            headers = ?transport_request.headers,
+            body = ?transport_request.body.as_ref().map(|b| std::str::from_utf8(b).unwrap_or("<non-UTF8 body>")),
         "transport request created");
 
         let selected_transport = match pipeline_type {
@@ -556,30 +562,53 @@ fn build_transport_request(
         );
     }
 
-    // Cosmos DB uses POST for both create and upsert; the service
-    // distinguishes them via this header.
-    if operation.operation_type() == OperationType::Upsert {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_UPSERT),
-            HeaderValue::from_static("true"),
-        );
-    }
-
-    // Cosmos DB uses POST for batch (same endpoint as create/upsert);
-    // the service requires these headers to process the request as a batch.
-    if operation.operation_type() == OperationType::Batch {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_BATCH_REQUEST),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            HeaderName::from_static(request_header_names::BATCH_ATOMIC),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
-            HeaderValue::from_static("False"),
-        );
+    // Apply operation type-specific headers.
+    match operation.operation_type() {
+        OperationType::Upsert => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_UPSERT),
+                HeaderValue::from_static("true"),
+            );
+        }
+        OperationType::Batch => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_BATCH_REQUEST),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::BATCH_ATOMIC),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
+                HeaderValue::from_static("False"),
+            );
+        }
+        OperationType::Query | OperationType::SqlQuery => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(QUERY_CONTENT_TYPE),
+            );
+        }
+        OperationType::QueryPlan => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(QUERY_CONTENT_TYPE),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY_PLAN_REQUEST),
+                HeaderValue::from_static("True"),
+            );
+        }
+        _ => {}
     }
 
     // Add operation type header for fault injection rule matching

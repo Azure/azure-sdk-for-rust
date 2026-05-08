@@ -284,7 +284,10 @@ pub(crate) async fn execute_transport_pipeline(
                 diagnostics.set_fault_injection_evaluations(request_handle, evals);
             }
         }
-        tracing::debug!("transport request complete");
+        tracing::debug!(
+            outcome = ?result.result.outcome,
+            "transport request complete"
+        );
 
         if result.shard_id.is_some_and(|failed_shard_id| {
             local_connectivity_retry_count < MAX_LOCAL_CONNECTIVITY_RETRIES

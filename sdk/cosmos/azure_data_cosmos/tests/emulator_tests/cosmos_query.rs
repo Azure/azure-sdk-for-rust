@@ -11,18 +11,70 @@ use std::error::Error;
 use azure_core::http::headers::HeaderValue;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
+    clients::DatabaseClient,
     constants,
     options::{OperationOptions, QueryOptions},
-    Query,
+    PartitionKey, Query,
 };
 use framework::{test_data, MockItem, TestClient};
 use futures::{StreamExt, TryStreamExt};
+use serde::de::DeserializeOwned;
 
 fn collect_matching_items(
     items: &[MockItem],
     predicate: impl Fn(&MockItem) -> bool,
 ) -> Vec<MockItem> {
     items.iter().filter(|p| predicate(p)).cloned().collect()
+}
+
+#[derive(Default)]
+struct QueryTestOptions {
+    max_item_count: Option<u32>,
+    use_continuation_token_resume: bool,
+}
+
+async fn execute_query_test<T>(
+    db_client: &DatabaseClient,
+    items: Vec<MockItem>,
+    query: impl Into<Query>,
+    partition_key: impl Into<PartitionKey>,
+    expected_items: Vec<T>,
+    options: QueryTestOptions,
+) -> Result<(), Box<dyn Error>>
+where
+    T: DeserializeOwned + Send + Eq + std::fmt::Debug + 'static,
+{
+    let container_client = test_data::create_container_with_items(db_client, items, None).await?;
+
+    let mut query_options = QueryOptions::default();
+    if let Some(max_item_count) = options.max_item_count {
+        query_options = query_options.with_max_item_count(max_item_count);
+    }
+
+    let mut pages = container_client
+        .query_items::<T>(query, partition_key, Some(query_options))
+        .await?
+        .into_pages();
+
+    let mut actual_items = Vec::new();
+    while let Some(page) = pages.next().await {
+        actual_items.extend(page?.into_items());
+    }
+
+    if options.use_continuation_token_resume {
+        // Placeholder for future continuation token-based resume support.
+        panic!("Continuation token resume support not yet implemented");
+    }
+
+    assert_eq!(expected_items, actual_items);
+    Ok(())
+}
+
+#[derive(serde::Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct ItemProjection {
+    id: String,
+    merge_order: usize,
 }
 
 #[tokio::test]
@@ -32,18 +84,20 @@ fn collect_matching_items(
 )]
 pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |run_context, db_client| {
+        async |_, db_client| {
             let items = test_data::generate_mock_items(10, 10);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+            let expected_items =
+                collect_matching_items(&items, |p| p.partition_key == "partition0");
 
-            let result_items: Vec<MockItem> = run_context
-                .query_items(&container_client, "select * from docs c", "partition0")
-                .await?;
-            assert_eq!(
-                collect_matching_items(&items, |p| p.partition_key == "partition0"),
-                result_items
-            );
+            execute_query_test(
+                db_client,
+                items,
+                "select * from docs c",
+                "partition0",
+                expected_items,
+                QueryTestOptions::default(),
+            )
+            .await?;
 
             Ok(())
         },
@@ -59,10 +113,8 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |run_context, db_client| {
+        async |_, db_client| {
             let items = test_data::generate_mock_items(10, 10);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
             // Find a merge order value in partition1's items
             let merge_order = items
@@ -74,13 +126,17 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
             // Query for items with that merge order
             let query = Query::from("select * from c where c.mergeOrder = @some_value")
                 .with_parameter("@some_value", merge_order)?;
-            let result_items: Vec<MockItem> = run_context
-                .query_items(&container_client, query, "partition1")
-                .await?;
-            assert_eq!(
-                collect_matching_items(&items, |p| p.merge_order == merge_order),
-                result_items
-            );
+            let expected_items = collect_matching_items(&items, |p| p.merge_order == merge_order);
+
+            execute_query_test(
+                db_client,
+                items,
+                query,
+                "partition1",
+                expected_items,
+                QueryTestOptions::default(),
+            )
+            .await?;
 
             Ok(())
         },
@@ -96,22 +152,26 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 )]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |run_context, db_client| {
+        async |_, db_client| {
             let items = test_data::generate_mock_items(10, 10);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+            let expected_items = items
+                .iter()
+                .filter(|p| p.partition_key == "partition1")
+                .map(|p| ItemProjection {
+                    id: p.id.to_string(),
+                    merge_order: p.merge_order,
+                })
+                .collect::<Vec<_>>();
 
-            let result_items: Vec<String> = run_context
-                .query_items(&container_client, "select value c.id from c", "partition1")
-                .await?;
-            assert_eq!(
-                items
-                    .iter()
-                    .filter(|p| p.partition_key == "partition1")
-                    .map(|p| p.id.to_string())
-                    .collect::<Vec<_>>(),
-                result_items
-            );
+            execute_query_test(
+                db_client,
+                items,
+                "select c.id, c.mergeOrder from c",
+                "partition1",
+                expected_items,
+                QueryTestOptions::default(),
+            )
+            .await?;
 
             Ok(())
         },
@@ -127,27 +187,23 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 )]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |run_context, db_client| {
+        async |_, db_client| {
             let items = test_data::generate_mock_items(10, 2);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+            let expected_items = items
+                .iter()
+                .filter(|p| p.merge_order >= 40 && p.merge_order <= 60)
+                .map(|p| p.id.to_string())
+                .collect::<Vec<_>>();
 
-            let result_items: Vec<String> = run_context
-                .query_items(
-                    &container_client,
-                    "select value c.id from c where c.mergeOrder between 40 and 60",
-                    (),
-                )
-                .await?;
-
-            assert_eq!(
-                items
-                    .iter()
-                    .filter(|p| p.merge_order >= 40 && p.merge_order <= 60)
-                    .map(|p| p.id.to_string())
-                    .collect::<Vec<_>>(),
-                result_items
-            );
+            execute_query_test(
+                db_client,
+                items,
+                "select value c.id from c where c.mergeOrder between 40 and 60",
+                (),
+                expected_items,
+                QueryTestOptions::default(),
+            )
+            .await?;
 
             Ok(())
         },
@@ -161,19 +217,16 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
     not(test_category = "emulator"),
     ignore = "requires test_category 'emulator'"
 )]
-pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
-) -> Result<(), Box<dyn Error>> {
+pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-            let mut pager = container_client.query_items::<String>(
-                "select value c.id from c order by c.mergeOrder",
-                (),
-                None,
-            )?;
+            let mut pager = container_client
+                .query_items::<String>("select value c.id from c order by c.mergeOrder", (), None)
+                .await?;
             let result = pager.try_next().await;
 
             let Err(err) = result else {
@@ -226,7 +279,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
             let options = QueryOptions::default().with_operation_options(operation);
 
             let mut pages = container_client
-                .query_items::<MockItem>("select * from c", "partition0", Some(options))?
+                .query_items::<MockItem>("select * from c", "partition0", Some(options)).await?
                 .into_pages();
 
             // Get the first page and check metrics headers
@@ -289,9 +342,6 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
             let items = test_data::generate_mock_items(1, 5);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
-
             let expected_items =
                 collect_matching_items(&items, |p| p.partition_key == "partition0");
             assert!(
@@ -299,37 +349,18 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 "need multiple items to test pagination"
             );
 
-            // Force 1 item per page to exercise continuation token pagination
-            let mut custom_headers = HashMap::new();
-            custom_headers.insert(constants::MAX_ITEM_COUNT, HeaderValue::from_static("1"));
-            let operation = OperationOptions::default().with_custom_headers(custom_headers);
-            let options = QueryOptions::default().with_operation_options(operation);
-
-            let mut pages = container_client
-                .query_items::<MockItem>("select * from c", "partition0", Some(options))?
-                .into_pages();
-
-            let mut all_items = Vec::new();
-            let mut page_count = 0;
-
-            while let Some(page) = pages.next().await {
-                let page = page?;
-                assert!(
-                    page.items().len() <= 1,
-                    "expected at most 1 item per page, got {}",
-                    page.items().len()
-                );
-                all_items.extend(page.into_items());
-                page_count += 1;
-            }
-
-            assert!(
-                page_count >= expected_items.len(),
-                "expected at least {} pages with max-item-count=1, got {}",
-                expected_items.len(),
-                page_count
-            );
-            assert_eq!(expected_items, all_items);
+            execute_query_test(
+                db_client,
+                items,
+                "select * from c",
+                "partition0",
+                expected_items,
+                QueryTestOptions {
+                    max_item_count: Some(1),
+                    use_continuation_token_resume: false,
+                },
+            )
+            .await?;
 
             Ok(())
         },
@@ -347,44 +378,19 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
             let items = test_data::generate_mock_items(3, 3);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-            // Force 1 item per page for cross-partition query
-            let mut custom_headers = HashMap::new();
-            custom_headers.insert(constants::MAX_ITEM_COUNT, HeaderValue::from_static("1"));
-            let operation = OperationOptions::default().with_custom_headers(custom_headers);
-            let options = QueryOptions::default().with_operation_options(operation);
-
-            let mut pages = container_client
-                .query_items::<MockItem>("select * from c", (), Some(options))?
-                .into_pages();
-
-            let mut all_items = Vec::new();
-            let mut page_count = 0;
-
-            while let Some(page) = pages.next().await {
-                let page = page?;
-                assert!(
-                    page.items().len() <= 1,
-                    "expected at most 1 item per page, got {}",
-                    page.items().len()
-                );
-                all_items.extend(page.into_items());
-                page_count += 1;
-            }
-
-            assert!(
-                page_count > 1,
-                "expected multiple pages with max-item-count=1, got {}",
-                page_count
-            );
-            // Cross-partition ordering is not guaranteed, so just check count
-            assert_eq!(
-                items.len(),
-                all_items.len(),
-                "expected all items to be returned across pages"
-            );
+            execute_query_test(
+                db_client,
+                items.clone(),
+                "select * from c",
+                (),
+                items,
+                QueryTestOptions {
+                    max_item_count: Some(1),
+                    use_continuation_token_resume: false,
+                },
+            )
+            .await?;
 
             Ok(())
         },

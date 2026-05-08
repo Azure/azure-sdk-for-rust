@@ -395,10 +395,7 @@ mod tests {
         let typed_response: Response<crate::feed::FeedBody<TestModel>> = raw_response.into();
         let cosmos_response = CosmosResponse::new(typed_response, create_mock_request());
 
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        let page = rt
-            .block_on(QueryFeedPage::from_response(cosmos_response))
-            .unwrap();
+        let page = QueryFeedPage::from_response(cosmos_response).unwrap();
         assert_eq!(
             page.index_metrics(),
             Some(r#"{"UtilizedSingleIndexes":[]}"#)

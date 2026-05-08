@@ -5,10 +5,6 @@
 
 use serde::Serialize;
 
-pub(crate) mod executor;
-
-pub use executor::QueryExecutor;
-
 /// Represents a Cosmos DB Query, with optional parameters.
 ///
 /// # Examples

@@ -1097,7 +1097,7 @@ impl CosmosDriver {
                 ),
             ));
         }
-        tracing::debug!("operation started");
+        tracing::debug!("plan execution started");
 
         let mut executor = DriverRequestExecutor {
             driver: self,
@@ -1124,6 +1124,14 @@ impl CosmosDriver {
         overrides: OperationOverrides,
         options: &OperationOptions,
     ) -> azure_core::Result<CosmosResponse> {
+        tracing::debug!(
+            operation_type = ?operation.operation_type(),
+            resource_type = ?operation.resource_type(),
+            resource_reference = ?operation.resource_reference(),
+            overrides = ?overrides,
+            body_length = operation.body().map(|b| b.len()),
+            "executing operation");
+
         // Step 1: Build the single OperationOptionsView for layered resolution.
         let effective_options = self.operation_options_view(options);
 
@@ -1342,9 +1350,11 @@ impl CosmosDriver {
             ));
         }
 
+        tracing::debug!(operation_type = ?operation.operation_type(), resource_type = ?operation.resource_type(), resource_reference = ?operation.resource_reference(), "planning operation");
+
         // Trivial plan: anything that isn't a cross-partition query.
         if operation.is_trivial() {
-            let pipeline = planner::build_trivial_pipeline(&operation)?;
+            let pipeline = planner::build_trivial_pipeline(operation)?;
             return Ok(OperationPlan::new(pipeline));
         }
 
@@ -1382,7 +1392,7 @@ impl CosmosDriver {
             |container, continuation| self.fetch_partition_key_ranges(container, continuation),
         );
 
-        let pipeline = planner::build_sequential_drain(&query_plan, &mut topology, &operation).await?;
+        let pipeline = planner::build_sequential_drain(&query_plan, &mut topology, operation).await?;
         Ok(OperationPlan::new(pipeline))
     }
 

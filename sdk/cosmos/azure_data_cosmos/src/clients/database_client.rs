@@ -84,12 +84,11 @@ impl DatabaseClient {
     ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
         let operation = CosmosOperation::read_database(self.database_ref.clone());
 
-        let driver_response = crate::driver_bridge::execute_point_operation(
-            &self.context.driver,
-            operation,
-            OperationOptions::default(),
-        )
-        .await?;
+        let driver_response = self
+            .context
+            .driver
+            .execute_point_operation(operation, OperationOptions::default())
+            .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
@@ -112,33 +111,37 @@ impl DatabaseClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # use azure_data_cosmos::clients::DatabaseClient;
     /// # let db_client: DatabaseClient = panic!("this is a non-running example");
-    /// let containers = db_client.query_containers(
-    ///     "SELECT * FROM dbs",
-    ///     None)?;
+    /// let containers = db_client
+    ///     .query_containers("SELECT * FROM dbs", None)
+    ///     .await?;
     /// # }
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
-    pub fn query_containers(
+    pub async fn query_containers(
         &self,
         query: impl Into<Query>,
+        #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
-        let db_ref = DatabaseReference::from_name(
-            self.context.driver.account().clone(),
-            self.database_id.clone(),
-        );
-        let factory = move || CosmosOperation::query_containers(db_ref.clone());
+        let query = query.into();
+        let initial_operation = CosmosOperation::query_containers(self.database_ref.clone())
+            .with_body(serde_json::to_vec(&query)?);
+        let operation_options = OperationOptions::default();
 
-        crate::query::executor::QueryExecutor::new(
+        let plan = self
+            .context
+            .driver
+            .plan_operation(&initial_operation, &operation_options)
+            .await?;
+
+        Ok(FeedItemIterator::new(
             self.context.driver.clone(),
-            factory,
-            query.into(),
-            Default::default(),
             None,
-        )
-        .into_stream()
+            plan,
+            operation_options,
+        ))
     }
 
     /// Creates a new container.
@@ -170,12 +173,11 @@ impl DatabaseClient {
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
-        let driver_response = crate::driver_bridge::execute_point_operation(
-            &self.context.driver,
-            operation,
-            operation_options,
-        )
-        .await?;
+        let driver_response = self
+            .context
+            .driver
+            .execute_point_operation(operation, operation_options)
+            .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
@@ -195,12 +197,11 @@ impl DatabaseClient {
     ) -> azure_core::Result<ResourceResponse<()>> {
         let operation = CosmosOperation::delete_database(self.database_ref.clone());
 
-        let driver_response = crate::driver_bridge::execute_point_operation(
-            &self.context.driver,
-            operation,
-            OperationOptions::default(),
-        )
-        .await?;
+        let driver_response = self
+            .context
+            .driver
+            .execute_point_operation(operation, OperationOptions::default())
+            .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
@@ -297,6 +298,7 @@ mod tests {
         let client: &DatabaseClient = todo!();
         assert_send(client.container_client(todo!()));
         assert_send(client.read(todo!()));
+        assert_send(client.query_containers(Query::from("SELECT * FROM c"), todo!()));
         assert_send(client.create_container(todo!(), todo!()));
         assert_send(client.delete(todo!()));
         assert_send(client.read_throughput(todo!()));
