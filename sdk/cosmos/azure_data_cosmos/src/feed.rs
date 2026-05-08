@@ -118,27 +118,6 @@ impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>> {
     }
 }
 
-impl<T: DeserializeOwned> FeedPage<T> {
-    #[allow(dead_code)] // Will be used by future read-many and change feed operations
-    pub(crate) async fn from_response(
-        response: CosmosResponse<FeedBody<T>>,
-    ) -> azure_core::Result<Self> {
-        let raw_headers = response.headers().clone();
-        let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
-        let cosmos_headers = response.cosmos_headers().clone();
-        let diagnostics = response.diagnostics();
-        let body: FeedBody<T> = response.into_model()?;
-
-        Ok(Self::new(
-            body.items,
-            continuation,
-            raw_headers,
-            cosmos_headers,
-            diagnostics,
-        ))
-    }
-}
-
 /// Represents a single page of results from a Cosmos DB query.
 ///
 /// Wraps a [`FeedPage`] and adds query-specific metadata such as

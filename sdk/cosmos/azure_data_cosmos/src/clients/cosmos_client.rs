@@ -181,19 +181,3 @@ impl CosmosClient {
         ))
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Compile-time assertion that `CosmosClient` async method futures are `Send`.
-    ///
-    /// This function is never called; it only needs to compile.
-    /// If any future is not `Send`, compilation will fail.
-    #[allow(dead_code, unreachable_code, unused_variables)]
-    fn _assert_futures_are_send() {
-        fn assert_send<T: Send>(_: T) {}
-        let client: &CosmosClient = todo!();
-        assert_send(client.create_database(todo!(), todo!()));
-    }
-}

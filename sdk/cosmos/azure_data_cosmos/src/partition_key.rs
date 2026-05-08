@@ -108,11 +108,6 @@ impl PartitionKey {
     /// An empty list of partition key values, which is used to signal a cross-partition query, when querying a container.
     pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
 
-    #[allow(dead_code)]
-    pub(crate) fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
     /// Converts this SDK partition key into the driver's equivalent type.
     pub(crate) fn into_driver_partition_key(
         self,
