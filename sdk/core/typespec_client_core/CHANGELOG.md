@@ -1,6 +1,6 @@
 # Release History
 
-## 1.0.0 (Unreleased)
+## 1.0.0 (2026-05-11)
 
 ### Features Added
 
@@ -10,10 +10,6 @@
 
 - Added `#[non_exhaustive]` to `AttributeArray`, `AttributeValue`, `SpanStatus`, and `SpanKind`.
 - `new_http_client()` now panics if the `reqwest` feature is not enabled.
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.14.0 (2026-04-22)
 
