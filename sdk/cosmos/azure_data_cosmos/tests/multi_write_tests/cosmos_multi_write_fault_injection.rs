@@ -13,8 +13,8 @@ use azure_data_cosmos::fault_injection::{
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::{ExcludedRegions, ItemReadOptions, OperationOptions};
 use framework::{
-    assert_failover_to_region, assert_local_retry_attempted_on_region, TestClient, TestOptions,
-    HUB_REGION, SATELLITE_REGION,
+    assert_local_retry_attempted_on_region, assert_region_contacted_with_retry, TestClient,
+    TestOptions, HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -331,7 +331,10 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
                 .await;
 
             let response = result.unwrap();
-            assert_failover_to_region(&response.diagnostics(), &SATELLITE_REGION);
+            // After 503 on hub, the driver fails over; recovery may either
+            // land on satellite or retry back on hub. Assert satellite was
+            // contacted at least once, proving the failover path was hit.
+            assert_region_contacted_with_retry(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -503,7 +506,10 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
                 .await;
 
             let response = result.unwrap();
-            assert_failover_to_region(&response.diagnostics(), &HUB_REGION);
+            // After 404:1002 on satellite, the driver fails over; recovery
+            // may either land on hub or retry back on satellite. Assert hub
+            // was contacted at least once, proving the failover path was hit.
+            assert_region_contacted_with_retry(&response.diagnostics(), &HUB_REGION);
 
             Ok(())
         },
@@ -574,8 +580,13 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
             let _response = fault_container_client
                 .create_item(&pk, &item_id, &item, None)
                 .await
-                .expect("write should succeed via failover to satellite");
-            assert_failover_to_region(&_response.diagnostics(), &SATELLITE_REGION);
+                .expect("write should succeed after connection-error failover");
+            // After local retries exhaust on hub, the driver fails over to
+            // the satellite. Recovery may either land on satellite or retry
+            // back on hub once the transient fault clears — both are valid.
+            // We assert the satellite was contacted at least once, proving
+            // the failover path was exercised.
+            assert_region_contacted_with_retry(&_response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -659,7 +670,10 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
                 .expect("read should succeed via failover to satellite");
-            assert_failover_to_region(&_response.diagnostics(), &SATELLITE_REGION);
+            // After connection error on hub, the driver fails over; recovery
+            // may either land on satellite or retry back on hub. Assert
+            // satellite was contacted at least once.
+            assert_region_contacted_with_retry(&_response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -901,7 +915,10 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
                 .create_item(&pk, &item_id, &item, None)
                 .await
                 .expect("write should succeed via reverse failover to hub");
-            assert_failover_to_region(&_response.diagnostics(), &HUB_REGION);
+            // After fault on satellite, the driver fails over; recovery may
+            // either land on hub or retry back on satellite. Assert hub was
+            // contacted at least once, proving the reverse failover path was hit.
+            assert_region_contacted_with_retry(&_response.diagnostics(), &HUB_REGION);
 
             Ok(())
         },

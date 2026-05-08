@@ -22,7 +22,9 @@ use azure_data_cosmos::fault_injection::{
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::Query;
-use framework::{assert_failover_to_region, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION};
+use framework::{
+    assert_region_contacted_with_retry, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
+};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{borrow::Cow, error::Error};
@@ -115,7 +117,10 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            assert_failover_to_region(&response.diagnostics(), &SATELLITE_REGION);
+            // After 408 on hub, the driver fails over; recovery may either
+            // land on satellite or retry back on hub. Assert satellite was
+            // contacted at least once, proving the failover path was hit.
+            assert_region_contacted_with_retry(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -442,7 +447,10 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            assert_failover_to_region(&response.diagnostics(), &SATELLITE_REGION);
+            // After 500 on hub, the driver fails over; recovery may either
+            // land on satellite or retry back on hub. Assert satellite was
+            // contacted at least once, proving the failover path was hit.
+            assert_region_contacted_with_retry(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },

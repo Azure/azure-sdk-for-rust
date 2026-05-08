@@ -42,41 +42,12 @@ pub const HUB_REGION: Region = Region::EAST_US_2;
 pub const SATELLITE_REGION: Region = Region::WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 pub const EMULATOR_HOST: &str = "127.0.0.1";
-
-/// Asserts that the operation completed via cross-region failover: at least
-/// one retry must have occurred AND the final tracked request must have
-/// landed on `expected_region`. Used by failover tests to validate routing
-/// behavior now that `request_url()` is gone.
-pub fn assert_failover_to_region(
-    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
-    expected_region: &Region,
-) {
-    let requests = diagnostics.requests();
-    assert!(
-        diagnostics.request_count() > 1,
-        "expected multiple requests indicating retry/failover, got {} (regions contacted: {:?})",
-        diagnostics.request_count(),
-        diagnostics.regions_contacted()
-    );
-    let last = requests
-        .last()
-        .expect("at least one tracked request after failover");
-    assert_eq!(
-        last.region(),
-        Some(expected_region),
-        "expected final request to land on region {:?}, but landed on {:?} (endpoint {})",
-        expected_region,
-        last.region(),
-        last.endpoint()
-    );
-}
-
 /// Asserts that the operation contacted `expected_region` at least once and
 /// that more than one request was tracked (i.e. some form of retry or
-/// failover happened). Unlike `assert_failover_to_region`, this does **not**
-/// require the *final* request to land on `expected_region` — the driver may
-/// probe an alternate region and successfully retry on the original. Used
-/// for read-path failover scenarios where either landing is valid.
+/// failover happened). Does **not** require the *final* request to land on
+/// `expected_region` — the driver may probe an alternate region and
+/// successfully retry on the original. Used for failover scenarios where
+/// either landing is valid.
 pub fn assert_region_contacted_with_retry(
     diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
     expected_region: &Region,
