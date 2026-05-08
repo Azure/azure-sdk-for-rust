@@ -691,10 +691,10 @@ async fn test_commit_block_list_with_tags(ctx: TestContext) -> Result<(), Box<dy
     block_blob_client
         .commit_block_list(
             block_lookup(block_id).try_into()?,
-            Some(BlockBlobClientCommitBlockListOptions {
-                blob_tags_string: Some("sdk=rust".to_string()),
-                ..Default::default()
-            }),
+            Some(
+                BlockBlobClientCommitBlockListOptions::default()
+                    .with_tags(HashMap::from([("sdk".to_string(), "rust".to_string())])),
+            ),
         )
         .await?;
 
@@ -835,10 +835,10 @@ async fn test_upload_block_blob_with_tags(ctx: TestContext) -> Result<(), Box<dy
     create_test_blob(
         &blob_client,
         Some(RequestContent::from(b"tagged blob content".to_vec())),
-        Some(BlockBlobClientUploadOptions {
-            tags: Some(HashMap::from([("version".to_string(), "1".to_string())]).into()),
-            ..Default::default()
-        }),
+        Some(
+            BlockBlobClientUploadOptions::default()
+                .with_tags(HashMap::from([("version".to_string(), "1".to_string())])),
+        ),
     )
     .await?;
 

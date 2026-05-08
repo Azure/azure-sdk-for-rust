@@ -637,10 +637,10 @@ async fn test_create_page_blob_with_tags(ctx: TestContext) -> Result<(), Box<dyn
     page_blob_client
         .create(
             512,
-            Some(PageBlobClientCreateOptions {
-                blob_tags_string: Some("env=test".to_string()),
-                ..Default::default()
-            }),
+            Some(
+                PageBlobClientCreateOptions::default()
+                    .with_tags(HashMap::from([("env".to_string(), "test".to_string())])),
+            ),
         )
         .await?;
 

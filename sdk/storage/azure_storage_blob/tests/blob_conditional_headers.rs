@@ -745,10 +745,10 @@ mod blob_client {
         create_test_blob(
             &blob_client,
             None,
-            Some(BlockBlobClientUploadOptions {
-                tags: Some(HashMap::from([("env".to_string(), "test".to_string())]).into()),
-                ..Default::default()
-            }),
+            Some(
+                BlockBlobClientUploadOptions::default()
+                    .with_tags(HashMap::from([("env".to_string(), "test".to_string())])),
+            ),
         )
         .await?;
 
@@ -1290,10 +1290,10 @@ mod block_blob_client {
         blob_client
             .upload(
                 RequestContent::from(b"tagged".to_vec()),
-                Some(BlockBlobClientUploadOptions {
-                    tags: Some(HashMap::from([("kind".to_string(), "block".to_string())]).into()),
-                    ..Default::default()
-                }),
+                Some(
+                    BlockBlobClientUploadOptions::default()
+                        .with_tags(HashMap::from([("kind".to_string(), "block".to_string())])),
+                ),
             )
             .await?;
 
@@ -1406,11 +1406,13 @@ mod append_blob_client {
         );
         // Create Success With if_match
         append_blob_client
-            .create(Some(AppendBlobClientCreateOptions {
-                if_match: Some(etag),
-                blob_tags_string: Some("env=test".to_string()),
-                ..Default::default()
-            }))
+            .create(Some(
+                AppendBlobClientCreateOptions {
+                    if_match: Some(etag),
+                    ..Default::default()
+                }
+                .with_tags(HashMap::from([("env".to_string(), "test".to_string())])),
+            ))
             .await?;
 
         let props = blob_client.get_properties(None).await?;
@@ -1677,11 +1679,13 @@ mod page_blob_client {
         page_blob_client
             .create(
                 BLOB_SIZE,
-                Some(PageBlobClientCreateOptions {
-                    if_match: Some(etag),
-                    blob_tags_string: Some("env=test".to_string()),
-                    ..Default::default()
-                }),
+                Some(
+                    PageBlobClientCreateOptions {
+                        if_match: Some(etag),
+                        ..Default::default()
+                    }
+                    .with_tags(HashMap::from([("env".to_string(), "test".to_string())])),
+                ),
             )
             .await?;
 

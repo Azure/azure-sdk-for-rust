@@ -3,8 +3,9 @@
 
 use crate::models::{
     method_options::BlockBlobClientUploadOptions, AccessPolicy, AppendBlobClientCreateOptions,
-    BlobTag, BlobTags, BlockBlobClientUploadBlobFromUrlOptions, PageBlobClientCreateOptions,
-    SignedIdentifier, SignedIdentifiers,
+    BlobTag, BlobTags, BlockBlobClientCommitBlockListOptions,
+    BlockBlobClientUploadBlobFromUrlOptions, PageBlobClientCreateOptions, SignedIdentifier,
+    SignedIdentifiers,
 };
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use std::collections::HashMap;
@@ -85,6 +86,57 @@ impl BlockBlobClientUploadOptions<'_> {
             if_none_match: Some("*".into()),
             ..self
         }
+    }
+}
+
+/// Augments the current options bag to only commit the Block blob if it does not already exist.
+/// # Arguments
+///
+/// * `self` - The options bag to be modified.
+impl BlockBlobClientCommitBlockListOptions<'_> {
+    pub fn if_not_exists(self) -> Self {
+        Self {
+            if_none_match: Some("*".into()),
+            ..self
+        }
+    }
+}
+
+/// Sets blob tags on the options bag, encoded as the `x-ms-tags` header value.
+///
+/// Accepts anything convertible to [`BlobTags`], including `HashMap<String, String>`.
+impl PageBlobClientCreateOptions<'_> {
+    pub fn with_tags(mut self, tags: impl Into<BlobTags>) -> Self {
+        self.blob_tags_string = blob_tags_to_string(&tags.into());
+        self
+    }
+}
+
+impl AppendBlobClientCreateOptions<'_> {
+    pub fn with_tags(mut self, tags: impl Into<BlobTags>) -> Self {
+        self.blob_tags_string = blob_tags_to_string(&tags.into());
+        self
+    }
+}
+
+impl BlockBlobClientUploadBlobFromUrlOptions<'_> {
+    pub fn with_tags(mut self, tags: impl Into<BlobTags>) -> Self {
+        self.blob_tags_string = blob_tags_to_string(&tags.into());
+        self
+    }
+}
+
+impl BlockBlobClientUploadOptions<'_> {
+    pub fn with_tags(mut self, tags: impl Into<BlobTags>) -> Self {
+        self.blob_tags_string = blob_tags_to_string(&tags.into());
+        self
+    }
+}
+
+impl BlockBlobClientCommitBlockListOptions<'_> {
+    pub fn with_tags(mut self, tags: impl Into<BlobTags>) -> Self {
+        self.blob_tags_string = blob_tags_to_string(&tags.into());
+        self
     }
 }
 
