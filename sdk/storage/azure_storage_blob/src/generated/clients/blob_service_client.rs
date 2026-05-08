@@ -38,11 +38,11 @@ pub struct BlobServiceClientOptions {
 }
 
 impl BlobServiceClient {
-    /// The Filter Blobs operation enables callers to list blobs across all containers whose tags match a given search expression.
+    /// Lists blobs across all containers whose tags match a given search expression.
     ///
     /// # Arguments
     ///
-    /// * `filter_expression` - Filters the results to return only to return only blobs whose tags match the specified expression.
+    /// * `filter_expression` - Filters the results to return only blobs whose tags match the specified expression.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlobServiceClient.findBlobsByTags")]
     pub fn find_blobs_by_tags(
@@ -118,7 +118,7 @@ impl BlobServiceClient {
         ))
     }
 
-    /// Returns the sku name and account kind.
+    /// Returns information about the storage account.
     ///
     /// # Arguments
     ///
@@ -270,7 +270,7 @@ impl BlobServiceClient {
         Ok(rsp.into())
     }
 
-    /// The List Containers Segment operation returns a list of the containers under the specified account
+    /// Returns a list of the containers in the specified account.
     ///
     /// # Arguments
     ///
@@ -351,7 +351,7 @@ impl BlobServiceClient {
     }
 
     /// Sets properties for a storage account's Blob service endpoint, including properties for Storage Analytics and CORS (Cross-Origin
-    /// Resource Sharing) rules
+    /// Resource Sharing) rules.
     ///
     /// # Arguments
     ///

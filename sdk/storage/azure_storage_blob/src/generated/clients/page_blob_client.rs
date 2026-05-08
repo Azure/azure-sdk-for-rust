@@ -44,11 +44,11 @@ pub struct PageBlobClientOptions {
 }
 
 impl PageBlobClient {
-    /// The Clear Pages operation clears a range of pages from a page blob
+    /// Clears a range of pages from the specified page blob.
     ///
     /// # Arguments
     ///
-    /// * `range` - Bytes of data in the specified range.
+    /// * `range` - Specifies the range of the blob to operate on.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -172,12 +172,11 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Create operation creates a new page blob.
+    /// Creates a new page blob.
     ///
     /// # Arguments
     ///
-    /// * `size` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to
-    ///   a 512-byte boundary.
+    /// * `size` - The maximum size for the page blob. Must be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -332,7 +331,7 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Get Page Ranges operation returns the list of valid page ranges for a page blob or snapshot of a page blob.
+    /// Returns the list of valid page ranges for the specified page blob.
     ///
     /// # Arguments
     ///
@@ -431,12 +430,11 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Resize operation increases the size of the page blob to the specified size.
+    /// Changes the size of the specified page blob.
     ///
     /// # Arguments
     ///
-    /// * `size` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to
-    ///   a 512-byte boundary.
+    /// * `size` - The maximum size for the page blob. Must be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -536,13 +534,13 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Update Sequence Number operation sets the blob's sequence number. The operation will fail if the specified sequence
-    /// number is less than the current sequence number of the blob.
+    /// Updates the sequence number of the specified page blob. The operation will fail if the specified sequence number is less
+    /// than the current sequence number of the blob.
     ///
     /// # Arguments
     ///
-    /// * `sequence_number_action` - Required if the x-ms-blob-sequence-number header is set for the request. This property applies
-    ///   to page blobs only. This property indicates how the service should modify the blob's sequence number
+    /// * `sequence_number_action` - Required if the blob sequence number is provided. This property indicates how the service
+    ///   should modify the blob's sequence number.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -636,13 +634,13 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Upload Pages operation writes a range of pages to a page blob
+    /// Writes a range of pages to the specified page blob.
     ///
     /// # Arguments
     ///
     /// * `body` - The body of the request.
     /// * `content_length` - The length of the request.
-    /// * `range` - Bytes of data in the specified range.
+    /// * `range` - Specifies the range of the blob to operate on.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -782,14 +780,14 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Upload Pages operation writes a range of pages to a page blob where the contents are read from a URL.
+    /// Writes a range of pages to the specified page blob where the contents are read from a URL.
     ///
     /// # Arguments
     ///
-    /// * `source_url` - Specify a URL to the copy source.
-    /// * `source_range` - Bytes of source data in the specified range.
+    /// * `source_url` - Specifies the URL of the source.
+    /// * `source_range` - Specifies the bytes of the source.
     /// * `content_length` - The length of the request.
-    /// * `range` - Bytes of data in the specified range.
+    /// * `range` - Specifies the range of the blob to operate on.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers

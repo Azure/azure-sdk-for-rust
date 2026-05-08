@@ -46,13 +46,12 @@ pub struct BlobClientOptions {
 }
 
 impl BlobClient {
-    /// The Acquire Lease operation requests a new lease on a blob. The lease lock duration can be 15 to 60 seconds, or can be
-    /// infinite.
+    /// Requests a new lease on the specified blob.
     ///
     /// # Arguments
     ///
     /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
-    ///   non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
+    ///   non-infinite lease can be between 15 and 60 seconds.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -138,8 +137,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Break Lease operation ends a lease and ensures that another client can't acquire a new lease until the current lease
-    /// period has expired.
+    /// Ends a lease and ensures that another client can't acquire a new lease until the current lease period has expired.
     ///
     /// # Arguments
     ///
@@ -226,13 +224,12 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Change Lease operation is used to change the ID of an existing lease.
+    /// Change the ID of an existing lease.
     ///
     /// # Arguments
     ///
-    /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
-    ///   lease ID must match.
-    /// * `proposed_lease_id` - Required. The proposed lease ID for the container.
+    /// * `lease_id` - A lease ID for the resource. The resource must have an active lease and the lease ID must match.
+    /// * `proposed_lease_id` - The proposed lease ID for the lease.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -317,7 +314,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Create Snapshot operation creates a read-only snapshot of a blob
+    /// Creates a read-only snapshot of the specified blob.
     ///
     /// # Arguments
     ///
@@ -425,15 +422,8 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// If the storage account's soft delete feature is disabled then, when a blob is deleted, it is permanently removed from
-    /// the storage account. If the storage account's soft delete feature is enabled, then, when a blob is deleted, it is marked
-    /// for deletion and becomes inaccessible immediately. However, the blob service retains the blob or snapshot for the number
-    /// of days specified by the DeleteRetentionPolicy section of [Storage service properties] (Set-Blob-Service-Properties.md).
-    /// After the specified number of days has passed, the blob's data is permanently removed from the storage account. Note that
-    /// you continue to be charged for the soft-deleted blob's storage until it is permanently removed. Use the List Blobs API
-    /// and specify the \"include=deleted\" query parameter to discover which blobs and snapshots have been soft deleted. You
-    /// can then use the Undelete Blob API to restore a soft-deleted blob. All other operations on a soft-deleted blob or snapshot
-    /// causes the service to return an HTTP status code of 404 (ResourceNotFound).
+    /// Deletes the specified blob. If blob soft delete is enabled, the blob is marked for deletion and can be recovered until
+    /// the retention period expires.
     ///
     /// # Arguments
     ///
@@ -511,7 +501,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Delete Immutability Policy operation deletes the immutability policy on the blob.
+    /// Deletes the immutability policy on the specified blob.
     ///
     /// # Arguments
     ///
@@ -554,8 +544,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Download operation reads or downloads a blob from the system, including its metadata and properties. You can also
-    /// call Download to read a snapshot.
+    /// Downloads the specified blob.
     ///
     /// # Arguments
     ///
@@ -712,7 +701,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// Returns the sku name and account kind
+    /// Returns information about the storage account.
     ///
     /// # Arguments
     ///
@@ -782,8 +771,8 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Get Properties operation returns all user-defined metadata, standard HTTP properties, and system properties for the
-    /// blob. It does not return the content of the blob.
+    /// Returns all user-defined metadata, standard HTTP properties, and system properties for the specified blob. It does not
+    /// return the content of the blob.
     ///
     /// # Arguments
     ///
@@ -927,7 +916,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Get Blob Tags operation enables users to get tags on a blob.
+    /// Gets the tags of the specified blob.
     ///
     /// # Arguments
     ///
@@ -995,13 +984,11 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Release Lease operation frees the lease if it's no longer needed, so that another client can immediately acquire a
-    /// lease against the blob.
+    /// Frees the lease if it's no longer needed, so that another client can immediately acquire a lease against the blob.
     ///
     /// # Arguments
     ///
-    /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
-    ///   lease ID must match.
+    /// * `lease_id` - A lease ID for the resource. The resource must have an active lease and the lease ID must match.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -1080,12 +1067,11 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Renew Lease operation renews an existing lease.
+    /// Renews an existing lease.
     ///
     /// # Arguments
     ///
-    /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
-    ///   lease ID must match.
+    /// * `lease_id` - A lease ID for the resource. The resource must have an active lease and the lease ID must match.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -1168,11 +1154,11 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// Set the immutability policy of a blob
+    /// Set the immutability policy on the specified blob.
     ///
     /// # Arguments
     ///
-    /// * `expiry` - Specifies the date time when the blobs immutability policy is set to expire.
+    /// * `expiry` - The date-time that indicates the time at which the blob immutability policy will expire.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlobClient.setImmutabilityPolicy")]
     pub async fn set_immutability_policy(
@@ -1223,11 +1209,11 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Set Legal Hold operation sets a legal hold on the blob.
+    /// Sets a legal hold on the specified blob.
     ///
     /// # Arguments
     ///
-    /// * `legal_hold` - Required. Specifies the legal hold status to set on the blob.
+    /// * `legal_hold` - Indicates whether the blob has a legal hold.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlobClient.setLegalHold")]
     pub async fn set_legal_hold(
@@ -1269,7 +1255,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Set Metadata operation sets user-defined metadata for the specified blob as one or more name-value pairs.
+    /// Sets user-defined metadata for the specified blob.
     ///
     /// # Arguments
     ///
@@ -1344,7 +1330,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Set HTTP Headers operation sets system properties on the blob.
+    /// Sets system properties on the specified blob.
     ///
     /// # Arguments
     ///
@@ -1417,7 +1403,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Set Tags operation enables users to set tags on a blob.
+    /// Sets the tags of the specified blob.
     ///
     /// # Arguments
     ///
@@ -1494,9 +1480,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// The Set Tier operation sets the tier on a block blob. The operation is allowed on a page blob or block blob, but not on
-    /// an append blob. A block blob's tier determines Hot/Cool/Archive storage type. This operation does not update the blob's
-    /// ETag.
+    /// Sets the tier of the specified blob.
     ///
     /// # Arguments
     ///
@@ -1551,7 +1535,7 @@ impl BlobClient {
         Ok(rsp.into())
     }
 
-    /// Undelete a blob that was previously soft deleted
+    /// Undelete the specified previously soft deleted blob.
     ///
     /// # Arguments
     ///
