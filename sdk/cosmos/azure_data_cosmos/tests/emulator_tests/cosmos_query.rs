@@ -260,13 +260,27 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
                 page.request_charge().is_some(),
                 "expected request charge on feed page"
             );
+            let diagnostics = page.diagnostics();
             assert!(
-                page.diagnostics().activity_id().is_some(),
+                !diagnostics.activity_id().as_str().is_empty(),
                 "expected activity ID on feed page"
             );
             assert!(
-                page.diagnostics().server_duration_ms().is_some(),
-                "expected server_duration_ms on feed page"
+                diagnostics.request_count() >= 1,
+                "expected at least one tracked request in feed page diagnostics"
+            );
+            let server_duration = diagnostics
+                .requests()
+                .iter()
+                .filter_map(|r| r.server_duration_ms())
+                .next();
+            assert!(
+                server_duration.is_some(),
+                "expected at least one tracked request to report server_duration_ms"
+            );
+            assert!(
+                f64::from(diagnostics.total_request_charge()) > 0.0,
+                "expected positive total request charge in feed page diagnostics"
             );
             assert!(
                 page.session_token().is_some(),

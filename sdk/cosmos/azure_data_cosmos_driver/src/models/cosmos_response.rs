@@ -88,9 +88,15 @@ impl CosmosResponse {
         self.status
     }
 
-    /// Returns diagnostics captured for this operation.
-    pub fn diagnostics(&self) -> &DiagnosticsContext {
-        &self.diagnostics
+    /// Returns a cloned [`Arc`] handle to the diagnostics captured for this operation.
+    ///
+    /// Cloning the [`Arc`] is a cheap atomic increment, allowing the diagnostics
+    /// to be retained alongside the response data when the [`CosmosResponse`] is
+    /// consumed (for example, by [`into_body`](Self::into_body)). For read-only
+    /// inspection, the returned handle derefs transparently to
+    /// [`DiagnosticsContext`].
+    pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
+        Arc::clone(&self.diagnostics)
     }
 }
 
@@ -215,7 +221,8 @@ mod tests {
         let result_status = result.status();
         assert_eq!(result_status.status_code(), StatusCode::NotFound);
         assert!(result_status.is_read_session_not_available());
-        let diagnostics_status = result.diagnostics().status().unwrap();
+        let diagnostics = result.diagnostics();
+        let diagnostics_status = diagnostics.status().unwrap();
         assert_eq!(diagnostics_status.status_code(), StatusCode::NotFound);
     }
 }

@@ -3,7 +3,9 @@
 
 //! Provides the [`ResourceResponse`] type for resource management operation responses.
 
-use crate::models::{CosmosDiagnostics, CosmosResponse};
+use std::sync::Arc;
+
+use crate::models::{CosmosDiagnosticsContext, CosmosResponse};
 use crate::SessionToken;
 use azure_core::http::{headers::Headers, response::ResponseBody, StatusCode};
 use serde::de::DeserializeOwned;
@@ -33,15 +35,6 @@ impl<T> ResourceResponse<T> {
         self.response.headers()
     }
 
-    /// Returns the final request URL used to fulfill the operation.
-    /// This api is subject to change without a major version bump.
-    #[cfg(feature = "fault_injection")]
-    pub fn request_url(&self) -> azure_core::http::Url {
-        self.response
-            .request_url()
-            .expect("request URL should be present for gateway-routed operations")
-    }
-
     /// Consumes the response and returns the response body.
     pub fn into_body(self) -> ResponseBody {
         self.response.into_body()
@@ -58,7 +51,11 @@ impl<T> ResourceResponse<T> {
     }
 
     /// Returns the diagnostics for this operation.
-    pub fn diagnostics(&self) -> &CosmosDiagnostics {
+    ///
+    /// The returned [`CosmosDiagnosticsContext`] surfaces the full per-operation
+    /// diagnostics produced by the driver pipeline (request tracking, retries,
+    /// regions contacted, RU charges, status, etc.).
+    pub fn diagnostics(&self) -> Arc<CosmosDiagnosticsContext> {
         self.response.diagnostics()
     }
 }
