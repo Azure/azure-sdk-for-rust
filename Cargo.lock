@@ -212,11 +212,11 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "0.36.0"
+version = "1.0.0"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core_macros 0.8.0",
+ "azure_core_macros",
  "azure_core_test",
  "azure_identity",
  "azure_security_keyvault_certificates",
@@ -239,14 +239,14 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 0.14.0",
+ "typespec",
  "typespec_client_core",
  "ureq",
 ]
 
 [[package]]
 name = "azure_core_amqp"
-version = "0.15.0"
+version = "1.0.0"
 dependencies = [
  "async-trait",
  "azure_core",
@@ -262,25 +262,13 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 0.14.0",
- "typespec_macros 0.13.0",
+ "typespec",
+ "typespec_macros",
 ]
 
 [[package]]
 name = "azure_core_macros"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70066e34b8db2c3f0b852c56a99333bd25fdedfb8850cd95dddf930928b47b80"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
- "tracing",
-]
-
-[[package]]
-name = "azure_core_macros"
-version = "0.9.0"
+version = "1.0.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -292,7 +280,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "0.10.0"
+version = "1.0.0"
 dependencies = [
  "azure_core",
  "azure_core_test",
@@ -386,7 +374,7 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "0.36.0"
+version = "1.0.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -3573,22 +3561,7 @@ checksum = "562d481066bde0658276a35467c4af00bdc6ee726305698a55b86e61d7ad82bb"
 
 [[package]]
 name = "typespec"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "247afbeabe0c383f630d0fdcb4fb92818c31cd3fe5d293335daff8cac79d4e0f"
-dependencies = [
- "base64",
- "bytes",
- "futures",
- "quick-xml",
- "serde",
- "serde_json",
- "url",
-]
-
-[[package]]
-name = "typespec"
-version = "0.15.0"
+version = "1.0.0"
 dependencies = [
  "base64",
  "bytes",
@@ -3602,7 +3575,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "0.15.0"
+version = "1.0.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -3620,27 +3593,15 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 0.14.0",
- "typespec_macros 0.13.0",
+ "typespec",
+ "typespec_macros",
  "url",
  "uuid",
 ]
 
 [[package]]
 name = "typespec_macros"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d17153fde258b3c862cecffad95e185c0eb83e619e76542c4b3ed9828af840f0"
-dependencies = [
- "proc-macro2",
- "quote",
- "rustc_version",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "typespec_macros"
-version = "0.14.0"
+version = "1.0.0"
 dependencies = [
  "cargo_metadata",
  "proc-macro2",

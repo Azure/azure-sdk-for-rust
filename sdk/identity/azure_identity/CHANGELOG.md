@@ -1,24 +1,16 @@
 # Release History
 
-## 0.36.0 (Unreleased)
+## 1.0.0 (2026-05-11)
 
 ### Features Added
+
+- Initial stable release.
 
 ### Breaking Changes
 
 - Added `#[non_exhaustive]` to `UserAssignedId`.
 
-### Bugs Fixed
-
-### Other Changes
-
-## 0.35.0 (Unreleased)
-
-### Features Added
-
-### Breaking Changes
-
-### Bugs Fixed
+## 0.35.0 (2026-04-022)
 
 ### Other Changes
 
