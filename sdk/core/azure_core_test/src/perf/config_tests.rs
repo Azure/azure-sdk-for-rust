@@ -119,6 +119,7 @@ fn test_perf_runner_new_with_empty_tests() {
     assert_eq!(runner.options.warmup, Duration::seconds(5));
     assert_eq!(runner.options.test_results_filename, "./results.json");
     assert!(!runner.options.no_cleanup);
+    assert!(!runner.options.latency);
 }
 
 #[test]
@@ -685,4 +686,39 @@ async fn test_perf_runner_with_test_functions() {
         .cleanup(test_context.clone())
         .await
         .expect("Cleanup failed");
+}
+
+#[test]
+fn test_perf_runner_latency_flag() {
+    let tests = vec![create_basic_test_metadata()];
+
+    // Defaults to false.
+    let runner = PerfRunner::with_command_line(
+        env!("CARGO_MANIFEST_DIR"),
+        file!(),
+        tests.clone(),
+        vec!["perf-tests"],
+    )
+    .unwrap();
+    assert!(!runner.options.latency);
+
+    // Long form.
+    let runner = PerfRunner::with_command_line(
+        env!("CARGO_MANIFEST_DIR"),
+        file!(),
+        tests.clone(),
+        vec!["perf-tests", "--latency"],
+    )
+    .unwrap();
+    assert!(runner.options.latency);
+
+    // Short form.
+    let runner = PerfRunner::with_command_line(
+        env!("CARGO_MANIFEST_DIR"),
+        file!(),
+        tests,
+        vec!["perf-tests", "-l"],
+    )
+    .unwrap();
+    assert!(runner.options.latency);
 }
