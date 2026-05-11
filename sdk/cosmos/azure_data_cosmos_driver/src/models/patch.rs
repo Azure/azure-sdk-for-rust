@@ -215,20 +215,22 @@ impl PatchOp {
 
 /// A PATCH document — the body of a `Patch` [`CosmosOperation`].
 ///
-/// Wraps the list of [`PatchOp`]s alongside an optional condition. The
-/// condition is a Cosmos DB SQL fragment evaluated server-side as part of the
-/// underlying Replace; callers typically use ETag preconditions instead, which
-/// are managed by the PATCH handler internally.
+/// Wraps the ordered list of [`PatchOp`]s to apply. PATCH is implemented
+/// driver-side as a Read-Modify-Write loop guarded by an ETag precondition
+/// (`If-Match`), which is managed entirely by the PATCH handler — callers do
+/// not (and cannot) configure a precondition on this type.
+///
+/// A SQL filter predicate (peer SDKs' `FilterPredicate`) is **not** supported
+/// in this preview. The peer SDKs place that knob on `PatchItemRequestOptions`,
+/// not on the operation list, and implementing it correctly requires either
+/// native wire-level PATCH (so the server evaluates the predicate inside the
+/// same transaction) or a client-side SQL subset evaluator. Both are tracked
+/// as follow-up work.
 ///
 /// [`CosmosOperation`]: crate::models::CosmosOperation
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[non_exhaustive]
 pub struct PatchSpec {
-    /// Optional SQL filter applied server-side after the patch operations are
-    /// staged but before the Replace is committed.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub condition: Option<String>,
-
     /// Ordered list of operations.
     pub operations: Vec<PatchOp>,
 }
@@ -236,16 +238,7 @@ pub struct PatchSpec {
 impl PatchSpec {
     /// Builds a [`PatchSpec`] from a list of operations.
     pub fn new(operations: Vec<PatchOp>) -> Self {
-        Self {
-            condition: None,
-            operations,
-        }
-    }
-
-    /// Builder-style setter for an optional condition.
-    pub fn with_condition(mut self, condition: impl Into<String>) -> Self {
-        self.condition = Some(condition.into());
-        self
+        Self { operations }
     }
 }
 
@@ -286,11 +279,26 @@ mod tests {
             PatchOp::add("/tags/-", json!("rust")),
             PatchOp::remove("/legacy"),
             PatchOp::move_op("/from", "/to"),
-        ])
-        .with_condition("FROM c WHERE c.tier = 'gold'");
+        ]);
         let bytes = serde_json::to_vec(&spec).unwrap();
         let back: PatchSpec = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(back, spec);
+    }
+
+    #[test]
+    fn patch_spec_does_not_serialize_condition_field() {
+        // The SQL filter predicate (peer SDKs' `FilterPredicate`) is not part
+        // of the public PATCH surface yet; serialization MUST NOT include a
+        // `condition` key, and deserialization MUST refuse one (since the
+        // struct is `#[non_exhaustive]` plus there is no `condition` field,
+        // serde's default `deny_unknown_fields = false` would silently drop
+        // an unknown field — verify the round-trip is condition-free).
+        let spec = PatchSpec::new(vec![PatchOp::set("/x", json!(1))]);
+        let s = serde_json::to_string(&spec).unwrap();
+        assert!(
+            !s.contains("condition"),
+            "PatchSpec serialization must not include a `condition` field: {s}"
+        );
     }
 
     #[test]

@@ -861,6 +861,50 @@ pub async fn cosmos_patch_cross_sdk_parity() -> Result<(), Box<dyn Error>> {
 }
 
 // ---------------------------------------------------------------------------
+// 404 on the read leg propagates: a never-created item surfaces a typed
+// NotFound error from the handler without entering the replace leg.
+// ---------------------------------------------------------------------------
+
+/// Patching a never-created item id must surface a `NotFound` from the
+/// read leg without retries or replace attempts. This pins the handler's
+/// "non-412 read error propagates immediately" branch end-to-end against
+/// the live emulator (the unit test `rmw_propagates_read_error_immediately`
+/// covers the same branch with a scripted dispatcher).
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn cosmos_patch_read_missing_item_returns_not_found() -> Result<(), Box<dyn Error>> {
+    Box::pin(DriverTestClient::run_with_unique_db(
+        async |context, database| {
+            let container_name = context.unique_container_name();
+            let container = context
+                .create_container(&database, &container_name, "/pk")
+                .await?;
+
+            // Patch a freshly-named item that was never created.
+            let missing_id = "patch-missing-item-001";
+            let pk = "tenant-a";
+            let spec = PatchSpec::new(vec![PatchOp::set("/deleted", json!(true))]);
+            let err = context
+                .patch_item(&container, missing_id, pk, &spec, None)
+                .await
+                .expect_err("expected NotFound from read leg, got Ok");
+            let msg = format!("{err}");
+            let lower = msg.to_ascii_lowercase();
+            assert!(
+                lower.contains("404") || lower.contains("notfound") || lower.contains("not found"),
+                "error should be NotFound-shaped (404/NotFound); got: {msg}",
+            );
+
+            Ok(())
+        },
+    ))
+    .await
+}
+
+// ---------------------------------------------------------------------------
 // A7 / A8 / A12 / A13 — deferred pending fault-injection primitives
 // ---------------------------------------------------------------------------
 

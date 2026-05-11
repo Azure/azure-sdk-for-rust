@@ -33,6 +33,7 @@ use crate::models::{
     CosmosOperation, CosmosResponse, PartitionKeyKind, PatchOp, PatchSpec, Precondition,
 };
 use crate::options::OperationOptions;
+use async_trait::async_trait;
 use azure_core::error::ErrorKind;
 use azure_core::http::StatusCode;
 use std::num::NonZeroU8;
@@ -41,12 +42,59 @@ use std::num::NonZeroU8;
 /// `412 PreconditionFailed` to the caller.
 pub const DEFAULT_PATCH_MAX_ATTEMPTS: u8 = 5;
 
+/// Internal abstraction for dispatching sub-operations from inside the
+/// PATCH handler's RMW loop.
+///
+/// Production code uses the `CosmosDriver` impl, which forwards to
+/// `CosmosDriver::execute_operation`. Unit tests provide stub impls so the
+/// loop body — including the 412 retry path, the exhaustion error, and the
+/// PK guard's "no I/O on rejection" contract — can be exercised without a
+/// live Cosmos endpoint or in-memory emulator.
+///
+/// This trait is `pub(crate)` and intentionally has no public re-export: it
+/// is a testability seam, not API surface.
+#[async_trait]
+pub(crate) trait SubOperationDispatcher: Send + Sync {
+    /// Executes a single Read or Replace sub-operation. The PATCH handler
+    /// invokes this twice per RMW attempt (Read, then Replace) and consumes
+    /// the result exactly as it would the driver's own
+    /// [`CosmosDriver::execute_operation`].
+    async fn execute_operation(
+        &self,
+        operation: CosmosOperation,
+        options: OperationOptions,
+    ) -> azure_core::Result<CosmosResponse>;
+}
+
+#[async_trait]
+impl SubOperationDispatcher for CosmosDriver {
+    async fn execute_operation(
+        &self,
+        operation: CosmosOperation,
+        options: OperationOptions,
+    ) -> azure_core::Result<CosmosResponse> {
+        CosmosDriver::execute_operation(self, operation, options).await
+    }
+}
+
 /// Executes a PATCH operation by running the Read-Modify-Write loop.
 ///
 /// `max_attempts` is the *total* number of attempts (not retries). `None`
 /// uses [`DEFAULT_PATCH_MAX_ATTEMPTS`].
 pub(crate) async fn execute(
     driver: &CosmosDriver,
+    operation: CosmosOperation,
+    options: OperationOptions,
+    max_attempts: Option<NonZeroU8>,
+) -> azure_core::Result<CosmosResponse> {
+    execute_with_dispatcher(driver, operation, options, max_attempts).await
+}
+
+/// Same as [`execute`], but parameterized over the sub-operation dispatcher.
+/// Tests provide a stub that returns scripted responses without a live
+/// endpoint.
+pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
+    dispatcher: &D,
     operation: CosmosOperation,
     options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
@@ -106,7 +154,9 @@ pub(crate) async fn execute(
         // caller wants the original error verbatim, complete with
         // `raw_response` and diagnostics — and there is nothing useful the
         // PATCH handler can do on a Read failure.
-        let read_resp = driver.execute_operation(read_op, options.clone()).await?;
+        let read_resp = dispatcher
+            .execute_operation(read_op, options.clone())
+            .await?;
         let etag = read_resp.headers().etag.clone().ok_or_else(|| {
             azure_core::Error::with_message(
                 ErrorKind::Other,
@@ -149,7 +199,10 @@ pub(crate) async fn execute(
         // is the terminal disposition for 412). So the success / 412 split
         // happens on the `Result` itself, not on a status code we never get
         // to inspect.
-        match driver.execute_operation(replace_op, options.clone()).await {
+        match dispatcher
+            .execute_operation(replace_op, options.clone())
+            .await
+        {
             Ok(replace_resp) => {
                 // Synthesize the final response: use the merged body we just
                 // sent (the PATCH post-image) plus the driver-routed
@@ -554,5 +607,503 @@ mod tests {
             msg.contains("partition key"),
             "error should mention partition key; got: {err}"
         );
+    }
+
+    // ====== exhaustion_error coverage ======
+
+    #[test]
+    fn exhaustion_error_with_source_chains_underlying_412() {
+        // Closes the loop where the RMW gives up: the final `Err` returned to
+        // the caller must (a) be a 412-shaped `HttpResponse`, (b) carry the
+        // attempts count in its message, and (c) chain the original service
+        // 412 as `Error::source()` so callers / diagnostics can see the real
+        // cause through `.source()` walking.
+        use azure_core::Error;
+
+        let underlying = Error::with_message(
+            ErrorKind::HttpResponse {
+                status: StatusCode::PreconditionFailed,
+                error_code: Some("EtagPreconditionFailed".into()),
+                raw_response: None,
+            },
+            "ETag mismatch from server",
+        );
+        let err = exhaustion_error(7, Some(underlying));
+
+        // (a) Shape.
+        assert!(
+            matches!(
+                err.kind(),
+                ErrorKind::HttpResponse { status, .. }
+                    if *status == StatusCode::PreconditionFailed
+            ),
+            "exhaustion error must surface as a 412 HttpResponse; got {:?}",
+            err.kind()
+        );
+        // (b) Message carries the attempts count.
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("7"),
+            "exhaustion message should mention the attempts count: {msg}"
+        );
+        assert!(
+            msg.to_ascii_lowercase().contains("etag")
+                || msg.to_ascii_lowercase().contains("conflict"),
+            "exhaustion message should mention ETag conflict: {msg}"
+        );
+        // (c) Source chain preserves the original 412.
+        let source = std::error::Error::source(&err)
+            .expect("exhaustion_error must chain the underlying 412 when one is supplied");
+        let source_msg = format!("{source}");
+        assert!(
+            source_msg.contains("ETag mismatch from server"),
+            "chained source must be the underlying service error; got: {source_msg}"
+        );
+    }
+
+    #[test]
+    fn exhaustion_error_without_source_is_still_412_shaped() {
+        // If the loop somehow exits without ever observing a real 412 (e.g.
+        // `attempts = 0` short-circuit), we still want the caller to see a
+        // 412-shaped error so they can recognize "we gave up" the same way
+        // they would for any other PATCH retry exhaustion.
+        let err = exhaustion_error(0, None);
+
+        assert!(
+            matches!(
+                err.kind(),
+                ErrorKind::HttpResponse { status, .. }
+                    if *status == StatusCode::PreconditionFailed
+            ),
+            "exhaustion error must surface as a 412 HttpResponse; got {:?}",
+            err.kind()
+        );
+        assert!(
+            std::error::Error::source(&err).is_none(),
+            "exhaustion_error must NOT synthesize a source when none was passed"
+        );
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("0"),
+            "exhaustion message should still mention the attempts count: {msg}"
+        );
+    }
+
+    // ====== Dispatcher-driven loop coverage ======
+    //
+    // These tests close the gap left by the predicate-only `is_precondition_failed`
+    // tests: they drive the *real* RMW loop end-to-end through the
+    // `SubOperationDispatcher` seam, so a regression that handled 412 in the
+    // `Ok(_)` arm (the bug this PR fixes) or that issued the Read AFTER the PK
+    // guard (rather than before) will fail loudly here — without needing a
+    // live emulator.
+
+    use crate::diagnostics::DiagnosticsContextBuilder;
+    use crate::models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge};
+    use crate::options::DiagnosticsOptions;
+    use std::sync::{Arc, Mutex};
+
+    /// A pre-baked response a [`ScriptedDispatcher`] returns for a single
+    /// sub-operation. `Ok` becomes a [`CosmosResponse`]; `Err` is returned
+    /// verbatim — so tests can inject a service-side 412 just like the
+    /// driver pipeline would.
+    enum ScriptedReply {
+        Ok {
+            body: Vec<u8>,
+            etag: Option<&'static str>,
+            status: StatusCode,
+        },
+        Err(azure_core::Error),
+    }
+
+    /// Records every (operation_type, etag-on-precondition, body) the PATCH
+    /// loop dispatches, and replays a fixed script of responses.
+    struct ScriptedDispatcher {
+        script: Mutex<Vec<ScriptedReply>>,
+        calls: Mutex<Vec<DispatchedCall>>,
+    }
+
+    #[derive(Debug, Clone)]
+    struct DispatchedCall {
+        op_type: OperationType,
+        /// The If-Match precondition's ETag, if one was set. The PATCH handler
+        /// MUST set this on the Replace; absence here means the ETag guard was
+        /// dropped, which would be a regression.
+        if_match_etag: Option<String>,
+    }
+
+    impl ScriptedDispatcher {
+        fn new(script: Vec<ScriptedReply>) -> Self {
+            Self {
+                script: Mutex::new(script),
+                calls: Mutex::new(Vec::new()),
+            }
+        }
+
+        fn calls(&self) -> Vec<DispatchedCall> {
+            self.calls.lock().unwrap().clone()
+        }
+    }
+
+    #[async_trait]
+    impl SubOperationDispatcher for ScriptedDispatcher {
+        async fn execute_operation(
+            &self,
+            operation: CosmosOperation,
+            _options: OperationOptions,
+        ) -> azure_core::Result<CosmosResponse> {
+            let if_match = match operation.precondition() {
+                Some(Precondition::IfMatch(tag)) => Some(tag.as_ref().to_string()),
+                _ => None,
+            };
+            self.calls.lock().unwrap().push(DispatchedCall {
+                op_type: operation.operation_type(),
+                if_match_etag: if_match,
+            });
+
+            let reply =
+                self.script.lock().unwrap().drain(..1).next().expect(
+                    "ScriptedDispatcher exhausted: PATCH loop made more sub-ops than scripted",
+                );
+
+            match reply {
+                ScriptedReply::Err(e) => Err(e),
+                ScriptedReply::Ok { body, etag, status } => {
+                    let mut headers = CosmosResponseHeaders::new();
+                    if let Some(tag) = etag {
+                        headers.etag = Some(ETag::from(tag));
+                    }
+                    headers.request_charge = Some(RequestCharge::new(1.0));
+                    let diagnostics = Arc::new(
+                        DiagnosticsContextBuilder::new(
+                            ActivityId::new_uuid(),
+                            Arc::new(DiagnosticsOptions::default()),
+                        )
+                        .complete(),
+                    );
+                    Ok(from_local_body_and_driver_headers(
+                        body,
+                        headers,
+                        CosmosStatus::from_parts(status, None),
+                        diagnostics,
+                    ))
+                }
+            }
+        }
+    }
+
+    fn http_error(status: StatusCode, msg: &'static str) -> azure_core::Error {
+        azure_core::Error::with_message(
+            ErrorKind::HttpResponse {
+                status,
+                error_code: None,
+                raw_response: None,
+            },
+            msg,
+        )
+    }
+
+    fn patch_op_for(item_ref: ItemReference, ops: Vec<PatchOp>) -> CosmosOperation {
+        let body = serde_json::to_vec(&PatchSpec::new(ops)).unwrap();
+        CosmosOperation::patch_item(item_ref).with_body(body)
+    }
+
+    /// Builds the canonical (`/pk`, `pk1`, `doc1`) PATCH operation used by
+    /// all of these tests — `+1` on `/visits`.
+    fn canonical_patch_op() -> CosmosOperation {
+        patch_op_for(test_item_ref(), vec![PatchOp::increment("/visits", 1i64)])
+    }
+
+    #[tokio::test]
+    async fn rmw_recovers_from_412_on_first_replace() {
+        // Gap #1 closure: a service-side 412 on the first Replace must drive
+        // the loop back to step 2 (Read again) — not be returned to the
+        // caller, and not be silently treated as a success.
+        //
+        // Script: Read#1 ok -> Replace#1 412 -> Read#2 ok -> Replace#2 ok.
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                etag: Some("\"v1\""),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost the race")),
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                etag: Some("\"v2\""),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
+                etag: Some("\"v3\""),
+                status: StatusCode::Ok,
+            },
+        ]);
+
+        let resp = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op(),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect("PATCH must succeed after a single 412 retry");
+
+        // The handler synthesizes the final response from the post-image
+        // it computed locally on attempt #2 (visits=1 + 1 = 2).
+        let body: serde_json::Value = serde_json::from_slice(resp.body()).unwrap();
+        assert_eq!(body["visits"], serde_json::json!(2));
+
+        let calls = dispatcher.calls();
+        assert_eq!(
+            calls.len(),
+            4,
+            "expected exactly Read,Replace,Read,Replace; got: {calls:?}"
+        );
+        assert_eq!(calls[0].op_type, OperationType::Read);
+        assert_eq!(calls[1].op_type, OperationType::Replace);
+        // Each Replace MUST be If-Match guarded — the ETag guard is the
+        // entire reason the RMW is safe under concurrent writers.
+        assert_eq!(calls[1].if_match_etag.as_deref(), Some("\"v1\""));
+        assert_eq!(calls[2].op_type, OperationType::Read);
+        assert_eq!(calls[3].op_type, OperationType::Replace);
+        // The second Replace MUST use the *new* ETag returned by the second
+        // Read — not stash the old one.
+        assert_eq!(calls[3].if_match_etag.as_deref(), Some("\"v2\""));
+    }
+
+    #[tokio::test]
+    async fn rmw_propagates_412_after_exhausting_max_attempts() {
+        // Gap #1 closure (other half): after `max_attempts` failed Replaces
+        // we surface the 412 with the chained source — not a synthetic
+        // success.
+        let dispatcher = ScriptedDispatcher::new(vec![
+            // Attempt 1
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                etag: Some("\"v1\""),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #1")),
+            // Attempt 2
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                etag: Some("\"v2\""),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #2")),
+            // Attempt 3
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                etag: Some("\"v3\""),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #3")),
+        ]);
+
+        let err = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op(),
+            OperationOptions::default(),
+            Some(NonZeroU8::new(3).unwrap()),
+        )
+        .await
+        .expect_err("PATCH must fail after exhausting attempts");
+
+        assert!(
+            is_precondition_failed(&err),
+            "final error must be 412-shaped; got {:?}",
+            err.kind()
+        );
+        assert!(
+            format!("{err}").contains("3"),
+            "final error must mention attempt count; got {err}"
+        );
+        // We exhausted all 3 attempts: that's exactly 3 Reads + 3 Replaces.
+        let calls = dispatcher.calls();
+        assert_eq!(calls.len(), 6, "expected 3 RMW attempts: {calls:?}");
+    }
+
+    #[tokio::test]
+    async fn rmw_propagates_non_412_replace_error_immediately() {
+        // A 500 / 503 / etc. on the Replace must surface verbatim — no
+        // retry, no remapping. The retry loop is ONLY for 412.
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                etag: Some("\"v1\""),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Err(http_error(StatusCode::InternalServerError, "boom")),
+        ]);
+
+        let err = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op(),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect_err("non-412 Replace error must abort the loop");
+
+        assert!(
+            matches!(
+                err.kind(),
+                ErrorKind::HttpResponse { status, .. } if *status == StatusCode::InternalServerError
+            ),
+            "non-412 must propagate verbatim; got {:?}",
+            err.kind()
+        );
+        // Single Read + single Replace — no retry.
+        assert_eq!(dispatcher.calls().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn rmw_propagates_read_error_immediately() {
+        // Gap #3 closure (handler-level): a non-2xx Read response (here a 404
+        // for a non-existent item) propagates to the caller without ever
+        // issuing a Replace. The emulator-level analog lives in
+        // tests/emulator_tests/driver_patch.rs.
+        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::Err(http_error(
+            StatusCode::NotFound,
+            "no such item",
+        ))]);
+
+        let err = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op(),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect_err("PATCH on a missing item must fail on the Read");
+
+        assert!(
+            matches!(
+                err.kind(),
+                ErrorKind::HttpResponse { status, .. } if *status == StatusCode::NotFound
+            ),
+            "PATCH on missing item must surface the Read's 404 verbatim; got {:?}",
+            err.kind()
+        );
+        // Exactly one sub-op was issued: the Read. No Replace.
+        let calls = dispatcher.calls();
+        assert_eq!(calls.len(), 1, "no Replace must be issued on Read failure");
+        assert_eq!(calls[0].op_type, OperationType::Read);
+    }
+
+    #[tokio::test]
+    async fn rmw_fails_without_etag_before_replacing() {
+        // The Read response without an ETag is unrecoverable — we cannot
+        // construct an If-Match precondition. Verify the handler aborts
+        // *before* issuing a Replace.
+        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::Ok {
+            body: br#"{"id":"doc1","pk":"pk1"}"#.to_vec(),
+            etag: None,
+            status: StatusCode::Ok,
+        }]);
+
+        let err = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op(),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect_err("missing ETag on Read must fail PATCH");
+
+        assert!(matches!(err.kind(), ErrorKind::Other));
+        let calls = dispatcher.calls();
+        assert_eq!(calls.len(), 1, "no Replace must be issued without an ETag");
+        assert_eq!(calls[0].op_type, OperationType::Read);
+    }
+
+    #[tokio::test]
+    async fn pk_guard_rejection_issues_no_sub_operations() {
+        // Gap #4 closure: when the PK guard fires, the handler MUST return
+        // before issuing a Read. A regression that re-ordered the guard
+        // after the first dispatch would do a wasted I/O AND would expose
+        // a window where a partition-key-mutating PATCH partially executed.
+        let dispatcher = ScriptedDispatcher::new(vec![]); // any sub-op call panics
+
+        // SET on `/pk` directly — this is a PK mutation; guard must reject.
+        let op = patch_op_for(
+            test_item_ref(),
+            vec![PatchOp::set("/pk", serde_json::json!("evicted"))],
+        );
+
+        let err = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("PK-mutating PATCH must be rejected by the guard");
+
+        assert!(
+            format!("{err}")
+                .to_ascii_lowercase()
+                .contains("partition key"),
+            "error must mention the partition key; got: {err}"
+        );
+        // The script was empty: any sub-op dispatch would have panicked
+        // with "ScriptedDispatcher exhausted". The fact that we got here
+        // means zero sub-ops were issued.
+        assert!(
+            dispatcher.calls().is_empty(),
+            "PK guard rejection must issue zero sub-operations; got: {:?}",
+            dispatcher.calls()
+        );
+    }
+
+    #[tokio::test]
+    async fn empty_patch_spec_issues_no_sub_operations() {
+        // A PATCH with zero ops short-circuits before any I/O — same
+        // structural guarantee as the PK guard.
+        let dispatcher = ScriptedDispatcher::new(vec![]);
+        let op = patch_op_for(test_item_ref(), vec![]);
+
+        let err = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("PATCH with no ops must be rejected");
+
+        let msg = format!("{err}").to_ascii_lowercase();
+        assert!(
+            msg.contains("at least one"),
+            "error should mention the empty-ops constraint: {err}"
+        );
+        assert!(dispatcher.calls().is_empty());
+    }
+
+    #[tokio::test]
+    async fn rmw_caller_session_token_reaches_read_then_replace_uses_read_response_token() {
+        // SE-004 wired end-to-end through the loop: caller-supplied session
+        // token rides the Read; the Read's response session token
+        // overrides it on the Replace.
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                etag: Some("\"v1\""),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                etag: Some("\"v2\""),
+                status: StatusCode::Ok,
+            },
+        ]);
+
+        let caller_token = SessionToken(Cow::Owned("0:1#7".into()));
+        let op = canonical_patch_op().with_session_token(caller_token.clone());
+
+        let _resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect("PATCH should succeed");
+
+        let calls = dispatcher.calls();
+        assert_eq!(calls.len(), 2);
+        // (The session token assertions live in the per-builder unit tests
+        // above — here we just confirm the loop body invoked both sub-ops
+        // and both passed through with the right precondition shape.)
+        assert_eq!(calls[0].op_type, OperationType::Read);
+        assert_eq!(calls[0].if_match_etag, None);
+        assert_eq!(calls[1].op_type, OperationType::Replace);
+        assert_eq!(calls[1].if_match_etag.as_deref(), Some("\"v1\""));
     }
 }
