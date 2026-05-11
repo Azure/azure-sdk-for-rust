@@ -1099,3 +1099,21 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
     }
     operation
 }
+
+/// Compile-time guarantee that the futures returned by [`ContainerClient`]
+/// helpers are `Send`.
+///
+/// This function is never called — it exists purely so `cargo build` rejects
+/// any regression that accidentally makes a future non-`Send` (e.g. by
+/// capturing a non-`Send` cell across an `.await` point). Each method we
+/// want covered is referenced below.
+#[allow(dead_code, unreachable_code, unused_variables)]
+fn _assert_futures_are_send() {
+    fn assert_send<T: Send>(_: T) {}
+    let client: &ContainerClient = todo!();
+    let partition_key: PartitionKey = todo!();
+    let item_id: &str = todo!();
+    let patch: PatchSpec = todo!();
+    let options: Option<PatchItemOptions> = todo!();
+    assert_send(client.patch_item(partition_key, item_id, patch, options));
+}
