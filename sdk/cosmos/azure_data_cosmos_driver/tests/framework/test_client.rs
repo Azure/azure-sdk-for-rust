@@ -346,15 +346,48 @@ impl DriverTestRunContext {
         container_name: &str,
         partition_key_path: &str,
     ) -> Result<ContainerReference, Box<dyn Error>> {
+        self.create_container_with_pk_paths(database, container_name, &[partition_key_path])
+            .await
+    }
+
+    /// Creates a container with one or more partition-key paths.
+    ///
+    /// Pass a single-element slice for a flat partition key, or multiple
+    /// paths for a hierarchical partition key (`MultiHash`). Mirrors the
+    /// `paths` array in the [PartitionKey definition][pk-spec] without
+    /// hard-coding `Hash` vs `MultiHash` — the service infers the kind from
+    /// the number of paths.
+    ///
+    /// [pk-spec]: https://learn.microsoft.com/en-us/rest/api/cosmos-db/create-a-collection
+    pub async fn create_container_with_pk_paths(
+        &self,
+        database: &DatabaseReference,
+        container_name: &str,
+        partition_key_paths: &[&str],
+    ) -> Result<ContainerReference, Box<dyn Error>> {
+        assert!(
+            !partition_key_paths.is_empty(),
+            "container requires at least one partition-key path"
+        );
         let driver = self
             .client
             .runtime
             .get_or_create_driver(self.client.account.clone(), None)
             .await?;
 
+        let paths_json = partition_key_paths
+            .iter()
+            .map(|p| format!("\"{}\"", p))
+            .collect::<Vec<_>>()
+            .join(",");
+        let kind = if partition_key_paths.len() == 1 {
+            "Hash"
+        } else {
+            "MultiHash"
+        };
         let body = format!(
-            r#"{{"id": "{}", "partitionKey": {{"paths": ["{}"], "kind": "Hash", "version": 2}}}}"#,
-            container_name, partition_key_path
+            r#"{{"id": "{}", "partitionKey": {{"paths": [{}], "kind": "{}", "version": 2}}}}"#,
+            container_name, paths_json, kind
         );
         let operation =
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
@@ -441,6 +474,47 @@ impl DriverTestRunContext {
         let pk = partition_key.into();
         let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
         let operation = CosmosOperation::read_item(item_ref);
+
+        let result = driver
+            .execute_operation(operation, OperationOptions::default())
+            .await?;
+
+        Ok(result)
+    }
+
+    /// Patches an item using the driver's `OperationType::Patch` RMW loop.
+    ///
+    /// Mirrors [`read_item`](Self::read_item)'s shape but builds the
+    /// [`CosmosOperation::patch_item`] body from a
+    /// [`PatchSpec`](azure_data_cosmos_driver::models::PatchSpec). The
+    /// returned [`CosmosResponse`] is the synthetic response produced by the
+    /// patch handler — its body is the locally-merged post-image and its
+    /// status/diagnostics are inherited from the underlying conditional
+    /// `Replace`.
+    ///
+    /// If `max_attempts` is `None`, the handler uses
+    /// `DEFAULT_PATCH_MAX_ATTEMPTS` (5).
+    pub async fn patch_item(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        patch: &azure_data_cosmos_driver::models::PatchSpec,
+        max_attempts: Option<std::num::NonZeroU8>,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        let driver = self
+            .client
+            .runtime
+            .get_or_create_driver(self.client.account.clone(), None)
+            .await?;
+
+        let pk = partition_key.into();
+        let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
+        let body = serde_json::to_vec(patch)?;
+        let mut operation = CosmosOperation::patch_item(item_ref).with_body(body);
+        if let Some(n) = max_attempts {
+            operation = operation.with_patch_max_attempts(n);
+        }
 
         let result = driver
             .execute_operation(operation, OperationOptions::default())
