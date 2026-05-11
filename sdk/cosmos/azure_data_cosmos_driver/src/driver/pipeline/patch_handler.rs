@@ -530,7 +530,7 @@ mod tests {
         )
         .unwrap();
         let props = ContainerProperties {
-            id: "hpkc".into(),
+            id: "multi_hash_container".into(),
             partition_key: pk_def,
             system_properties: SystemProperties::default(),
         };
@@ -538,8 +538,8 @@ mod tests {
             test_account(),
             "testdb",
             "testdb_rid",
-            "hpkc",
-            "hpkc_rid",
+            "multi_hash_container",
+            "multi_hash_container_rid",
             &props,
         );
         let item_ref =
