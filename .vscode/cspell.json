@@ -54,7 +54,7 @@
     "execdir",
     "fips",
     "hmac",
-    "hostnames",
+    "hostname",
     "iothub",
     "keyvault",
     "lastexitcode",
