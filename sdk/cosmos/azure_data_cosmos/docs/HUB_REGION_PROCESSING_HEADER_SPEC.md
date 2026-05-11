@@ -374,6 +374,46 @@ read endpoints the way .NET does. Extending the budget would close the gap; that
 in [ALT-5](#alt-5--extend-rusts-read-retry-budget-to-match-nets-readendpointscount-bound) and
 deferred to Future Work.
 
+#### 3.4.1 Worked example — partition hub-region migration (PPAD interaction, post-ALT-5)
+
+This second example exercises the interaction Fabian flagged on the spec PR: the header is the
+backend's signal that the **partition's** hub region (not the account's) should be discovered
+on the retry. When a partition has been migrated to a new hub (PPAD — Per-Partition
+Automatic-failover / Affinity-Driven routing), the original write region returns `403 / 3`
+("write forbidden — wrong region for this partition"). The latch — already set by the prior
+404/1002 — keeps emitting the header on the subsequent retries so the backend can route the
+attempt to whichever satellite region now owns the partition's writes.
+
+Single-master account, Session consistency, account write region `Region A`, preferred regions
+`[Region B, Region A, Region C]`, partition has been migrated so its **partition-scoped** hub
+is now `Region C`.
+
+| Attempt | Targeted region | Server response | Header on **this** attempt | Notes |
+|---|---|---|---|---|
+| 1 | Region B (preferred read) | `404 / 1002` | _absent_ | First 404/1002. Counter 0→1. Latch flips ON; policy returns `Retry`. |
+| 2 | Region A (account hub, per `retry_request_on_preferred_locations: false`) | `403 / 3` | **`True`** | Backend rejects: this partition no longer hubs in Region A. Header was on the wire so the backend knows the client wants partition-hub routing. |
+| 3 | Region B (next preferred per failover ladder) | `403 / 3` | **`True`** | Latch persists. Header keeps flowing so the partition router can redirect rather than serve stale routing. |
+| 4 | Region C (partition's new hub, discovered via failover ladder) | `200` ✓ | **`True`** | Backend serves from the new partition hub. Operation completes. |
+
+**Budget caveat — this scenario is gated on [ALT-5](#alt-5--extend-rusts-read-retry-budget-to-match-nets-readendpointscount-bound).**
+Under the *current* Rust single-master read budget, attempt 3 does not happen: the second
+`403/3` (or any second non-success after the 404/1002) exits with `DoNotRetry`. The trace
+above is the **post-ALT-5** behavior the latch-based design is forward-compatible with —
+[§3.1](#31-trigger) calls out that the latch sets once and rides every retry the budget
+permits, so widening the budget under ALT-5 automatically extends header coverage to attempts
+3 and 4 with no change to the trigger or emission code. Until ALT-5 lands, the parity gap
+described after [§3.4](#34-worked-example) applies here as well: the header reaches the wire
+on attempt 2 (the one retry today's budget allows), but Rust will not continue rotating
+through Region B / Region C to discover the partition's new hub.
+
+**PPAD scope note.** Per-partition hub-region discovery (which partition routes to which
+region after a migration) is a backend concern; the header is the *only* client-side
+contribution. Rust's client-side `LocationCache` / `RetryContext` does not model
+per-partition affinity today — it rotates account-level preferred regions. The header
+delegates the partition-scoped routing decision to the backend, so no client-side PPAD
+modeling is required for this work item. Future Work for explicit per-partition routing on
+the client is out of scope here.
+
 ---
 
 ## 4. Code Changes
@@ -731,6 +771,7 @@ guidance to omit `test_` does **not** apply here — every test in this file use
 | AC-4  | `test_session_not_available_no_header_for_multi_master`         | Multi-master account (mock `LocationCache::can_use_multiple_write_locations()` to return `true`), any number of 404/1002 invocations → header NEVER emitted. Pin specifically to the **account-level** gate, not to `ClientRetryPolicy.can_use_multiple_write_locations`. |
 | AC-5  | `test_session_not_available_no_header_when_discovery_disabled`  | `enable_endpoint_discovery = false` → policy returns `DoNotRetry`, latch never set. |
 | AC-6  | `test_hub_region_header_persists_across_connection_failure`     | After AC-2 latches the flag, drive a connection failure (the SDK's term for a transport-layer failure, tracked under `MAX_RETRY_COUNT_ON_CONNECTION_FAILURE`, separate from the `session_token_retry_count` budget) that takes the same-endpoint retry path → `before_send_request` STILL emits the header. Confirms the latch survives intervening attempts that exist under the current budget. |
+| AC-7  | `test_hub_region_header_persists_across_403_3_partition_migration` | **Gated on [ALT-5](#alt-5--extend-rusts-read-retry-budget-to-match-nets-readendpointscount-bound) — add only after the read budget is widened.** Models the [§3.4.1](#341-worked-example--partition-hub-region-migration-ppad-interaction-post-alt-5) trace: drive 404/1002 (latch ON), then drive 403/3 through `should_retry_on_*` for the second attempt → next `before_send_request` STILL emits the header; drive a second 403/3 → header still emitted. Asserts the latch is sticky across partition-hub migration responses, not just session-not-available retries. Until ALT-5 lands, this test belongs in the same change that extends the budget. |
 
 The earlier AC-3 / AC-6 / AC-7 tests covering "post-latch retry on 503" and "post-latch retry
 on 410/1022" have been intentionally **dropped**: under Rust's current single-master read
