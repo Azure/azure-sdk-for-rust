@@ -346,10 +346,38 @@ fn try_handle_read_session_not_available(
 
     Some((
         OperationAction::SessionRetry {
-            new_state: retry_state.clone().advance_session_retry(),
+            new_state: build_session_retry_state(retry_state),
         },
         Vec::new(),
     ))
+}
+
+/// Builds the `OperationRetryState` for a 404/1002 session retry,
+/// latching the `hub_region_processing_only` flag when the trigger
+/// conditions defined by HUB_REGION_PROCESSING_HEADER_SPEC.md fire.
+///
+/// All four conditions must hold (HUB_REGION_PROCESSING_HEADER_SPEC.md
+/// §7.1 / public-spec §3.3):
+///
+/// 1. `is_dataplane` — metadata operations ride the same pipeline but
+///    are scoped out per spec §1.5 (AC-8).
+/// 2. `!can_use_multiple_write_locations` — single-master only (AC-4).
+/// 3. `session_token_retry_count == 0` — first 1002 within the
+///    operation; the count is incremented by `advance_session_retry`
+///    so reading `retry_state.session_token_retry_count` here detects
+///    the pre-increment value (AC-3, S2 / T-5).
+/// 4. `!hub_region_processing_only` — defense-in-depth idempotency;
+///    structurally already guaranteed by latch-once semantics.
+fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetryState {
+    let mut new_state = retry_state.clone().advance_session_retry();
+    if retry_state.is_dataplane
+        && !retry_state.can_use_multiple_write_locations
+        && retry_state.session_token_retry_count == 0
+        && !retry_state.hub_region_processing_only
+    {
+        new_state.hub_region_processing_only = true;
+    }
+    new_state
 }
 
 /// Handles the retry-trigger group — 503 ServiceUnavailable, 410 Gone,
@@ -812,6 +840,8 @@ mod tests {
             max_failover_retries: 1,
             max_session_retries: 1,
             can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -1295,5 +1325,260 @@ mod tests {
         let (immediate, deferred) = partition_effects_for_deferral(false, true, false, effects);
         assert_eq!(immediate.len(), 3);
         assert!(deferred.is_empty());
+    }
+
+    // -----------------------------------------------------------------------
+    // Hub-region-processing-only latch tests.
+    //
+    // See HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §4.1 for the
+    // shape these cases are meant to cover (T-1..T-5, T-AC-8, T-8, T-9).
+    //
+    // All tests drive `evaluate_transport_result` against a 1002 response and
+    // inspect the `OperationAction::SessionRetry { new_state }`. Per
+    // `build_session_retry_state`, the latch is set when ALL four conditions
+    // hold:
+    //
+    //   1. `is_dataplane`                          (AC-8)
+    //   2. `!can_use_multiple_write_locations`     (AC-4)
+    //   3. `session_token_retry_count == 0`        (AC-3, first-1002-only)
+    //   4. `!hub_region_processing_only`           (idempotency / sticky)
+    //
+    // `OperationRetryState::initial(..)` defaults both `is_dataplane` and
+    // `hub_region_processing_only` to `false`, so tests that want the
+    // latch-on path mutate `is_dataplane = true` explicitly. This mirrors the
+    // production wiring in `execute_operation_pipeline`, which sets
+    // `retry_state.is_dataplane = pipeline_type.is_data_plane()` immediately
+    // after constructing the state.
+    // -----------------------------------------------------------------------
+
+    fn make_read_session_not_available_result() -> TransportResult {
+        TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
+                headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        }
+    }
+
+    fn test_endpoint() -> CosmosEndpoint {
+        CosmosEndpoint::global(url::Url::parse("https://test.documents.azure.com:443/").unwrap())
+    }
+
+    /// Drives one 1002 against `state` and returns the resulting
+    /// `new_state` from `SessionRetry`. Panics if the action isn't a
+    /// `SessionRetry` so callers don't have to repeat that pattern.
+    fn session_retry_state_for_1002(state: &OperationRetryState) -> OperationRetryState {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let result = make_read_session_not_available_result();
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, state);
+        assert!(
+            effects.is_empty(),
+            "1002 should not emit location effects, got {effects:?}",
+        );
+        match action {
+            OperationAction::SessionRetry { new_state } => new_state,
+            other => panic!("expected SessionRetry, got {other:?}"),
+        }
+    }
+
+    /// T-1 — Single-master, data-plane, first 1002 sets the latch.
+    /// Covers AC-1 of HUB_REGION_PROCESSING_HEADER_SPEC.md.
+    #[test]
+    fn hub_region_latch_sets_on_first_1002_single_master_dataplane() {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+
+        let new_state = session_retry_state_for_1002(&state);
+
+        assert!(
+            new_state.hub_region_processing_only,
+            "first 1002 on single-master data-plane should latch",
+        );
+        // The session-retry counter advanced — the latch decision happened
+        // pre-increment, so reading `== 0` on `state` was correct.
+        assert_eq!(new_state.session_token_retry_count, 1);
+    }
+
+    /// T-2 — Multi-master 1002s never latch (AC-4).
+    #[test]
+    fn hub_region_latch_does_not_set_on_multi_master_1002() {
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+
+        let new_state = session_retry_state_for_1002(&state);
+
+        assert!(
+            !new_state.hub_region_processing_only,
+            "multi-master 1002 must not latch the hub-region header",
+        );
+    }
+
+    /// T-3 — Latch is sticky across subsequent 1002s (AC-2).
+    /// The second 1002 must NOT clear the latch even though
+    /// `session_token_retry_count` is no longer 0.
+    #[test]
+    fn hub_region_latch_stays_set_on_subsequent_1002() {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+
+        let after_first = session_retry_state_for_1002(&state);
+        assert!(after_first.hub_region_processing_only);
+
+        let after_second = session_retry_state_for_1002(&after_first);
+        assert!(
+            after_second.hub_region_processing_only,
+            "latch must persist across subsequent 1002 retries",
+        );
+        assert_eq!(after_second.session_token_retry_count, 2);
+    }
+
+    /// T-4 — Non-1002 responses on a single-master data-plane state never
+    /// latch (AC-5). Drives 200, 410, and 503 to confirm the trigger is
+    /// scoped to the 1002 arm.
+    #[test]
+    fn hub_region_latch_does_not_set_on_non_1002_responses() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+
+        // 200: completes — no latch ever runs, but assert via state pass-through.
+        let (action, _) = evaluate_transport_result(&op, &endpoint, make_success_result(), &state);
+        assert!(matches!(action, OperationAction::Complete(_)));
+
+        // 410 (Gone). On a read this fails over but does not latch.
+        let (action, _) =
+            evaluate_transport_result(&op, &endpoint, make_http_error(StatusCode::Gone), &state);
+        match action {
+            OperationAction::FailoverRetry { new_state, .. } => {
+                assert!(!new_state.hub_region_processing_only);
+            }
+            OperationAction::Abort { .. } => {
+                // Acceptable terminal outcome; either way the latch wasn't set.
+            }
+            other => panic!("unexpected action for 410: {other:?}"),
+        }
+
+        // 503 (ServiceUnavailable) on a read fails over but does not latch.
+        let (action, _) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error(StatusCode::ServiceUnavailable),
+            &state,
+        );
+        match action {
+            OperationAction::FailoverRetry { new_state, .. } => {
+                assert!(!new_state.hub_region_processing_only);
+            }
+            OperationAction::Abort { .. } => {
+                // Terminal outcome — latch can't be observed but it cannot
+                // have been set because the 503 path does not run the
+                // 1002 trigger.
+            }
+            other => panic!("unexpected action for 503: {other:?}"),
+        }
+    }
+
+    /// T-5 — Boundary at `session_token_retry_count >= 2`: the second 1002
+    /// still latches the previously-set flag (sticky), and the third 1002
+    /// aborts. Validates AC-3 boundary semantics inherited from the
+    /// existing `>= 2` abort check.
+    #[test]
+    fn hub_region_latch_state_at_budget_exhaustion() {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+
+        let after_first = session_retry_state_for_1002(&state);
+        assert!(after_first.hub_region_processing_only);
+        let after_second = session_retry_state_for_1002(&after_first);
+        assert!(after_second.hub_region_processing_only);
+        assert_eq!(after_second.session_token_retry_count, 2);
+
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let result = make_read_session_not_available_result();
+        let (action, _) = evaluate_transport_result(&op, &endpoint, result, &after_second);
+        assert!(
+            matches!(action, OperationAction::Abort { .. }),
+            "third 1002 must abort, got {action:?}",
+        );
+    }
+
+    /// T-AC-8 — Metadata-pipeline 1002s never latch (AC-8). Same shape as
+    /// T-1 but with `is_dataplane = false`.
+    #[test]
+    fn hub_region_latch_does_not_set_on_metadata_pipeline_1002() {
+        // is_dataplane defaults to false from `initial(..)`.
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        assert!(!state.is_dataplane);
+
+        let new_state = session_retry_state_for_1002(&state);
+
+        assert!(
+            !new_state.hub_region_processing_only,
+            "metadata-pipeline 1002 must not latch the hub-region header",
+        );
+    }
+
+    /// T-8 — Independent operations don't share latch state (AC-6).
+    /// `OperationRetryState::initial(..)` is fresh per call, so a latch on
+    /// one operation can't leak to another even when they go through the
+    /// same evaluate path.
+    #[test]
+    fn hub_region_latch_independent_operations_do_not_share_state() {
+        let mut op_a = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        op_a.is_dataplane = true;
+        let mut op_b = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        op_b.is_dataplane = true;
+
+        let op_a_after = session_retry_state_for_1002(&op_a);
+        assert!(op_a_after.hub_region_processing_only);
+        // op_b is unrelated state and its latch is still false.
+        assert!(!op_b.hub_region_processing_only);
+        // Driving op_b independently sets its own latch but op_a_after is unchanged.
+        let op_b_after = session_retry_state_for_1002(&op_b);
+        assert!(op_b_after.hub_region_processing_only);
+        assert!(op_a_after.hub_region_processing_only);
+    }
+
+    /// T-9 — Latch survives mixed-cause retries (AC-2). Flip the latch on a
+    /// 1002, then drive a 503 that takes the failover path. `..self` in
+    /// `advance_failover` propagates the flag.
+    #[test]
+    fn hub_region_latch_survives_failover_after_latch() {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+
+        let after_1002 = session_retry_state_for_1002(&state);
+        assert!(after_1002.hub_region_processing_only);
+
+        // Now drive a 503 read — should fail over. Latch must propagate.
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let (action, _) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error(StatusCode::ServiceUnavailable),
+            &after_1002,
+        );
+        match action {
+            OperationAction::FailoverRetry { new_state, .. } => {
+                assert!(
+                    new_state.hub_region_processing_only,
+                    "latch must propagate through `..self` in advance_failover",
+                );
+            }
+            OperationAction::Abort { .. } => {
+                // Terminal abort path — the latch is on retry_state, which
+                // the abort path doesn't expose. The structural argument
+                // (every `advance_*` uses `..self`) still holds.
+            }
+            other => panic!("unexpected action for 503 after latch: {other:?}"),
+        }
     }
 }

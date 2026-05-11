@@ -4,7 +4,10 @@
 
 ### Features Added
 
+- The driver now emits the `x-ms-cosmos-hub-region-processing-only` request header on retries after a `404 / 1002 (READ_SESSION_NOT_AVAILABLE)` response on single-master data-plane Cosmos operations. This is a forward-compatible improvement to single-master session-retry behavior and requires no API surface changes in `azure_data_cosmos`. See the [`azure_data_cosmos_driver` 0.3.0 changelog](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/CHANGELOG.md) for details. ([#4389](https://github.com/Azure/azure-sdk-for-rust/pull/4389))
+
 ### Breaking Changes
+
 - Removed the `request_url()` accessor (gated on the `fault_injection` feature) from `ItemResponse`/`ResourceResponse`/`BatchResponse`. Driver-routed operations never populated it, so it always returned `None` in current usage.
 
 - `CosmosClientBuilder::with_user_agent_suffix` (and `CosmosClientOptions::with_user_agent_suffix`) now take `UserAgentSuffix` instead of `impl Into<String>`. Callers passing a `&str` or `String` must construct the value explicitly via `UserAgentSuffix::new` (panics on invalid input) or `UserAgentSuffix::try_new` (returns `Option`). Validation rules (max 25 characters, HTTP-header-safe) are now enforced at the construction site instead of being applied silently inside the builder. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
