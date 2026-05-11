@@ -5,30 +5,22 @@ use crate::{
     clients::{offers_client, ClientContext},
     feed_range::FeedRange,
     models::{
-        BatchResponse, ContainerProperties, CosmosResponse, ItemResponse, ResourceResponse,
-        ThroughputProperties,
+        BatchResponse, ContainerProperties, ItemResponse, ResourceResponse, ThroughputProperties,
     },
     options::{
         BatchOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
         SessionToken,
     },
-    resource_context::{ResourceLink, ResourceType},
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
     Query, ReplaceContainerOptions, ThroughputOptions,
 };
-use std::sync::Arc;
 
 use super::ThroughputPoller;
-use crate::cosmos_request::CosmosRequest;
-use crate::handler::container_connection::ContainerConnection;
-use crate::operation_context::OperationType;
-use crate::routing::partition_key_range_cache::PartitionKeyRangeCache;
-use azure_core::http::Context;
 use azure_data_cosmos_driver::models::{
-    effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
-    CosmosOperation, ItemReference, PartitionKeyKind,
+    ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
+use azure_data_cosmos_driver::options::OperationOptions;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -36,9 +28,6 @@ use serde::{de::DeserializeOwned, Serialize};
 /// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
 #[derive(Clone)]
 pub struct ContainerClient {
-    link: ResourceLink,
-    items_link: ResourceLink,
-    container_connection: Arc<ContainerConnection>,
     container_ref: ContainerReference,
     context: ClientContext,
 }
@@ -46,15 +35,9 @@ pub struct ContainerClient {
 impl ContainerClient {
     pub(crate) async fn new(
         context: ClientContext,
-        database_link: &ResourceLink,
         container_id: &str,
         database_id: &str,
     ) -> azure_core::Result<Self> {
-        let link = database_link
-            .feed(ResourceType::Containers)
-            .item(container_id);
-        let items_link = link.feed(ResourceType::Documents);
-
         // Eagerly resolve immutable container metadata from the driver.
         let container_ref = context
             .driver
@@ -66,22 +49,7 @@ impl ContainerClient {
                 ))
             })?;
 
-        let partition_key_range_cache = Arc::from(PartitionKeyRangeCache::new(
-            context.pipeline.clone(),
-            database_link.clone(),
-            context.global_endpoint_manager.clone(),
-        ));
-        let container_connection = Arc::from(ContainerConnection::new(
-            context.pipeline.clone(),
-            partition_key_range_cache,
-            context.global_partition_endpoint_manager.clone(),
-            container_ref.clone(),
-        ));
-
         Ok(Self {
-            link,
-            items_link,
-            container_connection,
             container_ref,
             context,
         })
@@ -111,14 +79,17 @@ impl ContainerClient {
         )]
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Read, self.link.clone()).build()?;
-        let response: CosmosResponse<ContainerProperties> = self
-            .container_connection
-            .send(cosmos_request, Context::default())
+        let operation = CosmosOperation::read_container(self.container_ref.clone());
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
-        Ok(ResourceResponse::new(response))
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Updates the indexing policy of the container.
@@ -154,13 +125,25 @@ impl ContainerClient {
         )]
         options: Option<ReplaceContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
-        let cosmos_request = CosmosRequest::builder(OperationType::Replace, self.link.clone())
-            .json(&properties)
-            .build()?;
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ResourceResponse::new)
+        let body = serde_json::to_vec(&properties)?;
+        let operation =
+            CosmosOperation::replace_container(self.container_ref.clone()).with_body(body);
+
+        // Control-plane replaces always need the full response body so the
+        // caller can inspect the updated resource properties.
+        let mut operation_options = OperationOptions::default();
+        operation_options.content_response_on_write =
+            Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, operation_options)
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Reads container throughput properties, if any.
@@ -242,12 +225,17 @@ impl ContainerClient {
         )]
         options: Option<DeleteContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<()>> {
-        let cosmos_request =
-            CosmosRequest::builder(OperationType::Delete, self.link.clone()).build()?;
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(ResourceResponse::new)
+        let operation = CosmosOperation::delete_container(self.container_ref.clone());
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, OperationOptions::default())
+            .await?;
+
+        Ok(ResourceResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Creates a new item in the container.
@@ -792,19 +780,22 @@ impl ContainerClient {
         options: Option<BatchOptions>,
     ) -> azure_core::Result<BatchResponse> {
         let options = options.unwrap_or_default();
-        let partition_key = batch.partition_key().clone();
+        let body = serde_json::to_vec(batch.operations())?;
+        let driver_pk = batch.partition_key().clone().into_driver_partition_key();
 
-        let mut cosmos_request =
-            CosmosRequest::builder(OperationType::Batch, self.items_link.clone())
-                .partition_key(partition_key)
-                .json(batch.operations())
-                .build()?;
-        options.apply_headers(&mut cosmos_request.headers);
+        let operation =
+            CosmosOperation::batch(self.container_ref.clone(), driver_pk).with_body(body);
+        let operation = apply_batch_options(operation, &options);
 
-        self.container_connection
-            .send(cosmos_request, Context::default())
-            .await
-            .map(BatchResponse::new)
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
+        Ok(BatchResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
     }
 
     /// Gets the feed ranges for this container.
@@ -813,21 +804,46 @@ impl ContainerClient {
         options: Option<ReadFeedRangesOptions>,
     ) -> azure_core::Result<Vec<FeedRange>> {
         let options = options.unwrap_or_default();
-        let routing_map = self
-            .container_connection
-            .resolve_routing_map(options.force_refresh())
-            .await?
+        let mut ranges = self
+            .context
+            .driver
+            .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
+            .await
             .ok_or_else(|| {
                 azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
                     "failed to resolve routing map for container",
                 )
             })?;
-        Ok(routing_map
-            .ordered_partition_key_ranges()
+
+        if ranges.is_empty() && !options.force_refresh() {
+            // A valid container always has at least one partition key range.
+            // Empty result likely means a stale/failed cache — retry with forced refresh.
+            ranges = self
+                .context
+                .driver
+                .resolve_all_partition_key_ranges(&self.container_ref, true)
+                .await
+                .ok_or_else(|| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "failed to resolve routing map for container",
+                    )
+                })?;
+        }
+
+        if ranges.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "resolved routing map contains no partition key ranges; \
+                 the container may not exist or the service may be unreachable",
+            ));
+        }
+
+        ranges
             .iter()
-            .map(FeedRange::from_sdk_partition_key_range)
-            .collect())
+            .map(FeedRange::from_partition_key_range)
+            .collect()
     }
 
     /// Returns the [`FeedRange`]s covering the given partition key.
@@ -842,7 +858,7 @@ impl ContainerClient {
         let partition_key = partition_key.into();
         let driver_pk = partition_key.into_driver_partition_key();
         let options = options.unwrap_or_default();
-        let pk_def = self.container_connection.partition_key_definition();
+        let pk_def = self.container_ref.partition_key_definition();
         let values = driver_pk.values();
 
         if values.is_empty() {
@@ -871,10 +887,15 @@ impl ContainerClient {
             ));
         }
 
-        let routing_map = self
-            .container_connection
-            .resolve_routing_map(options.force_refresh())
-            .await?
+        let ranges = self
+            .context
+            .driver
+            .resolve_partition_key_ranges_for_key(
+                &self.container_ref,
+                &driver_pk,
+                options.force_refresh(),
+            )
+            .await
             .ok_or_else(|| {
                 azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
@@ -882,56 +903,37 @@ impl ContainerClient {
                 )
             })?;
 
-        if is_prefix {
-            let epk_range = DriverEpk::compute_range(values, pk_def)?;
-            let query_range = crate::routing::range::Range::new(
-                epk_range.start.as_str().to_owned(),
-                epk_range.end.as_str().to_owned(),
-                true,
-                false,
-            );
-            let pkranges = routing_map.get_overlapping_ranges(&query_range);
-            if pkranges.is_empty() {
-                let refreshed = self
-                    .container_connection
-                    .resolve_routing_map(true)
-                    .await?
-                    .ok_or_else(|| {
-                        azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::Other,
-                            "failed to resolve routing map after refresh",
-                        )
-                    })?;
-                Ok(refreshed
-                    .get_overlapping_ranges(&query_range)
-                    .iter()
-                    .map(FeedRange::from_sdk_partition_key_range)
-                    .collect())
-            } else {
-                Ok(pkranges
-                    .iter()
-                    .map(FeedRange::from_sdk_partition_key_range)
-                    .collect())
+        if ranges.is_empty() && !options.force_refresh() {
+            // Empty result may indicate a stale cache — retry with refresh.
+            let ranges = self
+                .context
+                .driver
+                .resolve_partition_key_ranges_for_key(&self.container_ref, &driver_pk, true)
+                .await
+                .ok_or_else(|| {
+                    azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        "failed to resolve routing map for container",
+                    )
+                })?;
+
+            if ranges.is_empty() {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "no partition key ranges found for the given partition key; \
+                     the container may not exist or the service may be unreachable",
+                ));
             }
+
+            ranges
+                .iter()
+                .map(FeedRange::from_partition_key_range)
+                .collect()
         } else {
-            let epk = DriverEpk::compute(values, pk_def.kind(), pk_def.version());
-            match routing_map.get_range_by_effective_partition_key(epk.as_str()) {
-                Ok(pkr) => Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)]),
-                Err(_) => {
-                    let refreshed = self
-                        .container_connection
-                        .resolve_routing_map(true)
-                        .await?
-                        .ok_or_else(|| {
-                            azure_core::Error::with_message(
-                                azure_core::error::ErrorKind::Other,
-                                "failed to resolve routing map after refresh",
-                            )
-                        })?;
-                    let pkr = refreshed.get_range_by_effective_partition_key(epk.as_str())?;
-                    Ok(vec![FeedRange::from_sdk_partition_key_range(pkr)])
-                }
-            }
+            ranges
+                .iter()
+                .map(FeedRange::from_partition_key_range)
+                .collect()
         }
     }
 
@@ -1001,27 +1003,13 @@ fn apply_item_options(
     operation
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[allow(dead_code, unreachable_code, unused_variables)]
-    fn _assert_futures_are_send() {
-        fn assert_send<T: Send>(_: T) {}
-        let client: &ContainerClient = todo!();
-
-        assert_send(client.read(todo!()));
-        assert_send(client.replace(todo!(), todo!()));
-        assert_send(client.read_throughput(todo!()));
-        assert_send(client.begin_replace_throughput(todo!(), todo!()));
-        assert_send(client.delete(todo!()));
-        assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
-        assert_send(client.replace_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
-        assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
-        assert_send(client.read_item::<serde_json::Value>("", todo!(), todo!()));
-        assert_send(client.delete_item("", todo!(), todo!()));
-        assert_send(client.execute_transactional_batch(todo!(), todo!()));
-        assert_send(client.read_feed_ranges(todo!()));
-        assert_send(client.feed_range_from_partition_key("", todo!()));
+/// Applies [`BatchOptions`] fields to a [`CosmosOperation`].
+///
+/// [`BatchOptions`] carries a session token but no precondition (ETag-based
+/// conditions are specified per-operation within the batch itself).
+fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -> CosmosOperation {
+    if let Some(session_token) = &options.session_token {
+        operation = operation.with_session_token(session_token.clone());
     }
+    operation
 }

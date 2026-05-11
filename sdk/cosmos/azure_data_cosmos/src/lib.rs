@@ -14,11 +14,8 @@ mod feed;
 mod feed_range;
 pub mod options;
 mod partition_key;
-pub(crate) mod pipeline;
 pub mod query;
-pub(crate) mod resource_context;
 mod session_helpers;
-pub(crate) mod utils;
 
 pub mod models;
 pub mod transactional_batch;
@@ -33,7 +30,7 @@ pub use account_reference::CosmosAccountReference;
 pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
-pub use models::{BatchResponse, CosmosDiagnostics, ItemResponse, ResourceResponse};
+pub use models::{BatchResponse, CosmosDiagnosticsContext, ItemResponse, ResourceResponse};
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;
@@ -45,19 +42,11 @@ pub use transactional_batch::{
 
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
 pub use feed_range::FeedRange;
-mod background_task_manager;
-mod cosmos_request;
 mod driver_bridge;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
-mod handler;
 mod hash;
 mod murmur_hash;
-mod operation_context;
 mod region_proximity;
 pub mod regions;
-mod request_context;
-mod retry_policies;
-mod routing;
 mod routing_strategy;
-mod serde;

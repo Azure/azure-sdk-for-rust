@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::constants;
 use crate::models::ThroughputProperties;
-use azure_core::http::headers::{self, Headers};
 use std::fmt;
 use std::fmt::Display;
 
@@ -16,22 +14,8 @@ pub use azure_data_cosmos_driver::models::{
 pub use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
     OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
-    ThroughputControlGroupOptions,
+    ThroughputControlGroupOptions, UserAgentSuffix,
 };
-
-// Temporary: applies the prefer header based on the content_response_on_write option.
-// Will be removed when write operations use the internal pipeline directly.
-fn apply_content_response_on_write_header(
-    content_response_on_write: Option<&ContentResponseOnWrite>,
-    headers: &mut Headers,
-) {
-    match content_response_on_write {
-        Some(ContentResponseOnWrite::Enabled) => {}
-        _ => {
-            headers.insert(headers::PREFER, constants::PREFER_MINIMAL);
-        }
-    }
-}
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 ///
@@ -44,33 +28,19 @@ pub struct CosmosClientOptions {
     /// Default [`OperationOptions`] applied to all requests made by this client,
     /// unless overridden by per-request options.
     pub(crate) operation: OperationOptions,
-    pub(crate) user_agent_suffix: Option<String>,
+    pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
     pub(crate) application_region: Option<Region>,
 }
 
 impl CosmosClientOptions {
-    pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
-        self.user_agent_suffix = Some(suffix.into());
+    pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
+        self.user_agent_suffix = Some(suffix);
         self
     }
 
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
         self
-    }
-
-    // Temporary: extracts custom headers from the embedded OperationOptions and
-    // applies them to the HTTP request. Will be removed when operations use the
-    // internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (header_name, header_value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(header_name).is_none() {
-                    headers.insert(header_name.clone(), header_value.clone());
-                }
-            }
-        }
     }
 }
 
@@ -256,28 +226,6 @@ impl BatchOptions {
     }
 }
 
-impl BatchOptions {
-    // Temporary: applies option values as HTTP headers for the SDK pipeline.
-    // Will be removed when batch operations use the internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (name, value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(name).is_none() {
-                    headers.insert(name.clone(), value.clone());
-                }
-            }
-        }
-        if let Some(session_token) = &self.session_token {
-            headers.insert(constants::SESSION_TOKEN, session_token.to_string());
-        }
-        apply_content_response_on_write_header(
-            self.operation.content_response_on_write.as_ref(),
-            headers,
-        );
-    }
-}
-
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
@@ -351,140 +299,5 @@ impl ReadFeedRangesOptions {
 
     pub(crate) fn force_refresh(&self) -> bool {
         self.force_refresh
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use azure_core::http::headers::{HeaderName, HeaderValue};
-    use std::collections::HashMap;
-
-    fn headers_to_map<I>(headers: I) -> HashMap<HeaderName, HeaderValue>
-    where
-        I: IntoIterator<Item = (HeaderName, HeaderValue)>,
-    {
-        headers.into_iter().collect()
-    }
-
-    #[test]
-    fn client_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let client_options = CosmosClientOptions {
-            operation,
-            ..Default::default()
-        };
-
-        let mut headers_result = Headers::new();
-        client_options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> =
-            vec![("x-custom-header".into(), "custom_value".into())];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn batch_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let mut operation = OperationOptions::default().with_custom_headers(custom_headers);
-        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
-
-        let batch_options = BatchOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("BatchSessionToken".to_string());
-
-        let mut headers_result = Headers::new();
-        batch_options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            ("x-custom-header".into(), "custom_value".into()),
-            (constants::SESSION_TOKEN, "BatchSessionToken".into()),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn batch_options_custom_headers_should_not_override_sdk_set_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            constants::SESSION_TOKEN,
-            HeaderValue::from_static("CustomSession"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let batch_options = BatchOptions {
-            operation,
-            ..Default::default()
-        }
-        .with_session_token("RealSessionToken".to_string());
-
-        let mut headers_result = Headers::new();
-        batch_options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![
-            (constants::SESSION_TOKEN, "RealSessionToken".into()),
-            (headers::PREFER, constants::PREFER_MINIMAL),
-        ];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
-    }
-
-    #[test]
-    fn batch_options_default_as_headers() {
-        let batch_options = BatchOptions::default();
-
-        let mut headers_result = Headers::new();
-        batch_options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> =
-            vec![(headers::PREFER, constants::PREFER_MINIMAL)];
-
-        assert_eq!(headers_result, headers_expected);
-    }
-
-    #[test]
-    fn batch_options_with_content_response_enabled() {
-        let mut operation = OperationOptions::default();
-        operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
-
-        let batch_options = BatchOptions {
-            operation,
-            ..Default::default()
-        };
-
-        let mut headers_result = Headers::new();
-        batch_options.apply_headers(&mut headers_result);
-        let headers_result: Vec<(HeaderName, HeaderValue)> = headers_result.into_iter().collect();
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> = vec![];
-
-        assert_eq!(headers_result, headers_expected);
     }
 }

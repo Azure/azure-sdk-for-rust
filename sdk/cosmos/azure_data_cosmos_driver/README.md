@@ -34,27 +34,12 @@ This crate follows **strict semantic versioning** but can move to new major vers
 
 ## Architecture
 
-```text
-┌─────────────────────────────────────┐
-│  Language-Specific SDKs             │
-│  (azure_data_cosmos, Java, .NET)    │
-│  - Type-safe APIs                   │
-│  - Native serialization             │
-└───────────────┬─────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────┐
-│  azure_data_cosmos_driver           │
-│  - Transport & routing              │
-│  - Protocol handling                │
-│  - Retry logic                      │
-│  - Schema-agnostic (raw bytes)      │
-└───────────────┬─────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────┐
-│  Azure Cosmos DB Service            │
-└─────────────────────────────────────┘
+```mermaid
+flowchart TD
+    SDK["Language-Specific SDKs<br/>(azure_data_cosmos, Java, .NET)<br/>• Type-safe APIs<br/>• Native serialization"]
+    Driver["azure_data_cosmos_driver<br/>• Transport &amp; routing<br/>• Protocol handling<br/>• Retry logic<br/>• Schema-agnostic (raw bytes)"]
+    Service["Azure Cosmos DB Service"]
+    SDK --> Driver --> Service
 ```
 
 ## Usage

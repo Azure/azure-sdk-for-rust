@@ -357,6 +357,14 @@ impl CosmosOperation {
         Self::new(OperationType::Delete, resource_ref)
     }
 
+    /// Replaces a container's properties.
+    ///
+    /// Use `with_body()` to provide the updated container properties JSON.
+    pub fn replace_container(container: ContainerReference) -> Self {
+        let resource_ref: CosmosResourceReference = container.into();
+        Self::new(OperationType::Replace, resource_ref)
+    }
+
     /// Reads a container's properties from the service.
     ///
     /// Returns the full container properties payload for the container,
@@ -481,6 +489,18 @@ impl CosmosOperation {
         Self::new(OperationType::Delete, item).with_partition_key(partition_key)
     }
 
+    /// Executes a transactional batch of operations against a single partition.
+    ///
+    /// All operations in the batch target the same `partition_key` and are
+    /// committed atomically. Use `with_body()` to provide the JSON-encoded
+    /// array of batch operations.
+    pub fn batch(container: ContainerReference, partition_key: PartitionKey) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::Document)
+            .into_feed_reference();
+        Self::new(OperationType::Batch, resource_ref).with_partition_key(partition_key)
+    }
+
     /// Upserts (creates or replaces) an item (document) in a container.
     ///
     /// The `ItemReference` contains the container, partition key, and item identifier,
@@ -551,6 +571,24 @@ impl CosmosOperation {
     /// when possible.
     pub fn query_items_cross_partition(container: ContainerReference) -> Self {
         Self::query_items(container, PartitionKey::EMPTY)
+    }
+
+    /// Reads (lists) all partition key ranges for a container.
+    ///
+    /// Returns a feed of partition key range resources.
+    /// Used internally by the partition key range cache to build routing maps.
+    ///
+    /// **Crate-internal**: this constructor is intentionally not part of the
+    /// public API. Public callers should always go through the partition key
+    /// range cache (which already invokes this on cache miss) so that reads
+    /// benefit from caching, etag-based conditional refresh, and the standard
+    /// retry pipeline. Exposing a raw "read all PK ranges" entry point would
+    /// invite callers to bypass the cache and hammer the gateway.
+    pub(crate) fn read_all_partition_key_ranges(container: ContainerReference) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
+            .with_resource_type(ResourceType::PartitionKeyRange)
+            .into_feed_reference();
+        Self::new(OperationType::ReadFeed, resource_ref)
     }
 
     /// Returns true if this is a read-only operation.

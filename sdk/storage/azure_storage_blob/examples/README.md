@@ -14,6 +14,7 @@ This directory contains a set of examples for the use of the Blob Storage client
 | `append_blob_client.rs` | Append blob operations: create, append blocks, seal |
 | `page_blob_client.rs` | Page blob operations: create, upload/clear pages, list page ranges, resize |
 | `blob_storage_logging.rs` | Logging and OpenTelemetry distributed tracing |
+| `blob_storage_upload_file.rs` | Upload a local file with streaming support for large files |
 | `storage_error.rs` | Structured error handling with `StorageError` |
 
 ## Setup

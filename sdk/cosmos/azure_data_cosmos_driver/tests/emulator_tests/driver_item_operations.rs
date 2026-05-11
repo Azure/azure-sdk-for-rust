@@ -59,7 +59,7 @@ pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
 
             // Validate create diagnostics
             let create_diagnostics = create_result.diagnostics();
-            context.validate_data_plane_diagnostics(create_diagnostics, 201);
+            context.validate_data_plane_diagnostics(&create_diagnostics, 201);
 
             // Verify pipeline type is DataPlane
             let requests = create_diagnostics.requests();
@@ -72,7 +72,7 @@ pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
 
             // Validate read diagnostics
             let read_diagnostics = read_result.diagnostics();
-            context.validate_data_plane_diagnostics(read_diagnostics, 200);
+            context.validate_data_plane_diagnostics(&read_diagnostics, 200);
 
             // Verify the body matches
             let body = read_result.body();
@@ -132,7 +132,8 @@ pub async fn control_plane_uses_metadata_pipeline() -> Result<(), Box<dyn Error>
             .await?;
 
         // Verify item creation succeeded
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         assert!(status.map(|s| s.is_success()).unwrap_or(false));
 
         Ok(())
