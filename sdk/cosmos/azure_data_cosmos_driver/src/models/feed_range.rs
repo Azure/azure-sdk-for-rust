@@ -5,8 +5,16 @@
 //!
 //! A [`FeedRange`] represents a contiguous range of the effective partition key (EPK) space.
 //! It is used by the dataflow pipeline to target operations at one or more physical partitions.
+//!
+//! Feed ranges can also be serialized to base64-encoded JSON for cross-SDK storage and transport.
+
+use azure_core::{error::ErrorKind, fmt::SafeDebug};
+use base64::Engine;
+use serde::{Deserialize, Serialize};
+use std::{cmp, fmt, str::FromStr};
 
 use crate::models::effective_partition_key::EffectivePartitionKey;
+use crate::models::partition_key_range::PartitionKeyRange;
 
 /// A contiguous range of the effective partition key space.
 ///
@@ -15,10 +23,26 @@ use crate::models::effective_partition_key::EffectivePartitionKey;
 /// topology.
 ///
 /// Use [`FeedRange::full()`] for the entire key space (`""..FF`).
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
 pub struct FeedRange {
     min_inclusive: EffectivePartitionKey,
     max_exclusive: EffectivePartitionKey,
+}
+
+#[derive(Serialize, Deserialize)]
+struct FeedRangeJson {
+    #[serde(rename = "Range")]
+    range: RangeJson,
+}
+
+#[derive(Serialize, Deserialize)]
+struct RangeJson {
+    min: String,
+    max: String,
+    #[serde(rename = "isMinInclusive")]
+    is_min_inclusive: bool,
+    #[serde(rename = "isMaxInclusive")]
+    is_max_inclusive: bool,
 }
 
 impl FeedRange {
@@ -58,6 +82,127 @@ impl FeedRange {
     /// Two feed ranges overlap when one starts before the other ends and vice versa.
     pub fn overlaps(&self, other: &FeedRange) -> bool {
         self.min_inclusive < other.max_exclusive && other.min_inclusive < self.max_exclusive
+    }
+
+    /// Returns `true` if this feed range can be combined with `other`.
+    ///
+    /// Two ranges can be combined when they overlap or are adjacent
+    /// (one's max equals the other's min).
+    pub fn can_merge(&self, other: &FeedRange) -> bool {
+        self.max_exclusive >= other.min_inclusive && other.max_exclusive >= self.min_inclusive
+    }
+
+    /// Combines this feed range with `other` into a bounding range.
+    pub fn merge_with(&self, other: &FeedRange) -> FeedRange {
+        debug_assert!(
+            self.can_merge(other),
+            "merge_with called on disjoint ranges"
+        );
+        FeedRange {
+            min_inclusive: cmp::min(self.min_inclusive.clone(), other.min_inclusive.clone()),
+            max_exclusive: cmp::max(self.max_exclusive.clone(), other.max_exclusive.clone()),
+        }
+    }
+
+    fn to_json(&self) -> FeedRangeJson {
+        FeedRangeJson {
+            range: RangeJson {
+                min: self.min_inclusive.as_str().to_owned(),
+                max: self.max_exclusive.as_str().to_owned(),
+                is_min_inclusive: true,
+                is_max_inclusive: false,
+            },
+        }
+    }
+
+    fn from_json(json: FeedRangeJson) -> azure_core::Result<Self> {
+        if !json.range.is_min_inclusive || json.range.is_max_inclusive {
+            return Err(azure_core::Error::with_message(
+                ErrorKind::DataConversion,
+                "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
+            ));
+        }
+
+        let min = EffectivePartitionKey::from(json.range.min);
+        let max = EffectivePartitionKey::from(json.range.max);
+
+        if min > max {
+            return Err(azure_core::Error::with_message(
+                ErrorKind::DataConversion,
+                "feed range min must be less than or equal to max",
+            ));
+        }
+
+        Ok(Self {
+            min_inclusive: min,
+            max_exclusive: max,
+        })
+    }
+}
+
+impl TryFrom<&PartitionKeyRange> for FeedRange {
+    type Error = azure_core::Error;
+
+    /// Creates a `FeedRange` from a driver `PartitionKeyRange`.
+    ///
+    /// Partition key ranges from the service always use `[min, max)` semantics
+    /// (min inclusive, max exclusive). Returns an error if the range is inverted.
+    fn try_from(pkr: &PartitionKeyRange) -> Result<Self, Self::Error> {
+        if pkr.min_inclusive > pkr.max_exclusive {
+            return Err(azure_core::Error::with_message(
+                ErrorKind::DataConversion,
+                "partition key range min_inclusive must be <= max_exclusive",
+            ));
+        }
+
+        Ok(Self {
+            min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),
+            max_exclusive: EffectivePartitionKey::from(pkr.max_exclusive.as_str()),
+        })
+    }
+}
+
+impl fmt::Display for FeedRange {
+    /// Formats this feed range as a base64-encoded JSON string.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let json_str = serde_json::to_string(&self.to_json()).map_err(|_| fmt::Error)?;
+        let encoded = base64::engine::general_purpose::STANDARD.encode(json_str.as_bytes());
+        f.write_str(&encoded)
+    }
+}
+
+impl FromStr for FeedRange {
+    type Err = azure_core::Error;
+
+    /// Parses a feed range from a base64-encoded JSON string.
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let decoded_bytes = base64::engine::general_purpose::STANDARD
+            .decode(s)
+            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
+
+        let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes)
+            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
+
+        Self::from_json(json)
+    }
+}
+
+impl Serialize for FeedRange {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.to_json().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for FeedRange {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let json = FeedRangeJson::deserialize(deserializer)?;
+        Self::from_json(json).map_err(|e| serde::de::Error::custom(e.to_string()))
     }
 }
 
@@ -116,7 +261,6 @@ mod tests {
             EffectivePartitionKey::from("50"),
             EffectivePartitionKey::from("FF"),
         );
-        // Adjacent ranges (a's max == b's min) do NOT overlap because max is exclusive.
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
     }
@@ -133,5 +277,111 @@ mod tests {
         );
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
+    }
+
+    #[test]
+    fn can_merge_adjacent() {
+        let a = FeedRange::new(
+            EffectivePartitionKey::from("00"),
+            EffectivePartitionKey::from("50"),
+        );
+        let b = FeedRange::new(
+            EffectivePartitionKey::from("50"),
+            EffectivePartitionKey::from("FF"),
+        );
+
+        assert!(a.can_merge(&b));
+        assert!(b.can_merge(&a));
+    }
+
+    #[test]
+    fn merge_with_bounds() {
+        let a = FeedRange::new(
+            EffectivePartitionKey::from("00"),
+            EffectivePartitionKey::from("50"),
+        );
+        let b = FeedRange::new(
+            EffectivePartitionKey::from("30"),
+            EffectivePartitionKey::from("FF"),
+        );
+
+        let merged = a.merge_with(&b);
+        assert_eq!(merged.min_inclusive().as_str(), "00");
+        assert_eq!(merged.max_exclusive().as_str(), "FF");
+    }
+
+    #[test]
+    fn display_round_trip() {
+        let range = FeedRange::new(
+            EffectivePartitionKey::from("3FFFFFFFFFFF"),
+            EffectivePartitionKey::from("7FFFFFFFFFFF"),
+        );
+
+        let serialized = range.to_string();
+        let parsed: FeedRange = serialized.parse().unwrap();
+
+        assert_eq!(parsed, range);
+    }
+
+    #[test]
+    fn serde_json_round_trip() {
+        let range = FeedRange::new(
+            EffectivePartitionKey::from(""),
+            EffectivePartitionKey::from("FF"),
+        );
+
+        let json = serde_json::to_string(&range).unwrap();
+        let parsed: FeedRange = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed, range);
+    }
+
+    #[test]
+    fn try_from_partition_key_range() {
+        let pkr = PartitionKeyRange::new("0".to_string(), "".to_string(), "FF".to_string());
+        let feed_range = FeedRange::try_from(&pkr).unwrap();
+
+        assert_eq!(feed_range.min_inclusive().as_str(), "");
+        assert_eq!(feed_range.max_exclusive().as_str(), "FF");
+    }
+
+    #[test]
+    fn from_str_invalid_base64() {
+        assert!("not-valid-base64!!!".parse::<FeedRange>().is_err());
+    }
+
+    #[test]
+    fn from_str_invalid_json() {
+        let encoded = base64::engine::general_purpose::STANDARD.encode(b"not json");
+        assert!(encoded.parse::<FeedRange>().is_err());
+    }
+
+    #[test]
+    fn from_str_rejects_max_inclusive() {
+        let json = r#"{"Range":{"min":"","max":"FF","isMinInclusive":true,"isMaxInclusive":true}}"#;
+        let encoded = base64::engine::general_purpose::STANDARD.encode(json.as_bytes());
+        assert!(encoded.parse::<FeedRange>().is_err());
+    }
+
+    #[test]
+    fn serde_rejects_min_not_inclusive() {
+        let json =
+            r#"{"Range":{"min":"","max":"FF","isMinInclusive":false,"isMaxInclusive":false}}"#;
+        assert!(serde_json::from_str::<FeedRange>(json).is_err());
+    }
+
+    #[test]
+    fn from_str_rejects_inverted_range() {
+        let json =
+            r#"{"Range":{"min":"FF","max":"","isMinInclusive":true,"isMaxInclusive":false}}"#;
+        let encoded = base64::engine::general_purpose::STANDARD.encode(json.as_bytes());
+        assert!(encoded.parse::<FeedRange>().is_err());
+    }
+
+    #[test]
+    fn serde_rejects_inverted_range() {
+        let json =
+            r#"{"Range":{"min":"FF","max":"","isMinInclusive":true,"isMaxInclusive":false}}"#;
+        assert!(serde_json::from_str::<FeedRange>(json).is_err());
     }
 }

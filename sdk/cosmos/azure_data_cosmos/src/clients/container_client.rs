@@ -3,7 +3,6 @@
 
 use crate::{
     clients::{offers_client, ClientContext},
-    feed_range::FeedRange,
     models::{
         BatchResponse, ContainerProperties, ItemResponse, ResourceResponse, ThroughputProperties,
     },
@@ -12,14 +11,13 @@ use crate::{
         SessionToken,
     },
     transactional_batch::TransactionalBatch,
-    DeleteContainerOptions, FeedItemIterator, FeedPageIterator, ItemReadOptions, ItemWriteOptions,
+    DeleteContainerOptions, FeedItemIterator, FeedRange, ItemReadOptions, ItemWriteOptions,
     PartitionKey, Query, ReplaceContainerOptions, ThroughputOptions,
 };
 
 use super::ThroughputPoller;
 use azure_data_cosmos_driver::models::{
-    effective_partition_key::EffectivePartitionKey as DriverEpk, ContainerReference,
-    CosmosOperation, ItemReference, OperationTarget, PartitionKeyKind,
+    ContainerReference, CosmosOperation, ItemReference, OperationTarget, PartitionKeyKind,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use serde::{de::DeserializeOwned, Serialize};
@@ -712,7 +710,7 @@ impl ContainerClient {
     pub async fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
         query: impl Into<Query>,
-        partition_key: QueryTarget,
+        partition_key: impl Into<PartitionKey>,
         options: Option<QueryOptions>,
     ) -> azure_core::Result<FeedItemIterator<T>> {
         let options = options.unwrap_or_default();
@@ -852,10 +850,7 @@ impl ContainerClient {
             ));
         }
 
-        ranges
-            .iter()
-            .map(FeedRange::from_partition_key_range)
-            .collect()
+        ranges.iter().map(FeedRange::try_from).collect()
     }
 
     /// Returns the [`FeedRange`]s covering the given partition key.
@@ -937,15 +932,9 @@ impl ContainerClient {
                 ));
             }
 
-            ranges
-                .iter()
-                .map(FeedRange::from_partition_key_range)
-                .collect()
+            ranges.iter().map(FeedRange::try_from).collect()
         } else {
-            ranges
-                .iter()
-                .map(FeedRange::from_partition_key_range)
-                .collect()
+            ranges.iter().map(FeedRange::try_from).collect()
         }
     }
 
