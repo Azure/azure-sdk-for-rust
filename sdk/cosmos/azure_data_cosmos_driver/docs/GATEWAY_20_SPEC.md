@@ -14,7 +14,7 @@
 4. [Retry Behavior](#4-retry-behavior)
    - 4.1 [HTTP 449 (Retry-With)](#41-http-449-retry-with--dedicated-policy-separate-from-410gone)
    - 4.2 [HTTP 404/1002 (READ_SESSION_NOT_AVAILABLE)](#42-http-404-not-found-with-sub-status-1002-read_session_not_available)
-   - 4.3 [Connectivity-failure circuit breaker (G2 → G1 fallback)](#43-connectivity-failure-circuit-breaker-g2--g1-fallback)
+   - 4.3 [Fail-fast on Gateway 2.0 transport failures](#43-fail-fast-on-gateway-20-transport-failures)
 5. [Rust Implementation Plan](#5-rust-implementation-plan)
 6. [Open Questions](#6-open-questions)
 
@@ -152,7 +152,7 @@ These rules apply uniformly to V1 (HTTP) and V2 (RNTBD) — the retry policy ope
 
 Beyond 449 and 404/1002, Gateway 2.0 follows the timeout/408 handling defined in `TRANSPORT_PIPELINE_SPEC.md` — no Gateway-2.0-specific override is introduced.
 
-### 4.3 Connectivity-failure circuit breaker (G2 → G1 fallback)
+### 4.3 Fail-fast on Gateway 2.0 transport failures
 
 > **Status**: Design proposal — not yet implemented. Implementation is tracked as a follow-up to the Gateway 2.0 enablement work; this section reserves the design surface and the test plan so the implementation lands behaviorally consistent with the rest of the routing rules.
 
@@ -160,31 +160,51 @@ Beyond 449 and 404/1002, Gateway 2.0 follows the timeout/408 handling defined in
 
 Gateway 2.0 endpoints are advertised by the account on a different host (and may be advertised on a non-443 port — the test fixture in `routing_systems.rs` uses `:444`). Some enterprise networks block outbound TCP to non-443 ports, or block the Gateway 2.0 hostnames specifically. In those environments **every** Gateway 2.0 attempt from the client will fail at the transport layer (TCP refused, TCP timeout, TLS handshake failure, or HTTP/2 negotiation failure) while Gateway V1 on the *standard* gateway host:443 still works.
 
-Today the `endpoint_is_available()` check in `operation_pipeline.rs` skips a *single* G2 endpoint after we mark it `UnavailableReason::TransportError`, but the retry then immediately picks the *next* G2 endpoint. In a blanket-firewall scenario all G2 endpoints have the same outcome, so the operation exhausts its retry budget on G2 and fails — even though G1 would have succeeded immediately.
+Today the `endpoint_is_available()` check in `operation_pipeline.rs` skips a *single* G2 endpoint after we mark it `UnavailableReason::TransportError`, but the retry then immediately picks the *next* G2 endpoint. In a blanket-firewall scenario all G2 endpoints have the same outcome, so the operation exhausts its retry budget on G2 and fails — even though G1 would have succeeded immediately. Today the customer sees a generic transport error with no clear remediation.
 
-Java and .NET both choose **fail-fast** here: `ThinClientStoreModel` extends `RxGatewayStoreModel` and inherits the standard regional retry stack, with **no automatic G2 → G1 fallback**. (Confirmed by inspection of `Azure/azure-sdk-for-java/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/ThinClientStoreModel.java` and the equivalent paths in `Azure/azure-cosmos-dotnet-v3`.) The Rust SDK is in a position to do better because it controls the per-attempt transport selection in `resolve_endpoint`, but doing so requires explicit policy and explicit telemetry so customers and SREs can reason about why their client is on G1.
+Java and .NET both choose **fail-fast** here: `ThinClientStoreModel` extends `RxGatewayStoreModel` and inherits the standard regional retry stack, with **no automatic G2 → G1 fallback**. (Confirmed by inspection of `Azure/azure-sdk-for-java/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/ThinClientStoreModel.java` and the equivalent paths in `Azure/azure-cosmos-dotnet-v3`.)
 
 #### 4.3.2 Design space
 
-**Option A — Fail-fast (parity with Java/.NET).**
-Keep current behavior. A single attempt against an unreachable G2 endpoint fails, the endpoint is marked `TransportError`, the retry tries the next region's G2 endpoint, and the operation eventually fails with a transport error if all G2 regions are unreachable. The operator must then explicitly set `gateway20_disabled = true` to route through G1.
+**Option A — Fail-fast (recommended; parity with Java/.NET).**
+Keep the regional-retry behavior. A single attempt against an unreachable G2 endpoint fails, the endpoint is marked `TransportError`, the retry tries the next region's G2 endpoint, and the operation eventually fails with a transport error if all G2 regions are unreachable. The error and diagnostics surface a clear, actionable hint pointing the operator at `options.gateway20_disabled = true`. The operator must then explicitly opt out to route through G1.
 
-Pros: simple, matches Java/.NET semantics, no new state. Cons: customers in firewalled networks see a hard failure on every operation until they manually opt out, which breaks the "default on" rollout story for Gateway 2.0.
+Pros: simple, matches Java/.NET semantics, no new state, no concurrency contract, no probe semantics, no recovery logic. Customers behind firewalls get a single deterministic verdict and a one-line remediation.
 
-**Option B — Connectivity-failure circuit breaker (recommended).**
-Add a **client-scoped circuit breaker** that observes transport-layer failures across G2 endpoints and, after a trip threshold is met, suppresses Gateway 2.0 routing for subsequent operations on that client. This is functionally equivalent to flipping `gateway20_suppressed = true` at runtime, and deliberately *not* mutating the operator-controlled `options.gateway20_disabled` setting (which stays customer-owned).
+Cons: customers in firewalled networks see a hard failure on every operation until they manually opt out. We mitigate this with a discoverable error message and connection-pool documentation.
 
-The trip is **client-scoped** (not account-scoped, not global) so that two `CosmosClient` instances pointing at different accounts — or even the same account from a different network namespace — do not contaminate each other.
+**Option B — Connectivity-failure circuit breaker (alternative; not taken at this time).**
+Add a client-scoped circuit breaker that observes transport-layer failures across G2 endpoints and, after a trip threshold is met, suppresses Gateway 2.0 routing for subsequent operations on that client. Functionally equivalent to flipping `gateway20_suppressed = true` at runtime.
 
-#### 4.3.3 Recommended design (Option B)
+Reasons not taken in this iteration:
 
-##### Trip condition
+- **Latency surprise**: silently switching transport modes mid-workload changes the latency profile in ways the customer didn't ask for. Gateway 2.0 has different latency characteristics than Gateway V1; customers who are tuning their workload around G2 latency would experience a hidden regression they cannot attribute.
+- **G2 latency SLA**: the operational guarantees we publish for G2 are tied to G2 staying selected. Auto-degrading violates that contract for the affected client.
+- **Hidden state** can mask intermittent infrastructure issues that the customer needs to see and react to (firewall mis-configuration is exactly the kind of thing that should bubble up loudly).
+- **Java/.NET parity**: neither has auto-fallback. Diverging without strong evidence increases the support matrix and customer confusion when migrating SDKs.
+- **API-additive deferral**: Option B can be added later as a connection-pool option (e.g. `gateway20_auto_fallback: bool`) defaulting to `false`. The fail-fast contract does not foreclose that path.
 
-The breaker MUST trip only on signals that strongly correlate with a network/firewall block, not on signals that an outage at one G2 endpoint is producing. The classifier produces a closed enum (`TransportFailureClass`) that the breaker reads; downstream code MUST NOT pattern-match on `io::ErrorKind`, error strings, or `azure_core::Error` shapes:
+Option B is parked under §4.3.5 Q4a. Reopen only with telemetry from the live bake-in showing widespread firewall scenarios that the fail-fast hint does not mitigate.
+
+#### 4.3.3 Recommended design (Option A)
+
+##### Behavior summary
+
+1. Per-region retry within G2 follows the existing regional retry stack: `UnavailableReason::TransportError` marks the failed endpoint, and the next G2 endpoint is tried.
+2. When the operation has tried at least one G2 endpoint per region in `thinClientReadableLocations` and **every** observed transport failure is connectivity-class, the operation MUST fail with a single consolidated error that:
+   - Identifies the per-attempt `TransportFailureClass`.
+   - Lists the endpoints attempted.
+   - Includes the explicit guidance: "All Gateway 2.0 endpoints failed with connectivity-class errors. Set `options.gateway20_disabled = true` to disable Gateway 2.0 if your network blocks the Gateway 2.0 hostnames or ports."
+3. The error MUST NOT auto-fallback to Gateway V1. The operator picks the transport explicitly.
+4. Mixed-failure outcomes (some G2 attempts return HTTP responses, others fail at the transport layer) MUST NOT include the firewall hint — at least one path proved open and the firewall hypothesis is rejected.
+
+##### Trip signal classification
+
+We still need a structured classifier so the SDK can decide whether to attach the firewall hint. Use a closed `TransportFailureClass` enum produced at error-construction time in `cosmos_transport_client.rs` and `sharded_transport.rs` — not a late `is_connectivity_failure() -> bool` over an opaque error.
 
 ```text
 enum TransportFailureClass {
-    // counted as connectivity failures
+    // hint-eligible (network/firewall-class signals)
     DnsFailure,
     ConnectRefused,
     ConnectTimeout,
@@ -195,7 +215,7 @@ enum TransportFailureClass {
                               // structurally prove this; otherwise classify
                               // as `MidStreamFailure`
 
-    // explicitly NOT counted
+    // NOT hint-eligible
     HttpResponse,             // the proxy returned any HTTP response (200..599)
     PostSendTimeout,          // timeout fired after a request was on the wire
     MidStreamFailure,         // GOAWAY / stream reset / RST after at least one
@@ -206,133 +226,79 @@ enum TransportFailureClass {
 }
 ```
 
-The classifier MUST live where the error is constructed — `cosmos_transport_client.rs` and `sharded_transport.rs` — so it produces a structured value at the source. Adding a late `is_connectivity_failure(&self) -> bool` accessor over an opaque error is **not** acceptable; it forces string-matching on reqwest/hyper error chains and produces non-deterministic trip/no-trip behavior.
+The classifier MUST live where the error is constructed so it produces a structured value at the source. Adding a late `is_connectivity_failure(&self) -> bool` accessor over an opaque error is **not** acceptable; it forces string-matching on reqwest/hyper error chains and produces non-deterministic verdicts.
 
-Notes on edge cases the rubber-duck pass surfaced:
+Edge cases the rubber-duck pass surfaced:
 
 - **Timeout that fires during connect / TLS / HTTP/2 setup** counts as `ConnectTimeout` / `TlsHandshakeFailure` / `Http2NegotiationFailure` respectively (not `PostSendTimeout`). The transport layer MUST distinguish these by tracking which phase of the connection lifecycle it is in.
-- **`Connection reset by peer` before any response headers** counts as `PreResponseReset` ONLY when the transport can prove (e.g. via a per-connection state flag) that no response frame was observed; otherwise classify as `MidStreamFailure`. When in doubt, do NOT count.
-- **Mid-stream HTTP/2 reset / GOAWAY / stream reset after at least one response frame** is `MidStreamFailure` and does NOT count. The path is open by definition; the proxy is unhealthy.
-- **HTTP responses of any status** are `HttpResponse` and do NOT count. A G2 proxy returning 401/403/500/503/etc. proves the network is open.
+- **`Connection reset by peer` before any response headers** counts as `PreResponseReset` ONLY when the transport can prove (e.g. via a per-connection state flag) that no response frame was observed; otherwise classify as `MidStreamFailure`. When in doubt, do NOT classify as connectivity.
+- **Mid-stream HTTP/2 reset / GOAWAY / stream reset after at least one response frame** is `MidStreamFailure` and is NOT hint-eligible — the path is open by definition, the proxy is unhealthy.
+- **HTTP responses of any status** are `HttpResponse` and are NOT hint-eligible. A G2 proxy returning 401/403/500/503/etc. proves the network is open.
 
-##### Trip threshold
+##### Error contract: when to attach the firewall hint
 
-Two separate thresholds — one for multi-endpoint accounts, one for single-endpoint accounts — both expressed against a sliding window of `W` wall-clock seconds:
+The SDK MUST attach the "set `gateway20_disabled = true`" hint to the consolidated error if and only if **all** of the following hold:
 
-- **Multi-endpoint accounts** (`thinClientReadableLocations.len() >= 2`): trip when `N` distinct G2 endpoints (distinct host:port pairs) each raise `>= 1` connectivity failure within `W`. Recommended initial `N = 2`, `W = 60s`. The threshold MUST NOT scale up for accounts with more endpoints — `N = 2` already proves network-scoped trouble; larger `N` only delays escape from the firewall scenario.
-- **Single-endpoint accounts** (`thinClientReadableLocations.len() == 1`): trip when the sole endpoint raises `>= 2` connectivity failures within `W`. Two failures on the same endpoint are required to defend against false trips from a single transient timeout. Recommended `W = 60s` (same window).
+1. The operation routed through G2 (was G2-eligible per `is_operation_supported_by_gateway20()` and the account advertises G2 endpoints).
+2. The operation tried at least one G2 endpoint per region in `thinClientReadableLocations` (i.e. exhausted regional retry).
+3. **Every** observed `TransportFailureClass` in the per-attempt diagnostics is hint-eligible (one of `DnsFailure`, `ConnectRefused`, `ConnectTimeout`, `TlsHandshakeFailure`, `Http2NegotiationFailure`, `PreResponseReset`).
+4. **No** attempt observed a non-hint-eligible class (`HttpResponse`, `PostSendTimeout`, `MidStreamFailure`, `AuthFailure`, `DecodeError`, `OperationCancelled`).
 
-The implementation MUST expose `N`, `W`, and `C` as `pub(crate) const` so they can be tuned in one place. Tuning during the live-test bake-in is tracked under §4.3.5 Q4b.
-
-##### Trip action and operation-scope contract
-
-The breaker affects **subsequent logical operations**, not the current in-flight operation. Per §3, transport mode is decided once per logical operation in `resolve_endpoint`, attached to `OperationContext`, and inherited by all retries of that operation. The breaker preserves this contract by being read **only at operation start** (when `RoutingDecision` is computed for the first attempt). Mid-operation retries do NOT re-read breaker state.
-
-This means: an operation that is already executing on G2 may observe `N` connectivity failures across its own retries and trip the breaker, but it WILL continue retrying on G2 until its own retry budget is exhausted. Only the *next* logical operation (and all later ones) sees the open breaker and routes via G1.
-
-When the threshold is hit, the breaker:
-
-1. Atomically transitions a per-client `breaker_state: Arc<AtomicBreakerState>` from `Closed` to `Open { tripped_at: Instant, opens_again_at: Instant }`. Concurrent failures that all observe `Closed` MUST result in exactly one `Closed → Open` transition (use compare-and-swap or an internal mutex; document which in the implementation).
-2. Causes `resolve_endpoint` to compute `use_gateway20 = false` at operation start when `breaker_state.is_open()`. Implementation: `RoutingDecision::transport_mode = TransportMode::Gateway` is forced, and the suppression reason is recorded in diagnostics (see "Diagnostics requirements").
-3. Emits exactly **one** `WARN`-level log line at trip time with: client id, observed endpoints, the underlying `TransportFailureClass` of the most-recent failure per endpoint, and `opens_again_at`. Subsequent operations during the open window MUST NOT emit per-operation warnings (otherwise a busy client floods the log).
-
-The breaker MUST NOT mutate `options.gateway20_disabled`. The setting remains the only operator-visible control; the breaker is an internal runtime override that decays.
-
-##### Concurrency model
-
-`AtomicBreakerState` MUST be safe for concurrent reads from many operation pipelines and concurrent failure observations from many transport callbacks. The implementation MUST guarantee:
-
-- Exactly one `Closed → Open` transition per trip event (concurrent failures past the threshold do not produce duplicate warn-log lines or duplicate `tripped_at` timestamps).
-- Exactly one `Open → HalfOpen` transition per cooldown elapse (concurrent operations arriving after `opens_again_at` do not all become probes; only the first one wins the probe slot via CAS).
-- Exactly one `HalfOpen → Closed` or `HalfOpen → Open` transition per probe outcome (the probe's terminal status drives a single state mutation; in-flight operations that observed `HalfOpen` between probe-start and probe-end route via `Gateway` and do NOT race the probe's resolution).
-
-Recommended primitive: `Arc<RwLock<BreakerStateInner>>` for state, plus an `AtomicU64` "probe-in-flight" sentinel for the single-probe reservation. Either lock-based or fully lock-free is acceptable; the spec mandates the *behavior*, not the primitive.
+If any single attempt observed a non-hint-eligible class, the consolidated error uses standard messaging — the firewall hypothesis is rejected.
 
 ##### Avoiding cross-contamination of the G1 endpoint cache
 
-The current `mark_endpoint_unavailable()` in `driver/routing/routing_systems.rs:169` and the `endpoint_is_available()` check in `driver/pipeline/operation_pipeline.rs:425` both key the unavailable-endpoints map by `endpoint.url()` — which today returns the **same** per-region URL regardless of whether the request used the G1 or G2 transport. As a result, a G2 transport failure on `westus2` would mark `westus2`'s G1 URL unavailable too, and after the breaker opens the forced-G1 routing would skip the healthy same-region G1 endpoint and fail over cross-region unnecessarily.
+The current `mark_endpoint_unavailable()` in `driver/routing/routing_systems.rs:169` and the `endpoint_is_available()` check in `driver/pipeline/operation_pipeline.rs:425` both key the unavailable-endpoints map by `endpoint.url()` — which today returns the **same** per-region URL regardless of whether the request used the G1 or G2 transport. As a result, a G2 transport failure on `westus2` would mark `westus2`'s G1 URL unavailable too. After the operator opts out via `gateway20_disabled = true` (the action this spec asks them to take), the next G1 operation would skip the healthy same-region G1 endpoint and fail over cross-region unnecessarily.
 
-The breaker change MUST address this in one of two ways:
+The fail-fast change MUST address this in one of two ways:
 
-1. **Preferred**: extend the unavailable-endpoints cache key from `endpoint.url()` to `(endpoint.url(), TransportMode)`, so G2 transport failures only suppress G2 selection on that endpoint and leave G1 selection on the same endpoint unaffected. This also helps non-breaker scenarios — a G2 outage at one endpoint should not block G1 traffic to the same region.
-2. **Fallback**: if (1) is too invasive for the breaker change, route G2 transport failures into a separate `unavailable_endpoints_g2` map, and have the breaker read from it. The `unavailable_endpoints` map then sees G1-only failures and is read-by G1 routing only.
+1. **Preferred**: extend the unavailable-endpoints cache key from `endpoint.url()` to `(endpoint.url(), TransportMode)`, so G2 transport failures only suppress G2 selection on that endpoint and leave G1 selection on the same endpoint unaffected. This also helps non-firewall scenarios — a G2 outage at one endpoint should not block G1 traffic to the same region.
+2. **Fallback**: route G2 transport failures into a separate `unavailable_endpoints_g2` map; the existing `unavailable_endpoints` map then sees G1-only failures and is read by G1 routing only.
 
-This is a real bug in the current code (independent of the breaker), surfaced by the breaker design but worth fixing on its own merits.
-
-##### Recovery
-
-After cooldown `C` (initial recommendation: `C = 5 * 60` seconds, i.e. 5 minutes), the breaker transitions `Open → HalfOpen` on the next operation that observes the elapsed cooldown. In `HalfOpen` state, exactly one operation is permitted to use Gateway 2.0 as a probe:
-
-- The probe slot is consumed only by an operation that **would otherwise have routed via G2** (i.e. its `endpoint.uses_gateway20(prefer_gateway20)` returns `true` AND the operation is G2-eligible per `is_operation_supported_by_gateway20()`). Operations that are G2-ineligible (e.g. unsupported resource types) do NOT consume the probe slot; they continue routing via G1 as they normally would, and the breaker stays in `HalfOpen` waiting for an eligible operation.
-- **Probe succeeds** (the request reaches the G2 proxy and returns any HTTP response, including 4xx/5xx — the path is open by definition): breaker transitions `HalfOpen → Closed`. Routing returns to normal G2 selection.
-- **Probe fails with a connectivity-failure signal** (`TransportFailureClass` ∈ {`DnsFailure`, `ConnectRefused`, `ConnectTimeout`, `TlsHandshakeFailure`, `Http2NegotiationFailure`, `PreResponseReset`}): breaker transitions `HalfOpen → Open` again with a fresh `opens_again_at = Instant::now() + C`. Connectivity failure during the probe restarts the cooldown; it does not need to re-meet the trip threshold.
-- **Probe fails for any other reason** (HTTP error, auth failure, RNTBD decode error, mid-stream reset, post-send timeout, cancellation): breaker transitions `HalfOpen → Closed`. The probe proved that the network path is open; the failure is unrelated to the firewall hypothesis. Note: this is intentional even for HTTP 401 / auth failures isolated to G2 — operationally those are recoverable HTTP errors, not network blocks. (If we later observe customers in this scenario, we can revisit; the conservative call today is "if bytes flowed, the firewall hypothesis is dead".)
-
-The probe MUST be the user's next eligible operation, **not** a background ping. Background probing requires us to construct a synthetic request that the G2 proxy will accept, which is fragile to wire-protocol changes; piggy-backing on a real operation has none of those concerns. The tradeoff: an idle client whose firewall has been removed will stay on G1 indefinitely until it issues another operation. This is acceptable — an idle client is not paying any latency cost.
-
-##### Per-operation override (escape hatch)
-
-Customers running diagnostic / health-check operations who want to force a G2 attempt even while the breaker is open SHOULD be able to opt in per-operation. *Not* via a public option: if customers reach for this routinely, the breaker is mistuned and we should fix the breaker. Provide it only as a `pub(crate)` flag on `OperationContext` for use by internal diagnostic surfaces (e.g. the `azure_data_cosmos_driver::testing` shim, or a future SDK-level health-check API). Opening this up later is API-additive; locking it down later is not.
+This is a real bug in the current code (independent of the fail-fast decision), surfaced by this design but worth fixing on its own merits — and required for the operator's `gateway20_disabled = true` opt-out to actually recover affected per-region G1 endpoints.
 
 ##### Diagnostics requirements
 
-Every retry attempt MUST surface, in the existing diagnostics envelope, both the breaker state and an explicit suppression-reason enum at the time the attempt was scheduled. Concretely:
+Every retry attempt MUST surface in the diagnostics envelope:
 
-- Add a `gateway20_decision_reason` field (closed enum) to the per-attempt diagnostics struct (`AttemptDiagnostics` in `diagnostics/mod.rs`):
+- A `gateway20_decision_reason` field (closed enum) recording why this attempt did or did not route via G2:
 
   ```text
   enum Gateway20DecisionReason {
       Eligible,                  // request routed via G2
       OperatorDisabled,          // options.gateway20_disabled = true
-      BreakerOpen,               // connectivity-failure breaker is open
       NoGateway20Endpoints,      // account does not advertise G2 endpoints
       OperationIneligible,       // is_operation_supported_by_gateway20() = false
   }
   ```
 
-  These are the four reasons G2 may be skipped plus the "selected G2" verdict; they are mutually exclusive and exhaustive at the routing decision point. Customer support MUST be able to look at a single attempt's diagnostics and know which one applied.
-- Add a `breaker: Option<BreakerSnapshot>` field, where `BreakerSnapshot { state: "closed" | "open" | "half_open", tripped_at: Option<DateTime>, opens_again_at: Option<DateTime>, recent_failures: u32, recent_failure_classes: Vec<TransportFailureClass> }`. `recent_failure_classes` is the per-endpoint most-recent classification (capped at e.g. 8 entries) so an operator can verify "yes, all observed failures were `ConnectRefused`" without raw error strings.
-- The first attempt that observes `state == "open"` MUST also include the underlying `TransportFailureClass` and a one-line error message per offending endpoint, so a customer support ticket can copy-paste a single diagnostics blob and reach a verdict on "is this a firewall problem?".
+  These four cases are mutually exclusive and exhaustive at the routing decision point. Customer support MUST be able to look at a single attempt's diagnostics and know which one applied.
 
-##### Interaction with operator override
+- For attempts that produced a transport error: the `TransportFailureClass` of the error.
 
-If `options.gateway20_disabled = true`, the breaker is **inert** (it never observes any G2 attempts because none are scheduled). It does not need to be disabled explicitly; this falls out of the implementation.
-
-If `options.gateway20_disabled = false` (the default), the breaker is active and may flip the effective routing to G1 as described above.
-
-##### Out of scope (deliberately)
-
-- **Cross-process sharing.** Each `CosmosClient` instance has its own breaker. We do not persist breaker state to disk or to a shared cache.
-- **Per-region breakers.** A single client-scoped breaker is enough for the firewall use case (firewalls are network-scoped, not region-scoped). Per-region tracking is what `unavailable_endpoints` already does at the endpoint level.
-- **Auto-disable across the operator override.** If the operator sets `gateway20_disabled = true`, we never try G2 again until they flip it back. The breaker has no opinion on that.
+The consolidated operation error MUST cite the per-attempt diagnostics so the firewall hypothesis can be verified from a single trace blob.
 
 #### 4.3.4 Test plan
 
-The following tests are non-negotiable for the breaker to land. They MUST be added in the same change that adds the breaker, not in a follow-up.
+The following tests are non-negotiable for the fail-fast contract to land. They MUST be added in the same change that adds the `TransportFailureClass` classifier and the firewall-hint contract.
 
 ##### Unit tests — driver crate (`tests/gateway20_pipeline_tests.rs` or a sibling)
 
-Each test exercises the breaker's state machine in isolation, using synthetic `TransportError` values fed through the classifier. None of these require a live network or a fault-injection proxy.
-
 | # | Scenario | Expected result |
 | --- | --- | --- |
-| U1 | Single connectivity failure on one G2 endpoint, breaker stays `Closed`. | `RoutingDecision.transport_mode == Gateway20` for the next operation. |
-| U2 | `N = 2` connectivity failures on the same endpoint within `W` (multi-endpoint account), breaker stays `Closed`. | `Gateway20` selected. (Trip requires *distinct* endpoints, not repeated failures of one.) |
-| U3 | `N = 2` connectivity failures on two distinct endpoints within `W`, breaker trips to `Open`. | Next op routes via `Gateway`; diagnostics report `gateway20_decision_reason = BreakerOpen`. |
-| U4 | `Open` → `HalfOpen` after `C` elapses; next G2-eligible op routes via `Gateway20` as the probe. | Probe is scheduled on G2; subsequent ops (before probe completes) still route via `Gateway`. |
-| U5 | `HalfOpen` probe receives HTTP 500 from G2 proxy. | Breaker → `Closed`; subsequent ops route via `Gateway20`. (Server error is not a connectivity failure.) |
-| U6 | `HalfOpen` probe fails with `ConnectRefused`. | Breaker → `Open`, `opens_again_at = Now + C`; cooldown restarts. |
-| U7 | Single-endpoint account; **one** connectivity failure on the sole endpoint. | Breaker stays `Closed`. Per the refined single-endpoint threshold, two failures within `W` are required. |
-| U8 | Single-endpoint account; **two** connectivity failures on the sole endpoint within `W`. | Breaker → `Open`. |
-| U9 | `options.gateway20_disabled = true`; synthetic connectivity failures fed to the breaker. | Breaker remains `Closed` (no G2 attempts are scheduled to observe). Diagnostics report `gateway20_decision_reason = OperatorDisabled`. |
-| U10 | Non-connectivity errors only (`HttpResponse`, `AuthFailure`, `DecodeError`, `MidStreamFailure`, `PostSendTimeout`, `OperationCancelled`). | Breaker stays `Closed`; `recent_failures` does not increment regardless of count. |
-| U11 | Sliding-window expiry: fail endpoint A; advance clock by `> W`; fail endpoint B. | Breaker stays `Closed` — the A failure aged out before B was observed. |
-| U12 | Concurrent observations: fan out 100 simultaneous failure observations across `N` endpoints from many tasks. | Exactly one `Closed → Open` transition; exactly one warn-log line; `tripped_at` is set exactly once. |
-| U13 | Concurrent probe selection: cooldown elapses; 100 simultaneous operations arrive. | Exactly one operation routes via G2 (the probe); the other 99 route via `Gateway`. |
-| U14 | Topology refresh: account previously advertised endpoints {A, B}; both fail and breaker trips; account refresh shrinks topology to {A}. | Breaker stays `Open` until cooldown — the prior trip is not invalidated by topology changes. (Documents intentional behavior; alternative is debatable but inverting it requires evidence.) |
-| U15 | G2-ineligible operations during `HalfOpen` do not consume the probe. | An ineligible op observes `HalfOpen`, routes via `Gateway` per its own ineligibility, and the breaker remains in `HalfOpen` for the next eligible op. |
-| U16 | Mid-operation breaker behavior: an in-flight operation on G2 observes `N` connectivity failures across its own retries and trips the breaker. | The current operation continues retrying on G2 until its retry budget is exhausted; only the *next* operation sees `BreakerOpen` and routes via G1. |
-| U17 | Per-`TransportFailureClass` classifier coverage (one test per variant). | `DnsFailure`, `ConnectRefused`, `ConnectTimeout`, `TlsHandshakeFailure`, `Http2NegotiationFailure`, `PreResponseReset` increment `recent_failures`; `HttpResponse`, `PostSendTimeout`, `MidStreamFailure`, `AuthFailure`, `DecodeError`, `OperationCancelled` do not. |
+| U1 | `TransportFailureClass` classifier per-variant coverage. | Each `io::Error` / `reqwest::Error` shape produces the correct closed-enum variant at construction time. |
+| U2 | Single connectivity failure on one G2 endpoint, account has multiple regions. | Operation succeeds via the next region's G2 endpoint (existing regional retry); no firewall hint surfaced. |
+| U3 | All G2 endpoints fail with `ConnectRefused`. | Operation fails with consolidated transport error; firewall hint included; per-attempt diagnostics list every endpoint attempted. |
+| U4 | All G2 endpoints fail with mixed connectivity classes (`DnsFailure` + `TlsHandshakeFailure`). | Operation fails with consolidated transport error; firewall hint included (all classes are hint-eligible). |
+| U5 | All G2 endpoints fail with HTTP 503 (`HttpResponse`). | Operation fails per existing 503-exhausted policy; **no** firewall hint (the path was open). |
+| U6 | Mixed: westus2 G2 fails with `ConnectRefused`, westus3 G2 returns HTTP 503. | Operation fails per existing 503 policy; **no** firewall hint (the proof of an open path on westus3 rejects the firewall hypothesis). |
+| U7 | All G2 endpoints fail with `MidStreamFailure` (GOAWAY mid-response). | Operation fails per existing transport-error policy; **no** firewall hint (mid-stream proves the path was open). |
+| U8 | All G2 endpoints fail with `PostSendTimeout`. | Operation fails per existing timeout policy; **no** firewall hint (request reached the wire). |
+| U9 | `options.gateway20_disabled = true`. | No G2 attempts are scheduled; operation routes via G1 from the start; diagnostics report `gateway20_decision_reason = OperatorDisabled`. |
+| U10 | G2-ineligible operation type, account advertises G2 endpoints. | Operation routes via G1; diagnostics report `gateway20_decision_reason = OperationIneligible`; no firewall hint regardless of G1 outcome. |
+| U11 | Account does not advertise G2 endpoints. | Operation routes via G1; diagnostics report `gateway20_decision_reason = NoGateway20Endpoints`; no firewall hint. |
+| U12 | After a G2 transport failure on westus2, the operator sets `gateway20_disabled = true` and issues a G1 operation against westus2. | G1 operation routes to westus2 successfully — proves G2 transport failures do not poison the G1 unavailable-endpoint cache (validates the cache-isolation fix). |
+| U13 | Single-endpoint account; sole G2 endpoint fails with `ConnectRefused`. | Operation fails with consolidated transport error; firewall hint included (single connectivity failure is sufficient when there is only one region to try). |
 
 ##### Fault-injection tests — emulator (`tests/emulator_tests/cosmos_fault_injection.rs`)
 
@@ -340,15 +306,13 @@ Inject the listed failures via the existing fault-injection rules (extended in P
 
 | # | Injected fault | Expected result |
 | --- | --- | --- |
-| F1 | Inject `connect_refused` on every G2 endpoint, enough times to meet the trip threshold. | First operations fail with G2 transport error; the operation issued after the trip succeeds via G1; diagnostics on the post-trip attempt show `gateway20_decision_reason = BreakerOpen` and `breaker.state = "open"`. |
-| F2 | Inject TLS handshake failure on every G2 endpoint. | Same as F1; classifier MUST produce `TlsHandshakeFailure`. |
-| F3 | Inject HTTP/2 negotiation failure (server returns HTTP/1.x bytes). | Same as F1; classifier MUST produce `Http2NegotiationFailure`. |
-| F4 | Inject HTTP 503 (server-side, not transport-side) on every G2 endpoint. | Operations retry per existing 503 policy and may eventually fail; breaker MUST stay `Closed` (the network is fine); diagnostics show `gateway20_decision_reason = Eligible`. |
-| F5 | Inject `connect_refused` on G2; after `C` elapses, stop injecting. | Probe operation succeeds via G2; subsequent operations route via G2; diagnostics show breaker recovered to `Closed`. |
-| F6 | Inject `connect_refused` on G2 *and* `service_unavailable` on G1. | Operations fail (no transport works); breaker is `Open`; diagnostics make both failure causes legible. |
-| F7 | Inject `connect_refused` on G2 westus2 only; verify subsequent G1 routing to westus2 succeeds (does not cross-region failover). | Once the breaker is open, a G1-routed op against westus2 MUST succeed — proving G2 transport failures did not poison the G1 unavailable-endpoint cache. |
-| F8 | Trip the breaker, then refresh the account metadata mid-cooldown to add/remove G2 endpoints. | Breaker stays `Open` until cooldown regardless of topology changes; once cooldown elapses, the probe runs against the current topology (not the trip-time topology). |
-| F9 | Trip the breaker while regional failover state is already active for an unrelated reason. | Breaker-forced G1 routing respects the existing regional failover decision (does not undo it); diagnostics surface both states. |
+| F1 | Inject `connect_refused` on every G2 endpoint. | Operation fails with consolidated transport error; firewall hint present in error message; diagnostics show per-attempt `TransportFailureClass = ConnectRefused`. |
+| F2 | Inject TLS handshake failure on every G2 endpoint. | Same as F1; classifier produces `TlsHandshakeFailure`; firewall hint present. |
+| F3 | Inject HTTP/2 negotiation failure (server returns HTTP/1.x bytes) on every G2 endpoint. | Same as F1; classifier produces `Http2NegotiationFailure`; firewall hint present. |
+| F4 | Inject HTTP 503 on every G2 endpoint. | Operation fails with standard 503-exhausted error; **no** firewall hint; diagnostics show `TransportFailureClass = HttpResponse`. |
+| F5 | Inject `connect_refused` on G2 westus2 only (account has multiple regions). | Operation succeeds via G2 westus3 (existing regional retry); no firewall hint. |
+| F6 | Inject `connect_refused` on G2 westus2 + HTTP 503 on G2 westus3. | Operation fails with standard 503-exhausted error; **no** firewall hint (mixed outcomes reject the firewall hypothesis). |
+| F7 | After F1 fails, set `options.gateway20_disabled = true` on the same client and retry the workload. | Operations succeed via G1 against the same per-region URLs that were marked unavailable for G2 — validates the cache-isolation fix end-to-end. |
 
 ##### Live tests — Gateway 2.0 live pipeline (`tests/emulator_tests/gateway20_e2e.rs`)
 
@@ -356,16 +320,16 @@ The live job already authenticates against a dedicated Gateway 2.0-enabled accou
 
 | # | Scenario | Expected result |
 | --- | --- | --- |
-| L1 | Normal operation against the Gateway 2.0 account. | Diagnostics show `gateway20_decision_reason = Eligible`, `breaker.state = "closed"`. |
-| L2 | Set `options.gateway20_disabled = true`, run the same workload. | Diagnostics show `gateway20_decision_reason = OperatorDisabled`, breaker remains inert (`recent_failures = 0`). |
+| L1 | Normal operation against the Gateway 2.0 account. | Diagnostics show `gateway20_decision_reason = Eligible`. |
+| L2 | Set `options.gateway20_disabled = true`, run the same workload. | Diagnostics show `gateway20_decision_reason = OperatorDisabled`. |
 
-A "firewall in CI" test (force outbound block to G2 hostnames) is **not** added to the standard live job because it requires container-network manipulation that the SDK live pipeline is not currently set up to perform. Java has the same gap (its `Http2ConnectionLifecycleTests` is in the explicitly-excluded `manual-thinclient-network-delay` group). Track as a separate manual test ticket; do not block the breaker landing on it.
+A "firewall in CI" test (force outbound block to G2 hostnames) is **not** added to the standard live job because it requires container-network manipulation that the SDK live pipeline is not currently set up to perform. Java has the same gap (its `Http2ConnectionLifecycleTests` lives in the explicitly-excluded `manual-thinclient-network-delay` group). Track as a separate manual test ticket; the fault-injection coverage above demonstrates the contract.
 
 #### 4.3.5 Open sub-questions for this section
 
-- **Q4a** — Should the breaker fire the first probe **automatically** in the background after `C` instead of waiting for the next user op? (Decision: no, as argued above. Captured here in case the team revisits.)
-- **Q4b** — Should the trip threshold `N` and window `W` be tunable via env var? (Default position: no — these are SDK-level safety parameters and customers should not tune them in production. Re-open if the live bake-in shows the defaults are wrong for a specific account topology.)
-- **Q4c** — Should the breaker be allowed to *escalate* (e.g. mark the entire account as G2-incompatible in the account-cache so a fresh client picks it up)? (Decision: no, scope creep. Each client makes its own observation.)
+- **Q4a — Revisit Option B (auto-fallback)?** Default position: only with telemetry from the live bake-in showing widespread firewall trouble that the fail-fast hint does not mitigate. Option B is API-additive — it can ship later as a connection-pool option (e.g. `gateway20_auto_fallback: bool`) defaulting to `false` so existing fail-fast semantics remain the default.
+- **Q4b — Should the firewall hint mention the specific port (`:444`)?** Default position: no — the test fixture uses `:444` but production may use a different port; the hint stays abstract ("Gateway 2.0 hostnames or ports") and the per-attempt diagnostics carry the exact endpoint URLs.
+- **Q4c — Should `gateway20_disabled` accept a structured reason for diagnostic logging instead of a `bool`?** Default position: no, scope creep. Operator-set settings are settings, not telemetry. If we want to record _why_ the operator opted out, that belongs in customer-side logs.
 
 ---
 
@@ -846,4 +810,4 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 - **Q1 — HTTP/2 prior knowledge vs ALPN**: _Resolved_. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails and the existing retry policies handle it.
 - **Q2 — Live test account provisioning**: Cosmos DB account configuration flags required to enable Gateway 2.0 endpoints are not part of the standard Bicep templates. _Resolution_: hardcode a dedicated, pre-provisioned Gateway 2.0 account for the gateway 2.0 live tests pipeline and reuse it across runs (rather than provisioning per-run via Bicep). Account name and credentials stored in pipeline secrets (`AZURE_COSMOS_GW20_ENDPOINT`, `AZURE_COSMOS_GW20_KEY`); pipeline reads endpoint from environment variables.
 - **Q3 — EPK range header names**: _Resolved_. The Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. Phase 2 introduces new constants (`GATEWAY20_RANGE_MIN`, `GATEWAY20_RANGE_MAX`) on the Gateway 2.0 path; the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
-- **Q4 — Connectivity-failure G2 → G1 fallback**: _Specified, not yet implemented_. See §4.3 for the full design and test plan. The breaker is **not** part of the initial Gateway 2.0 enablement; it is a follow-up that must land before we can claim "Gateway 2.0 default-on is safe for customers behind firewalls". Open sub-questions for tuning live in §4.3.5.
+- **Q4 — Connectivity-failure handling (G2 → G1)**: _Specified, not yet implemented_. See §4.3 for the full design and test plan. Recommendation is **fail-fast** (parity with Java/.NET): when all G2 endpoints fail with connectivity-class errors, surface a consolidated error pointing the operator at `options.gateway20_disabled = true`. Auto-fallback (a client-scoped circuit breaker) is parked under §4.3.5 Q4a as a future API-additive option that ships only with telemetry justifying it. The fail-fast contract — and the structured `TransportFailureClass` classifier and the G1/G2 endpoint-cache isolation it depends on — must land before we can claim "Gateway 2.0 default-on is safe for customers behind firewalls".
