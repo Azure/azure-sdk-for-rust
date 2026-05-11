@@ -12,7 +12,6 @@ mod throughput_poller;
 
 use std::sync::Arc;
 
-use crate::pipeline::GatewayPipeline;
 use azure_data_cosmos_driver::CosmosDriver;
 
 /// Shared infrastructure threaded from [`CosmosClient`](super::CosmosClient)
@@ -23,7 +22,6 @@ use azure_data_cosmos_driver::CosmosDriver;
 /// constructor in the client hierarchy.
 #[derive(Clone, Debug)]
 pub(crate) struct ClientContext {
-    pub(crate) pipeline: Arc<GatewayPipeline>,
     pub(crate) driver: Arc<CosmosDriver>,
 }
 

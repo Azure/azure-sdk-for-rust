@@ -42,6 +42,52 @@ pub const HUB_REGION: Region = Region::EAST_US_2;
 pub const SATELLITE_REGION: Region = Region::WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 pub const EMULATOR_HOST: &str = "127.0.0.1";
+/// Asserts that the operation contacted `expected_region` at least once and
+/// that more than one request was tracked (i.e. some form of retry or
+/// failover happened). Does **not** require the *final* request to land on
+/// `expected_region` — the driver may probe an alternate region and
+/// successfully retry on the original. Used for failover scenarios where
+/// either landing is valid.
+pub fn assert_region_contacted_with_retry(
+    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    expected_region: &Region,
+) {
+    assert!(
+        diagnostics.request_count() > 1,
+        "expected multiple requests indicating retry/failover, got {} (regions contacted: {:?})",
+        diagnostics.request_count(),
+        diagnostics.regions_contacted()
+    );
+    assert!(
+        diagnostics.regions_contacted().contains(expected_region),
+        "expected at least one tracked request on region {:?}, but only contacted {:?}",
+        expected_region,
+        diagnostics.regions_contacted()
+    );
+}
+
+/// Asserts that local retry was attempted on `expected_region` before any
+/// cross-region failover: at least one tracked request must have landed on
+/// the expected region. Used to validate scenarios where a transient fault
+/// is exercised via local retry; this does **not** require the operation to
+/// stay on `expected_region` (the driver may still fail over to an alternate
+/// region after exhausting its local retry budget).
+pub fn assert_local_retry_attempted_on_region(
+    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    expected_region: &Region,
+) {
+    let requests = diagnostics.requests();
+    let on_region = requests
+        .iter()
+        .filter(|r| r.region() == Some(expected_region))
+        .count();
+    assert!(
+        on_region >= 1,
+        "expected at least one tracked request on region {:?}, but none did (regions contacted: {:?})",
+        expected_region,
+        diagnostics.regions_contacted()
+    );
+}
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);

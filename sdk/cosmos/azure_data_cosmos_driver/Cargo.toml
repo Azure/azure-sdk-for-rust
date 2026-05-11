@@ -78,6 +78,8 @@ native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = ["dep:rand"]
 __internal_in_memory_emulator = ["dep:tokio", "dep:time", "dep:percent-encoding"]
 __internal_mocking = []
+# Enables test-only DiagnosticsContext construction used by SDK unit tests. NOT a stable API.
+__internal_test_diagnostics_construction = []
 __tls = []
 
 [package.metadata.docs.rs]
