@@ -247,6 +247,19 @@ fn parse_array_index(
             token: token.to_string(),
             path: full_path.to_string(),
         })?;
+    // F14: when `allow_append=false` (Set / Replace on a numeric index), the
+    // array must contain that index. `len.saturating_sub(1)` is `0` for an
+    // empty array, which would let `idx=0` slip through and cause the caller's
+    // `arr[idx] = v` to panic with "index out of bounds". Reject empty arrays
+    // up front so the typed `ArrayIndexOutOfRange` surfaces instead of a
+    // panic.
+    if !allow_append && len == 0 {
+        return Err(PatchEvalError::ArrayIndexOutOfRange {
+            index: idx,
+            len,
+            path: full_path.to_string(),
+        });
+    }
     let upper = if allow_append {
         len
     } else {
@@ -749,5 +762,64 @@ mod tests {
         )
         .unwrap();
         assert_eq!(out["n"], json!(6));
+    }
+
+    #[test]
+    fn set_on_empty_array_index_zero_errors_not_panics() {
+        // F14: `Set('/xs/0', v)` against `{xs: []}` would previously slip
+        // through `parse_array_index` (because `len.saturating_sub(1) = 0`
+        // when `len == 0`) and panic at `arr[0] = v`. The empty-array guard
+        // must convert this into a typed `ArrayIndexOutOfRange`.
+        let doc = json!({"xs": []});
+        let err = apply(doc, &[PatchOp::set("/xs/0", json!("v"))]).unwrap_err();
+        assert!(
+            matches!(
+                err,
+                PatchEvalError::ArrayIndexOutOfRange {
+                    index: 0,
+                    len: 0,
+                    ..
+                }
+            ),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn replace_on_empty_array_index_zero_errors_not_panics() {
+        // F14: same shape as the Set case but on the pre-existing Replace
+        // branch (`arr[idx] = v` at the bottom of `replace`).
+        let doc = json!({"xs": []});
+        let err = apply(doc, &[PatchOp::replace("/xs/0", json!("v"))]).unwrap_err();
+        assert!(
+            matches!(
+                err,
+                PatchEvalError::ArrayIndexOutOfRange {
+                    index: 0,
+                    len: 0,
+                    ..
+                }
+            ),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn add_on_empty_array_index_zero_succeeds() {
+        // F14 regression guard: the empty-array fix only applies when
+        // `allow_append=false`. `Add('/xs/0', v)` on `{xs: []}` is an insert
+        // at index 0 on an empty array (equivalent to push), which RFC 6902
+        // permits and which `allow_append=true` correctly handles.
+        let doc = json!({"xs": []});
+        let out = apply(doc, &[PatchOp::add("/xs/0", json!("v"))]).unwrap();
+        assert_eq!(out, json!({"xs": ["v"]}));
+    }
+
+    #[test]
+    fn add_on_empty_array_with_dash_succeeds() {
+        // F14 regression guard: `-` (append) on an empty array still works.
+        let doc = json!({"xs": []});
+        let out = apply(doc, &[PatchOp::add("/xs/-", json!("v"))]).unwrap();
+        assert_eq!(out, json!({"xs": ["v"]}));
     }
 }

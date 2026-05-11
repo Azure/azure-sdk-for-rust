@@ -207,8 +207,17 @@ fn build_replace_sub_op(
 }
 
 fn read_status_error(status: crate::models::CosmosStatus) -> azure_core::Error {
+    // F15: mirror F10's typed-error treatment for the 412 path. Failures
+    // surfaced from the Read sub-op (any non-success status) and from the
+    // non-412 Replace path use `ErrorKind::HttpResponse { status, .. }` so
+    // callers can downcast on `error.http_status()` instead of having to
+    // string-match on `ErrorKind::Other`.
     azure_core::Error::with_message(
-        azure_core::error::ErrorKind::Other,
+        azure_core::error::ErrorKind::HttpResponse {
+            status: status.status_code(),
+            error_code: None,
+            raw_response: None,
+        },
         format!(
             "PATCH inner operation failed with status {}",
             status.status_code()
@@ -405,7 +414,7 @@ mod tests {
         let op = build_replace_sub_op(
             test_item_ref(),
             body.clone(),
-            etag,
+            etag.clone(),
             Some(read_response_token.clone()),
         );
 
@@ -415,6 +424,11 @@ mod tests {
             op.request_headers().session_token.as_ref(),
             Some(&read_response_token)
         );
+        // F16: assert the If-Match precondition was applied. A future refactor
+        // that silently dropped `.with_precondition(...)` would downgrade the
+        // RMW to a non-conditional Replace — precisely the bug R3-DRIVER's
+        // ETag guard exists to prevent.
+        assert_eq!(op.precondition(), Some(&Precondition::if_match(etag)));
     }
 
     #[test]
@@ -424,5 +438,24 @@ mod tests {
 
         assert_eq!(op.operation_type(), OperationType::Replace);
         assert!(op.request_headers().session_token.is_none());
+    }
+
+    #[test]
+    fn read_status_error_uses_http_response_kind() {
+        // F15: a non-412 sub-op failure (here: 404 NotFound from the Read)
+        // must surface as `ErrorKind::HttpResponse { status: NotFound, .. }`
+        // so callers can downcast on `error.http_status()`. The pre-fix
+        // implementation returned `ErrorKind::Other`, which was asymmetric
+        // with the F10-typed 412 path and forced callers to string-match.
+        use crate::models::CosmosStatus;
+        use azure_core::error::ErrorKind;
+
+        let err = read_status_error(CosmosStatus::new(StatusCode::NotFound));
+        match err.kind() {
+            ErrorKind::HttpResponse { status, .. } => {
+                assert_eq!(*status, StatusCode::NotFound);
+            }
+            other => panic!("expected ErrorKind::HttpResponse, got {other:?}"),
+        }
     }
 }
