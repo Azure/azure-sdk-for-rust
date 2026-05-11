@@ -14,7 +14,8 @@ use azure_data_cosmos::{
     clients::DatabaseClient,
     constants,
     options::{OperationOptions, QueryOptions},
-    PartitionKey, Query,
+    query::QueryScope,
+    Query,
 };
 use framework::{test_data, MockItem, TestClient};
 use futures::{StreamExt, TryStreamExt};
@@ -37,7 +38,7 @@ async fn execute_query_test<T>(
     db_client: &DatabaseClient,
     items: Vec<MockItem>,
     query: impl Into<Query>,
-    partition_key: impl Into<PartitionKey>,
+    scope: QueryScope,
     expected_items: Vec<T>,
     options: QueryTestOptions,
 ) -> Result<(), Box<dyn Error>>
@@ -52,7 +53,7 @@ where
     }
 
     let mut pages = container_client
-        .query_items::<T>(query, partition_key, Some(query_options))
+        .query_items::<T>(query, scope, Some(query_options))
         .await?
         .into_pages();
 
@@ -93,7 +94,7 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
                 db_client,
                 items,
                 "select * from docs c",
-                "partition0",
+                QueryScope::partition("partition0"),
                 expected_items,
                 QueryTestOptions::default(),
             )
@@ -132,7 +133,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
                 db_client,
                 items,
                 query,
-                "partition1",
+                QueryScope::partition("partition1"),
                 expected_items,
                 QueryTestOptions::default(),
             )
@@ -167,7 +168,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
                 db_client,
                 items,
                 "select c.id, c.mergeOrder from c",
-                "partition1",
+                QueryScope::partition("partition1"),
                 expected_items,
                 QueryTestOptions::default(),
             )
@@ -199,7 +200,7 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
                 db_client,
                 items,
                 "select value c.id from c where c.mergeOrder between 40 and 60",
-                (),
+                QueryScope::full_container(),
                 expected_items,
                 QueryTestOptions::default(),
             )
@@ -225,7 +226,11 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
             let mut pager = container_client
-                .query_items::<String>("select value c.id from c order by c.mergeOrder", (), None)
+                .query_items::<String>(
+                    "select value c.id from c order by c.mergeOrder",
+                    QueryScope::full_container(),
+                    None,
+                )
                 .await?;
             let result = pager.try_next().await;
 
@@ -279,7 +284,12 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
             let options = QueryOptions::default().with_operation_options(operation);
 
             let mut pages = container_client
-                .query_items::<MockItem>("select * from c", "partition0", Some(options)).await?
+                .query_items::<MockItem>(
+                    "select * from c",
+                    QueryScope::partition("partition0"),
+                    Some(options),
+                )
+                .await?
                 .into_pages();
 
             // Get the first page and check metrics headers
@@ -353,7 +363,7 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 db_client,
                 items,
                 "select * from c",
-                "partition0",
+                QueryScope::partition("partition0"),
                 expected_items,
                 QueryTestOptions {
                     max_item_count: Some(1),
@@ -383,7 +393,7 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 db_client,
                 items.clone(),
                 "select * from c",
-                (),
+                QueryScope::full_container(),
                 items,
                 QueryTestOptions {
                     max_item_count: Some(1),

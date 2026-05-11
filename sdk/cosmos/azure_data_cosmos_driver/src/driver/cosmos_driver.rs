@@ -1298,7 +1298,9 @@ impl CosmosDriver {
             Some(c) => Box::new(CachedTopologyProvider::new(
                 &self.pk_range_cache,
                 c,
-                |container, continuation| self.fetch_partition_key_ranges(container, continuation),
+                |container, continuation| {
+                    self.fetch_pk_ranges_from_service(container, continuation)
+                },
             )) as Box<dyn TopologyProvider>,
             None => Box::new(StubTopologyProvider) as Box<dyn TopologyProvider>,
         };
@@ -1586,56 +1588,11 @@ impl CosmosDriver {
         let mut topology = CachedTopologyProvider::new(
             &self.pk_range_cache,
             container_ref,
-            |container, continuation| self.fetch_partition_key_ranges(container, continuation),
+            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
         );
 
         let pipeline = planner::build_sequential_drain(&query_plan, &mut topology, operation).await?;
         Ok(OperationPlan::new(pipeline))
-    }
-
-    /// Fetches partition key ranges from the service for the given container.
-    ///
-    /// Used as the fetch function for [`CachedTopologyProvider`].
-    async fn fetch_partition_key_ranges(
-        &self,
-        container: ContainerReference,
-        continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        let operation = CosmosOperation::read_partition_key_ranges(container);
-        let overrides = OperationOverrides {
-            continuation,
-            ..Default::default()
-        };
-        let options = OperationOptions::default();
-
-        let response = self
-            .execute_operation_direct(&operation, overrides, &options)
-            .await
-            .ok()?;
-
-        let not_modified = u16::from(response.status().status_code()) == 304;
-        let etag_continuation = response
-            .headers()
-            .etag
-            .as_ref()
-            .map(|e| e.as_str().to_owned());
-
-        if not_modified {
-            return Some(PkRangeFetchResult {
-                ranges: Vec::new(),
-                continuation: etag_continuation,
-                not_modified: true,
-            });
-        }
-
-        let pk_ranges_response: crate::models::partition_key_range::PkRangesResponse =
-            serde_json::from_slice(response.body()).ok()?;
-
-        Some(PkRangeFetchResult {
-            ranges: pk_ranges_response.partition_key_ranges,
-            continuation: etag_continuation,
-            not_modified: false,
-        })
     }
 
     /// Returns all partition key ranges for a container, ordered by min EPK.

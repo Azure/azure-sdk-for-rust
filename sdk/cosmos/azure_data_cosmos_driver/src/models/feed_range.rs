@@ -24,6 +24,7 @@ use crate::models::partition_key_range::PartitionKeyRange;
 ///
 /// Use [`FeedRange::full()`] for the entire key space (`""..FF`).
 #[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
+#[safe(true)]
 pub struct FeedRange {
     min_inclusive: EffectivePartitionKey,
     max_exclusive: EffectivePartitionKey,

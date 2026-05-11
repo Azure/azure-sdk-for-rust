@@ -10,6 +10,7 @@ use crate::{
         BatchOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
         SessionToken,
     },
+    query::QueryScope,
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, FeedRange, ItemReadOptions, ItemWriteOptions,
     PartitionKey, Query, ReplaceContainerOptions, ThroughputOptions,
@@ -17,7 +18,7 @@ use crate::{
 
 use super::ThroughputPoller;
 use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosOperation, ItemReference, OperationTarget, PartitionKeyKind,
+    ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use serde::{de::DeserializeOwned, Serialize};
@@ -660,7 +661,7 @@ impl ContainerClient {
     /// # Arguments
     ///
     /// * `query` - The query to execute.
-    /// * `partition_key` - The partition key to scope the query on, or specify an empty key (`()`) to perform a cross-partition query.
+    /// * `scope` - The [`QueryScope`] specifying the scope of the query.
     /// * `options` - Optional parameters for the request.
     ///
     /// # Cross Partition Queries
@@ -671,11 +672,12 @@ impl ContainerClient {
     ///
     /// # Examples
     ///
-    /// The `query` and `partition_key` parameters accept anything that can be transformed [`Into`] their relevant types.
+    /// The `query` parameter accepts anything that can be transformed [`Into`] a [`Query`], and `scope` controls partition targeting.
     /// This allows simple queries without parameters to be expressed easily:
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # use azure_data_cosmos::query::QueryScope;
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
@@ -684,8 +686,9 @@ impl ContainerClient {
     /// }
     /// let items = container_client.query_items::<Customer>(
     ///     "SELECT * FROM c",
-    ///     "some_partition_key",
-    ///     None)?;
+    ///     QueryScope::partition("some_partition_key"),
+    ///     None,
+    /// )?;
     /// # }
     /// ```
     ///
@@ -693,7 +696,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// use azure_data_cosmos::Query;
+    /// use azure_data_cosmos::{query::QueryScope, Query};
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
@@ -702,7 +705,8 @@ impl ContainerClient {
     /// }
     /// let query = Query::from("SELECT COUNT(*) FROM c WHERE c.customer_id = @customer_id")
     ///     .with_parameter("@customer_id", 42)?;
-    /// let items = container_client.query_items::<Customer>(query, "some_partition_key", None)?;
+    /// let items = container_client
+    ///     .query_items::<Customer>(query, QueryScope::partition("some_partition_key"), None)?;
     /// # }
     /// ```
     ///
@@ -710,23 +714,19 @@ impl ContainerClient {
     pub async fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
         query: impl Into<Query>,
-        partition_key: impl Into<PartitionKey>,
+        scope: QueryScope,
         options: Option<QueryOptions>,
     ) -> azure_core::Result<FeedItemIterator<T>> {
         let options = options.unwrap_or_default();
-        let partition_key: PartitionKey = partition_key.into();
         let query = query.into();
 
-        let driver_pk = partition_key;
         let container_ref = self.container_ref.clone();
 
         // The first operation to execute in the query items flow.
         // This holds the session token provided by the user, if any.
-        let mut initial_operation = CosmosOperation::query_items(
-            container_ref.clone(),
-            OperationTarget::PartitionKey(driver_pk.clone()),
-        )
-        .with_body(serde_json::to_vec(&query)?);
+        let mut initial_operation =
+            CosmosOperation::query_items(container_ref.clone(), scope.into())
+                .with_body(serde_json::to_vec(&query)?);
         if let Some(token) = options.session_token {
             initial_operation = initial_operation.with_session_token(token);
         }

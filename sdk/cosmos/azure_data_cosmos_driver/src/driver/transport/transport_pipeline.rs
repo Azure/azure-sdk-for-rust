@@ -305,6 +305,17 @@ pub(crate) async fn execute_transport_pipeline(
         }
 
         let result = result.result;
+        if result.is_successful() {
+            tracing::trace!(
+                ?result.outcome,
+                "transport attempt complete"
+            );
+        } else {
+            tracing::warn!(
+                ?result.outcome,
+                "transport attempt failed"
+            );
+        }
 
         // Check for 429 throttling → transport-level retry
         let action = evaluate_transport_retry(&result, &throttle_state);

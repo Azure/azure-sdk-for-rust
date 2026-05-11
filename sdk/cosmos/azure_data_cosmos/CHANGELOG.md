@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 - `CosmosClientBuilder::with_user_agent_suffix` (and `CosmosClientOptions::with_user_agent_suffix`) now take `UserAgentSuffix` instead of `impl Into<String>`. Callers passing a `&str` or `String` must construct the value explicitly via `UserAgentSuffix::new` (panics on invalid input) or `UserAgentSuffix::try_new` (returns `Option`). Validation rules (max 25 characters, HTTP-header-safe) are now enforced at the construction site instead of being applied silently inside the builder. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
+- `ContainerClient::query_items()` now takes a `QueryScope` (`QueryScope::partition(...)`, `QueryScope::feed_range(...)`, or `QueryScope::full_container()`) instead of a partition key where `()` represented cross-partition queries.
 
 ### Bugs Fixed
 

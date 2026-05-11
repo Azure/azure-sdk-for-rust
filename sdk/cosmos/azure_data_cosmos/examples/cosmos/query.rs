@@ -3,7 +3,7 @@
 
 use std::error::Error;
 
-use azure_data_cosmos::{CosmosClient, PartitionKey};
+use azure_data_cosmos::{query::QueryScope, CosmosClient};
 use clap::{Args, Subcommand};
 use futures::TryStreamExt;
 
@@ -55,13 +55,14 @@ impl QueryCommand {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container).await?;
 
-                let pk = match partition_key {
-                    Some(pk) => PartitionKey::from(pk),
-                    None => PartitionKey::EMPTY,
+                let scope = match partition_key {
+                    Some(pk) => QueryScope::partition(pk),
+                    None => QueryScope::full_container(),
                 };
 
-                let mut items =
-                    container_client.query_items::<serde_json::Value>(&query, pk, None)?;
+                let mut items = container_client
+                    .query_items::<serde_json::Value>(&query, scope, None)
+                    .await?;
 
                 println!("Items:");
                 while let Some(item) = items.try_next().await? {
@@ -70,7 +71,7 @@ impl QueryCommand {
                 Ok(())
             }
             Subcommands::Databases { query } => {
-                let mut dbs = client.query_databases(query, None)?;
+                let mut dbs = client.query_databases(query, None).await?;
 
                 println!("Databases:");
                 while let Some(item) = dbs.try_next().await? {
@@ -80,7 +81,7 @@ impl QueryCommand {
             }
             Subcommands::Containers { database, query } => {
                 let db_client = client.database_client(&database);
-                let mut dbs = db_client.query_containers(query, None)?;
+                let mut dbs = db_client.query_containers(query, None).await?;
 
                 println!("Containers:");
                 while let Some(item) = dbs.try_next().await? {

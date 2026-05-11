@@ -54,6 +54,7 @@ pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
+pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
 pub use feed_range::FeedRange;
 pub use operation_target::OperationTarget;

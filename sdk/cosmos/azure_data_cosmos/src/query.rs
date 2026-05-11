@@ -3,7 +3,49 @@
 
 //! Models and components used to represents and execute queries.
 
+use azure_data_cosmos_driver::models::{FeedRange, OperationTarget, PartitionKey};
 use serde::Serialize;
+
+/// Represents the scope of a query, which determines which partitions it targets.
+///
+/// The Cosmos DB backend can only execute queries against a single physical partition at a time,
+/// so it is important to choose the appropriate scope for your query to ensure it is executed efficiently.
+/// Queries that cross physical partition boundaries require the client to fan out the query to
+/// multiple partitions and aggregate the results, which can be expensive and slow for large datasets.
+pub enum QueryScope {
+    Partition(PartitionKey),
+    FeedRange(FeedRange),
+}
+
+impl QueryScope {
+    /// Returns a [`QueryScope`] that represents the given partition key, which is used for targeting a specific partition in the container.
+    pub fn partition(pk: impl Into<PartitionKey>) -> Self {
+        Self::Partition(pk.into())
+    }
+
+    /// Returns a [`QueryScope`] that represents the given feed range, which can be used for partition-specific or cross-partition queries depending on the feed range provided.
+    ///
+    /// WARNING: Using a feed range that covers multiple partitions may result in a full scan of those partitions, which can be expensive and slow for large datasets. Use with caution.
+    pub fn feed_range(fr: FeedRange) -> Self {
+        Self::FeedRange(fr)
+    }
+
+    /// Returns a [`QueryScope`] that represents the full container, which is used for cross-partition queries.
+    ///
+    /// WARNING: Using this query scope may result in a full scan of the container, which can be expensive and slow for large datasets. Use with caution.
+    pub fn full_container() -> Self {
+        Self::FeedRange(FeedRange::full())
+    }
+}
+
+impl From<QueryScope> for OperationTarget {
+    fn from(value: QueryScope) -> Self {
+        match value {
+            QueryScope::Partition(pk) => Self::PartitionKey(pk),
+            QueryScope::FeedRange(fr) => Self::FeedRange(fr),
+        }
+    }
+}
 
 /// Represents a Cosmos DB Query, with optional parameters.
 ///

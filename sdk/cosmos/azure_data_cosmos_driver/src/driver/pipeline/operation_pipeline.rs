@@ -23,8 +23,8 @@ use crate::{
     driver::transport::CosmosTransport,
     models::{
         cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
-        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel, OperationType,
-        SessionToken, SubStatusCode,
+        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel,
+        EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
     },
     options::{
         OperationOptionsView, ReadConsistencyStrategy, Region, ThroughputControlGroupSnapshot,
@@ -77,14 +77,18 @@ impl OperationOverrides {
         headers: &mut azure_core::http::headers::Headers,
     ) -> azure_core::Result<()> {
         if let Some(feed_range) = &self.feed_range {
-            headers.insert(
-                HeaderName::from_static(request_header_names::START_EPK),
-                HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
-            );
-            headers.insert(
-                HeaderName::from_static(request_header_names::END_EPK),
-                HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
-            );
+            if feed_range.min_inclusive() != &EffectivePartitionKey::min() {
+                headers.insert(
+                    HeaderName::from_static(request_header_names::START_EPK),
+                    HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
+                );
+            }
+            if feed_range.max_exclusive() != &EffectivePartitionKey::max() {
+                headers.insert(
+                    HeaderName::from_static(request_header_names::END_EPK),
+                    HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
+                );
+            }
         }
 
         if let Some(pk_range_id) = &self.partition_key_range_id {

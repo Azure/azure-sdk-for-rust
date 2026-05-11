@@ -11,6 +11,7 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
 use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemReadOptions;
+use azure_data_cosmos::query::QueryScope;
 use azure_data_cosmos::Region;
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
@@ -640,7 +641,11 @@ impl TestRunContext {
 
         loop {
             match container
-                .query_items::<T>(query.clone(), partition_key.clone(), None)
+                .query_items::<T>(
+                    query.clone(),
+                    QueryScope::partition(partition_key.clone()),
+                    None,
+                )
                 .await
             {
                 Ok(pager) => match pager.try_collect::<Vec<T>>().await {
