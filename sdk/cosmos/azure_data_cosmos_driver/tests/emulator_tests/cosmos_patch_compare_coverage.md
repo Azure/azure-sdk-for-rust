@@ -1,7 +1,7 @@
 # `cosmos_patch_compare` Fixture Coverage
 
 This file documents the comparison-harness fixture catalog driven by
-[`fixtures()`](./driver_patch.rs) in `driver_patch.rs::cosmos_patch_compare`.
+`fixtures()` in `driver_patch.rs::cosmos_patch_compare`.
 
 Each row in the catalog is exercised end-to-end against the emulator: we
 seed the document, call `DriverTestClient::patch_item`, and assert either a
@@ -66,6 +66,6 @@ exercise directly (i64 fidelity, RFC 6901 pointer escapes, RFC 6902 array
 The .NET-backend comparison half of A9 (running the same fixture through a
 .NET PATCH reference binary and comparing post-images byte-for-byte) is
 deferred — it depends on the `cosmos-patch-ref` helper (see
-[`tests/tools/cosmos-patch-ref/README.md`](../tools/cosmos-patch-ref/README.md)).
+`tests/tools/cosmos-patch-ref/README.md`).
 The fixture schema in this file is intentionally compatible with that
 future binary so no migration will be needed.

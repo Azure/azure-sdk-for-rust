@@ -23,7 +23,7 @@ shared regression would slip past A9.
 `cosmos-patch-ref` closes that gap: it is a small .NET console binary that
 wraps `Microsoft.Azure.Cosmos.PatchOperation` and reports what the .NET SDK
 *would* compute for the same input. The harness then compares the Rust
-post-image byte-for-byte (after canonicalising key order) with the .NET
+post-image byte-for-byte (after canonicalizing key order) with the .NET
 oracle.
 
 ## Contract

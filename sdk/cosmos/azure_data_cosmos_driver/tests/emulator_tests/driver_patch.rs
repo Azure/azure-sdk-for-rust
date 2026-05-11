@@ -460,7 +460,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             scenario_category: "missing_path",
             initial_props: json!({ "description": "orig" }),
             ops: vec![PatchOp::add("/nonExistentParent/Child", json!("bar"))],
-            expected: Expected::ErrorContains("nonexistentparent"),
+            expected: Expected::ErrorContains("nonExistentParent"),
             notes: "Mirrors .NET Add(\"/nonExistentParent/Child\", \"bar\") — expect bad-request from evaluator",
         },
         PatchCompareCase {

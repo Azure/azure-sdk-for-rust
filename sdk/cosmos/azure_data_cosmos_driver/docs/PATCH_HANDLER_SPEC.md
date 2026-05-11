@@ -11,7 +11,7 @@ of a PATCH by running a **Read-Modify-Write (RMW) loop** entirely
 client-side.
 
 The handler lives in
-[`driver::pipeline::patch_handler`](../src/driver/pipeline/patch_handler.rs)
+`driver::pipeline::patch_handler` (`src/driver/pipeline/patch_handler.rs`)
 and is dispatched from `CosmosDriver::execute_operation` before any of the
 normal pipeline stages run.
 
@@ -65,7 +65,7 @@ contains, the handler builds the returned `CosmosResponse` from:
 
 `from_local_body_and_driver_headers` is the single helper that builds this
 synthesized response. It is `pub(crate)` and lives in
-[`driver::pipeline::from_local_body`](../src/driver/pipeline/from_local_body.rs).
+`driver::pipeline::from_local_body` (`src/driver/pipeline/from_local_body.rs`).
 
 ## Patch Operations
 
