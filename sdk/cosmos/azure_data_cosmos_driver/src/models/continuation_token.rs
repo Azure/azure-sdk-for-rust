@@ -111,6 +111,17 @@ pub(crate) enum ResolvedToken {
     ServerOpaque(String),
 }
 
+// `PipelineNodeState` lives in driver internals and is not Debug-printable
+// outside; provide a tiny Debug shim so test panic messages can include it.
+impl std::fmt::Debug for ResolvedToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ResolvedToken::ClientV1(state) => write!(f, "ClientV1({state:?})"),
+            ResolvedToken::ServerOpaque(s) => write!(f, "ServerOpaque({s})"),
+        }
+    }
+}
+
 /// Returns `Some(N)` if `s` starts with `c<N>.` for some unsigned integer `N`,
 /// otherwise `None`.
 ///
@@ -221,9 +232,8 @@ mod tests {
 
     #[test]
     fn resolve_v1_request_state_with_server_continuation() {
-        let token = encode_v1_payload(
-            r#"{"kind":"request","server_continuation":"opaque-srv-token"}"#,
-        );
+        let token =
+            encode_v1_payload(r#"{"kind":"request","server_continuation":"opaque-srv-token"}"#);
         match token.resolve().unwrap() {
             ResolvedToken::ClientV1(state) => assert_eq!(
                 state,
@@ -308,16 +318,5 @@ mod tests {
             err.kind(),
             azure_core::error::ErrorKind::DataConversion
         ));
-    }
-}
-
-// PipelineNodeState lives in driver internals and is not Debug-printable
-// outside; provide a tiny Debug shim for the panic message above.
-impl std::fmt::Debug for ResolvedToken {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ResolvedToken::ClientV1(state) => write!(f, "ClientV1({state:?})"),
-            ResolvedToken::ServerOpaque(s) => write!(f, "ServerOpaque({s})"),
-        }
     }
 }

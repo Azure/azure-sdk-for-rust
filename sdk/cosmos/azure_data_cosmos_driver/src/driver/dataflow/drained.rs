@@ -11,7 +11,7 @@
 
 use async_trait::async_trait;
 
-use super::{ChildNodes, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
+use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState};
 
 pub(crate) struct DrainedLeaf;
 
@@ -24,10 +24,7 @@ impl PipelineNode for DrainedLeaf {
         Ok(PageResult::Drained)
     }
 
-    fn children(&self) -> ChildNodes<'_> {
-        ChildNodes::None
-    }
-
+    #[cfg(test)]
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         Vec::new()
     }

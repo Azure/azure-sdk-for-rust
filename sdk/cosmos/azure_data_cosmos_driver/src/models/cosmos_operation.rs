@@ -626,6 +626,7 @@ impl CosmosOperation {
     /// Creates a read-feed request for partition key ranges in a container.
     ///
     /// Used to populate the partition key range cache for topology resolution.
+    #[allow(dead_code)] // Reserved for an upcoming pk-range cache refresh path.
     pub(crate) fn read_partition_key_ranges(container: ContainerReference) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::PartitionKeyRange)

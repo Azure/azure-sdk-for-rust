@@ -34,6 +34,7 @@ pub(crate) mod request_header_names {
     pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
     pub const START_EPK: &str = "x-ms-start-epk";
     pub const END_EPK: &str = "x-ms-end-epk";
+    #[allow(dead_code)] // Reserved for future direct partition-key header writes.
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
     pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";

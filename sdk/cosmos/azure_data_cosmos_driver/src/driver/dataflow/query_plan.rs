@@ -15,6 +15,7 @@ use serde::Deserialize;
 /// The response returned by the Gateway for a query plan request.
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)] // Wire-format fields; not all are consumed today.
 pub(crate) struct QueryPlan {
     /// The version of the query plan format.
     pub partitioned_query_execution_info_version: usize,
@@ -35,6 +36,7 @@ pub(crate) struct QueryPlan {
 /// Information about a hybrid search query.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)] // Wire-format fields; hybrid search isn't fully wired yet.
 pub(crate) struct HybridSearchQueryInfo {
     /// The query used for global statistics gathering.
     pub global_statistics_query: String,
@@ -128,6 +130,7 @@ pub(crate) enum SortOrder {
 /// An EPK range covered by the query.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)] // Inclusivity flags are wire-format; planner treats ranges uniformly.
 pub(crate) struct QueryRange {
     /// The minimum EPK value.
     pub min: String,

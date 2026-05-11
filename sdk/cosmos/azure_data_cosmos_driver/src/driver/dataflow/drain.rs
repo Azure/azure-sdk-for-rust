@@ -14,7 +14,7 @@ use async_trait::async_trait;
 
 use crate::models::FeedRange;
 
-use super::{ChildNodes, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
+use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState};
 
 /// Maximum number of consecutive split retries before giving up.
 ///
@@ -105,15 +105,7 @@ impl PipelineNode for SequentialDrain {
         }
     }
 
-    fn children(&self) -> ChildNodes<'_> {
-        let (front, back) = self.children.as_slices();
-        if back.is_empty() {
-            ChildNodes::Slice(front)
-        } else {
-            ChildNodes::Split(front, back)
-        }
-    }
-
+    #[cfg(test)]
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         self.children.into_iter().collect()
     }
@@ -160,7 +152,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -204,7 +196,7 @@ mod tests {
             SequentialDrain::new(vec![Box::new(child1), Box::new(child2), Box::new(child3)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -230,7 +222,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_drained(drain.next_page(&mut context).await);
     }
@@ -244,7 +236,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = drain.next_page(&mut context).await.unwrap_err();
         assert_eq!(err.to_string(), "test error");
@@ -282,7 +274,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(split_child), Box::new(trailing_child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -335,7 +327,7 @@ mod tests {
         ]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -376,7 +368,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(split_child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -410,7 +402,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(initial_split)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -436,7 +428,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![current]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = drain.next_page(&mut context).await.unwrap_err();
         assert_eq!(
@@ -459,7 +451,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(empty_child), Box::new(real_child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -499,7 +491,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(split_child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -533,7 +525,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -571,7 +563,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
@@ -609,23 +601,13 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(split_child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         assert_eq!(
             unwrap_page(drain.next_page(&mut context).await).body(),
             b"immediate"
         );
         assert_drained(drain.next_page(&mut context).await);
-    }
-
-    #[tokio::test]
-    async fn children_returns_all_nodes() {
-        let c1 = MockLeaf::with_pages(vec![Ok(PageResult::Drained)]);
-        let c2 = MockLeaf::with_pages(vec![Ok(PageResult::Drained)]);
-        let c3 = MockLeaf::with_pages(vec![Ok(PageResult::Drained)]);
-
-        let drain = SequentialDrain::new(vec![Box::new(c1), Box::new(c2), Box::new(c3)]);
-        assert_eq!(drain.children().len(), 3);
     }
 
     #[tokio::test]
@@ -656,7 +638,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let page = unwrap_page(drain.next_page(&mut context).await);
         assert_eq!(page.body(), b"c1-final");
@@ -687,7 +669,7 @@ mod tests {
         let mut drain = SequentialDrain::new(vec![Box::new(only_child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         match drain.next_page(&mut context).await.unwrap() {
             PageResult::Page {

@@ -6,13 +6,11 @@
 use async_trait::async_trait;
 use azure_core::http::StatusCode;
 
-use crate::models::{
-    CosmosOperation, CosmosResponse, FeedRange, PartitionKey, SubStatusCode,
-};
+use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey, SubStatusCode};
 
 use super::{
-    ChildNodes, PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode,
-    PipelineNodeState, ResolvedRange,
+    PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, PipelineNodeState,
+    ResolvedRange,
 };
 
 /// The target of a request node.
@@ -162,10 +160,7 @@ impl PipelineNode for Request {
         }
     }
 
-    fn children(&self) -> ChildNodes<'_> {
-        ChildNodes::None
-    }
-
+    #[cfg(test)]
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         Vec::new()
     }
@@ -495,7 +490,7 @@ mod tests {
         let mut rewritten = Vec::new();
 
         for mut request in requests {
-            let mut context = PipelineContext::new(&mut executor, &mut topology);
+            let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
             match request.next_page(&mut context).await.unwrap() {
                 PageResult::SplitRequired { replacement_nodes } => {
                     rewritten.extend(replacement_nodes.into_iter().map(|node| {
@@ -551,7 +546,7 @@ mod tests {
         let mut request = Request::new(operation(), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Ok(response(b"ok"))]);
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let page = unwrap_page(request.next_page(&mut context).await);
 
@@ -571,7 +566,7 @@ mod tests {
         let mut request = Request::new(operation(), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Err(gone_error())]);
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let error = request.next_page(&mut context).await.unwrap_err();
 
@@ -591,7 +586,7 @@ mod tests {
         let mut request = Request::new(operation(), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(non_topology_gone_error())]);
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let error = request.next_page(&mut context).await.unwrap_err();
 
@@ -611,7 +606,7 @@ mod tests {
             Ok(response_with_continuation(b"page2", Some("token-2"))),
         ]);
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let page1 = unwrap_page(request.next_page(&mut context).await);
         let page2 = unwrap_page(request.next_page(&mut context).await);
@@ -639,7 +634,7 @@ mod tests {
         );
         let mut executor = MockRequestExecutor::new(vec![Ok(response(b"page"))]);
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let page = unwrap_page(request.next_page(&mut context).await);
 
@@ -765,7 +760,7 @@ mod tests {
             azure_core::error::ErrorKind::Other,
             "topology fetch failed",
         ))]);
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();
         assert_eq!(err.to_string(), "topology fetch failed");
@@ -776,7 +771,7 @@ mod tests {
         let mut request = Request::new(operation(), RequestTarget::NonPartitioned, None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
         let mut topology = NoopTopologyProvider;
-        let mut context = PipelineContext::new(&mut executor, &mut topology);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();
         assert!(is_partition_topology_change(&err));

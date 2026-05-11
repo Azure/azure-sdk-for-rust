@@ -11,11 +11,7 @@ use azure_core::{
     http::{headers::Headers, response::Response, RawResponse, StatusCode},
     Bytes,
 };
-use azure_data_cosmos_driver::{
-    models::{CosmosOperation, CosmosResponse as DriverResponse, CosmosResponseHeaders},
-    options::OperationOptions as DriverOperationOptions,
-    CosmosDriver,
-};
+use azure_data_cosmos_driver::models::{CosmosResponse as DriverResponse, CosmosResponseHeaders};
 
 use crate::{
     constants::{

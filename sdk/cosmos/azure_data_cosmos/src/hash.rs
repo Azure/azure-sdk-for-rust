@@ -50,6 +50,7 @@ impl From<&str> for EffectivePartitionKey {
 ///
 /// Versions 1 and 2 map directly to the driver's partition key version enum.
 /// Any other version falls back to V2 for forward-compatible behavior.
+#[allow(dead_code)] // Currently exercised only by tests; kept for upcoming SDK API.
 pub fn get_hashed_partition_key_string(
     pk_value: &[DriverPartitionKeyValue],
     kind: PartitionKeyKind,

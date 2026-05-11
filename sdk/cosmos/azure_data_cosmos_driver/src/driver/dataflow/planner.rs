@@ -56,7 +56,7 @@ pub(crate) fn build_trivial_pipeline(
                 "operation target {target_desc} is not valid for resource type {resource_type}",
                 target_desc = target_description(target),
             ),
-        ))?;
+        ));
     }
 
     let initial_continuation = match resume {
@@ -285,8 +285,6 @@ fn target_description(target: &OperationTarget) -> &'static str {
 #[cfg(test)]
 mod tests {
     use std::borrow::Cow;
-
-    use futures::FutureExt as _;
 
     use super::*;
     use crate::{
@@ -788,9 +786,10 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(PipelineNodeState::Drained))
-            .await
-            .unwrap();
+        let pipeline =
+            build_sequential_drain(&plan, &mut topology, &op, Some(PipelineNodeState::Drained))
+                .await
+                .unwrap();
 
         // The drained pipeline immediately yields no pages.
         assert!(matches!(

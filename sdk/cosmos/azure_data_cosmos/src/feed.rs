@@ -373,7 +373,7 @@ impl LiveState {
 /// underlying [`OperationPlan`]. Unit tests use [`Synthetic`](Self::Synthetic)
 /// to inject a pre-built sequence of pages.
 enum PageSource<T: Send> {
-    Live(LiveState),
+    Live(Box<LiveState>),
     #[cfg(test)]
     Synthetic(std::collections::VecDeque<azure_core::Result<QueryFeedPage<T>>>),
     #[cfg(not(test))]
@@ -414,7 +414,7 @@ impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
         options: OperationOptions,
     ) -> Self {
         Self {
-            source: PageSource::Live(LiveState::new(driver, container, plan, options)),
+            source: PageSource::Live(Box::new(LiveState::new(driver, container, plan, options))),
             current: None,
             _marker: PhantomData,
         }

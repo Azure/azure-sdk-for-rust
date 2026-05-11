@@ -9,8 +9,8 @@ use azure_core::http::StatusCode;
 use futures::future::BoxFuture;
 
 use super::{
-    ChildNodes, PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode,
-    PipelineNodeState, RequestExecutor, RequestTarget, ResolvedRange, TopologyProvider,
+    PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, PipelineNodeState,
+    RequestExecutor, RequestTarget, ResolvedRange, TopologyProvider,
 };
 use crate::{
     diagnostics::DiagnosticsContextBuilder,
@@ -58,10 +58,7 @@ impl PipelineNode for MockLeaf {
             .expect("MockLeaf: no more page results")
     }
 
-    fn children(&self) -> ChildNodes<'_> {
-        ChildNodes::None
-    }
-
+    #[cfg(test)]
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         vec![]
     }

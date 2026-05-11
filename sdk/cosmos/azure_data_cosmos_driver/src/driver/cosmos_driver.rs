@@ -12,7 +12,7 @@ use crate::{
         dataflow::{
             planner, query_plan::QueryPlan, CachedTopologyProvider, OperationPlan,
             PartitionRoutingRefresh, PipelineContext, PipelineNodeState, RequestExecutor,
-            RequestTarget, ResolvedRange, TopologyProvider,
+            RequestTarget, TopologyProvider,
         },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{
@@ -104,28 +104,6 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             driver
                 .execute_operation_direct(operation, overrides, self.options)
                 .await
-        })
-    }
-}
-
-/// Stub topology provider for the current single-request pipeline.
-///
-/// Cross-partition feed operations will replace this with a
-/// [`CachedTopologyProvider`](super::dataflow::CachedTopologyProvider) backed
-/// by the driver's partition key range cache.
-struct StubTopologyProvider;
-
-impl TopologyProvider for StubTopologyProvider {
-    fn resolve_ranges<'a>(
-        &'a mut self,
-        _range: &'a crate::models::FeedRange,
-        _refresh: super::dataflow::PartitionRoutingRefresh,
-    ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
-        Box::pin(async {
-            Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "topology resolution not yet wired up for this pipeline",
-            ))
         })
     }
 }
@@ -1310,18 +1288,16 @@ impl CosmosDriver {
             options: &options,
         };
 
-        let mut topology = match container {
-            Some(c) => Box::new(CachedTopologyProvider::new(
-                &self.pk_range_cache,
-                c,
-                |container, continuation| {
-                    self.fetch_pk_ranges_from_service(container, continuation)
-                },
-            )) as Box<dyn TopologyProvider>,
-            None => Box::new(StubTopologyProvider) as Box<dyn TopologyProvider>,
-        };
+        let mut topology = container.map(|c| {
+            CachedTopologyProvider::new(&self.pk_range_cache, c, |container, continuation| {
+                self.fetch_pk_ranges_from_service(container, continuation)
+            })
+        });
 
-        let mut context = PipelineContext::new(&mut executor, topology.as_mut());
+        let mut context = PipelineContext::new(
+            &mut executor,
+            topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
+        );
 
         plan.pipeline.next_page(&mut context).await
     }
@@ -1641,7 +1617,8 @@ impl CosmosDriver {
         );
 
         let pipeline =
-            planner::build_sequential_drain(&query_plan, &mut topology, operation, resume_state).await?;
+            planner::build_sequential_drain(&query_plan, &mut topology, operation, resume_state)
+                .await?;
         Ok(OperationPlan::new(pipeline))
     }
 
