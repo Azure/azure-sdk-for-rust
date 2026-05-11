@@ -36,6 +36,7 @@ use serde_json::Value;
 /// or vice versa — is rejected by the patch evaluator at apply time rather than
 /// silently demoting integer values to floating point.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
 pub enum IncrValue {
     /// Integer increment. Preserves integer fidelity even when serialized into
     /// JSON, and refuses to merge with floating-point targets.
@@ -91,6 +92,7 @@ impl<'de> Deserialize<'de> for IncrValue {
 /// recommended way to construct ops.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum PatchOp {
     /// Add (insert) `value` at `path`.
     ///

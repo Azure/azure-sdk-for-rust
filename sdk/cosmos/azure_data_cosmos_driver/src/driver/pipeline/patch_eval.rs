@@ -296,6 +296,16 @@ fn add_or_set(
             Ok(())
         }
         Value::Array(arr) => {
+            // Set on a numeric array index replaces the element (no shift).
+            // Add inserts at the index, shifting the tail right. The trailing
+            // '-' token always appends, regardless of mode. This matches the
+            // .NET / Java SDK's "Set is similar to Add… in an array, Set
+            // replaces an existing element value" semantics.
+            if matches!(mode, AddOrSet::Set) && last != "-" {
+                let idx = parse_array_index(last, path, arr.len(), false)?;
+                arr[idx] = new_value;
+                return Ok(());
+            }
             let idx = parse_array_index(last, path, arr.len(), true)?;
             if idx == arr.len() {
                 arr.push(new_value);
@@ -465,13 +475,32 @@ fn move_op(doc: &mut Value, from: &str, to: &str) -> Result<(), PatchEvalError> 
     if from == to {
         return Ok(());
     }
-    if to.starts_with(from) && to[from.len()..].starts_with('/') {
+
+    // F4: descendant check at the JSON-Pointer token level, not byte level.
+    // The previous byte-prefix check happens to be correct for canonical
+    // encodings (escapes only encode '/' and '~'), but it's brittle: e.g.
+    // `from = "/a"` would erroneously look like a prefix of `to = "/ab/c"`
+    // without the trailing-'/' guard. Comparing parsed token slices makes
+    // the invariant explicit and robust to any future encoding changes.
+    let from_tokens = parse_pointer(from)?;
+    let to_tokens = parse_pointer(to)?;
+    if to_tokens.len() > from_tokens.len() && to_tokens[..from_tokens.len()] == from_tokens[..] {
         return Err(PatchEvalError::InvalidMove(format!(
             "destination '{to}' is a descendant of source '{from}'"
         )));
     }
-    let value = remove(doc, from)?;
-    add_or_set(doc, to, value, AddOrSet::Add)
+
+    // F5: atomic move via clone-stage-commit. The previous implementation
+    // performed `remove` directly on `doc`, then `add_or_set`. If the
+    // second step failed (e.g. the destination's parent didn't exist), the
+    // original document was already mutated and the caller observed a
+    // partial state — violating the "fail leaves doc unchanged" invariant.
+    // Stage both steps on a clone, then commit on success.
+    let mut staged = doc.clone();
+    let value = remove(&mut staged, from)?;
+    add_or_set(&mut staged, to, value, AddOrSet::Add)?;
+    *doc = staged;
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -608,6 +637,76 @@ mod tests {
         let doc = json!({"a": {"x": 1}});
         let err = apply(doc, &[PatchOp::move_op("/a", "/a/inner")]).unwrap_err();
         assert!(matches!(err, PatchEvalError::InvalidMove(_)), "{err}");
+    }
+
+    #[test]
+    fn move_into_escaped_descendant_fails() {
+        // F4: a token containing an escaped '/' must still count as a single
+        // pointer segment when computing the descendant relationship. The
+        // unescaped key is `a/b`, so `/a~1b/c` is a true descendant of
+        // `/a~1b` even though the byte-prefix check is also correct in this
+        // specific case.
+        let doc = json!({"a/b": {"x": 1}});
+        let err = apply(doc, &[PatchOp::move_op("/a~1b", "/a~1b/c")]).unwrap_err();
+        assert!(matches!(err, PatchEvalError::InvalidMove(_)), "{err}");
+    }
+
+    #[test]
+    fn move_to_sibling_with_shared_prefix_succeeds() {
+        // F4: `/a` is NOT a descendant of `/ab` (byte-prefix would say yes
+        // without a `/` guard; token-level compare says no). The move must
+        // proceed.
+        let doc = json!({"a": 1, "ab": {"x": 2}});
+        let out = apply(doc, &[PatchOp::move_op("/a", "/ab/y")]).unwrap();
+        assert_eq!(out, json!({"ab": {"x": 2, "y": 1}}));
+    }
+
+    #[test]
+    fn move_failure_leaves_doc_unchanged() {
+        // F5: when the destination is invalid (parent missing), the source
+        // must not be removed. The pre-fix implementation would have left
+        // the doc as `{"b": {}}` (source removed before add_or_set failed).
+        let doc = json!({"a": 1, "b": {}});
+        let original = doc.clone();
+        let mut d = doc;
+        let err =
+            apply_patch_ops(&mut d, &[PatchOp::move_op("/a", "/missing/parent/x")]).unwrap_err();
+        assert!(matches!(err, PatchEvalError::MissingParent(_)), "{err}");
+        assert_eq!(
+            d, original,
+            "move_op must be atomic: a failed move must leave the document unchanged"
+        );
+    }
+
+    #[test]
+    fn set_at_array_index_replaces_in_place() {
+        // F7: Set on a numeric array index replaces the existing element
+        // (no shift). Cosmos backend semantics: "set is similar to add… in
+        // an array, Set replaces an existing element value".
+        let doc = json!({"xs": [1, 2, 3]});
+        let out = apply(doc, &[PatchOp::set("/xs/1", json!(9))]).unwrap();
+        assert_eq!(out, json!({"xs": [1, 9, 3]}));
+    }
+
+    #[test]
+    fn set_with_dash_appends_to_array() {
+        // F7: Set with the trailing '-' token still appends, matching Add.
+        let doc = json!({"xs": [1, 2]});
+        let out = apply(doc, &[PatchOp::set("/xs/-", json!(3))]).unwrap();
+        assert_eq!(out, json!({"xs": [1, 2, 3]}));
+    }
+
+    #[test]
+    fn set_at_array_index_out_of_range_fails() {
+        // F7: Set on an out-of-range numeric index must fail rather than
+        // silently insert (the Add codepath uses allow_append=true; Set
+        // does not).
+        let doc = json!({"xs": [1, 2]});
+        let err = apply(doc, &[PatchOp::set("/xs/5", json!(9))]).unwrap_err();
+        assert!(
+            matches!(err, PatchEvalError::ArrayIndexOutOfRange { .. }),
+            "{err}"
+        );
     }
 
     #[test]
