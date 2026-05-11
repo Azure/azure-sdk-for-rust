@@ -5,7 +5,6 @@ use crate::{
     clients::{offers_client, ClientContext, ContainerClient},
     models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
     options::ReadDatabaseOptions,
-    resource_context::{ResourceLink, ResourceType},
     CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
     ThroughputOptions,
 };
@@ -18,7 +17,6 @@ use super::ThroughputPoller;
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
-    link: ResourceLink,
     database_id: String,
     context: ClientContext,
     database_ref: DatabaseReference,
@@ -27,12 +25,10 @@ pub struct DatabaseClient {
 impl DatabaseClient {
     pub(crate) fn new(context: ClientContext, database_id: &str) -> Self {
         let database_id = database_id.to_string();
-        let link = ResourceLink::root(ResourceType::Databases).item(&database_id);
         let database_ref =
             DatabaseReference::from_name(context.driver.account().clone(), database_id.clone());
 
         Self {
-            link,
             database_id,
             context,
             database_ref,
@@ -52,7 +48,7 @@ impl DatabaseClient {
     ///
     /// Returns an error if the container does not exist or the metadata cannot be resolved.
     pub async fn container_client(&self, name: &str) -> azure_core::Result<ContainerClient> {
-        ContainerClient::new(self.context.clone(), &self.link, name, &self.database_id).await
+        ContainerClient::new(self.context.clone(), name, &self.database_id).await
     }
 
     /// Returns the identifier of the Cosmos database.
@@ -277,26 +273,5 @@ impl DatabaseClient {
             throughput,
         )
         .await
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Compile-time assertion that `DatabaseClient` async method futures are `Send`.
-    ///
-    /// This function is never called; it only needs to compile.
-    /// If any future is not `Send`, compilation will fail.
-    #[allow(dead_code, unreachable_code, unused_variables)]
-    fn _assert_futures_are_send() {
-        fn assert_send<T: Send>(_: T) {}
-        let client: &DatabaseClient = todo!();
-        assert_send(client.container_client(todo!()));
-        assert_send(client.read(todo!()));
-        assert_send(client.create_container(todo!(), todo!()));
-        assert_send(client.delete(todo!()));
-        assert_send(client.read_throughput(todo!()));
-        assert_send(client.begin_replace_throughput(todo!(), todo!()));
     }
 }

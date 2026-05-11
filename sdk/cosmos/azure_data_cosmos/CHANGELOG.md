@@ -7,12 +7,23 @@
 - Added `CosmosClientBuilder::with_gateway20_disabled(bool)` to opt out of the new Gateway 2.0 transport, which is now enabled by default. Gateway 2.0 routes data-plane requests through a regional proxy that forwards RNTBD-over-HTTP/2 to the backend. Set this to `true` to fall back to the direct gateway transport — useful for workloads that depend on the published gateway latency SLAs (Gateway 2.0 is not currently covered by them) or that need the direct-gateway behavior for diagnostics. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 
 ### Breaking Changes
+- Removed the `request_url()` accessor (gated on the `fault_injection` feature) from `ItemResponse`/`ResourceResponse`/`BatchResponse`. Driver-routed operations never populated it, so it always returned `None` in current usage.
+
+- `CosmosClientBuilder::with_user_agent_suffix` (and `CosmosClientOptions::with_user_agent_suffix`) now take `UserAgentSuffix` instead of `impl Into<String>`. Callers passing a `&str` or `String` must construct the value explicitly via `UserAgentSuffix::new` (panics on invalid input) or `UserAgentSuffix::try_new` (returns `Option`). Validation rules (max 25 characters, HTTP-header-safe) are now enforced at the construction site instead of being applied silently inside the builder. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
+
+- Replaced `CosmosDiagnostics` with `CosmosDiagnosticsContext` (a re-export of `azure_data_cosmos_driver::diagnostics::DiagnosticsContext`). All response types now return `Arc<CosmosDiagnosticsContext>` from `diagnostics()` (the returned `Arc` derefs transparently to `CosmosDiagnosticsContext` for read-only inspection, and can be retained alongside a consumed response body). The previous `activity_id() -> Option<&str>` and `server_duration_ms() -> Option<f64>` accessors on `CosmosDiagnostics` are replaced by `CosmosDiagnosticsContext::activity_id() -> &ActivityId` and per-request server timing via `CosmosDiagnosticsContext::requests()[i].server_duration_ms()`.
+
+- Removed `azure_data_cosmos::constants::SubStatusCode` and its `new`/`value`/`from_header_value`/`From`/`Display`/`Debug` API. The SDK no longer maintains a parallel sub-status-code type — fault-injection (the only remaining consumer) now uses `azure_data_cosmos_driver::models::SubStatusCode` directly. Callers that referenced the SDK type should switch to the driver re-export.
 
 - Consolidated SDK fault-injection types as re-exports from `azure_data_cosmos_driver::fault_injection`. `FaultInjectionRule`, `FaultInjectionCondition`, `FaultInjectionResult`, `CustomResponse`, `FaultInjectionErrorType`, `FaultOperationType`, and the matching builders are now provided by the driver crate. Field access is via accessor methods (e.g., `rule.id()`, `condition.region()`, `response.body()`) rather than direct field reads. The SDK retains only `FaultInjectionClientBuilder` (gateway-side transport wrapper). ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 
 ### Bugs Fixed
 
+- Fixed `CosmosClientBuilder::with_user_agent_suffix` not propagating the suffix to data-plane requests. The suffix was only applied to the SDK's account-metadata pipeline; requests issued through the driver transport pipeline (the vast majority of operations) had a `User-Agent` header without the configured suffix. The suffix is now forwarded to `CosmosDriverRuntimeBuilder` so it appears on every outgoing request. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
+
 ### Other Changes
+
+- Per-partition automatic failover (PPAF) and per-partition circuit breaker (PPCB) are now driven by the `azure_data_cosmos_driver` crate, replacing the SDK's prior implementation. Behavior is unchanged from a configuration standpoint — the existing `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` environment variable continues to work — but routing is now per-`(partition_key_range_id, region)` instead of per-region. Driver-level changes are described in [`azure_data_cosmos_driver` 0.3.0](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/CHANGELOG.md). ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 
 ## 0.33.0 (2026-04-24)
 

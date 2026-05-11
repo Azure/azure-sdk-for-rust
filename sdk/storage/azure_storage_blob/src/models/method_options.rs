@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{collections::HashMap, num::NonZero, ops::Range};
+use std::{collections::HashMap, num::NonZero};
 
 use azure_core::{
     fmt::SafeDebug,
@@ -9,7 +9,7 @@ use azure_core::{
 };
 use time::OffsetDateTime;
 
-use crate::models::{AccessTier, EncryptionAlgorithmType, ImmutabilityPolicyMode};
+use crate::models::{AccessTier, EncryptionAlgorithmType, HttpRange, ImmutabilityPolicyMode};
 
 /// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
@@ -28,13 +28,13 @@ pub struct BlobClientDownloadOptions<'a> {
     pub encryption_key_sha256: Option<String>,
 
     /// The request should only proceed if an entity matches this string.
-    pub if_match: Option<String>,
+    pub if_match: Option<Etag>,
 
     /// The request should only proceed if the entity was modified after this time.
     pub if_modified_since: Option<OffsetDateTime>,
 
     /// The request should only proceed if no entity matches this string.
-    pub if_none_match: Option<String>,
+    pub if_none_match: Option<Etag>,
 
     /// Specify a SQL where clause on blob tags to operate only on blobs with a matching value.
     pub if_tags: Option<String>,
@@ -58,12 +58,11 @@ pub struct BlobClientDownloadOptions<'a> {
 
     /// Optional range of the blob to download.
     ///
-    /// The range is specified in byte offsets and uses standard Rust range semantics:
-    /// `start` is the first byte offset to include, and `end` is a byte offset that is
-    /// *not* included in the download (i.e. `start..end` is end-exclusive).
+    /// Accepts an [`HttpRange`] value. You can convert from standard Rust range types
+    /// using `.into()`, for example `(0..100u64).into()` or `(100u64..).into()`.
     ///
     /// When set to `None`, the entire blob will be downloaded.
-    pub range: Option<Range<usize>>,
+    pub range: Option<HttpRange>,
 
     /// Optional. When this header is set to true and specified together with the Range header, the service returns the CRC64
     /// hash for the range, as long as the range is less than or equal to 4 MB in size.

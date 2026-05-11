@@ -30,18 +30,22 @@ use crate::{
 /// The driver's pre-parsed [`CosmosResponseHeaders`] are passed directly to
 /// avoid double-parsing. Some headers (e.g., `index_metrics`) are base64-decoded
 /// by the driver; re-parsing from raw headers would fail on already-decoded values.
+/// The driver's [`DiagnosticsContext`](azure_data_cosmos_driver::diagnostics::DiagnosticsContext)
+/// is plumbed through unchanged so that all SDK response wrappers expose the
+/// rich per-operation diagnostics produced by the driver pipeline.
 pub(crate) fn driver_response_to_cosmos_response<T>(
     driver_response: DriverResponse,
 ) -> CosmosResponse<T> {
     let status_code: StatusCode = driver_response.status().status_code();
     let cosmos_headers = driver_response.headers().clone();
+    let diagnostics = driver_response.diagnostics();
     let headers = driver_response_headers_to_headers(&cosmos_headers);
     let body = driver_response.into_body();
 
     let raw_response = RawResponse::from_bytes(status_code, headers, Bytes::from(body));
     let typed_response: Response<T> = raw_response.into();
 
-    CosmosResponse::from_driver_response(typed_response, cosmos_headers)
+    CosmosResponse::from_driver_response(typed_response, cosmos_headers, diagnostics)
 }
 
 /// Converts driver [`CosmosResponseHeaders`] into raw [`Headers`] for the SDK response.
@@ -177,6 +181,9 @@ mod tests {
     fn driver_response_preserves_index_metrics() {
         use crate::feed::{FeedBody, QueryFeedPage};
         use crate::models::CosmosResponse;
+        use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
+        use azure_data_cosmos_driver::models::ActivityId;
+        use std::sync::Arc;
 
         let mut cosmos_headers = CosmosResponseHeaders::new();
         cosmos_headers.index_metrics = Some(r#"{"UtilizedSingleIndexes":[]}"#.to_string());
@@ -195,7 +202,9 @@ mod tests {
 
         // This is the code path used by driver_response_to_cosmos_response:
         // pre-parsed headers are passed directly, skipping re-parsing.
-        let cosmos_response = CosmosResponse::from_driver_response(typed_response, cosmos_headers);
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid()));
+        let cosmos_response =
+            CosmosResponse::from_driver_response(typed_response, cosmos_headers, diagnostics);
 
         assert_eq!(
             cosmos_response.cosmos_headers().index_metrics.as_deref(),

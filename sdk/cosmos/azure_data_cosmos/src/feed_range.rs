@@ -37,7 +37,6 @@ use azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange;
 
 use crate::hash::EffectivePartitionKey;
 use crate::hash::{MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY, MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY};
-use crate::routing::range::Range;
 
 /// An opaque representation of a contiguous range of partitions in a Cosmos DB container.
 ///
@@ -130,49 +129,10 @@ impl FeedRange {
         }
     }
 
-    /// Creates a `FeedRange` from an internal `Range<String>`.
-    ///
-    /// The source range must have `[min, max)` semantics (min inclusive, max exclusive),
-    /// which is the invariant for all partition key ranges from the service.
-    #[allow(
-        dead_code,
-        reason = "will be used when query/change-feed gain FeedRange support"
-    )]
-    pub(crate) fn from_range(range: &Range<String>) -> azure_core::Result<Self> {
-        if !range.is_min_inclusive || range.is_max_inclusive {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "FeedRange requires [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
-            ));
-        }
-        Ok(Self {
-            min_inclusive: EffectivePartitionKey::from(range.min.as_str()),
-            max_exclusive: EffectivePartitionKey::from(range.max.as_str()),
-        })
-    }
-
-    /// Converts this `FeedRange` to an internal `Range<String>`.
-    #[allow(
-        dead_code,
-        reason = "will be used when query/change-feed gain FeedRange support"
-    )]
-    pub(crate) fn to_range(&self) -> Range<String> {
-        Range::new(
-            self.min_inclusive.as_str().to_owned(),
-            self.max_exclusive.as_str().to_owned(),
-            true,
-            false,
-        )
-    }
-
     /// Creates a `FeedRange` from a driver `PartitionKeyRange`.
     ///
     /// Partition key ranges from the service always use `[min, max)` semantics
     /// (min inclusive, max exclusive). Returns an error if the range is inverted.
-    #[allow(
-        dead_code,
-        reason = "will be used when feed range methods route through the driver's routing map"
-    )]
     pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> azure_core::Result<Self> {
         if pkr.min_inclusive > pkr.max_exclusive {
             return Err(azure_core::Error::with_message(
@@ -184,22 +144,6 @@ impl FeedRange {
             min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),
             max_exclusive: EffectivePartitionKey::from(pkr.max_exclusive.as_str()),
         })
-    }
-
-    /// Creates a `FeedRange` from the SDK's internal `PartitionKeyRange`.
-    ///
-    /// This uses the SDK-side routing map type (with `String` EPK fields).
-    pub(crate) fn from_sdk_partition_key_range(
-        pkr: &crate::routing::partition_key_range::PartitionKeyRange,
-    ) -> Self {
-        debug_assert!(
-            pkr.min_inclusive.as_str() <= pkr.max_exclusive.as_str(),
-            "partition key range min_inclusive must be <= max_exclusive"
-        );
-        Self {
-            min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),
-            max_exclusive: EffectivePartitionKey::from(pkr.max_exclusive.as_str()),
-        }
     }
 
     /// Builds the JSON wire-format representation for serialization.
@@ -452,27 +396,6 @@ mod tests {
     }
 
     #[test]
-    fn to_range_produces_expected_fields() {
-        let feed_range = FeedRange {
-            min_inclusive: EffectivePartitionKey::from("20"),
-            max_exclusive: EffectivePartitionKey::from("80"),
-        };
-        let range = feed_range.to_range();
-        assert_eq!(range.min, "20");
-        assert_eq!(range.max, "80");
-        assert!(range.is_min_inclusive);
-        assert!(!range.is_max_inclusive);
-    }
-
-    #[test]
-    fn from_range_parses_expected_fields() {
-        let range = Range::new("20".to_owned(), "80".to_owned(), true, false);
-        let feed_range = FeedRange::from_range(&range).unwrap();
-        assert_eq!(feed_range.min_inclusive.as_str(), "20");
-        assert_eq!(feed_range.max_exclusive.as_str(), "80");
-    }
-
-    #[test]
     fn cross_sdk_compatibility() {
         // Verify that the full range serializes to the same base64 string regardless of platform
         let full = FeedRange::full();
@@ -518,11 +441,5 @@ mod tests {
         let json =
             r#"{"Range":{"min":"FF","max":"","isMinInclusive":true,"isMaxInclusive":false}}"#;
         assert!(serde_json::from_str::<FeedRange>(json).is_err());
-    }
-
-    #[test]
-    fn from_range_rejects_wrong_inclusivity() {
-        let range = Range::new("".to_string(), "FF".to_string(), false, true);
-        assert!(FeedRange::from_range(&range).is_err());
     }
 }

@@ -154,13 +154,13 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     let create_resp = container
         .create_item(&pk_value, &item_id, &item, None)
         .await?;
-    assert!(create_resp.diagnostics().activity_id().is_some());
-    assert!(create_resp.diagnostics().server_duration_ms().is_some());
+    assert!(!create_resp.diagnostics().activity_id().as_str().is_empty());
+    assert!(create_resp.diagnostics().duration() > std::time::Duration::ZERO);
 
     let read_resp = container
         .read_item::<Gw20TestItem>(&pk_value, &item_id, None)
         .await?;
-    assert!(read_resp.diagnostics().activity_id().is_some());
+    assert!(!read_resp.diagnostics().activity_id().as_str().is_empty());
     let read_item: Gw20TestItem = read_resp.into_model()?;
     assert_eq!(read_item, item);
 
@@ -169,10 +169,10 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     let replace_resp = container
         .replace_item(&pk_value, &item_id, &item, None)
         .await?;
-    assert!(replace_resp.diagnostics().activity_id().is_some());
+    assert!(!replace_resp.diagnostics().activity_id().as_str().is_empty());
 
     let delete_resp = container.delete_item(&pk_value, &item_id, None).await?;
-    assert!(delete_resp.diagnostics().activity_id().is_some());
+    assert!(!delete_resp.diagnostics().activity_id().as_str().is_empty());
 
     drop_database(&client, &db_name).await;
     Ok(())
@@ -219,7 +219,7 @@ pub async fn gateway20_query_streams() -> Result<(), Box<dyn std::error::Error>>
     while let Some(page) = pages.next().await {
         let page = page?;
         pages_seen += 1;
-        assert!(page.diagnostics().activity_id().is_some());
+        assert!(!page.diagnostics().activity_id().as_str().is_empty());
         items_seen += page.items().len();
     }
     assert!(pages_seen >= 1, "expected at least one query page");
@@ -292,7 +292,7 @@ pub async fn gateway20_query_paginates_via_continuation_tokens(
         let page = page?;
         pages_seen += 1;
         assert!(
-            page.diagnostics().activity_id().is_some(),
+            !page.diagnostics().activity_id().as_str().is_empty(),
             "every Gateway 2.0 page must surface an activity-id",
         );
         for item in page.items() {
@@ -427,11 +427,11 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
         .await?;
     let diagnostics = read_resp.diagnostics();
     assert!(
-        diagnostics.activity_id().is_some(),
+        !diagnostics.activity_id().as_str().is_empty(),
         "expected activity_id to be populated for a Gateway 2.0 request"
     );
     assert!(
-        diagnostics.server_duration_ms().is_some(),
+        diagnostics.duration() > std::time::Duration::ZERO,
         "expected server_duration_ms to be populated for a Gateway 2.0 request"
     );
 
@@ -477,7 +477,7 @@ pub async fn gateway20_operator_override_at_sdk_boundary() -> Result<(), Box<dyn
         .read_item::<Gw20TestItem>(&pk_value, "override-item", None)
         .await?;
     let diagnostics = read_resp.diagnostics();
-    assert!(diagnostics.activity_id().is_some());
+    assert!(!diagnostics.activity_id().as_str().is_empty());
 
     drop_database(&client, &db_name).await;
     Ok(())
@@ -612,7 +612,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
     while let Some(page) = pages.next().await {
         let page = page?;
         pages_seen += 1;
-        assert!(page.diagnostics().activity_id().is_some());
+        assert!(!page.diagnostics().activity_id().as_str().is_empty());
         for it in page.items() {
             assert_eq!(
                 it.tenant_id, target_tenant,

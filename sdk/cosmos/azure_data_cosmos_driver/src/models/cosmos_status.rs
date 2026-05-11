@@ -1253,9 +1253,9 @@ impl CosmosStatus {
         self.sub_status
     }
 
-    /// Returns `true` if the HTTP status indicates success (2xx).
+    /// Returns `true` if the HTTP status indicates success (2xx) or 304 Not Modified.
     pub fn is_success(&self) -> bool {
-        self.status_code.is_success()
+        self.status_code.is_success() || u16::from(self.status_code) == 304
     }
 
     /// Returns `true` if this is a throttling response (HTTP 429).

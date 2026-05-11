@@ -21,47 +21,31 @@ Make the SDK client a **thin wrapper** over the driver. The SDK translates publi
 
 ### Data Flow
 
-```text
-User calls:     container_client.read_item(pk, id, options)
-                              │
-                    ┌─────────▼────────────┐
-                    │  SDK ContainerClient │
-                    └─────────┬────────────┘
-                              │
-          ┌───────────────────┼───────────────────┐
-          │                   │                   │
-  PartitionKey           ItemOptions        ContainerRef
-  (SDK type)             (SDK type)        (driver type,
-          │                   │           stored on client)
-          │                   │                   │
-          ▼                   ▼                   ▼
-  into_driver_pk()   item_options_to_       ItemReference::
-          │           operation_options()    from_name()
-          │                   │                   │
-          └───────────────────┼───────────────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │  CosmosOperation:: │
-                    │    read_item()     │
-                    └─────────┬──────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │  driver.execute_    │
-                    │  operation(op, opts)│
-                    │                     │
-                    │  (auth, routing,    │
-                    │   retries, HTTP)    │
-                    └─────────┬───────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │  driver_response_   │
-                    │  to_cosmos_response │
-                    └─────────┬───────────┘
-                              │
-                    ┌─────────▼───────────┐
-                    │  CosmosResponse<T>  │
-                    │  (SDK public type)  │
-                    └─────────────────────┘
+```mermaid
+flowchart TD
+    User["User calls: container_client.read_item(pk, id, options)"]
+    SDK["SDK ContainerClient"]
+    PK["PartitionKey<br/>(SDK type)"]
+    Opts["ItemOptions<br/>(SDK type)"]
+    Cref["ContainerRef<br/>(driver type, stored on client)"]
+    PKx["into_driver_pk()"]
+    Optsx["item_options_to_operation_options()"]
+    Cref2["ItemReference::from_name()"]
+    Op["CosmosOperation::read_item()"]
+    Exec["driver.execute_operation(op, opts)<br/>(auth, routing, retries, HTTP)"]
+    Conv["driver_response_to_cosmos_response"]
+    Final["CosmosResponse&lt;T&gt;<br/>(SDK public type)"]
+    User --> SDK
+    SDK --> PK
+    SDK --> Opts
+    SDK --> Cref
+    PK --> PKx
+    Opts --> Optsx
+    Cref --> Cref2
+    PKx --> Op
+    Optsx --> Op
+    Cref2 --> Op
+    Op --> Exec --> Conv --> Final
 ```
 
 ### Key Principle
