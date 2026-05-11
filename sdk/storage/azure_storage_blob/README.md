@@ -39,7 +39,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 In order to interact with the Azure Blob Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
-use azure_storage_blob::{BlobClient, BlobClientOptions};
+use azure_storage_blob::BlobClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
@@ -47,11 +47,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a BlobClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/", // Endpoint
+        "https://<storage_account_name>.blob.core.windows.net/",  // Endpoint
         "<container_name>",                                       // Container Name
         "<blob_name>",                                            // Blob Name
         Some(credential),                                         // Credential
-        Some(BlobClientOptions::default()),                       // BlobClient Options
+        None,                                                     // BlobClient Options
     )?;
     Ok(())
 }
@@ -80,7 +80,7 @@ You can find executable examples for all major SDK functions in:
 
 ```rust no_run
 use azure_core::http::RequestContent;
-use azure_storage_blob::{BlobClient, BlobClientOptions};
+use azure_storage_blob::BlobClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "<container_name>",
         "<blob_name>",
         Some(credential),
-        Some(BlobClientOptions::default()),
+        None,
     )?;
 
     let data = b"hello world";
@@ -108,18 +108,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Download a blob
 
 ```rust no_run
-use azure_storage_blob::{BlobClient, BlobClientOptions};
+use azure_storage_blob::BlobClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/", // Endpoint
+        "https://<storage_account_name>.blob.core.windows.net/",  // Endpoint
         "<container_name>",                                       // Container Name
         "<blob_name>",                                            // Blob Name
         Some(credential),                                         // Credential
-        Some(BlobClientOptions::default()),                       // BlobClient Options
+        None,                                                     // BlobClient Options
     )?;
     let response = blob_client.download(None).await?;
     let data = String::from_utf8(response.body.collect().await?.into())?;

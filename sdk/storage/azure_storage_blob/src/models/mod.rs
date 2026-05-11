@@ -5,7 +5,7 @@
 
 mod download_result;
 pub(crate) mod drains;
-pub mod error;
+pub(crate) mod error;
 pub(crate) mod extensions;
 pub(crate) mod http_ranges;
 pub mod method_options;

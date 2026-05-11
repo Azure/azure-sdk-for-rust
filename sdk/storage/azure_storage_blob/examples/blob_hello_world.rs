@@ -23,13 +23,15 @@
 //! cargo run --package azure_storage_blob --example blob_hello_world
 //! ```
 
+use std::env;
+
 use azure_core::http::RequestContent;
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::BlobContainerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let account = std::env::var("AZURE_STORAGE_ACCOUNT_NAME")
+    let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
 
     let endpoint = format!("https://{}.blob.core.windows.net/", account);

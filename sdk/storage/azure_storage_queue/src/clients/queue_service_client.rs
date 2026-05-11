@@ -29,6 +29,13 @@ impl QueueServiceClient {
         options: Option<QueueServiceClientOptions>,
     ) -> Result<Self> {
         let endpoint = Url::parse(endpoint)?;
+        // Storage endpoints must be base URLs.
+        if endpoint.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{endpoint} is not a valid base URL"),
+            ));
+        }
         let mut options = options.unwrap_or_default();
         apply_storage_logging_defaults(&mut options.client_options);
 
@@ -89,5 +96,23 @@ impl QueueServiceClient {
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_rejects_non_base_url() {
+        assert!(QueueServiceClient::new("data:text/plain,hello", None, None).is_err());
+    }
+
+    #[test]
+    fn new_accepts_https_url() {
+        assert!(
+            QueueServiceClient::new("https://myaccount.queue.core.windows.net/", None, None)
+                .is_ok()
+        );
     }
 }

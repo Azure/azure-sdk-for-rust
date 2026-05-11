@@ -18,10 +18,10 @@
 - Renamed `BlockBlobClientUploadBlobFromUrlOptions::with_if_not_exists()` to `if_not_exists()`.
 - Renamed `BlockBlobClientUploadOptions::with_if_not_exists()` to `if_not_exists()`.
 - Removed the `endpoint()` method from all clients. Use `url()` instead.
+- Removed `PageBlobClient::get_page_ranges()` along with the `PageList`, `PageRange`, `ClearRange`, `PageBlobClientGetPageRangesOptions`, and `PageListHeaders` types.
+- Removed the `azure_storage_blob::error` and `azure_storage_blob::models::error` module paths. Use the re-exported `azure_storage_blob::{Result, StorageError}` instead.
 
-### Bugs Fixed
-
-### Other Changes
+### Features Added
 
 - Added `with_tags()` helpers to set blob tags on create/upload options by accepting `BlobTags` or `HashMap<String, String>` and encoding them into the `x-ms-tags` header format:
   - `PageBlobClientCreateOptions::with_tags()`
@@ -29,6 +29,10 @@
   - `BlockBlobClientUploadOptions::with_tags()`
   - `BlockBlobClientUploadBlobFromUrlOptions::with_tags()`
   - `BlockBlobClientCommitBlockListOptions::with_tags()`
+
+### Bugs Fixed
+
+- All client constructors (`BlobClient::from_url()`, `BlobContainerClient::from_url()`, `BlobServiceClient::new()`, `AppendBlobClient::from_url()`, `BlockBlobClient::from_url()`, `PageBlobClient::from_url()`) now reject non-base URLs (e.g. `data:`, `mailto:`).
 
 ## 0.12.0 (2026-04-22)
 

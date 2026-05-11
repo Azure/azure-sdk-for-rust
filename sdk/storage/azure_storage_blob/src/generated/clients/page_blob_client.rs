@@ -6,12 +6,11 @@
 use crate::{
     generated::models::{
         PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
-        PageBlobClientCreateOptions, PageBlobClientCreateResult,
-        PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
+        PageBlobClientCreateOptions, PageBlobClientCreateResult, PageBlobClientResizeOptions,
         PageBlobClientResizeResult, PageBlobClientSetSequenceNumberOptions,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlOptions,
         PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesOptions,
-        PageBlobClientUploadPagesResult, PageList, SequenceNumberActionType,
+        PageBlobClientUploadPagesResult, SequenceNumberActionType,
     },
     models::HttpRange,
 };
@@ -21,7 +20,7 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
-        Response, Url, UrlExt, XmlFormat,
+        Response, Url, UrlExt,
     },
     time::to_rfc7231,
     tracing, Bytes, Result,
@@ -323,105 +322,6 @@ impl PageBlobClient {
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
                         success_codes: &[201],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
-    }
-
-    /// Returns the list of valid page ranges for the specified page blob.
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`PageListHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{PageList, PageListHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<PageList, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(etag) = response.etag()? {
-    ///         println!("etag: {:?}", etag);
-    ///     }
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("last-modified: {:?}", last_modified);
-    ///     }
-    ///     if let Some(blob_content_length) = response.blob_content_length()? {
-    ///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`etag`()](crate::generated::models::PageListHeaders::etag) - etag
-    /// * [`last_modified`()](crate::generated::models::PageListHeaders::last_modified) - last-modified
-    /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
-    ///
-    /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
-    #[tracing::function("Storage.Blob.PageBlobClient.getPageRanges")]
-    pub async fn get_page_ranges(
-        &self,
-        options: Option<PageBlobClientGetPageRangesOptions<'_>>,
-    ) -> Result<Response<PageList, XmlFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
-        query_builder.append_pair("comp", "pagelist");
-        if let Some(marker) = options.marker.as_ref() {
-            query_builder.set_pair("marker", marker);
-        }
-        if let Some(maxresults) = options.maxresults {
-            query_builder.set_pair("maxresults", maxresults.to_string());
-        }
-        if let Some(snapshot) = options.snapshot.as_ref() {
-            query_builder.set_pair("snapshot", snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match.to_string());
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match.to_string());
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(range) = options.range.as_ref() {
-            request.insert_header("range", range.to_string());
-        }
-        if let Some(if_tags) = options.if_tags.as_ref() {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id.as_ref() {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[200],
                     },
                     ..Default::default()
                 }),

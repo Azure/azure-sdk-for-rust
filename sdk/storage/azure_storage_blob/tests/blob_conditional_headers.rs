@@ -19,7 +19,7 @@ use azure_storage_blob::models::{
     BlobContainerClientSetMetadataOptions, BlobTags, BlockBlobClientCommitBlockListOptions,
     BlockBlobClientGetBlockListOptions, BlockBlobClientUploadOptions, BlockListType,
     BlockLookupList, DeleteSnapshotsOptionType, HttpRange, PageBlobClientClearPagesOptions,
-    PageBlobClientCreateOptions, PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
+    PageBlobClientCreateOptions, PageBlobClientResizeOptions,
     PageBlobClientSetSequenceNumberOptions, PageBlobClientUploadPagesOptions,
     SequenceNumberActionType, SignedIdentifiers,
 };
@@ -1858,49 +1858,6 @@ mod page_blob_client {
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
-
-        // Get Page Ranges - PageBlobClientGetPageRangesOptions
-
-        // if_match Failure
-        let err = page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_match: Some(BAD_ETAG.to_string().into()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure
-        let err = page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_tags: Some("\"env\"='wrong'".to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since - Not Modified (304)
-        let err = page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_modified_since: Some(after),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::NotModified,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Get Page Ranges Success
-        page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_match: Some(etag.clone()),
-                ..Default::default()
-            }))
-            .await?;
 
         // Resize - PageBlobClientResizeOptions
 

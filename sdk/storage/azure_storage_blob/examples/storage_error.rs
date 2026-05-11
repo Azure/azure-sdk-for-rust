@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.blob.core.windows.net", account);
+    let endpoint = format!("https://{}.blob.core.windows.net/", account);
     let container_name = "nonexistent-container";
     let blob_name = "nonexistent-blob.txt";
 
