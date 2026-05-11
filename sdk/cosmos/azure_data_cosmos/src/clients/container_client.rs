@@ -8,8 +8,8 @@ use crate::{
         BatchResponse, ContainerProperties, ItemResponse, ResourceResponse, ThroughputProperties,
     },
     options::{
-        BatchOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
-        SessionToken,
+        BatchOptions, PatchItemOptions, Precondition, QueryOptions, ReadContainerOptions,
+        ReadFeedRangesOptions, SessionToken,
     },
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
@@ -17,6 +17,7 @@ use crate::{
 };
 
 use super::ThroughputPoller;
+use crate::PatchSpec;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
@@ -430,6 +431,91 @@ impl ContainerClient {
             .await?;
 
         // Bridge the driver response to the SDK response type.
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
+    }
+
+    /// Applies a JSON-PATCH-style update to an item by reading it, applying
+    /// the [`PatchSpec`] locally, and issuing an ETag-guarded Replace.
+    ///
+    /// This is implemented as a driver-side Read-Modify-Write (RMW) loop:
+    ///
+    /// 1. The driver reads the current item and captures its `ETag`.
+    /// 2. It applies the [`PatchSpec`] to a local `serde_json::Value` copy.
+    /// 3. It issues a `Replace` with `If-Match` set to the captured `ETag`.
+    /// 4. On `412 PreconditionFailed`, the loop restarts (another writer
+    ///    won the race). It retries up to
+    ///    [`PatchItemOptions::max_attempts`](crate::PatchItemOptions::max_attempts)
+    ///    times (default 5).
+    ///
+    /// The handler refuses to PATCH paths that overlap the container's
+    /// partition-key paths: rewriting the partition key would move the
+    /// document to a different physical partition, so such requests are
+    /// rejected synchronously.
+    ///
+    /// # Arguments
+    /// * `partition_key` - The partition key of the item to patch.
+    /// * `item_id` - The id of the item to patch.
+    /// * `patch` - The [`PatchSpec`] describing the ops to apply.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{PatchOp, PatchSpec};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("non-running example");
+    /// let patch = PatchSpec::new(vec![
+    ///     PatchOp::set("/displayName", serde_json::json!("New name")),
+    ///     PatchOp::increment("/visits", 1i64),
+    /// ]);
+    /// container_client
+    ///     .patch_item("category1", "product1", patch, None)
+    ///     .await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Content Response on Write
+    ///
+    /// By default, the patched item is *not* returned in the HTTP response.
+    /// If you want it returned, set `content_response_on_write` to
+    /// [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled)
+    /// on the [`OperationOptions`](crate::OperationOptions) in your
+    /// [`PatchItemOptions`](crate::PatchItemOptions).
+    pub async fn patch_item(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: &str,
+        patch: PatchSpec,
+        options: Option<PatchItemOptions>,
+    ) -> azure_core::Result<ItemResponse<()>> {
+        let options = options.unwrap_or_default();
+        let body = serde_json::to_vec(&patch)?;
+
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
+
+        // Build the PATCH operation. The handler reads the PatchSpec back
+        // out of the body, so we pass it through verbatim.
+        let mut operation = CosmosOperation::patch_item(item_ref).with_body(body);
+        if let Some(max_attempts) = options.max_attempts {
+            operation = operation.with_patch_max_attempts(max_attempts);
+        }
+        // PATCH manages its own If-Match internally — we only forward the
+        // session token.
+        let operation = apply_item_options(operation, options.session_token, None);
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
         Ok(ItemResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
         ))

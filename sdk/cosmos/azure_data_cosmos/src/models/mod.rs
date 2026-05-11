@@ -26,7 +26,8 @@ pub use throughput_properties::*;
 // These are the canonical definitions; the SDK does not duplicate them.
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
-    ContainerReference, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion,
+    ContainerReference, IncrValue, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion,
+    PatchOp, PatchSpec,
 };
 
 // Re-export the driver's full diagnostics context as the canonical type for

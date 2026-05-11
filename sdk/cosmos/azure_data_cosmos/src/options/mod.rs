@@ -193,6 +193,56 @@ impl ItemWriteOptions {
     }
 }
 
+/// Options for [`ContainerClient::patch_item()`](crate::clients::ContainerClient::patch_item()).
+///
+/// PATCH is implemented driver-side as a Read-Modify-Write (RMW) loop:
+/// the driver reads the current item, applies your [`PatchSpec`](crate::PatchSpec)
+/// locally, and issues an ETag-guarded Replace. If the Replace returns
+/// 412 PreconditionFailed (another writer raced), the loop restarts.
+///
+/// The optional [`max_attempts`](Self::max_attempts) field bounds how many
+/// times that loop may retry; `None` falls back to the driver default (5).
+/// PATCH never exposes [`Precondition`] directly — the handler always
+/// manages the IfMatch internally.
+///
+/// General-purpose settings (custom headers, content response behavior,
+/// session tokens, etc.) are configured via [`operation`](Self::operation)
+/// — see [`OperationOptions`] for details.
+#[derive(Clone, Default)]
+#[non_exhaustive]
+pub struct PatchItemOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+
+    /// Session token for session-consistent writes.
+    pub session_token: Option<SessionToken>,
+
+    /// Maximum number of Read-Modify-Write attempts the driver may make
+    /// before surfacing a 412. `None` selects the driver default (5).
+    pub max_attempts: Option<std::num::NonZeroU8>,
+}
+
+impl PatchItemOptions {
+    /// Sets the session token for this request.
+    pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
+        self.session_token = Some(session_token.into());
+        self
+    }
+
+    /// Caps the number of Read-Modify-Write attempts the driver may make.
+    pub fn with_max_attempts(mut self, max_attempts: std::num::NonZeroU8) -> Self {
+        self.max_attempts = Some(max_attempts);
+        self
+    }
+
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
+
 /// Options for transactional batch operations.
 ///
 /// Used by [`ContainerClient::execute_transactional_batch()`](crate::clients::ContainerClient::execute_transactional_batch()).
