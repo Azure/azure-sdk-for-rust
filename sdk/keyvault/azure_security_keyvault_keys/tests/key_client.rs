@@ -26,7 +26,7 @@ async fn key_roundtrip(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = KeyClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -68,7 +68,7 @@ async fn update_key_properties(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = KeyClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -116,7 +116,7 @@ async fn list_keys(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = KeyClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -165,7 +165,7 @@ async fn purge_key(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = KeyClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -222,7 +222,7 @@ async fn encrypt_decrypt(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = KeyClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -289,7 +289,7 @@ async fn encrypt_decrypt_latest_key_version(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = KeyClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -342,7 +342,7 @@ async fn sign_verify(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = KeyClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -407,7 +407,7 @@ async fn wrap_key_unwrap_key(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = KeyClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = KeyClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),

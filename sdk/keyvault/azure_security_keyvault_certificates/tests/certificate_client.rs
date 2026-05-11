@@ -51,7 +51,7 @@ async fn certificate_roundtrip(ctx: TestContext) -> Result<()> {
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = CertificateClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -84,7 +84,7 @@ async fn certificate_validate_instrumentation(ctx: TestContext) -> Result<()> {
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     azure_core_test::tracing::assert_instrumentation_information(
         |tracer_provider| {
@@ -149,7 +149,7 @@ async fn update_certificate_properties(ctx: TestContext) -> Result<()> {
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = CertificateClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -205,7 +205,7 @@ async fn list_certificates(ctx: TestContext) -> Result<()> {
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = CertificateClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -246,7 +246,7 @@ async fn purge_certificate(ctx: TestContext) -> Result<()> {
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = CertificateClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -301,7 +301,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = CertificateClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -343,7 +343,7 @@ async fn sign_jwt_with_ec_certificate(ctx: TestContext) -> Result<()> {
         .expect("certificate version required");
 
     let mut key_options = KeyClientOptions::default();
-    recording.instrument(&mut key_options.client_options);
+    recording.instrument(&mut key_options.client_options, None);
 
     // Sign a JWT.
     let key_client = KeyClient::new(
@@ -385,7 +385,7 @@ async fn create_invalid_certificate(ctx: TestContext) -> Result<()> {
     recording.remove_sanitizers(&[SANITIZE_BODY_NAME]).await?;
 
     let mut options = CertificateClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = CertificateClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),

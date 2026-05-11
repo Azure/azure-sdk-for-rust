@@ -31,7 +31,7 @@ async fn secret_roundtrip(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = SecretClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = SecretClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -72,7 +72,7 @@ async fn update_secret_properties(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = SecretClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = SecretClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -120,7 +120,7 @@ async fn list_secrets(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = SecretClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = SecretClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -169,7 +169,7 @@ async fn purge_secret(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
 
     let mut options = SecretClientOptions::default();
-    recording.instrument(&mut options.client_options);
+    recording.instrument(&mut options.client_options, None);
 
     let client = SecretClient::new(
         recording.var("AZURE_KEYVAULT_URL", None).as_str(),
@@ -233,7 +233,7 @@ async fn round_trip_secret_verify_telemetry(ctx: TestContext) -> Result<()> {
     azure_core_test::tracing::assert_instrumentation_information(
         |tracer_provider| {
             let mut options = SecretClientOptions::default();
-            recording.instrument(&mut options.client_options);
+            recording.instrument(&mut options.client_options, None);
             options.client_options.instrumentation = InstrumentationOptions {
                 tracer_provider: Some(tracer_provider),
             };
@@ -321,7 +321,7 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
 
         let secret_client = {
             let mut options = SecretClientOptions::default();
-            recording.instrument(&mut options.client_options);
+            recording.instrument(&mut options.client_options, None);
             SecretClient::new(
                 recording.var("AZURE_KEYVAULT_URL", None).as_str(),
                 recording.credential(),
@@ -351,7 +351,7 @@ async fn list_secrets_verify_telemetry(ctx: TestContext) -> Result<()> {
     let validate_result = azure_core_test::tracing::assert_instrumentation_information(
         |tracer_provider| {
             let mut options = SecretClientOptions::default();
-            recording.instrument(&mut options.client_options);
+            recording.instrument(&mut options.client_options, None);
             options.client_options.instrumentation = InstrumentationOptions {
                 tracer_provider: Some(tracer_provider),
             };
@@ -411,7 +411,7 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
 
         let secret_client = {
             let mut options = SecretClientOptions::default();
-            recording.instrument(&mut options.client_options);
+            recording.instrument(&mut options.client_options, None);
             SecretClient::new(
                 recording.var("AZURE_KEYVAULT_URL", None).as_str(),
                 recording.credential(),
@@ -441,7 +441,7 @@ async fn list_secrets_by_pages_verify_telemetry(ctx: TestContext) -> Result<()> 
     let validate_result = azure_core_test::tracing::assert_instrumentation_information(
         |tracer_provider| {
             let mut options = SecretClientOptions::default();
-            recording.instrument(&mut options.client_options);
+            recording.instrument(&mut options.client_options, None);
             options.client_options.instrumentation = InstrumentationOptions {
                 tracer_provider: Some(tracer_provider),
             };
@@ -504,7 +504,7 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
 
         let secret_client = {
             let mut options = SecretClientOptions::default();
-            recording.instrument(&mut options.client_options);
+            recording.instrument(&mut options.client_options, None);
             SecretClient::new(
                 recording.var("AZURE_KEYVAULT_URL", None).as_str(),
                 recording.credential(),
@@ -534,7 +534,7 @@ async fn list_secrets_verify_telemetry_rehydrated(ctx: TestContext) -> Result<()
     let validate_result = azure_core_test::tracing::assert_instrumentation_information(
         |tracer_provider| {
             let mut options = SecretClientOptions::default();
-            recording.instrument(&mut options.client_options);
+            recording.instrument(&mut options.client_options, None);
             options.client_options.instrumentation = InstrumentationOptions {
                 tracer_provider: Some(tracer_provider),
             };

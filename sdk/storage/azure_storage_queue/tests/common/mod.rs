@@ -22,7 +22,7 @@ pub fn get_queue_name(recording: &Recording) -> String {
 /// * `recording` - A reference to a Recording instance.
 pub fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String, String) {
     let mut client_options = ClientOptions::default();
-    recording.instrument(&mut client_options);
+    recording.instrument(&mut client_options, None);
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
     let endpoint = format!("https://{}.queue.core.windows.net/", account_name.as_str());
     let secondary_endpoint = format!(

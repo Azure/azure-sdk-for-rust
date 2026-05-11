@@ -20,7 +20,7 @@ use azure_core::{
     },
     Bytes, Result,
 };
-use azure_core_test::Recording;
+use azure_core_test::{InstrumentOptions, Recording};
 use azure_storage_blob::{
     models::{
         BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
@@ -111,7 +111,13 @@ pub fn recorded_test_setup(
     account_type: StorageAccount,
     client_options: &mut ClientOptions,
 ) -> String {
-    recording.instrument(client_options);
+    recording.instrument(
+        client_options,
+        Some(InstrumentOptions {
+            // Storage does not use automatic decompression by default.
+            automatic_decompression: false,
+        }),
+    );
 
     let account_name_var = match account_type {
         StorageAccount::Standard => "AZURE_STORAGE_ACCOUNT_NAME",

@@ -19,10 +19,7 @@ pub use tokio::{
 pub use tracing::Level;
 use tracing::Span;
 
-// cspell:ignore aspnetcore devcert teamprojectid testproxy
-pub const KESTREL_CERT_PATH_ENV: &str = "ASPNETCORE_Kestrel__Certificates__Default__Path";
-pub const KESTREL_CERT_PASSWORD_ENV: &str = "ASPNETCORE_Kestrel__Certificates__Default__Password";
-pub const KESTREL_CERT_PASSWORD: &str = "password";
+// cspell:ignore teamprojectid testproxy
 pub const MIN_VERSION: Version = Version {
     major: 20241213,
     minor: 1,
@@ -40,23 +37,23 @@ pub async fn start(
     crate_dir: impl AsRef<Path>,
     options: Option<ProxyOptions>,
 ) -> Result<Proxy> {
+    // Find root of git repo or work tree: a ".git" directory or file will exist either way.
+    let git_dir = crate::find_ancestor_file(crate_dir.as_ref(), ".git")?;
+    let git_dir = git_dir.parent().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "parent git repository not found")
+    })?;
+
     if env::var(PROXY_MANUAL_START).is_ok_and(|v| v.eq_ignore_ascii_case("true")) {
         tracing::warn!(
             "environment variable {PROXY_MANUAL_START} is 'true'; not starting test-proxy"
         );
-        let proxy = Proxy::existing()?;
+        let proxy = Proxy::existing(git_dir)?;
 
         // Set up default matchers and sanitizers.
         proxy.initialize().await?;
 
         return Ok(proxy);
     }
-
-    // Find root of git repo or work tree: a ".git" directory or file will exist either way.
-    let git_dir = crate::find_ancestor_file(crate_dir.as_ref(), ".git")?;
-    let git_dir = git_dir.parent().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "parent git repository not found")
-    })?;
 
     let executable_file_path = ensure_test_proxy(git_dir).await?;
 
