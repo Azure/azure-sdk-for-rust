@@ -22,6 +22,7 @@ mod etag;
 mod finite_f64;
 pub(crate) use finite_f64::FiniteF64;
 pub(crate) mod partition_key;
+mod patch;
 mod request_charge;
 pub(crate) mod resource_id;
 mod resource_reference;
@@ -54,6 +55,7 @@ pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
 pub use etag::{ETag, Precondition};
 pub use partition_key::{PartitionKey, PartitionKeyValue};
+pub use patch::{IncrValue, PatchOp, PatchSpec};
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
 pub use resource_reference::{DatabaseReference, ItemReference};
@@ -470,6 +472,15 @@ pub enum OperationType {
     HeadFeed,
     /// Execute a stored procedure.
     Execute,
+    /// Patch an item using a server-style operation list.
+    ///
+    /// The driver implements `Patch` as a client-side Read-Modify-Write loop:
+    /// it issues a [`OperationType::Read`] for the target item, applies the
+    /// requested patch operations to the local document, and then issues an
+    /// ETag-guarded [`OperationType::Replace`]. PATCH itself is therefore
+    /// never sent on the wire; the variant is a virtual operation type the
+    /// driver dispatches to a dedicated handler.
+    Patch,
 }
 
 impl OperationType {
@@ -489,6 +500,11 @@ impl OperationType {
             OperationType::ReadFeed => Method::Get,
             OperationType::Replace => Method::Put,
             OperationType::Head | OperationType::HeadFeed => Method::Head,
+            // `Patch` is a virtual operation; the driver decomposes it into a
+            // Read followed by a Replace, so it never produces wire requests
+            // of its own. Reporting `Patch` keeps `http_method` total for
+            // diagnostics/logging without affecting the transport layer.
+            OperationType::Patch => Method::Patch,
         }
     }
 
@@ -538,6 +554,7 @@ impl OperationType {
             OperationType::Head => "head",
             OperationType::HeadFeed => "head_feed",
             OperationType::Execute => "execute",
+            OperationType::Patch => "patch",
         }
     }
 }

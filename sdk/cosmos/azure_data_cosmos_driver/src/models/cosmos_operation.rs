@@ -68,6 +68,10 @@ pub struct CosmosOperation {
     request_headers: CosmosRequestHeaders,
     /// Optional request body (raw bytes, schema-agnostic).
     body: Option<Vec<u8>>,
+    /// Maximum number of Read-Modify-Write attempts the PATCH handler may
+    /// make. Only consulted when `operation_type == OperationType::Patch`;
+    /// ignored for every other op. `None` selects the handler default (5).
+    patch_max_attempts: Option<std::num::NonZeroU8>,
 }
 
 impl CosmosOperation {
@@ -170,6 +174,21 @@ impl CosmosOperation {
         self
     }
 
+    /// Caps the number of Read-Modify-Write attempts the PATCH handler may make.
+    ///
+    /// Only consulted when [`operation_type`](Self::operation_type) is
+    /// [`OperationType::Patch`]; otherwise the value is ignored. `None`
+    /// (the default) selects the handler default (5).
+    pub fn with_patch_max_attempts(mut self, max_attempts: std::num::NonZeroU8) -> Self {
+        self.patch_max_attempts = Some(max_attempts);
+        self
+    }
+
+    /// Returns the cap on PATCH Read-Modify-Write attempts, if one was set.
+    pub fn patch_max_attempts(&self) -> Option<std::num::NonZeroU8> {
+        self.patch_max_attempts
+    }
+
     // ===== Factory Methods =====
 
     /// Creates a new operation with the specified type and resource reference.
@@ -186,6 +205,7 @@ impl CosmosOperation {
             partition_key: None,
             request_headers: CosmosRequestHeaders::new(),
             body: None,
+            patch_max_attempts: None,
         }
     }
 
@@ -520,6 +540,21 @@ impl CosmosOperation {
     pub fn replace_item(item: ItemReference) -> Self {
         let partition_key = item.partition_key().clone();
         Self::new(OperationType::Replace, item).with_partition_key(partition_key)
+    }
+
+    /// Builds a virtual PATCH operation for an item.
+    ///
+    /// The driver implements PATCH as a client-side Read-Modify-Write loop:
+    /// it reads the current item, applies the requested patch operations to
+    /// the local JSON document, and issues an ETag-guarded
+    /// [`OperationType::Replace`]. The PATCH operation itself is never sent on
+    /// the wire; callers build a [`crate::models::PatchSpec`] and pass it as
+    /// the operation body (via [`with_body`](Self::with_body)) — the patch
+    /// handler deserializes it before issuing the underlying transport
+    /// operations.
+    pub fn patch_item(item: ItemReference) -> Self {
+        let partition_key = item.partition_key().clone();
+        Self::new(OperationType::Patch, item).with_partition_key(partition_key)
     }
 
     /// Reads (lists) all items within a single partition.
