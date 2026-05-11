@@ -32,7 +32,7 @@
 
 ### Bugs Fixed
 
-- All client constructors (`BlobClient::from_url()`, `BlobContainerClient::from_url()`, `BlobServiceClient::new()`, `AppendBlobClient::from_url()`, `BlockBlobClient::from_url()`, `PageBlobClient::from_url()`) now reject cannot-be-a-base URLs (e.g. `data:`, `mailto:`).
+- All client constructors (`BlobClient::from_url()`, `BlobContainerClient::from_url()`, `BlobServiceClient::new()`, `AppendBlobClient::from_url()`, `BlockBlobClient::from_url()`, `PageBlobClient::from_url()`) now reject non-base URLs (e.g. `data:`, `mailto:`).
 
 ## 0.12.0 (2026-04-22)
 

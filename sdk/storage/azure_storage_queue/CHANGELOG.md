@@ -6,6 +6,10 @@
 
 - Renamed `QueueClient::endpoint()` and `QueueServiceClient::endpoint()` to `url()` for consistency with other Storage clients.
 
+### Bugs Fixed
+
+- `QueueClient::from_url()` and `QueueServiceClient::new()` now reject non-base URLs (e.g. `data:`, `mailto:`).
+
 ## 0.6.0 (2026-04-22)
 
 ### Features Added

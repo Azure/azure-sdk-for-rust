@@ -54,6 +54,14 @@ impl QueueClient {
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<QueueClientOptions>,
     ) -> Result<Self> {
+        // Storage endpoints must be base URLs.
+        if queue_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{queue_url} is not a valid base URL"),
+            ));
+        }
+
         let mut options = options.unwrap_or_default();
         apply_storage_logging_defaults(&mut options.client_options);
 
@@ -136,6 +144,12 @@ mod tests {
             err.to_string().contains("must use https"),
             "Expected error message to contain 'must use https', got: {err}"
         );
+    }
+
+    #[test]
+    fn from_url_rejects_non_base_url() {
+        let url = azure_core::http::Url::parse("data:text/plain,hello").unwrap();
+        assert!(QueueClient::from_url(url, None, None).is_err());
     }
 
     #[test]
