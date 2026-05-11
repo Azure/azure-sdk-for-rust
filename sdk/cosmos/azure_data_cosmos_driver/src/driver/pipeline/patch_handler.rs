@@ -85,15 +85,21 @@ pub(crate) async fn execute(
         .map(|n| n.get())
         .unwrap_or(DEFAULT_PATCH_MAX_ATTEMPTS);
 
+    // Capture the caller's session token (if any). The PATCH outer
+    // CosmosOperation carries it on its request headers because the SDK
+    // wrapper applies it via `apply_item_options`. We propagate it to the
+    // internal Read so we get a session-consistent view of the current item,
+    // then override with the Read's response session token on the Replace —
+    // closing the SE-004 TOCTOU window.
+    let caller_session_token = operation.request_headers().session_token.clone();
+
     // -- 2..6. RMW loop --
     let mut last_412: Option<azure_core::Error> = None;
     for _ in 0..attempts {
-        // Read the current item.
-        let read_op = CosmosOperation::read_item(item_ref.clone());
+        // Read the current item, propagating the caller's session token.
+        let read_op = build_read_sub_op(item_ref.clone(), caller_session_token.clone());
 
-        let read_resp = driver
-            .execute_operation(read_op, OperationOptions::default())
-            .await?;
+        let read_resp = driver.execute_operation(read_op, options.clone()).await?;
         let status = read_resp.status();
         if !status.is_success() {
             // Surface the underlying Read failure verbatim (NotFound, throttling,
@@ -106,6 +112,11 @@ pub(crate) async fn execute(
                 "PATCH cannot proceed: the Read response did not include an ETag",
             )
         })?;
+        // R3-DRIVER: forward the session token returned by the Read on the
+        // Replace, so the write commits against the same replica view we
+        // just read from. This is what mitigates SE-004 (session token
+        // TOCTOU across read->write).
+        let read_session_token = read_resp.headers().session_token.clone();
 
         // Locally apply the patch ops.
         let mut value: serde_json::Value =
@@ -123,10 +134,14 @@ pub(crate) async fn execute(
             )
         })?;
 
-        // Issue the ETag-guarded Replace.
-        let replace_op = CosmosOperation::replace_item(item_ref.clone())
-            .with_body(merged_bytes.clone())
-            .with_precondition(Precondition::if_match(etag));
+        // Issue the ETag-guarded Replace, forwarding the Read response's
+        // session token (overriding any caller-supplied value).
+        let replace_op = build_replace_sub_op(
+            item_ref.clone(),
+            merged_bytes.clone(),
+            etag,
+            read_session_token,
+        );
 
         let replace_resp = driver
             .execute_operation(replace_op, options.clone())
@@ -134,7 +149,7 @@ pub(crate) async fn execute(
         let replace_status = replace_resp.status();
         if replace_status.status_code() == StatusCode::PreconditionFailed {
             // 412 — someone raced us. Restart the loop.
-            last_412 = Some(precondition_failed_error());
+            last_412 = Some(precondition_failed_inner_error());
             continue;
         }
         if !replace_status.is_success() {
@@ -152,16 +167,43 @@ pub(crate) async fn execute(
         ));
     }
 
-    Err(last_412.unwrap_or_else(|| {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "PATCH exhausted attempts without success",
-        )
-    }))
+    Err(exhaustion_error(attempts, last_412))
 }
 
 fn missing_body_error(msg: &'static str) -> azure_core::Error {
     azure_core::Error::with_message(azure_core::error::ErrorKind::Other, msg)
+}
+
+/// Builds the internal Read sub-operation used by the RMW loop, propagating
+/// the caller's session token so the read sees a session-consistent view.
+fn build_read_sub_op(
+    item_ref: crate::models::ItemReference,
+    caller_session_token: Option<crate::models::SessionToken>,
+) -> CosmosOperation {
+    let mut op = CosmosOperation::read_item(item_ref);
+    if let Some(token) = caller_session_token {
+        op = op.with_session_token(token);
+    }
+    op
+}
+
+/// Builds the internal Replace sub-operation used by the RMW loop. The
+/// session token comes from the Read response (NOT the caller's options) so
+/// the write commits against the same replica view we just read from. This
+/// is the SE-004 TOCTOU mitigation.
+fn build_replace_sub_op(
+    item_ref: crate::models::ItemReference,
+    merged_bytes: Vec<u8>,
+    etag: crate::models::ETag,
+    read_response_session_token: Option<crate::models::SessionToken>,
+) -> CosmosOperation {
+    let mut op = CosmosOperation::replace_item(item_ref)
+        .with_body(merged_bytes)
+        .with_precondition(Precondition::if_match(etag));
+    if let Some(token) = read_response_session_token {
+        op = op.with_session_token(token);
+    }
+    op
 }
 
 fn read_status_error(status: crate::models::CosmosStatus) -> azure_core::Error {
@@ -174,11 +216,45 @@ fn read_status_error(status: crate::models::CosmosStatus) -> azure_core::Error {
     )
 }
 
-fn precondition_failed_error() -> azure_core::Error {
+/// Synthesizes a per-attempt 412 error that the RMW loop stashes as the
+/// "underlying cause" of an exhaustion. The error kind is `HttpResponse` so
+/// downstream callers that inspect `error.http_status()` see the 412 directly.
+fn precondition_failed_inner_error() -> azure_core::Error {
     azure_core::Error::with_message(
-        azure_core::error::ErrorKind::Other,
-        "PATCH exhausted attempts: every Read-Modify-Write attempt was preempted (412 PreconditionFailed)",
+        azure_core::error::ErrorKind::HttpResponse {
+            status: StatusCode::PreconditionFailed,
+            error_code: None,
+            raw_response: None,
+        },
+        "Read-Modify-Write attempt was preempted (412 PreconditionFailed)",
     )
+}
+
+/// Builds the final error returned to callers when the RMW loop exhausted
+/// `attempts` retries without ever landing a Replace. The underlying 412 is
+/// preserved as the source so `Error::source()` / debug formatting still
+/// surfaces the original cause.
+fn exhaustion_error(attempts: u8, last_412: Option<azure_core::Error>) -> azure_core::Error {
+    let message = format!("patch_item: ETag conflict after {attempts} attempts");
+    match last_412 {
+        Some(source) => azure_core::Error::with_error(
+            azure_core::error::ErrorKind::HttpResponse {
+                status: StatusCode::PreconditionFailed,
+                error_code: None,
+                raw_response: None,
+            },
+            source,
+            message,
+        ),
+        None => azure_core::Error::with_message(
+            azure_core::error::ErrorKind::HttpResponse {
+                status: StatusCode::PreconditionFailed,
+                error_code: None,
+                raw_response: None,
+            },
+            message,
+        ),
+    }
 }
 
 /// Rejects patches that try to mutate the partition key.
@@ -244,6 +320,43 @@ fn path_overlaps_partition_key(op_path: &str, pk_path: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{
+        AccountReference, ContainerProperties, ContainerReference, ETag, ItemReference,
+        OperationType, PartitionKey, PartitionKeyDefinition, SessionToken, SystemProperties,
+    };
+    use azure_core::http::Url;
+    use std::borrow::Cow;
+
+    fn test_account() -> AccountReference {
+        AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "test-key",
+        )
+    }
+
+    fn test_partition_key_definition(path: &str) -> PartitionKeyDefinition {
+        serde_json::from_str(&format!(r#"{{"paths":["{path}"]}}"#)).unwrap()
+    }
+
+    fn test_container() -> ContainerReference {
+        let props = ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: test_partition_key_definition("/pk"),
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &props,
+        )
+    }
+
+    fn test_item_ref() -> ItemReference {
+        ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1")
+    }
 
     #[test]
     fn path_overlap_detection() {
@@ -256,5 +369,60 @@ mod tests {
         // Sibling paths do not overlap.
         assert!(!path_overlaps_partition_key("/pkOther", "/pk"));
         assert!(!path_overlaps_partition_key("/other", "/pk"));
+    }
+
+    #[test]
+    fn read_sub_op_propagates_caller_session_token() {
+        // R3-DRIVER / SE-004: caller's session token must reach the internal Read so
+        // we get a session-consistent view of the current item.
+        let caller_token = SessionToken(Cow::Owned("0:1#42".into()));
+        let op = build_read_sub_op(test_item_ref(), Some(caller_token.clone()));
+
+        assert_eq!(op.operation_type(), OperationType::Read);
+        assert_eq!(
+            op.request_headers().session_token.as_ref(),
+            Some(&caller_token)
+        );
+    }
+
+    #[test]
+    fn read_sub_op_omits_token_when_caller_has_none() {
+        let op = build_read_sub_op(test_item_ref(), None);
+
+        assert_eq!(op.operation_type(), OperationType::Read);
+        assert!(op.request_headers().session_token.is_none());
+    }
+
+    #[test]
+    fn replace_sub_op_uses_read_response_session_token() {
+        // SE-004 TOCTOU mitigation: the Replace must commit against the same replica
+        // view we just read from, so the session token comes from the Read response,
+        // not from the caller's options.
+        let read_response_token = SessionToken(Cow::Owned("0:1#99".into()));
+        let etag = ETag::from("\"abc\"");
+        let body = b"{\"id\":\"doc1\"}".to_vec();
+
+        let op = build_replace_sub_op(
+            test_item_ref(),
+            body.clone(),
+            etag,
+            Some(read_response_token.clone()),
+        );
+
+        assert_eq!(op.operation_type(), OperationType::Replace);
+        assert_eq!(op.body(), Some(body.as_slice()));
+        assert_eq!(
+            op.request_headers().session_token.as_ref(),
+            Some(&read_response_token)
+        );
+    }
+
+    #[test]
+    fn replace_sub_op_omits_token_when_read_response_has_none() {
+        let etag = ETag::from("\"abc\"");
+        let op = build_replace_sub_op(test_item_ref(), Vec::new(), etag, None);
+
+        assert_eq!(op.operation_type(), OperationType::Replace);
+        assert!(op.request_headers().session_token.is_none());
     }
 }

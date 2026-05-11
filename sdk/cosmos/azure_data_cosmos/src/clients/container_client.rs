@@ -464,33 +464,47 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{PatchOp, PatchSpec};
+    /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("non-running example");
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")]
+    ///     product_id: String,
+    ///     display_name: String,
+    ///     visits: i64,
+    /// }
+    ///
     /// let patch = PatchSpec::new(vec![
     ///     PatchOp::set("/displayName", serde_json::json!("New name")),
     ///     PatchOp::increment("/visits", 1i64),
     /// ]);
-    /// container_client
+    /// // The post-image of the patched item is always available, regardless of
+    /// // `content_response_on_write`: the driver synthesizes it from the locally
+    /// // merged document.
+    /// let updated: Product = container_client
     ///     .patch_item("category1", "product1", patch, None)
-    ///     .await?;
+    ///     .await?
+    ///     .into_model()?;
     /// # Ok(())
     /// # }
     /// ```
     ///
-    /// # Content Response on Write
+    /// # Response Body
     ///
-    /// By default, the patched item is *not* returned in the HTTP response.
-    /// If you want it returned, set `content_response_on_write` to
-    /// [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled)
-    /// on the [`OperationOptions`](crate::OperationOptions) in your
-    /// [`PatchItemOptions`](crate::PatchItemOptions).
-    pub async fn patch_item(
+    /// Unlike a wire-level Cosmos PATCH (which honors
+    /// `content_response_on_write`), this method always returns the post-image
+    /// of the patched item. The driver constructs it locally from the merged
+    /// document it just wrote, so no extra round trip is required to read it
+    /// back. Callers that don't need the body can use
+    /// [`ItemResponse::<serde_json::Value>`] or simply discard the response.
+    pub async fn patch_item<T>(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         patch: PatchSpec,
         options: Option<PatchItemOptions>,
-    ) -> azure_core::Result<ItemResponse<()>> {
+    ) -> azure_core::Result<ItemResponse<T>> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&patch)?;
 
@@ -1115,5 +1129,5 @@ fn _assert_futures_are_send() {
     let item_id: &str = todo!();
     let patch: PatchSpec = todo!();
     let options: Option<PatchItemOptions> = todo!();
-    assert_send(client.patch_item(partition_key, item_id, patch, options));
+    assert_send(client.patch_item::<serde_json::Value>(partition_key, item_id, patch, options));
 }

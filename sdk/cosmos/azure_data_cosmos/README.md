@@ -121,11 +121,16 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 
     // Patch an item: apply a list of JSON-PATCH-style ops driver-side.
     // The driver handles Read-Modify-Write internally and retries on 412.
+    // PATCH always returns the post-image (the locally merged document) — no
+    // extra round trip is required to read it back.
     let patch = azure_data_cosmos::PatchSpec::new(vec![
         azure_data_cosmos::PatchOp::set("/value", serde_json::json!("4")),
-        azure_data_cosmos::PatchOp::increment("/count", 1i64),
     ]);
-    container.patch_item("partition1", "1", patch, None).await?;
+    let patched: Item = container
+        .patch_item("partition1", "1", patch, None)
+        .await?
+        .into_model()?;
+    println!("patched value = {}", patched.value);
 
     // Delete an item
     container.delete_item("partition1", "1", None).await?;
