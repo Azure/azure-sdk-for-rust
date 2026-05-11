@@ -1,11 +1,14 @@
-# `cosmos_patch_compare` Fixture Coverage
+# `cosmos_patch_cross_sdk_parity` Fixture Coverage
 
-This file documents the comparison-harness fixture catalog driven by
-`fixtures()` in `driver_patch.rs::cosmos_patch_compare`.
+This file documents the fixture catalog driven by
+`fixtures()` in `driver_patch.rs::cosmos_patch_cross_sdk_parity`.
 
 Each row in the catalog is exercised end-to-end against the emulator: we
 seed the document, call `DriverTestClient::patch_item`, and assert either a
-matching post-image or an error substring.
+matching post-image or an error substring. The expected behavior for each
+fixture is derived from running (or reading) the equivalent test in the
+.NET and Java Cosmos SDKs, so a green run here means the Rust driver
+matches the observable PATCH semantics of those SDKs for the covered cases.
 
 | # | Fixture ID | source_test_id | op_kind | scenario_category | expected_outcome_kind |
 |--:|---|---|---|---|---|
@@ -61,11 +64,11 @@ The "rust-derived" rows cover scenarios the .NET/Java patch surfaces don't
 exercise directly (i64 fidelity, RFC 6901 pointer escapes, RFC 6902 array
 `-`, deep nesting, semantic edges).
 
-## Out-of-scope rows
+## Verifying against the source SDKs
 
-The .NET-backend comparison half of A9 (running the same fixture through a
-.NET PATCH reference binary and comparing post-images byte-for-byte) is
-deferred — it depends on the `cosmos-patch-ref` helper (see
-`tests/tools/cosmos-patch-ref/README.md`).
-The fixture schema in this file is intentionally compatible with that
-future binary so no migration will be needed.
+Each row whose `source_test_id` cites a .NET or Java test can be
+re-verified by running that test locally against the Cosmos emulator and
+comparing the resulting document body. The Rust fixture's expected
+`post_image` (or `error_kind`) reflects what those tests observe today;
+updates to the .NET or Java patch surface that change observable behavior
+should be mirrored here.

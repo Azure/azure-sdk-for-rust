@@ -424,7 +424,7 @@ mod tests {
             op.request_headers().session_token.as_ref(),
             Some(&read_response_token)
         );
-        // F16: assert the If-Match precondition was applied. A future refactor
+        // assert the If-Match precondition was applied. A future refactor
         // that silently dropped `.with_precondition(...)` would downgrade the
         // RMW to a non-conditional Replace — precisely the bug R3-DRIVER's
         // ETag guard exists to prevent.
@@ -442,7 +442,7 @@ mod tests {
 
     #[test]
     fn is_precondition_failed_matches_real_412() {
-        // F-C1: the RMW loop's 412 detection runs on the `Err(_)` produced
+        // the RMW loop's 412 detection runs on the `Err(_)` produced
         // by the driver pipeline. The pipeline's `build_http_error` builds
         // `ErrorKind::HttpResponse { status, error_code, raw_response: Some(_) }`
         // for any non-2xx; on a 412 the status field is the discriminator
@@ -504,7 +504,7 @@ mod tests {
 
     #[test]
     fn pk_guard_rejects_move_from_pk_path() {
-        // F-C2: moving FROM a PK path mutates the partition key (the field
+        // moving FROM a PK path mutates the partition key (the field
         // is removed after being copied to the destination), so the
         // preflight guard must reject it just like a move TO a PK path.
         // Reuses the `/pk` flat PK fixture.

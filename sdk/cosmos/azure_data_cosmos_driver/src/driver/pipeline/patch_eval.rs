@@ -247,7 +247,7 @@ fn parse_array_index(
             token: token.to_string(),
             path: full_path.to_string(),
         })?;
-    // F14: when `allow_append=false` (Set / Replace on a numeric index), the
+    // when `allow_append=false` (Set / Replace on a numeric index), the
     // array must contain that index. `len.saturating_sub(1)` is `0` for an
     // empty array, which would let `idx=0` slip through and cause the caller's
     // `arr[idx] = v` to panic with "index out of bounds". Reject empty arrays
@@ -489,7 +489,7 @@ fn move_op(doc: &mut Value, from: &str, to: &str) -> Result<(), PatchEvalError> 
         return Ok(());
     }
 
-    // F4: descendant check at the JSON-Pointer token level, not byte level.
+    // descendant check at the JSON-Pointer token level, not byte level.
     // The previous byte-prefix check happens to be correct for canonical
     // encodings (escapes only encode '/' and '~'), but it's brittle: e.g.
     // `from = "/a"` would erroneously look like a prefix of `to = "/ab/c"`
@@ -503,7 +503,7 @@ fn move_op(doc: &mut Value, from: &str, to: &str) -> Result<(), PatchEvalError> 
         )));
     }
 
-    // F5: atomic move via clone-stage-commit. The previous implementation
+    // atomic move via clone-stage-commit. The previous implementation
     // performed `remove` directly on `doc`, then `add_or_set`. If the
     // second step failed (e.g. the destination's parent didn't exist), the
     // original document was already mutated and the caller observed a
@@ -654,7 +654,7 @@ mod tests {
 
     #[test]
     fn move_into_escaped_descendant_fails() {
-        // F4: a token containing an escaped '/' must still count as a single
+        // a token containing an escaped '/' must still count as a single
         // pointer segment when computing the descendant relationship. The
         // unescaped key is `a/b`, so `/a~1b/c` is a true descendant of
         // `/a~1b` even though the byte-prefix check is also correct in this
@@ -666,7 +666,7 @@ mod tests {
 
     #[test]
     fn move_to_sibling_with_shared_prefix_succeeds() {
-        // F4: `/a` is NOT a descendant of `/ab` (byte-prefix would say yes
+        // `/a` is NOT a descendant of `/ab` (byte-prefix would say yes
         // without a `/` guard; token-level compare says no). The move must
         // proceed.
         let doc = json!({"a": 1, "ab": {"x": 2}});
@@ -676,7 +676,7 @@ mod tests {
 
     #[test]
     fn move_failure_leaves_doc_unchanged() {
-        // F5: when the destination is invalid (parent missing), the source
+        // when the destination is invalid (parent missing), the source
         // must not be removed. The pre-fix implementation would have left
         // the doc as `{"b": {}}` (source removed before add_or_set failed).
         let doc = json!({"a": 1, "b": {}});
@@ -693,7 +693,7 @@ mod tests {
 
     #[test]
     fn set_at_array_index_replaces_in_place() {
-        // F7: Set on a numeric array index replaces the existing element
+        // Set on a numeric array index replaces the existing element
         // (no shift). Cosmos backend semantics: "set is similar to add… in
         // an array, Set replaces an existing element value".
         let doc = json!({"xs": [1, 2, 3]});
@@ -703,7 +703,7 @@ mod tests {
 
     #[test]
     fn set_with_dash_appends_to_array() {
-        // F7: Set with the trailing '-' token still appends, matching Add.
+        // Set with the trailing '-' token still appends, matching Add.
         let doc = json!({"xs": [1, 2]});
         let out = apply(doc, &[PatchOp::set("/xs/-", json!(3))]).unwrap();
         assert_eq!(out, json!({"xs": [1, 2, 3]}));
@@ -711,7 +711,7 @@ mod tests {
 
     #[test]
     fn set_at_array_index_out_of_range_fails() {
-        // F7: Set on an out-of-range numeric index must fail rather than
+        // Set on an out-of-range numeric index must fail rather than
         // silently insert (the Add codepath uses allow_append=true; Set
         // does not).
         let doc = json!({"xs": [1, 2]});
@@ -766,7 +766,7 @@ mod tests {
 
     #[test]
     fn set_on_empty_array_index_zero_errors_not_panics() {
-        // F14: `Set('/xs/0', v)` against `{xs: []}` would previously slip
+        // `Set('/xs/0', v)` against `{xs: []}` would previously slip
         // through `parse_array_index` (because `len.saturating_sub(1) = 0`
         // when `len == 0`) and panic at `arr[0] = v`. The empty-array guard
         // must convert this into a typed `ArrayIndexOutOfRange`.
@@ -787,7 +787,7 @@ mod tests {
 
     #[test]
     fn replace_on_empty_array_index_zero_errors_not_panics() {
-        // F14: same shape as the Set case but on the pre-existing Replace
+        // same shape as the Set case but on the pre-existing Replace
         // branch (`arr[idx] = v` at the bottom of `replace`).
         let doc = json!({"xs": []});
         let err = apply(doc, &[PatchOp::replace("/xs/0", json!("v"))]).unwrap_err();

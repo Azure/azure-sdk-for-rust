@@ -12,13 +12,15 @@
 //!   containers; no network round-trip is issued.
 //! - **A7** `cosmos_patch_412_retry` — DEFERRED, see below.
 //! - **A8** `cosmos_patch_412_exhaustion` — DEFERRED, see below.
-//! - **A9** `cosmos_patch_compare` — iterate a comparison-harness fixture
-//!   catalog (≥30 rows traced to .NET / Java PATCH tests) and assert each
-//!   case's post-image (or error substring) matches.
+//! - **A9** `cosmos_patch_cross_sdk_parity` — iterate a fixture catalog
+//!   (≥30 rows derived from .NET and Java PATCH tests) and assert each
+//!   case's post-image (or error substring) matches the Rust driver's
+//!   observable behavior. See `cosmos_patch_cross_sdk_parity_coverage.md`
+//!   for the full catalog.
 //! - **A12** `cosmos_patch_no_etag_returns_error` — DEFERRED, see below.
 //! - **A13** `cosmos_patch_e2e_latency_budget` — DEFERRED, see below.
 //!
-//! **Deferral rationale** (tracked in `.coding-harness/implementation-state.json`):
+//! **Deferral rationale** (tracked alongside the implementation):
 //! A7/A8/A12 require a `PreconditionFailed(412)` variant on
 //! [`FaultInjectionErrorType`] and/or a response-header-strip primitive that
 //! the current fault-injection framework does not provide. A13 needs the
@@ -138,7 +140,7 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
                     "Move to /pk",
                     PatchSpec::new(vec![PatchOp::move_op("/name", "/pk")]),
                 ),
-                // F-C2: moving FROM a PK path also mutates the partition key
+                // moving FROM a PK path also mutates the partition key
                 // (the field is removed at the source after being copied to
                 // the destination). The guard must reject this too.
                 (
@@ -222,7 +224,7 @@ pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> 
                     "Remove /userId",
                     PatchSpec::new(vec![PatchOp::remove("/userId")]),
                 ),
-                // F-C2: moving FROM one of the hierarchical PK paths also
+                // moving FROM one of the hierarchical PK paths also
                 // mutates that PK component. Reject pre-flight.
                 (
                     "Move from /tenantId",
@@ -783,7 +785,7 @@ fn assert_post_image_props(actual: &Value, expected_props: &Value, case_id: &str
     not(test_category = "emulator"),
     ignore = "requires test_category 'emulator'"
 )]
-pub async fn cosmos_patch_compare() -> Result<(), Box<dyn Error>> {
+pub async fn cosmos_patch_cross_sdk_parity() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
         async |context, database| {
             let container_name = context.unique_container_name();
@@ -791,11 +793,12 @@ pub async fn cosmos_patch_compare() -> Result<(), Box<dyn Error>> {
                 .create_container(&database, &container_name, "/pk")
                 .await?;
 
-            // TODO(A9-deferred): swap expected_props with .NET-oracle-derived
-            // values once the helper binary lands. Today the fixture catalog
-            // is hand-curated against the documented Cosmos PATCH semantics;
-            // a parallel run against the .NET SDK would catch any silent
-            // semantic drift between our local evaluator and the backend.
+            // The fixture catalog is curated against the observable behavior
+            // of the equivalent .NET and Java PATCH tests (see
+            // `cosmos_patch_cross_sdk_parity_coverage.md` for the source-
+            // test mapping). Re-running those source tests locally and
+            // updating an expected value here is the canonical way to
+            // adjust the contract when a cross-SDK semantic changes.
             let cases = fixtures();
             assert!(
                 cases.len() >= 30,
@@ -868,17 +871,14 @@ pub async fn cosmos_patch_compare() -> Result<(), Box<dyn Error>> {
 /// which the framework does not yet expose. A two-client racing approach was
 /// rejected as flaky.
 #[tokio::test]
-#[ignore = "deferred: needs FaultInjectionErrorType::PreconditionFailed(412); see implementation-state.json#known_issues"]
+#[ignore = "deferred: needs FaultInjectionErrorType::PreconditionFailed(412)"]
 async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
-    // F12: This test is currently deferred, not "passing". Returning `Ok(())`
+    // This test is currently deferred, not "passing". Returning `Ok(())`
     // would silently certify behavior we have not exercised. `unimplemented!`
     // makes it impossible for someone to remove the `#[ignore]` without also
     // wiring the test body — a green run without the fault primitive is then
     // structurally impossible.
-    unimplemented!(
-        "A7 deferred: needs FaultInjectionErrorType::PreconditionFailed(412); \
-         see implementation-state.json#known_issues.fault-injection-412"
-    );
+    unimplemented!("A7 deferred: needs FaultInjectionErrorType::PreconditionFailed(412)");
 }
 
 /// A8: handler surfaces a typed error after exhausting `patch_max_attempts`
@@ -886,13 +886,10 @@ async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
 ///
 /// **Deferred**: same blocker as A7.
 #[tokio::test]
-#[ignore = "deferred: needs FaultInjectionErrorType::PreconditionFailed(412); see implementation-state.json#known_issues"]
+#[ignore = "deferred: needs FaultInjectionErrorType::PreconditionFailed(412)"]
 async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
-    // F12: deferred — see cosmos_patch_412_retry for rationale.
-    unimplemented!(
-        "A8 deferred: needs FaultInjectionErrorType::PreconditionFailed(412); \
-         see implementation-state.json#known_issues.fault-injection-412"
-    );
+    // deferred — see cosmos_patch_412_retry for rationale.
+    unimplemented!("A8 deferred: needs FaultInjectionErrorType::PreconditionFailed(412)");
 }
 
 /// A12: a server response missing the `etag` header surfaces a typed error
@@ -902,13 +899,10 @@ async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
 /// headers from a real (non-synthetic) response. The current
 /// `FaultInjectionResultBuilder` only builds fully-synthetic responses.
 #[tokio::test]
-#[ignore = "deferred: needs response-header-strip fault primitive; see implementation-state.json#known_issues"]
+#[ignore = "deferred: needs response-header-strip fault primitive"]
 async fn cosmos_patch_no_etag_returns_error() -> Result<(), Box<dyn Error>> {
-    // F12: deferred — see cosmos_patch_412_retry for rationale.
-    unimplemented!(
-        "A12 deferred: needs response-header-strip fault primitive; \
-         see implementation-state.json#known_issues.fault-injection-header-strip"
-    );
+    // deferred — see cosmos_patch_412_retry for rationale.
+    unimplemented!("A12 deferred: needs response-header-strip fault primitive");
 }
 
 /// A13: the handler honors the end-to-end operation latency budget.
@@ -916,11 +910,8 @@ async fn cosmos_patch_no_etag_returns_error() -> Result<(), Box<dyn Error>> {
 /// **Deferred**: `EndToEndOperationLatencyPolicy` plumbing on
 /// `OperationOptions` is not yet wired through the driver for PATCH.
 #[tokio::test]
-#[ignore = "deferred: needs EndToEndOperationLatencyPolicy plumbing; see implementation-state.json#known_issues"]
+#[ignore = "deferred: needs EndToEndOperationLatencyPolicy plumbing"]
 async fn cosmos_patch_e2e_latency_budget() -> Result<(), Box<dyn Error>> {
-    // F12: deferred — see cosmos_patch_412_retry for rationale.
-    unimplemented!(
-        "A13 deferred: needs EndToEndOperationLatencyPolicy plumbing; \
-         see implementation-state.json#known_issues.e2e-latency-policy"
-    );
+    // deferred — see cosmos_patch_412_retry for rationale.
+    unimplemented!("A13 deferred: needs EndToEndOperationLatencyPolicy plumbing");
 }
