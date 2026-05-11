@@ -35,9 +35,9 @@ impl FaultInjectionCondition {
 
     /// Returns the transport kind to which the fault injection applies.
     ///
-    /// When `Some`, the rule only matches requests that travelled through the
-    /// specified transport (e.g. `TransportKind::Gateway20`). When `None`, the
-    /// rule matches every transport (including metadata, gateway, and Gateway 2.0).
+    /// When `Some`, the rule only matches requests sent over the specified
+    /// transport (e.g. `TransportKind::Gateway20`). When `None`, the rule
+    /// matches every transport (including metadata, gateway, and Gateway 2.0).
     pub fn transport_kind(&self) -> Option<TransportKind> {
         self.transport_kind
     }
