@@ -49,10 +49,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let endpoint = format!("https://{}.blob.core.windows.net/", args.account_name);
+    let account_url = format!("https://{}.blob.core.windows.net/", args.account_name);
 
     let container_client = BlobContainerClient::new(
-        &endpoint,
+        &account_url,
         &args.container_name,
         Some(credential),
         Some(options),

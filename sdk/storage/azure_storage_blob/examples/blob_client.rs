@@ -36,13 +36,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.blob.core.windows.net/", account);
+    let account_url = format!("https://{}.blob.core.windows.net/", account);
     let container_name = "test-container-blob-client";
     let blob_name = "sample.txt";
 
     let credential = DeveloperToolsCredential::new(None)?;
     let container_client =
-        BlobContainerClient::new(&endpoint, container_name, Some(credential), None)?;
+        BlobContainerClient::new(&account_url, container_name, Some(credential), None)?;
 
     container_client.create(None).await?;
     println!("Created container '{container_name}'");

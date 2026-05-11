@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a QueueClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
     let queue_client = QueueClient::new(
-        "https://<storage_account_name>.queue.core.windows.net/", // Endpoint
+        "https://<storage_account_name>.queue.core.windows.net/", // Account URL
         "<queue_name>",                                           // Queue Name
         Some(credential),                                         // Credential
         Some(QueueClientOptions::default()),                      // QueueClient Options

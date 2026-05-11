@@ -115,7 +115,7 @@ use azure_identity::DeveloperToolsCredential;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/",  // Endpoint
+        "https://<storage_account_name>.blob.core.windows.net/",  // Account URL
         "<container_name>",                                       // Container Name
         "<blob_name>",                                            // Blob Name
         Some(credential),                                         // Credential

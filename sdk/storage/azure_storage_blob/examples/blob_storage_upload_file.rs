@@ -39,10 +39,10 @@ use std::{num::NonZero, path::PathBuf};
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let endpoint = format!("https://{}.blob.core.windows.net", args.account_name);
+    let account_url = format!("https://{}.blob.core.windows.net", args.account_name);
     let credential = AzureCliCredential::new(None)?;
     let client = BlobClient::new(
-        &endpoint,
+        &account_url,
         &args.container_name,
         &args.blob_name,
         Some(credential),

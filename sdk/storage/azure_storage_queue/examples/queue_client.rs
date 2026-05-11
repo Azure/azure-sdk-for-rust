@@ -40,11 +40,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = env::var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_QUEUE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.queue.core.windows.net/", account);
+    let account_url = format!("https://{}.queue.core.windows.net/", account);
     let queue_name = random_queue_name();
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_client = QueueClient::new(&endpoint, &queue_name, Some(credential), None)?;
+    let queue_client = QueueClient::new(&account_url, &queue_name, Some(credential), None)?;
 
     println!("Creating queue '{queue_name}'...");
     queue_client.create(None).await?;

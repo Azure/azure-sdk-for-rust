@@ -74,15 +74,16 @@ impl PerfTest for ListBlobTest {
         let recording = context.recording();
         let credential = recording.credential();
         let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
-        let endpoint = match &self.endpoint {
+        let account_url = match &self.endpoint {
             Some(e) => e.clone(),
             None => format!(
                 "https://{}.blob.core.windows.net",
                 recording.var("AZURE_STORAGE_ACCOUNT_NAME", None)
             ),
         };
-        println!("Using endpoint: {}", endpoint);
-        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
+        println!("Using account URL: {}", account_url);
+        let client =
+            BlobContainerClient::new(&account_url, &container_name, Some(credential), None)?;
         self.client.set(client).map_err(|_| {
             azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
         })?;

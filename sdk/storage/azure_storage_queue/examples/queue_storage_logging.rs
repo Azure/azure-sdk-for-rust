@@ -105,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Authenticating with Azure CLI...");
     let credential = AzureCliCredential::new(None)?;
 
-    let endpoint = format!("https://{}.queue.core.windows.net", account);
+    let account_url = format!("https://{}.queue.core.windows.net", account);
 
     // Configure client options with optional OpenTelemetry tracing.
     // Azure Queue Storage headers (x-ms-version, x-ms-approximate-messages-count, etc.)
@@ -123,7 +123,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let service_client =
-        QueueServiceClient::new(&endpoint, Some(credential), Some(client_options))?;
+        QueueServiceClient::new(&account_url, Some(credential), Some(client_options))?;
     let queue_client = service_client.queue_client(queue_name)?;
 
     // Create queue if it doesn't exist

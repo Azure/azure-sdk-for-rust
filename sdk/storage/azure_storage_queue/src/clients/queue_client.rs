@@ -19,22 +19,22 @@ impl QueueClient {
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
+    /// * `account_url` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
     /// * `queue_name` - The name of the queue to interact with.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     pub fn new(
-        endpoint: &str,
+        account_url: &str,
         queue_name: &str,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<QueueClientOptions>,
     ) -> Result<Self> {
-        let mut url = Url::parse(endpoint)?;
+        let mut url = Url::parse(account_url)?;
         url.path_segments_mut()
             .map_err(|_| {
                 azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
+                    "Invalid account URL: Failed to parse out path segments from provided account URL.",
                 )
             })?
             .push(queue_name);

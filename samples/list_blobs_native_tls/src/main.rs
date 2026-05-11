@@ -11,11 +11,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let endpoint = format!("https://{}.blob.core.windows.net/", args.account_name);
+    let account_url = format!("https://{}.blob.core.windows.net/", args.account_name);
 
     // The reqwest/native-tls feature automatically configures native-tls as the TLS provider.
     let container_client =
-        BlobContainerClient::new(&endpoint, &args.container_name, Some(credential), None)?;
+        BlobContainerClient::new(&account_url, &args.container_name, Some(credential), None)?;
 
     // Iterate through all pages of blobs in the container.
     let mut pager = container_client.list_blobs(None)?.into_pages();

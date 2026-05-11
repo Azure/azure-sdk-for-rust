@@ -19,21 +19,21 @@ impl QueueServiceClient {
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
+    /// * `account_url` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Queues.Service")]
     pub fn new(
-        endpoint: &str,
+        account_url: &str,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<QueueServiceClientOptions>,
     ) -> Result<Self> {
-        let endpoint = Url::parse(endpoint)?;
+        let account_url = Url::parse(account_url)?;
         // Storage endpoints must be base URLs.
-        if endpoint.cannot_be_a_base() {
+        if account_url.cannot_be_a_base() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{endpoint} is not a valid base URL"),
+                format!("{account_url} is not a valid base URL"),
             ));
         }
         let mut options = options.unwrap_or_default();
@@ -41,10 +41,10 @@ impl QueueServiceClient {
 
         let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
         if let Some(token_credential) = credential {
-            if !endpoint.scheme().starts_with("https") {
+            if !account_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{endpoint} must use https"),
+                    format!("{account_url} must use https"),
                 ));
             }
             per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
@@ -63,7 +63,7 @@ impl QueueServiceClient {
         );
 
         Ok(Self {
-            endpoint,
+            endpoint: account_url,
             version: options.version,
             pipeline,
         })

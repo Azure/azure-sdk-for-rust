@@ -628,13 +628,13 @@ async fn test_set_retention_too_long(ctx: TestContext) -> Result<()> {
 ///
 /// * `recording` - A reference to a Recording instance.
 pub async fn get_queue_service_client(recording: &Recording) -> Result<QueueServiceClient> {
-    let (options, endpoint, _) = recorded_test_setup(recording);
+    let (options, account_url, _) = recorded_test_setup(recording);
     let queue_client_options = QueueServiceClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };
     let queue_client = QueueServiceClient::new(
-        &endpoint,
+        &account_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )?;
@@ -650,13 +650,13 @@ pub async fn get_queue_service_client(recording: &Recording) -> Result<QueueServ
 pub async fn get_queue_service_client_secondary(
     recording: &Recording,
 ) -> Result<QueueServiceClient> {
-    let (options, _, endpoint) = recorded_test_setup(recording);
+    let (options, _, account_url) = recorded_test_setup(recording);
     let queue_client_options = QueueServiceClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };
     let queue_client = QueueServiceClient::new(
-        &endpoint,
+        &account_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )?;

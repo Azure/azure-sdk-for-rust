@@ -4,6 +4,7 @@
 
 ### Breaking Changes
 
+- Renamed the `endpoint` parameter on `QueueClient::new()` and `QueueServiceClient::new()` to `account_url`.
 - Renamed `QueueClient::endpoint()` and `QueueServiceClient::endpoint()` to `url()` for consistency with other Storage clients.
 
 ### Bugs Fixed

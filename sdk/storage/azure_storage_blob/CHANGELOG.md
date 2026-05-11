@@ -4,6 +4,7 @@
 
 ### Breaking Changes
 
+- Renamed the `endpoint` parameter on `new()` to `account_url` for `BlobClient`, `BlockBlobClient`, `AppendBlobClient`, `PageBlobClient`, `BlobContainerClient`, and `BlobServiceClient`.
 - `BlobServiceClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilterBlobSegment, XmlFormat>>`.
 - `BlobContainerClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilteredBlobResponse, XmlFormat>>`.
 - Renamed `FilterBlobSegment` to `FilteredBlobResponse`.

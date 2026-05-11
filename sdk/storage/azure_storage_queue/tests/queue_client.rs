@@ -1539,7 +1539,7 @@ async fn test_set_access_policy_too_many_identifiers(ctx: TestContext) -> Result
 async fn test_invalid_queue_name(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
-    let (options, endpoint, _) = recorded_test_setup(recording);
+    let (options, account_url, _) = recorded_test_setup(recording);
     let queue_client_options = QueueClientOptions {
         client_options: options.clone(),
         ..Default::default()
@@ -1547,7 +1547,7 @@ async fn test_invalid_queue_name(ctx: TestContext) -> Result<()> {
 
     // Act - queue names must be lowercase alphanumeric; Unicode characters are not valid.
     let queue_client = QueueClient::new(
-        &endpoint,
+        &account_url,
         "啊齄丂狛狜",
         Some(recording.credential()),
         Some(queue_client_options),
@@ -1569,7 +1569,7 @@ async fn test_invalid_queue_name(ctx: TestContext) -> Result<()> {
 async fn test_retry_on_io_error(ctx: TestContext) -> Result<()> {
     // Recording Setup
     let recording = ctx.recording();
-    let (base_options, endpoint, _) = recorded_test_setup(recording);
+    let (base_options, account_url, _) = recorded_test_setup(recording);
 
     // Arrange
     let invocations = Arc::new(AtomicUsize::new(0));
@@ -1595,7 +1595,7 @@ async fn test_retry_on_io_error(ctx: TestContext) -> Result<()> {
 
     let queue_name = get_queue_name(recording);
     let queue_client = QueueClient::new(
-        &endpoint,
+        &account_url,
         &queue_name,
         Some(recording.credential()),
         Some(queue_client_options),
@@ -1652,14 +1652,14 @@ impl Policy for FailFirstPolicy {
 }
 
 async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result<QueueClient> {
-    let (options, endpoint, _) = recorded_test_setup(recording);
+    let (options, account_url, _) = recorded_test_setup(recording);
     let queue_client_options = QueueClientOptions {
         client_options: options.clone(),
         ..Default::default()
     };
 
     QueueClient::new(
-        &endpoint,
+        &account_url,
         queue_name,
         Some(recording.credential()),
         Some(queue_client_options),

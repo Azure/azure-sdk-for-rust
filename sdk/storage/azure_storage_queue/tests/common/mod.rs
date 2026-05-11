@@ -15,7 +15,7 @@ pub fn get_queue_name(recording: &Recording) -> String {
         .to_ascii_lowercase()
 }
 
-/// Takes in a Recording instance and returns an instrumented options bag, primary endpoint, and secondary endpoint.
+/// Takes in a Recording instance and returns an instrumented options bag, primary account URL, and secondary account URL.
 ///
 /// # Arguments
 ///
@@ -24,10 +24,10 @@ pub fn recorded_test_setup(recording: &Recording) -> (ClientOptions, String, Str
     let mut client_options = ClientOptions::default();
     recording.instrument(&mut client_options);
     let account_name = recording.var("AZURE_STORAGE_ACCOUNT_NAME", None);
-    let endpoint = format!("https://{}.queue.core.windows.net/", account_name.as_str());
-    let secondary_endpoint = format!(
+    let account_url = format!("https://{}.queue.core.windows.net/", account_name.as_str());
+    let secondary_account_url = format!(
         "https://{}-secondary.queue.core.windows.net/",
         account_name.as_str()
     );
-    (client_options, endpoint, secondary_endpoint)
+    (client_options, account_url, secondary_account_url)
 }

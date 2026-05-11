@@ -270,8 +270,8 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
     // Recording Setup
     let recording = ctx.recording();
     let mut options = ClientOptions::default();
-    let endpoint = recorded_test_setup(recording, StorageAccount::Standard, &mut options);
-    let endpoint = endpoint.replace(
+    let account_url = recorded_test_setup(recording, StorageAccount::Standard, &mut options);
+    let account_url = account_url.replace(
         ".blob.core.windows.net/",
         "-secondary.blob.core.windows.net/",
     );
@@ -280,7 +280,7 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
         ..Default::default()
     };
     let service_client = BlobServiceClient::new(
-        &endpoint,
+        &account_url,
         Some(recording.credential()),
         Some(service_client_options),
     )?;

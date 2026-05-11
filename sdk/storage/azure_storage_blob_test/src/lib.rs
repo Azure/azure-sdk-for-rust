@@ -100,7 +100,7 @@ pub enum StorageAccount {
     Versioned,
 }
 
-/// Takes in a Recording instance and returns an instrumented options bag and endpoint.
+/// Takes in a Recording instance and returns an instrumented options bag and account URL.
 ///
 /// # Arguments
 ///
@@ -158,13 +158,13 @@ pub fn get_blob_service_client(
     service_client_options: Option<BlobServiceClientOptions>,
 ) -> Result<BlobServiceClient> {
     let mut service_client_options = service_client_options.unwrap_or_default();
-    let endpoint = recorded_test_setup(
+    let account_url = recorded_test_setup(
         recording,
         account_type,
         &mut service_client_options.client_options,
     );
     BlobServiceClient::new(
-        &endpoint,
+        &account_url,
         Some(recording.credential()),
         Some(service_client_options),
     )
@@ -185,13 +185,13 @@ pub async fn get_container_client(
 ) -> Result<BlobContainerClient> {
     let container_name = get_container_name(recording);
     let mut container_client_options = container_client_options.unwrap_or_default();
-    let endpoint = recorded_test_setup(
+    let account_url = recorded_test_setup(
         recording,
         account_type,
         &mut container_client_options.client_options,
     );
     let container_client = BlobContainerClient::new(
-        &endpoint,
+        &account_url,
         &container_name,
         Some(recording.credential()),
         Some(container_client_options),

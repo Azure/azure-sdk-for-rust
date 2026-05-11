@@ -538,8 +538,8 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         ..Default::default()
     };
 
-    // Endpoint
-    let endpoint = format!(
+    // Account URL
+    let account_url = format!(
         "https://{}.blob.core.windows.net/",
         recording.var("AZURE_STORAGE_ACCOUNT_NAME", None).as_str()
     );
@@ -547,7 +547,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     let container_name = get_container_name(recording);
     // Create Container & Container Client
     let container_client = BlobContainerClient::new(
-        &endpoint,
+        &account_url,
         &container_name,
         Some(recording.credential()),
         Some(container_client_options.clone()),
@@ -574,7 +574,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     for blob_name in test_cases {
         // Test Case 1: Initialize BlobClient using new() constructor
         let blob_client_new = BlobClient::new(
-            &endpoint,
+            &account_url,
             &container_name,
             blob_name,
             Some(recording.credential()),
@@ -591,7 +591,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         assert_eq!(17, properties.content_length()?.unwrap());
 
         // Test Case 2: Initialize BlobClient using from_blob_url(), separate path segments
-        let mut blob_url = Url::parse(&endpoint)?;
+        let mut blob_url = Url::parse(&account_url)?;
         blob_url
             .path_segments_mut()
             .expect("Storage Endpoint must be a valid base URL with http/https scheme")

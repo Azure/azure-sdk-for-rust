@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.blob.core.windows.net/", account);
+    let account_url = format!("https://{}.blob.core.windows.net/", account);
     let container_name = "nonexistent-container";
     let blob_name = "nonexistent-blob.txt";
 
@@ -44,8 +44,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = AzureCliCredential::new(None)?;
 
     // Create a BlobClient pointing to a blob that doesn't exist
-    let blob_client =
-        BlobClient::new(&endpoint, container_name, blob_name, Some(credential), None)?;
+    let blob_client = BlobClient::new(
+        &account_url,
+        container_name,
+        blob_name,
+        Some(credential),
+        None,
+    )?;
 
     // Attempt to download a blob that doesn't exist to force an error
     println!("Attempting to download a blob that doesn't exist...");

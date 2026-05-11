@@ -102,7 +102,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = AzureCliCredential::new(None)?;
 
     // Create BlobContainerClient
-    let endpoint = format!("https://{}.blob.core.windows.net", account);
+    let account_url = format!("https://{}.blob.core.windows.net", account);
 
     // Configure client options with optional OpenTelemetry tracing.
     // Azure Storage headers (x-ms-version, x-ms-request-id, etc.) are logged by default.
@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let container_client = BlobContainerClient::new(
-        &endpoint,
+        &account_url,
         container_name,
         Some(credential),
         Some(client_options),
