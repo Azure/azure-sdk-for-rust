@@ -51,11 +51,28 @@ struct PerfResult {
     p50_ms: f64,
     p90_ms: f64,
     p99_ms: f64,
+    /// Server-reported request processing latency parsed from
+    /// `x-ms-request-duration-ms` response header. `None` for intervals
+    /// without backend samples.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    backend_min_ms: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    backend_max_ms: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    backend_mean_ms: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    backend_p50_ms: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    backend_p90_ms: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    backend_p99_ms: Option<f64>,
     cpu_percent: f32,
     memory_bytes: u64,
     system_cpu_percent: f32,
     system_total_memory_bytes: u64,
     system_used_memory_bytes: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cgroup_cpu_percent: Option<f32>,
     // Tokio runtime metrics (present only when tokio-metrics feature is enabled)
     #[serde(skip_serializing_if = "Option::is_none")]
     tokio_workers: Option<u64>,
@@ -279,8 +296,8 @@ pub async fn run(config: RunConfig) {
 
                 let op_start = Instant::now();
                 match op.execute(&container).await {
-                    Ok(()) => {
-                        stats.record_latency(op.name(), op_start.elapsed());
+                    Ok(backend) => {
+                        stats.record_latency(op.name(), op_start.elapsed(), backend);
                     }
                     Err(e) => {
                         stats.record_error(op.name());
@@ -345,7 +362,7 @@ async fn upsert_results(
     let now = time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
         .expect("RFC 3339 formatting should never fail");
-    let (cpu, mem, sys_cpu, sys_total, sys_used) = metrics
+    let (cpu, mem, sys_cpu, sys_total, sys_used, cgroup_cpu) = metrics
         .map(|m| {
             (
                 m.cpu_percent,
@@ -353,9 +370,10 @@ async fn upsert_results(
                 m.system_cpu_percent,
                 m.system_total_memory_bytes,
                 m.system_used_memory_bytes,
+                m.cgroup_cpu_percent,
             )
         })
-        .unwrap_or((0.0, 0, 0.0, 0, 0));
+        .unwrap_or((0.0, 0, 0.0, 0, 0, None));
 
     for s in summaries {
         let result = PerfResult {
@@ -374,11 +392,18 @@ async fn upsert_results(
             p50_ms: s.p50.as_secs_f64() * 1000.0,
             p90_ms: s.p90.as_secs_f64() * 1000.0,
             p99_ms: s.p99.as_secs_f64() * 1000.0,
+            backend_min_ms: s.backend_min.map(|d| d.as_secs_f64() * 1000.0),
+            backend_max_ms: s.backend_max.map(|d| d.as_secs_f64() * 1000.0),
+            backend_mean_ms: s.backend_mean.map(|d| d.as_secs_f64() * 1000.0),
+            backend_p50_ms: s.backend_p50.map(|d| d.as_secs_f64() * 1000.0),
+            backend_p90_ms: s.backend_p90.map(|d| d.as_secs_f64() * 1000.0),
+            backend_p99_ms: s.backend_p99.map(|d| d.as_secs_f64() * 1000.0),
             cpu_percent: cpu,
             memory_bytes: mem,
             system_cpu_percent: sys_cpu,
             system_total_memory_bytes: sys_total,
             system_used_memory_bytes: sys_used,
+            cgroup_cpu_percent: cgroup_cpu,
             tokio_workers: tokio_fields.map(|t| t.workers),
             tokio_busy_pct: tokio_fields.map(|t| t.busy_pct),
             tokio_park_count: tokio_fields.map(|t| t.park_count),
