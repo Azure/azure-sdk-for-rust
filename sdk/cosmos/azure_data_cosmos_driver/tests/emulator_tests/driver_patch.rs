@@ -778,6 +778,11 @@ pub async fn cosmos_patch_compare() -> Result<(), Box<dyn Error>> {
                 .create_container(&database, &container_name, "/pk")
                 .await?;
 
+            // TODO(A9-deferred): swap expected_props with .NET-oracle-derived
+            // values once the helper binary lands. Today the fixture catalog
+            // is hand-curated against the documented Cosmos PATCH semantics;
+            // a parallel run against the .NET SDK would catch any silent
+            // semantic drift between our local evaluator and the backend.
             let cases = fixtures();
             assert!(
                 cases.len() >= 30,
@@ -852,8 +857,15 @@ pub async fn cosmos_patch_compare() -> Result<(), Box<dyn Error>> {
 #[tokio::test]
 #[ignore = "deferred: needs FaultInjectionErrorType::PreconditionFailed(412); see implementation-state.json#known_issues"]
 async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
-    // TODO(rust-patch-rmw#a7): wire once fault injection supports 412.
-    Ok(())
+    // F12: This test is currently deferred, not "passing". Returning `Ok(())`
+    // would silently certify behavior we have not exercised. `unimplemented!`
+    // makes it impossible for someone to remove the `#[ignore]` without also
+    // wiring the test body — a green run without the fault primitive is then
+    // structurally impossible.
+    unimplemented!(
+        "A7 deferred: needs FaultInjectionErrorType::PreconditionFailed(412); \
+         see implementation-state.json#known_issues.fault-injection-412"
+    );
 }
 
 /// A8: handler surfaces a typed error after exhausting `patch_max_attempts`
@@ -863,8 +875,11 @@ async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
 #[tokio::test]
 #[ignore = "deferred: needs FaultInjectionErrorType::PreconditionFailed(412); see implementation-state.json#known_issues"]
 async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
-    // TODO(rust-patch-rmw#a8): wire once fault injection supports 412.
-    Ok(())
+    // F12: deferred — see cosmos_patch_412_retry for rationale.
+    unimplemented!(
+        "A8 deferred: needs FaultInjectionErrorType::PreconditionFailed(412); \
+         see implementation-state.json#known_issues.fault-injection-412"
+    );
 }
 
 /// A12: a server response missing the `etag` header surfaces a typed error
@@ -876,8 +891,11 @@ async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
 #[tokio::test]
 #[ignore = "deferred: needs response-header-strip fault primitive; see implementation-state.json#known_issues"]
 async fn cosmos_patch_no_etag_returns_error() -> Result<(), Box<dyn Error>> {
-    // TODO(rust-patch-rmw#a12): wire once header-strip primitive exists.
-    Ok(())
+    // F12: deferred — see cosmos_patch_412_retry for rationale.
+    unimplemented!(
+        "A12 deferred: needs response-header-strip fault primitive; \
+         see implementation-state.json#known_issues.fault-injection-header-strip"
+    );
 }
 
 /// A13: the handler honors the end-to-end operation latency budget.
@@ -887,6 +905,9 @@ async fn cosmos_patch_no_etag_returns_error() -> Result<(), Box<dyn Error>> {
 #[tokio::test]
 #[ignore = "deferred: needs EndToEndOperationLatencyPolicy plumbing; see implementation-state.json#known_issues"]
 async fn cosmos_patch_e2e_latency_budget() -> Result<(), Box<dyn Error>> {
-    // TODO(rust-patch-rmw#a13): wire once latency-policy plumbing lands.
-    Ok(())
+    // F12: deferred — see cosmos_patch_412_retry for rationale.
+    unimplemented!(
+        "A13 deferred: needs EndToEndOperationLatencyPolicy plumbing; \
+         see implementation-state.json#known_issues.e2e-latency-policy"
+    );
 }

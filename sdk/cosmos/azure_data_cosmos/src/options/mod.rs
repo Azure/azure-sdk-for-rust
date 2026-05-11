@@ -208,6 +208,22 @@ impl ItemWriteOptions {
 /// General-purpose settings (custom headers, content response behavior,
 /// session tokens, etc.) are configured via [`operation`](Self::operation)
 /// — see [`OperationOptions`] for details.
+///
+/// # Latency
+///
+/// Because every PATCH is at minimum a Read followed by a Replace, the
+/// best-case round-trip floor for ``patch_item`` is **2× the single-RTT
+/// cost** of a comparable Read or Replace against the same partition.
+/// Each retry triggered by a 412 PreconditionFailed adds another full
+/// Read+Replace pair to the wall-clock cost.
+///
+/// When configuring an end-to-end latency budget via
+/// [`OperationOptions`]'s end-to-end request settings, size the budget
+/// accordingly — a useful rule of thumb is **≥ 2× the p99 single-RTT
+/// budget you would set for a plain Replace**, plus headroom for any
+/// 412 retries you want to tolerate. Setting the budget too low can
+/// cancel the RMW between the Read and the Replace, producing a
+/// timeout error even when the service is healthy.
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct PatchItemOptions {
