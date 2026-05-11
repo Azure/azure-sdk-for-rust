@@ -54,6 +54,40 @@ struct DriverRequestExecutor<'a> {
     options: &'a OperationOptions,
 }
 
+fn request_target_overrides(
+    target: RequestTarget,
+    continuation: Option<String>,
+) -> OperationOverrides {
+    match target {
+        RequestTarget::LogicalPartitionKey(pk) => OperationOverrides {
+            partition_key: Some(pk),
+            continuation,
+            ..Default::default()
+        },
+        RequestTarget::PartitionKeyRange {
+            partition_key_range_id,
+            ..
+        } => OperationOverrides {
+            partition_key_range_id: Some(partition_key_range_id),
+            continuation,
+            ..Default::default()
+        },
+        RequestTarget::EffectivePartitionKeyRange {
+            range,
+            partition_key_range_id,
+        } => OperationOverrides {
+            partition_key_range_id: Some(partition_key_range_id),
+            feed_range: Some(range),
+            continuation,
+            ..Default::default()
+        },
+        RequestTarget::NonPartitioned => OperationOverrides {
+            continuation,
+            ..Default::default()
+        },
+    }
+}
+
 impl RequestExecutor for DriverRequestExecutor<'_> {
     fn execute_request<'a>(
         &'a mut self,
@@ -63,30 +97,11 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         continuation: Option<String>,
     ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>> {
         let driver = self.driver;
-        let overrides = match target {
-            RequestTarget::LogicalPartitionKey(pk) => OperationOverrides {
-                partition_key: Some(pk),
-                continuation,
-                ..Default::default()
-            },
-            RequestTarget::EffectivePartitionKeyRange {
-                range,
-                partition_key_range_id,
-            } => OperationOverrides {
-                partition_key_range_id: Some(partition_key_range_id.clone()),
-                feed_range: Some(range),
-                continuation,
-                ..Default::default()
-            },
-            RequestTarget::NonPartitioned => OperationOverrides {
-                continuation,
-                ..Default::default()
-            },
-        };
+        let overrides = request_target_overrides(target, continuation);
 
         Box::pin(async move {
             driver
-                .execute_operation_direct(operation, overrides, &self.options)
+                .execute_operation_direct(operation, overrides, self.options)
                 .await
         })
     }
@@ -1365,7 +1380,7 @@ impl CosmosDriver {
         // When partition-level failover is enabled, resolving the range ID
         // before the first attempt lets the pipeline apply partition overrides
         // from the very first request instead of only after the first retry.
-        let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(&operation).await;
+        let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(operation).await;
 
         // Step 6: Select the adaptive transport context for the chosen pipeline
         let transport = self.transport();
@@ -2450,6 +2465,43 @@ mod tests {
 
     fn multi_region_previous_props() -> Arc<CachedAccountProperties> {
         Arc::new(serde_json::from_str(MULTI_REGION_ACCOUNT_PROPERTIES).unwrap())
+    }
+
+    #[test]
+    fn partition_key_range_override_does_not_set_feed_range() {
+        let overrides = request_target_overrides(
+            RequestTarget::PartitionKeyRange {
+                range: crate::models::FeedRange::new(
+                    EffectivePartitionKey::from("10"),
+                    EffectivePartitionKey::from("20"),
+                ),
+                partition_key_range_id: "7".to_string(),
+            },
+            Some("ct".to_string()),
+        );
+
+        assert_eq!(overrides.partition_key_range_id.as_deref(), Some("7"));
+        assert_eq!(overrides.continuation.as_deref(), Some("ct"));
+        assert_eq!(overrides.feed_range, None);
+    }
+
+    #[test]
+    fn effective_partition_key_range_override_sets_feed_range() {
+        let range = crate::models::FeedRange::new(
+            EffectivePartitionKey::from("10"),
+            EffectivePartitionKey::from("20"),
+        );
+        let overrides = request_target_overrides(
+            RequestTarget::EffectivePartitionKeyRange {
+                range: range.clone(),
+                partition_key_range_id: "merged".to_string(),
+            },
+            Some("ct".to_string()),
+        );
+
+        assert_eq!(overrides.partition_key_range_id.as_deref(), Some("merged"));
+        assert_eq!(overrides.continuation.as_deref(), Some("ct"));
+        assert_eq!(overrides.feed_range, Some(range));
     }
 
     #[tokio::test]

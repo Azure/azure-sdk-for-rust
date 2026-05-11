@@ -288,6 +288,20 @@ pub(crate) async fn execute_transport_pipeline(
             outcome = ?result.result.outcome,
             "transport request complete"
         );
+        if result.result.is_successful() {
+            tracing::trace!(
+                ?result.result.outcome,
+                "transport attempt complete"
+            );
+        } else if let TransportOutcome::HttpError { status, body, .. } = &result.result.outcome {
+            let body_str = String::from_utf8_lossy(body);
+            tracing::warn!(%status, "transport request resulted in HTTP error: {}", body_str);
+        } else {
+            tracing::warn!(
+                ?result.result.outcome,
+                "transport attempt failed"
+            );
+        }
 
         if result.shard_id.is_some_and(|failed_shard_id| {
             local_connectivity_retry_count < MAX_LOCAL_CONNECTIVITY_RETRIES
@@ -304,20 +318,8 @@ pub(crate) async fn execute_transport_pipeline(
             continue;
         }
 
-        let result = result.result;
-        if result.is_successful() {
-            tracing::trace!(
-                ?result.outcome,
-                "transport attempt complete"
-            );
-        } else {
-            tracing::warn!(
-                ?result.outcome,
-                "transport attempt failed"
-            );
-        }
-
         // Check for 429 throttling → transport-level retry
+        let result = result.result;
         let action = evaluate_transport_retry(&result, &throttle_state);
         match action {
             ThrottleAction::Retry { delay, new_state } => {

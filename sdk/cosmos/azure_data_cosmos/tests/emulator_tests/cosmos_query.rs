@@ -12,7 +12,7 @@ use azure_core::http::headers::HeaderValue;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     clients::DatabaseClient,
-    constants,
+    constants::{self, SUB_STATUS},
     options::{OperationOptions, QueryOptions},
     query::QueryScope,
     Query,
@@ -225,32 +225,52 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-            let mut pager = container_client
+            let Err(err) = container_client
                 .query_items::<String>(
                     "select value c.id from c order by c.mergeOrder",
                     QueryScope::full_container(),
                     None,
                 )
-                .await?;
-            let result = pager.try_next().await;
-
-            let Err(err) = result else {
-                panic!("expected an error but got a successful result");
+                .await
+            else {
+                panic!("Expected query to fail due to cross-partition ORDER BY");
             };
-            assert_eq!(Some(StatusCode::BadRequest), err.http_status());
 
-            let response =
-                if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = err.kind()
-                {
-                    raw_response.as_ref().unwrap().clone()
-                } else {
-                    panic!("expected an HTTP response error");
-                };
-            let sub_status = response.headers().get_optional_str(&constants::SUB_STATUS);
+            match err.kind() {
+                azure_core::error::ErrorKind::HttpResponse {
+                    status,
+                    raw_response,
+                    ..
+                } => {
+                    assert_eq!(
+                        *status,
+                        StatusCode::BadRequest,
+                        "Expected 400 Bad Request for cross-partition ORDER BY"
+                    );
+                    let raw_response = raw_response.as_ref().unwrap();
+                    let body = std::str::from_utf8(raw_response.body()).unwrap();
+                    #[derive(serde::Deserialize)]
+                    struct ErrorDetail {
+                        code: String,
+                        message: String,
+                    }
+                    let error_detail: ErrorDetail = serde_json::from_str(body).unwrap();
+                    assert_eq!(error_detail.code, "BadRequest");
 
-            // 1004 = CrossPartitionQueryNotServable
-            assert_eq!(Some("1004"), sub_status);
-
+                    // Take only the first two lines of the message for comparison, since the full message may contain additional details that could change over time
+                    let clean_message = error_detail
+                        .message
+                        .lines()
+                        .take(2)
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    assert_eq!(
+                        clean_message,
+                        "Query contains 1 or more unsupported features. Upgrade your SDK to a version that does support the requested features:\nQuery contained OrderBy, which the calling client does not support."
+                    );
+                }
+                _ => panic!("Expected HTTP error response for cross-partition ORDER BY"),
+            }
             Ok(())
         },
         None,
