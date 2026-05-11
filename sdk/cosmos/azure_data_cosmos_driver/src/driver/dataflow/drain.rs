@@ -12,7 +12,9 @@ use std::collections::VecDeque;
 
 use async_trait::async_trait;
 
-use super::{ChildNodes, PageResult, PipelineContext, PipelineNode};
+use crate::models::FeedRange;
+
+use super::{ChildNodes, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
 
 /// Maximum number of consecutive split retries before giving up.
 ///
@@ -54,7 +56,26 @@ impl PipelineNode for SequentialDrain {
             };
 
             match current.next_page(context).await? {
-                PageResult::Page(response) => return Ok(PageResult::Page(response)),
+                PageResult::Page {
+                    response,
+                    is_terminal,
+                } => {
+                    if is_terminal {
+                        // The front child has emitted its last page; evict it
+                        // now so a snapshot taken after this call no longer
+                        // references it. The drain itself is terminal only
+                        // when this was its last child.
+                        self.children.pop_front();
+                        return Ok(PageResult::Page {
+                            response,
+                            is_terminal: self.children.is_empty(),
+                        });
+                    }
+                    return Ok(PageResult::Page {
+                        response,
+                        is_terminal: false,
+                    });
+                }
                 PageResult::Drained => {
                     self.children.pop_front();
                     // Loop to try the next child.
@@ -96,18 +117,44 @@ impl PipelineNode for SequentialDrain {
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         self.children.into_iter().collect()
     }
+
+    fn snapshot_state(&self) -> PipelineNodeState {
+        let Some(front) = self.children.front() else {
+            return PipelineNodeState::Drained;
+        };
+        let Some(range) = front.feed_range() else {
+            // Shouldn't happen for an EPK-ordered drain, but degrade gracefully:
+            // serialize the child snapshot directly with no cursor.
+            return front.snapshot_state();
+        };
+        PipelineNodeState::SequentialDrain {
+            current_min_epk: range.min_inclusive().as_str().to_string(),
+            left_most: Box::new(front.snapshot_state()),
+        }
+    }
+
+    fn feed_range(&self) -> Option<&FeedRange> {
+        self.children.front().and_then(|c| c.feed_range())
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::driver::dataflow::mocks::*;
+    use crate::models::effective_partition_key::EffectivePartitionKey;
 
     #[tokio::test]
     async fn drains_single_child() {
         let child = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"p1"))),
-            Ok(PageResult::Page(response(b"p2"))),
+            Ok(PageResult::Page {
+                response: response(b"p1"),
+                is_terminal: false,
+            }),
+            Ok(PageResult::Page {
+                response: response(b"p2"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let mut drain = SequentialDrain::new(vec![Box::new(child)]);
@@ -129,16 +176,28 @@ mod tests {
     #[tokio::test]
     async fn drains_multiple_children_in_order() {
         let child1 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"c1-p1"))),
+            Ok(PageResult::Page {
+                response: response(b"c1-p1"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let child2 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"c2-p1"))),
-            Ok(PageResult::Page(response(b"c2-p2"))),
+            Ok(PageResult::Page {
+                response: response(b"c2-p1"),
+                is_terminal: false,
+            }),
+            Ok(PageResult::Page {
+                response: response(b"c2-p2"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let child3 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"c3-p1"))),
+            Ok(PageResult::Page {
+                response: response(b"c3-p1"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let mut drain =
@@ -194,11 +253,17 @@ mod tests {
     #[tokio::test]
     async fn handles_split_of_first_child() {
         let replacement1 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"split-left"))),
+            Ok(PageResult::Page {
+                response: response(b"split-left"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let replacement2 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"split-right"))),
+            Ok(PageResult::Page {
+                response: response(b"split-right"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
@@ -207,7 +272,10 @@ mod tests {
         })]);
 
         let trailing_child = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"trailing"))),
+            Ok(PageResult::Page {
+                response: response(b"trailing"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
@@ -234,12 +302,18 @@ mod tests {
     #[tokio::test]
     async fn handles_split_of_middle_child() {
         let child1 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"c1"))),
+            Ok(PageResult::Page {
+                response: response(b"c1"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
         let replacement = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"c2-split"))),
+            Ok(PageResult::Page {
+                response: response(b"c2-split"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
@@ -247,7 +321,10 @@ mod tests {
         })]);
 
         let child3 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"c3"))),
+            Ok(PageResult::Page {
+                response: response(b"c3"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
@@ -278,12 +355,18 @@ mod tests {
     #[tokio::test]
     async fn handles_split_of_last_child() {
         let child1 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"c1"))),
+            Ok(PageResult::Page {
+                response: response(b"c1"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
         let replacement = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"last-split"))),
+            Ok(PageResult::Page {
+                response: response(b"last-split"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let split_child = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
@@ -309,7 +392,10 @@ mod tests {
     #[tokio::test]
     async fn handles_cascading_split() {
         let final_leaf = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"final"))),
+            Ok(PageResult::Page {
+                response: response(b"final"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
@@ -335,9 +421,11 @@ mod tests {
 
     #[tokio::test]
     async fn split_retry_limit_prevents_infinite_loop() {
-        let mut current: Box<dyn PipelineNode> = Box::new(MockLeaf::with_pages(vec![Ok(
-            PageResult::Page(response(b"unreachable")),
-        )]));
+        let mut current: Box<dyn PipelineNode> =
+            Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                response: response(b"unreachable"),
+                is_terminal: false,
+            })]));
 
         for _ in 0..12 {
             current = Box::new(MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
@@ -361,7 +449,10 @@ mod tests {
     async fn child_drained_immediately_skips_to_next() {
         let empty_child = MockLeaf::with_pages(vec![Ok(PageResult::Drained)]);
         let real_child = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"data"))),
+            Ok(PageResult::Page {
+                response: response(b"data"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
@@ -380,15 +471,24 @@ mod tests {
     #[tokio::test]
     async fn split_with_three_way_replacement() {
         let r1 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"r1"))),
+            Ok(PageResult::Page {
+                response: response(b"r1"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let r2 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"r2"))),
+            Ok(PageResult::Page {
+                response: response(b"r2"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let r3 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"r3"))),
+            Ok(PageResult::Page {
+                response: response(b"r3"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
@@ -419,7 +519,10 @@ mod tests {
     #[tokio::test]
     async fn error_after_partial_drain() {
         let child1 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"ok"))),
+            Ok(PageResult::Page {
+                response: response(b"ok"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let child2 = MockLeaf::with_pages(vec![Err(azure_core::Error::with_message(
@@ -443,13 +546,25 @@ mod tests {
     #[tokio::test]
     async fn multiple_pages_per_child_then_advance() {
         let child1 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"c1-p1"))),
-            Ok(PageResult::Page(response(b"c1-p2"))),
-            Ok(PageResult::Page(response(b"c1-p3"))),
+            Ok(PageResult::Page {
+                response: response(b"c1-p1"),
+                is_terminal: false,
+            }),
+            Ok(PageResult::Page {
+                response: response(b"c1-p2"),
+                is_terminal: false,
+            }),
+            Ok(PageResult::Page {
+                response: response(b"c1-p3"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
         let child2 = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"c2-p1"))),
+            Ok(PageResult::Page {
+                response: response(b"c2-p1"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
@@ -480,7 +595,10 @@ mod tests {
     #[tokio::test]
     async fn split_produces_page_on_same_call() {
         let replacement = MockLeaf::with_pages(vec![
-            Ok(PageResult::Page(response(b"immediate"))),
+            Ok(PageResult::Page {
+                response: response(b"immediate"),
+                is_terminal: false,
+            }),
             Ok(PageResult::Drained),
         ]);
 
@@ -508,5 +626,79 @@ mod tests {
 
         let drain = SequentialDrain::new(vec![Box::new(c1), Box::new(c2), Box::new(c3)]);
         assert_eq!(drain.children().len(), 3);
+    }
+
+    #[tokio::test]
+    async fn terminal_page_pops_child_eagerly() {
+        // The first child returns one terminal page; the drain must pop it
+        // immediately so a snapshot taken right after the call already
+        // points at the next child.
+        let child1 = MockLeaf::with_pages(vec![Ok(PageResult::Page {
+            response: response(b"c1-final"),
+            is_terminal: true,
+        })])
+        .with_feed_range(FeedRange::new(
+            EffectivePartitionKey::from("00"),
+            EffectivePartitionKey::from("80"),
+        ));
+        let child2 = MockLeaf::with_pages(vec![
+            Ok(PageResult::Page {
+                response: response(b"c2-p1"),
+                is_terminal: false,
+            }),
+            Ok(PageResult::Drained),
+        ])
+        .with_feed_range(FeedRange::new(
+            EffectivePartitionKey::from("80"),
+            EffectivePartitionKey::from("FF"),
+        ));
+
+        let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, &mut topology);
+
+        let page = unwrap_page(drain.next_page(&mut context).await);
+        assert_eq!(page.body(), b"c1-final");
+
+        // Snapshot must already reference child2 (cursor at "80"), not the
+        // just-drained child1.
+        let snapshot = drain.snapshot_state();
+        let PipelineNodeState::SequentialDrain {
+            current_min_epk, ..
+        } = snapshot
+        else {
+            panic!("expected SequentialDrain snapshot, got {snapshot:?}");
+        };
+        assert_eq!(current_min_epk, "80");
+    }
+
+    #[tokio::test]
+    async fn terminal_page_on_last_child_marks_drain_terminal() {
+        let only_child = MockLeaf::with_pages(vec![Ok(PageResult::Page {
+            response: response(b"final"),
+            is_terminal: true,
+        })])
+        .with_feed_range(FeedRange::new(
+            EffectivePartitionKey::from("00"),
+            EffectivePartitionKey::from("FF"),
+        ));
+
+        let mut drain = SequentialDrain::new(vec![Box::new(only_child)]);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, &mut topology);
+
+        match drain.next_page(&mut context).await.unwrap() {
+            PageResult::Page {
+                response,
+                is_terminal,
+            } => {
+                assert_eq!(response.body(), b"final");
+                assert!(is_terminal, "drain must propagate terminal flag");
+            }
+            other => panic!("expected Page, got {other:?}"),
+        }
+        assert!(matches!(drain.snapshot_state(), PipelineNodeState::Drained));
     }
 }

@@ -16,8 +16,8 @@ use crate::models::{
 
 use super::{
     query_plan::{QueryInfo, QueryPlan},
-    PartitionRoutingRefresh, Pipeline, PipelineNode, Request, RequestTarget, SequentialDrain,
-    TopologyProvider,
+    DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, Request,
+    RequestTarget, SequentialDrain, TopologyProvider,
 };
 
 /// Builds a single-node [`Pipeline`] for a trivial operation.
@@ -26,12 +26,19 @@ use super::{
 /// one partition (point reads, single-partition queries, metadata operations).
 /// Use [`CosmosOperation::is_trivial`] to check eligibility before calling.
 ///
+/// `resume` is an optional [`PipelineNodeState`] from a continuation token
+/// that augments planning. Only `Request` and `Drained` shapes are accepted
+/// for trivial operations; any other shape returns a `DataConversion` error.
+///
 /// # Panics (debug builds)
 ///
 /// Debug-asserts that the operation is indeed trivial. In release builds,
 /// returns an error if a non-trivial operation (e.g. a cross-partition query)
 /// is passed.
-pub(crate) fn build_trivial_pipeline(operation: &CosmosOperation) -> azure_core::Result<Pipeline> {
+pub(crate) fn build_trivial_pipeline(
+    operation: &CosmosOperation,
+    resume: Option<PipelineNodeState>,
+) -> azure_core::Result<Pipeline> {
     debug_assert!(
         operation.is_trivial(),
         "build_trivial_pipeline called with non-trivial operation: {:?} targeting {:?}",
@@ -52,6 +59,25 @@ pub(crate) fn build_trivial_pipeline(operation: &CosmosOperation) -> azure_core:
         ))?;
     }
 
+    let initial_continuation = match resume {
+        None => None,
+        Some(PipelineNodeState::Request {
+            server_continuation,
+        }) => server_continuation,
+        Some(PipelineNodeState::Drained) => {
+            return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+        }
+        Some(other) => {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!(
+                    "continuation token shape {} does not match a trivial operation",
+                    snapshot_kind(&other)
+                ),
+            ));
+        }
+    };
+
     let request_target = match target {
         OperationTarget::None => RequestTarget::NonPartitioned,
         OperationTarget::PartitionKey(pk) => RequestTarget::LogicalPartitionKey(pk.clone()),
@@ -64,7 +90,7 @@ pub(crate) fn build_trivial_pipeline(operation: &CosmosOperation) -> azure_core:
         }
     };
 
-    let root = Request::new(operation.clone(), request_target, None);
+    let root = Request::new(operation.clone(), request_target, initial_continuation);
     Ok(Pipeline::new(Box::new(root)))
 }
 
@@ -82,15 +108,63 @@ pub(crate) fn build_trivial_pipeline(operation: &CosmosOperation) -> azure_core:
 ///    against the current partition topology.
 /// 3. Creates a [`Request`] node for each resolved range and bundles them in a
 ///    [`SequentialDrain`].
+///
+/// `resume` is an optional [`PipelineNodeState`] from a continuation token.
+/// When present, ranges whose `max_exclusive <= current_min_epk` are skipped
+/// and the server continuation from `left_most` is propagated to the front
+/// (resumed) leaf only.
 pub(crate) async fn build_sequential_drain(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
     operation: &CosmosOperation,
+    resume: Option<PipelineNodeState>,
 ) -> azure_core::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
+    let resume = match resume {
+        None => None,
+        Some(PipelineNodeState::Drained) => {
+            return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+        }
+        Some(PipelineNodeState::SequentialDrain {
+            current_min_epk,
+            left_most,
+        }) => {
+            let server_continuation = match *left_most {
+                PipelineNodeState::Request {
+                    server_continuation,
+                } => server_continuation,
+                PipelineNodeState::Drained => None,
+                other => {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::DataConversion,
+                        format!(
+                            "continuation token has unsupported nested shape inside SequentialDrain: {}",
+                            snapshot_kind(&other)
+                        ),
+                    ));
+                }
+            };
+            Some(ResumeCursor {
+                current_min_epk: EffectivePartitionKey::from(current_min_epk),
+                server_continuation,
+            })
+        }
+        Some(PipelineNodeState::Request {
+            server_continuation,
+        }) => {
+            // A bare Request snapshot means the cross-partition query had only
+            // a single child — apply it as a cursor at the minimum EPK.
+            Some(ResumeCursor {
+                current_min_epk: EffectivePartitionKey::min(),
+                server_continuation,
+            })
+        }
+    };
+
     // Convert query ranges to FeedRanges and resolve against topology.
     let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
+    let mut resume = resume;
     for query_range in &query_plan.query_ranges {
         let min = EffectivePartitionKey::from(query_range.min.as_str());
         let max = EffectivePartitionKey::from(query_range.max.as_str());
@@ -100,17 +174,36 @@ pub(crate) async fn build_sequential_drain(
             .await?;
 
         for resolved_range in resolved {
+            // Skip ranges that are entirely below the resume cursor.
+            if let Some(cursor) = resume.as_ref() {
+                if resolved_range.range.max_exclusive() <= &cursor.current_min_epk {
+                    continue;
+                }
+            }
+
+            // Carry the server continuation onto the first surviving leaf,
+            // then clear it so subsequent leaves start fresh.
+            let initial_continuation = resume.as_mut().and_then(|c| c.server_continuation.take());
             let target = RequestTarget::EffectivePartitionKeyRange {
                 range: resolved_range.range,
                 partition_key_range_id: resolved_range.partition_key_range_id,
             };
-            request_nodes.push(Box::new(Request::new(operation.clone(), target, None)));
+            request_nodes.push(Box::new(Request::new(
+                operation.clone(),
+                target,
+                initial_continuation,
+            )));
         }
     }
 
     // TODO: enforce max fan-out (default 100, configurable). See FEED_OPERATIONS_REQS.md §3.
 
     if request_nodes.is_empty() {
+        // Either the plan had no ranges or everything was below the cursor.
+        // The latter is a normal "fully drained" outcome — emit a drained leaf.
+        if resume.is_some() {
+            return Ok(Pipeline::new(Box::new(DrainedLeaf)));
+        }
         return Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "query plan produced no partition ranges to query",
@@ -124,6 +217,20 @@ pub(crate) async fn build_sequential_drain(
     };
 
     Ok(Pipeline::new(root))
+}
+
+/// Resume cursor extracted from a `SequentialDrain` continuation snapshot.
+struct ResumeCursor {
+    current_min_epk: EffectivePartitionKey,
+    server_continuation: Option<String>,
+}
+
+fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
+    match state {
+        PipelineNodeState::Drained => "Drained",
+        PipelineNodeState::Request { .. } => "Request",
+        PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
+    }
 }
 
 /// Validates that the query plan does not require features we don't yet support.
@@ -238,7 +345,7 @@ mod tests {
     #[test]
     fn plans_non_partitioned_pipeline_for_database_read() {
         let op = CosmosOperation::read_database(test_database());
-        let pipeline = build_trivial_pipeline(&op).unwrap();
+        let pipeline = build_trivial_pipeline(&op, None).unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(*request.target(), RequestTarget::NonPartitioned);
@@ -251,7 +358,7 @@ mod tests {
         let pk = PartitionKey::from("pk-value");
         let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let op = CosmosOperation::read_item(item);
-        let pipeline = build_trivial_pipeline(&op).unwrap();
+        let pipeline = build_trivial_pipeline(&op, None).unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(
@@ -268,7 +375,7 @@ mod tests {
 
         // In debug builds, this panics via debug_assert; in release builds it returns Err.
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            build_trivial_pipeline(&op)
+            build_trivial_pipeline(&op, None)
         }));
 
         match result {
@@ -383,7 +490,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
         assert_single_request(&pipeline, "", "FF", "pkrange-0");
     }
 
@@ -397,7 +506,9 @@ mod tests {
             rr("80", "FF", "pkrange-right"),
         ])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
         assert_drain_requests(
             pipeline,
             &[("", "80", "pkrange-left"), ("80", "FF", "pkrange-right")],
@@ -414,7 +525,9 @@ mod tests {
             Ok(vec![rr("80", "FF", "pkrange-C")]),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
         assert_drain_requests(
             pipeline,
             &[("", "40", "pkrange-A"), ("80", "FF", "pkrange-C")],
@@ -432,7 +545,9 @@ mod tests {
             rr("80", "C0", "pkrange-3"),
         ])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
         assert_drain_requests(
             pipeline,
             &[
@@ -462,7 +577,9 @@ mod tests {
             ]),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
         assert_drain_requests(
             pipeline,
             &[
@@ -482,7 +599,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-wide")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
         assert_single_request(&pipeline, "", "FF", "pkrange-wide");
     }
 
@@ -498,7 +617,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.to_string(),
             "unsupported query feature: TOP clause in cross-partition queries"
@@ -517,7 +638,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.to_string(),
             "unsupported query feature: LIMIT clause in cross-partition queries"
@@ -537,7 +660,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.to_string(),
             "unsupported query feature: ORDER BY in cross-partition queries"
@@ -556,7 +681,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.to_string(),
             "unsupported query feature: aggregates in cross-partition queries"
@@ -575,7 +702,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.to_string(),
             "unsupported query feature: GROUP BY in cross-partition queries"
@@ -598,7 +727,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.to_string(),
             "unsupported query feature: hybrid search queries"
@@ -611,7 +742,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op).await.unwrap();
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap();
         assert_single_request(&pipeline, "", "FF", "pkrange-0");
     }
 
@@ -621,7 +754,9 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
         assert_eq!(
             err.to_string(),
             "query plan produced no partition ranges to query"
@@ -637,7 +772,133 @@ mod tests {
             "topology resolution failed",
         ))]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &op).await.unwrap_err();
+        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+            .await
+            .unwrap_err();
         assert_eq!(err.to_string(), "topology resolution failed");
+    }
+
+    // -----------------------------------------------------------------
+    // Resume tests
+    // -----------------------------------------------------------------
+
+    #[tokio::test]
+    async fn resume_drained_state_yields_drained_pipeline() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(PipelineNodeState::Drained))
+            .await
+            .unwrap();
+
+        // The drained pipeline immediately yields no pages.
+        assert!(matches!(
+            pipeline.snapshot_state(),
+            PipelineNodeState::Drained
+        ));
+    }
+
+    #[tokio::test]
+    async fn resume_skips_ranges_below_cursor() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "55", "pk-a"),
+            rr("55", "AA", "pk-b"),
+            rr("AA", "FF", "pk-c"),
+        ])]);
+
+        // Cursor sitting at the first byte of the second range — the first
+        // range (max_exclusive == "55") must be skipped, the others kept.
+        let resume = PipelineNodeState::SequentialDrain {
+            current_min_epk: "55".to_owned(),
+            left_most: Box::new(PipelineNodeState::Request {
+                server_continuation: None,
+            }),
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests(pipeline, &[("55", "AA", "pk-b"), ("AA", "FF", "pk-c")]);
+    }
+
+    #[tokio::test]
+    async fn resume_propagates_server_continuation_to_first_surviving_leaf_only() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "55", "pk-a"),
+            rr("55", "AA", "pk-b"),
+            rr("AA", "FF", "pk-c"),
+        ])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            current_min_epk: "55".to_owned(),
+            left_most: Box::new(PipelineNodeState::Request {
+                server_continuation: Some("server-token-xyz".to_owned()),
+            }),
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(resume))
+            .await
+            .unwrap();
+        let snapshot = pipeline.snapshot_state();
+        let PipelineNodeState::SequentialDrain { left_most, .. } = snapshot else {
+            panic!("expected SequentialDrain snapshot, got {snapshot:?}");
+        };
+        assert_eq!(
+            *left_most,
+            PipelineNodeState::Request {
+                server_continuation: Some("server-token-xyz".to_owned()),
+            },
+            "front leaf must carry the resumed server continuation",
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_with_cursor_past_all_ranges_yields_drained_pipeline() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "55", "pk-a")])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            current_min_epk: "FF".to_owned(),
+            left_most: Box::new(PipelineNodeState::Drained),
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(resume))
+            .await
+            .unwrap();
+        assert!(matches!(
+            pipeline.snapshot_state(),
+            PipelineNodeState::Drained
+        ));
+    }
+
+    #[tokio::test]
+    async fn resume_rejects_nested_sequential_drain_inside_left_most() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-a")])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            current_min_epk: "00".to_owned(),
+            left_most: Box::new(PipelineNodeState::SequentialDrain {
+                current_min_epk: "00".to_owned(),
+                left_most: Box::new(PipelineNodeState::Request {
+                    server_continuation: None,
+                }),
+            }),
+        };
+
+        let err = build_sequential_drain(&plan, &mut topology, &op, Some(resume))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("unsupported nested shape"),
+            "unexpected error message: {err}",
+        );
     }
 }

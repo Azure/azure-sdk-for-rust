@@ -11,8 +11,8 @@ use crate::{
         cache::{PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
             planner, query_plan::QueryPlan, CachedTopologyProvider, OperationPlan,
-            PartitionRoutingRefresh, PipelineContext, RequestExecutor, RequestTarget,
-            ResolvedRange, TopologyProvider,
+            PartitionRoutingRefresh, PipelineContext, PipelineNodeState, RequestExecutor,
+            RequestTarget, ResolvedRange, TopologyProvider,
         },
         pipeline::operation_pipeline::OperationOverrides,
         routing::{
@@ -23,8 +23,9 @@ use crate::{
     },
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
-        ActivityId, ContainerProperties, ContainerReference, CosmosOperation, DatabaseProperties,
-        DatabaseReference, OperationTarget, PartitionKey, ResourceType,
+        ActivityId, ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
+        DatabaseProperties, DatabaseReference, OperationTarget, PartitionKey, ResolvedToken,
+        ResourceType,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
@@ -1251,7 +1252,7 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<Option<crate::models::CosmosResponse>> {
-        let mut plan = self.plan_operation(&operation, &options).await?;
+        let mut plan = self.plan_operation(&operation, &options, None).await?;
         self.execute_plan(&mut plan, operation.container().cloned(), options)
             .await
     }
@@ -1548,10 +1549,21 @@ impl CosmosDriver {
     /// For trivial operations (non-query or single-partition), returns a
     /// singleton pipeline immediately. For cross-partition queries, fetches a
     /// query plan from the backend and builds a fan-out pipeline.
+    ///
+    /// `continuation` optionally provides resume state from a prior call. Two
+    /// kinds of tokens are accepted:
+    ///
+    /// - SDK-issued tokens (`c1.…`) carry a serialized snapshot of the
+    ///   previous pipeline's state and can resume any operation.
+    /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
+    ///   for trivial operations; passing one to a cross-partition query
+    ///   returns a [`DataConversion`](azure_core::error::ErrorKind::DataConversion)
+    ///   error.
     pub async fn plan_operation(
         &self,
         operation: &CosmosOperation,
         options: &OperationOptions,
+        continuation: Option<&ContinuationToken>,
     ) -> azure_core::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
@@ -1566,9 +1578,31 @@ impl CosmosDriver {
 
         tracing::debug!(operation_type = ?operation.operation_type(), resource_type = ?operation.resource_type(), resource_reference = ?operation.resource_reference(), "planning operation");
 
+        // Resolve the continuation token (if any) into a planner-ready resume
+        // state. Server-issued tokens are only valid for trivial operations.
+        let resume_state = match continuation {
+            None => None,
+            Some(token) => match token.resolve()? {
+                ResolvedToken::ClientV1(state) => Some(state),
+                ResolvedToken::ServerOpaque(server_token) => {
+                    if !operation.is_trivial() {
+                        return Err(azure_core::Error::with_message(
+                            azure_core::error::ErrorKind::DataConversion,
+                            "an opaque server continuation token cannot be used to resume a \
+                             cross-partition query; use the SDK-issued continuation token from \
+                             FeedPageIterator::to_continuation_token()",
+                        ));
+                    }
+                    Some(PipelineNodeState::Request {
+                        server_continuation: Some(server_token),
+                    })
+                }
+            },
+        };
+
         // Trivial plan: anything that isn't a cross-partition query.
         if operation.is_trivial() {
-            let pipeline = planner::build_trivial_pipeline(operation)?;
+            let pipeline = planner::build_trivial_pipeline(operation, resume_state)?;
             return Ok(OperationPlan::new(pipeline));
         }
 
@@ -1606,7 +1640,8 @@ impl CosmosDriver {
             |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
         );
 
-        let pipeline = planner::build_sequential_drain(&query_plan, &mut topology, operation).await?;
+        let pipeline =
+            planner::build_sequential_drain(&query_plan, &mut topology, operation, resume_state).await?;
         Ok(OperationPlan::new(pipeline))
     }
 
@@ -2437,7 +2472,7 @@ mod tests {
         assert_send(driver.execute_operation(todo!(), todo!()));
         assert_send(driver.execute_point_operation(todo!(), todo!()));
         assert_send(driver.execute_plan(todo!(), todo!(), todo!()));
-        assert_send(driver.plan_operation(todo!(), todo!()));
+        assert_send(driver.plan_operation(todo!(), todo!(), todo!()));
     }
 
     // Account properties with two readable locations for regional fallback tests.

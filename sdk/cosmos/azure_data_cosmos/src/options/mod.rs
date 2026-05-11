@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::models::ThroughputProperties;
+use crate::ContinuationToken;
 use azure_core::http::headers::Headers;
 use std::fmt;
 use std::fmt::Display;
@@ -270,9 +271,18 @@ pub struct QueryOptions {
     /// Maximum number of items to return per page.
     ///
     /// When set, the server will return at most this many items in each response page.
-    /// This is useful for controlling memory usage and for testing pagination behavior.
     /// If not set, the server uses its default page size.
+    ///
+    /// This is a _hint_ to the server, not a client-side guarantee of the maximum returned page size.
+    /// In a cross-partition query, each partition may return up to this many items,
+    /// so the total page size could be up to this value times the number of partitions involved.
+    /// Some server operations may return fewer, or even more, items than this value based on internal heuristics.
     pub max_item_count: Option<u32>,
+
+    /// Continuation token from a prior page iterator, used to resume the query.
+    ///
+    /// See [`FeedPageIterator::to_continuation_token`](crate::FeedPageIterator::to_continuation_token).
+    pub continuation_token: Option<ContinuationToken>,
 }
 
 impl QueryOptions {
@@ -291,6 +301,12 @@ impl QueryOptions {
     /// Sets the maximum number of items to return per page.
     pub fn with_max_item_count(mut self, max_item_count: u32) -> Self {
         self.max_item_count = Some(max_item_count);
+        self
+    }
+
+    /// Sets a continuation token to resume the query at a previous position.
+    pub fn with_continuation_token(mut self, continuation_token: ContinuationToken) -> Self {
+        self.continuation_token = Some(continuation_token);
         self
     }
 }

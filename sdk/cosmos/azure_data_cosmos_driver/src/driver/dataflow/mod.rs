@@ -2,23 +2,54 @@
 // Licensed under the MIT License.
 
 //! Dataflow pipeline nodes for paged Cosmos DB operations.
+//!
+//! Everything in this module is driver-internal except [`OperationPlan`],
+//! which is the only type re-exported to public APIs. The rest is the
+//! machinery `CosmosDriver` uses to plan, execute, and resume paged
+//! operations.
+//!
+//! # Navigation map
+//!
+//! - Leaf nodes: [`Request`] (executes a single Cosmos DB request and pages
+//!   through continuation tokens) and [`DrainedLeaf`] (a no-op leaf used when
+//!   resuming an already-completed plan).
+//! - Intermediate nodes: [`SequentialDrain`] iterates EPK-ordered children
+//!   left-to-right, draining each before advancing.
+//! - Planner: [`planner::build_trivial_pipeline`] handles point reads and
+//!   single-partition operations; [`planner::build_sequential_drain`] handles
+//!   cross-partition queries by consuming a backend query plan and resolving
+//!   it against the current topology.
+//! - Serializable state: [`PipelineNodeState`] (see [`snapshot`]) is the
+//!   in-memory shape of a continuation snapshot; the wire-format token lives
+//!   in [`crate::models::ContinuationToken`].
+//! - Topology adapter: [`CachedTopologyProvider`] backs the
+//!   [`TopologyProvider`] trait with the driver's
+//!   [`PartitionKeyRangeCache`](crate::driver::cache::PartitionKeyRangeCache).
+//!
+//! See `FEED_OPERATIONS_REQS.md` for the design intent behind the dataflow
+//! pipeline (paged operations, split recovery, continuation tokens, planned
+//! cross-partition strategies).
 
 mod drain;
+mod drained;
 #[cfg(test)]
 pub(crate) mod mocks;
 pub(crate) mod planner;
 pub(crate) mod query_plan;
 mod request;
+mod snapshot;
 mod topology;
 
 use std::ops::Index;
 
 use futures::future::BoxFuture;
 
-use crate::models::{CosmosOperation, CosmosResponse, FeedRange};
+use crate::models::{ContinuationToken, CosmosOperation, CosmosResponse, FeedRange};
 
 pub(crate) use drain::SequentialDrain;
+pub(crate) use drained::DrainedLeaf;
 pub(crate) use request::{Request, RequestTarget};
+pub(crate) use snapshot::PipelineNodeState;
 pub(crate) use topology::CachedTopologyProvider;
 
 /// Request execution mode for partition routing metadata.
@@ -120,7 +151,17 @@ impl<'a> PipelineContext<'a> {
 #[allow(clippy::large_enum_variant)]
 pub(crate) enum PageResult {
     /// A page of results was produced.
-    Page(CosmosResponse),
+    ///
+    /// `is_terminal` is `true` when this node has no more pages to emit
+    /// after this one — set by leaf nodes when the server returned no
+    /// continuation token, and propagated by intermediate nodes when their
+    /// last child has emitted its terminal page. Parents use this to evict
+    /// drained children eagerly so that snapshots of the pipeline do not
+    /// include children that are already done.
+    Page {
+        response: CosmosResponse,
+        is_terminal: bool,
+    },
     /// This node has no more pages to emit.
     Drained,
     /// This node's EPK range has split and needs to be replaced by new child nodes.
@@ -139,7 +180,9 @@ pub(crate) enum PageResult {
 impl std::fmt::Debug for PageResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PageResult::Page(_) => f.write_str("Page(...)"),
+            PageResult::Page { is_terminal, .. } => {
+                write!(f, "Page(terminal={is_terminal})")
+            }
             PageResult::Drained => f.write_str("Drained"),
             PageResult::SplitRequired {
                 replacement_nodes, ..
@@ -226,6 +269,28 @@ pub(crate) trait PipelineNode: Send + std::any::Any {
 
     /// Consumes this node and returns its children as a `Vec`.
     fn into_children(self) -> Vec<Box<dyn PipelineNode>>;
+
+    /// Snapshots this node's state for continuation-token serialization.
+    fn snapshot_state(&self) -> PipelineNodeState;
+
+    /// Returns the EPK range this node currently targets, if known.
+    ///
+    /// Used by intermediate nodes (e.g. [`SequentialDrain`]) to record the
+    /// current cursor position when snapshotting, without needing to know
+    /// the concrete type of their children. Defaults to `None`.
+    ///
+    /// # Invariant
+    ///
+    /// Every node in the dataflow tree is responsible for some contiguous EPK
+    /// sub-range of the container key space. Intermediate nodes that drain
+    /// children in EPK order (such as [`SequentialDrain`]) may use the front
+    /// child's `feed_range()` as their own cursor; intermediates that combine
+    /// results across ranges (e.g. a future k-way merge for streaming
+    /// `ORDER BY`) are responsible for snapshotting whatever cursor
+    /// representation makes sense for their ordering semantics.
+    fn feed_range(&self) -> Option<&FeedRange> {
+        None
+    }
 }
 
 impl dyn PipelineNode {
@@ -275,7 +340,7 @@ impl Pipeline {
         context: &mut PipelineContext<'_>,
     ) -> azure_core::Result<Option<CosmosResponse>> {
         match self.root.next_page(context).await? {
-            PageResult::Page(response) => Ok(Some(response)),
+            PageResult::Page { response, .. } => Ok(Some(response)),
             PageResult::Drained => Ok(None),
             // Defensive: today the root is always a `Request`, `SequentialDrain`,
             // or `DrainedLeaf`, none of which can bubble `SplitRequired` up past
@@ -286,6 +351,11 @@ impl Pipeline {
                 "root node cannot request a split; splits must be handled by a parent node",
             )),
         }
+    }
+
+    /// Snapshots the pipeline's current state for continuation-token serialization.
+    pub(crate) fn snapshot_state(&self) -> PipelineNodeState {
+        self.root.snapshot_state()
     }
 }
 
@@ -302,6 +372,17 @@ impl OperationPlan {
     pub(crate) fn new(pipeline: Pipeline) -> Self {
         Self { pipeline }
     }
+
+    /// Snapshots this plan into a [`ContinuationToken`] suitable for cross-process
+    /// resumption.
+    ///
+    /// Snapshotting walks the pipeline tree and serializes a minimal record of
+    /// each node's progress. The result can be passed back to
+    /// [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation)
+    /// (with the same operation) to resume where this plan left off.
+    pub fn to_continuation_token(&self) -> azure_core::Result<ContinuationToken> {
+        ContinuationToken::encode_v1(&self.pipeline.snapshot_state())
+    }
 }
 
 #[cfg(test)]
@@ -311,9 +392,11 @@ mod tests {
 
     #[tokio::test]
     async fn pipeline_forwards_pages_from_root() {
-        let mut pipeline = Pipeline::new(Box::new(MockLeaf::with_pages(vec![Ok(
-            PageResult::Page(response(b"page")),
-        )])));
+        let mut pipeline =
+            Pipeline::new(Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                response: response(b"page"),
+                is_terminal: false,
+            })])));
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, &mut topology);

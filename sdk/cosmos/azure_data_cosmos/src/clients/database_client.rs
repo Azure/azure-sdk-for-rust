@@ -129,7 +129,7 @@ impl DatabaseClient {
         let plan = self
             .context
             .driver
-            .plan_operation(&initial_operation, &operation_options)
+            .plan_operation(&initial_operation, &operation_options, None)
             .await?;
 
         Ok(FeedItemIterator::new(

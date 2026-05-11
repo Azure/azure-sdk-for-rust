@@ -13,6 +13,7 @@ mod account_reference;
 mod activity_id;
 mod connection_string;
 mod consistency_level;
+mod continuation_token;
 pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
@@ -44,6 +45,8 @@ pub use account_reference::{AccountReference, AccountReferenceBuilder, Credentia
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
 pub(crate) use consistency_level::DefaultConsistencyLevel;
+pub use continuation_token::ContinuationToken;
+pub(crate) use continuation_token::ResolvedToken;
 pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
     CosmosResponseHeaders, OfferAutoscaleSettings,

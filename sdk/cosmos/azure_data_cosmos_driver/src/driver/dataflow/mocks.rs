@@ -10,7 +10,7 @@ use futures::future::BoxFuture;
 
 use super::{
     ChildNodes, PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode,
-    RequestExecutor, RequestTarget, ResolvedRange, TopologyProvider,
+    PipelineNodeState, RequestExecutor, RequestTarget, ResolvedRange, TopologyProvider,
 };
 use crate::{
     diagnostics::DiagnosticsContextBuilder,
@@ -27,6 +27,7 @@ use crate::{
 /// A mock leaf node that returns pre-configured page results.
 pub(crate) struct MockLeaf {
     pages: VecDeque<azure_core::Result<PageResult>>,
+    feed_range: Option<FeedRange>,
 }
 
 impl MockLeaf {
@@ -34,7 +35,15 @@ impl MockLeaf {
     pub fn with_pages(pages: Vec<azure_core::Result<PageResult>>) -> Self {
         Self {
             pages: pages.into(),
+            feed_range: None,
         }
+    }
+
+    /// Sets the feed range reported by [`PipelineNode::feed_range`].
+    #[allow(dead_code)]
+    pub fn with_feed_range(mut self, range: FeedRange) -> Self {
+        self.feed_range = Some(range);
+        self
     }
 }
 
@@ -55,6 +64,14 @@ impl PipelineNode for MockLeaf {
 
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         vec![]
+    }
+
+    fn snapshot_state(&self) -> PipelineNodeState {
+        PipelineNodeState::Drained
+    }
+
+    fn feed_range(&self) -> Option<&FeedRange> {
+        self.feed_range.as_ref()
     }
 }
 
@@ -164,7 +181,7 @@ impl TopologyProvider for MockTopologyProvider {
 /// Extracts the `CosmosResponse` from a `PageResult::Page`, panicking otherwise.
 pub(crate) fn unwrap_page(result: azure_core::Result<PageResult>) -> CosmosResponse {
     match result.expect("expected Ok result") {
-        PageResult::Page(r) => r,
+        PageResult::Page { response, .. } => response,
         PageResult::Drained => panic!("expected Page, got Drained"),
         PageResult::SplitRequired { .. } => panic!("expected Page, got SplitRequired"),
     }
@@ -174,7 +191,7 @@ pub(crate) fn unwrap_page(result: azure_core::Result<PageResult>) -> CosmosRespo
 pub(crate) fn assert_drained(result: azure_core::Result<PageResult>) {
     match result.expect("expected Ok result") {
         PageResult::Drained => {}
-        PageResult::Page(_) => panic!("expected Drained, got Page"),
+        PageResult::Page { .. } => panic!("expected Drained, got Page"),
         PageResult::SplitRequired { .. } => panic!("expected Drained, got SplitRequired"),
     }
 }

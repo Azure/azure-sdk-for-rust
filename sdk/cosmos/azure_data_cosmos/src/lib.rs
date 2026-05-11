@@ -29,6 +29,7 @@ pub use clients::CosmosClientBuilder;
 pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
 #[doc(inline)]
+pub use azure_data_cosmos_driver::models::ContinuationToken;
 pub use azure_data_cosmos_driver::models::FeedRange;
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::PartitionKey;

@@ -36,6 +36,7 @@ pub(crate) mod request_header_names {
     pub const END_EPK: &str = "x-ms-end-epk";
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
+    pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
 }
 
 /// Standard Cosmos DB response header names.
@@ -117,6 +118,12 @@ pub struct CosmosRequestHeaders {
     /// Sent on query plan requests to indicate which query capabilities the
     /// client supports. The backend uses this to shape its response.
     pub supported_query_features: Option<String>,
+
+    /// Maximum number of items the server should return per page
+    /// (`x-ms-max-item-count`).
+    ///
+    /// Applies to feed-style operations such as queries and read-feed.
+    pub max_item_count: Option<u32>,
 }
 
 impl CosmosRequestHeaders {
@@ -169,6 +176,12 @@ impl CosmosRequestHeaders {
             headers.insert(
                 request_header_names::SUPPORTED_QUERY_FEATURES,
                 HeaderValue::from(features.clone()),
+            );
+        }
+        if let Some(max_item_count) = self.max_item_count {
+            headers.insert(
+                request_header_names::MAX_ITEM_COUNT,
+                HeaderValue::from(max_item_count.to_string()),
             );
         }
     }
@@ -759,6 +772,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
+            max_item_count: None,
         };
 
         assert_eq!(
@@ -780,6 +794,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
+            max_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -804,6 +819,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
+            max_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -828,6 +844,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
+            max_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -852,6 +869,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
+            max_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -876,6 +894,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
+            max_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -895,6 +914,30 @@ mod tests {
         );
         assert_eq!(
             headers.get_optional_str(&HeaderName::from_static("if-none-match")),
+            None
+        );
+    }
+    #[test]
+    fn write_to_headers_emits_max_item_count() {
+        let cosmos_headers = CosmosRequestHeaders {
+            max_item_count: Some(7),
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("x-ms-max-item-count")),
+            Some("7")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_omits_max_item_count_when_none() {
+        let cosmos_headers = CosmosRequestHeaders::default();
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("x-ms-max-item-count")),
             None
         );
     }

@@ -15,7 +15,7 @@ use azure_data_cosmos::{
     constants::{self, SUB_STATUS},
     options::{OperationOptions, QueryOptions},
     query::QueryScope,
-    Query,
+    ContinuationToken, Query,
 };
 use framework::{test_data, MockItem, TestClient};
 use futures::{StreamExt, TryStreamExt};
@@ -46,25 +46,67 @@ where
     T: DeserializeOwned + Send + Eq + std::fmt::Debug + 'static,
 {
     let container_client = test_data::create_container_with_items(db_client, items, None).await?;
+    let query: Query = query.into();
 
-    let mut query_options = QueryOptions::default();
-    if let Some(max_item_count) = options.max_item_count {
-        query_options = query_options.with_max_item_count(max_item_count);
-    }
-
-    let mut pages = container_client
-        .query_items::<T>(query, scope, Some(query_options))
-        .await?
-        .into_pages();
+    let build_options = || -> QueryOptions {
+        let mut o = QueryOptions::default();
+        if let Some(max_item_count) = options.max_item_count {
+            o = o.with_max_item_count(max_item_count);
+        }
+        o
+    };
 
     let mut actual_items = Vec::new();
-    while let Some(page) = pages.next().await {
-        actual_items.extend(page?.into_items());
-    }
 
     if options.use_continuation_token_resume {
-        // Placeholder for future continuation token-based resume support.
-        panic!("Continuation token resume support not yet implemented");
+        // Fetch one page at a time, taking a continuation token after each
+        // page and resuming a brand-new iterator from the token. This
+        // exercises the suspend/resume path end-to-end.
+        let mut continuation: Option<ContinuationToken> = None;
+        loop {
+            let mut query_options = build_options();
+            if let Some(token) = continuation.take() {
+                query_options = query_options.with_continuation_token(token);
+            }
+            let mut pages = container_client
+                .query_items::<T>(query.clone(), scope.clone(), Some(query_options))
+                .await?
+                .into_pages();
+
+            let Some(page) = pages.next().await else {
+                break;
+            };
+            let page = page?;
+            actual_items.extend(page.into_items());
+
+            // Round-trip the continuation token through string form to
+            // mimic real usage (e.g. persisting it across processes).
+            let token = pages.to_continuation_token()?;
+            let serialized = token.as_str().to_owned();
+            let restored = ContinuationToken::from_string(serialized);
+            // Drop the iterator before checking for termination — we want to
+            // observe the snapshot taken right after the page was emitted.
+            drop(pages);
+
+            // The pipeline reports its own terminal state via
+            // `to_continuation_token` returning a token whose decoded
+            // snapshot is `Drained`. We can't introspect that here, so we
+            // detect termination by attempting one more poll on a fresh
+            // iterator: if it yields no page, we're done.
+            //
+            // To avoid an extra round-trip when the snapshot is trivially
+            // drained, we still always set `continuation` and let the
+            // planner short-circuit to a `DrainedLeaf`.
+            continuation = Some(restored);
+        }
+    } else {
+        let mut pages = container_client
+            .query_items::<T>(query, scope, Some(build_options()))
+            .await?
+            .into_pages();
+        while let Some(page) = pages.next().await {
+            actual_items.extend(page?.into_items());
+        }
     }
 
     assert_eq!(expected_items, actual_items);
@@ -422,6 +464,270 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
             )
             .await?;
 
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn cross_partition_query_suspend_resume() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            // Four logical partitions × three items per partition. With a
+            // page size of one, this exercises both intra-partition and
+            // cross-partition resume points.
+            let items = test_data::generate_mock_items(4, 3);
+
+            execute_query_test(
+                db_client,
+                items.clone(),
+                "select * from c",
+                QueryScope::full_container(),
+                items,
+                QueryTestOptions {
+                    max_item_count: Some(1),
+                    use_continuation_token_resume: true,
+                },
+            )
+            .await?;
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn query_rejects_newer_sdk_continuation_token() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(1, 1);
+            let container_client =
+                test_data::create_container_with_items(db_client, items, None).await?;
+
+            // A `c2.` prefix indicates the token was issued by a future
+            // SDK version this client does not understand.
+            let token = ContinuationToken::from_string("c2.something".to_string());
+            let options = QueryOptions::default().with_continuation_token(token);
+
+            let Err(err) = container_client
+                .query_items::<MockItem>(
+                    "select * from c",
+                    QueryScope::full_container(),
+                    Some(options),
+                )
+                .await
+            else {
+                panic!("expected newer-SDK token to be rejected");
+            };
+            let message = err.to_string();
+            assert!(
+                message.contains("newer SDK") || message.contains("c2"),
+                "unexpected error: {message}"
+            );
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn query_rejects_server_token_for_cross_partition() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            let items = test_data::generate_mock_items(2, 1);
+            let container_client =
+                test_data::create_container_with_items(db_client, items, None).await?;
+
+            // An un-prefixed token is treated as an opaque server
+            // continuation, which is only valid for trivial (single-
+            // partition) queries.
+            let token = ContinuationToken::from_string("opaque-server-blob".to_string());
+            let options = QueryOptions::default().with_continuation_token(token);
+
+            let Err(err) = container_client
+                .query_items::<MockItem>(
+                    "select * from c",
+                    QueryScope::full_container(),
+                    Some(options),
+                )
+                .await
+            else {
+                panic!("expected opaque server token to be rejected for cross-partition query");
+            };
+            let message = err.to_string();
+            assert!(
+                message.contains("opaque server continuation token"),
+                "unexpected error: {message}"
+            );
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<(), Box<dyn Error>> {
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use base64::Engine as _;
+
+    TestClient::run_with_unique_db(
+        async |_, db_client| {
+            // One logical partition × five items so we get multiple pages
+            // with `max_item_count(1)`.
+            let items = test_data::generate_mock_items(1, 5);
+            let expected: Vec<MockItem> =
+                collect_matching_items(&items, |p| p.partition_key == "partition0");
+            assert!(
+                expected.len() > 1,
+                "need multiple items to exercise pagination"
+            );
+
+            let container_client =
+                test_data::create_container_with_items(db_client, items, None).await?;
+            let scope = QueryScope::partition("partition0");
+
+            // --- Round 1: fetch the first page through the SDK and pull
+            // the SDK-issued `c1.` token. ---
+            let mut pages = container_client
+                .query_items::<MockItem>(
+                    "select * from c",
+                    scope.clone(),
+                    Some(QueryOptions::default().with_max_item_count(1)),
+                )
+                .await?
+                .into_pages();
+
+            let first_page = pages
+                .next()
+                .await
+                .expect("expected at least one page from the server")?;
+            let mut actual: Vec<MockItem> = first_page.into_items();
+
+            let token = pages.to_continuation_token()?;
+            let raw = token.as_str().to_owned();
+            drop(pages);
+
+            assert!(
+                raw.starts_with("c1."),
+                "expected SDK to emit a c1.-prefixed token, got: {raw}"
+            );
+
+            // Crack the SDK token open. We deliberately couple this test
+            // to the on-the-wire format so we can recover the underlying
+            // server continuation without exposing extra public APIs.
+            //
+            // Format: `c1.` + base64url-no-pad(JSON of `PipelineNodeState`).
+            // For a trivial single-partition query the JSON is shaped like
+            // `{"kind":"request","server_continuation":"<token>"}`.
+            let payload = raw.strip_prefix("c1.").unwrap();
+            let json_bytes = URL_SAFE_NO_PAD
+                .decode(payload)
+                .expect("c1. payload must be valid base64url-no-pad");
+            let snapshot: serde_json::Value = serde_json::from_slice(&json_bytes)
+                .expect("decoded c1. payload must be valid JSON");
+            assert_eq!(
+                snapshot.get("kind").and_then(|v| v.as_str()),
+                Some("request"),
+                "trivial single-partition pipeline should snapshot as a single Request node, got: {snapshot}"
+            );
+            let server_token = snapshot
+                .get("server_continuation")
+                .and_then(|v| v.as_str())
+                .expect("Request node must carry a server_continuation after the first page")
+                .to_owned();
+            assert!(
+                !server_token.is_empty(),
+                "server continuation token should not be empty"
+            );
+            assert!(
+                !server_token.starts_with("c1.") && !server_token.starts_with("c2."),
+                "server continuation must not look like an SDK token, got: {server_token}"
+            );
+
+            // --- Round 2: drain the rest of the query using the raw
+            // server token directly (no `c1.` prefix). The SDK accepts
+            // un-prefixed tokens as an opaque server fallback for trivial
+            // single-partition queries. ---
+            let mut continuation = Some(ContinuationToken::from_string(server_token));
+            let mut page_count: usize = 1;
+            loop {
+                let mut options = QueryOptions::default().with_max_item_count(1);
+                if let Some(t) = continuation.take() {
+                    options = options.with_continuation_token(t);
+                }
+
+                let mut pages = container_client
+                    .query_items::<MockItem>("select * from c", scope.clone(), Some(options))
+                    .await?
+                    .into_pages();
+
+                let Some(page) = pages.next().await else {
+                    break;
+                };
+                let page = page?;
+                let items_in_page = page.into_items();
+                let was_empty = items_in_page.is_empty();
+                actual.extend(items_in_page);
+                page_count += 1;
+
+                let next_token = pages.to_continuation_token()?;
+                let raw_next = next_token.as_str().to_owned();
+                drop(pages);
+
+                // Subsequent SDK-issued tokens must still be `c1.`-prefixed.
+                assert!(
+                    raw_next.starts_with("c1."),
+                    "follow-up token must remain c1.-prefixed, got: {raw_next}"
+                );
+
+                // Decode again to detect end-of-stream: when the inner
+                // snapshot is `{"kind":"drained"}` we are done.
+                let payload = raw_next.strip_prefix("c1.").unwrap();
+                let json_bytes = URL_SAFE_NO_PAD
+                    .decode(payload)
+                    .expect("c1. payload must be valid base64url-no-pad");
+                let snapshot: serde_json::Value =
+                    serde_json::from_slice(&json_bytes).expect("payload must be valid JSON");
+                let kind = snapshot.get("kind").and_then(|v| v.as_str()).unwrap_or("");
+                if kind == "drained" || was_empty {
+                    break;
+                }
+
+                // Continue feeding the SDK its own next-token.
+                continuation = Some(ContinuationToken::from_string(raw_next));
+
+                assert!(
+                    page_count <= expected.len() + 2,
+                    "fetched more pages ({page_count}) than expected ({})",
+                    expected.len()
+                );
+            }
+
+            assert_eq!(expected, actual);
             Ok(())
         },
         None,

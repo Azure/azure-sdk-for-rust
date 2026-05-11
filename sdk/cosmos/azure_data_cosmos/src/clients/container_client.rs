@@ -730,10 +730,17 @@ impl ContainerClient {
         if let Some(token) = options.session_token {
             initial_operation = initial_operation.with_session_token(token);
         }
+        if let Some(max_item_count) = options.max_item_count {
+            initial_operation = initial_operation.with_max_item_count(max_item_count);
+        }
         let plan = self
             .context
             .driver
-            .plan_operation(&initial_operation, &options.operation)
+            .plan_operation(
+                &initial_operation,
+                &options.operation,
+                options.continuation_token.as_ref(),
+            )
             .await?;
         Ok(FeedItemIterator::new(
             self.context.driver.clone(),

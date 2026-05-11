@@ -1,25 +1,25 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{pin::Pin, result, sync::Arc, task};
+use std::{marker::PhantomData, pin::Pin, sync::Arc, task};
 
 use azure_core::http::{
     headers::Headers,
     pager::{PagerContinuation, PagerResult},
 };
 use azure_data_cosmos_driver::{
-    models::{ContainerReference, CosmosResponseHeaders},
+    models::{ContainerReference, CosmosResponse as DriverResponse, CosmosResponseHeaders},
     options::OperationOptions,
     CosmosDriver, OperationPlan,
 };
-use futures::stream::BoxStream;
+use futures::future::BoxFuture;
 use futures::Stream;
 use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::{
     constants, driver_bridge,
     models::{CosmosDiagnostics, CosmosResponse},
-    SessionToken,
+    ContinuationToken, SessionToken,
 };
 
 /// Represents a single page of results from a Cosmos DB feed.
@@ -263,69 +263,150 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
     }
 }
 
-fn create_pagination_stream<T: DeserializeOwned + Send + 'static>(
+type DriverPageFuture =
+    BoxFuture<'static, (OperationPlan, azure_core::Result<Option<DriverResponse>>)>;
+
+/// Live pipeline state held by [`FeedPageIterator`] / [`FeedItemIterator`].
+///
+/// Owns the [`OperationPlan`] directly (rather than burying it inside an
+/// `unfold` closure) so that
+/// [`FeedPageIterator::to_continuation_token`] can snapshot it between polls.
+struct LiveState {
     driver: Arc<CosmosDriver>,
     container: Option<ContainerReference>,
-    plan: OperationPlan,
     options: OperationOptions,
-) -> BoxStream<'static, azure_core::Result<QueryFeedPage<T>>> {
-    struct State {
+    /// Always `Some` while no page fetch is in flight.
+    plan: Option<OperationPlan>,
+    /// `Some` while a page fetch is pending.
+    in_flight: Option<DriverPageFuture>,
+    exhausted: bool,
+}
+
+impl LiveState {
+    fn new(
         driver: Arc<CosmosDriver>,
         container: Option<ContainerReference>,
         plan: OperationPlan,
         options: OperationOptions,
-        continuation: Option<String>,
+    ) -> Self {
+        Self {
+            driver,
+            container,
+            options,
+            plan: Some(plan),
+            in_flight: None,
+            exhausted: false,
+        }
     }
-    let initial_state = State {
-        driver,
-        container,
-        options,
-        plan,
-        continuation: None,
-    };
-    let stream = futures::stream::unfold(Some(initial_state), |state| async move {
-        let Some(mut state) = state else {
-            return None; // No more pages to fetch
-        };
 
-        let result = state
-            .driver
-            .execute_plan(
-                &mut state.plan,
-                state.container.clone(),
-                state.options.clone(),
+    fn poll_next_page<T: DeserializeOwned + Send + 'static>(
+        &mut self,
+        cx: &mut task::Context<'_>,
+    ) -> task::Poll<Option<azure_core::Result<QueryFeedPage<T>>>> {
+        if self.exhausted {
+            return task::Poll::Ready(None);
+        }
+
+        if self.in_flight.is_none() {
+            // Move the plan into a future. The future returns the plan back so
+            // we can store it again between polls.
+            let mut plan = self
+                .plan
+                .take()
+                .expect("plan must be present between polls");
+            let driver = Arc::clone(&self.driver);
+            let container = self.container.clone();
+            let options = self.options.clone();
+            let fut: DriverPageFuture = Box::pin(async move {
+                let result = driver.execute_plan(&mut plan, container, options).await;
+                (plan, result)
+            });
+            self.in_flight = Some(fut);
+        }
+
+        let fut = self.in_flight.as_mut().expect("future just installed");
+        let (plan, result) = match fut.as_mut().poll(cx) {
+            task::Poll::Pending => return task::Poll::Pending,
+            task::Poll::Ready(out) => out,
+        };
+        self.in_flight = None;
+        self.plan = Some(plan);
+
+        match result {
+            Ok(None) => {
+                self.exhausted = true;
+                task::Poll::Ready(None)
+            }
+            Err(err) => {
+                self.exhausted = true;
+                task::Poll::Ready(Some(Err(err)))
+            }
+            Ok(Some(driver_response)) => {
+                let response = driver_bridge::driver_response_to_cosmos_response::<FeedBody<T>>(
+                    driver_response,
+                );
+                match QueryFeedPage::from_response(response) {
+                    Ok(page) => task::Poll::Ready(Some(Ok(page))),
+                    Err(err) => {
+                        self.exhausted = true;
+                        task::Poll::Ready(Some(Err(err)))
+                    }
+                }
+            }
+        }
+    }
+
+    fn to_continuation_token(&self) -> azure_core::Result<ContinuationToken> {
+        let plan = self.plan.as_ref().ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "to_continuation_token called while a page fetch is in flight",
             )
-            .await;
-        let driver_response = match result {
-            Ok(None) => return None,                   // No more pages to fetch
-            Err(err) => return Some((Err(err), None)), // Propagate error, terminates the stream after this response.
-            Ok(Some(r)) => r,
-        };
+        })?;
+        plan.to_continuation_token()
+    }
+}
 
-        // Parse the response into a page
-        let response =
-            driver_bridge::driver_response_to_cosmos_response::<FeedBody<T>>(driver_response);
-        let page = match QueryFeedPage::from_response(response) {
-            Ok(page) => page,
-            Err(err) => return Some((Err(err), None)), // Propagate error, terminates the stream after this response.
-        };
-        Some((Ok(page), Some(state)))
-    });
-    Box::pin(stream)
+/// Internal source of pages for [`FeedPageIterator`] and [`FeedItemIterator`].
+///
+/// Production iterators use the [`Live`](Self::Live) variant which drives the
+/// underlying [`OperationPlan`]. Unit tests use [`Synthetic`](Self::Synthetic)
+/// to inject a pre-built sequence of pages.
+enum PageSource<T: Send> {
+    Live(LiveState),
+    #[cfg(test)]
+    Synthetic(std::collections::VecDeque<azure_core::Result<QueryFeedPage<T>>>),
+    #[cfg(not(test))]
+    #[allow(dead_code)]
+    _Phantom(PhantomData<fn() -> T>),
+}
+
+impl<T: Send + DeserializeOwned + 'static> PageSource<T> {
+    fn poll_next_page(
+        &mut self,
+        cx: &mut task::Context<'_>,
+    ) -> task::Poll<Option<azure_core::Result<QueryFeedPage<T>>>> {
+        match self {
+            PageSource::Live(state) => state.poll_next_page::<T>(cx),
+            #[cfg(test)]
+            PageSource::Synthetic(pages) => task::Poll::Ready(pages.pop_front()),
+            #[cfg(not(test))]
+            PageSource::_Phantom(_) => task::Poll::Ready(None),
+        }
+    }
 }
 
 /// Represents a stream of items from a Cosmos DB query.
 ///
 /// See [`QueryFeedPage`] for more details on Cosmos DB feeds.
-#[pin_project::pin_project]
 pub struct FeedItemIterator<T: Send> {
-    #[pin]
-    pages: BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>,
+    source: PageSource<T>,
     current: Option<std::vec::IntoIter<T>>,
+    _marker: PhantomData<fn() -> T>,
 }
 
 impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
-    /// Creates a new `FeedItemIterator` from a stream of pages.
+    /// Creates a new `FeedItemIterator` backed by the given operation plan.
     pub(crate) fn new(
         driver: Arc<CosmosDriver>,
         container: Option<ContainerReference>,
@@ -333,63 +414,106 @@ impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
         options: OperationOptions,
     ) -> Self {
         Self {
-            pages: create_pagination_stream(driver, container, plan, options),
+            source: PageSource::Live(LiveState::new(driver, container, plan, options)),
             current: None,
+            _marker: PhantomData,
         }
     }
 
-    /// Converts this item iterator into a page iterator, yielding full pages instead of individual items.
+    /// Converts this item iterator into a page iterator, yielding full pages
+    /// instead of individual items.
     ///
-    /// IMPORTANT: This will DISCARD any items from the current page that have not yet been yielded by the item iterator.
-    /// Use this method before consuming any items if you want to switch to page-based iteration.
+    /// IMPORTANT: This will DISCARD any items from the current page that have
+    /// not yet been yielded by the item iterator. Use this method before
+    /// consuming any items if you want to switch to page-based iteration.
     pub fn into_pages(self) -> FeedPageIterator<T> {
-        FeedPageIterator(self.pages)
+        FeedPageIterator {
+            source: self.source,
+            _marker: PhantomData,
+        }
     }
 }
 
-impl<T: Send> Stream for FeedItemIterator<T> {
+impl<T: Send + DeserializeOwned + 'static> Stream for FeedItemIterator<T> {
     type Item = azure_core::Result<T>;
 
     fn poll_next(
         self: Pin<&mut Self>,
         cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<Self::Item>> {
-        let mut this = self.project();
+        // Safety: we never move the inner source/current out via Pin.
+        let this = unsafe { self.get_unchecked_mut() };
         loop {
             if let Some(current) = this.current.as_mut() {
                 if let Some(item) = current.next() {
                     return task::Poll::Ready(Some(Ok(item)));
                 }
-
-                // Reset the iterator and poll for the next page.
-                *this.current = None;
+                this.current = None;
             }
 
-            match this.pages.as_mut().poll_next(cx) {
-                task::Poll::Ready(page) => match page {
-                    Some(Ok(page)) => {
-                        *this.current = Some(page.page.items.into_iter());
-                        continue;
-                    }
-                    Some(Err(err)) => return task::Poll::Ready(Some(Err(err))),
-                    None => return task::Poll::Ready(None),
-                },
+            match this.source.poll_next_page(cx) {
+                task::Poll::Ready(Some(Ok(page))) => {
+                    this.current = Some(page.into_items().into_iter());
+                    continue;
+                }
+                task::Poll::Ready(Some(Err(err))) => return task::Poll::Ready(Some(Err(err))),
+                task::Poll::Ready(None) => return task::Poll::Ready(None),
                 task::Poll::Pending => return task::Poll::Pending,
             }
         }
     }
 }
 
-pub struct FeedPageIterator<T: Send>(BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>);
+/// A stream of pages from a Cosmos DB feed operation.
+///
+/// In addition to yielding [`QueryFeedPage`]s like a regular `Stream`, this
+/// iterator can be snapshotted into a [`ContinuationToken`] for later
+/// resumption via
+/// [`to_continuation_token`](Self::to_continuation_token).
+pub struct FeedPageIterator<T: Send> {
+    source: PageSource<T>,
+    _marker: PhantomData<fn() -> T>,
+}
 
-impl<T: Send> Stream for FeedPageIterator<T> {
+impl<T: Send + DeserializeOwned + 'static> FeedPageIterator<T> {
+    /// Captures the current iterator position as a [`ContinuationToken`].
+    ///
+    /// Pass the returned token to a subsequent
+    /// [`ContainerClient::query_items`](crate::clients::ContainerClient::query_items)
+    /// call (via [`QueryOptions::with_continuation_token`](crate::QueryOptions::with_continuation_token))
+    /// to resume the query at the same position.
+    ///
+    /// Snapshotting is non-mutating; the iterator may continue to be used
+    /// afterwards.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a page fetch is currently in flight (the plan
+    /// state is being mutated and cannot be safely snapshotted).
+    pub fn to_continuation_token(&self) -> azure_core::Result<ContinuationToken> {
+        match &self.source {
+            PageSource::Live(state) => state.to_continuation_token(),
+            #[cfg(test)]
+            PageSource::Synthetic(_) => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "synthetic test iterator does not support to_continuation_token",
+            )),
+            #[cfg(not(test))]
+            PageSource::_Phantom(_) => unreachable!(),
+        }
+    }
+}
+
+impl<T: Send + DeserializeOwned + 'static> Stream for FeedPageIterator<T> {
     type Item = azure_core::Result<QueryFeedPage<T>>;
 
     fn poll_next(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<Self::Item>> {
-        self.0.as_mut().poll_next(cx)
+        // Safety: we never move source out via Pin.
+        let this = unsafe { self.get_unchecked_mut() };
+        this.source.poll_next_page(cx)
     }
 }
 
@@ -412,6 +536,16 @@ mod tests {
         }
     }
 
+    fn synthetic_item_iter<T: Send + DeserializeOwned + 'static>(
+        pages: Vec<azure_core::Result<QueryFeedPage<T>>>,
+    ) -> FeedItemIterator<T> {
+        FeedItemIterator {
+            source: PageSource::Synthetic(pages.into()),
+            current: None,
+            _marker: PhantomData,
+        }
+    }
+
     #[tokio::test]
     async fn item_iterator_yields_all_items_from_multiple_pages() {
         let pages = vec![
@@ -420,12 +554,7 @@ mod tests {
             Ok(create_test_page(vec![6], None)),
         ];
 
-        let stream = futures::stream::iter(pages);
-        let item_iter = FeedItemIterator {
-            pages: Box::pin(stream),
-            current: None,
-        };
-
+        let item_iter = synthetic_item_iter(pages);
         let items: Vec<_> = item_iter
             .collect::<Vec<_>>()
             .await
@@ -442,13 +571,7 @@ mod tests {
             Ok(create_test_page(vec![3], None)),
         ];
 
-        let stream = futures::stream::iter(pages);
-        let page_iter = FeedItemIterator {
-            pages: Box::pin(stream),
-            current: None,
-        }
-        .into_pages();
-
+        let page_iter = synthetic_item_iter(pages).into_pages();
         let page_items: Vec<_> = page_iter
             .collect::<Vec<_>>()
             .await
@@ -468,11 +591,7 @@ mod tests {
             )),
         ];
 
-        let stream = futures::stream::iter(pages);
-        let mut item_iter = FeedItemIterator {
-            pages: Box::pin(stream),
-            current: None,
-        };
+        let mut item_iter = synthetic_item_iter(pages);
 
         // First two items should succeed
         assert_eq!(item_iter.next().await.unwrap().unwrap(), 1);
@@ -490,12 +609,7 @@ mod tests {
             Ok(create_test_page(vec![2], None)),
         ];
 
-        let stream = futures::stream::iter(pages);
-        let item_iter = FeedItemIterator {
-            pages: Box::pin(stream),
-            current: None,
-        };
-
+        let item_iter = synthetic_item_iter(pages);
         let items: Vec<_> = item_iter
             .collect::<Vec<_>>()
             .await

@@ -6,10 +6,13 @@
 use async_trait::async_trait;
 use azure_core::http::StatusCode;
 
-use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey, SubStatusCode};
+use crate::models::{
+    CosmosOperation, CosmosResponse, FeedRange, PartitionKey, SubStatusCode,
+};
 
 use super::{
-    ChildNodes, PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, ResolvedRange,
+    ChildNodes, PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode,
+    PipelineNodeState, ResolvedRange,
 };
 
 /// The target of a request node.
@@ -166,6 +169,22 @@ impl PipelineNode for Request {
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         Vec::new()
     }
+
+    fn snapshot_state(&self) -> PipelineNodeState {
+        match &self.state {
+            RequestState::Initial => PipelineNodeState::Request {
+                server_continuation: None,
+            },
+            RequestState::Continuing { continuation } => PipelineNodeState::Request {
+                server_continuation: Some(continuation.clone()),
+            },
+            RequestState::Drained => PipelineNodeState::Drained,
+        }
+    }
+
+    fn feed_range(&self) -> Option<&FeedRange> {
+        self.target.owned_range()
+    }
 }
 impl Request {
     fn handle_response(&mut self, response: CosmosResponse) -> PageResult {
@@ -184,7 +203,11 @@ impl Request {
             RequestState::Drained
         };
         tracing::trace!(target = ?self.target, state = ?self.state, "updated request state after response");
-        PageResult::Page(response)
+        let is_terminal = matches!(self.state, RequestState::Drained);
+        PageResult::Page {
+            response,
+            is_terminal,
+        }
     }
 
     async fn handle_partition_topology_change(

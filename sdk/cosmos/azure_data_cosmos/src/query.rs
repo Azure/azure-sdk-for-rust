@@ -12,6 +12,7 @@ use serde::Serialize;
 /// so it is important to choose the appropriate scope for your query to ensure it is executed efficiently.
 /// Queries that cross physical partition boundaries require the client to fan out the query to
 /// multiple partitions and aggregate the results, which can be expensive and slow for large datasets.
+#[derive(Clone)]
 pub enum QueryScope {
     Partition(PartitionKey),
     FeedRange(FeedRange),
