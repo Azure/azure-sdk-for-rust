@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `ContainerClient::patch_item()` for applying JSON-PATCH-style updates to individual items. Supports `add`/`set`/`replace`/`remove`/`increment`/`move` ops via the new `PatchSpec`/`PatchOp`/`IncrValue` types (re-exported at the crate root). Internally the driver implements PATCH as a Read-Modify-Write loop guarded by `If-Match` on the captured `ETag`; on `412 PreconditionFailed` the loop retries (up to `PatchItemOptions::max_attempts`, default 5). Ops targeting the container's partition-key paths are rejected synchronously, since rewriting the partition key would move the document. Added `PatchItemOptions` for per-request configuration.
+- Added `ContainerClient::patch_item()` for applying JSON-Patch-style mutations to a single item. Supports `add`/`set`/`replace`/`remove`/`increment`/`move` ops via the new `PatchSpec`/`PatchOp`/`IncrValue` types (re-exported at the crate root). Added `PatchItemOptions` for per-request configuration (`max_attempts`, `session_token`, etc.).
 
 ### Breaking Changes
 - Removed the `request_url()` accessor (gated on the `fault_injection` feature) from `ItemResponse`/`ResourceResponse`/`BatchResponse`. Driver-routed operations never populated it, so it always returned `None` in current usage.

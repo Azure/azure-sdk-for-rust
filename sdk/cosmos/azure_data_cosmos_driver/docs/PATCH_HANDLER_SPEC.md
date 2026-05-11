@@ -27,32 +27,69 @@ normal pipeline stages run.
 ## Algorithm
 
 ```text
+1. Pre-flight validation:
+   - reject ops whose path overlaps any partition-key path (we cannot
+     move a document between physical partitions). For MoveOp this
+     covers BOTH the source (`from`) and the destination (`path`).
+   - reject empty op lists.
+
+2. Capture the caller's session token (if any) from the outer PATCH
+   operation's request headers — see "Session-token threading" below.
+
 loop up to max_attempts times:
-    1. Pre-flight validation:
-       - reject ops whose path overlaps any partition-key path (we cannot
-         move a document between physical partitions).
-       - reject ops on a Hash/Range/MultiHash partition definition where
-         the spec is empty.
-    2. read = execute_operation(Read, default options)
-       if read.status() is not 2xx: return read error verbatim.
+    3. read = execute_operation(Read, caller_options) with the caller's
+       session token applied to the Read sub-op.
+       The driver pipeline returns Err(ErrorKind::HttpResponse { .. })
+       for any non-2xx Read response; the patch handler propagates that
+       error verbatim (with its raw_response and diagnostics intact).
        if read.headers().etag is None: return Other("no ETag, cannot RMW").
-    3. value = serde_json::from_slice(read.body())
+    4. value = serde_json::from_slice(read.body())
        apply_patch_ops(&mut value, &spec.operations)
        merged_bytes = serde_json::to_vec(&value)
-    4. replace = execute_operation(Replace(merged_bytes,
+    5. replace = execute_operation(Replace(merged_bytes,
                                            Precondition::IfMatch(etag)),
-                                   caller_options)
-       match replace.status():
-         412 PreconditionFailed -> remember and continue the loop
-         2xx                    -> succeed, see step 5
-         other                  -> return error verbatim
-    5. return CosmosResponse::new(merged_bytes,
+                                   caller_options) with the
+       Read RESPONSE's session token overriding any caller-supplied
+       value (this is the SE-004 TOCTOU mitigation; see below).
+       match replace result:
+         Ok(_)                                            -> succeed, see step 6
+         Err(HttpResponse{ status: PreconditionFailed })  -> remember and continue the loop
+         Err(_)                                           -> return error verbatim
+    6. return CosmosResponse::new(merged_bytes,
                                   replace.headers(),
                                   replace.status(),
                                   replace.diagnostics())
 
-if loop exhausted: return the 412 captured in the last attempt.
+if loop exhausted: return ErrorKind::HttpResponse{ status:
+PreconditionFailed, .. } with the last 412 chained as the source.
 ```
+
+### Session-token threading and the SE-004 TOCTOU mitigation
+
+The RMW loop crosses two service round-trips (Read → Replace). Without
+care, the Read could be served by one replica's view of the data and the
+Replace could commit against a stale view on a *different* replica —
+silently undoing recent writes the original caller would otherwise have
+read. To close that window:
+
+1. The caller-provided `OperationOptions` (consistency, end-to-end
+   latency budget, throughput control, etc.) are threaded through to
+   the internal Read **and** to the internal Replace.
+2. The **caller's** session token (if any) is applied to the internal
+   Read via `build_read_sub_op`, so the Read observes a session-
+   consistent view of the item.
+3. The Replace's session token is **overridden** with the session token
+   returned on the Read's response — see `build_replace_sub_op`. This
+   pins the Replace to the same replica view we just read from. Any
+   further client-supplied session token on the outer PATCH is
+   intentionally discarded for the Replace; the Read's response token
+   is by definition fresher.
+
+This matters most for `Session` consistency, but is correct for
+`Eventual` too (a no-op there). For `Strong` / `BoundedStaleness` the
+service-side replica selection already provides the guarantee, but the
+handler still propagates the tokens so diagnostics surface them
+end-to-end.
 
 ## Response Synthesis
 

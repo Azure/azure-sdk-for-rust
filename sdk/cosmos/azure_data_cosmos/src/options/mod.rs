@@ -205,9 +205,12 @@ impl ItemWriteOptions {
 /// PATCH never exposes [`Precondition`] directly — the handler always
 /// manages the IfMatch internally.
 ///
-/// General-purpose settings (custom headers, content response behavior,
-/// session tokens, etc.) are configured via [`operation`](Self::operation)
-/// — see [`OperationOptions`] for details.
+/// The session token lives on the dedicated
+/// [`session_token`](Self::session_token) field (mirroring
+/// [`ItemReadOptions`] / [`ItemWriteOptions`]). All other general-purpose
+/// settings (custom headers, content response behavior, excluded regions,
+/// etc.) are configured via [`operation`](Self::operation) — see
+/// [`OperationOptions`] for details.
 ///
 /// # Latency
 ///

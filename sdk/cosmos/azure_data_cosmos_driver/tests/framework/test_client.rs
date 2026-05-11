@@ -352,10 +352,10 @@ impl DriverTestRunContext {
 
     /// Creates a container with one or more partition-key paths.
     ///
-    /// Pass a single-element slice for a flat partition key, or multiple
-    /// paths for a hierarchical partition key (`MultiHash`). Mirrors the
-    /// `paths` array in the [PartitionKey definition][pk-spec] without
-    /// hard-coding `Hash` vs `MultiHash` — the service infers the kind from
+    /// Pass a single-element slice for a flat partition key (sets `kind`
+    /// to `Hash`), or multiple paths for a hierarchical partition key
+    /// (sets `kind` to `MultiHash`). Mirrors the `paths` array in the
+    /// [PartitionKey definition][pk-spec], with the `kind` derived from
     /// the number of paths.
     ///
     /// [pk-spec]: https://learn.microsoft.com/en-us/rest/api/cosmos-db/create-a-collection

@@ -138,6 +138,13 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
                     "Move to /pk",
                     PatchSpec::new(vec![PatchOp::move_op("/name", "/pk")]),
                 ),
+                // F-C2: moving FROM a PK path also mutates the partition key
+                // (the field is removed at the source after being copied to
+                // the destination). The guard must reject this too.
+                (
+                    "Move from /pk",
+                    PatchSpec::new(vec![PatchOp::move_op("/pk", "/somewhere_else")]),
+                ),
             ];
 
             for (label, spec) in guard_cases {
@@ -214,6 +221,12 @@ pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> 
                 (
                     "Remove /userId",
                     PatchSpec::new(vec![PatchOp::remove("/userId")]),
+                ),
+                // F-C2: moving FROM one of the hierarchical PK paths also
+                // mutates that PK component. Reject pre-flight.
+                (
+                    "Move from /tenantId",
+                    PatchSpec::new(vec![PatchOp::move_op("/tenantId", "/somewhere_else")]),
                 ),
             ];
 

@@ -23,7 +23,10 @@
 //!     PatchOp::add("/tags/-", serde_json::json!("new-tag")),
 //! ]);
 //! let bytes = serde_json::to_vec(&spec).unwrap();
-//! assert!(bytes.windows(7).any(|w| w == b"\"set\""[..].as_ref()) || !bytes.is_empty());
+//! // The wire payload is a JSON object with an `operations` array; the
+//! // first op above is a `set`.
+//! assert!(bytes.starts_with(b"{"));
+//! assert!(bytes.windows(5).any(|w| w == b"\"set\""));
 //! ```
 
 use serde::{Deserialize, Serialize};
