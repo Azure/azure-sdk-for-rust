@@ -12,7 +12,6 @@ pub mod constants;
 mod credential;
 mod feed;
 pub mod options;
-mod partition_key;
 pub(crate) mod pipeline;
 pub mod query;
 pub(crate) mod resource_context;
@@ -30,15 +29,18 @@ pub use clients::CosmosClientBuilder;
 pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
 #[doc(inline)]
-pub use hash::EffectivePartitionKey;
-#[doc(inline)]
 pub use azure_data_cosmos_driver::models::FeedRange;
+#[doc(inline)]
+pub use azure_data_cosmos_driver::models::PartitionKey;
+#[doc(inline)]
+pub use azure_data_cosmos_driver::models::PartitionKeyValue;
 pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
+#[doc(inline)]
+pub use hash::EffectivePartitionKey;
 pub use models::{BatchResponse, CosmosDiagnostics, ItemResponse, ResourceResponse};
 pub use options::*;
-pub use partition_key::*;
 pub use query::Query;
 pub use routing_strategy::RoutingStrategy;
 pub use transactional_batch::{

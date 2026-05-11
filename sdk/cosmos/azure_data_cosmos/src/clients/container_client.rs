@@ -315,7 +315,7 @@ impl ContainerClient {
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
             &self.container_ref,
-            partition_key.into().into_driver_partition_key(),
+            partition_key.into(),
             item_id.to_owned(),
         );
 
@@ -413,7 +413,7 @@ impl ContainerClient {
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
             &self.container_ref,
-            partition_key.into().into_driver_partition_key(),
+            partition_key.into(),
             item_id.to_owned(),
         );
 
@@ -515,7 +515,7 @@ impl ContainerClient {
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
             &self.container_ref,
-            partition_key.into().into_driver_partition_key(),
+            partition_key.into(),
             item_id.to_owned(),
         );
 
@@ -575,7 +575,7 @@ impl ContainerClient {
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
             &self.container_ref,
-            partition_key.into().into_driver_partition_key(),
+            partition_key.into(),
             item_id.to_owned(),
         );
 
@@ -627,7 +627,7 @@ impl ContainerClient {
         // Build the driver's item reference from our stored container metadata.
         let item_ref = ItemReference::from_name(
             &self.container_ref,
-            partition_key.into().into_driver_partition_key(),
+            partition_key.into(),
             item_id.to_owned(),
         );
 
@@ -717,7 +717,7 @@ impl ContainerClient {
         let partition_key: PartitionKey = partition_key.into();
         let query = query.into();
 
-        let driver_pk = partition_key.into_driver_partition_key();
+        let driver_pk = partition_key;
         let container_ref = self.container_ref.clone();
 
         // The first operation to execute in the query items flow.
@@ -791,7 +791,7 @@ impl ContainerClient {
     ) -> azure_core::Result<BatchResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(batch.operations())?;
-        let driver_pk = batch.partition_key().clone().into_driver_partition_key();
+        let driver_pk = batch.partition_key().clone();
 
         let operation =
             CosmosOperation::batch(self.container_ref.clone(), driver_pk).with_body(body);
@@ -863,7 +863,7 @@ impl ContainerClient {
         options: Option<ReadFeedRangesOptions>,
     ) -> azure_core::Result<Vec<FeedRange>> {
         let partition_key = partition_key.into();
-        let driver_pk = partition_key.into_driver_partition_key();
+        let driver_pk = partition_key;
         let options = options.unwrap_or_default();
         let pk_def = self.container_ref.partition_key_definition();
         let values = driver_pk.values();

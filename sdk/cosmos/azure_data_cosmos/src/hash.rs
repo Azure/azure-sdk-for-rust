@@ -46,51 +46,18 @@ impl From<&str> for EffectivePartitionKey {
     }
 }
 
-/// Internal representation used by SDK partition key APIs.
-#[derive(Clone, Debug, PartialEq)]
-pub enum InnerPartitionKeyValue {
-    Null,
-    Bool(bool),
-    Number(f64),
-    String(String),
-    Infinity,
-    Undefined,
-}
-
-impl Eq for InnerPartitionKeyValue {}
-
-fn to_driver_partition_key_value(value: &InnerPartitionKeyValue) -> DriverPartitionKeyValue {
-    match value {
-        InnerPartitionKeyValue::Null => DriverPartitionKeyValue::from(Option::<String>::None),
-        InnerPartitionKeyValue::Bool(b) => DriverPartitionKeyValue::from(*b),
-        InnerPartitionKeyValue::Number(n) => DriverPartitionKeyValue::from(*n),
-        InnerPartitionKeyValue::String(s) => DriverPartitionKeyValue::from(s.clone()),
-        InnerPartitionKeyValue::Undefined => DriverPartitionKeyValue::undefined(),
-        InnerPartitionKeyValue::Infinity => DriverPartitionKeyValue::from(Option::<String>::None),
-    }
-}
-
 /// Returns an [`EffectivePartitionKey`] representing the hashed partition key.
 ///
 /// Versions 1 and 2 map directly to the driver's partition key version enum.
 /// Any other version falls back to V2 for forward-compatible behavior.
 pub fn get_hashed_partition_key_string(
-    pk_value: &[&InnerPartitionKeyValue],
+    pk_value: &[DriverPartitionKeyValue],
     kind: PartitionKeyKind,
     version: u8,
 ) -> EffectivePartitionKey {
     if pk_value.is_empty() {
         return EffectivePartitionKey(DriverEffectivePartitionKey::min());
     }
-
-    if pk_value.len() == 1 && *pk_value[0] == InnerPartitionKeyValue::Infinity {
-        return EffectivePartitionKey(DriverEffectivePartitionKey::max());
-    }
-
-    let driver_values: Vec<DriverPartitionKeyValue> = pk_value
-        .iter()
-        .map(|value| to_driver_partition_key_value(value))
-        .collect();
 
     let version = match version {
         1 => PartitionKeyVersion::V1,
@@ -104,7 +71,9 @@ pub fn get_hashed_partition_key_string(
         }
     };
 
-    EffectivePartitionKey(DriverEffectivePartitionKey::compute(&driver_values, kind, version))
+    EffectivePartitionKey(DriverEffectivePartitionKey::compute(
+        pk_value, kind, version,
+    ))
 }
 
 #[cfg(test)]
@@ -118,63 +87,64 @@ mod tests {
     }
 
     #[test]
-    fn infinity_pk_returns_max() {
-        let inf = InnerPartitionKeyValue::Infinity;
-        let result = get_hashed_partition_key_string(&[&inf], PartitionKeyKind::Hash, 0);
-        assert_eq!(result.as_str(), "FF");
-    }
-
-    #[test]
     fn single_string_hash_v2_matches_baseline() {
-        let comp = InnerPartitionKeyValue::String("customer42".to_string());
-        let result = get_hashed_partition_key_string(&[&comp], PartitionKeyKind::Hash, 2);
+        let comp = DriverPartitionKeyValue::from("customer42".to_string());
+        let result = get_hashed_partition_key_string(&[comp], PartitionKeyKind::Hash, 2);
         assert_eq!(result.as_str(), "19819C94CE42A1654CCC8110539D9589");
     }
 
     #[test]
     fn effective_partition_key_hash_v2_examples() {
-        let cases: Vec<(InnerPartitionKeyValue, &str)> = vec![
+        let cases: Vec<(DriverPartitionKeyValue, &str)> = vec![
             (
-                InnerPartitionKeyValue::String(String::from("")),
+                DriverPartitionKeyValue::from(String::from("")),
                 "32E9366E637A71B4E710384B2F4970A0",
             ),
             (
-                InnerPartitionKeyValue::String(String::from("partitionKey")),
+                DriverPartitionKeyValue::from(String::from("partitionKey")),
                 "013AEFCF77FA271571CF665A58C933F1",
             ),
             (
-                InnerPartitionKeyValue::Number(5.0),
+                DriverPartitionKeyValue::from(5.0),
                 "19C08621B135968252FB34B4CF66F811",
             ),
             (
-                InnerPartitionKeyValue::String(String::from("redmond")),
+                DriverPartitionKeyValue::from(String::from("redmond")),
                 "22E342F38A486A088463DFF7838A5963",
             ),
         ];
 
         for (component, expected) in &cases {
-            let actual = get_hashed_partition_key_string(&[component], PartitionKeyKind::Hash, 2);
+            let actual = get_hashed_partition_key_string(
+                std::slice::from_ref(component),
+                PartitionKeyKind::Hash,
+                2,
+            );
             assert_eq!(actual.as_str(), *expected, "Mismatch for V2 component hash");
         }
     }
 
     #[test]
     fn effective_partition_key_hash_v1_examples() {
-        let cases: Vec<(InnerPartitionKeyValue, &str)> = vec![
+        let cases: Vec<(DriverPartitionKeyValue, &str)> = vec![
             (
-                InnerPartitionKeyValue::String(String::from("")),
+                DriverPartitionKeyValue::from(String::from("")),
                 "05C1CF33970FF80800",
             ),
             (
-                InnerPartitionKeyValue::String(String::from("partitionKey")),
+                DriverPartitionKeyValue::from(String::from("partitionKey")),
                 "05C1E1B3D9CD2608716273756A756A706F4C667A00",
             ),
-            (InnerPartitionKeyValue::Null, "05C1ED45D7475601"),
-            (InnerPartitionKeyValue::Bool(true), "05C1D7C5A903D803"),
+            (DriverPartitionKeyValue::NULL, "05C1ED45D7475601"),
+            (DriverPartitionKeyValue::from(true), "05C1D7C5A903D803"),
         ];
 
         for (component, expected) in &cases {
-            let actual = get_hashed_partition_key_string(&[component], PartitionKeyKind::Hash, 1);
+            let actual = get_hashed_partition_key_string(
+                std::slice::from_ref(component),
+                PartitionKeyKind::Hash,
+                1,
+            );
             assert_eq!(actual.as_str(), *expected, "Mismatch for V1 component hash");
         }
     }
