@@ -30,6 +30,8 @@ pub use clients::CosmosClientBuilder;
 pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
 #[doc(inline)]
+pub use hash::EffectivePartitionKey;
+#[doc(inline)]
 pub use azure_data_cosmos_driver::models::FeedRange;
 pub use clients::ThroughputPoller;
 pub use connection_string::*;
@@ -52,7 +54,6 @@ mod driver_bridge;
 pub mod fault_injection;
 mod handler;
 mod hash;
-mod murmur_hash;
 mod operation_context;
 mod region_proximity;
 pub mod regions;
