@@ -11,6 +11,7 @@ use azure_storage_blob_test::stress::{
     args::StressRunnerOptions, Result, StressRunner, StressTest, StressTestFactory,
 };
 use clap::Subcommand;
+use log::error;
 
 use crate::{
     download_blobs_test::DownloadBlobsTestArgs, roundtrip_blobs_test::RoundtripBlobsTestArgs,
@@ -18,10 +19,12 @@ use crate::{
 
 #[tokio::main]
 async fn main() {
+    init_logger();
+
     let runner = StressRunner::<StressTests>::new(env!("CARGO_MANIFEST_DIR"), file!());
 
     if let Err(e) = runner.run().await {
-        eprintln!("{}", e);
+        error!("{}", e);
         exit(1);
     }
 }
@@ -55,4 +58,10 @@ impl std::fmt::Display for StressTests {
             Self::Roundtrip(args) => args.fmt(f),
         }
     }
+}
+
+fn init_logger() {
+    env_logger::Builder::from_default_env()
+        .target(env_logger::Target::Stdout)
+        .init();
 }

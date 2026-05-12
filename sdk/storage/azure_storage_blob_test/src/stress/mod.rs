@@ -15,6 +15,7 @@ use futures::{
     channel::mpsc::{self, UnboundedSender},
     future,
 };
+use log::{debug, error, info, warn};
 use serde::Serialize;
 use std::{fmt::Debug, future::Future, mem, pin::Pin, time::Duration};
 
@@ -138,17 +139,17 @@ impl<T: StressTestFactory> StressRunner<T> {
         let stress_test = self.options.build_test()?;
         let mut totals = StressRunCounts::default();
 
-        println!("{}", self.options);
+        info!("{}", self.options);
 
         // Catch all Err returns of setup and test run, ensuring we always run cleanup.
         let setup_and_run_result: Result<()> = async {
-            println!("=== Global Setup ===");
+            info!("=== Global Setup ===");
             stress_test
                 .global_setup()
                 .timeout(self.options.setup_timeout)
                 .await??;
 
-            println!("=== Begin Stress ===");
+            info!("=== Begin Stress ===");
             // Race an infinite loop of parallel tests against a timeout.
             // Note that each individual test is spawned into a different worker, and therefore
             // will NOT cease when the stress loop future is dropped.
@@ -176,14 +177,16 @@ impl<T: StressTestFactory> StressRunner<T> {
         }
         .await;
         if let Err(e) = setup_and_run_result {
-            eprintln!("Stress runner failure.");
-            eprintln!("{e}");
-            if let Ok(inner) = e.into_inner() {
-                eprintln!("{inner}");
-            }
+            let error_message = e.to_string();
+            let inner_error_message = if let Ok(inner) = e.into_inner() {
+                format!("\n{inner}")
+            } else {
+                "".to_string()
+            };
+            error!("Stress runner failure.\n{error_message}{inner_error_message}");
         }
 
-        println!(
+        info!(
             "Final results: {}",
             serde_json::to_string_pretty(&totals).with_context(
                 ErrorKind::DataConversion,
@@ -191,7 +194,7 @@ impl<T: StressTestFactory> StressRunner<T> {
             )?
         );
 
-        println!("=== Begin Cleanup ===");
+        info!("=== Begin Cleanup ===");
         stress_test
             .global_cleanup()
             .timeout(self.options.cleanup_timeout)
@@ -208,7 +211,7 @@ async fn infinite_stress_loop<T: StressTestFactory>(
     let (tx, mut rx) = mpsc::unbounded();
 
     for iteration in 1usize.. {
-        println!("Start operation {}", iteration);
+        debug!("Start operation {}", iteration);
 
         join_handles.push(get_async_runtime().spawn(operation_wrapper(
             stress_test.get_operation().await?,
@@ -222,7 +225,7 @@ async fn infinite_stress_loop<T: StressTestFactory>(
             (join_result, _, join_handles) = future::select_all(mem::take(&mut join_handles)).await;
             if let Err(join_error) = join_result {
                 totals.loops_panic += 1;
-                eprintln!("{}", join_error);
+                warn!("{}", join_error);
             }
         }
 
@@ -239,14 +242,14 @@ async fn infinite_stress_loop<T: StressTestFactory>(
             match msg {
                 StressRunOutput::Success | StressRunOutput::GracefulError(_) => {
                     if iteration % 100 == 0 {
-                        println!(
+                        info!(
                             "{}",
                             serde_json::to_string_pretty(&totals)
                                 .unwrap_or("Failed to serialize test results to JSON.".to_string())
                         )
                     }
                 }
-                _ => println!(
+                _ => warn!(
                     "{}",
                     serde_json::to_string_pretty(&totals)
                         .unwrap_or("Failed to serialize test results to JSON.".to_string())
@@ -263,7 +266,7 @@ fn operation_wrapper(
     timeout: Option<Duration>,
     tx: UnboundedSender<StressRunOutput>,
 ) -> Pin<Box<impl Future<Output = ()>>> {
-    Box::pin(async move { operation.run(timeout, tx.clone()).await })
+    Box::pin(async move { operation.run(timeout, tx).await })
 }
 
 #[cfg(test)]
