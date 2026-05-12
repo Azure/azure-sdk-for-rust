@@ -36,7 +36,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 
 #### Authenticate the client
 
-To interact with the Azure Blob Storage service, a client is needed. `BlobServiceClient` is the recommended entry point. Construct it once using `BlobServiceClient::new()`, then call `BlobServiceClient::blob_container_client()`  or `BlobServiceClient::blob_client()` to get a `BlobContainerClient` or `BlobClient` respectively. If you already have a fully-formed (for example, SAS-scoped) URL for a single container or blob, call `BlobContainerClient::new()` or `BlobClient::new()` with that URL directly instead.
+In order to interact with the Azure Blob Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. `BlobServiceClient` is the recommended entry point. Construct it once using `BlobServiceClient::new()`, then call `BlobServiceClient::blob_container_client()`  or `BlobServiceClient::blob_client()` to get a `BlobContainerClient` or `BlobClient` respectively. If you already have a fully-formed (for example, SAS-scoped) URL for a single container or blob, call `BlobContainerClient::new()` or `BlobClient::new()` with that URL directly instead.
 
 The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 

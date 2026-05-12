@@ -36,7 +36,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 
 #### Authenticate the client
 
-To interact with the Azure Queue service, a client is needed. `QueueServiceClient` is the recommended entry point. Construct it once using `QueueServiceClient::new()`, then call `QueueServiceClient::queue_client()` to get a `QueueClient`. If you already have a fully-formed (for example, SAS-scoped) URL for a single queue, call `QueueClient::new()` with that URL directly instead.
+In order to interact with the Azure Queue service, you'll need to create an instance of a client, `QueueClient` or `QueueServiceClient`. `QueueServiceClient` is the recommended entry point. Construct it once using `QueueServiceClient::new()`, then call `QueueServiceClient::queue_client()` to get a `QueueClient`. If you already have a fully-formed (for example, SAS-scoped) URL for a single queue, call `QueueClient::new()` with that URL directly instead.
 
 The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
