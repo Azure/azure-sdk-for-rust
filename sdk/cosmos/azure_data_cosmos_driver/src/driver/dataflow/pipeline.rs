@@ -65,9 +65,8 @@ impl Pipeline {
     }
 }
 
-/// An opaque plan for executing a Cosmos DB operation.
+/// A plan for executing a Cosmos DB operation.
 ///
-/// Wraps the internal dataflow [`Pipeline`] to hide its structure from callers.
 /// Produced by [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation).
 pub struct OperationPlan {
     pub(crate) pipeline: Pipeline,

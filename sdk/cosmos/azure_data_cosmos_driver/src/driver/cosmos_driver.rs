@@ -1242,7 +1242,7 @@ impl CosmosDriver {
 
     /// Executes a point operation (read/write item, read database, etc.) without a pre-planned pipeline.
     ///
-    /// This is a convenience method around [`execute_operation`] that asserts at debug-time that the operation
+    /// This is a convenience method around [`execute_operation`](CosmosDriver::execute_operation) that asserts at debug-time that the operation
     /// does not return an empty page.
     pub async fn execute_point_operation(
         &self,
