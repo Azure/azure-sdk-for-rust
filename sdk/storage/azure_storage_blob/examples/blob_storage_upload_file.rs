@@ -44,6 +44,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let endpoint = format!("https://{}.blob.core.windows.net", args.account_name);
     let credential = AzureCliCredential::new(None)?;
+    // Construct a `BlobClient` directly from a fully-formed blob URL. This is the
+    // right entry point when you already have a URL (for example a SAS-scoped URL)
+    // pointing at the destination blob, rather than starting from a service client.
     let mut blob_url = Url::parse(&endpoint)?;
     blob_url
         .path_segments_mut()

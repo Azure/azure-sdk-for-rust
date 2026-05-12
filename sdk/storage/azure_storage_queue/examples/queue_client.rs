@@ -33,7 +33,7 @@ use azure_storage_queue::{
         QueueClientGetPropertiesResultHeaders, QueueClientPeekMessagesOptions,
         QueueClientReceiveMessagesOptions, QueueClientSendMessageOptions, QueueMessage,
     },
-    QueueClient,
+    QueueClient, QueueServiceClient,
 };
 
 #[tokio::main]
@@ -41,16 +41,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = env::var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_QUEUE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.queue.core.windows.net/", account);
+    let service_url = Url::parse(&format!("https://{account}.queue.core.windows.net/"))?;
     let queue_name = random_queue_name();
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let mut queue_url = Url::parse(&endpoint)?;
-    queue_url
-        .path_segments_mut()
-        .expect("endpoint must be a valid base URL")
-        .push(&queue_name);
-    let queue_client = QueueClient::new(queue_url, Some(credential), None)?;
+    let service_client = QueueServiceClient::new(service_url, Some(credential), None)?;
+    let queue_client = service_client.queue_client(&queue_name)?;
 
     println!("Creating queue '{queue_name}'...");
     queue_client.create(None).await?;

@@ -53,7 +53,7 @@ use azure_core::{
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use azure_identity::AzureCliCredential;
-use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
+use azure_storage_blob::{BlobServiceClient, BlobServiceClientOptions};
 use clap::Parser;
 use opentelemetry_sdk::trace::SdkTracerProvider;
 use std::sync::Arc;
@@ -106,7 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Configure client options with optional OpenTelemetry tracing.
     // Azure Storage headers (x-ms-version, x-ms-request-id, etc.) are logged by default.
-    let client_options = BlobContainerClientOptions {
+    let client_options = BlobServiceClientOptions {
         client_options: ClientOptions {
             instrumentation: InstrumentationOptions {
                 tracer_provider: otel_provider.as_ref().map(|p| {
@@ -118,13 +118,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let mut container_url = Url::parse(&endpoint)?;
-    container_url
-        .path_segments_mut()
-        .expect("endpoint must be a valid base URL")
-        .push(container_name);
-    let container_client =
-        BlobContainerClient::new(container_url, Some(credential), Some(client_options))?;
+    let service_client = BlobServiceClient::new(
+        Url::parse(&endpoint)?,
+        Some(credential),
+        Some(client_options),
+    )?;
+    let container_client = service_client.blob_container_client(container_name);
 
     // Create BlobClient
     let blob_client = container_client.blob_client(blob_name);

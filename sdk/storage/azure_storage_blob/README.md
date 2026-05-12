@@ -36,25 +36,29 @@ az storage account create -n my-storage-account-name -g my-resource-group
 
 #### Authenticate the client
 
-In order to interact with the Azure Blob Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
+To interact with the Azure Blob Storage service, a client is needed. `BlobServiceClient` is the recommended entry point. Construct it once using `BlobServiceClient::new()`, then call `BlobServiceClient::blob_container_client()`  or `BlobServiceClient::blob_client()` to get a `BlobContainerClient` or `BlobClient` respectively. If you already have a fully-formed (for example, SAS-scoped) URL for a single container or blob, call `BlobContainerClient::new()` or `BlobClient::new()` with that URL directly instead.
+
+The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
 use azure_core::http::Url;
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::BlobServiceClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a BlobClient that will authenticate through Microsoft Entra ID
+    // Create a BlobServiceClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_url = Url::parse(
-        "https://<storage_account_name>.blob.core.windows.net/<container_name>/<blob_name>",
+    let service_url = Url::parse("https://<storage_account_name>.blob.core.windows.net/")?;
+    let service_client = BlobServiceClient::new(
+        service_url,
+        Some(credential),
+        None,
     )?;
-    let blob_client = BlobClient::new(
-        blob_url,        // Blob URL
-        Some(credential), // Credential
-        None,             // BlobClient Options
-    )?;
+
+    // Derive container and blob clients by name.
+    let container_client = service_client.blob_container_client("<container_name>");
+    let blob_client = container_client.blob_client("<blob_name>");
     Ok(())
 }
 ```
@@ -82,16 +86,15 @@ You can find executable examples for all major SDK functions in:
 
 ```rust no_run
 use azure_core::http::{RequestContent, Url};
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::BlobServiceClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_url = Url::parse(
-        "https://<storage_account_name>.blob.core.windows.net/<container_name>/<blob_name>",
-    )?;
-    let blob_client = BlobClient::new(blob_url, Some(credential), None)?;
+    let service_url = Url::parse("https://<storage_account_name>.blob.core.windows.net/")?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+    let blob_client = service_client.blob_client("<container_name>", "<blob_name>");
 
     let data = b"hello world";
     blob_client
@@ -108,20 +111,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust no_run
 use azure_core::http::Url;
-use azure_storage_blob::BlobClient;
+use azure_storage_blob::BlobServiceClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_url = Url::parse(
-        "https://<storage_account_name>.blob.core.windows.net/<container_name>/<blob_name>",
-    )?;
-    let blob_client = BlobClient::new(
-        blob_url,         // Blob URL
-        Some(credential), // Credential
-        None,             // BlobClient Options
-    )?;
+    let service_url = Url::parse("https://<storage_account_name>.blob.core.windows.net/")?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+    let blob_client = service_client.blob_client("<container_name>", "<blob_name>");
+
     let response = blob_client.download(None).await?;
     let data = String::from_utf8(response.body.collect().await?.into())?;
     println!("Downloaded: {data}");
