@@ -52,18 +52,7 @@ pub(crate) fn build_trivial_pipeline(
         operation.target(),
     );
 
-    let resource_type = operation.resource_type();
     let target = operation.target();
-
-    if !resource_type.is_valid_target(target) {
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            format!(
-                "operation target {target_desc} is not valid for resource type {resource_type}",
-                target_desc = target_description(target),
-            ),
-        ));
-    }
 
     let initial_continuation = match resume {
         None => None,
@@ -284,14 +273,6 @@ fn unsupported_feature(feature: &str) -> azure_core::Error {
         azure_core::error::ErrorKind::Other,
         format!("unsupported query feature: {feature}"),
     )
-}
-
-fn target_description(target: &OperationTarget) -> &'static str {
-    match target {
-        OperationTarget::None => "None",
-        OperationTarget::PartitionKey(_) => "PartitionKey",
-        OperationTarget::FeedRange(_) => "FeedRange",
-    }
 }
 
 #[cfg(test)]

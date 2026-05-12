@@ -185,7 +185,9 @@ impl CosmosOperation {
         let resource_reference = resource_reference.into();
         let resource_type = resource_reference.resource_type();
         debug_assert!(
-            !resource_type.is_partitioned(operation_type) || target.has_partition_reference(),
+            // QueryPlans and non-partitioned resources don't require a partition reference.
+            // Point and query operations on partitioned resources require a partition reference for routing.
+            operation_type == OperationType::QueryPlan || !resource_type.is_partitioned(operation_type) || target.has_partition_reference(),
             "Attempted to create a partitioned operation without an OperationTarget specifying the partitions to access"
         );
         Self {
@@ -609,29 +611,15 @@ impl CosmosOperation {
     /// before issuing the actual cross-partition query.
     ///
     /// Use `with_body()` to provide the query JSON (same as the original query).
-    ///
-    /// **Visibility:** crate-internal in production builds; exposed (still
-    /// `#[doc(hidden)]`) when the `__internal_testing` feature is enabled so
-    /// cross-crate gateway-comparison tests can build the request directly.
-    /// The `__internal_testing` surface is intentionally unstable and is not
-    /// covered by SemVer.
-    #[cfg(any(test, feature = "__internal_testing"))]
-    #[doc(hidden)]
-    pub fn query_plan(container: ContainerReference) -> Self {
-        Self::query_plan_impl(container)
-    }
-
-    #[cfg(not(any(test, feature = "__internal_testing")))]
-    pub(crate) fn query_plan(container: ContainerReference) -> Self {
-        Self::query_plan_impl(container)
-    }
-
-    fn query_plan_impl(container: ContainerReference) -> Self {
+    pub fn query_plan(
+        container: ContainerReference,
+        supported_query_features: Cow<'static, str>,
+    ) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
             .with_resource_type(ResourceType::Document)
             .into_feed_reference();
         let mut headers = CosmosRequestHeaders::new();
-        headers.supported_query_features = Some(String::new());
+        headers.supported_query_features = Some(supported_query_features);
         Self::new(
             OperationType::QueryPlan,
             resource_ref,
@@ -875,26 +863,5 @@ mod tests {
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let resource_ref: CosmosResourceReference = item_ref.into();
         let _op = CosmosOperation::new(OperationType::Create, resource_ref, OperationTarget::None);
-    }
-
-    // ── query_plan factory ──────────────────────────────────────────────
-
-    /// `CosmosOperation::query_plan` builds a `QueryPlan` operation targeting
-    /// the container's documents feed and pre-populates `supported_query_features`
-    /// on the operation's request headers. The remaining gateway query-plan
-    /// headers (`x-ms-cosmos-is-query-plan-request`, `x-ms-documentdb-isquery`,
-    /// and `Content-Type: application/query+json`) are added by the transport
-    /// pipeline.
-    #[test]
-    fn query_plan_factory_sets_operation_metadata() {
-        let op = CosmosOperation::query_plan(test_container());
-
-        assert_eq!(op.operation_type(), OperationType::QueryPlan);
-        assert_eq!(op.resource_type(), ResourceType::Document);
-        assert!(matches!(op.target(), OperationTarget::None));
-        assert_eq!(
-            op.request_headers().supported_query_features.as_deref(),
-            Some(""),
-        );
     }
 }

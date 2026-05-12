@@ -29,12 +29,12 @@ use std::sync::Arc;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use tokio::sync::OnceCell;
 
-use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, PartitionKeyDefinition,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
+use azure_data_cosmos_driver::{driver::CosmosDriverRuntime, models::OperationTarget};
 
 use framework::resolve_test_env;
 
@@ -135,20 +135,14 @@ async fn fetch_gateway_plan(
     };
     let body = serde_json::to_vec(&query_body)?;
 
-    // The four mandatory query-plan headers (`x-ms-cosmos-is-query-plan-request`,
-    // `x-ms-cosmos-supported-query-features`, `x-ms-documentdb-isquery`, and
-    // `Content-Type: application/query+json`) are now applied by the transport
-    // pipeline when it sees a `QueryPlan` operation. We only need to add the
-    // cross-partition toggle that is specific to gateway-comparison tests.
-    let mut custom_headers = std::collections::HashMap::new();
-    custom_headers.insert(
-        HeaderName::from("x-ms-documentdb-query-enablecrosspartition"),
-        HeaderValue::from("True"),
-    );
-    let op_options = OperationOptions::default().with_custom_headers(custom_headers);
-    let operation = CosmosOperation::query_plan(container.clone()).with_body(body);
-
-    let response = driver.execute_operation(operation, op_options).await?;
+    let operation = CosmosOperation::query_plan(
+        container.clone(),
+        azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES.into(),
+    )
+    .with_body(body);
+    let response = driver
+        .execute_operation(operation, OperationOptions::default())
+        .await?;
     let body_bytes = response
         .ok_or_else(|| {
             azure_core::Error::with_message(

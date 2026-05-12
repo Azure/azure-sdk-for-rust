@@ -16,7 +16,7 @@ use crate::models::{FeedRange, PartitionKey};
 ///   partition. Always executed as a single request (point operation).
 /// - [`FeedRange`](Self::FeedRange) — operations scoped to an EPK range that may
 ///   span one or more physical partitions (e.g., cross-partition queries).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum OperationTarget {
     /// No partition scope. Used for account, database, and container-level operations.
     ///
@@ -39,5 +39,10 @@ impl OperationTarget {
     /// Returns `true` if the target has a partition reference (i.e., it is not [`None`](Self::None)).
     pub fn has_partition_reference(&self) -> bool {
         !matches!(self, OperationTarget::None)
+    }
+
+    /// Convenience factory for a feed-range target that covers the full container key space.
+    pub fn full_container() -> Self {
+        OperationTarget::FeedRange(FeedRange::full())
     }
 }

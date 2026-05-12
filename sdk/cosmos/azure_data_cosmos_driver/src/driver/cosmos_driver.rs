@@ -1600,7 +1600,8 @@ impl CosmosDriver {
             )
         })?;
 
-        let query_plan_operation = CosmosOperation::query_plan(container.clone())
+        // Currently, we don't support any extra query features (like ordering, etc.)
+        let query_plan_operation = CosmosOperation::query_plan(container.clone(), "".into())
             .with_body(operation.body().unwrap_or_default().to_vec());
 
         let response = self

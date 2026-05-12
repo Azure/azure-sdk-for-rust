@@ -3,6 +3,8 @@
 
 //! Cosmos DB request/response header models.
 
+use std::borrow::Cow;
+
 use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
@@ -118,7 +120,7 @@ pub struct CosmosRequestHeaders {
     ///
     /// Sent on query plan requests to indicate which query capabilities the
     /// client supports. The backend uses this to shape its response.
-    pub supported_query_features: Option<String>,
+    pub supported_query_features: Option<Cow<'static, str>>,
 
     /// Maximum number of items the server should return per page
     /// (`x-ms-max-item-count`).
@@ -176,7 +178,10 @@ impl CosmosRequestHeaders {
         if let Some(features) = self.supported_query_features.as_ref() {
             headers.insert(
                 request_header_names::SUPPORTED_QUERY_FEATURES,
-                HeaderValue::from(features.clone()),
+                match features {
+                    Cow::Borrowed(s) => HeaderValue::from(*s),
+                    Cow::Owned(s) => HeaderValue::from(s.clone()),
+                },
             );
         }
         if let Some(max_item_count) = self.max_item_count {
