@@ -368,6 +368,16 @@ fn try_handle_read_session_not_available(
 ///    the pre-increment value (AC-3, S2 / T-5).
 /// 4. `!hub_region_processing_only` — defense-in-depth idempotency;
 ///    structurally already guaranteed by latch-once semantics.
+///
+/// **Hedging coordination (future).** Per HEDGING_SPEC.md §9.5, when
+/// `OperationRetryState` gains a `shared_hub_region_latch:
+/// Option<Arc<AtomicBool>>` (populated by `execute_with_hedging()`),
+/// this function MUST also CAS-set the shared latch with
+/// `Release` ordering when it latches the per-state flag. That is the
+/// Rust counterpart of .NET v3's `CrossRegionAvailabilityContext` flag
+/// from azure-cosmos-dotnet-v3#5815 and is what propagates the
+/// discovery from one hedge to its siblings without each hedge
+/// independently re-running the 404/1002 cycle.
 fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetryState {
     let mut new_state = retry_state.clone().advance_session_retry();
     if retry_state.is_dataplane

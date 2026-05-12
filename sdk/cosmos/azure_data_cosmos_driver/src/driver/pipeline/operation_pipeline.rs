@@ -955,6 +955,16 @@ fn compute_execution_context(retry_state: &OperationRetryState) -> ExecutionCont
 ///
 /// HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §3.4. See
 /// `try_handle_read_session_not_available` for the latch trigger.
+///
+/// **Hedging coordination (future).** Per HEDGING_SPEC.md §9.5, the
+/// emission decision MUST OR in a `shared_hub_region_latch:
+/// Option<Arc<AtomicBool>>` field added to `OperationRetryState`, read
+/// with `Acquire` ordering. That field is set from `build_session_retry_state`
+/// the first time any hedge in the same `execute_with_hedging()`
+/// fan-out observes 1002 and is what makes the other (still-latch-clean)
+/// hedges immediately emit the header — the Rust counterpart of .NET v3's
+/// `CrossRegionAvailabilityContext.ShouldAddHubRegionProcessingOnlyHeader`
+/// from azure-cosmos-dotnet-v3#5815.
 fn apply_hub_region_header(
     transport_request: &mut TransportRequest,
     retry_state: &OperationRetryState,

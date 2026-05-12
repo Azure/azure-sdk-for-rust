@@ -122,6 +122,19 @@ pub(crate) struct OperationRetryState {
     /// refactor adds a second production construction site for
     /// `OperationRetryState`, the SE-003 mitigation argument needs to be
     /// re-validated.
+    ///
+    /// **Cross-region hedging coordination.** The orchestrator added in
+    /// `azure_data_cosmos_driver/docs/HEDGING_SPEC.md` §9.5 constructs an
+    /// `OperationRetryState` *per hedge*, so this per-state latch is
+    /// per-hedge by default. The hedging spec requires augmenting this
+    /// state with a `shared_hub_region_latch: Option<Arc<AtomicBool>>`
+    /// that is `Some` only when running inside `execute_with_hedging()`,
+    /// is CAS-set alongside this field in `build_session_retry_state`,
+    /// and is OR'd into the emission decision in `apply_hub_region_header`.
+    /// This mirrors .NET v3's `CrossRegionAvailabilityContext` shared
+    /// object introduced by azure-cosmos-dotnet-v3#5815. Any change to
+    /// the latch trigger or emission rule here MUST update both call
+    /// sites and §9.5 of the hedging spec.
     pub hub_region_processing_only: bool,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
