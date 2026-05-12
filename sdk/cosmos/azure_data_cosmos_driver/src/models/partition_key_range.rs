@@ -3,33 +3,26 @@
 
 use crate::models::effective_partition_key::EffectivePartitionKey;
 use crate::models::range::EpkRange;
-use crate::models::ETag;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
 
 /// Represents a partition key range in the Azure Cosmos DB service.
+///
+/// This is the routing-cache view of a partition key range, not a full
+/// mirror of the `/pkranges` REST resource. The service returns several
+/// metadata fields (`_rid`, `_self`, `_etag`, `_ts`, `ridPrefix`,
+/// `targetThroughput`, `_lsn`, `ownedArchivalPKRangeIds`) that the routing
+/// layer never consults. They are intentionally absent from this struct;
+/// serde silently ignores the unknown JSON fields on deserialization, so
+/// service responses keep parsing without modification while each cached
+/// entry stays small — important when many containers or `CosmosClient`
+/// instances are alive at once.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartitionKeyRange {
     /// Gets or sets the Id of the resource
     #[serde(rename = "id")]
     pub id: String,
-
-    /// Gets or sets the Resource Id associated with the resource
-    #[serde(rename = "_rid", skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-
-    /// Gets the self-link associated with the resource
-    #[serde(rename = "_self", skip_serializing_if = "Option::is_none")]
-    pub self_link: Option<String>,
-
-    /// Gets the entity tag associated with the resource
-    #[serde(rename = "_etag", skip_serializing_if = "Option::is_none")]
-    pub etag: Option<ETag>,
-
-    /// Gets the last modified timestamp associated with the resource
-    #[serde(rename = "_ts", skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<i64>,
 
     /// Represents the minimum possible value of a PartitionKeyRange (inclusive)
     #[serde(rename = "minInclusive")]
@@ -39,27 +32,24 @@ pub struct PartitionKeyRange {
     #[serde(rename = "maxExclusive")]
     pub max_exclusive: EffectivePartitionKey,
 
-    /// Resource ID prefix
-    #[serde(rename = "ridPrefix", skip_serializing_if = "Option::is_none")]
-    pub rid_prefix: Option<i32>,
-
-    /// Throughput fraction
-    #[serde(rename = "throughputFraction", default)]
-    pub throughput_fraction: f64,
-
-    /// Target throughput
-    #[serde(rename = "targetThroughput", skip_serializing_if = "Option::is_none")]
-    pub target_throughput: Option<f64>,
-
     /// Status of the partition key range.
     ///
     /// Not part of the public API surface; uses a crate-internal enum type.
+    /// Retained on the cached struct (1 byte) because the routing map uses
+    /// it to compute `highest_non_offline_pk_range_id` for split detection.
     #[serde(rename = "status", default)]
     pub(crate) status: PartitionKeyRangeStatus,
 
-    /// Log Sequence Number
-    #[serde(rename = "_lsn", default)]
-    pub lsn: i64,
+    /// Fraction of the container's provisioned throughput allocated to this
+    /// partition key range.
+    ///
+    /// Retained on the cached struct for parity with the Python SDK
+    /// (`PartitionKeyRange.ThroughputFraction`), which surfaces it on the
+    /// equivalent slim namedtuple. Not consulted by the routing layer
+    /// itself, but kept so consumers that read it directly continue to
+    /// work after the slim-down.
+    #[serde(rename = "throughputFraction", default)]
+    pub throughput_fraction: f64,
 
     /// Contains ids of parent ranges.
     /// For example if range with id '1' splits into '2' and '3',
@@ -68,17 +58,6 @@ pub struct PartitionKeyRange {
     /// will be ['1', '3'].
     #[serde(rename = "parents", skip_serializing_if = "Option::is_none")]
     pub parents: Option<Vec<String>>,
-
-    /// Contains ids of owned archival pkranges.
-    /// For example, consider a range '1' owns archival reference to ['0'], to begin.
-    /// If '1' splits into '2' (left) and '3' (right)
-    /// '2' owns archival reference to ['0']
-    /// '3' owns archival reference to ['1']
-    #[serde(
-        rename = "ownedArchivalPKRangeIds",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub owned_archival_pk_range_ids: Option<Vec<String>>,
 }
 
 /// Status of a partition key range
@@ -101,19 +80,11 @@ impl PartitionKeyRange {
     ) -> Self {
         Self {
             id,
-            resource_id: None,
-            self_link: None,
-            etag: None,
-            timestamp: None,
             min_inclusive: min_inclusive.into(),
             max_exclusive: max_exclusive.into(),
-            rid_prefix: None,
-            throughput_fraction: 0.0,
-            target_throughput: None,
             status: PartitionKeyRangeStatus::default(),
-            lsn: 0,
+            throughput_fraction: 0.0,
             parents: None,
-            owned_archival_pk_range_ids: None,
         }
     }
 
@@ -136,15 +107,16 @@ impl PartitionKeyRange {
     }
 }
 
-// Implement PartialEq for PartitionKeyRange
-// Note: Only identity fields are compared to maintain consistency with Hash.
-// Floating-point fields (throughput_fraction, target_throughput) are excluded
-// because f64 does not implement Hash, and Rust requires that if a == b,
-// then hash(a) == hash(b).
+// Implement PartialEq for PartitionKeyRange.
+//
+// Equality compares only the routing-relevant identity fields. The
+// service-side `_rid` (resource_id) is no longer stored on the cached
+// struct, so it cannot participate. Two ranges with the same `id` and
+// EPK extents are treated as equal — which matches how the routing map
+// addresses them (`range_by_id` keys by `id` only).
 impl PartialEq for PartitionKeyRange {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
-            && self.resource_id == other.resource_id
             && self.min_inclusive == other.min_inclusive
             && self.max_exclusive == other.max_exclusive
     }
@@ -168,12 +140,11 @@ impl Ord for PartitionKeyRange {
     }
 }
 
-// Implement a Manual Hash for PartitionKeyRange, because only the ID, RID,
-// and min/max should be considered for equality/hashing.
+// Implement a manual Hash for PartitionKeyRange consistent with PartialEq:
+// only the identity fields contribute.
 impl Hash for PartitionKeyRange {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.id.hash(state);
-        self.resource_id.hash(state);
         self.min_inclusive.hash(state);
         self.max_exclusive.hash(state);
     }
@@ -223,29 +194,95 @@ mod tests {
         assert_ne!(pkr1, pkr2);
     }
 
+    /// Service responses commonly include metadata fields (`_rid`, `_self`,
+    /// `_etag`, `_ts`, `ridPrefix`, `targetThroughput`, `_lsn`,
+    /// `ownedArchivalPKRangeIds`) that this struct deliberately does not
+    /// retain. Serde must silently ignore them so existing service payloads
+    /// keep parsing.
     #[test]
-    fn serialization() {
-        let pkr = PartitionKeyRange {
-            id: "1".to_string(),
-            resource_id: Some("rid123".to_string()),
-            self_link: None,
-            etag: None,
-            timestamp: Some(1234567890),
-            min_inclusive: EffectivePartitionKey::from(""),
-            max_exclusive: EffectivePartitionKey::from("FF"),
-            rid_prefix: Some(42),
-            throughput_fraction: 0.5,
-            target_throughput: Some(1000.0),
-            status: PartitionKeyRangeStatus::Online,
-            lsn: 100,
-            parents: Some(vec!["0".to_string()]),
-            owned_archival_pk_range_ids: None,
-        };
+    fn deserialization_ignores_stripped_metadata_fields() {
+        let json = r#"{
+            "id": "1",
+            "_rid": "rid123",
+            "_self": "self/1",
+            "_etag": "\"etag\"",
+            "_ts": 1234567890,
+            "minInclusive": "",
+            "maxExclusive": "FF",
+            "ridPrefix": 42,
+            "throughputFraction": 0.5,
+            "targetThroughput": 1000.0,
+            "status": "online",
+            "_lsn": 100,
+            "parents": ["0"],
+            "ownedArchivalPKRangeIds": ["arch-0"]
+        }"#;
 
-        let json = serde_json::to_string(&pkr).unwrap();
-        let deserialized: PartitionKeyRange = serde_json::from_str(&json).unwrap();
+        let pkr: PartitionKeyRange = serde_json::from_str(json).unwrap();
 
-        assert_eq!(pkr, deserialized);
+        assert_eq!(pkr.id, "1");
+        assert_eq!(pkr.min_inclusive.as_str(), "");
+        assert_eq!(pkr.max_exclusive.as_str(), "FF");
+        assert_eq!(pkr.status, PartitionKeyRangeStatus::Online);
+        assert_eq!(pkr.throughput_fraction, 0.5);
+        assert_eq!(pkr.parents.as_deref(), Some(&["0".to_string()][..]));
+    }
+
+    /// The whole point of slimming the cached struct is to keep its
+    /// in-memory footprint small. This guard catches accidental re-bloat
+    /// (a new field, a `#[serde(flatten)]` extension, etc.) before it
+    /// regresses memory at scale.
+    ///
+    /// The exact size depends on the `EffectivePartitionKey` and `String`
+    /// representations on the target platform; the bound is set just above
+    /// the current 64-bit value (112 B) so that adding back a 24-byte
+    /// `String` field would trip this check.
+    ///
+    /// We assert two things:
+    /// 1. A hard upper bound to catch re-bloat (re-adding a stripped field).
+    /// 2. An exact-size pin so a silent layout regression (e.g., a future
+    ///    Rust release tweaks `String`/`Vec` representation, niche
+    ///    optimization for `Option<Vec<T>>`, or alignment) is also caught
+    ///    rather than absorbed by the slack.
+    #[test]
+    fn cached_size_stays_small() {
+        // 6 fields:
+        //   id:                   String                    (24 bytes on 64-bit)
+        //   min:                  EffectivePartitionKey     (24 bytes — wraps String)
+        //   max:                  EffectivePartitionKey     (24 bytes)
+        //   status:               PartitionKeyRangeStatus   (1 byte, packed)
+        //   throughput_fraction:  f64                       (8 bytes, 8-aligned)
+        //   parents:              Option<Vec<String>>       (24 bytes — Vec is 24, niche fills the Option)
+        //
+        // Plus alignment padding ⇒ 112 bytes today. The cap is intentionally
+        // tight (one stripped-then-re-added `String` would push it past 120)
+        // so re-bloat is caught at PR time rather than at runtime.
+        const MAX_SIZE: usize = 120;
+        let actual = std::mem::size_of::<PartitionKeyRange>();
+        assert!(
+            actual <= MAX_SIZE,
+            "PartitionKeyRange grew to {actual} bytes (cap {MAX_SIZE}). \
+             Cached pkrange entries should stay small — re-evaluate the field set."
+        );
+
+        // Layout-regression pin: the exact size on 64-bit. If a future Rust
+        // release tweaks `String`/`Vec` representation, niche optimization
+        // for `Option<Vec<T>>`, or alignment, this fires before the slack
+        // absorbs it. 32-bit targets have a different (smaller) expected
+        // size, so the pin is gated to 64-bit; the cap above still catches
+        // re-bloat on any arch.
+        #[cfg(target_pointer_width = "64")]
+        {
+            const EXPECTED_SIZE: usize = 112;
+            assert_eq!(
+                actual, EXPECTED_SIZE,
+                "PartitionKeyRange size shifted from {EXPECTED_SIZE} to {actual} bytes \
+                 without a field change. A toolchain or stdlib layout assumption may \
+                 have moved (`String`/`Vec` representation, `Option<Vec<T>>` niche, \
+                 alignment). Re-confirm the per-cache-entry footprint expectation, \
+                 then bump `EXPECTED_SIZE` if the new layout is acceptable."
+            );
+        }
     }
 
     #[test]

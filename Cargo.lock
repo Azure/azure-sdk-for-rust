@@ -456,6 +456,7 @@ dependencies = [
  "azure_core 0.35.0",
  "azure_data_cosmos_driver",
  "criterion",
+ "serde_json",
  "tokio",
  "url",
 ]
