@@ -96,6 +96,7 @@
     "mydoc",
     "mysproc",
     "myudf",
+    "namedtuple",
     "newtypes",
     "nocoll",
     "normalises",
