@@ -79,7 +79,7 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
             let patch = PatchSpec::new(vec![
                 PatchOp::set("/deleted", serde_json::json!(true)),
                 PatchOp::increment("/visits", 3i64),
-                PatchOp::replace("/displayName", serde_json::json!("after")),
+                PatchOp::replace("/display_name", serde_json::json!("after")),
             ]);
 
             let patch_response: ItemResponse<PatchTestItem> = container_client

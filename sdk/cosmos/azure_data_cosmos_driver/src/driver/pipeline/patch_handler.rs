@@ -1072,10 +1072,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn rmw_caller_session_token_reaches_read_then_replace_uses_read_response_token() {
-        // SE-004 wired end-to-end through the loop: caller-supplied session
-        // token rides the Read; the Read's response session token
-        // overrides it on the Replace.
+    async fn rmw_loop_dispatches_read_then_etag_guarded_replace() {
+        // Structural pin: the loop issues exactly Read → Replace in order,
+        // the Replace inherits the ETag captured from the Read, and the
+        // post-image is produced from the locally-merged document.
+        //
+        // The session-token wire-up (caller → Read; Read response → Replace)
+        // is covered by the per-builder unit tests
+        // `read_sub_op_propagates_caller_session_token` and
+        // `replace_sub_op_uses_read_response_session_token`. Pinning it at
+        // the loop level here would require expanding `ScriptedReply` to
+        // carry a synthetic session token; the helpers exercise the same
+        // code path with less fixture surface.
         let dispatcher = ScriptedDispatcher::new(vec![
             ScriptedReply::Ok {
                 body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
@@ -1098,9 +1106,6 @@ mod tests {
 
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 2);
-        // (The session token assertions live in the per-builder unit tests
-        // above — here we just confirm the loop body invoked both sub-ops
-        // and both passed through with the right precondition shape.)
         assert_eq!(calls[0].op_type, OperationType::Read);
         assert_eq!(calls[0].if_match_etag, None);
         assert_eq!(calls[1].op_type, OperationType::Replace);
