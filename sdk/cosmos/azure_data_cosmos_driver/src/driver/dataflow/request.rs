@@ -3,6 +3,8 @@
 
 //! Request leaf node for the dataflow pipeline.
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use azure_core::http::StatusCode;
 
@@ -84,8 +86,15 @@ enum RequestState {
 }
 
 /// Leaf node that executes one Cosmos DB request per page.
+///
+/// The `operation` is held as an `Arc<CosmosOperation>` so the same logical
+/// operation can be shared across many `Request` nodes (e.g. in a fan-out
+/// `SequentialDrain` over multiple partitions) without paying for one full
+/// `CosmosOperation` copy per node. Per-request differences are applied at
+/// execution time via [`OperationOverrides`](crate::pipeline::OperationOverrides),
+/// not by mutating the shared operation.
 pub(crate) struct Request {
-    operation: CosmosOperation,
+    operation: Arc<CosmosOperation>,
     target: RequestTarget,
     state: RequestState,
 }
@@ -93,7 +102,7 @@ pub(crate) struct Request {
 impl Request {
     /// Creates a request node.
     pub(crate) fn new(
-        operation: CosmosOperation,
+        operation: Arc<CosmosOperation>,
         target: RequestTarget,
         initial_continuation: Option<String>,
     ) -> Self {
@@ -465,7 +474,7 @@ mod tests {
     }
 
     fn build_request(spec: RequestSpec) -> Request {
-        Request::new(operation(), spec.target, spec.continuation)
+        Request::new(Arc::new(operation()), spec.target, spec.continuation)
     }
 
     fn snapshot_request(request: &Request) -> RequestSpec {
@@ -543,7 +552,7 @@ mod tests {
 
     #[tokio::test]
     async fn request_retries_logical_partition_key_topology_change_once() {
-        let mut request = Request::new(operation(), logical_partition_target(), None);
+        let mut request = Request::new(Arc::new(operation()), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Ok(response(b"ok"))]);
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -563,7 +572,7 @@ mod tests {
 
     #[tokio::test]
     async fn request_returns_second_logical_partition_key_topology_change() {
-        let mut request = Request::new(operation(), logical_partition_target(), None);
+        let mut request = Request::new(Arc::new(operation()), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Err(gone_error())]);
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -583,7 +592,7 @@ mod tests {
 
     #[tokio::test]
     async fn request_does_not_retry_non_topology_gone() {
-        let mut request = Request::new(operation(), logical_partition_target(), None);
+        let mut request = Request::new(Arc::new(operation()), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(non_topology_gone_error())]);
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
@@ -600,7 +609,7 @@ mod tests {
 
     #[tokio::test]
     async fn request_tracks_server_continuation_for_next_page() {
-        let mut request = Request::new(operation(), logical_partition_target(), None);
+        let mut request = Request::new(Arc::new(operation()), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![
             Ok(response_with_continuation(b"page1", Some("token-1"))),
             Ok(response_with_continuation(b"page2", Some("token-2"))),
@@ -628,7 +637,7 @@ mod tests {
     #[tokio::test]
     async fn request_uses_restored_continuation_on_first_page() {
         let mut request = Request::new(
-            operation(),
+            Arc::new(operation()),
             logical_partition_target(),
             Some("restored-token".to_string()),
         );
@@ -754,7 +763,7 @@ mod tests {
 
     #[tokio::test]
     async fn topology_provider_error_propagates() {
-        let mut request = Request::new(operation(), epk_range_target(), None);
+        let mut request = Request::new(Arc::new(operation()), epk_range_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
         let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
@@ -768,7 +777,7 @@ mod tests {
 
     #[tokio::test]
     async fn non_partitioned_topology_change_not_retried() {
-        let mut request = Request::new(operation(), RequestTarget::NonPartitioned, None);
+        let mut request = Request::new(Arc::new(operation()), RequestTarget::NonPartitioned, None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));

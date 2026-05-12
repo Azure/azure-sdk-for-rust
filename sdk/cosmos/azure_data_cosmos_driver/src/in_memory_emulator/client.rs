@@ -11,6 +11,7 @@ use azure_core::Bytes;
 
 use super::config::VirtualAccountConfig;
 use super::dispatch::{parse_request, resolve_region};
+use super::observer::RequestObserver;
 use super::operations::handle_operation;
 use super::store::EmulatorStore;
 use crate::driver::transport::cosmos_transport_client::{
@@ -37,6 +38,7 @@ use crate::options::ConnectionPoolOptions;
 /// running inside a Tokio reactor.
 pub struct InMemoryEmulatorHttpClient {
     store: Arc<EmulatorStore>,
+    request_observer: Option<Arc<dyn RequestObserver>>,
 }
 
 impl InMemoryEmulatorHttpClient {
@@ -44,12 +46,26 @@ impl InMemoryEmulatorHttpClient {
     pub fn new(config: VirtualAccountConfig) -> Self {
         Self {
             store: EmulatorStore::new(config),
+            request_observer: None,
         }
     }
 
     /// Returns a handle to the underlying emulator store for test hooks and provisioning.
     pub fn store(&self) -> Arc<EmulatorStore> {
         Arc::clone(&self.store)
+    }
+
+    /// Attaches a [`RequestObserver`] that is invoked for every request the
+    /// emulator handles, before the request is routed.
+    ///
+    /// Intended for tests that need to assert on outgoing request shape
+    /// (e.g. that the configured `User-Agent` suffix actually reaches the
+    /// wire). Without an observer the dispatch path pays no overhead.
+    ///
+    /// Replaces any previously-attached observer.
+    pub fn with_request_observer(mut self, observer: Arc<dyn RequestObserver>) -> Self {
+        self.request_observer = Some(observer);
+        self
     }
 
     /// Creates a `CosmosDriverRuntimeBuilder` pre-configured to use this emulator
@@ -101,6 +117,14 @@ impl std::fmt::Debug for InMemoryEmulatorHttpClient {
 #[async_trait]
 impl HttpClient for InMemoryEmulatorHttpClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
+        // Notify any attached observer first so tests can assert on the
+        // outgoing request shape (headers, URL, method) before the emulator
+        // mutates state. The fast path when no observer is attached is a
+        // single Option check.
+        if let Some(observer) = &self.request_observer {
+            observer.on_request(request);
+        }
+
         let parsed = parse_request(request);
 
         // Resolve region from URL

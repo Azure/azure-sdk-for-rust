@@ -556,7 +556,7 @@ impl GlobalEndpointManager {
 mod tests {
     use super::*;
     use crate::models::AccountRegion;
-    use crate::PartitionKey;
+    use crate::partition_key::PartitionKey;
 
     fn create_test_pipeline() -> Pipeline {
         Pipeline::new(

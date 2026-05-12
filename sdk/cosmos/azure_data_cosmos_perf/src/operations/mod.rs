@@ -14,6 +14,7 @@ mod read_item;
 mod upsert_item;
 
 use async_trait::async_trait;
+use azure_core::http::headers::{HeaderName, Headers};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::options::{
     ExcludedRegions, ItemReadOptions, ItemWriteOptions, OperationOptions,
@@ -21,6 +22,7 @@ use azure_data_cosmos::options::{
 use azure_data_cosmos::regions::Region;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::config::{Config, ExcludeRegionsScope};
 pub use crate::operations::create_item::CreateItemOperation;
@@ -28,6 +30,23 @@ pub use crate::operations::query_items::QueryItemsOperation;
 pub use crate::operations::read_item::ReadItemOperation;
 pub use crate::operations::upsert_item::UpsertItemOperation;
 use crate::seed::SharedItems;
+
+/// `x-ms-request-duration-ms` — server-reported request processing time in
+/// milliseconds (floating-point string).
+const REQUEST_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
+
+/// Extracts the server-reported request duration from a Cosmos response.
+///
+/// Returns `None` when the header is missing (e.g., on responses served
+/// from cache or when the gateway omitted the diagnostic header) or when
+/// the value cannot be parsed as `f64`.
+pub(crate) fn extract_backend_duration(headers: &Headers) -> Option<Duration> {
+    headers
+        .get_optional_str(&REQUEST_DURATION_MS)
+        .and_then(|s| s.parse::<f64>().ok())
+        .filter(|ms| ms.is_finite() && *ms >= 0.0)
+        .map(|ms| Duration::from_secs_f64(ms / 1000.0))
+}
 
 /// A single executable perf test operation.
 ///
@@ -39,7 +58,14 @@ pub trait Operation: Send + Sync {
     fn name(&self) -> &'static str;
 
     /// Executes one instance of the operation.
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<()>;
+    ///
+    /// Returns `Ok(Some(d))` when the server reported a processing duration
+    /// via the `x-ms-request-duration-ms` response header (this is the
+    /// backend latency surfaced separately from the client-observed
+    /// wall-clock latency). Returns `Ok(None)` when no backend duration
+    /// could be observed (multi-page query streams may aggregate, see
+    /// individual implementations).
+    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<Option<Duration>>;
 }
 
 /// The item type used for seeding, reading, querying, and upserting.

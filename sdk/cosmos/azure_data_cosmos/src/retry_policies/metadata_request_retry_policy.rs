@@ -267,10 +267,10 @@ mod tests {
     use super::*;
     use crate::operation_context::OperationType;
     use crate::options::ExcludedRegions;
+    use crate::partition_key::PartitionKey;
     use crate::regions::Region;
     use crate::resource_context::{ResourceLink, ResourceType};
     use crate::routing::global_endpoint_manager::GlobalEndpointManager;
-    use crate::PartitionKey;
     use azure_core::http::headers::Headers;
     use azure_core::http::ClientOptions;
     use azure_core::Bytes;

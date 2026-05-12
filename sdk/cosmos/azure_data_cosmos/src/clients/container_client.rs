@@ -688,7 +688,7 @@ impl ContainerClient {
     ///     "SELECT * FROM c",
     ///     QueryScope::partition("some_partition_key"),
     ///     None,
-    /// )?;
+    /// ).await?;
     /// # }
     /// ```
     ///
@@ -706,7 +706,7 @@ impl ContainerClient {
     /// let query = Query::from("SELECT COUNT(*) FROM c WHERE c.customer_id = @customer_id")
     ///     .with_parameter("@customer_id", 42)?;
     /// let items = container_client
-    ///     .query_items::<Customer>(query, QueryScope::partition("some_partition_key"), None)?;
+    ///     .query_items::<Customer>(query, QueryScope::partition("some_partition_key"), None).await?;
     /// # }
     /// ```
     ///
@@ -737,7 +737,7 @@ impl ContainerClient {
             .context
             .driver
             .plan_operation(
-                &initial_operation,
+                initial_operation,
                 &options.operation,
                 options.continuation_token.as_ref(),
             )
@@ -1020,29 +1020,4 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
         operation = operation.with_session_token(session_token.clone());
     }
     operation
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[allow(dead_code, unreachable_code, unused_variables)]
-    fn _assert_futures_are_send() {
-        fn assert_send<T: Send>(_: T) {}
-        let client: &ContainerClient = todo!();
-
-        assert_send(client.read(todo!()));
-        assert_send(client.replace(todo!(), todo!()));
-        assert_send(client.read_throughput(todo!()));
-        assert_send(client.begin_replace_throughput(todo!(), todo!()));
-        assert_send(client.delete(todo!()));
-        assert_send(client.create_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
-        assert_send(client.replace_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
-        assert_send(client.upsert_item::<serde_json::Value>("", todo!(), todo!(), todo!()));
-        assert_send(client.read_item::<serde_json::Value>("", todo!(), todo!()));
-        assert_send(client.delete_item("", todo!(), todo!()));
-        assert_send(client.execute_transactional_batch(todo!(), todo!()));
-        assert_send(client.read_feed_ranges(todo!()));
-        assert_send(client.feed_range_from_partition_key("", todo!()));
-    }
 }

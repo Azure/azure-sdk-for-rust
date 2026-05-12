@@ -1230,9 +1230,14 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<Option<crate::models::CosmosResponse>> {
-        let mut plan = self.plan_operation(&operation, &options, None).await?;
-        self.execute_plan(&mut plan, operation.container().cloned(), options)
-            .await
+        // TODO: This boxing is a temporary fix to avoid a large future.
+        // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
+        Box::pin(async {
+            let container = operation.container().cloned();
+            let mut plan = self.plan_operation(operation, &options, None).await?;
+            self.execute_plan(&mut plan, container, options).await
+        })
+        .await
     }
 
     /// Executes a point operation (read/write item, read database, etc.) without a pre-planned pipeline.
@@ -1537,7 +1542,7 @@ impl CosmosDriver {
     ///   error.
     pub async fn plan_operation(
         &self,
-        operation: &CosmosOperation,
+        operation: CosmosOperation,
         options: &OperationOptions,
         continuation: Option<&ContinuationToken>,
     ) -> azure_core::Result<OperationPlan> {
@@ -1553,6 +1558,11 @@ impl CosmosDriver {
         }
 
         tracing::debug!(operation_type = ?operation.operation_type(), resource_type = ?operation.resource_type(), resource_reference = ?operation.resource_reference(), "planning operation");
+
+        // Share the operation across every Request node in the resulting plan.
+        // Per-Request differences are layered on at execution time via
+        // OperationOverrides; the operation itself is never mutated.
+        let operation = Arc::new(operation);
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.
@@ -1617,7 +1627,7 @@ impl CosmosDriver {
         );
 
         let pipeline =
-            planner::build_sequential_drain(&query_plan, &mut topology, operation, resume_state)
+            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
                 .await?;
         Ok(OperationPlan::new(pipeline))
     }

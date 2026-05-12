@@ -282,6 +282,7 @@ mod tests {
 
     #[test]
     fn rejects_newer_sdk_token() {
+        // cspell:ignore somethingnew
         let token = ContinuationToken::from_string("c2.somethingnew".to_string());
         let err = token.resolve().unwrap_err();
         assert!(matches!(
@@ -302,6 +303,7 @@ mod tests {
 
     #[test]
     fn rejects_invalid_base64_in_v1_token() {
+        // cspell:ignore notvalid
         let token = ContinuationToken::from_string("c1.!!!notvalid!!!".to_string());
         let err = token.resolve().unwrap_err();
         assert!(matches!(

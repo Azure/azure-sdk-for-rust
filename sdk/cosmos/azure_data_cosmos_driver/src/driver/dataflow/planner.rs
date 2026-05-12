@@ -10,6 +10,8 @@
 //! [`QueryPlan`](super::query_plan::QueryPlan) and resolves the query's EPK
 //! ranges against the current topology to produce a fan-out pipeline.
 
+use std::sync::Arc;
+
 use crate::models::{
     effective_partition_key::EffectivePartitionKey, CosmosOperation, FeedRange, OperationTarget,
 };
@@ -26,6 +28,10 @@ use super::{
 /// one partition (point reads, single-partition queries, metadata operations).
 /// Use [`CosmosOperation::is_trivial`] to check eligibility before calling.
 ///
+/// `operation` is shared with the resulting [`Request`] node via `Arc`; the
+/// caller passes ownership in (cheap because the underlying allocation is
+/// shared with any other nodes that need the same operation).
+///
 /// `resume` is an optional [`PipelineNodeState`] from a continuation token
 /// that augments planning. Only `Request` and `Drained` shapes are accepted
 /// for trivial operations; any other shape returns a `DataConversion` error.
@@ -36,7 +42,7 @@ use super::{
 /// returns an error if a non-trivial operation (e.g. a cross-partition query)
 /// is passed.
 pub(crate) fn build_trivial_pipeline(
-    operation: &CosmosOperation,
+    operation: Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> azure_core::Result<Pipeline> {
     debug_assert!(
@@ -90,7 +96,7 @@ pub(crate) fn build_trivial_pipeline(
         }
     };
 
-    let root = Request::new(operation.clone(), request_target, initial_continuation);
+    let root = Request::new(operation, request_target, initial_continuation);
     Ok(Pipeline::new(Box::new(root)))
 }
 
@@ -100,6 +106,12 @@ pub(crate) fn build_trivial_pipeline(
 /// single physical partition) or a [`SequentialDrain`] over one `Request` per
 /// resolved range. Other cross-partition strategies (streaming `ORDER BY`,
 /// hybrid search, read-many, etc.) will live as sibling functions.
+///
+/// `operation` is the underlying logical operation shared across every
+/// resulting [`Request`] node via `Arc::clone`; per-partition differences
+/// (e.g. partition-key-range targeting) are layered on at execution time via
+/// [`OperationOverrides`](crate::pipeline::OperationOverrides) and the
+/// per-node [`RequestTarget`], not by cloning the operation itself.
 ///
 /// This function:
 /// 1. Validates that the query plan contains no unsupported features (no
@@ -116,7 +128,7 @@ pub(crate) fn build_trivial_pipeline(
 pub(crate) async fn build_sequential_drain(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
-    operation: &CosmosOperation,
+    operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> azure_core::Result<Pipeline> {
     validate_query_plan(query_plan)?;
@@ -189,7 +201,7 @@ pub(crate) async fn build_sequential_drain(
                 partition_key_range_id: resolved_range.partition_key_range_id,
             };
             request_nodes.push(Box::new(Request::new(
-                operation.clone(),
+                Arc::clone(operation),
                 target,
                 initial_continuation,
             )));
@@ -343,7 +355,7 @@ mod tests {
     #[test]
     fn plans_non_partitioned_pipeline_for_database_read() {
         let op = CosmosOperation::read_database(test_database());
-        let pipeline = build_trivial_pipeline(&op, None).unwrap();
+        let pipeline = build_trivial_pipeline(Arc::new(op), None).unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(*request.target(), RequestTarget::NonPartitioned);
@@ -356,7 +368,7 @@ mod tests {
         let pk = PartitionKey::from("pk-value");
         let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let op = CosmosOperation::read_item(item);
-        let pipeline = build_trivial_pipeline(&op, None).unwrap();
+        let pipeline = build_trivial_pipeline(Arc::new(op), None).unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(
@@ -373,7 +385,7 @@ mod tests {
 
         // In debug builds, this panics via debug_assert; in release builds it returns Err.
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            build_trivial_pipeline(&op, None)
+            build_trivial_pipeline(Arc::new(op), None)
         }));
 
         match result {
@@ -488,7 +500,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
         assert_single_request(&pipeline, "", "FF", "pkrange-0");
@@ -504,7 +516,7 @@ mod tests {
             rr("80", "FF", "pkrange-right"),
         ])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
         assert_drain_requests(
@@ -523,7 +535,7 @@ mod tests {
             Ok(vec![rr("80", "FF", "pkrange-C")]),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
         assert_drain_requests(
@@ -543,7 +555,7 @@ mod tests {
             rr("80", "C0", "pkrange-3"),
         ])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
         assert_drain_requests(
@@ -575,7 +587,7 @@ mod tests {
             ]),
         ]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
         assert_drain_requests(
@@ -597,7 +609,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-wide")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
         assert_single_request(&pipeline, "", "FF", "pkrange-wide");
@@ -615,7 +627,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -636,7 +648,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -658,7 +670,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -679,7 +691,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -700,7 +712,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -725,7 +737,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -740,7 +752,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, None)
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
         assert_single_request(&pipeline, "", "FF", "pkrange-0");
@@ -752,7 +764,7 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = NoopTopologyProvider;
 
-        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
         assert_eq!(
@@ -770,7 +782,7 @@ mod tests {
             "topology resolution failed",
         ))]);
 
-        let err = build_sequential_drain(&plan, &mut topology, &op, None)
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
         assert_eq!(err.to_string(), "topology resolution failed");
@@ -786,10 +798,14 @@ mod tests {
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
 
-        let pipeline =
-            build_sequential_drain(&plan, &mut topology, &op, Some(PipelineNodeState::Drained))
-                .await
-                .unwrap();
+        let pipeline = build_sequential_drain(
+            &plan,
+            &mut topology,
+            &Arc::new(op),
+            Some(PipelineNodeState::Drained),
+        )
+        .await
+        .unwrap();
 
         // The drained pipeline immediately yields no pages.
         assert!(matches!(
@@ -817,7 +833,7 @@ mod tests {
             }),
         };
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(resume))
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
             .unwrap();
         assert_drain_requests(pipeline, &[("55", "AA", "pk-b"), ("AA", "FF", "pk-c")]);
@@ -840,7 +856,7 @@ mod tests {
             }),
         };
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(resume))
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
             .unwrap();
         let snapshot = pipeline.snapshot_state();
@@ -867,7 +883,7 @@ mod tests {
             left_most: Box::new(PipelineNodeState::Drained),
         };
 
-        let pipeline = build_sequential_drain(&plan, &mut topology, &op, Some(resume))
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
             .unwrap();
         assert!(matches!(
@@ -892,7 +908,7 @@ mod tests {
             }),
         };
 
-        let err = build_sequential_drain(&plan, &mut topology, &op, Some(resume))
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
             .unwrap_err();
         assert!(

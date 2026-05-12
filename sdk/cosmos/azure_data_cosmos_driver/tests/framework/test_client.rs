@@ -15,6 +15,7 @@ use azure_data_cosmos_driver::{
     options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
 };
 use std::{error::Error, future::Future, sync::Arc};
+use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 
 use super::env::{
@@ -39,7 +40,13 @@ pub struct TestEnv {
 /// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
 pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let _ = tracing_subscriber::fmt::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_env_filter(
+            EnvFilter::builder()
+                // Tests with intentional failures cause noise, so we set the default level to "off"
+                // to silence them unless the user explicitly configures it.
+                .with_default_directive("off".parse().unwrap())
+                .from_env_lossy(),
+        )
         .try_init();
 
     let test_mode = get_test_mode();
@@ -295,9 +302,16 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::create_database(self.client.account.clone())
             .with_body(body.into_bytes());
 
-        driver
+        let result = driver
             .execute_point_operation(operation, OperationOptions::default())
             .await?;
+
+        // Check for success status (201 Created)
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
+        if !status.map(|s| s.is_success()).unwrap_or(false) {
+            return Err(format!("Failed to create database, status: {:?}", status).into());
+        }
 
         Ok(DatabaseReference::from_name(
             self.client.account.clone(),
@@ -318,9 +332,16 @@ impl DriverTestRunContext {
 
         let operation = CosmosOperation::delete_database(database.clone());
 
-        driver
+        let result = driver
             .execute_point_operation(operation, OperationOptions::default())
             .await?;
+
+        // Check for success status (204 No Content)
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
+        if !status.map(|s| s.is_success()).unwrap_or(false) {
+            return Err(format!("Failed to delete database, status: {:?}", status).into());
+        }
 
         Ok(())
     }
@@ -345,10 +366,16 @@ impl DriverTestRunContext {
         let operation =
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
-        driver
+        let result = driver
             .execute_point_operation(operation, OperationOptions::default())
             .await?;
 
+        // Check for success status (201 Created)
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
+        if !status.map(|s| s.is_success()).unwrap_or(false) {
+            return Err(format!("Failed to create container, status: {:?}", status).into());
+        }
         let db_name = database
             .name()
             .ok_or_else(|| "database reference must be name-based".to_string())?;
