@@ -1,21 +1,56 @@
 # Release History
 
-## 0.11.0 (Unreleased)
+## 0.13.0 (Unreleased)
 
 ### Features Added
 
-- Added `stream::tokio` module (gated on the `tokio` feature) with `FileStream` and `FileStreamBuilder` for streaming file uploads.
-
 ### Breaking Changes
-
-- Revised `download()` on `BlobClient` with the following breaking changes:
-  - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
-  - Returns `Result<BlobClientDownloadResult>` instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.
-  - The previous `BlobClientDownloadResultHeaders` trait was removed.
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 0.12.0 (2026-04-22)
+
+### Features Added
+
+- Added the `reqwest_rustls` feature to use `aws-lc-rs` as the default TLS provider.
+- Added `From` implementations on `HttpRange` for standard Rust range types: `Range<u64>`, `RangeFrom<u64>`, `RangeInclusive<u64>`, `RangeTo<u64>`, `RangeToInclusive<u64>`, and their `usize` equivalents. This allows `(0..100u64).into()`, `(100u64..).into()`, etc.
+
+### Breaking Changes
+
+- Added default connection timeout of 20s and read timeout of 60s.
+- Removed the `reqwest_native_tls` feature in favor of `reqwest_rustls`.
+- Responses are no longer automatically decompressed.
+- Removed `download_into()` from existing clients. Callers can still use `download()` and collect the streamed `Bytes` into memory.
+- Changed `BlobClientDownloadOptions.range` from `Option<Range<usize>>` to `Option<HttpRange>`.
+- Changed `BlobClientDownloadOptions.if_match` and `if_none_match` from `Option<String>` to `Option<Etag>`.
+- Changed `PageBlobClient::upload_pages()` and `clear_pages()` `range` parameter from `String` to `HttpRange`.
+- Changed `PageBlobClient::upload_pages_from_url()` `range` and `source_range` parameters from `String` to `HttpRange`.
+- Changed `PageBlobClientGetPageRangesOptions.range` from `Option<String>` to `Option<HttpRange>`.
+- Changed `AppendBlobClientAppendBlockFromUrlOptions.source_range` from `Option<String>` to `Option<HttpRange>`.
+- Changed `BlockBlobClientUploadBlobFromUrlOptions.source_range` from `Option<String>` to `Option<HttpRange>`.
+
+### Other Changes
+
+- Updated dependencies.
+
+## 0.11.0 (2026-04-14)
+
+### Features Added
+
+- Added `stream::tokio` module (gated on the `tokio` feature) with `FileStream` and `FileStreamBuilder` for streaming file uploads.
+- Added `models::HttpRange` for specifying byte ranges in blob operations, replacing the removed `format_page_range()` helper.
+
+### Breaking Changes
+
+- Removed `format_page_range()`. Use `HttpRange::new(offset, length)` or `HttpRange::from_offset(offset)` instead.
+- Revised `download()` on `BlobClient` with the following breaking changes:
+  - Now uses managed (multi-part) download logic for optimal performance on single-shot and parallel range transfers.
+  - Returns `Result<BlobClientDownloadResult>` instead of `Result<AsyncResponse<BlobClientDownloadResult>>`.
+  - The previous `BlobClientDownloadResultHeaders` trait was removed.
+- Revised `upload()` on `BlobClient` `BlockBlobClient` with the following breaking changes:
+  - `partition_size` option changed from `Option<NonZero<usize>>` to `Option<NonZero<u64>>`
 
 ## 0.10.1 (2026-03-18)
 

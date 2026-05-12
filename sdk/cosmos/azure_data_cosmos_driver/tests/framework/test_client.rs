@@ -119,7 +119,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_fault_injection_rules(rules)
+            .with_fault_injection_rules(rules)?
             .build()
             .await?;
 
@@ -192,6 +192,47 @@ impl DriverTestClient {
         .await
     }
 
+    /// Like [`run_with_unique_db_and_fault_injection`](Self::run_with_unique_db_and_fault_injection)
+    /// but also applies the given [`OperationOptions`] to the driver runtime.
+    #[cfg(feature = "fault_injection")]
+    pub async fn run_with_unique_db_and_fault_injection_options<F, Fut>(
+        rules: Vec<Arc<FaultInjectionRule>>,
+        operation_options: OperationOptions,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(env) = resolve_test_env()? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .with_fault_injection_rules(rules)?
+            .with_operation_options(operation_options)
+            .build()
+            .await?;
+
+        let client = Self {
+            runtime,
+            account: env.account,
+        };
+        let context = DriverTestRunContext::new(client);
+
+        let db_name = context.unique_database_name();
+        let db_ref = context.create_database(&db_name).await?;
+
+        let result = f(context.clone(), db_ref.clone()).await;
+
+        // Cleanup (best effort)
+        let _ = context.delete_database(&db_ref).await;
+
+        result
+    }
+
     /// Runs a test with a unique database that will be cleaned up after the test.
     pub async fn run_with_unique_db<F, Fut>(f: F) -> Result<(), Box<dyn Error>>
     where
@@ -259,7 +300,8 @@ impl DriverTestRunContext {
             .await?;
 
         // Check for success status (201 Created)
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to create database, status: {:?}", status).into());
         }
@@ -288,7 +330,8 @@ impl DriverTestRunContext {
             .await?;
 
         // Check for success status (204 No Content)
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to delete database, status: {:?}", status).into());
         }
@@ -321,7 +364,8 @@ impl DriverTestRunContext {
             .await?;
 
         // Check for success status (201 Created)
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to create container, status: {:?}", status).into());
         }
@@ -335,9 +379,16 @@ impl DriverTestRunContext {
     }
 
     /// Creates an item using the driver.
+    ///
+    /// The `item_id` is used to build the [`ItemReference`]. For `Create`
+    /// operations the item ID is part of the body JSON, not the URL path
+    /// (Cosmos POSTs to the collection feed), so the value of `item_id`
+    /// here is used only for PK-range routing and does not need to match the
+    /// body's `"id"` field exactly.
     pub async fn create_item(
         &self,
         container: &ContainerReference,
+        item_id: &str,
         partition_key: impl Into<PartitionKey>,
         body: &[u8],
     ) -> Result<CosmosResponse, Box<dyn Error>> {
@@ -348,14 +399,30 @@ impl DriverTestRunContext {
             .await?;
 
         let pk = partition_key.into();
-        let operation =
-            CosmosOperation::create_item(container.clone(), pk).with_body(body.to_vec());
+        let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
+        let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
             .execute_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)
+    }
+
+    /// Creates an item by partition key only (item id is embedded in `body`).
+    ///
+    /// Convenience overload for tests that include the item id inside the JSON
+    /// body and do not want to pass it separately. Uses `"_"` as the routing
+    /// item-id placeholder, which is acceptable because `Create` operations
+    /// route to the collection feed URL and do not include the item id in the
+    /// path.
+    pub async fn create_item_with_pk(
+        &self,
+        container: &ContainerReference,
+        partition_key: impl Into<PartitionKey>,
+        body: &[u8],
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        self.create_item(container, "_", partition_key, body).await
     }
 
     /// Reads an item using the driver.

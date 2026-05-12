@@ -254,13 +254,13 @@ mod tests {
         status: StatusCode,
         offer_replace_pending: Option<&str>,
     ) -> CosmosResponse<ThroughputProperties> {
-        use crate::cosmos_request::CosmosRequest;
-        use crate::operation_context::OperationType;
-        use crate::resource_context::{ResourceLink, ResourceType};
+        use crate::CosmosDiagnosticsContext;
         use azure_core::{
             http::{headers::Headers, response::Response, RawResponse},
             Bytes,
         };
+        use azure_data_cosmos_driver::models::{ActivityId, CosmosResponseHeaders};
+        use std::sync::Arc;
 
         let mut headers = Headers::new();
         if let Some(value) = offer_replace_pending {
@@ -268,12 +268,13 @@ mod tests {
         }
 
         let body = Bytes::from_static(b"{}");
-        let raw = RawResponse::from_bytes(status, headers, body);
+        let raw = RawResponse::from_bytes(status, headers.clone(), body);
         let typed: Response<ThroughputProperties> = raw.into();
-        let resource_link = ResourceLink::root(ResourceType::Offers);
-        let request = CosmosRequest::builder(OperationType::Replace, resource_link)
-            .build()
-            .unwrap();
-        CosmosResponse::new(typed, request)
+        let mut cosmos_headers = CosmosResponseHeaders::default();
+        if let Some(value) = offer_replace_pending {
+            cosmos_headers.offer_replace_pending = value.parse::<bool>().ok();
+        }
+        let diagnostics = Arc::new(CosmosDiagnosticsContext::for_testing(ActivityId::new_uuid()));
+        CosmosResponse::from_driver_response(typed, cosmos_headers, diagnostics)
     }
 }

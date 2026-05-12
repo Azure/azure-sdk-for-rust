@@ -83,6 +83,11 @@ impl VectorSessionToken {
         })
     }
 
+    /// Returns the global logical sequence number.
+    pub(crate) fn global_lsn(&self) -> u64 {
+        self.global_lsn
+    }
+
     /// Returns `true` if this token is at least as recent as `other`.
     ///
     /// A token with a higher version is always considered more recent (captures
@@ -210,6 +215,14 @@ pub(crate) enum SessionTokenValue {
 }
 
 impl SessionTokenValue {
+    /// Returns the global logical sequence number.
+    pub(crate) fn global_lsn(&self) -> u64 {
+        match self {
+            Self::Simple(lsn) => *lsn,
+            Self::Vector(v) => v.global_lsn(),
+        }
+    }
+
     /// Parses a session token value string, trying V2 (vector) first, then V1 (simple).
     pub(crate) fn parse(s: &str) -> azure_core::Result<Self> {
         if let Ok(vector) = VectorSessionToken::parse(s) {

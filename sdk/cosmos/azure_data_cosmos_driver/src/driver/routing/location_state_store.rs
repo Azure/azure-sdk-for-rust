@@ -6,7 +6,7 @@
 use std::{
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc,
+        Arc, Weak,
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -14,25 +14,25 @@ use std::{
 use crossbeam_epoch::{self as epoch, Atomic, Owned};
 use futures::future::BoxFuture;
 
+#[cfg(feature = "tokio")]
+use crate::driver::transport::background_task_manager::BackgroundTaskManager;
 use crate::{
     driver::cache::{AccountMetadataCache, AccountProperties},
     models::AccountEndpoint,
+    options::Region,
 };
 
 use super::{
-    build_account_endpoint_state, expire_unavailable_endpoints, mark_endpoint_unavailable,
+    build_account_endpoint_state, expire_partition_overrides, expire_unavailable_endpoints,
+    mark_endpoint_unavailable, mark_partition_unavailable,
+    partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
     AccountEndpointState, CosmosEndpoint, LocationEffect,
 };
-
-/// Placeholder for partition-level state (not yet implemented).
-#[derive(Clone, Debug, Default)]
-pub(crate) struct PartitionEndpointState;
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
 #[derive(Clone, Debug)]
 pub(crate) struct LocationSnapshot {
     pub account: Arc<AccountEndpointState>,
-    #[allow(dead_code)]
     pub partitions: Arc<PartitionEndpointState>,
 }
 
@@ -41,7 +41,17 @@ impl LocationSnapshot {
     pub(crate) fn for_tests(account: Arc<AccountEndpointState>) -> Self {
         Self {
             account,
-            partitions: Arc::new(PartitionEndpointState),
+            partitions: Arc::new(PartitionEndpointState::default()),
+        }
+    }
+
+    pub(crate) fn for_tests_with_partitions(
+        account: Arc<AccountEndpointState>,
+        partitions: Arc<PartitionEndpointState>,
+    ) -> Self {
+        Self {
+            account,
+            partitions,
         }
     }
 }
@@ -62,6 +72,7 @@ pub(crate) struct LocationStateStore {
     account_endpoint: AccountEndpoint,
     account_refresh_fn: AccountRefreshFn,
     default_endpoint: CosmosEndpoint,
+    preferred_regions: Vec<Region>,
     gateway20_enabled: bool,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
@@ -69,12 +80,22 @@ pub(crate) struct LocationStateStore {
     /// The etag of the last `AccountProperties` that was synced.
     /// Used to skip the CAS loop when the account metadata hasn't changed.
     last_synced_etag: std::sync::Mutex<String>,
+    /// Pointer identity of the last synced `AccountProperties` arc.
+    /// When `sync_account_properties` is called with the same `Arc` (i.e.,
+    /// the account metadata cache returned the same cached value), the entire
+    /// sync is skipped without acquiring any other locks or rebuilding endpoint
+    /// lists.
+    last_synced_properties: std::sync::Mutex<Option<Arc<AccountProperties>>>,
     /// Monotonic version counter bumped on every successful CAS write.
     account_version: AtomicU64,
     /// Cached snapshot: (version, snapshot). When the version matches
     /// `account_version`, `snapshot()` returns `Arc::clone()` of the cached
     /// arcs (refcount increment only) instead of a full clone.
     cached_snapshot: std::sync::Mutex<(u64, LocationSnapshot)>,
+    /// Manages the background failback loop task.
+    /// Dropping this manager aborts the failback task.
+    #[cfg(feature = "tokio")]
+    background_task_manager: BackgroundTaskManager,
 }
 
 impl std::fmt::Debug for LocationStateStore {
@@ -113,6 +134,7 @@ impl Drop for LocationStateStore {
 
 impl LocationStateStore {
     /// Creates a new location store with a single-endpoint account snapshot.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         account_metadata_cache: Arc<AccountMetadataCache>,
         account_endpoint: AccountEndpoint,
@@ -120,29 +142,36 @@ impl LocationStateStore {
         account_refresh_fn: AccountRefreshFn,
         gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
+        partition_failover_config: PartitionFailoverConfig,
+        preferred_regions: Vec<Region>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
+        let partition_state = PartitionEndpointState::new(partition_failover_config);
 
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
-            partitions: Arc::new(PartitionEndpointState),
+            partitions: Arc::new(partition_state.clone()),
         };
 
         Self {
             account: Atomic::new(account_state),
-            partitions: Atomic::new(PartitionEndpointState),
+            partitions: Atomic::new(partition_state),
             account_metadata_cache,
             account_endpoint,
             account_refresh_fn,
             default_endpoint,
+            preferred_regions,
             gateway20_enabled,
             endpoint_unavailability_ttl,
             // TODO(refresh-config): Make refresh interval configurable.
             refresh_interval: Duration::from_secs(5),
             last_refresh_epoch_ms: AtomicU64::new(0),
             last_synced_etag: std::sync::Mutex::new(String::new()),
+            last_synced_properties: std::sync::Mutex::new(None),
             account_version: AtomicU64::new(0),
             cached_snapshot: std::sync::Mutex::new((0, initial_snapshot)),
+            #[cfg(feature = "tokio")]
+            background_task_manager: BackgroundTaskManager::new(),
         }
     }
 
@@ -220,8 +249,22 @@ impl LocationStateStore {
                         mark_endpoint_unavailable(current, &endpoint, reason.clone())
                     });
                 }
-                LocationEffect::MarkPartitionUnavailable(_) => {
-                    // TODO(partition-routing): Apply partition-level unavailability.
+                LocationEffect::MarkPartitionUnavailable(partition) => {
+                    if partition.partition_key_range_id.is_none() {
+                        // No partition key range ID available (first attempt);
+                        // skip partition-level marking.
+                        continue;
+                    }
+                    let is_partitioned = partition.is_partitioned_resource;
+                    self.apply_partition(|current_partitions| {
+                        let account = self.account_snapshot();
+                        mark_partition_unavailable(
+                            current_partitions,
+                            &account,
+                            partition,
+                            is_partitioned,
+                        )
+                    });
                 }
                 LocationEffect::RefreshAccountProperties => {
                     self.refresh_account_properties_if_due().await;
@@ -248,6 +291,41 @@ impl LocationStateStore {
             ) {
                 Ok(_) => {
                     // `current` is the old value that was just replaced.
+                    unsafe { guard.defer_destroy(current) };
+                    self.account_version.fetch_add(1, Ordering::Release);
+                    return;
+                }
+                Err(_) => continue,
+            }
+        }
+    }
+
+    /// CAS loop on partition-level state.
+    pub(crate) fn apply_partition(
+        &self,
+        mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState,
+    ) {
+        let guard = epoch::pin();
+
+        loop {
+            let current = self.partitions.load(Ordering::Acquire, &guard);
+            // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
+            let current_ref = unsafe { current.deref() };
+            let next_state = f(current_ref);
+
+            match self.partitions.compare_exchange(
+                current,
+                Owned::new(next_state),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+                &guard,
+            ) {
+                Ok(_) => {
+                    // current is the pointer that was just replaced and is no
+                    // longer reachable from self.partitions. compare_exchange
+                    // returns the newly-installed pointer on success, not the
+                    // replaced one, so we must defer-destroy current (matching
+                    // the pattern in apply_account above).
                     unsafe { guard.defer_destroy(current) };
                     self.account_version.fetch_add(1, Ordering::Release);
                     return;
@@ -294,7 +372,7 @@ impl LocationStateStore {
         };
 
         let default_endpoint = self.default_endpoint.clone();
-        self.sync_account_properties(properties.as_ref(), &default_endpoint);
+        self.sync_account_properties(properties, &default_endpoint);
     }
 
     /// Updates account state from properties using a CAS loop that preserves
@@ -304,14 +382,25 @@ impl LocationStateStore {
     /// the last synced value (same server version, properties unchanged).
     pub fn sync_account_properties(
         &self,
-        properties: &AccountProperties,
+        properties: Arc<AccountProperties>,
         default_endpoint: &CosmosEndpoint,
     ) {
+        // Fast path: same Arc pointer means identical data — nothing changed.
+        {
+            let last = self.last_synced_properties.lock().unwrap();
+            if last.as_ref().is_some_and(|p| Arc::ptr_eq(p, &properties)) {
+                return;
+            }
+        }
+
         self.prune_expired_unavailable_endpoints();
 
         if !properties.etag.is_empty() {
-            let last = self.last_synced_etag.lock().unwrap();
-            if *last == properties.etag {
+            let last_etag = self.last_synced_etag.lock().unwrap();
+            if *last_etag == properties.etag {
+                // Etag matches: update the pointer so future calls hit the fast path.
+                drop(last_etag);
+                *self.last_synced_properties.lock().unwrap() = Some(properties);
                 return;
             }
         }
@@ -320,10 +409,11 @@ impl LocationStateStore {
         let ttl = self.endpoint_unavailability_ttl;
         self.apply_account(|current| {
             let mut next = build_account_endpoint_state(
-                properties,
+                &properties,
                 default_endpoint.clone(),
                 Some(current.generation),
                 self.gateway20_enabled,
+                &self.preferred_regions,
             );
             // Carry forward unavailability marks from the current state,
             // filtering out entries that have expired past the configured TTL.
@@ -335,9 +425,23 @@ impl LocationStateStore {
         });
 
         if !properties.etag.is_empty() {
-            let mut last = self.last_synced_etag.lock().unwrap();
-            *last = properties.etag.clone();
+            let mut last_etag = self.last_synced_etag.lock().unwrap();
+            *last_etag = properties.etag.clone();
         }
+
+        // Update partition-level PPAF/PPCB flags from account properties.
+        let per_partition_automatic_failover_enabled =
+            properties.enable_per_partition_failover_behavior;
+
+        *self.last_synced_properties.lock().unwrap() = Some(properties);
+        self.apply_partition(|current| {
+            let mut next = current.clone();
+            next.per_partition_automatic_failover_enabled =
+                per_partition_automatic_failover_enabled;
+            next.per_partition_circuit_breaker_enabled = per_partition_automatic_failover_enabled
+                || current.config.circuit_breaker_option_enabled;
+            next
+        });
     }
 
     fn prune_expired_unavailable_endpoints(&self) {
@@ -355,6 +459,44 @@ impl LocationStateStore {
         }
 
         self.apply_account(|current| expire_unavailable_endpoints(current, now, ttl));
+    }
+
+    /// Starts the background failback loop that periodically sweeps expired
+    /// partition override entries.
+    ///
+    /// The loop holds a `Weak` reference to `self` so it self-terminates when
+    /// the store is dropped. The `BackgroundTaskManager` provides abort-on-drop
+    /// as an additional safety layer.
+    #[cfg(feature = "tokio")]
+    pub fn start_failback_loop(self: &Arc<Self>) {
+        let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
+        let config = self.snapshot().partitions.config.clone();
+        self.background_task_manager.spawn(async move {
+            failback_loop(weak_store, config).await;
+        });
+    }
+}
+
+/// Background failback loop that periodically sweeps expired partition overrides.
+///
+/// Exits when the `LocationStateStore` is dropped (`Weak::upgrade()` returns `None`).
+#[cfg(feature = "tokio")]
+async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverConfig) {
+    loop {
+        tokio::time::sleep(config.failback_sweep_interval).await;
+
+        let Some(store) = weak_store.upgrade() else {
+            // LocationStateStore was dropped — exit the loop.
+            break;
+        };
+
+        store.apply_partition(|current_partitions| {
+            expire_partition_overrides(
+                current_partitions,
+                Instant::now(),
+                config.partition_unavailability_duration,
+            )
+        });
     }
 }
 
@@ -418,6 +560,8 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
         );
 
         store
@@ -454,6 +598,8 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
         );
 
         store
@@ -484,10 +630,12 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
         );
 
-        let properties = test_refresh_payload();
-        store.sync_account_properties(&properties, &default_endpoint);
+        let properties = Arc::new(test_refresh_payload());
+        store.sync_account_properties(Arc::clone(&properties), &default_endpoint);
 
         let expired_endpoint = CosmosEndpoint::regional(
             "eastus".into(),
@@ -496,7 +644,7 @@ mod tests {
         store.apply_account(|current| {
             let mut next = current.clone();
             next.unavailable_endpoints.insert(
-                expired_endpoint.clone(),
+                expired_endpoint.url().clone(),
                 (
                     Instant::now() - Duration::from_secs(120),
                     UnavailableReason::TransportError,
@@ -505,9 +653,110 @@ mod tests {
             next
         });
 
-        store.sync_account_properties(&properties, &default_endpoint);
+        // Use a different Arc to force a re-sync (same data, different pointer).
+        let properties2 = Arc::new(test_refresh_payload());
+        store.sync_account_properties(properties2, &default_endpoint);
 
         let snapshot = store.snapshot();
         assert!(snapshot.account.unavailable_endpoints.is_empty());
+    }
+
+    #[test]
+    fn apply_partition_keeps_installed_pointer_live_until_store_drop() {
+        // Regression test for a use-after-free in `apply_partition`. Earlier
+        // versions called `defer_destroy(installed)` instead of
+        // `defer_destroy(replaced)` (because crossbeam_epoch's
+        // `compare_exchange` returns the *newly installed* pointer in `Ok`,
+        // not the replaced one). With that bug, the freshly installed
+        // `PartitionEndpointState` is reclaimed once the epoch advances even
+        // though it is still reachable through `self.partitions`.
+        //
+        // We detect this by stamping a `Weak` canary onto the new state via
+        // `apply_partition`'s closure. If the new state is incorrectly
+        // destroyed, the canary's only strong reference (held inside the
+        // destroyed state) drops and `weak.upgrade()` returns `None`. With the
+        // fix, the strong ref stays alive until the store itself is dropped.
+
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
+        );
+
+        let canary = Arc::new(());
+        let weak = Arc::downgrade(&canary);
+
+        // Move the canary into the closure. `apply_partition` may call the
+        // closure more than once under contention; in this single-threaded
+        // test there is no contention, but we still write it defensively so
+        // the closure is callable repeatedly.
+        let canary_for_closure = canary.clone();
+        store.apply_partition(move |current| {
+            let mut next = current.clone();
+            next.per_partition_automatic_failover_enabled =
+                !current.per_partition_automatic_failover_enabled;
+            next._test_canary = Some(canary_for_closure.clone());
+            next
+        });
+
+        // Drop our outer strong reference. The only remaining strong ref must
+        // now live inside the newly installed `PartitionEndpointState` held by
+        // `self.partitions`.
+        drop(canary);
+
+        // Force epoch advancement on multiple participants so any incorrectly
+        // deferred destroy would actually fire. Without this, the buggy free
+        // can be observed only at process exit.
+        let collector = epoch::default_collector();
+        let helper_a = collector.register();
+        let helper_b = collector.register();
+        for _ in 0..1024 {
+            let mut g = epoch::pin();
+            g.flush();
+            g.repin();
+            drop(g);
+
+            let mut ga = helper_a.pin();
+            ga.flush();
+            ga.repin();
+            drop(ga);
+
+            let mut gb = helper_b.pin();
+            gb.flush();
+            gb.repin();
+            drop(gb);
+
+            if weak.upgrade().is_none() {
+                break;
+            }
+        }
+
+        assert!(
+            weak.upgrade().is_some(),
+            "newly installed PartitionEndpointState was reclaimed by apply_partition \
+             while still reachable from self.partitions (use-after-free regression)"
+        );
+
+        // After dropping the store the canary must be released, confirming
+        // the install path eventually frees the state via the normal Drop
+        // path rather than leaking it.
+        drop(store);
+        assert!(
+            weak.upgrade().is_none(),
+            "PartitionEndpointState was leaked: not dropped after LocationStateStore drop"
+        );
     }
 }

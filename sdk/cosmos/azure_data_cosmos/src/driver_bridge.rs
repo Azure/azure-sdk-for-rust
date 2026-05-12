@@ -15,8 +15,9 @@ use azure_data_cosmos_driver::models::{CosmosResponse as DriverResponse, CosmosR
 
 use crate::{
     constants::{
-        ACTIVITY_ID, CONTINUATION, INDEX_METRICS, ITEM_COUNT, OFFER_REPLACE_PENDING, QUERY_METRICS,
-        REQUEST_CHARGE, REQUEST_DURATION_MS, SESSION_TOKEN, SUB_STATUS,
+        ACTIVITY_ID, CONTINUATION, COSMOS_INTERNAL_PARTITION_ID, INDEX_METRICS, ITEM_COUNT,
+        OFFER_REPLACE_PENDING, PARTITION_KEY_RANGE_ID, QUERY_METRICS, REQUEST_CHARGE,
+        REQUEST_DURATION_MS, SESSION_TOKEN, SUB_STATUS,
     },
     models::CosmosResponse,
 };
@@ -25,17 +26,26 @@ use crate::{
 ///
 /// This reconstructs an `azure_core::Response<T>` from the driver's raw bytes,
 /// status code, and headers, then wraps it in the SDK's response type.
+///
+/// The driver's pre-parsed [`CosmosResponseHeaders`] are passed directly to
+/// avoid double-parsing. Some headers (e.g., `index_metrics`) are base64-decoded
+/// by the driver; re-parsing from raw headers would fail on already-decoded values.
+/// The driver's [`DiagnosticsContext`](azure_data_cosmos_driver::diagnostics::DiagnosticsContext)
+/// is plumbed through unchanged so that all SDK response wrappers expose the
+/// rich per-operation diagnostics produced by the driver pipeline.
 pub(crate) fn driver_response_to_cosmos_response<T>(
     driver_response: DriverResponse,
 ) -> CosmosResponse<T> {
     let status_code: StatusCode = driver_response.status().status_code();
-    let headers = driver_response_headers_to_headers(driver_response.headers());
+    let cosmos_headers = driver_response.headers().clone();
+    let diagnostics = driver_response.diagnostics();
+    let headers = driver_response_headers_to_headers(&cosmos_headers);
     let body = driver_response.into_body();
 
     let raw_response = RawResponse::from_bytes(status_code, headers, Bytes::from(body));
     let typed_response: Response<T> = raw_response.into();
 
-    CosmosResponse::from_response(typed_response)
+    CosmosResponse::from_driver_response(typed_response, cosmos_headers, diagnostics)
 }
 
 /// Converts driver [`CosmosResponseHeaders`] into raw [`Headers`] for the SDK response.
@@ -77,6 +87,12 @@ fn driver_response_headers_to_headers(cosmos_headers: &CosmosResponseHeaders) ->
     }
     if let Some(pending) = cosmos_headers.offer_replace_pending {
         headers.insert(OFFER_REPLACE_PENDING, pending.to_string());
+    }
+    if let Some(pk_range_id) = &cosmos_headers.partition_key_range_id {
+        headers.insert(PARTITION_KEY_RANGE_ID, pk_range_id.clone());
+    }
+    if let Some(internal_id) = &cosmos_headers.internal_partition_id {
+        headers.insert(COSMOS_INTERNAL_PARTITION_ID, internal_id.clone());
     }
 
     headers
@@ -222,6 +238,8 @@ mod tests {
         h.item_count = Some(42);
         h.substatus = Some(SubStatusCode::new(0));
         h.offer_replace_pending = Some(true);
+        h.partition_key_range_id = Some("5".to_string());
+        h.internal_partition_id = Some("int-part-99".to_string());
         h
     }
 
@@ -246,6 +264,11 @@ mod tests {
             headers.get_optional_str(&OFFER_REPLACE_PENDING),
             Some("true")
         );
+        assert_eq!(headers.get_optional_str(&PARTITION_KEY_RANGE_ID), Some("5"));
+        assert_eq!(
+            headers.get_optional_str(&COSMOS_INTERNAL_PARTITION_ID),
+            Some("int-part-99")
+        );
     }
 
     #[test]
@@ -263,5 +286,71 @@ mod tests {
         assert_eq!(headers.get_optional_str(&ITEM_COUNT), None);
         assert_eq!(headers.get_optional_str(&SUB_STATUS), None);
         assert_eq!(headers.get_optional_str(&OFFER_REPLACE_PENDING), None);
+        assert_eq!(headers.get_optional_str(&PARTITION_KEY_RANGE_ID), None);
+        assert_eq!(
+            headers.get_optional_str(&COSMOS_INTERNAL_PARTITION_ID),
+            None
+        );
+    }
+
+    /// Regression test: index_metrics (base64-decoded by the driver) must survive
+    /// the driver→SDK bridge without double-decoding.
+    ///
+    /// Exercises `CosmosResponse::from_driver_response` which accepts pre-parsed
+    /// headers, ensuring that already-decoded index_metrics are preserved rather
+    /// than being base64-decoded a second time (which would silently return None).
+    #[test]
+    fn driver_response_preserves_index_metrics() {
+        use crate::feed::{FeedBody, QueryFeedPage};
+        use crate::models::CosmosResponse;
+        use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
+        use azure_data_cosmos_driver::models::ActivityId;
+        use std::sync::Arc;
+
+        let mut cosmos_headers = CosmosResponseHeaders::new();
+        cosmos_headers.index_metrics = Some(r#"{"UtilizedSingleIndexes":[]}"#.to_string());
+        cosmos_headers.query_metrics =
+            Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01".to_string());
+
+        // Build a minimal raw response with synthesized headers (as the bridge does).
+        let raw_headers = driver_response_headers_to_headers(&cosmos_headers);
+        let raw_response = azure_core::http::RawResponse::from_bytes(
+            StatusCode::Ok,
+            raw_headers,
+            Bytes::from_static(br#"{"Documents":[]}"#),
+        );
+        let typed_response: azure_core::http::response::Response<FeedBody<serde_json::Value>> =
+            raw_response.into();
+
+        // This is the code path used by driver_response_to_cosmos_response:
+        // pre-parsed headers are passed directly, skipping re-parsing.
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid()));
+        let cosmos_response =
+            CosmosResponse::from_driver_response(typed_response, cosmos_headers, diagnostics);
+
+        assert_eq!(
+            cosmos_response.cosmos_headers().index_metrics.as_deref(),
+            Some(r#"{"UtilizedSingleIndexes":[]}"#),
+            "index_metrics should survive the driver bridge without double base64-decoding"
+        );
+        assert_eq!(
+            cosmos_response.cosmos_headers().query_metrics.as_deref(),
+            Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01"),
+        );
+
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let page = rt
+            .block_on(QueryFeedPage::<serde_json::Value>::from_response(
+                cosmos_response,
+            ))
+            .unwrap();
+        assert_eq!(
+            page.index_metrics(),
+            Some(r#"{"UtilizedSingleIndexes":[]}"#)
+        );
+        assert_eq!(
+            page.query_metrics(),
+            Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
+        );
     }
 }

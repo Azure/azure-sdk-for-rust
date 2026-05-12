@@ -8,6 +8,7 @@
     "**/test-resources-post.ps1",
     "**/assets.json",
     "**/*.pfx",
+    ".cargo/",
     ".config",
     ".devcontainer/devcontainer.json",
     ".devcontainer/Dockerfile",
@@ -23,6 +24,7 @@
     "aarch",
     "accountendpoint",
     "accountkey",
+    "agentic",
     "amqp",
     "asyncoperation",
     "azsdk",
@@ -106,7 +108,9 @@
     "windowspool",
     "windowsvmimage",
     "webpki",
-    "worktree"
+    "worktree",
+    "decorrelates",
+    "finalizer"
   ],
   "dictionaryDefinitions": [
     {

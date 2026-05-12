@@ -1,14 +1,35 @@
 # Release History
 
-## 0.2.0 (Unreleased)
+## 0.3.0 (Unreleased)
 
 ### Features Added
 
+- Added per-partition automatic failover (PPAF) for writes on single-master accounts. On 403/3 WriteForbidden, 503 ServiceUnavailable, 429/3092 SystemResourceUnavailable, 410/1022 Gone, or 408 RequestTimeout from a region, the affected partition is failed over to the next preferred region; subsequent writes for that partition skip the failed region. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
+- Added per-partition circuit breaker (PPCB) for reads (any account) and writes (multi-master accounts). Tracks failure counts per `(partition_key_range_id, region)` and routes to an alternate region once the threshold (default 10 reads, 5 writes) is exceeded. A background failback loop probes the original region for recovery. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
+- Added `OperationOptions` fields for tuning PPCB: `circuit_breaker_failure_count_for_reads`, `circuit_breaker_failure_count_for_writes`, `circuit_breaker_timeout_counter_reset_window_in_minutes`, `allowed_partition_unavailability_duration_in_seconds`, `ppcb_stale_partition_unavailability_refresh_interval_in_seconds`, and `per_partition_circuit_breaker_enabled` (each also configurable via the corresponding `AZURE_COSMOS_*` environment variable). ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
+
 ### Breaking Changes
+
+- Changed `CosmosResponse::diagnostics()` to return `Arc<DiagnosticsContext>` instead of `&DiagnosticsContext`. The returned `Arc` derefs transparently for read-only inspection (existing call patterns like `response.diagnostics().activity_id()` continue to work), but bindings of the form `let d = response.diagnostics();` now own a cloned `Arc` handle rather than a borrow — letting callers retain operation diagnostics across `into_body()`. Replaces the additive `CosmosResponse::diagnostics_arc()` accessor introduced earlier in this preview cycle.
 
 ### Bugs Fixed
 
+- PPCB now records every 5xx failure for the affected partition, including the final failure that exhausts the failover retry budget. Previously the budget-exhausted abort path skipped emitting `MarkPartitionUnavailable`, causing the most diagnostic failure to be silently dropped from PPCB's per-partition counter. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
+
 ### Other Changes
+
+- The PPCB failback sweep now applies a per-entry random jitter (uniform in `[0, partition_unavailability_duration / 2)`) before transitioning an `Unhealthy` entry to `ProbeCandidate`. This spreads the failback of partitions that failed in the same burst across the failback window, mitigating a thundering-herd effect on the recovering region. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
+- The `reqwest` feature now also enables the crate's `tokio` feature, ensuring the partition failback background loop is compiled in when using the reqwest transport. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
+
+## 0.2.0 (2026-04-24)
+
+### Features Added
+
+- Added `item_lsn` field to `CosmosResponseHeaders` for the `x-ms-item-lsn` response header.
+- Added `partition_key_range_id` and `internal_partition_id` fields to `CosmosResponseHeaders` for the `x-ms-documentdb-partitionkeyrangeid` and `x-ms-cosmos-internal-partition-id` response headers. ([#4278](https://github.com/Azure/azure-sdk-for-rust/pull/4278))
+- Added `rustls` feature flag (enabled by default) that configures reqwest with rustls as the TLS stack. ([#4252](https://github.com/Azure/azure-sdk-for-rust/pull/4252))
+- Added `native_tls` feature flag that configures reqwest with native-tls as the TLS stack. Disable default features and enable `native_tls` to use the platform TLS stack. ([#4252](https://github.com/Azure/azure-sdk-for-rust/pull/4252))
+- Added `SessionToken::merge()` for merging two session tokens by partition key range ID. ([#4214](https://github.com/Azure/azure-sdk-for-rust/pull/4214))
 
 ## 0.1.0 (2026-04-09)
 

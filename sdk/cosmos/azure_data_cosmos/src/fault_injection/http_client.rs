@@ -1,16 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore evals
+
 use super::result::FaultInjectionResult;
 use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
 use super::FaultOperationType;
-use crate::constants::{self, SubStatusCode};
+use crate::constants;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
 use azure_core::http::{
     headers::Headers, AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode,
 };
+use azure_data_cosmos_driver::models::SubStatusCode;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -198,7 +201,10 @@ impl FaultClient {
 
         let raw_response = sub_status.map(|ss| {
             let mut headers = Headers::new();
-            headers.insert(constants::SUB_STATUS, ss.to_string());
+            // The driver's `SubStatusCode::Display` formats as
+            // `"NAME (NUMBER)"` for known sub-statuses; the wire format
+            // requires only the numeric value, so write `value()` directly.
+            headers.insert(constants::SUB_STATUS, ss.value().to_string());
             Box::new(RawResponse::from_bytes(status_code, headers, vec![]))
         });
 
@@ -297,7 +303,8 @@ impl HttpClient for FaultClient {
 #[cfg(test)]
 mod tests {
     use super::FaultClient;
-    use crate::constants::{SubStatusCode, SUB_STATUS};
+    use super::SubStatusCode;
+    use crate::constants::SUB_STATUS;
     use crate::fault_injection::{
         CustomResponse, FaultInjectionConditionBuilder, FaultInjectionErrorType,
         FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,

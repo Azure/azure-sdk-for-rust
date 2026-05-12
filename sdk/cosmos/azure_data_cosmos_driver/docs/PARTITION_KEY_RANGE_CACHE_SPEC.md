@@ -59,34 +59,17 @@ owns that key. The `PartitionKeyRangeCache` provides this resolution layer.
 
 ## 2. Architectural Overview
 
-```text
-+---------------------------------------------------------------------+
-|                       Caller (Operation Pipeline)                   |
-|                                                                     |
-|  resolve_partition_key_range_id(container, pk, fetch_fn)            |
-+---------------------------+-----------------------------------------+
-                            |
-                            v
-+--------------------------------------------------------------------------------+
-|                    PartitionKeyRangeCache                                      |
-|                                                                                |
-|  1. Guard: pk.is_empty() -> None (cross-partition)                             |
-|  2. Compute EPK from pk values + container's PK definition                     |
-|  3. Lookup routing map from AsyncCache<ContainerReference,ContainerRoutingMap> |
-|     +-- Cache hit  -> use existing routing map                                 |
-|     +-- Cache miss -> invoke fetch_pk_ranges(container)                        |
-|  4. Binary search the routing map for the EPK                                  |
-|     +-- O(log n) where n = number of partition key ranges                      |
-|  5. Return range ID (or None)                                                  |
-+--------------------------------------------------------------------------------+
-                            |
-             +--------------+--------------+
-             v              v              v
-  +--------------+  +------------+  +--------------------+
-  | EPK Engine   |  | AsyncCache |  | ContainerRouting   |
-  | (murmur hash |  | (per-key   |  | Map (sorted ranges |
-  |  V1 / V2)    |  |  lazy I/O) |  |  + binary search)  |
-  +--------------+  +------------+  +--------------------+
+```mermaid
+flowchart TD
+    Caller["<b>Caller (Operation Pipeline)</b><br/>resolve_partition_key_range_id(container, pk, fetch_fn)"]
+    Cache["<b>PartitionKeyRangeCache</b><br/>1. Guard: pk.is_empty() → None (cross-partition)<br/>2. Compute EPK from pk values + container's PK definition<br/>3. Lookup routing map from AsyncCache&lt;ContainerReference, ContainerRoutingMap&gt;<br/>&nbsp;&nbsp;&nbsp;• Cache hit → use existing routing map<br/>&nbsp;&nbsp;&nbsp;• Cache miss → invoke fetch_pk_ranges(container)<br/>4. Binary search the routing map for the EPK<br/>&nbsp;&nbsp;&nbsp;• O(log n) where n = number of partition key ranges<br/>5. Return range ID (or None)"]
+    EPK["EPK Engine<br/>(murmur hash V1 / V2)"]
+    AC["AsyncCache<br/>(per-key lazy I/O)"]
+    RM["ContainerRoutingMap<br/>(sorted ranges + binary search)"]
+    Caller --> Cache
+    Cache --> EPK
+    Cache --> AC
+    Cache --> RM
 ```
 
 ### Layer Separation
@@ -169,32 +152,22 @@ without a live endpoint.
 
 #### `resolve_partition_key_range_id` — Detailed Flow
 
-```text
-resolve_partition_key_range_id(container, pk, force_refresh, fetch_fn)
-│
-├── pk.is_empty()?  ──yes──▶ return None  (cross-partition request)
-│
-├── Extract PK definition from container reference
-│   └── kind (Hash), version (V1/V2)
-│
-├── EffectivePartitionKey::compute(pk_values, kind, version)  ──▶ epk
-│
-├── try_lookup(container, force_refresh, fetch_fn)
-│   │
-│   ├── force_refresh = false:
-│   │   └── AsyncCache::get_or_insert_with(rid, || fetch_and_build(rid, None, fetch_fn))
-│   │       ├── Cache hit  → Arc<ContainerRoutingMap>
-│   │       └── Cache miss → change-feed loop → build routing map → cache it
-│   │
-│   └── force_refresh = true:
-│       ├── Read previous map's change_feed_next_if_none_match (ETag)
-│       └── AsyncCache::get_or_refresh_with(rid, should_refresh, || fetch_and_build(rid, previous, fetch_fn))
-│           ├── should_refresh compares ETag: skip if another request already refreshed
-│           └── change-feed loop with previous continuation → try_combine or rebuild
-│
-└── routing_map.get_range_by_effective_partition_key(&epk)
-    └── Some(range) → range.id.clone()
-    └── None        → None
+```mermaid
+flowchart TD
+    Start["resolve_partition_key_range_id(container, pk, force_refresh, fetch_fn)"]
+    Empty{"pk.is_empty()?"}
+    Cross["return None (cross-partition request)"]
+    Extract["Extract PK definition from container reference<br/>kind (Hash), version (V1 / V2)"]
+    Compute["EffectivePartitionKey::compute(pk_values, kind, version) → epk"]
+    Lookup["try_lookup(container, force_refresh, fetch_fn)"]
+    NoRefresh["<b>force_refresh = false</b><br/>AsyncCache::get_or_insert_with(rid, || fetch_and_build(rid, None, fetch_fn))<br/>• Cache hit → Arc&lt;ContainerRoutingMap&gt;<br/>• Cache miss → change-feed loop → build routing map → cache it"]
+    Refresh["<b>force_refresh = true</b><br/>Read previous map's change_feed_next_if_none_match (ETag)<br/>AsyncCache::get_or_refresh_with(rid, should_refresh, || fetch_and_build(rid, previous, fetch_fn))<br/>• should_refresh compares ETag: skip if another request already refreshed<br/>• change-feed loop with previous continuation → try_combine or rebuild"]
+    Final["routing_map.get_range_by_effective_partition_key(&amp;epk)<br/>• Some(range) → range.id.clone()<br/>• None → None"]
+    Start --> Empty
+    Empty -- yes --> Cross
+    Empty -- no --> Extract --> Compute --> Lookup
+    Lookup --> NoRefresh --> Final
+    Lookup --> Refresh --> Final
 ```
 
 ### 3.3 `parse_pk_ranges_response`
@@ -239,12 +212,15 @@ boundaries.
 
 ### Dispatch Logic
 
-```text
-pk_values empty?          → MIN_INCLUSIVE ("")
-pk_values = [Infinity]?   → MAX_EXCLUSIVE ("FF")
-kind = Hash, version = V1 → effective_partition_key_hash_v1
-kind = Hash, version = V2 → effective_partition_key_hash_v2
-kind = other (legacy)     → fall through to V2
+```mermaid
+flowchart TD
+    Q1{"pk_values empty?"} -- yes --> R1["MIN_INCLUSIVE ('')"]
+    Q1 -- no --> Q2{"pk_values = [Infinity]?"}
+    Q2 -- yes --> R2["MAX_EXCLUSIVE ('FF')"]
+    Q2 -- no --> Q3{"kind?"}
+    Q3 -- "Hash, version = V1" --> R3["effective_partition_key_hash_v1"]
+    Q3 -- "Hash, version = V2" --> R4["effective_partition_key_hash_v2"]
+    Q3 -- "other (legacy)" --> R4
 ```
 
 ### Constants
@@ -292,28 +268,19 @@ pub(crate) enum RoutingMapError {
 }
 ```
 
-```text
-try_create(ranges, etag, continuation) → Result<Option<Self>, RoutingMapError>
-│
-├── ranges.is_empty()?  → Ok(None)
-│
-├── Collect "gone" parent IDs
-│   └── Union of all `parents` arrays across ranges
-│
-├── Filter out ranges whose ID is in the gone set
-│
-├── Sort remaining ranges by min_inclusive (lexicographic)
-│
-├── validate_and_build_index(sorted_ranges):
-│   ├── First range starts at ""   (MIN_EPK)
-│   ├── Last range ends at "FF"    (MAX_EPK)
-│   ├── Each range[i].max_exclusive == range[i+1].min_inclusive
-│   ├── Gap detected       → Err(IncompleteRanges)
-│   ├── Overlap detected   → Err(OverlappingRanges)
-│   ├── Build HashMap<id, range>
-│   └── Compute highest_non_offline_pk_range_id from non-Offline ranges
-│
-└── Build HashSet<gone> + return Ok(Some(Self))
+```mermaid
+flowchart TD
+    Start["try_create(ranges, etag, continuation) → Result&lt;Option&lt;Self&gt;, RoutingMapError&gt;"]
+    Empty{"ranges.is_empty()?"}
+    None["Ok(None)"]
+    Gone["Collect 'gone' parent IDs<br/>(union of all `parents` arrays across ranges)"]
+    Filter["Filter out ranges whose ID is in the gone set"]
+    Sort["Sort remaining ranges by min_inclusive (lexicographic)"]
+    Validate["validate_and_build_index(sorted_ranges):<br/>• First range starts at '' (MIN_EPK)<br/>• Last range ends at 'FF' (MAX_EPK)<br/>• Each range[i].max_exclusive == range[i+1].min_inclusive<br/>• Gap detected → Err(IncompleteRanges)<br/>• Overlap detected → Err(OverlappingRanges)<br/>• Build HashMap&lt;id, range&gt;<br/>• Compute highest_non_offline_pk_range_id from non-Offline ranges"]
+    Done["Build HashSet&lt;gone&gt; + return Ok(Some(Self))"]
+    Start --> Empty
+    Empty -- yes --> None
+    Empty -- no --> Gone --> Filter --> Sort --> Validate --> Done
 ```
 
 **Key behaviors:**
@@ -332,19 +299,20 @@ try_create(ranges, etag, continuation) → Result<Option<Self>, RoutingMapError>
 
 Uses binary search on the sorted `ordered_ranges` vector:
 
-```text
-get_range_by_effective_partition_key(epk)
-│
-├── ordered_ranges empty? → None
-│
-├── epk == ""? → ordered_ranges[0]  (special case: minimum always in first range)
-│
-├── find_range_index(epk)  (shared binary search helper)
-│   ├── Ok(i)         → exact match at index i
-│   └── Err(i), i > 0 → EPK falls in range at index i-1
-│   └── Err(0)        → unreachable (constructor guarantees full coverage)
-│
-└── range.min_inclusive <= epk < range.max_exclusive? → Some(range) / None
+```mermaid
+flowchart TD
+    Start["get_range_by_effective_partition_key(epk)"]
+    Empty{"ordered_ranges empty?"}
+    None["None"]
+    Min{"epk == ''?"}
+    First["ordered_ranges[0]<br/>(special case: minimum always in first range)"]
+    Search["find_range_index(epk) (shared binary search helper)<br/>• Ok(i) → exact match at index i<br/>• Err(i), i &gt; 0 → EPK falls in range at index i-1<br/>• Err(0) → unreachable (constructor guarantees full coverage)"]
+    Bounds["range.min_inclusive ≤ epk &lt; range.max_exclusive?<br/>→ Some(range) / None"]
+    Start --> Empty
+    Empty -- yes --> None
+    Empty -- no --> Min
+    Min -- yes --> First
+    Min -- no --> Search --> Bounds
 ```
 
 The final bounds check uses direct `&str` comparisons (`min_inclusive <= epk` and
@@ -390,20 +358,22 @@ On the first request for a container:
 5. Concurrent requests for the same container that arrive while the fetch is
    in-flight share the same pending future (single-pending-I/O).
 
-```text
-fetch_and_build_routing_map(container, previous=None, fetch_fn)
-│
-├── continuation = None
-├── loop (bounded by MAX_FETCH_ITERATIONS = 10):
-│   ├── trace!(iteration, has_continuation)
-│   ├── result = fetch_fn(container, continuation)?
-│   ├── continuation = result.continuation
-│   ├── result.not_modified? → trace! + break
-│   └── trace!(range_count) + all_ranges.extend(result.ranges)
-│
-├── debug!(iterations, total_ranges, not_modified)
-│
-└── ContainerRoutingMap::try_create(all_ranges, None, continuation) → map
+```mermaid
+flowchart TD
+    Start["fetch_and_build_routing_map(container, previous=None, fetch_fn)"]
+    Init["continuation = None"]
+    Trace1["trace!(iteration, has_continuation)"]
+    Fetch["result = fetch_fn(container, continuation)?"]
+    Update["continuation = result.continuation"]
+    NM{"result.not_modified?"}
+    Break["trace! + break"]
+    Extend["trace!(range_count) + all_ranges.extend(result.ranges)"]
+    Done["debug!(iterations, total_ranges, not_modified)<br/>ContainerRoutingMap::try_create(all_ranges, None, continuation) → map"]
+    Start --> Init --> Trace1
+    Trace1 --> Fetch --> Update --> NM
+    NM -- yes --> Break --> Done
+    NM -- no --> Extend --> Trace1
+    Extend -. "loop bounded by<br/>MAX_FETCH_ITERATIONS = 10" .-> Trace1
 ```
 
 Note: `fetch_and_build_routing_map` is a bare free function (not an associated
@@ -434,27 +404,19 @@ When `force_refresh=true` (e.g., after a 410/1002 Gone response):
    - The merged set is validated for completeness.
    - If incomplete (gaps), the previous map is preserved as fallback.
 
-```text
-try_lookup(rid, force_refresh=true, fetch_fn)
-│
-├── previous = cache.get(container)  → existing Arc<ContainerRoutingMap>
-├── prev_continuation = previous.change_feed_next_if_none_match
-│
-├── cache.get_or_refresh_with(container, should_refresh, || fetch_and_build(container, previous, fetch_fn))
-│   │
-│   ├── should_refresh: cached.continuation == prev_continuation
-│   │   ├── true  → run factory (change feed loop with incremental merge)
-│   │   └── false → return cached value (already refreshed by another request)
-│   │
-│   └── fetch_and_build_routing_map(container, previous, fetch_fn)
-│       ├── continuation = previous.change_feed_next_if_none_match
-│       ├── loop: fetch_fn(container, continuation) until 304
-│       │   ├── not_modified on first iteration → return (*previous).clone()
-│       │   └── ranges received → accumulate
-│       └── previous.try_combine(ranges, continuation)
-│           ├── Ok(Some(merged)) → merged map
-│           ├── Ok(None)         → previous map (incomplete merge)
-│           └── Err(_)           → previous map (overlap error)
+```mermaid
+flowchart TD
+    Start["try_lookup(rid, force_refresh=true, fetch_fn)"]
+    Prev["previous = cache.get(container) → existing Arc&lt;ContainerRoutingMap&gt;<br/>prev_continuation = previous.change_feed_next_if_none_match"]
+    Refresh["cache.get_or_refresh_with(container, should_refresh,<br/>|| fetch_and_build(container, previous, fetch_fn))"]
+    SR{"should_refresh:<br/>cached.continuation == prev_continuation?"}
+    Run["run factory (change feed loop with incremental merge)"]
+    Cached["return cached value (already refreshed by another request)"]
+    Build["fetch_and_build_routing_map(container, previous, fetch_fn)<br/>• continuation = previous.change_feed_next_if_none_match<br/>• loop: fetch_fn(container, continuation) until 304<br/>&nbsp;&nbsp;– not_modified on first iteration → return (*previous).clone()<br/>&nbsp;&nbsp;– ranges received → accumulate"]
+    Combine["previous.try_combine(ranges, continuation)<br/>• Ok(Some(merged)) → merged map<br/>• Ok(None) → previous map (incomplete merge)<br/>• Err(_) → previous map (overlap error)"]
+    Start --> Prev --> Refresh --> SR
+    SR -- true --> Run --> Build --> Combine
+    SR -- false --> Cached
 ```
 
 ### 6.5 Invalidation (Partition Splits)
@@ -466,18 +428,20 @@ When the driver receives a **410/1002 Gone — PartitionKeyRangeGone** response:
 3. The next `resolve_partition_key_range_id` call triggers a fresh `/pkranges` fetch
    (full change feed loop, no incremental merge since there's no previous map).
 
-```text
-Time ──────────────────────────────────────────────────────────────►
-
- [Request A] ── resolve ── cache miss ── change feed loop ── cache populated
- [Request B] ── resolve ── cache hit  ── binary search ── done
- [Request C] ── resolve ── cache hit  ── binary search ── done
-                             ... partition split occurs ...
- [Request D] ── 410/1002 ── resolve(force_refresh=true) ── incremental merge ── done
- [Request E] ── resolve ── cache hit (merged map) ── binary search ── done
-                             ... if incremental merge fails ...
- [Request F] ── 410/1002 ── invalidate(rid) ── cache cleared
- [Request G] ── resolve ── cache miss ── full change feed loop ── new map cached
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Cache as PartitionKeyRangeCache
+    Note over Cache: Time →
+    Note over Cache: Request A — resolve → cache miss → change feed loop → cache populated
+    Note over Cache: Request B — resolve → cache hit → binary search → done
+    Note over Cache: Request C — resolve → cache hit → binary search → done
+    Note over Cache: ... partition split occurs ...
+    Note over Cache: Request D — 410/1002 → resolve(force_refresh=true) → incremental merge → done
+    Note over Cache: Request E — resolve → cache hit (merged map) → binary search → done
+    Note over Cache: ... if incremental merge fails ...
+    Note over Cache: Request F — 410/1002 → invalidate(rid) → cache cleared
+    Note over Cache: Request G — resolve → cache miss → full change feed loop → new map cached
 ```
 
 ### 6.6 Fallback on Fetch Failure

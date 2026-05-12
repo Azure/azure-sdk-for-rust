@@ -108,7 +108,7 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
     let container = cosmos_client.database_client("myDatabase").container_client("myContainer").await?;
 
     // Create an item
-    container.create_item("partition1", item, None).await?;
+    container.create_item("partition1", "1", item, None).await?;
 
     // Read an item
     let item_response = container.read_item("partition1", "1", None).await?;
@@ -135,6 +135,12 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 ### Provide feedback
 
 If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).
+
+## Developer notes
+
+This crate exposes feature flags prefixed with `__internal_` (currently `__internal_in_memory_emulator`). These are intended **only** for in-repo testing, are not part of the public API, are not subject to semver, and may change or be removed without notice. Do not enable them on builds shipped to crates.io or to other consumers.
+
+Note: enabling `__internal_in_memory_emulator` also implicitly enables the `key_auth` feature (the in-memory emulator authenticates with master keys), which will appear in your dependency graph (`cargo tree`) when the emulator feature is on.
 
 ## Contributing
 

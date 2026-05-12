@@ -13,7 +13,8 @@ use azure_data_cosmos::fault_injection::{
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::{ExcludedRegions, ItemReadOptions, OperationOptions};
 use framework::{
-    get_effective_hub_endpoint, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
+    assert_local_retry_attempted_on_region, assert_region_contacted_with_retry, TestClient,
+    TestOptions, HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -80,7 +81,9 @@ async fn verify_read_fails_with_injected_error(
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -231,7 +234,9 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
             let item_id = format!("Item1-{}", unique_id);
 
             // Create the item using the normal client (this should succeed)
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -253,10 +258,6 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
 
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
-            // request_url() returns None for driver-routed operations.
-            if let Some(url) = response.request_url() {
-                assert_eq!(url.host_str().unwrap(), get_effective_hub_endpoint());
-            }
 
             Ok(())
         },
@@ -314,7 +315,9 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -328,14 +331,10 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
                 .await;
 
             let response = result.unwrap();
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                println!("Request succeeded via failover, final URL: {}", request_url);
-                // Verify the request went to a different endpoint than the faulted one
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to secondary region"
-                );
-            }
+            // After 503 on hub, the driver fails over; recovery may either
+            // land on satellite or retry back on hub. Assert satellite was
+            // contacted at least once, proving the failover path was hit.
+            assert_region_contacted_with_retry(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -348,13 +347,19 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
     .await
 }
 
-/// Test write region retries - inject 503 for primary region, verify cross region retries.
+/// Test that a transport-generated 503 on a non-idempotent write aborts (not retried).
+///
+/// Fault injection simulates transport-level failures (e.g. connection drops) which
+/// produce a synthetic 503/20003 (`TransportGenerated503`). These are distinct from
+/// HTTP-level 503s returned by the service: transport errors on non-idempotent writes
+/// are NOT retried because we cannot know whether the server processed the request.
+/// HTTP-level 503s ARE retried for all operations (see retry_evaluation.rs Block 2).
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
-pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Error>> {
+pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
         .build();
@@ -364,7 +369,7 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
         .with_region(HUB_REGION)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("write-region-503", server_error)
+    let rule = FaultInjectionRuleBuilder::new("write-region-transport-503", server_error)
         .with_condition(condition)
         .with_hit_limit(1)
         .build();
@@ -399,24 +404,18 @@ pub async fn fault_injection_write_region_retry_503() -> Result<(), Box<dyn Erro
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
-            // Try to create using fault client - should  succeed via retry
-            let result = fault_container_client.upsert_item(&pk, &item, None).await;
+            // Transport-generated 503 on a non-idempotent write (upsert) should NOT
+            // be retried — the driver cannot know if the server processed the request.
+            let result = fault_container_client
+                .upsert_item(&pk, &item_id, &item, None)
+                .await;
 
             assert!(
-                result.is_ok(),
-                "Write should succeed via retry, but got error: {:?}",
-                result.err()
+                result.is_err(),
+                "Transport-generated 503 on non-idempotent write should abort, not retry"
             );
-
-            let response = result.unwrap();
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                // Verify the request went to a different endpoint than the faulted one
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to secondary region"
-                );
-            }
 
             Ok(())
         },
@@ -479,7 +478,9 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -505,14 +506,10 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
                 .await;
 
             let response = result.unwrap();
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                println!("Request succeeded via failover, final URL: {}", request_url);
-                // Verify the request was retried on the hub region
-                assert!(
-                    request_url.contains(HUB_REGION.as_str()),
-                    "request should have failed over to hub region"
-                );
-            }
+            // After 404:1002 on satellite, the driver fails over; recovery
+            // may either land on hub or retry back on satellite. Assert hub
+            // was contacted at least once, proving the failover path was hit.
+            assert_region_contacted_with_retry(&response.diagnostics(), &HUB_REGION);
 
             Ok(())
         },
@@ -578,18 +575,18 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
-            let response = fault_container_client
-                .create_item(&pk, &item, None)
+            let _response = fault_container_client
+                .create_item(&pk, &item_id, &item, None)
                 .await
-                .expect("write should succeed via failover to satellite");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to satellite region, got: {request_url}"
-                );
-            }
+                .expect("write should succeed after connection-error failover");
+            // After local retries exhaust on hub, the driver fails over to
+            // the satellite. Recovery may either land on satellite or retry
+            // back on hub once the transient fault clears — both are valid.
+            // We assert the satellite was contacted at least once, proving
+            // the failover path was exercised.
+            assert_region_contacted_with_retry(&_response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -651,7 +648,9 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
             let item_id = format!("Item-{}", unique_id);
 
             // Create item with the normal client
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -667,17 +666,14 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;
 
-            let response = run_context
+            let _response = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
                 .expect("read should succeed via failover to satellite");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to satellite region, got: {request_url}"
-                );
-            }
+            // After connection error on hub, the driver fails over; recovery
+            // may either land on satellite or retry back on hub. Assert
+            // satellite was contacted at least once.
+            assert_region_contacted_with_retry(&_response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -742,8 +738,11 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
-            let result = fault_container_client.create_item(&pk, &item, None).await;
+            let result = fault_container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await;
 
             assert!(
                 result.is_err(),
@@ -761,8 +760,12 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
     .await
 }
 
-/// Test that reads ARE retried on response timeout and fail over to satellite.
-/// ResponseTimeout has Unknown sent-status — reads are safe to retry.
+/// Test that reads ARE retried on response timeout. ResponseTimeout has
+/// Unknown sent-status — reads are safe to retry. With `hit_limit(1)` the
+/// fault fires once on hub and the driver recovers on retry; the recovery
+/// may stay on hub (local retry) or fail over to the satellite — both
+/// outcomes are valid. We only assert (a) the operation succeeded and
+/// (b) more than one request was tracked, proving retry actually occurred.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
@@ -810,7 +813,9 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -826,17 +831,20 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
                 .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
                 .await;
 
-            let response = run_context
+            let _response = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
-                .expect("read should succeed via failover after response timeout on hub");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "request should have failed over to satellite region, got: {request_url}"
-                );
-            }
+                .expect("read should succeed via retry after response timeout on hub");
+            // The driver may either retry locally on hub or fail over to the
+            // satellite — both are valid for this scenario. We only assert
+            // that the response-timeout fault was exercised on hub and that
+            // some form of retry occurred.
+            assert_local_retry_attempted_on_region(&_response.diagnostics(), &HUB_REGION);
+            assert!(
+                _response.diagnostics().request_count() > 1,
+                "expected retry after response timeout on hub, got only {} request(s)",
+                _response.diagnostics().request_count()
+            );
 
             Ok(())
         },
@@ -901,18 +909,16 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
-            let response = fault_container_client
-                .create_item(&pk, &item, None)
+            let _response = fault_container_client
+                .create_item(&pk, &item_id, &item, None)
                 .await
                 .expect("write should succeed via reverse failover to hub");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                assert!(
-                    request_url.contains(HUB_REGION.as_str()),
-                    "request should have failed over to hub region, got: {request_url}"
-                );
-            }
+            // After fault on satellite, the driver fails over; recovery may
+            // either land on hub or retry back on satellite. Assert hub was
+            // contacted at least once, proving the reverse failover path was hit.
+            assert_region_contacted_with_retry(&_response.diagnostics(), &HUB_REGION);
 
             Ok(())
         },
@@ -925,9 +931,12 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
     .await
 }
 
-/// Test that a transient connection error clears before failover is needed.
-/// With hit_limit(2), the fault fires twice then stops. Since MAX_RETRY_COUNT is 3,
-/// the third local retry succeeds on the same hub endpoint — no failover occurs.
+/// Test that a transient connection error on the hub is exercised by local
+/// retry. With `hit_limit(2)` the fault fires twice then stops, after which
+/// the operation must succeed — either via a third local retry on the hub
+/// or via cross-region failover to the satellite. Either outcome is valid;
+/// we only verify that the connection-error path was actually hit on the
+/// hub region before recovery.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
@@ -974,7 +983,9 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -982,18 +993,16 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
-            let response = run_context
+            let _response = run_context
                 .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
                 .await
-                .expect("read should succeed on hub after transient fault clears");
-
-            if let Some(request_url) = response.request_url().map(|u| u.to_string()) {
-                // The fault cleared before MAX_RETRY_COUNT, so no failover — still on hub.
-                assert!(
-                    request_url.contains(HUB_REGION.as_str()),
-                    "request should have succeeded on hub without failover, got: {request_url}"
-                );
-            }
+                .expect("read should succeed after transient fault clears");
+            // The driver may exhaust local retries on hub and then fail over to
+            // the satellite, or the local retry may succeed before failover —
+            // both are valid outcomes. We only assert the local-retry path was
+            // exercised: at least one tracked request must have hit the hub
+            // (proving the connection-error fault was triggered there).
+            assert_local_retry_attempted_on_region(&_response.diagnostics(), &HUB_REGION);
 
             Ok(())
         },

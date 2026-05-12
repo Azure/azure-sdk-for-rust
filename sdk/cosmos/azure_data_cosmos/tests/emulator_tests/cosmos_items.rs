@@ -40,7 +40,7 @@ struct TestItem {
 fn assert_response<T>(
     response: &ItemResponse<T>,
     expected_status: StatusCode,
-    expected_endpoint: &str,
+    _expected_endpoint: &str,
     read_operation: bool,
 ) {
     assert_eq!(response.status(), expected_status, "unexpected status code");
@@ -63,34 +63,45 @@ fn assert_response<T>(
         );
     }
 
-    // request_url() returns None for driver-routed operations (e.g., read_item).
-    // Only assert the endpoint when the URL is available.
-    if let Some(url) = response.request_url() {
-        assert_eq!(
-            url.host_str().unwrap(),
-            expected_endpoint,
-            "unexpected endpoint"
-        );
-    }
     assert!(
         response.session_token().is_some(),
         "expected session token to be present"
     );
+    let diagnostics = response.diagnostics();
     assert!(
-        response.diagnostics().activity_id().is_some(),
-        "expected activity ID to be present"
-    );
-    assert!(
-        !response.diagnostics().activity_id().unwrap().is_empty(),
+        !diagnostics.activity_id().as_str().is_empty(),
         "expected activity ID to be non-empty"
     );
-    // Server duration is returned by the Cosmos DB service on all operations
+    // The driver tracks at least one request per operation and finalizes its
+    // status on completion. Validate the richer DiagnosticsContext fields.
     assert!(
-        response.diagnostics().server_duration_ms().is_some(),
-        "expected server_duration_ms to be present"
+        diagnostics.request_count() >= 1,
+        "expected at least one request to be tracked"
+    );
+    let op_status = diagnostics
+        .status()
+        .expect("operation status should be set on completed diagnostics");
+    assert_eq!(
+        op_status.status_code(),
+        expected_status,
+        "operation-level diagnostics status should match HTTP response status"
     );
     assert!(
-        response.diagnostics().server_duration_ms().unwrap() >= 0.0,
+        f64::from(diagnostics.total_request_charge()) > 0.0,
+        "expected positive total request charge in diagnostics"
+    );
+    // Server duration is returned by the Cosmos DB service on all operations
+    let requests = diagnostics.requests();
+    let server_duration = requests
+        .iter()
+        .filter_map(|r| r.server_duration_ms())
+        .next();
+    assert!(
+        server_duration.is_some(),
+        "expected at least one tracked request to report server_duration_ms"
+    );
+    assert!(
+        server_duration.unwrap() >= 0.0,
         "expected server_duration_ms to be non-negative"
     );
 }
@@ -135,7 +146,9 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition@1-{}", unique_id);
             let item_id = format!("Item@1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -257,7 +270,9 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let create_response = container_client.create_item(&pk, &item, None).await?;
+            let create_response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &create_response,
                 StatusCode::Created,
@@ -316,7 +331,9 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let upsert_response = container_client.upsert_item(&pk, &item, None).await?;
+            let upsert_response = container_client
+                .upsert_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &upsert_response,
                 StatusCode::Created,
@@ -365,8 +382,11 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
             };
 
             let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
 
-            let create_response = container_client.create_item(&pk, &item, None).await?;
+            let create_response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &create_response,
                 StatusCode::Created,
@@ -378,7 +398,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
             item.nested.nested_value = "Updated".into();
 
             let upsert_response = container_client
-                .upsert_item(&pk, &item, {
+                .upsert_item(&pk, &item_id, &item, {
                     let mut operation = OperationOptions::default();
                     operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
                     Some(ItemWriteOptions::default().with_operation_options(operation))
@@ -424,7 +444,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             let item_id = format!("Item1-{}", unique_id);
 
             let create_response = container_client
-                .create_item(PartitionKey::NULL, &item, None)
+                .create_item(PartitionKey::NULL, &item_id, &item, None)
                 .await?;
             assert_response(
                 &create_response,
@@ -437,7 +457,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             item.nested.nested_value = "Updated".into();
 
             let upsert_response = container_client
-                .upsert_item(PartitionKey::NULL, &item, None)
+                .upsert_item(PartitionKey::NULL, &item_id, &item, None)
                 .await?;
             assert_response(
                 &upsert_response,
@@ -520,7 +540,9 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -610,8 +632,11 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             };
 
             let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -633,6 +658,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             let upsert_response = container_client
                 .upsert_item(
                     &pk,
+                    &item_id,
                     &item,
                     Some(
                         ItemWriteOptions::default()
@@ -654,6 +680,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             let response = container_client
                 .upsert_item(
                     &pk,
+                    &item_id,
                     &item,
                     Some(
                         ItemWriteOptions::default()
@@ -701,7 +728,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -735,7 +764,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             );
 
             //Add item again for second delete test
-            let create_response = container_client.create_item(&pk, &item, None).await?;
+            let create_response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &create_response,
                 StatusCode::Created,
@@ -803,7 +834,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
             let item_no_pk_id = format!("Item-NoPK-{}", unique_id);
 
             let response = container_client
-                .create_item(PartitionKey::UNDEFINED, &item_no_pk, None)
+                .create_item(PartitionKey::UNDEFINED, &item_no_pk_id, &item_no_pk, None)
                 .await?;
             assert_response(
                 &response,
@@ -825,7 +856,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
             let item_null_pk_id = format!("Item-NullPK-{}", unique_id);
 
             let response = container_client
-                .create_item(PartitionKey::NULL, &item_null_pk, None)
+                .create_item(PartitionKey::NULL, &item_null_pk_id, &item_null_pk, None)
                 .await?;
             assert_response(
                 &response,
@@ -844,7 +875,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
             let item_with_pk_id = format!("Item-WithPK-{}", unique_id);
 
             let response = container_client
-                .create_item(&pk_value, &item_with_pk, None)
+                .create_item(&pk_value, &item_with_pk_id, &item_with_pk, None)
                 .await?;
             assert_response(
                 &response,
@@ -955,9 +986,12 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
                 bool_value: true,
             };
             let pk = format!("pk-{}", unique_id);
+            let item_id = format!("dup-{}", unique_id);
 
             // First create should succeed.
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -966,7 +1000,9 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
             );
 
             // Second create of the same item should fail with 409 Conflict.
-            let result = container_client.create_item(&pk, &item, None).await;
+            let result = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await;
             assert_eq!(
                 Some(StatusCode::Conflict),
                 result
@@ -1004,13 +1040,14 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
                 bool_value: false,
             };
             let pk = format!("pk-{}", unique_id);
+            let item_id = format!("cr-{}", unique_id);
 
             let mut operation = OperationOptions::default();
             operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
             let options = ItemWriteOptions::default().with_operation_options(operation);
 
             let response = container_client
-                .create_item(&pk, &item, Some(options))
+                .create_item(&pk, &item_id, &item, Some(options))
                 .await?;
             assert_response(
                 &response,
@@ -1053,8 +1090,11 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
                 bool_value: true,
             };
             let pk = format!("pk-{}", unique_id);
+            let item_id = format!("meta-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_eq!(response.status(), StatusCode::Created);
 
             // Session token must be present for session consistency.
@@ -1063,21 +1103,41 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
                 "expected session token on create_item response"
             );
 
-            // Activity ID is required for tracing/support.
-            let activity_id = response.diagnostics().activity_id();
-            assert!(activity_id.is_some(), "expected activity ID");
+            // Diagnostics from the driver pipeline must surface a populated
+            // activity ID and at least one tracked request with timing data.
+            let diagnostics = response.diagnostics();
             assert!(
-                !activity_id.unwrap().is_empty(),
+                !diagnostics.activity_id().as_str().is_empty(),
                 "activity ID must be non-empty"
+            );
+            assert!(
+                diagnostics.request_count() >= 1,
+                "expected at least one request to be tracked in diagnostics"
+            );
+            let op_status = diagnostics
+                .status()
+                .expect("operation status should be set on completed diagnostics");
+            assert_eq!(
+                op_status.status_code(),
+                StatusCode::Created,
+                "operation-level diagnostics status should match HTTP response status"
             );
 
             // Request charge must be positive.
             let charge = response.request_charge();
             assert!(charge.is_some(), "expected request charge");
             assert!(charge.unwrap() > 0.0, "request charge must be positive");
+            assert!(
+                f64::from(diagnostics.total_request_charge()) >= charge.unwrap(),
+                "diagnostics total request charge should aggregate response request charge"
+            );
 
-            // Server duration must be present and non-negative.
-            let duration = response.diagnostics().server_duration_ms();
+            // Server duration must be present and non-negative on the tracked request.
+            let requests = diagnostics.requests();
+            let duration = requests
+                .iter()
+                .filter_map(|r| r.server_duration_ms())
+                .next();
             assert!(duration.is_some(), "expected server_duration_ms");
             assert!(
                 duration.unwrap() >= 0.0,

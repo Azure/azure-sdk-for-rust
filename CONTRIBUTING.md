@@ -247,6 +247,8 @@ To log traces from the [Test Proxy] itself, pass `test-proxy=trace` to `RUST_LOG
 RUST_LOG=info,azure_core=debug,test-proxy=trace cargo test -p azure_security_keyvault_secrets --test secret_client
 ```
 
+See our [guidelines](https://azure.github.io/azure-sdk/rust_implementation.html#rust-tracing) for information about logging levels, subscriber configuration, and more.
+
 #### Debugging in Windows
 
 Using the recommended [CodeLLDB] Visual Studio Code extension on Windows will stop at breakpoints but may not pretty print variables e.g.,

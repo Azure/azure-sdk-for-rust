@@ -18,19 +18,22 @@
     "RustToolchainName": ["stable"],
     "Account Settings": {
       "Eventual SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual' }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Eventual'; enableAutomaticFailover = $false }"
       },
       "Session SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session' }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false }"
       },
       "Strong SingleWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Strong'; enableAutomaticFailover = $false }"
       },
       "Session MultiWrite": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; testCategory = 'multi_write'; enableMultipleRegions = $true }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleWriteLocations = $true; enableAutomaticFailover = $false; testCategory = 'multi_write'; enableMultipleRegions = $true }"
       },
       "Session Split": {
-        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; testCategory = 'split' }"
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'split' }"
+      },
+      "Session SingleWrite MultiRegion PartitionFailover": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $true; enableMultipleRegions = $true; testCategory = 'multi_region' }"
       }
     }
   },

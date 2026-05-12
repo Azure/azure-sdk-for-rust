@@ -22,7 +22,9 @@ use azure_data_cosmos::fault_injection::{
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::Query;
-use framework::{TestClient, TestOptions, HUB_REGION, SATELLITE_REGION};
+use framework::{
+    assert_region_contacted_with_retry, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
+};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{borrow::Cow, error::Error};
@@ -93,7 +95,9 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -113,15 +117,10 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            // request_url() returns None for driver-routed operations.
-            if let Some(request_url) = response.request_url() {
-                let request_url = request_url.to_string();
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "read should have failed over to satellite region, but URL was: {}",
-                    request_url
-                );
-            }
+            // After 408 on hub, the driver fails over; recovery may either
+            // land on satellite or retry back on hub. Assert satellite was
+            // contacted at least once, proving the failover path was hit.
+            assert_region_contacted_with_retry(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -186,9 +185,12 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
             // Write should fail with 408 — no cross-region retry for writes
-            let result = fault_container_client.create_item(&pk, &item, None).await;
+            let result = fault_container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await;
 
             let err = result.expect_err("write should fail with 408 and not retry across regions");
             assert_eq!(
@@ -261,9 +263,12 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
             // Upsert should fail with 408 — no cross-region retry for writes
-            let result = fault_container_client.upsert_item(&pk, &item, None).await;
+            let result = fault_container_client
+                .upsert_item(&pk, &item_id, &item, None)
+                .await;
 
             let err = result.expect_err("upsert should fail with 408 and not retry across regions");
             assert_eq!(
@@ -333,8 +338,11 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
                 bool_value: true,
             };
             let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -417,7 +425,9 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -437,15 +447,10 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
             );
 
             let response = result.unwrap();
-            // request_url() returns None for driver-routed operations.
-            if let Some(request_url) = response.request_url() {
-                let request_url = request_url.to_string();
-                assert!(
-                    request_url.contains(SATELLITE_REGION.as_str()),
-                    "read should have failed over to satellite region, but URL was: {}",
-                    request_url
-                );
-            }
+            // After 500 on hub, the driver fails over; recovery may either
+            // land on satellite or retry back on hub. Assert satellite was
+            // contacted at least once, proving the failover path was hit.
+            assert_region_contacted_with_retry(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -507,7 +512,9 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
             let item_id = format!("Item-{}", unique_id);
 
             // Create the item first via the non-fault client
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()
@@ -599,7 +606,9 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
             let item_id = format!("Item-{}", unique_id);
 
             // Create the item first via the non-fault client
-            container_client.create_item(&pk, &item, None).await?;
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
 
             let fault_client = run_context
                 .fault_client()

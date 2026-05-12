@@ -7,10 +7,15 @@ use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
-    driver::routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
+    driver::routing::{
+        partition_endpoint_state::PartitionFailoverConfig,
+        partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
+        CosmosEndpoint, LocationStateStore,
+    },
     models::{
-        AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, DatabaseProperties, DatabaseReference,
+        effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
+        ActivityId, ContainerProperties, ContainerReference, CosmosOperation, DatabaseProperties,
+        DatabaseReference, PartitionKey, ResourceType,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
@@ -26,7 +31,7 @@ use std::time::Duration;
 use url::Url;
 
 use super::{
-    cache::AccountRegion,
+    cache::{parse_pk_ranges_response, AccountRegion, PartitionKeyRangeCache, PkRangeFetchResult},
     transport::{
         cosmos_headers, cosmos_transport_client::HttpRequest, is_emulator_host, request_signing,
         uses_dataplane_pipeline, AuthorizationContext, CosmosTransport,
@@ -56,6 +61,10 @@ pub struct CosmosDriver {
     transport: Arc<ArcSwap<CosmosTransport>>,
     /// Shared operation routing state for multi-region failover.
     location_state_store: Arc<LocationStateStore>,
+    /// Cache for partition key range routing maps.
+    /// Used to pre-resolve partition key range IDs for PPAF/PPCB
+    /// before the first request attempt.
+    pk_range_cache: PartitionKeyRangeCache,
     /// Session token cache for session consistency.
     session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
@@ -304,7 +313,7 @@ impl CosmosDriver {
             account.auth(),
             &AuthorizationContext::new(
                 azure_core::http::Method::Get,
-                crate::models::ResourceType::DatabaseAccount,
+                ResourceType::DatabaseAccount,
                 "",
             ),
         )
@@ -336,15 +345,10 @@ impl CosmosDriver {
         write_region: Option<&AccountRegion>,
     ) -> AccountEndpoint {
         if let Some(region) = write_region {
-            if let Ok(endpoint) =
-                AccountEndpoint::try_from(region.database_account_endpoint.as_str())
-            {
-                return endpoint;
-            }
+            return region.database_account_endpoint.clone();
         }
 
-        // Fall back to the account-level endpoint when there is no writable
-        // location or the regional URL could not be parsed.
+        // Fall back to the account-level endpoint when there is no writable location.
         AccountEndpoint::from(account)
     }
 
@@ -455,7 +459,7 @@ impl CosmosDriver {
             .readable_locations
             .iter()
             .filter_map(|loc| {
-                let url = Url::parse(&loc.database_account_endpoint).ok()?;
+                let url = loc.database_account_endpoint.url().clone();
                 let ep = AccountEndpoint::from(url.clone());
                 if ep == *primary_endpoint {
                     None
@@ -750,6 +754,17 @@ impl CosmosDriver {
                     .unwrap_or(Duration::from_secs(60))
             });
 
+        // Build a layered view (env → runtime → account) to resolve init-time config.
+        // No per-operation overrides exist at construction time.
+        let init_view = OperationOptionsView::new(
+            Some(Arc::clone(runtime.env_operation_options())),
+            Some(runtime.operation_options()),
+            Some(options.operation_options().clone()),
+            None,
+        );
+
+        let partition_failover_config = PartitionFailoverConfig::from_options(&init_view);
+
         let location_state_store = Arc::new(LocationStateStore::new(
             runtime.account_metadata_cache().clone(),
             account_endpoint,
@@ -757,13 +772,20 @@ impl CosmosDriver {
             refresh_callback,
             runtime.connection_pool().is_gateway20_allowed(),
             endpoint_unavailability_ttl,
+            partition_failover_config,
+            options.preferred_regions().to_vec(),
         ));
+
+        // Spawn the background failback loop for partition-level overrides.
+        #[cfg(feature = "tokio")]
+        location_state_store.start_failback_loop();
 
         Self {
             runtime,
             options,
             transport,
             location_state_store,
+            pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
         }
@@ -911,6 +933,166 @@ impl CosmosDriver {
             .map(|group| ThroughputControlGroupSnapshot::from(group.as_ref())))
     }
 
+    /// Fetches partition key ranges from the service for the given container.
+    ///
+    /// Builds a GET request to `/dbs/{db_rid}/colls/{container_rid}/pkranges`
+    /// using the `A-IM: Incremental feed` header for changefeed semantics.
+    /// When `continuation` is provided, it is sent as the `If-None-Match` header
+    /// for incremental fetches. The server may return 304 Not Modified if no
+    /// new ranges exist since the last fetch.
+    ///
+    /// # Retry Policy
+    ///
+    /// The request is dispatched through the standard `execute_operation`
+    /// pipeline, which performs in-flight cross-region failover on transient
+    /// errors (503, 410, 408, 429, 403/3) by routing successive retries to
+    /// the next preferred read region. A single call therefore traverses
+    /// every preferred region before giving up — no additional outer retry
+    /// loop is needed here.
+    ///
+    /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
+    /// terminal: `None` is returned immediately so the caller can surface a
+    /// clear misconfiguration signal.
+    ///
+    /// Returns `None` if the pipeline exhausts its cross-region failover
+    /// budget or the response cannot be parsed. The caller (the PK range
+    /// cache) falls back gracefully on `None`.
+    async fn fetch_pk_ranges_from_service(
+        &self,
+        container: ContainerReference,
+        continuation: Option<String>,
+    ) -> Option<PkRangeFetchResult> {
+        // Build the operation through the standard pipeline to get correct
+        // URL construction, signing, and cross-region retry behavior.
+        let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
+
+        // Set changefeed If-None-Match precondition for continuation.
+        if let Some(token) = continuation.as_deref() {
+            operation = operation
+                .with_precondition(crate::models::Precondition::if_none_match(token.to_owned()));
+        }
+
+        // Custom headers for changefeed (a-im, max item count).
+        let mut custom_headers = std::collections::HashMap::new();
+        custom_headers.insert(
+            azure_core::http::headers::HeaderName::from_static("a-im"),
+            azure_core::http::headers::HeaderValue::from_static("Incremental feed"),
+        );
+        custom_headers.insert(
+            azure_core::http::headers::HeaderName::from_static("x-ms-max-item-count"),
+            azure_core::http::headers::HeaderValue::from_static("-1"),
+        );
+        let options = OperationOptions::default().with_custom_headers(custom_headers);
+
+        match self.execute_operation(operation, options).await {
+            Ok(response) => {
+                let etag = response.headers().etag.as_ref().map(|e| e.to_string());
+
+                // 304 Not Modified is a success outcome for conditional
+                // changefeed reads: the cached routing map is still current.
+                if response.status().status_code() == azure_core::http::StatusCode::NotModified {
+                    return Some(PkRangeFetchResult {
+                        ranges: vec![],
+                        continuation,
+                        not_modified: true,
+                    });
+                }
+
+                match parse_pk_ranges_response(response.body()) {
+                    Some(ranges) => Some(PkRangeFetchResult {
+                        ranges,
+                        continuation: etag,
+                        not_modified: false,
+                    }),
+                    None => {
+                        tracing::error!(
+                            container = %container.name(),
+                            "Failed to parse partition key ranges response body"
+                        );
+                        None
+                    }
+                }
+            }
+            Err(e) => {
+                if let azure_core::error::ErrorKind::HttpResponse { status, .. } = e.kind() {
+                    // Permanent errors (auth/config issues) are logged at error
+                    // level so operators can distinguish misconfiguration from
+                    // transient blips.
+                    // TODO: Consider adding a negative-cache TTL to suppress
+                    // repeated fetches on permanent errors (401/403/404).
+                    if matches!(
+                        *status,
+                        azure_core::http::StatusCode::Unauthorized
+                            | azure_core::http::StatusCode::Forbidden
+                            | azure_core::http::StatusCode::NotFound
+                    ) {
+                        tracing::error!(
+                            container = %container.name(),
+                            status = %status,
+                            error = %e,
+                            "Permanent error fetching partition key ranges — check account credentials and container existence"
+                        );
+                        return None;
+                    }
+                }
+
+                tracing::warn!(
+                    container = %container.name(),
+                    error = %e,
+                    "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
+                );
+                None
+            }
+        }
+    }
+
+    /// Pre-resolves the partition key range ID for a data plane operation.
+    ///
+    /// When PPAF/PPCB is enabled and the operation provides both a container
+    /// reference and a partition key, uses the `PartitionKeyRangeCache` to
+    /// compute the effective partition key and look up the range ID from
+    /// the cached routing map. If the routing map is not cached, fetches it
+    /// from the service.
+    ///
+    /// Returns `None` if:
+    /// - PPAF/PPCB is not enabled
+    /// - The operation does not target a partitioned resource
+    /// - The operation has no container reference or partition key
+    /// - The cache lookup or fetch fails
+    async fn pre_resolve_partition_key_range_id(
+        &self,
+        operation: &CosmosOperation,
+    ) -> Option<PartitionKeyRangeId> {
+        // Only pre-resolve for partitioned data plane operations.
+        if !operation
+            .resource_type()
+            .is_partitioned(operation.operation_type())
+        {
+            return None;
+        }
+
+        // A pre-resolved partition key range ID is only useful for
+        // PPAF/PPCB. Skip the work when neither mechanism is enabled.
+        let snapshot = self.location_state_store.snapshot();
+        let partition_state = snapshot.partitions.as_ref();
+        if !partition_state.per_partition_automatic_failover_enabled
+            && !partition_state.per_partition_circuit_breaker_enabled
+        {
+            return None;
+        }
+
+        // Need both a container reference and a partition key.
+        let container = operation.container()?;
+        let partition_key = operation.partition_key()?;
+
+        self.pk_range_cache
+            .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
+                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
+            })
+            .await
+            .map(PartitionKeyRangeId::from)
+    }
+
     /// Executes a Cosmos DB operation.
     ///
     /// This method computes effective options by merging the provided operation options
@@ -1006,19 +1188,25 @@ impl CosmosDriver {
         // Uses CAS to preserve unavailable_endpoints marks set by concurrent operations.
         // Skips the CAS loop when the etag matches (same server version).
         self.location_state_store.sync_account_properties(
-            account_properties.as_ref(),
+            Arc::clone(&account_properties),
             self.location_state_store.default_endpoint(),
         );
 
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(account, write_region);
 
-        // Step 5: Select the adaptive transport context for the chosen pipeline
+        // Step 5: Pre-resolve partition key range ID for PPAF/PPCB.
+        // When partition-level failover is enabled, resolving the range ID
+        // before the first attempt lets the pipeline apply partition overrides
+        // from the very first request instead of only after the first retry.
+        let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(&operation).await;
+
+        // Step 6: Select the adaptive transport context for the chosen pipeline
         let transport = self.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        // Step 6: Initialize diagnostics
+        // Step 7: Initialize diagnostics
         let mut diagnostics_builder = DiagnosticsContextBuilder::new(
             activity_id.clone(),
             std::sync::Arc::new(DiagnosticsOptions::default()),
@@ -1050,7 +1238,7 @@ impl CosmosDriver {
             self.runtime.user_agent().as_str().to_owned(),
         );
 
-        // Step 7: Execute via the new operation pipeline
+        // Step 8: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
             &operation,
             &effective_options,
@@ -1069,6 +1257,7 @@ impl CosmosDriver {
                 .user_consistency_policy
                 .default_consistency_level,
             effective_control_group.as_ref(),
+            pre_resolved_pk_range_id,
         )
         .await
     }
@@ -1170,6 +1359,89 @@ impl CosmosDriver {
             .await?;
 
         Ok(resolved.as_ref().clone())
+    }
+
+    /// Returns all partition key ranges for a container, ordered by min EPK.
+    ///
+    /// Uses the driver's internal `PartitionKeyRangeCache`. When `force_refresh`
+    /// is `true`, the cached routing map is refreshed from the service before
+    /// returning results. Returns `None` if the routing map cannot be resolved.
+    pub async fn resolve_all_partition_key_ranges(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+        let routing_map = self
+            .pk_range_cache
+            .try_lookup(container, force_refresh, |c, cont| {
+                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
+            })
+            .await?;
+
+        let ranges = routing_map.ranges();
+        if ranges.is_empty() {
+            // A valid container always has at least one partition key range.
+            // An empty routing map indicates a service/parse failure.
+            return None;
+        }
+        Some(ranges.to_vec())
+    }
+
+    /// Returns the partition key ranges covering the given partition key.
+    ///
+    /// Handles both full keys (single range via point lookup) and prefix keys
+    /// on MultiHash containers (multiple ranges via overlapping range lookup).
+    ///
+    /// Returns `None` if the partition key is empty or the routing map cannot
+    /// be resolved. When `force_refresh` is `true`, the cached routing map is
+    /// refreshed from the service before lookup.
+    pub async fn resolve_partition_key_ranges_for_key(
+        &self,
+        container: &ContainerReference,
+        partition_key: &PartitionKey,
+        force_refresh: bool,
+    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+        if partition_key.is_empty() {
+            return None;
+        }
+
+        let pk_def = container.partition_key_definition();
+        let epk_range = match EffectivePartitionKey::compute_range(partition_key.values(), pk_def) {
+            Ok(range) => range,
+            Err(e) => {
+                tracing::warn!("EPK computation failed for partition key: {e}");
+                return None;
+            }
+        };
+
+        if epk_range.start == epk_range.end {
+            // Full key — point lookup
+            let routing_map = self
+                .pk_range_cache
+                .try_lookup(container, force_refresh, |c, cont| {
+                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
+                })
+                .await?;
+            if routing_map.ranges().is_empty() {
+                return None;
+            }
+            Some(
+                routing_map
+                    .get_range_by_effective_partition_key(&epk_range.start)
+                    .cloned()
+                    .map_or_else(Vec::new, |r| vec![r]),
+            )
+        } else {
+            // Prefix key — overlapping range lookup
+            self.pk_range_cache
+                .resolve_overlapping_ranges(
+                    container,
+                    &epk_range.start..&epk_range.end,
+                    force_refresh,
+                    |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+                )
+                .await
+        }
     }
 }
 
@@ -1576,8 +1848,10 @@ mod tests {
 
         let region = AccountRegion {
             name: Region::new("West US"),
-            database_account_endpoint: "https://myaccount-westus.documents.azure.com:443/"
-                .to_string(),
+            database_account_endpoint: AccountEndpoint::try_from(
+                "https://myaccount-westus.documents.azure.com:443/",
+            )
+            .unwrap(),
         };
 
         let endpoint = CosmosDriver::endpoint_for_write_region(&account, Some(&region));
@@ -1596,22 +1870,6 @@ mod tests {
         );
 
         let endpoint = CosmosDriver::endpoint_for_write_region(&account, None);
-        assert_eq!(endpoint.url().as_str(), account.endpoint().as_str());
-    }
-
-    #[test]
-    fn endpoint_for_write_region_falls_back_for_invalid_url() {
-        let account = AccountReference::with_master_key(
-            Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
-            "test-key",
-        );
-
-        let region = AccountRegion {
-            name: Region::new("westus"),
-            database_account_endpoint: "not-a-valid-url".to_string(),
-        };
-
-        let endpoint = CosmosDriver::endpoint_for_write_region(&account, Some(&region));
         assert_eq!(endpoint.url().as_str(), account.endpoint().as_str());
     }
 
@@ -1768,7 +2026,8 @@ mod tests {
         .unwrap();
 
         assert!(factory.configs().iter().any(|config| {
-            matches!(config.version_policy, HttpVersionPolicy::Http11Only) && config.for_emulator
+            matches!(config.version_policy, HttpVersionPolicy::Http11Only)
+                && config.allow_invalid_cert
         }));
     }
 
@@ -1810,7 +2069,8 @@ mod tests {
         assert_eq!(version, TransportHttpVersion::Http11);
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert!(factory.configs().iter().any(|config| {
-            matches!(config.version_policy, HttpVersionPolicy::Http11Only) && config.for_emulator
+            matches!(config.version_policy, HttpVersionPolicy::Http11Only)
+                && config.allow_invalid_cert
         }));
     }
 

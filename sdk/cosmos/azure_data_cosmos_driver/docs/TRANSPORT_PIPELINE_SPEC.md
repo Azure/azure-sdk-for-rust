@@ -60,71 +60,34 @@ eventually live in `azure_data_cosmos_driver`. The goal is:
 
 ## 2. Architectural Overview
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      CosmosDriver.execute_operation()                       │
-│                                                                             │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                          OPERATION PIPELINE                           │  │
-│  │                                                                       │  │
-│  │  Responsibilities:                                                    │  │
-│  │  ┌─ Region selection (AccountEndpointState + resolve_endpoint)        │  │
-│  │  ├─ Hedging (parallel speculative execution in secondary region)      │  │
-│  │  ├─ Cross-region failover (503/WriteForbidden/SessionNotAvailable)    │  │
-│  │  ├─ 403.3 recovery (refresh AccountMetadataCache, rate-limited)       │  │
-│  │  ├─ Partition-level circuit breaker (PPAF/PPCB)                       │  │
-│  │  ├─ Session token resolution                                          │  │
-│  │  └─ Operation-level diagnostics aggregation                           │  │
-│  │                                                                       │  │
-│  │  Input:  CosmosOperation + OperationOptions                           │  │
-│  │  Output: CosmosResponse (includes DiagnosticsContext)                 │  │
-│  │                                                                       │  │
-│  │          ┌─────────────────┐   ┌─────────────────┐                    │  │
-│  │          │  Attempt to     │   │ Hedged attempt  │                    │  │
-│  │          │  Region A       │   │ to Region B     │  (optional)        │  │
-│  │          └────────┬────────┘   └────────┬────────┘                    │  │
-│  │                   │                     │                             │  │
-│  └───────────────────┼─────────────────────┼─────────────────────────────┘  │
-│                      ▼                     ▼                                │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                          TRANSPORT PIPELINE                           │  │
-│  │                                                                       │  │
-│  │  Responsibilities (per-attempt, single region/endpoint):              │  │
-│  │  ┌─ Transport-level retry (429 with backoff)                          │  │
-│  │  ├─ One shard-local connectivity retry before endpoint failover       │  │
-│  │  ├─ Authorization header generation                                   │  │
-│  │  ├─ Common headers (x-ms-version, User-Agent, Content-Type)           │  │
-│  │  ├─ Request/response diagnostics capture (per-attempt events)         │  │
-│  │  ├─ Request-sent-status tracking (for retry safety)                   │  │
-│  │  └─ End-to-end deadline enforcement                                   │  │
-│  │                                                                       │  │
-│  │  Input:  TransportRequest (= operation snapshot + resolved endpoint)  │  │
-│  │  Output: TransportResult (= raw response + attempt diagnostics)       │  │
-│  │                                                                       │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                      │                                                      │
-│                      ▼                                                      │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                     ADAPTIVE HTTP TRANSPORT LAYER                     │  │
-│  │                                                                       │  │
-│  │  Negotiated at client init based on gateway type:                     │  │
-│  │  ┌─ HTTP/2 (ComputeGateway or Gateway 2.0):                           │  │
-│  │  │    ShardedHttpTransport (see §6)                                   │  │
-│  │  │    ┌─ Tracks inflight per HttpClient shard per endpoint            │  │
-│  │  │    ├─ Load-balances across multiple HttpClient instances           │  │
-│  │  │    ├─ Health monitoring per shard (consecutive failures)           │  │
-│  │  │    └─ Proactive eviction of unhealthy shards                       │  │
-│  │  └─ HTTP/1.1 (RoutingGateway):                                        │  │
-│  │       Single HttpClient (no sharding needed)                          │  │
-│  │                                                                       │  │
-│  │  Uses azure_core::http::HttpClient trait (pluggable transport)        │  │
-│  │  Input:  azure_core::http::Request                                    │  │
-│  │  Output: azure_core::http::AsyncRawResponse                           │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                      │                                                      │
-│                      ▼                                                      │
-│         [Arc<dyn HttpClient>]  (reqwest / future pluggable impl)            │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Driver["CosmosDriver.execute_operation()"]
+        direction TB
+        subgraph OP["OPERATION PIPELINE"]
+            direction TB
+            OPR["<b>Responsibilities</b><br/>• Region selection (AccountEndpointState + resolve_endpoint)<br/>• Hedging (parallel speculative execution in secondary region)<br/>• Cross-region failover (503 / WriteForbidden / SessionNotAvailable)<br/>• 403.3 recovery (refresh AccountMetadataCache, rate-limited)<br/>• Partition-level circuit breaker (PPAF/PPCB)<br/>• Session token resolution<br/>• Operation-level diagnostics aggregation"]
+            OPIO["<b>Input:</b> CosmosOperation + OperationOptions<br/><b>Output:</b> CosmosResponse (includes DiagnosticsContext)"]
+            A["Attempt to Region A"]
+            B["Hedged attempt to Region B<br/>(optional)"]
+            OPR --- OPIO
+        end
+        subgraph TP["TRANSPORT PIPELINE (per-attempt, single region/endpoint)"]
+            direction TB
+            TPR["<b>Responsibilities</b><br/>• Transport-level retry (429 with backoff)<br/>• One shard-local connectivity retry before endpoint failover<br/>• Authorization header generation<br/>• Common headers (x-ms-version, User-Agent, Content-Type)<br/>• Request/response diagnostics capture (per-attempt events)<br/>• Request-sent-status tracking (for retry safety)<br/>• End-to-end deadline enforcement"]
+            TPIO["<b>Input:</b> TransportRequest (operation snapshot + resolved endpoint)<br/><b>Output:</b> TransportResult (raw response + attempt diagnostics)"]
+            TPR --- TPIO
+        end
+        subgraph HT["ADAPTIVE HTTP TRANSPORT LAYER"]
+            direction TB
+            HTD["Negotiated at client init based on gateway type:<br/>• HTTP/2 (ComputeGateway or Gateway 2.0): ShardedHttpTransport (§6)<br/>&nbsp;&nbsp;&nbsp;&nbsp;– Tracks inflight per HttpClient shard per endpoint<br/>&nbsp;&nbsp;&nbsp;&nbsp;– Load-balances across multiple HttpClient instances<br/>&nbsp;&nbsp;&nbsp;&nbsp;– Health monitoring per shard (consecutive failures)<br/>&nbsp;&nbsp;&nbsp;&nbsp;– Proactive eviction of unhealthy shards<br/>• HTTP/1.1 (RoutingGateway): Single HttpClient (no sharding)<br/><br/>Uses azure_core::http::HttpClient trait (pluggable transport)<br/><b>Input:</b> azure_core::http::Request<br/><b>Output:</b> azure_core::http::AsyncRawResponse"]
+        end
+        H["[Arc&lt;dyn HttpClient&gt;] (reqwest / future pluggable impl)"]
+    end
+    A --> TP
+    B --> TP
+    TP --> HT
+    HT --> H
 ```
 
 ---
@@ -2064,32 +2027,23 @@ the behavior we need to validate in tests. If fault injection sat *above* `Adapt
 the sharding layer would never see the injected errors and its management logic would be
 untestable.
 
-```text
-  execute_transport_pipeline()
-       │
-       ▼
-  ┌─────────────────────────────┐
-  │  AdaptiveTransport          │  ← Sharded (H2) or Plain (H1.1)
-  │                             │
-  │  ┌────────────────────────┐ │
-  │  │ ShardedHttpTransport   │ │  ← shard selection, health tracking
-  │  │  ┌──────────────────┐  │ │
-  │  │  │ ClientShard[0]   │  │ │
-  │  │  │  ┌─────────────┐ │  │ │
-  │  │  │  │FaultInject- │ │  │ │  ← evaluates rules, may short-circuit
-  │  │  │  │ingHttpClient│ │  │ │
-  │  │  │  │  ┌────────┐ │ │  │ │
-  │  │  │  │  │ real   │ │ │  │ │  ← actual HTTP I/O (reqwest etc.)
-  │  │  │  │  │HttpCli.│ │ │  │ │
-  │  │  │  │  └────────┘ │ │  │ │
-  │  │  │  └─────────────┘ │  │ │
-  │  │  └──────────────────┘  │ │
-  │  │  ┌──────────────────┐  │ │
-  │  │  │ ClientShard[1]   │  │ │  ← same wrapping per shard
-  │  │  │  ...             │  │ │
-  │  │  └──────────────────┘  │ │
-  │  └────────────────────────┘ │
-  └─────────────────────────────┘
+```mermaid
+flowchart TD
+    Pipeline["execute_transport_pipeline()"]
+    subgraph AT["AdaptiveTransport — Sharded (H2) or Plain (H1.1)"]
+        direction TB
+        subgraph SHT["ShardedHttpTransport — shard selection, health tracking"]
+            direction TB
+            subgraph CS0["ClientShard[0]"]
+                direction TB
+                FI0["FaultInjectingHttpClient<br/>(evaluates rules, may short-circuit)"]
+                Real0["real HttpClient<br/>(actual HTTP I/O — reqwest etc.)"]
+                FI0 --> Real0
+            end
+            CS1["ClientShard[1] — same wrapping per shard ..."]
+        end
+    end
+    Pipeline --> AT
 ```
 
 ### 7.2 Injection via `HttpClientFactory`
@@ -2877,7 +2831,7 @@ azure_core = { workspace = true, features = ["hmac_rust"] }
 
 [dev-dependencies]
 # Concrete implementations for testing:
-azure_core = { workspace = true, features = ["reqwest_native_tls"] }
+azure_core = { workspace = true, features = ["reqwest"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
 ```
 
