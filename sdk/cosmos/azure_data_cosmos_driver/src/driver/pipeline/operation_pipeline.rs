@@ -165,7 +165,7 @@ pub(crate) async fn execute_operation_pipeline(
             operation,
             &retry_state,
             &location,
-            pipeline_type == PipelineType::DataPlane,
+            pipeline_type.is_data_plane(),
             location_state_store.endpoint_unavailability_ttl(),
         );
 
