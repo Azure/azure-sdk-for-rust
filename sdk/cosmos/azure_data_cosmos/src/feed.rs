@@ -248,10 +248,7 @@ type DriverPageFuture =
     BoxFuture<'static, (OperationPlan, azure_core::Result<Option<DriverResponse>>)>;
 
 /// Live pipeline state held by [`FeedPageIterator`] / [`FeedItemIterator`].
-///
-/// Owns the [`OperationPlan`] directly (rather than burying it inside an
-/// `unfold` closure) so that
-/// [`FeedPageIterator::to_continuation_token`] can snapshot it between polls.
+#[pin_project::pin_project]
 struct LiveState {
     driver: Arc<CosmosDriver>,
     container: Option<ContainerReference>,
@@ -281,55 +278,78 @@ impl LiveState {
     }
 
     fn poll_next_page<T: DeserializeOwned + Send + 'static>(
-        &mut self,
+        self: Pin<&mut Self>,
         cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<azure_core::Result<QueryFeedPage<T>>>> {
-        if self.exhausted {
+        // Because we want to be able to use the OperationPlan to generate a continuation token on-demand (generating the token has a perf cost),
+        // we can't use a utility like `futures::stream::unfold` to drive the pagination, since that would move the plan into the future and make it inaccessible for token generation until the future completes.
+        // So, instead, we have to manually drive the pagination loop here in `poll_next_page`, which allows us to keep the plan in `self` and only move it into the future when we actually need to fetch the next page.
+        // Since poll_next_page holds a mutable reference to self, we can safely move the plan in and out of the future as long as we bring it back into self before returning Poll::Ready.
+
+        let this = self.project();
+
+        // Early exit if we're done.
+        if *this.exhausted {
             return task::Poll::Ready(None);
         }
 
-        if self.in_flight.is_none() {
-            // Move the plan into a future. The future returns the plan back so
-            // we can store it again between polls.
-            let mut plan = self
-                .plan
-                .take()
-                .expect("plan must be present between polls");
-            let driver = Arc::clone(&self.driver);
-            let container = self.container.clone();
-            let options = self.options.clone();
-            let fut: DriverPageFuture = Box::pin(async move {
-                let result = driver.execute_plan(&mut plan, container, options).await;
-                (plan, result)
-            });
-            self.in_flight = Some(fut);
-        }
+        // Is there a current in-flight page fetch future? If not, start one.
+        let in_flight = match this.in_flight.as_mut() {
+            Some(fut) => fut,
+            None => {
+                // Move the plan into a future. The future returns the plan back so
+                // we can store it again between polls.
+                let mut plan = this
+                    .plan
+                    .take()
+                    .expect("plan must be present between polls");
+                let driver = Arc::clone(this.driver);
+                let container = this.container.clone();
+                let options = this.options.clone();
+                let fut: DriverPageFuture = Box::pin(async move {
+                    let result = driver.execute_plan(&mut plan, container, options).await;
+                    (plan, result)
+                });
+                this.in_flight.insert(fut)
+            }
+        };
 
-        let fut = self.in_flight.as_mut().expect("future just installed");
-        let (plan, result) = match fut.as_mut().poll(cx) {
+        // Poll the in-flight future.
+        let (plan, result) = match in_flight.as_mut().poll(cx) {
+            // It's not done yet, so we're not ready to yield a page.
+            // We haven't returned the plan back to self yet since it's still being used by the future.
+            // That means that if the user tries to generate a continuation token while a page fetch is in-flight, we'll get an error since the plan is not currently available.
+            // This is intentional since generating a continuation token while a page fetch is in-flight would be racy (the internal state is being mutated by the in-flight future and we might capture a token that's inconsistent with the actual state of the iteration).
             task::Poll::Pending => return task::Poll::Pending,
+
+            // It's done. Take the the result out.
             task::Poll::Ready(out) => out,
         };
-        self.in_flight = None;
-        self.plan = Some(plan);
+
+        // Restore the plan back into self so the user can capture a continuation token, and clear the in-flight future since it's done.
+        this.in_flight.take();
+        *this.plan = Some(plan);
 
         match result {
             Ok(None) => {
-                self.exhausted = true;
+                // The driver returning Ok(None) indicates that there are no more pages to fetch. Mark ourselves as exhausted and return None to end the stream.
+                *this.exhausted = true;
                 task::Poll::Ready(None)
             }
             Err(err) => {
-                self.exhausted = true;
+                // An error from the driver indicates a failure to fetch the next page. Mark ourselves as exhausted and return the error.
+                *this.exhausted = true;
                 task::Poll::Ready(Some(Err(err)))
             }
             Ok(Some(driver_response)) => {
+                // Successfully got a response from the driver. Convert it into a QueryFeedPage and yield it.
                 let response = driver_bridge::driver_response_to_cosmos_response::<FeedBody<T>>(
                     driver_response,
                 );
                 match QueryFeedPage::from_response(response) {
                     Ok(page) => task::Poll::Ready(Some(Ok(page))),
                     Err(err) => {
-                        self.exhausted = true;
+                        *this.exhausted = true;
                         task::Poll::Ready(Some(Err(err)))
                     }
                 }
@@ -337,6 +357,10 @@ impl LiveState {
         }
     }
 
+    /// Captures the current iterator position as a [`ContinuationToken`].
+    ///
+    /// This can ONLY be called when there is no page fetch currently in-flight.
+    /// Attempting to call this method while a page fetch is in-flight will result in an error, since the internal state is being mutated and cannot be safely snapshotted.
     fn to_continuation_token(&self) -> azure_core::Result<ContinuationToken> {
         let plan = self.plan.as_ref().ok_or_else(|| {
             azure_core::Error::with_message(
@@ -353,8 +377,9 @@ impl LiveState {
 /// Production iterators use the [`Live`](Self::Live) variant which drives the
 /// underlying [`OperationPlan`]. Unit tests use [`Synthetic`](Self::Synthetic)
 /// to inject a pre-built sequence of pages.
+#[pin_project::pin_project(project = PageSourceProj)]
 enum PageSource<T: Send> {
-    Live(Box<LiveState>),
+    Live(Pin<Box<LiveState>>),
     #[cfg(test)]
     Synthetic(std::collections::VecDeque<azure_core::Result<QueryFeedPage<T>>>),
     #[cfg(not(test))]
@@ -364,15 +389,15 @@ enum PageSource<T: Send> {
 
 impl<T: Send + DeserializeOwned + 'static> PageSource<T> {
     fn poll_next_page(
-        &mut self,
+        self: Pin<&mut Self>,
         cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<azure_core::Result<QueryFeedPage<T>>>> {
-        match self {
-            PageSource::Live(state) => state.poll_next_page::<T>(cx),
+        match self.project() {
+            PageSourceProj::Live(state) => state.as_mut().poll_next_page::<T>(cx),
             #[cfg(test)]
-            PageSource::Synthetic(pages) => task::Poll::Ready(pages.pop_front()),
+            PageSourceProj::Synthetic(pages) => task::Poll::Ready(pages.pop_front()),
             #[cfg(not(test))]
-            PageSource::_Phantom(_) => task::Poll::Ready(None),
+            PageSourceProj::_Phantom(_) => task::Poll::Ready(None),
         }
     }
 }
@@ -380,7 +405,9 @@ impl<T: Send + DeserializeOwned + 'static> PageSource<T> {
 /// Represents a stream of items from a Cosmos DB query.
 ///
 /// See [`QueryFeedPage`] for more details on Cosmos DB feeds.
+#[pin_project::pin_project]
 pub struct FeedItemIterator<T: Send> {
+    #[pin]
     source: PageSource<T>,
     current: Option<std::vec::IntoIter<T>>,
     _marker: PhantomData<fn() -> T>,
@@ -395,7 +422,7 @@ impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
         options: OperationOptions,
     ) -> Self {
         Self {
-            source: PageSource::Live(Box::new(LiveState::new(driver, container, plan, options))),
+            source: PageSource::Live(Box::pin(LiveState::new(driver, container, plan, options))),
             current: None,
             _marker: PhantomData,
         }
@@ -406,7 +433,7 @@ impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
     ///
     /// IMPORTANT: This will DISCARD any items from the current page that have
     /// not yet been yielded by the item iterator. Use this method before
-    /// consuming any items if you want to switch to page-based iteration.
+    /// consuming any items to cleanly switch to page-based iteration.
     pub fn into_pages(self) -> FeedPageIterator<T> {
         FeedPageIterator {
             source: self.source,
@@ -422,19 +449,18 @@ impl<T: Send + DeserializeOwned + 'static> Stream for FeedItemIterator<T> {
         self: Pin<&mut Self>,
         cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<Self::Item>> {
-        // Safety: we never move the inner source/current out via Pin.
-        let this = unsafe { self.get_unchecked_mut() };
+        let mut this = self.project();
         loop {
-            if let Some(current) = this.current.as_mut() {
+            if let Some(current) = this.current {
                 if let Some(item) = current.next() {
                     return task::Poll::Ready(Some(Ok(item)));
                 }
-                this.current = None;
+                this.current.take();
             }
 
-            match this.source.poll_next_page(cx) {
+            match this.source.as_mut().poll_next_page(cx) {
                 task::Poll::Ready(Some(Ok(page))) => {
-                    this.current = Some(page.into_items().into_iter());
+                    *this.current = Some(page.into_items().into_iter());
                     continue;
                 }
                 task::Poll::Ready(Some(Err(err))) => return task::Poll::Ready(Some(Err(err))),
@@ -451,7 +477,9 @@ impl<T: Send + DeserializeOwned + 'static> Stream for FeedItemIterator<T> {
 /// iterator can be snapshotted into a [`ContinuationToken`] for later
 /// resumption via
 /// [`to_continuation_token`](Self::to_continuation_token).
+#[pin_project::pin_project]
 pub struct FeedPageIterator<T: Send> {
+    #[pin]
     source: PageSource<T>,
     _marker: PhantomData<fn() -> T>,
 }
@@ -465,7 +493,8 @@ impl<T: Send + DeserializeOwned + 'static> FeedPageIterator<T> {
     /// to resume the query at the same position.
     ///
     /// Snapshotting is non-mutating; the iterator may continue to be used
-    /// afterwards.
+    /// afterwards. However, the captured token will resume from the position of the iterator at the time of capture,
+    /// so any subsequent calls to `poll_next` after token capture will not affect the captured token's position.
     ///
     /// # Errors
     ///
@@ -493,7 +522,7 @@ impl<T: Send + DeserializeOwned + 'static> Stream for FeedPageIterator<T> {
         cx: &mut task::Context<'_>,
     ) -> task::Poll<Option<Self::Item>> {
         // Safety: we never move source out via Pin.
-        let this = unsafe { self.get_unchecked_mut() };
+        let this = self.project();
         this.source.poll_next_page(cx)
     }
 }
