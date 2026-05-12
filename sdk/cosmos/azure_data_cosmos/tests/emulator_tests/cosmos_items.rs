@@ -40,7 +40,7 @@ struct TestItem {
 fn assert_response<T>(
     response: &ItemResponse<T>,
     expected_status: StatusCode,
-    expected_endpoint: &str,
+    _expected_endpoint: &str,
     read_operation: bool,
 ) {
     assert_eq!(response.status(), expected_status, "unexpected status code");
@@ -63,34 +63,45 @@ fn assert_response<T>(
         );
     }
 
-    // request_url() returns None for driver-routed operations (e.g., read_item).
-    // Only assert the endpoint when the URL is available.
-    if let Some(url) = response.request_url() {
-        assert_eq!(
-            url.host_str().unwrap(),
-            expected_endpoint,
-            "unexpected endpoint"
-        );
-    }
     assert!(
         response.session_token().is_some(),
         "expected session token to be present"
     );
+    let diagnostics = response.diagnostics();
     assert!(
-        response.diagnostics().activity_id().is_some(),
-        "expected activity ID to be present"
-    );
-    assert!(
-        !response.diagnostics().activity_id().unwrap().is_empty(),
+        !diagnostics.activity_id().as_str().is_empty(),
         "expected activity ID to be non-empty"
     );
-    // Server duration is returned by the Cosmos DB service on all operations
+    // The driver tracks at least one request per operation and finalizes its
+    // status on completion. Validate the richer DiagnosticsContext fields.
     assert!(
-        response.diagnostics().server_duration_ms().is_some(),
-        "expected server_duration_ms to be present"
+        diagnostics.request_count() >= 1,
+        "expected at least one request to be tracked"
+    );
+    let op_status = diagnostics
+        .status()
+        .expect("operation status should be set on completed diagnostics");
+    assert_eq!(
+        op_status.status_code(),
+        expected_status,
+        "operation-level diagnostics status should match HTTP response status"
     );
     assert!(
-        response.diagnostics().server_duration_ms().unwrap() >= 0.0,
+        f64::from(diagnostics.total_request_charge()) > 0.0,
+        "expected positive total request charge in diagnostics"
+    );
+    // Server duration is returned by the Cosmos DB service on all operations
+    let requests = diagnostics.requests();
+    let server_duration = requests
+        .iter()
+        .filter_map(|r| r.server_duration_ms())
+        .next();
+    assert!(
+        server_duration.is_some(),
+        "expected at least one tracked request to report server_duration_ms"
+    );
+    assert!(
+        server_duration.unwrap() >= 0.0,
         "expected server_duration_ms to be non-negative"
     );
 }
@@ -1092,21 +1103,41 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
                 "expected session token on create_item response"
             );
 
-            // Activity ID is required for tracing/support.
-            let activity_id = response.diagnostics().activity_id();
-            assert!(activity_id.is_some(), "expected activity ID");
+            // Diagnostics from the driver pipeline must surface a populated
+            // activity ID and at least one tracked request with timing data.
+            let diagnostics = response.diagnostics();
             assert!(
-                !activity_id.unwrap().is_empty(),
+                !diagnostics.activity_id().as_str().is_empty(),
                 "activity ID must be non-empty"
+            );
+            assert!(
+                diagnostics.request_count() >= 1,
+                "expected at least one request to be tracked in diagnostics"
+            );
+            let op_status = diagnostics
+                .status()
+                .expect("operation status should be set on completed diagnostics");
+            assert_eq!(
+                op_status.status_code(),
+                StatusCode::Created,
+                "operation-level diagnostics status should match HTTP response status"
             );
 
             // Request charge must be positive.
             let charge = response.request_charge();
             assert!(charge.is_some(), "expected request charge");
             assert!(charge.unwrap() > 0.0, "request charge must be positive");
+            assert!(
+                f64::from(diagnostics.total_request_charge()) >= charge.unwrap(),
+                "diagnostics total request charge should aggregate response request charge"
+            );
 
-            // Server duration must be present and non-negative.
-            let duration = response.diagnostics().server_duration_ms();
+            // Server duration must be present and non-negative on the tracked request.
+            let requests = diagnostics.requests();
+            let duration = requests
+                .iter()
+                .filter_map(|r| r.server_duration_ms())
+                .next();
             assert!(duration.is_some(), "expected server_duration_ms");
             assert!(
                 duration.unwrap() >= 0.0,

@@ -11,6 +11,8 @@
 
 ### Breaking Changes
 
+- Changed `CosmosResponse::diagnostics()` to return `Arc<DiagnosticsContext>` instead of `&DiagnosticsContext`. The returned `Arc` derefs transparently for read-only inspection (existing call patterns like `response.diagnostics().activity_id()` continue to work), but bindings of the form `let d = response.diagnostics();` now own a cloned `Arc` handle rather than a borrow — letting callers retain operation diagnostics across `into_body()`. Replaces the additive `CosmosResponse::diagnostics_arc()` accessor introduced earlier in this preview cycle.
+
 ### Bugs Fixed
 
 - PPCB now records every 5xx failure for the affected partition, including the final failure that exhausts the failover retry budget. Previously the budget-exhausted abort path skipped emitting `MarkPartitionUnavailable`, causing the most diagnostic failure to be silently dropped from PPCB's per-partition counter. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))

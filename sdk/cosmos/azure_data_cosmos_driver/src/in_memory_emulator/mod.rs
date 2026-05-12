@@ -31,6 +31,7 @@ mod client;
 mod config;
 mod dispatch;
 mod epk;
+mod observer;
 mod operations;
 mod response;
 mod rid;
@@ -45,6 +46,7 @@ pub use config::{
     WriteMode, DEFAULT_MAX_BUFFERED_REPLICATIONS,
 };
 pub use epk::Epk;
+pub use observer::RequestObserver;
 #[doc(hidden)]
 pub use response::headers as test_headers;
 pub use ru_model::RuChargingModel;

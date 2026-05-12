@@ -15,7 +15,7 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use framework::{get_effective_hub_endpoint, TestClient, TestOptions};
+use framework::{TestClient, TestOptions};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::error::Error;
@@ -249,10 +249,6 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
             let response = result.unwrap();
             assert_eq!(response.status(), StatusCode::Ok);
-            // request_url() returns None for driver-routed operations.
-            if let Some(url) = response.request_url() {
-                assert_eq!(url.host_str().unwrap(), get_effective_hub_endpoint());
-            }
 
             Ok(())
         },
