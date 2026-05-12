@@ -746,7 +746,10 @@ dependencies = [
  "azure_identity",
  "azure_storage_blob",
  "bytes",
+ "clap",
  "futures",
+ "serde",
+ "serde_json",
  "tokio",
 ]
 
