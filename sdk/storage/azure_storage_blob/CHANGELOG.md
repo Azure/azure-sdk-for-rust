@@ -4,7 +4,7 @@
 
 ### Breaking Changes
 
-- Consolidated client constructors. The previous `from_url()` constructors are now the sole `new()` constructor and the prior multi-string `new()` overloads have been removed:
+- Consolidated client constructors: the existing `from_url()` constructors have been renamed to `new()`, replacing the previous endpoint-plus-name string overloads. Each client now has a single `new()` that takes a fully-formed `Url`:
   - `BlobClient::new(blob_url: Url, ...)`
   - `BlockBlobClient::new(blob_url: Url, ...)`
   - `AppendBlobClient::new(blob_url: Url, ...)`

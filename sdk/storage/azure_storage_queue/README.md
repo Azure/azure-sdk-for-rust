@@ -39,6 +39,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 In order to interact with the Azure Queue service, you'll need to create an instance of a client, `QueueClient` or `QueueServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
+use azure_core::http::Url;
 use azure_storage_queue::{QueueClient, QueueClientOptions};
 use azure_identity::DeveloperToolsCredential;
 
@@ -46,7 +47,7 @@ use azure_identity::DeveloperToolsCredential;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a QueueClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_url = azure_core::http::Url::parse(
+    let queue_url = Url::parse(
         "https://<storage_account_name>.queue.core.windows.net/<queue_name>",
     )?;
     let queue_client = QueueClient::new(
@@ -75,13 +76,14 @@ You can find executable examples for all major SDK functions in:
 ### Send a message
 
 ```rust no_run
+use azure_core::http::Url;
 use azure_storage_queue::{models::QueueMessage, QueueClient, QueueClientOptions};
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_url = azure_core::http::Url::parse(
+    let queue_url = Url::parse(
         "https://<storage_account_name>.queue.core.windows.net/<queue_name>",
     )?;
     let queue_client = QueueClient::new(
@@ -101,13 +103,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Receive messages
 
 ```rust no_run
+use azure_core::http::Url;
 use azure_storage_queue::{QueueClient, QueueClientOptions};
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_url = azure_core::http::Url::parse(
+    let queue_url = Url::parse(
         "https://<storage_account_name>.queue.core.windows.net/<queue_name>",
     )?;
     let queue_client = QueueClient::new(

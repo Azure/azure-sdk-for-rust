@@ -39,6 +39,7 @@ az storage account create -n my-storage-account-name -g my-resource-group
 In order to interact with the Azure Blob Storage service, you'll need to create an instance of a client, `BlobClient`, `BlobContainerClient`, or `BlobServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
+use azure_core::http::Url;
 use azure_storage_blob::BlobClient;
 use azure_identity::DeveloperToolsCredential;
 
@@ -46,7 +47,7 @@ use azure_identity::DeveloperToolsCredential;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a BlobClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_url = azure_core::http::Url::parse(
+    let blob_url = Url::parse(
         "https://<storage_account_name>.blob.core.windows.net/<container_name>/<blob_name>",
     )?;
     let blob_client = BlobClient::new(
@@ -80,14 +81,14 @@ You can find executable examples for all major SDK functions in:
 ### Upload a blob
 
 ```rust no_run
-use azure_core::http::RequestContent;
+use azure_core::http::{RequestContent, Url};
 use azure_storage_blob::BlobClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_url = azure_core::http::Url::parse(
+    let blob_url = Url::parse(
         "https://<storage_account_name>.blob.core.windows.net/<container_name>/<blob_name>",
     )?;
     let blob_client = BlobClient::new(blob_url, Some(credential), None)?;
@@ -106,13 +107,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Download a blob
 
 ```rust no_run
+use azure_core::http::Url;
 use azure_storage_blob::BlobClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_url = azure_core::http::Url::parse(
+    let blob_url = Url::parse(
         "https://<storage_account_name>.blob.core.windows.net/<container_name>/<blob_name>",
     )?;
     let blob_client = BlobClient::new(

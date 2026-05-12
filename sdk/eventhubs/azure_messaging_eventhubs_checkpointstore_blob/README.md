@@ -75,6 +75,7 @@ This example creates a blob container client on the storage account which will h
 It then creates an EventHubs processor client using the blob checkpoint store and starts the processor.
 
 ```rust no_run
+use azure_core::http::Url;
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
 use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, ProcessorStrategy};
 use azure_storage_blob::BlobContainerClient;
@@ -86,7 +87,7 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create blob service client
     let credential = DeveloperToolsCredential::new(None)?;
-    let container_url = azure_core::http::Url::parse(
+    let container_url = Url::parse(
         "https://yourstorageaccount.blob.core.windows.net/yourcontainername",
     )?;
     let blob_client = BlobContainerClient::new(
