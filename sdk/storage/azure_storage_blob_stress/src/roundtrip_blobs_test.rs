@@ -28,6 +28,7 @@ use azure_storage_blob_test::{
 use clap::{Args, ValueEnum};
 use crc_fast::{CrcAlgorithm, Digest};
 use futures::{channel::mpsc::UnboundedSender, SinkExt, TryStreamExt};
+use log::{debug, info};
 use uuid::Uuid;
 
 const CRC_ALGORITHM: CrcAlgorithm = CrcAlgorithm::Crc64Nvme;
@@ -107,7 +108,7 @@ static NO_FAULT: LazyLock<Context> = LazyLock::new(|| {
 #[async_trait]
 impl StressTest for RoundtripBlobsTest {
     async fn global_setup(&self) -> Result<()> {
-        println!("Creating container...");
+        debug!("Creating container...");
         self.container_client
             .create(Some(BlobContainerClientCreateOptions {
                 method_options: ClientMethodOptions {
@@ -116,7 +117,7 @@ impl StressTest for RoundtripBlobsTest {
                 ..Default::default()
             }))
             .await?;
-        println!("Container created.");
+        info!("Container created.");
         Ok(())
     }
 
@@ -151,7 +152,7 @@ impl StressTest for RoundtripBlobsTest {
     }
 
     async fn global_cleanup(&self) -> Result<()> {
-        println!("Deleting container...");
+        debug!("Deleting container...");
         self.container_client
             .delete(Some(BlobContainerClientDeleteOptions {
                 method_options: ClientMethodOptions {
@@ -160,7 +161,7 @@ impl StressTest for RoundtripBlobsTest {
                 ..Default::default()
             }))
             .await?;
-        println!("Deleting created.");
+        info!("Deleting created.");
         Ok(())
     }
 }

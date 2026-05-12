@@ -33,6 +33,7 @@ use azure_storage_blob_test::{
 use clap::Args;
 use crc_fast::{CrcAlgorithm, Digest};
 use futures::{channel::mpsc::UnboundedSender, future, lock::Mutex, SinkExt, TryStreamExt};
+use log::{debug, info};
 use uuid::Uuid;
 
 const CRC_ALGORITHM: CrcAlgorithm = CrcAlgorithm::Crc64Nvme;
@@ -109,7 +110,7 @@ static NO_FAULT: LazyLock<Context> = LazyLock::new(|| {
 #[async_trait]
 impl StressTest for DownloadBlobsTest {
     async fn global_setup(&self) -> Result<()> {
-        println!("Creating container...");
+        debug!("Creating container...");
         self.container_client
             .create(Some(BlobContainerClientCreateOptions {
                 method_options: ClientMethodOptions {
@@ -118,11 +119,11 @@ impl StressTest for DownloadBlobsTest {
                 ..Default::default()
             }))
             .await?;
-        println!("Container created.");
+        info!("Container created.");
 
         let mut create_blob_tasks = Vec::with_capacity(self.download_targets);
         for i in 0..self.download_targets {
-            println!("Creating blob {i}...");
+            debug!("Creating blob {i}...");
             let (stream, data_crc) =
                 data::random_data_stream_with_checksum(self.download_targets_len, CRC_ALGORITHM);
 
@@ -153,8 +154,10 @@ impl StressTest for DownloadBlobsTest {
             .enumerate()
         {
             res?;
-            println!("Created blob {i}.");
+            debug!("Created blob {i}.");
         }
+        info!("Target blobs created.");
+
         Ok(())
     }
 
@@ -174,7 +177,7 @@ impl StressTest for DownloadBlobsTest {
     }
 
     async fn global_cleanup(&self) -> Result<()> {
-        println!("Deleting container...");
+        debug!("Deleting container...");
         self.container_client
             .delete(Some(BlobContainerClientDeleteOptions {
                 method_options: ClientMethodOptions {
@@ -183,7 +186,7 @@ impl StressTest for DownloadBlobsTest {
                 ..Default::default()
             }))
             .await?;
-        println!("Deleting created.");
+        info!("Container deleted.");
         Ok(())
     }
 }

@@ -22,6 +22,7 @@ bytes.workspace = true
 clap = { workspace = true, features = ["derive"] }
 crc-fast = "1.9.0"
 futures.workspace = true
+log = "0.4.29"
 pin-project.workspace = true
 rand.workspace = true
 serde.workspace = true
