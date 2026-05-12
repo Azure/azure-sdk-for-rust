@@ -41,13 +41,9 @@ pub struct PartitionKeyRange {
     pub(crate) status: PartitionKeyRangeStatus,
 
     /// Fraction of the container's provisioned throughput allocated to this
-    /// partition key range.
-    ///
-    /// Retained on the cached struct for parity with the Python SDK
-    /// (`PartitionKeyRange.ThroughputFraction`), which surfaces it on the
-    /// equivalent slim namedtuple. Not consulted by the routing layer
-    /// itself, but kept so consumers that read it directly continue to
-    /// work after the slim-down.
+    /// partition key range. Not consulted by the routing layer itself, but
+    /// kept on the cached struct so consumers that read it directly continue
+    /// to work after the slim-down.
     #[serde(rename = "throughputFraction", default)]
     pub throughput_fraction: f64,
 
