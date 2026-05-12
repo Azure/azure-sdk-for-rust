@@ -24,7 +24,7 @@
 
 use std::{collections::HashMap, env};
 
-use azure_core::http::RequestContent;
+use azure_core::http::{RequestContent, Url};
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
     models::{AccessTier, BlobClientGetPropertiesResultHeaders, BlobTags},
@@ -41,8 +41,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let blob_name = "sample.txt";
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let container_client =
-        BlobContainerClient::new(&endpoint, container_name, Some(credential), None)?;
+    let mut container_url = Url::parse(&endpoint)?;
+    container_url
+        .path_segments_mut()
+        .expect("endpoint must be a valid base URL")
+        .push(container_name);
+    let container_client = BlobContainerClient::new(container_url, Some(credential), None)?;
 
     container_client.create(None).await?;
     println!("Created container '{container_name}'");

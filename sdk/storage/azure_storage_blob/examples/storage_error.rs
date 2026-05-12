@@ -24,7 +24,7 @@
 //! AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>" cargo run --package azure_storage_blob --example storage_error
 //! ```
 
-use azure_core::error::ErrorKind;
+use azure_core::{error::ErrorKind, http::Url};
 use azure_identity::AzureCliCredential;
 use azure_storage_blob::{models::StorageErrorCode, BlobClient, StorageError};
 use std::env;
@@ -44,8 +44,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = AzureCliCredential::new(None)?;
 
     // Create a BlobClient pointing to a blob that doesn't exist
-    let blob_client =
-        BlobClient::new(&endpoint, container_name, blob_name, Some(credential), None)?;
+    let mut blob_url = Url::parse(&endpoint)?;
+    blob_url
+        .path_segments_mut()
+        .expect("endpoint must be a valid base URL")
+        .extend([container_name, blob_name]);
+    let blob_client = BlobClient::new(blob_url, Some(credential), None)?;
 
     // Attempt to download a blob that doesn't exist to force an error
     println!("Attempting to download a blob that doesn't exist...");

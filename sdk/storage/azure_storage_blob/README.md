@@ -46,12 +46,13 @@ use azure_identity::DeveloperToolsCredential;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a BlobClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
+    let blob_url = azure_core::http::Url::parse(
+        "https://<storage_account_name>.blob.core.windows.net/<container_name>/<blob_name>",
+    )?;
     let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/",  // Endpoint
-        "<container_name>",                                       // Container Name
-        "<blob_name>",                                            // Blob Name
-        Some(credential),                                         // Credential
-        None,                                                     // BlobClient Options
+        blob_url,        // Blob URL
+        Some(credential), // Credential
+        None,             // BlobClient Options
     )?;
     Ok(())
 }
@@ -86,13 +87,10 @@ use azure_identity::DeveloperToolsCredential;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/",
-        "<container_name>",
-        "<blob_name>",
-        Some(credential),
-        None,
+    let blob_url = azure_core::http::Url::parse(
+        "https://<storage_account_name>.blob.core.windows.net/<container_name>/<blob_name>",
     )?;
+    let blob_client = BlobClient::new(blob_url, Some(credential), None)?;
 
     let data = b"hello world";
     blob_client
@@ -114,12 +112,13 @@ use azure_identity::DeveloperToolsCredential;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
+    let blob_url = azure_core::http::Url::parse(
+        "https://<storage_account_name>.blob.core.windows.net/<container_name>/<blob_name>",
+    )?;
     let blob_client = BlobClient::new(
-        "https://<storage_account_name>.blob.core.windows.net/",  // Endpoint
-        "<container_name>",                                       // Container Name
-        "<blob_name>",                                            // Blob Name
-        Some(credential),                                         // Credential
-        None,                                                     // BlobClient Options
+        blob_url,         // Blob URL
+        Some(credential), // Credential
+        None,             // BlobClient Options
     )?;
     let response = blob_client.download(None).await?;
     let data = String::from_utf8(response.body.collect().await?.into())?;

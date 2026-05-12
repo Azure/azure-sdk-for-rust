@@ -4,11 +4,14 @@
 
 ### Breaking Changes
 
+- Consolidated client constructors. The previous `from_url()` constructor on `QueueClient` is now the sole `new()` constructor and the prior multi-string `new()` overloads have been removed:
+  - `QueueClient::new(queue_url: Url, ...)`
+  - `QueueServiceClient::new(service_url: Url, ...)`
 - Renamed `QueueClient::endpoint()` and `QueueServiceClient::endpoint()` to `url()` for consistency with other Storage clients.
 
 ### Bugs Fixed
 
-- `QueueClient::from_url()` and `QueueServiceClient::new()` now reject non-base URLs (e.g. `data:`, `mailto:`).
+- `QueueClient::new()` and `QueueServiceClient::new()` now reject non-base URLs (e.g. `data:`, `mailto:`).
 
 ## 0.6.0 (2026-04-22)
 

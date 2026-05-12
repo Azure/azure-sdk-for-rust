@@ -10,7 +10,7 @@
 //!
 //! It also uses the OpenTelemetry SDK to set up tracing and logging with a stdout exporter.
 
-use azure_core::http::{ClientOptions, InstrumentationOptions};
+use azure_core::http::{ClientOptions, InstrumentationOptions, Url};
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::{
@@ -44,9 +44,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
 
     // Instantiate a blob client with OpenTelemetry instrumentation enabled
+    let mut container_url = Url::parse(&storage_account_url)?;
+    container_url
+        .path_segments_mut()
+        .expect("storage_account_url must be a valid base URL")
+        .push(&container);
     let blob_container_client = BlobContainerClient::new(
-        &storage_account_url,
-        &container,
+        container_url,
         Some(credential),
         Some(BlobContainerClientOptions {
             client_options: ClientOptions {

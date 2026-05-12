@@ -48,7 +48,7 @@
 //! ```
 
 use azure_core::{
-    http::{ClientOptions, InstrumentationOptions, RequestContent},
+    http::{ClientOptions, InstrumentationOptions, RequestContent, Url},
     tracing::TracerProvider,
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
@@ -118,12 +118,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let container_client = BlobContainerClient::new(
-        &endpoint,
-        container_name,
-        Some(credential),
-        Some(client_options),
-    )?;
+    let mut container_url = Url::parse(&endpoint)?;
+    container_url
+        .path_segments_mut()
+        .expect("endpoint must be a valid base URL")
+        .push(container_name);
+    let container_client =
+        BlobContainerClient::new(container_url, Some(credential), Some(client_options))?;
 
     // Create BlobClient
     let blob_client = container_client.blob_client(blob_name);

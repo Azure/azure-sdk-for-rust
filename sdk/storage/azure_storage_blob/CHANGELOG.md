@@ -4,6 +4,13 @@
 
 ### Breaking Changes
 
+- Consolidated client constructors. The previous `from_url()` constructors are now the sole `new()` constructor and the prior multi-string `new()` overloads have been removed:
+  - `BlobClient::new(blob_url: Url, ...)`
+  - `BlockBlobClient::new(blob_url: Url, ...)`
+  - `AppendBlobClient::new(blob_url: Url, ...)`
+  - `PageBlobClient::new(blob_url: Url, ...)`
+  - `BlobContainerClient::new(container_url: Url, ...)`
+  - `BlobServiceClient::new(service_url: Url, ...)`
 - `BlobServiceClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilterBlobSegment, XmlFormat>>`.
 - `BlobContainerClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilteredBlobResponse, XmlFormat>>`.
 - Renamed `FilterBlobSegment` to `FilteredBlobResponse`.
@@ -32,7 +39,7 @@
 
 ### Bugs Fixed
 
-- All client constructors (`BlobClient::from_url()`, `BlobContainerClient::from_url()`, `BlobServiceClient::new()`, `AppendBlobClient::from_url()`, `BlockBlobClient::from_url()`, `PageBlobClient::from_url()`) now reject non-base URLs (e.g. `data:`, `mailto:`).
+- All client constructors (`BlobClient::new()`, `BlobContainerClient::new()`, `BlobServiceClient::new()`, `AppendBlobClient::new()`, `BlockBlobClient::new()`, `PageBlobClient::new()`) now reject non-base URLs (e.g. `data:`, `mailto:`).
 
 ## 0.12.0 (2026-04-22)
 

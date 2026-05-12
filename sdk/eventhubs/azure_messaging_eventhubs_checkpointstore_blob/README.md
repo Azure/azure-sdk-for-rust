@@ -86,9 +86,11 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create blob service client
     let credential = DeveloperToolsCredential::new(None)?;
+    let container_url = azure_core::http::Url::parse(
+        "https://yourstorageaccount.blob.core.windows.net/yourcontainername",
+    )?;
     let blob_client = BlobContainerClient::new(
-        "https://yourstorageaccount.blob.core.windows.net",
-        "yourcontainername",
+        container_url,
         Some(credential.clone()),
         None,
     )?;

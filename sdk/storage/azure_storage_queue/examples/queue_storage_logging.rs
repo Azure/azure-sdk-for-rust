@@ -47,7 +47,7 @@
 //! ```
 
 use azure_core::{
-    http::{ClientOptions, InstrumentationOptions},
+    http::{ClientOptions, InstrumentationOptions, Url},
     tracing::TracerProvider,
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
@@ -122,8 +122,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let service_client =
-        QueueServiceClient::new(&endpoint, Some(credential), Some(client_options))?;
+    let service_client = QueueServiceClient::new(
+        Url::parse(&endpoint)?,
+        Some(credential),
+        Some(client_options),
+    )?;
     let queue_client = service_client.queue_client(queue_name)?;
 
     // Create queue if it doesn't exist

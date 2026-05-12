@@ -26,6 +26,7 @@
 
 use std::{collections::HashMap, env};
 
+use azure_core::http::Url;
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_queue::{
     models::{
@@ -44,7 +45,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let queue_name = random_queue_name();
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_client = QueueClient::new(&endpoint, &queue_name, Some(credential), None)?;
+    let mut queue_url = Url::parse(&endpoint)?;
+    queue_url
+        .path_segments_mut()
+        .expect("endpoint must be a valid base URL")
+        .push(&queue_name);
+    let queue_client = QueueClient::new(queue_url, Some(credential), None)?;
 
     println!("Creating queue '{queue_name}'...");
     queue_client.create(None).await?;

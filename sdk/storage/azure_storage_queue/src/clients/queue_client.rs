@@ -15,32 +15,6 @@ use azure_core::{
 use std::sync::Arc;
 
 impl QueueClient {
-    /// Creates a new `QueueClient`.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`
-    /// * `queue_name` - The name of the queue to interact with.
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    pub fn new(
-        endpoint: &str,
-        queue_name: &str,
-        credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<QueueClientOptions>,
-    ) -> Result<Self> {
-        let mut url = Url::parse(endpoint)?;
-        url.path_segments_mut()
-            .map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
-                )
-            })?
-            .push(queue_name);
-        Self::from_url(url, credential, options)
-    }
-
     /// Creates a new `QueueClient` from a queue URL.
     ///
     /// # Arguments
@@ -49,7 +23,7 @@ impl QueueClient {
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Queues.Queue")]
-    pub fn from_url(
+    pub fn new(
         queue_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<QueueClientOptions>,
@@ -114,20 +88,14 @@ impl QueueClient {
 
 #[cfg(test)]
 mod tests {
-    use super::{QueueClient, QueueClientOptions};
+    use super::{QueueClient, QueueClientOptions, Url};
     use azure_core_test::credentials::MockCredential;
 
     #[test]
     fn new_requires_https_with_credential() {
         let cred = MockCredential::new().unwrap();
-        let err = QueueClient::new(
-            "http://myaccount.queue.core.windows.net/",
-            "myqueue",
-            Some(cred),
-            None,
-        )
-        .err()
-        .unwrap();
+        let url = Url::parse("http://myaccount.queue.core.windows.net/myqueue").unwrap();
+        let err = QueueClient::new(url, Some(cred), None).err().unwrap();
         assert!(
             err.to_string().contains("must use https"),
             "Expected error message to contain 'must use https', got: {err}"
@@ -135,44 +103,23 @@ mod tests {
     }
 
     #[test]
-    fn from_url_requires_https_with_credential() {
-        let cred = MockCredential::new().unwrap();
-        let url = azure_core::http::Url::parse("http://myaccount.queue.core.windows.net/myqueue")
-            .unwrap();
-        let err = QueueClient::from_url(url, Some(cred), None).err().unwrap();
-        assert!(
-            err.to_string().contains("must use https"),
-            "Expected error message to contain 'must use https', got: {err}"
-        );
-    }
-
-    #[test]
-    fn from_url_rejects_non_base_url() {
-        let url = azure_core::http::Url::parse("data:text/plain,hello").unwrap();
-        assert!(QueueClient::from_url(url, None, None).is_err());
+    fn new_rejects_non_base_url() {
+        let url = Url::parse("data:text/plain,hello").unwrap();
+        assert!(QueueClient::new(url, None, None).is_err());
     }
 
     #[test]
     fn new_allows_http_without_credential() {
         // HTTP is allowed when no credential is provided (e.g., SAS token in URL)
-        let result = QueueClient::new(
-            "http://myaccount.queue.core.windows.net/",
-            "myqueue",
-            None,
-            None,
-        );
-        assert!(result.is_ok());
+        let url = Url::parse("http://myaccount.queue.core.windows.net/myqueue").unwrap();
+        assert!(QueueClient::new(url, None, None).is_ok());
     }
 
     #[test]
     fn new_allows_https_with_credential() {
         let cred = MockCredential::new().unwrap();
-        let result = QueueClient::new(
-            "https://myaccount.queue.core.windows.net/",
-            "myqueue",
-            Some(cred),
-            Some(QueueClientOptions::default()),
-        );
+        let url = Url::parse("https://myaccount.queue.core.windows.net/myqueue").unwrap();
+        let result = QueueClient::new(url, Some(cred), Some(QueueClientOptions::default()));
         assert!(result.is_ok());
     }
 }

@@ -27,7 +27,7 @@
 //! cargo run --package azure_storage_queue --example access_policy
 //! ```
 
-use azure_core::time::OffsetDateTime;
+use azure_core::{http::Url, time::OffsetDateTime};
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_queue::{
     models::{AccessPolicy, SignedIdentifier, SignedIdentifiers},
@@ -43,7 +43,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let queue_name = "access-policy-sample-queue";
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_client = QueueClient::new(&endpoint, queue_name, Some(credential), None)?;
+    let mut queue_url = Url::parse(&endpoint)?;
+    queue_url
+        .path_segments_mut()
+        .expect("endpoint must be a valid base URL")
+        .push(queue_name);
+    let queue_client = QueueClient::new(queue_url, Some(credential), None)?;
 
     // Create the queue.
     queue_client.create(None).await?;

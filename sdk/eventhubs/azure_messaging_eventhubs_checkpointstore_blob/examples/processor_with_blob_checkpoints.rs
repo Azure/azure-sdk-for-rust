@@ -3,6 +3,7 @@
 
 //! Example showing how to use the blob checkpoint store with an Event Hubs processor.
 
+use azure_core::http::Url;
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::{ConsumerClient, EventProcessor};
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
@@ -31,12 +32,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create Azure credential and blob service client
     let credential = DeveloperToolsCredential::new(None)?;
-    let blob_container_client = BlobContainerClient::new(
-        &storage_account_url,
-        &container_name,
-        Some(credential.clone()),
-        None,
-    )?;
+    let mut container_url = Url::parse(&storage_account_url)?;
+    container_url
+        .path_segments_mut()
+        .expect("storage_account_url must be a valid base URL")
+        .push(&container_name);
+    let blob_container_client =
+        BlobContainerClient::new(container_url, Some(credential.clone()), None)?;
     let consumer = ConsumerClient::builder()
         .with_application_id("ProcessorExample".to_string())
         .with_consumer_group(consumer_group)

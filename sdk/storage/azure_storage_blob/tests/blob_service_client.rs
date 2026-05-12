@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientOptions, RequestContent, XmlFormat};
+use azure_core::http::{ClientOptions, RequestContent, Url, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
@@ -280,7 +280,7 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
         ..Default::default()
     };
     let service_client = BlobServiceClient::new(
-        &endpoint,
+        Url::parse(&endpoint)?,
         Some(recording.credential()),
         Some(service_client_options),
     )?;

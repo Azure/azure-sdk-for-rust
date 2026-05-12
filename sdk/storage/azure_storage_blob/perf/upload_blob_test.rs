@@ -3,7 +3,7 @@
 
 use std::sync::{Arc, OnceLock};
 
-use azure_core::Bytes;
+use azure_core::{http::Url, Bytes};
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
@@ -82,7 +82,12 @@ impl PerfTest for UploadBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
+        let mut container_url = Url::parse(&endpoint)?;
+        container_url
+            .path_segments_mut()
+            .expect("endpoint must be a valid base URL")
+            .push(&container_name);
+        let client = BlobContainerClient::new(container_url, Some(credential), None)?;
         self.client.get_or_init(|| client);
         let data = vec![0u8; self.size];
         self.upload_buffer

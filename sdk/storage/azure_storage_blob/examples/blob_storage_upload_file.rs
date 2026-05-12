@@ -29,7 +29,10 @@
 //! The `<ACCOUNT_NAME>` flag can also be provided via the `AZURE_STORAGE_ACCOUNT_NAME`
 //! environment variable.
 
-use azure_core::{http::Body, stream::DEFAULT_BUFFER_SIZE};
+use azure_core::{
+    http::{Body, Url},
+    stream::DEFAULT_BUFFER_SIZE,
+};
 use azure_identity::AzureCliCredential;
 use azure_storage_blob::{models::BlobClientUploadOptions, stream::tokio::FileStream, BlobClient};
 use clap::Parser;
@@ -41,13 +44,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let endpoint = format!("https://{}.blob.core.windows.net", args.account_name);
     let credential = AzureCliCredential::new(None)?;
-    let client = BlobClient::new(
-        &endpoint,
-        &args.container_name,
-        &args.blob_name,
-        Some(credential),
-        None,
-    )?;
+    let mut blob_url = Url::parse(&endpoint)?;
+    blob_url
+        .path_segments_mut()
+        .expect("endpoint must be a valid base URL")
+        .extend([&args.container_name, &args.blob_name]);
+    let client = BlobClient::new(blob_url, Some(credential), None)?;
 
     let file_size = std::fs::metadata(&args.file_path)?.len();
 

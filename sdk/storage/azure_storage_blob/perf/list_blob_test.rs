@@ -3,7 +3,7 @@
 
 use std::sync::{Arc, OnceLock};
 
-use azure_core::{error::ErrorKind, Bytes};
+use azure_core::{error::ErrorKind, http::Url, Bytes};
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
@@ -82,7 +82,12 @@ impl PerfTest for ListBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
+        let mut container_url = Url::parse(&endpoint)?;
+        container_url
+            .path_segments_mut()
+            .expect("endpoint must be a valid base URL")
+            .push(&container_name);
+        let client = BlobContainerClient::new(container_url, Some(credential), None)?;
         self.client.set(client).map_err(|_| {
             azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
         })?;

@@ -7,7 +7,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
-        Context, FixedRetryOptions, Response, RetryOptions, StatusCode,
+        Context, FixedRetryOptions, Response, RetryOptions, StatusCode, Url,
     },
     time::{parse_rfc3339, to_rfc3339, Duration, OffsetDateTime},
     Result,
@@ -1546,9 +1546,18 @@ async fn test_invalid_queue_name(ctx: TestContext) -> Result<()> {
     };
 
     // Act - queue names must be lowercase alphanumeric; Unicode characters are not valid.
+    let mut queue_url = Url::parse(&endpoint)?;
+    queue_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Invalid endpoint URL: cannot append queue name.",
+            )
+        })?
+        .push("啊齄丂狛狜");
     let queue_client = QueueClient::new(
-        &endpoint,
-        "啊齄丂狛狜",
+        queue_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )?;
@@ -1594,9 +1603,18 @@ async fn test_retry_on_io_error(ctx: TestContext) -> Result<()> {
         .insert(0, fail_first);
 
     let queue_name = get_queue_name(recording);
+    let mut queue_url = Url::parse(&endpoint)?;
+    queue_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Invalid endpoint URL: cannot append queue name.",
+            )
+        })?
+        .push(&queue_name);
     let queue_client = QueueClient::new(
-        &endpoint,
-        &queue_name,
+        queue_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )?;
@@ -1658,9 +1676,19 @@ async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result<Que
         ..Default::default()
     };
 
+    let mut queue_url = Url::parse(&endpoint)?;
+    queue_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Invalid endpoint URL: cannot append queue name.",
+            )
+        })?
+        .push(queue_name);
+
     QueueClient::new(
-        &endpoint,
-        queue_name,
+        queue_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )

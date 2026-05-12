@@ -46,11 +46,13 @@ use azure_identity::DeveloperToolsCredential;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a QueueClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
+    let queue_url = azure_core::http::Url::parse(
+        "https://<storage_account_name>.queue.core.windows.net/<queue_name>",
+    )?;
     let queue_client = QueueClient::new(
-        "https://<storage_account_name>.queue.core.windows.net/", // Endpoint
-        "<queue_name>",                                           // Queue Name
-        Some(credential),                                         // Credential
-        Some(QueueClientOptions::default()),                      // QueueClient Options
+        queue_url,                           // Queue URL
+        Some(credential),                    // Credential
+        Some(QueueClientOptions::default()), // QueueClient Options
     )?;
     Ok(())
 }
@@ -79,9 +81,11 @@ use azure_identity::DeveloperToolsCredential;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
+    let queue_url = azure_core::http::Url::parse(
+        "https://<storage_account_name>.queue.core.windows.net/<queue_name>",
+    )?;
     let queue_client = QueueClient::new(
-        "https://<storage_account_name>.queue.core.windows.net/",
-        "<queue_name>",
+        queue_url,
         Some(credential),
         Some(QueueClientOptions::default()),
     )?;
@@ -103,9 +107,11 @@ use azure_identity::DeveloperToolsCredential;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
+    let queue_url = azure_core::http::Url::parse(
+        "https://<storage_account_name>.queue.core.windows.net/<queue_name>",
+    )?;
     let queue_client = QueueClient::new(
-        "https://<storage_account_name>.queue.core.windows.net/",
-        "<queue_name>",
+        queue_url,
         Some(credential),
         Some(QueueClientOptions::default()),
     )?;
