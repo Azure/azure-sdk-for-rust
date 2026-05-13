@@ -2,10 +2,9 @@
 // Licensed under the MIT License.
 
 use crate::models::{
-    method_options::BlockBlobClientUploadOptions, AccessPolicy, AppendBlobClientCreateOptions,
-    BlobTag, BlobTags, BlockBlobClientCommitBlockListOptions,
-    BlockBlobClientUploadBlobFromUrlOptions, PageBlobClientCreateOptions, SignedIdentifier,
-    SignedIdentifiers,
+    AccessPolicy, AppendBlobClientCreateOptions, BlobTag, BlobTags,
+    BlockBlobClientCommitBlockListOptions, BlockBlobClientUploadBlobFromUrlOptions,
+    BlockBlobClientUploadOptions, PageBlobClientCreateOptions, SignedIdentifier, SignedIdentifiers,
 };
 use percent_encoding::{percent_encode, NON_ALPHANUMERIC};
 use std::collections::HashMap;

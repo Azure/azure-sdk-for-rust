@@ -9,8 +9,8 @@ use crate::{
         BlockBlobClientUploadInternalResultHeaders,
     },
     models::{
-        method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
 };
