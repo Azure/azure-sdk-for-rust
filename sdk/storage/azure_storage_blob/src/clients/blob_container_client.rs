@@ -21,6 +21,7 @@ impl BlobContainerClient {
     /// # Arguments
     ///
     /// * `container_url` - The full URL of the container, for example `https://myaccount.blob.core.windows.net/mycontainer`.
+    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.Container")]

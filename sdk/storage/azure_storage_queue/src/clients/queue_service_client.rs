@@ -20,6 +20,7 @@ impl QueueServiceClient {
     /// # Arguments
     ///
     /// * `service_url` - The full URL of the Azure storage account, for example `https://myaccount.queue.core.windows.net/`.
+    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Queues.Service")]
