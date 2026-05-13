@@ -40,6 +40,14 @@ pub(crate) mod request_header_names {
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
     pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
+    /// Request-only header that asks the backend, on retries after a
+    /// `404 / 1002 (READ_SESSION_NOT_AVAILABLE)` on single-master accounts,
+    /// to route only to a region that has caught up to the requested LSN.
+    ///
+    /// Forward-compatible by design: backends that ignore the header
+    /// preserve the existing single-master 1002 retry behavior. Mirrors
+    /// .NET parity (Azure/azure-cosmos-dotnet-v3#5447).
+    pub const HUB_REGION_PROCESSING_ONLY: &str = "x-ms-cosmos-hub-region-processing-only";
 }
 
 /// Standard Cosmos DB response header names.
