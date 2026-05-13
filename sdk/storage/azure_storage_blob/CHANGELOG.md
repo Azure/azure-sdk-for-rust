@@ -1,6 +1,6 @@
 # Release History
 
-## 0.13.0 (Unreleased)
+## 0.13.0 (2026-05-13)
 
 ### Breaking Changes
 

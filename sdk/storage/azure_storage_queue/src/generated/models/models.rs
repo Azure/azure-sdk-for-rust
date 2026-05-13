@@ -362,7 +362,7 @@ pub struct RetentionPolicy {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "QueueMessage")]
-pub struct SentMessageInternal {
+pub(crate) struct SentMessageInternal {
     /// The time that the message will expire and be automatically deleted.
     #[serde(
         default,
@@ -370,7 +370,7 @@ pub struct SentMessageInternal {
         skip_serializing_if = "Option::is_none",
         with = "azure_core::time::rfc7231::option"
     )]
-    pub expiration_time: Option<OffsetDateTime>,
+    pub(crate) expiration_time: Option<OffsetDateTime>,
 
     /// The time the message was inserted into the queue.
     #[serde(
@@ -379,16 +379,16 @@ pub struct SentMessageInternal {
         skip_serializing_if = "Option::is_none",
         with = "azure_core::time::rfc7231::option"
     )]
-    pub insertion_time: Option<OffsetDateTime>,
+    pub(crate) insertion_time: Option<OffsetDateTime>,
 
     /// The ID of the message.
     #[serde(rename = "MessageId", skip_serializing_if = "Option::is_none")]
-    pub message_id: Option<String>,
+    pub(crate) message_id: Option<String>,
 
     /// An opaque value required to delete the message. If deletion fails using this
     /// PopReceipt then the message has been dequeued by another client.
     #[serde(rename = "PopReceipt", skip_serializing_if = "Option::is_none")]
-    pub pop_receipt: Option<String>,
+    pub(crate) pop_receipt: Option<String>,
 
     /// The time that the message will again become visible in the queue.
     #[serde(
@@ -397,7 +397,7 @@ pub struct SentMessageInternal {
         skip_serializing_if = "Option::is_none",
         with = "azure_core::time::rfc7231::option"
     )]
-    pub time_next_visible: Option<OffsetDateTime>,
+    pub(crate) time_next_visible: Option<OffsetDateTime>,
 }
 
 /// The signed identifier.

@@ -1,6 +1,6 @@
 # Release History
 
-## 0.7.0 (Unreleased)
+## 0.7.0 (2026-05-13)
 
 ### Breaking Changes
 
@@ -8,6 +8,7 @@
   - `QueueClient::new(queue_url: Url, ...)`
   - `QueueServiceClient::new(service_url: Url, ...)`
 - Renamed `QueueClient::endpoint()` and `QueueServiceClient::endpoint()` to `url()` for consistency with other Storage clients.
+- Removed the `SentMessageInternal` model from the public API.
 
 ### Bugs Fixed
 
