@@ -6,8 +6,6 @@ Azure Queue Storage is a service for storing large numbers of messages.
 
 ## Getting started
 
-**⚠️ Note: The `azure_storage_queue` crate is currently under active development and not all features may be implemented or work as intended. This crate is in beta and not suitable for Production environments. For any general feedback or usage issues, please open a GitHub issue at <https://github.com/Azure/azure-sdk-for-rust/issues>.**
-
 ### Install the package
 
 Install the Azure Storage Queue client library for Rust with [cargo]:
