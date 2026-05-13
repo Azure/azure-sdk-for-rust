@@ -8,7 +8,7 @@ pub(crate) mod drains;
 pub(crate) mod error;
 pub(crate) mod extensions;
 pub(crate) mod http_ranges;
-pub mod method_options;
+mod method_options;
 
 pub use http_ranges::HttpRange;
 pub(crate) mod response_ext;
@@ -123,7 +123,7 @@ impl Serialize for BlobMetadata {
 ///     name: Option<String>,
 /// }
 /// ```
-pub mod blob_name {
+pub(crate) mod blob_name {
     use super::BlobName;
     use percent_encoding::percent_decode_str;
     use serde::{de::Error, Deserialize, Deserializer};
