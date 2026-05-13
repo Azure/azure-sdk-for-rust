@@ -16,6 +16,7 @@
 
 ### Bugs Fixed
 
+- PATCH RMW loop now folds the 412 response's `x-ms-session-token` (via `SessionToken::merge`) into the carry-forward token threaded into the next attempt's Read. Previously only the Read response's token was carried forward, so a retry could regress to a strictly older session view than the failed Replace already observed. ([#4386](https://github.com/Azure/azure-sdk-for-rust/pull/4386))
 - PPCB now records every 5xx failure for the affected partition, including the final failure that exhausts the failover retry budget. Previously the budget-exhausted abort path skipped emitting `MarkPartitionUnavailable`, causing the most diagnostic failure to be silently dropped from PPCB's per-partition counter. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 
 ### Other Changes

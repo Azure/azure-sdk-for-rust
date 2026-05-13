@@ -38,11 +38,13 @@ use crate::driver::pipeline::from_local_body::from_local_body_and_driver_headers
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::driver::CosmosDriver;
 use crate::models::{
-    CosmosOperation, CosmosResponse, PartitionKeyKind, PatchOp, PatchSpec, Precondition,
+    cosmos_headers::response_header_names, CosmosOperation, CosmosResponse, PartitionKeyKind,
+    PatchOp, PatchSpec, Precondition, SessionToken,
 };
 use crate::options::OperationOptions;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
+use azure_core::http::headers::HeaderName;
 use azure_core::http::StatusCode;
 use std::num::NonZeroU8;
 use std::sync::Arc;
@@ -261,8 +263,30 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                 ));
             }
             Err(err) if is_precondition_failed(&err) => {
-                // 412 — someone raced us. Stash the real service error so
-                // exhaustion_error can chain it as the underlying cause.
+                // 412 — someone raced us.
+                //
+                // A 412 response carries a session token that is strictly
+                // fresher than the Read we just performed (it was produced
+                // by a replica that already saw the conflicting writer's
+                // commit). Fold it into `effective_session_token` — using
+                // `merge` to preserve segments from previously observed
+                // tokens for other partition-key ranges — so the next
+                // attempt's Read can't regress to an older session view.
+                // Falls back to the carry-forward from the Read response
+                // we already advanced above when the 412 carries no
+                // session token header (e.g. unit-test errors built via
+                // `azure_core::Error::with_message` without a raw
+                // response).
+                if let Some(token_412) = session_token_from_error(&err) {
+                    effective_session_token = Some(
+                        effective_session_token
+                            .as_ref()
+                            .and_then(|prev| prev.merge(&token_412).ok())
+                            .unwrap_or(token_412),
+                    );
+                }
+                // Stash the real service error so exhaustion_error can
+                // chain it as the underlying cause.
                 last_412 = Some(err);
                 continue;
             }
@@ -293,6 +317,34 @@ fn is_precondition_failed(err: &azure_core::Error) -> bool {
         err.kind(),
         ErrorKind::HttpResponse { status, .. } if *status == StatusCode::PreconditionFailed
     )
+}
+
+/// Extracts the `x-ms-session-token` response header from an
+/// `azure_core::Error`'s wrapped `raw_response`, if both are present.
+///
+/// The driver pipeline's `build_http_error` attaches the raw HTTP response —
+/// including its headers — to every non-2xx error. The PATCH handler uses
+/// this to recover the session token off a 412, which is strictly fresher
+/// than the Read response we just observed (the 412 was produced after the
+/// conflicting writer committed against the same replica).
+///
+/// Returns `None` when the error has no raw response (typical for
+/// synthesized unit-test errors built via `Error::with_message`) or when
+/// the response carries no session-token header (e.g. accounts not
+/// configured for Session consistency).
+fn session_token_from_error(err: &azure_core::Error) -> Option<SessionToken> {
+    let ErrorKind::HttpResponse {
+        raw_response: Some(raw),
+        ..
+    } = err.kind()
+    else {
+        return None;
+    };
+    raw.headers()
+        .get_optional_str(&HeaderName::from_static(
+            response_header_names::SESSION_TOKEN,
+        ))
+        .map(|s| SessionToken::new(s.to_owned()))
 }
 
 /// Builds the internal Read sub-operation used by the RMW loop, propagating
@@ -977,6 +1029,28 @@ mod tests {
         )
     }
 
+    /// Same as [`http_error`], but wraps an `azure_core::http::RawResponse`
+    /// carrying the given `x-ms-session-token` header so the patch handler
+    /// can recover it via `session_token_from_error`.
+    fn http_error_with_session_token(
+        status: StatusCode,
+        msg: &'static str,
+        session_token: &'static str,
+    ) -> azure_core::Error {
+        use azure_core::http::headers::Headers;
+        let mut headers = Headers::new();
+        headers.insert("x-ms-session-token", session_token);
+        let raw = azure_core::http::RawResponse::from_bytes(status, headers, Vec::<u8>::new());
+        azure_core::Error::with_message(
+            ErrorKind::HttpResponse {
+                status,
+                error_code: None,
+                raw_response: Some(Box::new(raw)),
+            },
+            msg,
+        )
+    }
+
     fn patch_op_for(item_ref: ItemReference, ops: Vec<PatchOp>) -> CosmosOperation {
         let body = serde_json::to_vec(&PatchSpec::new(ops)).unwrap();
         CosmosOperation::patch_item(item_ref).with_body(body)
@@ -1357,6 +1431,67 @@ mod tests {
         assert_eq!(
             calls[3].session_token.as_ref().map(|t| t.0.as_ref()),
             Some("0:1#200")
+        );
+    }
+
+    #[tokio::test]
+    async fn rmw_folds_412_response_session_token_into_carry_forward() {
+        // When a 412 carries a session-token header (the replica that
+        // rejected our Replace had already seen the conflicting writer's
+        // commit), it is strictly fresher than the Read response we just
+        // observed. The PATCH handler must fold it into
+        // `effective_session_token` so attempt 2's Read uses the freshest
+        // possible view — matching .NET's behavior and minimizing the
+        // chance of an avoidable second 412.
+        //
+        // Script: Read#1 token=0:1#100 -> Replace#1 412 with token=0:1#300
+        // -> Read#2 token=0:1#301 -> Replace#2 ok.
+        let dispatcher = ScriptedDispatcher::new(vec![
+            // Attempt 1
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                etag: Some("\"v1\""),
+                session_token: Some("0:1#100"),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Err(http_error_with_session_token(
+                StatusCode::PreconditionFailed,
+                "lost the race",
+                "0:1#300",
+            )),
+            // Attempt 2
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                etag: Some("\"v2\""),
+                session_token: Some("0:1#301"),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
+                etag: Some("\"v3\""),
+                session_token: Some("0:1#302"),
+                status: StatusCode::Ok,
+            },
+        ]);
+
+        let op = canonical_patch_op();
+        let _resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect("PATCH should succeed");
+
+        let calls = dispatcher.calls();
+        assert_eq!(calls.len(), 4);
+
+        // Attempt 2 Read MUST use the 412's session token (0:1#300), not
+        // the Read#1's older 0:1#100. SessionToken::merge picks the
+        // higher version per partition-key range, so the carry-forward
+        // strictly advances.
+        assert_eq!(calls[2].op_type, OperationType::Read);
+        assert_eq!(
+            calls[2].session_token.as_ref().map(|t| t.0.as_ref()),
+            Some("0:1#300"),
+            "attempt 2 Read must use the 412's session token (freshest), \
+             not Read#1's older token"
         );
     }
 

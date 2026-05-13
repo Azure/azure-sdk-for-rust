@@ -498,6 +498,23 @@ impl ContainerClient {
     /// document it just wrote, so no extra round trip is required to read it
     /// back. Callers that don't need the body can use
     /// [`ItemResponse::<serde_json::Value>`] or simply discard the response.
+    ///
+    /// # Failure Semantics
+    ///
+    /// PATCH is **not exactly-once** under transport failures. The driver
+    /// issues the inner Replace as `OperationType::Replace`, which the
+    /// pipeline classifies as idempotent. If a transport-layer error fires
+    /// *after* the inner Replace has been sent but before its response is
+    /// received and the server has already committed the write, the pipeline
+    /// may cross-region retry it. A retry against a replica that has already
+    /// replicated the original commit returns 412, which the RMW loop
+    /// recovers by re-Reading and re-applying. Non-idempotent operations
+    /// (`PatchOp::increment`, `PatchOp::add` on an array, `PatchOp::move`)
+    /// may therefore be applied **more than once** under this scenario.
+    /// Callers that require exactly-once semantics for counters or array
+    /// appends should either build idempotent ops (`PatchOp::set` on a
+    /// caller-computed value) or detect duplicate-application via a
+    /// monotonic application-level sequence number.
     pub async fn patch_item<T>(
         &self,
         partition_key: impl Into<PartitionKey>,

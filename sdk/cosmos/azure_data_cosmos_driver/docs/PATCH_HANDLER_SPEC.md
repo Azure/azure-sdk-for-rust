@@ -94,11 +94,16 @@ read. To close that window:
    intentionally discarded for the Replace; the Read's response token
    is by definition fresher.
 4. Across RMW attempts the loop monotonically advances the *effective*
-   session token to the freshest one observed (currently the Read's
-   response token on every attempt; the final Replace's response token
-   on the successful attempt). Attempt N's Read therefore never
-   regresses to a strictly older session view than attempt N-1 already
-   saw.
+   session token to the freshest one observed:
+   - the Read's response token on every attempt;
+   - the final Replace's response token on the successful attempt;
+   - **the failed Replace's response token on every 412** (folded in
+     via `SessionToken::merge`) — a 412 response carries a token that
+     is strictly fresher than the Read we just performed (it was
+     produced by a replica that already saw the conflicting writer's
+     commit). Attempt N's Read therefore never regresses to a strictly
+     older session view than attempt N-1 already saw, *including the
+     failed-Replace's view of the post-conflict world*.
 
 This matters most for `Session` consistency, but is correct for
 `Eventual` too (a no-op there). For `Strong` / `BoundedStaleness` the
@@ -183,3 +188,19 @@ as a JSON number without precision loss.
   is no recursive loop.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's
   RMW retry is internal and never depends on the global policy.
+- **PATCH is not exactly-once under transport failures.** The internal
+  Replace is `OperationType::Replace`, which the pipeline classifies as
+  idempotent (`OperationType::is_idempotent`). If a transport-layer error
+  fires after the inner Replace has been sent but before its response is
+  received, and the server has already committed the write, the pipeline
+  will cross-region retry the Replace. A retry against a replica that has
+  already replicated the original commit returns 412, which the RMW loop
+  treats as a normal race-lost and recovers by re-Reading and re-applying.
+  Non-idempotent ops (`Increment`, `Add` on an array, `Move`) may therefore
+  be applied **more than once** under this scenario. Lifting this caveat
+  requires marking the internal Replace as non-idempotent for retry
+  purposes (e.g. a per-op idempotency override on `CosmosOperation`); that
+  is tracked as a follow-up because it interacts with PPAF write-retry
+  semantics. Callers needing exactly-once should either use idempotent ops
+  (`Set` on a caller-computed value) or detect duplicate-application via a
+  monotonic application-level sequence number.
