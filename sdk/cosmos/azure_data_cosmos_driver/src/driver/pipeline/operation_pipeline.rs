@@ -2933,7 +2933,8 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
         };
-        build_transport_request(&operation, None, &ctx).expect("request should build")
+        build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+            .expect("request should build")
     }
 
     /// T-6 — When the latch is set on `retry_state`, the helper emits

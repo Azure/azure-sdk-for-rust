@@ -3,10 +3,7 @@
 
 use std::{marker::PhantomData, pin::Pin, sync::Arc, task};
 
-use azure_core::http::{
-    headers::Headers,
-    pager::{PagerContinuation, PagerResult},
-};
+use azure_core::http::headers::Headers;
 use azure_data_cosmos_driver::{
     models::{ContainerReference, CosmosResponse as DriverResponse, CosmosResponseHeaders},
     options::OperationOptions,
@@ -17,7 +14,7 @@ use futures::Stream;
 use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::{
-    constants, driver_bridge,
+    driver_bridge,
     models::{CosmosDiagnosticsContext, CosmosResponse},
     ContinuationToken, SessionToken,
 };
@@ -99,19 +96,6 @@ impl<T> FeedPage<T> {
     }
 }
 
-impl<T> From<FeedPage<T>> for PagerResult<FeedPage<T>> {
-    fn from(value: FeedPage<T>) -> Self {
-        let continuation = value.continuation.clone();
-        match continuation {
-            Some(continuation) => PagerResult::More {
-                response: value,
-                continuation: PagerContinuation::Token(continuation),
-            },
-            None => PagerResult::Done { response: value },
-        }
-    }
-}
-
 /// Represents a single page of results from a Cosmos DB query.
 ///
 /// Wraps a [`FeedPage`] and adds query-specific metadata such as
@@ -180,19 +164,6 @@ impl<T> QueryFeedPage<T> {
     /// Only populated when the request included the `x-ms-documentdb-populatequerymetrics` header.
     pub fn query_metrics(&self) -> Option<&str> {
         self.query_metrics.as_deref()
-    }
-}
-
-impl<T> From<QueryFeedPage<T>> for PagerResult<QueryFeedPage<T>> {
-    fn from(value: QueryFeedPage<T>) -> Self {
-        let continuation = value.page.continuation.clone();
-        match continuation {
-            Some(continuation) => PagerResult::More {
-                response: value,
-                continuation: PagerContinuation::Token(continuation),
-            },
-            None => PagerResult::Done { response: value },
-        }
     }
 }
 
