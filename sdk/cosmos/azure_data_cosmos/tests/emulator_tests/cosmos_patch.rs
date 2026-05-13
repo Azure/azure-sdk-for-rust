@@ -7,12 +7,21 @@ use super::framework;
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
+#[cfg(feature = "fault_injection")]
+use azure_data_cosmos::fault_injection::{
+    CustomResponseBuilder, FaultInjectionClientBuilder, FaultInjectionConditionBuilder,
+    FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+};
 use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
 use azure_data_cosmos::{PatchItemOptions, PatchOp, PatchSpec};
 use framework::TestClient;
+#[cfg(feature = "fault_injection")]
+use framework::TestOptions;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+#[cfg(feature = "fault_injection")]
+use std::sync::Arc;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
 struct PatchTestItem {
@@ -166,11 +175,15 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
 /// that the option survives the SDK → driver translation for the
 /// happy-path (single-attempt) flow.
 ///
-/// We can't reliably force a 412 from the emulator here, so this test
-/// only asserts the option does not break a normal patch. The retry-loop
-/// behavior is covered exhaustively by the dispatcher-driven unit tests
-/// (`rmw_recovers_from_412_on_first_replace` and
-/// `rmw_propagates_412_after_exhausting_max_attempts`).
+/// The retry-loop behavior itself is covered end-to-end against a forced
+/// 412 by [`patch_item_412_retry_succeeds`] (single 412 → retries and
+/// succeeds) and [`patch_item_412_exhaustion_surfaces_precondition_failed`]
+/// (persistent 412 → surfaces a typed `PreconditionFailed` error after
+/// exhausting `max_attempts`). The dispatcher-driven unit tests
+/// `rmw_recovers_from_412_on_first_replace` and
+/// `rmw_propagates_412_after_exhausting_max_attempts` in
+/// `azure_data_cosmos_driver::driver::pipeline::patch_handler` cover the
+/// underlying loop semantics.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "emulator"),
@@ -209,6 +222,208 @@ pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error
             Ok(())
         },
         None,
+    )
+    .await
+}
+
+// ---------------------------------------------------------------------------
+// Fault-injected 412 retry + exhaustion at the SDK surface.
+//
+// Walks the same SDK ContainerClient::patch_item path as the happy-path
+// tests above, but routes calls through a fault-injection-aware client so
+// the internal ReplaceItem sub-op of the driver RMW loop returns a
+// synthetic 412. These mirror the driver-level emulator tests
+// `cosmos_patch_412_retry` and `cosmos_patch_412_exhaustion`.
+// ---------------------------------------------------------------------------
+
+/// Build a [`FaultInjectionRule`] that returns a synthetic 412 for every
+/// `ReplaceItem` request, with an optional `hit_limit` to cap how many
+/// times it fires.
+#[cfg(feature = "fault_injection")]
+fn build_replace_412_rule(
+    name: &str,
+    hit_limit: Option<u32>,
+) -> Arc<azure_data_cosmos::fault_injection::FaultInjectionRule> {
+    let custom_412 = CustomResponseBuilder::new(StatusCode::PreconditionFailed)
+        .with_body(br#"{"code":"PreconditionFailed","message":"injected 412"}"#.to_vec())
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_custom_response(custom_412)
+        .build();
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReplaceItem)
+        .build();
+    let mut rule = FaultInjectionRuleBuilder::new(name, result).with_condition(condition);
+    if let Some(limit) = hit_limit {
+        rule = rule.with_hit_limit(limit);
+    }
+    Arc::new(rule.build())
+}
+
+/// Create a fresh container under `db_client`, seed it with `initial`, and
+/// return `(regular_container, fault_container, item_id, pk)`. The fault
+/// container is bound to the fault-injection-aware `CosmosClient` exposed
+/// by `run_context.fault_client()`, so calls through it are subject to the
+/// fault rules registered on `TestOptions`.
+#[cfg(feature = "fault_injection")]
+async fn setup_fault_injected_container(
+    run_context: &TestRunContext,
+    db_client: &azure_data_cosmos::clients::DatabaseClient,
+    initial: &PatchTestItem,
+) -> Result<(ContainerClient, ContainerClient, String, String), Box<dyn Error>> {
+    let container_id = format!("Container-{}", Uuid::new_v4());
+    run_context
+        .create_container(
+            db_client,
+            ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+            None,
+        )
+        .await?;
+
+    let regular = db_client.container_client(&container_id).await?;
+    regular
+        .create_item(&initial.partition_key, &initial.id, initial, None)
+        .await?;
+
+    let fault_client = run_context
+        .fault_client()
+        .expect("fault client should be configured");
+    let fault_db_client = fault_client.database_client(db_client.id());
+    let fault_container = fault_db_client.container_client(&container_id).await?;
+
+    Ok((
+        regular,
+        fault_container,
+        initial.id.clone(),
+        initial.partition_key.clone(),
+    ))
+}
+
+/// Driver RMW retries on a single fault-injected 412 on the internal
+/// `ReplaceItem` and the overall PATCH eventually succeeds at the SDK
+/// surface.
+///
+/// Mirrors the driver-level emulator test `cosmos_patch_412_retry`.
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
+    let rule = build_replace_412_rule("sdk-patch-412-once", Some(1));
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::clone(&rule));
+    let options = TestOptions::new().with_fault_injection_builder(fault_builder);
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let unique_id = Uuid::new_v4().to_string();
+            let initial = PatchTestItem {
+                id: format!("patch-412-retry-{unique_id}"),
+                partition_key: format!("pk-{unique_id}"),
+                display_name: "before".into(),
+                visits: 0,
+                deleted: false,
+            };
+            let (regular, fault_container, item_id, pk) =
+                setup_fault_injected_container(run_context, db_client, &initial).await?;
+
+            let patch = PatchSpec::new(vec![PatchOp::increment("/visits", 1i64)]);
+            let response: ItemResponse<PatchTestItem> = fault_container
+                .patch_item(&pk, &item_id, patch, None)
+                .await?;
+            assert_eq!(
+                response.status(),
+                StatusCode::Ok,
+                "PATCH should succeed after one retried 412"
+            );
+
+            let merged: PatchTestItem = response.into_model()?;
+            assert_eq!(
+                merged.visits, 1,
+                "post-image should reflect the locally-merged Increment"
+            );
+
+            // The fault rule fired exactly once — the first Replace hit
+            // it; the retry's Replace went to the live emulator.
+            assert_eq!(
+                rule.hit_count(),
+                1,
+                "fault rule should fire exactly once on the first attempt; got {}",
+                rule.hit_count()
+            );
+
+            // A fresh read sees the same merged state — the retry's
+            // Replace actually persisted on the service.
+            let read_response = regular
+                .read_item::<PatchTestItem>(&pk, &item_id, None)
+                .await?;
+            let read_item: PatchTestItem = read_response.into_model()?;
+            assert_eq!(read_item, merged);
+
+            Ok(())
+        },
+        Some(options),
+    )
+    .await
+}
+
+/// Persistent fault-injected 412 on every internal `ReplaceItem` exhausts
+/// `PatchItemOptions::max_attempts(2)` and the SDK surfaces a typed
+/// `PreconditionFailed` error.
+///
+/// Mirrors the driver-level emulator test `cosmos_patch_412_exhaustion`.
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<(), Box<dyn Error>>
+{
+    let rule = build_replace_412_rule("sdk-patch-412-always", None);
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::clone(&rule));
+    let options = TestOptions::new().with_fault_injection_builder(fault_builder);
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let unique_id = Uuid::new_v4().to_string();
+            let initial = PatchTestItem {
+                id: format!("patch-412-exhaust-{unique_id}"),
+                partition_key: format!("pk-{unique_id}"),
+                display_name: "before".into(),
+                visits: 0,
+                deleted: false,
+            };
+            let (_regular, fault_container, item_id, pk) =
+                setup_fault_injected_container(run_context, db_client, &initial).await?;
+
+            let max_attempts = std::num::NonZeroU8::new(2).unwrap();
+            let patch_options = PatchItemOptions::default().with_max_attempts(max_attempts);
+            let patch = PatchSpec::new(vec![PatchOp::increment("/visits", 1i64)]);
+
+            let err = fault_container
+                .patch_item::<PatchTestItem>(&pk, &item_id, patch, Some(patch_options))
+                .await
+                .expect_err("PATCH should fail after exhausting max_attempts");
+            assert_eq!(
+                err.http_status(),
+                Some(StatusCode::PreconditionFailed),
+                "exhausted PATCH should surface 412 PreconditionFailed; got: {err}"
+            );
+
+            // One injection per attempt — max_attempts total.
+            assert_eq!(
+                rule.hit_count(),
+                u32::from(max_attempts.get()),
+                "fault rule should fire once per attempt; hit_count={} max_attempts={}",
+                rule.hit_count(),
+                max_attempts.get()
+            );
+
+            Ok(())
+        },
+        Some(options),
     )
     .await
 }

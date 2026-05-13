@@ -751,17 +751,30 @@ mod tests {
 
     #[test]
     fn ops_apply_in_order() {
-        let doc = json!({"n": 0});
+        // Increment is transitive, so three Increments alone would pass even
+        // if ops were reordered. Use Increment -> Move -> Increment so the
+        // assertion is only satisfied when ops execute in the listed order.
+        // Sequence: start at {a: 0}.
+        // 1. `Increment /a 1`   -> {a: 1}
+        // 2. `Move /a /b`       -> {b: 1}        (a is now absent)
+        // 3. `Increment /b 1`   -> {b: 2}
+        // If any pair is reordered, step 3 either errors (path missing) or
+        // observes a different intermediate state.
+        let doc = json!({"a": 0});
         let out = apply(
             doc,
             &[
-                PatchOp::increment("/n", 1i64),
-                PatchOp::increment("/n", 2i64),
-                PatchOp::increment("/n", 3i64),
+                PatchOp::increment("/a", 1i64),
+                PatchOp::move_op("/a", "/b"),
+                PatchOp::increment("/b", 1i64),
             ],
         )
         .unwrap();
-        assert_eq!(out["n"], json!(6));
+        assert_eq!(out["b"], json!(2));
+        assert!(
+            out.get("a").is_none(),
+            "after Move /a /b, /a must be absent; got {out}"
+        );
     }
 
     #[test]

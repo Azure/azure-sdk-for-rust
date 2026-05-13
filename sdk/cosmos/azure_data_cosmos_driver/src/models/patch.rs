@@ -271,18 +271,49 @@ mod tests {
         assert!(!s.contains("E+"), "actual: {s}");
     }
 
-    #[test]
-    fn patch_spec_roundtrips() {
-        let spec = PatchSpec::new(vec![
+    /// Canonical wire JSON for the `PatchSpec` exercised by the
+    /// serialize/deserialize tests below. Kept as a single source of
+    /// truth so the two halves of the (former) round-trip test cannot
+    /// drift apart silently. Matches `PATCH_HANDLER_SPEC.md` §"Wire
+    /// format".
+    const PATCH_SPEC_WIRE_JSON: &str = concat!(
+        r#"{"operations":["#,
+        r#"{"op":"set","path":"/age","value":31},"#,
+        r#"{"op":"increment","path":"/visits","value":1},"#,
+        r#"{"op":"add","path":"/tags/-","value":"rust"},"#,
+        r#"{"op":"remove","path":"/legacy"},"#,
+        r#"{"op":"move","from":"/from","path":"/to"}"#,
+        r#"]}"#,
+    );
+
+    fn canonical_patch_spec() -> PatchSpec {
+        PatchSpec::new(vec![
             PatchOp::set("/age", json!(31)),
             PatchOp::increment("/visits", 1i64),
             PatchOp::add("/tags/-", json!("rust")),
             PatchOp::remove("/legacy"),
             PatchOp::move_op("/from", "/to"),
-        ]);
-        let bytes = serde_json::to_vec(&spec).unwrap();
-        let back: PatchSpec = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(back, spec);
+        ])
+    }
+
+    #[test]
+    fn patch_spec_serializes_to_expected_json() {
+        // Builds the PatchSpec, serializes it, and compares to a known
+        // JSON string. This pins the wire format (key names, op tags,
+        // field ordering for each PatchOp variant) independently of the
+        // Deserialize impl, so a regression in only one direction is
+        // detectable.
+        let s = serde_json::to_string(&canonical_patch_spec()).unwrap();
+        assert_eq!(s, PATCH_SPEC_WIRE_JSON);
+    }
+
+    #[test]
+    fn patch_spec_deserializes_from_known_json() {
+        // Parses a known JSON string and asserts the resulting PatchSpec
+        // matches the canonical value. This pins the wire-format -> model
+        // direction independently of the Serialize impl.
+        let parsed: PatchSpec = serde_json::from_str(PATCH_SPEC_WIRE_JSON).unwrap();
+        assert_eq!(parsed, canonical_patch_spec());
     }
 
     #[test]

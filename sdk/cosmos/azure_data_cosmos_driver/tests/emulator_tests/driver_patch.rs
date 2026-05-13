@@ -3,30 +3,28 @@
 
 //! Emulator-backed E2E tests for the driver's PATCH (RMW) pipeline.
 //!
-//! Test names track the canonical A-mapping from the Phase 0 design spec:
+//! Coverage:
 //!
-//! - **A5** `cosmos_patch_basic_set` — round-trip a single `Set` PATCH and
-//!   observe the locally-merged post-image.
-//! - **A6** `cosmos_patch_pk_guard{,_hierarchical}` — preflight rejects ops
-//!   that target a partition-key path, on both flat and hierarchical (HPK)
+//! - `cosmos_patch_basic_set` — round-trip a single `Set` PATCH and observe
+//!   the locally-merged post-image.
+//! - `cosmos_patch_pk_guard{,_hierarchical}` — preflight rejects ops that
+//!   target a partition-key path, on both flat and hierarchical (HPK)
 //!   containers; no network round-trip is issued.
-//! - **A7** `cosmos_patch_412_retry` — DEFERRED, see below.
-//! - **A8** `cosmos_patch_412_exhaustion` — DEFERRED, see below.
-//! - **A9** `cosmos_patch_cross_sdk_parity` — iterate a fixture catalog
-//!   (≥30 rows derived from .NET and Java PATCH tests) and assert each
-//!   case's post-image (or error substring) matches the Rust driver's
-//!   observable behavior. See `cosmos_patch_cross_sdk_parity_coverage.md`
-//!   for the full catalog.
-//! - **A12** `cosmos_patch_no_etag_returns_error` — DEFERRED, see below.
-//! - **A13** `cosmos_patch_e2e_latency_budget` — DEFERRED, see below.
+//! - `cosmos_patch_412_retry` — fault-inject a 412 on the first
+//!   `ReplaceItem` and verify the handler retries and ultimately succeeds.
+//! - `cosmos_patch_412_exhaustion` — fault-inject 412 on every
+//!   `ReplaceItem` and verify the handler surfaces a `PreconditionFailed`
+//!   error after `max_attempts` is exhausted.
+//! - `cosmos_patch_semantics` — iterate a fixture catalog of driver-side
+//!   PATCH cases and assert each case's post-image (or error substring)
+//!   against the live emulator. The fixtures cover the cross product of op
+//!   kinds × scenario categories (happy_path, nested, missing_path,
+//!   null_value, multi_op, etc.).
+//! - `cosmos_patch_read_missing_item_returns_not_found` — 404 on the read
+//!   leg propagates immediately; no replace is issued.
 //!
-//! **Deferral rationale** (tracked alongside the implementation):
-//! A7/A8/A12 require a `PreconditionFailed(412)` variant on
-//! [`FaultInjectionErrorType`] and/or a response-header-strip primitive that
-//! the current fault-injection framework does not provide. A13 needs the
-//! `EndToEndOperationLatencyPolicy` plumbing on `OperationOptions`, which is
-//! not yet wired through the driver. Two-client racing approaches for A7
-//! were rejected as inherently flaky per the Phase 4 brief.
+//! The missing-ETag and end-to-end latency-budget contracts are
+//! unit-tested in `driver/pipeline/patch_handler.rs`.
 
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::models::{IncrValue, PartitionKey, PatchOp, PatchSpec};
@@ -267,16 +265,19 @@ enum Expected {
     ErrorContains(&'static str),
 }
 
-/// A single comparison row in the patch-fixture catalog. Each row is traceable
-/// to a specific cross-SDK test method via [`source_test_id`].
+/// A single fixture row in the patch-fixture catalog. Each row exercises a
+/// driver-side PATCH case against the live emulator and asserts the
+/// observable post-image (or surfaced error substring).
 ///
-/// [`source_test_id`]: PatchCompareCase::source_test_id
+/// `source_test_id` is informational provenance only: it records which
+/// upstream SDK test method inspired the fixture but the assertion here is
+/// against the Rust driver's emulator response, not a cross-SDK comparison.
 #[derive(Debug, Clone)]
 struct PatchCompareCase {
-    /// Stable kebab-case fixture id, also used in the coverage markdown.
+    /// Stable kebab-case fixture id.
     id: &'static str,
-    /// Originating .NET / Java test method name (e.g.
-    /// `CosmosItemTests.ItemPatchSuccessTest`).
+    /// Informational provenance: name of an upstream test method this
+    /// fixture was inspired by. Not used by the harness for assertions.
     source_test_id: &'static str,
     /// One of: `Add` | `Set` | `Replace` | `Remove` | `Increment` | `Move`
     /// | `Mixed`.
@@ -779,13 +780,15 @@ fn assert_post_image_props(actual: &Value, expected_props: &Value, case_id: &str
 }
 
 /// Iterates the fixture catalog, applying each case against the emulator and
-/// asserting its expected outcome. This is the workhorse of A9.
+/// asserting its expected outcome. This is the workhorse of A9 — it
+/// exercises driver-side PATCH semantics (post-image merging, evaluator
+/// error surfacing) against the live emulator.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "emulator"),
     ignore = "requires test_category 'emulator'"
 )]
-pub async fn cosmos_patch_cross_sdk_parity() -> Result<(), Box<dyn Error>> {
+pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
         async |context, database| {
             let container_name = context.unique_container_name();
@@ -793,12 +796,14 @@ pub async fn cosmos_patch_cross_sdk_parity() -> Result<(), Box<dyn Error>> {
                 .create_container(&database, &container_name, "/pk")
                 .await?;
 
-            // The fixture catalog is curated against the observable behavior
-            // of the equivalent .NET and Java PATCH tests (see
-            // `cosmos_patch_cross_sdk_parity_coverage.md` for the source-
-            // test mapping). Re-running those source tests locally and
-            // updating an expected value here is the canonical way to
-            // adjust the contract when a cross-SDK semantic changes.
+            // The fixture catalog tests driver-side PATCH semantics
+            // directly against the emulator. Each row's expected post-image
+            // (or error substring) is the contract for the Rust driver; if
+            // a row needs adjusting after a behavior change, update the
+            // expected value here and let the emulator confirm. Some
+            // fixtures were originally inspired by upstream .NET/Java PATCH
+            // tests (see each row's `notes`) but the assertion is against
+            // the emulator response, not a cross-SDK comparison.
             let cases = fixtures();
             assert!(
                 cases.len() >= 30,
@@ -905,57 +910,164 @@ pub async fn cosmos_patch_read_missing_item_returns_not_found() -> Result<(), Bo
 }
 
 // ---------------------------------------------------------------------------
-// A7 / A8 / A12 / A13 — deferred pending fault-injection primitives
+// Fault-injected 412 retry + exhaustion: drive the RMW loop's
+// PreconditionFailed branches end-to-end using
+// `CustomResponseBuilder::new(StatusCode::PreconditionFailed)` against the
+// internal ReplaceItem sub-operation.
 // ---------------------------------------------------------------------------
 
-/// A7: handler retries on a 412 produced by a concurrent writer and
+#[cfg(feature = "fault_injection")]
+use azure_data_cosmos_driver::fault_injection::{
+    CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
+    FaultInjectionRuleBuilder, FaultOperationType,
+};
+#[cfg(feature = "fault_injection")]
+use std::sync::Arc;
+
+/// The handler retries on a 412 produced by a concurrent writer and
 /// eventually succeeds.
 ///
-/// **Deferred**: requires `FaultInjectionErrorType::PreconditionFailed(412)`
-/// which the framework does not yet expose. A two-client racing approach was
-/// rejected as flaky.
+/// We force a single synthetic 412 on the internal `ReplaceItem` sub-op via
+/// fault injection (hit_limit=1). The handler must observe the 412, re-Read,
+/// re-merge, and re-Replace; the second Replace goes to the real emulator
+/// and succeeds, so the overall PATCH returns the locally-merged post-image.
+#[cfg(feature = "fault_injection")]
 #[tokio::test]
-#[ignore = "deferred: needs FaultInjectionErrorType::PreconditionFailed(412)"]
-async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
-    // This test is currently deferred, not "passing". Returning `Ok(())`
-    // would silently certify behavior we have not exercised. `unimplemented!`
-    // makes it impossible for someone to remove the `#[ignore]` without also
-    // wiring the test body — a green run without the fault primitive is then
-    // structurally impossible.
-    unimplemented!("A7 deferred: needs FaultInjectionErrorType::PreconditionFailed(412)");
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
+    let custom_412 = CustomResponseBuilder::new(azure_core::http::StatusCode::PreconditionFailed)
+        .with_body(br#"{"code":"PreconditionFailed","message":"injected 412"}"#.to_vec())
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_custom_response(custom_412)
+        .build();
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReplaceItem)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("patch-412-once", result)
+            .with_condition(condition)
+            .with_hit_limit(1)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    Box::pin(DriverTestClient::run_with_unique_db_and_fault_injection(
+        rules,
+        async move |context, database| {
+            let container_name = context.unique_container_name();
+            let container = context
+                .create_container(&database, &container_name, "/pk")
+                .await?;
+
+            let item_id = "patch-412-retry-001";
+            let pk = "p1";
+            let initial = json!({ "id": item_id, "pk": pk, "value": 0 });
+            context
+                .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
+                .await?;
+
+            let spec = PatchSpec::new(vec![PatchOp::increment("/value", 1i64)]);
+            let response = context
+                .patch_item(&container, item_id, pk, &spec, None)
+                .await?;
+
+            // Post-image reflects the merged increment.
+            let body: Value = serde_json::from_slice(response.body())?;
+            assert_eq!(
+                body.get("value"),
+                Some(&json!(1)),
+                "PATCH post-image should reflect the increment; got {body}",
+            );
+
+            // Fault rule was hit exactly once (one 412 was injected, one
+            // retry succeeded).
+            assert_eq!(
+                rule.hit_count(),
+                1,
+                "fault rule should fire exactly once; hit_count={}",
+                rule.hit_count()
+            );
+
+            Ok(())
+        },
+    ))
+    .await
 }
 
-/// A8: handler surfaces a typed error after exhausting `patch_max_attempts`
-/// against a persistently-412'ing backend.
+/// The handler surfaces a `PreconditionFailed` error after exhausting
+/// `max_attempts` against a persistently-412'ing backend.
 ///
-/// **Deferred**: same blocker as A7.
+/// Fault injection returns a synthetic 412 on every `ReplaceItem`. With
+/// `max_attempts(2)` the handler dispatches Read1 -> Replace1 (412) ->
+/// Read2 -> Replace2 (412) -> Error.
+#[cfg(feature = "fault_injection")]
 #[tokio::test]
-#[ignore = "deferred: needs FaultInjectionErrorType::PreconditionFailed(412)"]
-async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
-    // deferred — see cosmos_patch_412_retry for rationale.
-    unimplemented!("A8 deferred: needs FaultInjectionErrorType::PreconditionFailed(412)");
-}
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
+    let custom_412 = CustomResponseBuilder::new(azure_core::http::StatusCode::PreconditionFailed)
+        .with_body(br#"{"code":"PreconditionFailed","message":"injected 412"}"#.to_vec())
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_custom_response(custom_412)
+        .build();
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReplaceItem)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("patch-412-always", result)
+            .with_condition(condition)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
 
-/// A12: a server response missing the `etag` header surfaces a typed error
-/// (no panic, no silent retry).
-///
-/// **Deferred**: requires a fault-injection primitive that strips response
-/// headers from a real (non-synthetic) response. The current
-/// `FaultInjectionResultBuilder` only builds fully-synthetic responses.
-#[tokio::test]
-#[ignore = "deferred: needs response-header-strip fault primitive"]
-async fn cosmos_patch_no_etag_returns_error() -> Result<(), Box<dyn Error>> {
-    // deferred — see cosmos_patch_412_retry for rationale.
-    unimplemented!("A12 deferred: needs response-header-strip fault primitive");
-}
+    Box::pin(DriverTestClient::run_with_unique_db_and_fault_injection(
+        rules,
+        async move |context, database| {
+            let container_name = context.unique_container_name();
+            let container = context
+                .create_container(&database, &container_name, "/pk")
+                .await?;
 
-/// A13: the handler honors the end-to-end operation latency budget.
-///
-/// **Deferred**: `EndToEndOperationLatencyPolicy` plumbing on
-/// `OperationOptions` is not yet wired through the driver for PATCH.
-#[tokio::test]
-#[ignore = "deferred: needs EndToEndOperationLatencyPolicy plumbing"]
-async fn cosmos_patch_e2e_latency_budget() -> Result<(), Box<dyn Error>> {
-    // deferred — see cosmos_patch_412_retry for rationale.
-    unimplemented!("A13 deferred: needs EndToEndOperationLatencyPolicy plumbing");
+            let item_id = "patch-412-exhaust-001";
+            let pk = "p1";
+            let initial = json!({ "id": item_id, "pk": pk, "value": 0 });
+            context
+                .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
+                .await?;
+
+            let max_attempts = std::num::NonZeroU8::new(2).unwrap();
+            let spec = PatchSpec::new(vec![PatchOp::increment("/value", 1i64)]);
+            let err = context
+                .patch_item(&container, item_id, pk, &spec, Some(max_attempts))
+                .await
+                .expect_err("PATCH should fail with 412 after exhausting max_attempts");
+
+            let msg = format!("{err}").to_ascii_lowercase();
+            assert!(
+                msg.contains("412")
+                    || msg.contains("preconditionfailed")
+                    || msg.contains("precondition failed"),
+                "exhausted error should be a 412 / PreconditionFailed; got: {err}",
+            );
+
+            // Fault rule fired once per attempt (`max_attempts` total).
+            assert_eq!(
+                rule.hit_count(),
+                u32::from(max_attempts.get()),
+                "fault rule should fire once per attempt; hit_count={} max_attempts={}",
+                rule.hit_count(),
+                max_attempts.get()
+            );
+
+            Ok(())
+        },
+    ))
+    .await
 }
