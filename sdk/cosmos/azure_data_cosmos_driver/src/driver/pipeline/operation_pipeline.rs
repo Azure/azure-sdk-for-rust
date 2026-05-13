@@ -22,8 +22,9 @@ use crate::{
     },
     driver::transport::CosmosTransport,
     models::{
-        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
+        cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
+        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel,
+        EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
     },
     options::{
         OperationOptionsView, ReadConsistencyStrategy, Region, ThroughputControlGroupSnapshot,
@@ -45,6 +46,76 @@ use crate::driver::transport::{
     AuthorizationContext,
 };
 
+/// Per-request overrides that take precedence over values from [`CosmosOperation`].
+///
+/// Used by the dataflow pipeline to inject routing and pagination state that
+/// varies per physical partition or per page, without mutating the shared
+/// `CosmosOperation`. Each field, when `Some`, emits the corresponding request
+/// header in [`OperationOverrides::apply_headers`].
+#[derive(Debug, Clone, Default)]
+pub(crate) struct OperationOverrides {
+    /// Feed range to constrain the request to (emits `x-ms-start-epk` / `x-ms-end-epk`).
+    pub feed_range: Option<crate::models::FeedRange>,
+
+    /// Physical partition key range ID (emits `x-ms-documentdb-partitionkeyrangeid`).
+    pub partition_key_range_id: Option<String>,
+
+    /// Logical partition key (emits `x-ms-documentdb-partitionkey`).
+    pub partition_key: Option<crate::models::PartitionKey>,
+
+    /// Continuation token for pagination (emits `x-ms-continuation`).
+    pub continuation: Option<String>,
+}
+
+impl OperationOverrides {
+    /// Applies the override headers to the given header map.
+    ///
+    /// Headers set here take precedence over any previously-set values for
+    /// the same header name (they overwrite on conflict).
+    pub fn apply_headers(
+        &self,
+        headers: &mut azure_core::http::headers::Headers,
+    ) -> azure_core::Result<()> {
+        if let Some(feed_range) = &self.feed_range {
+            if feed_range.min_inclusive() != &EffectivePartitionKey::min() {
+                headers.insert(
+                    HeaderName::from_static(request_header_names::START_EPK),
+                    HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
+                );
+            }
+            if feed_range.max_exclusive() != &EffectivePartitionKey::max() {
+                headers.insert(
+                    HeaderName::from_static(request_header_names::END_EPK),
+                    HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
+                );
+            }
+        }
+
+        if let Some(pk_range_id) = &self.partition_key_range_id {
+            headers.insert(
+                HeaderName::from_static(request_header_names::PARTITION_KEY_RANGE_ID),
+                HeaderValue::from(pk_range_id.clone()),
+            );
+        }
+
+        if let Some(pk) = &self.partition_key {
+            let pk_headers = pk.as_headers()?;
+            for (name, value) in pk_headers {
+                headers.insert(name, value);
+            }
+        }
+
+        if let Some(continuation) = &self.continuation {
+            headers.insert(
+                HeaderName::from_static(request_header_names::CONTINUATION),
+                HeaderValue::from(continuation.clone()),
+            );
+        }
+
+        Ok(())
+    }
+}
+
 /// Executes a Cosmos DB operation through the new pipeline architecture.
 ///
 /// This is the entry point called by `CosmosDriver::execute_operation`.
@@ -56,6 +127,7 @@ use crate::driver::transport::{
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
+    overrides: OperationOverrides,
     options: &OperationOptionsView<'_>,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     location_state_store: &LocationStateStore,
@@ -140,6 +212,18 @@ pub(crate) async fn execute_operation_pipeline(
         .per_partition_circuit_breaker_enabled
         && location_snapshot.account.preferred_read_endpoints.len() > 1;
 
+    // HUB_REGION_PROCESSING_HEADER_SPEC.md §1.5: gate the
+    // `x-ms-cosmos-hub-region-processing-only` latch on data-plane scope
+    // so metadata-pipeline operations (which ride the same
+    // `execute_operation_pipeline`) never emit the header.
+    //
+    // Use the `PipelineType::is_data_plane()` accessor — NOT `==` matching
+    // — because `PipelineType` is `#[non_exhaustive]` and a future variant
+    // would silently bypass an equality gate. Equivalently
+    // `!pipeline_type.is_metadata()` (the metadata pipeline is the only
+    // current variant that is out of spec scope).
+    retry_state.is_dataplane = pipeline_type.is_data_plane();
+
     let deadline = options
         .end_to_end_latency_policy()
         .map(|p| Instant::now() + p.timeout());
@@ -153,7 +237,7 @@ pub(crate) async fn execute_operation_pipeline(
             operation,
             &retry_state,
             &location,
-            pipeline_type == PipelineType::DataPlane,
+            pipeline_type.is_data_plane(),
             location_state_store.endpoint_unavailability_ttl(),
         );
 
@@ -183,7 +267,16 @@ pub(crate) async fn execute_operation_pipeline(
                 .flatten(),
             throughput_control,
         };
-        let mut transport_request = build_transport_request(operation, custom_headers, &ctx)?;
+        let mut transport_request =
+            build_transport_request(operation, &overrides, custom_headers, &ctx)?;
+
+        // HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §3.4:
+        // Emit the `x-ms-cosmos-hub-region-processing-only: True` header
+        // when the latch is set. The latch is flipped in
+        // `try_handle_read_session_not_available` on the first 1002 of a
+        // single-master data-plane operation, and is sticky for the
+        // remainder of the operation's transport attempts (AC-1, AC-2).
+        apply_hub_region_header(&mut transport_request, &retry_state);
 
         apply_optional_request_headers(&mut transport_request, operation, options);
 
@@ -702,8 +795,11 @@ struct TransportRequestContext<'a> {
 /// Builds a `TransportRequest` from the operation and routing decision.
 ///
 /// If `resolved_session_token` is provided, it is added to the request headers.
+/// Override headers from `overrides` are applied after operation headers, so they
+/// take precedence.
 fn build_transport_request(
     operation: &CosmosOperation,
+    overrides: &OperationOverrides,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     ctx: &TransportRequestContext<'_>,
 ) -> azure_core::Result<TransportRequest> {
@@ -748,38 +844,53 @@ fn build_transport_request(
         );
     }
 
-    // Add partition key headers
-    if let Some(pk) = operation.partition_key() {
-        let pk_headers = pk.as_headers()?;
-        for (name, value) in pk_headers {
-            headers.insert(name, value);
+    // Apply operation type-specific headers.
+    match operation.operation_type() {
+        OperationType::Upsert => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_UPSERT),
+                HeaderValue::from_static("true"),
+            );
         }
-    }
-
-    // Cosmos DB uses POST for both create and upsert; the service
-    // distinguishes them via this header.
-    if operation.operation_type() == OperationType::Upsert {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_UPSERT),
-            HeaderValue::from_static("true"),
-        );
-    }
-
-    // Cosmos DB uses POST for batch (same endpoint as create/upsert);
-    // the service requires these headers to process the request as a batch.
-    if operation.operation_type() == OperationType::Batch {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_BATCH_REQUEST),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            HeaderName::from_static(request_header_names::BATCH_ATOMIC),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
-            HeaderValue::from_static("False"),
-        );
+        OperationType::Batch => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_BATCH_REQUEST),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::BATCH_ATOMIC),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
+                HeaderValue::from_static("False"),
+            );
+        }
+        OperationType::Query | OperationType::SqlQuery => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(QUERY_CONTENT_TYPE),
+            );
+        }
+        OperationType::QueryPlan => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(QUERY_CONTENT_TYPE),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY_PLAN_REQUEST),
+                HeaderValue::from_static("True"),
+            );
+        }
+        _ => {}
     }
 
     // Add operation type header for fault injection rule matching
@@ -795,6 +906,10 @@ fn build_transport_request(
             headers.insert(FAULT_INJECTION_OPERATION, fault_op.as_str());
         }
     }
+
+    // Apply overrides — these take precedence over operation-level headers
+    // (e.g., an override partition key replaces the operation's partition key).
+    overrides.apply_headers(&mut headers)?;
 
     // Add resolved session token
     if let Some(token) = &ctx.resolved_session_token {
@@ -920,6 +1035,40 @@ fn compute_execution_context(retry_state: &OperationRetryState) -> ExecutionCont
         ExecutionContext::Retry
     } else {
         ExecutionContext::RegionFailover
+    }
+}
+
+/// Conditionally emits the `x-ms-cosmos-hub-region-processing-only: True`
+/// header on the outbound transport request when the latch on
+/// `retry_state` is set.
+///
+/// Extracted as a free function (rather than left inline at the call site
+/// in `execute_operation_pipeline`) so that the emission rule can be
+/// exercised by unit tests without spinning up the full pipeline. The
+/// production call site is the loop iteration after `build_transport_request`
+/// and before `apply_optional_request_headers`.
+///
+/// HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §3.4. See
+/// `try_handle_read_session_not_available` for the latch trigger.
+///
+/// **Hedging coordination (future).** Per HEDGING_SPEC.md §9.5, the
+/// emission decision MUST OR in a `shared_hub_region_latch:
+/// Option<Arc<AtomicBool>>` field added to `OperationRetryState`, read
+/// with `Acquire` ordering. That field is set from `build_session_retry_state`
+/// the first time any hedge in the same `execute_with_hedging()`
+/// fan-out observes 1002 and is what makes the other (still-latch-clean)
+/// hedges immediately emit the header — the Rust counterpart of .NET v3's
+/// `CrossRegionAvailabilityContext.ShouldAddHubRegionProcessingOnlyHeader`
+/// from azure-cosmos-dotnet-v3#5815.
+fn apply_hub_region_header(
+    transport_request: &mut TransportRequest,
+    retry_state: &OperationRetryState,
+) {
+    if retry_state.hub_region_processing_only {
+        transport_request.headers.insert(
+            HeaderName::from_static(request_header_names::HUB_REGION_PROCESSING_ONLY),
+            HeaderValue::from_static("True"),
+        );
     }
 }
 
@@ -1093,6 +1242,7 @@ mod tests {
     use url::Url;
 
     use super::build_transport_request;
+    use super::OperationOverrides;
     use super::TransportRequestContext;
     use crate::{
         diagnostics::ExecutionContext,
@@ -1166,7 +1316,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs");
     }
@@ -1187,7 +1338,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
@@ -1208,7 +1360,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         let activity_header = request
             .headers
@@ -1233,8 +1386,12 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
         };
-        let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+        let overrides = OperationOverrides {
+            partition_key: Some(PartitionKey::from("pk1")),
+            ..Default::default()
+        };
+        let request = build_transport_request(&operation, &overrides, None, &ctx)
+            .expect("request should build");
 
         let partition_key_header = request
             .headers
@@ -1267,7 +1424,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(
             request.url.as_str(),
@@ -1297,7 +1455,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(
             request.url.as_str(),
@@ -1333,6 +1492,8 @@ mod tests {
             max_failover_retries: 3,
             max_session_retries: 2,
             can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
@@ -1387,6 +1548,8 @@ mod tests {
             max_failover_retries: 3,
             max_session_retries: 2,
             can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -1441,6 +1604,8 @@ mod tests {
             max_failover_retries: 3,
             max_session_retries: 2,
             can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -1502,6 +1667,8 @@ mod tests {
             max_failover_retries: 3,
             max_session_retries: 3,
             can_use_multiple_write_locations: true,
+            is_dataplane: false,
+            hub_region_processing_only: false,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -1761,6 +1928,8 @@ mod tests {
             max_failover_retries: 3,
             max_session_retries: 2,
             can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
             excluded_regions: vec!["westus2".into()],
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -2436,7 +2605,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         let is_upsert = request
             .headers
@@ -2468,7 +2638,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert!(
             request
@@ -2502,7 +2673,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(
             request
@@ -2548,7 +2720,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert!(
             request
@@ -2585,7 +2758,9 @@ mod tests {
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
-        let request = build_transport_request(&operation, None, &ctx).unwrap();
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .unwrap();
 
         let priority = request
             .headers
@@ -2628,7 +2803,9 @@ mod tests {
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
-        let request = build_transport_request(&operation, None, &ctx).unwrap();
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .unwrap();
 
         let bucket = request
             .headers
@@ -2672,7 +2849,9 @@ mod tests {
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
-        let request = build_transport_request(&operation, None, &ctx).unwrap();
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .unwrap();
 
         assert_eq!(
             request.headers.get_optional_str(&HeaderName::from_static(
@@ -2734,6 +2913,65 @@ mod tests {
             super::compute_execution_context(&state),
             ExecutionContext::RegionFailover
         ));
+    }
+
+    // ── apply_hub_region_header ──────────────────────────────────────
+    //
+    // See HUB_REGION_PROCESSING_HEADER_SPEC.md §3.4 / public-spec §4.2.
+    // The emission logic itself is a 4-line conditional; these tests
+    // exercise both branches so AC-1/AC-5 don't drift on a refactor.
+
+    fn build_minimal_transport_request() -> super::TransportRequest {
+        let operation = CosmosOperation::read_all_databases(test_account());
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("hub-region-test".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        build_transport_request(&operation, None, &ctx).expect("request should build")
+    }
+
+    /// T-6 — When the latch is set on `retry_state`, the helper emits
+    /// `x-ms-cosmos-hub-region-processing-only: True` on the transport
+    /// request (AC-1).
+    #[test]
+    fn transport_request_emits_hub_region_header_when_latched() {
+        let mut request = build_minimal_transport_request();
+        let mut state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true;
+
+        super::apply_hub_region_header(&mut request, &state);
+
+        let value = request.headers.get_optional_str(&HeaderName::from_static(
+            request_header_names::HUB_REGION_PROCESSING_ONLY,
+        ));
+        assert_eq!(value, Some("True"));
+    }
+
+    /// T-7 — When the latch is NOT set, the helper does not emit the
+    /// header. Covers AC-5 / cross-operation isolation guarantee at the
+    /// emission layer.
+    #[test]
+    fn transport_request_omits_hub_region_header_when_not_latched() {
+        let mut request = build_minimal_transport_request();
+        let state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        assert!(!state.hub_region_processing_only);
+
+        super::apply_hub_region_header(&mut request, &state);
+
+        let value = request.headers.get_optional_str(&HeaderName::from_static(
+            request_header_names::HUB_REGION_PROCESSING_ONLY,
+        ));
+        assert!(
+            value.is_none(),
+            "hub-region header must not be present when latch is unset, got {value:?}",
+        );
     }
 
     // ── apply_failover_delay ──────────────────────────────────────────

@@ -13,6 +13,7 @@ mod account_reference;
 mod activity_id;
 mod connection_string;
 mod consistency_level;
+mod continuation_token;
 pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
@@ -31,8 +32,10 @@ pub(crate) mod vector_session_token;
 pub(crate) use cosmos_headers::request_header_names;
 #[allow(dead_code)]
 pub mod effective_partition_key;
+mod feed_range;
 #[allow(dead_code)]
 mod murmur_hash;
+mod operation_target;
 #[allow(dead_code)]
 pub mod partition_key_range;
 #[allow(dead_code)]
@@ -42,6 +45,8 @@ pub use account_reference::{AccountReference, AccountReferenceBuilder, Credentia
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
 pub(crate) use consistency_level::DefaultConsistencyLevel;
+pub use continuation_token::ContinuationToken;
+pub(crate) use continuation_token::ResolvedToken;
 pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
     CosmosResponseHeaders, OfferAutoscaleSettings,
@@ -52,7 +57,10 @@ pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
+pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
+pub use feed_range::FeedRange;
+pub use operation_target::OperationTarget;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;

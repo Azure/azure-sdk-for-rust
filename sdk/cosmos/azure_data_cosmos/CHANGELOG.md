@@ -4,13 +4,16 @@
 
 ### Features Added
 
+- Support for simple cross-partition queries with `SELECT` projections and `WHERE` filters. Cross-partition queries are now done through fan-out in the client, and provide a client-generated continuation token that can be used to resume the query. See `ContainerClient::query_items()` and `QueryScope` for details. ([#4391](https://github.com/Azure/azure-sdk-for-rust/pull/4391))
+- The `QueryOptions` struct now has `with_max_item_count` and `with_continuation_token` methods for configuring the maximum number of items requested from the backend per page and resuming from a continuation token, respectively. ([#4391](https://github.com/Azure/azure-sdk-for-rust/pull/4391))
+
 ### Breaking Changes
+
 - Removed the `request_url()` accessor (gated on the `fault_injection` feature) from `ItemResponse`/`ResourceResponse`/`BatchResponse`. Driver-routed operations never populated it, so it always returned `None` in current usage.
-
 - `CosmosClientBuilder::with_user_agent_suffix` (and `CosmosClientOptions::with_user_agent_suffix`) now take `UserAgentSuffix` instead of `impl Into<String>`. Callers passing a `&str` or `String` must construct the value explicitly via `UserAgentSuffix::new` (panics on invalid input) or `UserAgentSuffix::try_new` (returns `Option`). Validation rules (max 25 characters, HTTP-header-safe) are now enforced at the construction site instead of being applied silently inside the builder. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
-
++- Changed how continuation tokens are returned. Instead of a `continuation()` accessor on `QueryFeedPage` and `FeedPage`, continuation tokens are now returned as a `Option<ContinuationToken>` from the `FeedPageIterator::to_continuation_token(&self)` method. Generating a continuation token for a cross-partition query requires computation, so this change makes it explicit that callers must opt in to generating a continuation token and allows them to choose when to pay the cost of generation. ([#4391](https://github.com/Azure/azure-sdk-for-rust/pull/4391))
+ - `ContainerClient::query_items()` now takes a `QueryScope` (`QueryScope::partition(...)`, `QueryScope::feed_range(...)`, or `QueryScope::full_container()`) instead of a partition key where `()` represented cross-partition queries. ([#4391](https://github.com/Azure/azure-sdk-for-rust/pull/4391))
 - Replaced `CosmosDiagnostics` with `CosmosDiagnosticsContext` (a re-export of `azure_data_cosmos_driver::diagnostics::DiagnosticsContext`). All response types now return `Arc<CosmosDiagnosticsContext>` from `diagnostics()` (the returned `Arc` derefs transparently to `CosmosDiagnosticsContext` for read-only inspection, and can be retained alongside a consumed response body). The previous `activity_id() -> Option<&str>` and `server_duration_ms() -> Option<f64>` accessors on `CosmosDiagnostics` are replaced by `CosmosDiagnosticsContext::activity_id() -> &ActivityId` and per-request server timing via `CosmosDiagnosticsContext::requests()[i].server_duration_ms()`.
-
 - Removed `azure_data_cosmos::constants::SubStatusCode` and its `new`/`value`/`from_header_value`/`From`/`Display`/`Debug` API. The SDK no longer maintains a parallel sub-status-code type — fault-injection (the only remaining consumer) now uses `azure_data_cosmos_driver::models::SubStatusCode` directly. Callers that referenced the SDK type should switch to the driver re-export.
 
 ### Bugs Fixed

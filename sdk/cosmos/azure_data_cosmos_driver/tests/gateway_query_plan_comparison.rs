@@ -29,12 +29,12 @@ use std::sync::Arc;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use tokio::sync::OnceCell;
 
-use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, PartitionKeyDefinition,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
+use azure_data_cosmos_driver::{driver::CosmosDriverRuntime, models::OperationTarget};
 
 use framework::resolve_test_env;
 
@@ -135,21 +135,22 @@ async fn fetch_gateway_plan(
     };
     let body = serde_json::to_vec(&query_body)?;
 
-    // Headers required for a query-plan request are folded in by
-    // `CosmosOperation::query_plan` (see #12). We pre-populate the
-    // cross-partition toggle (specific to gateway-comparison tests) and let
-    // the factory merge the four mandatory query-plan headers on top.
-    let mut custom_headers = std::collections::HashMap::new();
-    custom_headers.insert(
-        HeaderName::from("x-ms-documentdb-query-enablecrosspartition"),
-        HeaderValue::from("True"),
-    );
-    let caller_options = OperationOptions::default().with_custom_headers(custom_headers);
-    let (operation, op_options) = CosmosOperation::query_plan(container.clone(), caller_options);
-    let operation = operation.with_body(body);
-
-    let response = driver.execute_operation(operation, op_options).await?;
-    let body_bytes = response.into_body();
+    let operation = CosmosOperation::query_plan(
+        container.clone(),
+        azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES.into(),
+    )
+    .with_body(body);
+    let response = driver
+        .execute_operation(operation, OperationOptions::default())
+        .await?;
+    let body_bytes = response
+        .ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "gateway query-plan request returned no response body",
+            )
+        })?
+        .into_body();
     serde_json::from_slice(&body_bytes)
         .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))
 }
