@@ -78,26 +78,27 @@ It then creates an EventHubs processor client using the blob checkpoint store an
 use azure_core::http::Url;
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
 use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, ProcessorStrategy};
-use azure_storage_blob::BlobContainerClient;
+use azure_storage_blob::BlobServiceClient;
 use azure_identity::DeveloperToolsCredential;
 use std::sync::Arc;
 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create blob service client
+    // Create a blob service client, then derive a container client by name.
     let credential = DeveloperToolsCredential::new(None)?;
-    let container_url = Url::parse(
-        "https://yourstorageaccount.blob.core.windows.net/yourcontainername",
+    let service_url = Url::parse(
+        "https://yourstorageaccount.blob.core.windows.net/",
     )?;
-    let blob_client = BlobContainerClient::new(
-        container_url,
+    let service_client = BlobServiceClient::new(
+        service_url,
         Some(credential.clone()),
         None,
     )?;
+    let container_client = service_client.blob_container_client("yourcontainername");
 
     // Create checkpoint store
-    let checkpoint_store = BlobCheckpointStore::new(blob_client);
+    let checkpoint_store = BlobCheckpointStore::new(container_client);
 
     let consumer_client = ConsumerClient::builder()
         .open(

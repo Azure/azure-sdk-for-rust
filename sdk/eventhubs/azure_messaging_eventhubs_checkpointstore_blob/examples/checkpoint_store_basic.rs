@@ -18,7 +18,7 @@ use azure_messaging_eventhubs::{
     CheckpointStore,
 };
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
-use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
+use azure_storage_blob::{BlobServiceClient, BlobServiceClientOptions};
 use tracing::info;
 
 use opentelemetry_appender_tracing::layer;
@@ -43,16 +43,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create Azure credential and blob service client
     let credential = DeveloperToolsCredential::new(None)?;
 
-    // Instantiate a blob client with OpenTelemetry instrumentation enabled
-    let mut container_url = Url::parse(&storage_account_url)?;
-    container_url
-        .path_segments_mut()
-        .expect("storage_account_url must be a valid base URL")
-        .push(&container);
-    let blob_container_client = BlobContainerClient::new(
-        container_url,
+    // Instantiate a blob service client with OpenTelemetry instrumentation enabled,
+    // then derive a container client by name.
+    let service_url = Url::parse(&storage_account_url)?;
+    let service_client = BlobServiceClient::new(
+        service_url,
         Some(credential),
-        Some(BlobContainerClientOptions {
+        Some(BlobServiceClientOptions {
             client_options: ClientOptions {
                 instrumentation: InstrumentationOptions {
                     tracer_provider: Some(OpenTelemetryTracerProvider::from_global_provider()),
@@ -62,6 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ..Default::default()
         }),
     )?;
+    let blob_container_client = service_client.blob_container_client(&container);
 
     // Create the checkpoint store
     let checkpoint_store = BlobCheckpointStore::new(blob_container_client);
