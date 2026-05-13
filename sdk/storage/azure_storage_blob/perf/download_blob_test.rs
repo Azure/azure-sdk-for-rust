@@ -6,7 +6,7 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-use azure_core::{error::ErrorKind, Bytes};
+use azure_core::{error::ErrorKind, http::Url, Bytes};
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
@@ -206,7 +206,12 @@ impl PerfTest for DownloadBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
+        let mut container_url = Url::parse(&endpoint)?;
+        container_url
+            .path_segments_mut()
+            .expect("endpoint must be a valid base URL")
+            .push(&container_name);
+        let client = BlobContainerClient::new(container_url, Some(credential), None)?;
         self.client.get_or_init(|| client);
 
         // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).

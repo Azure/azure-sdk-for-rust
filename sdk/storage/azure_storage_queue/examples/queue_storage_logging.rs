@@ -47,12 +47,15 @@
 //! ```
 
 use azure_core::{
-    http::{ClientOptions, InstrumentationOptions},
+    http::{ClientOptions, InstrumentationOptions, Url},
     tracing::TracerProvider,
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use azure_identity::AzureCliCredential;
-use azure_storage_queue::{models::QueueMessage, QueueServiceClient, QueueServiceClientOptions};
+use azure_storage_queue::{
+    models::{QueueMessage, SentMessage},
+    QueueServiceClient, QueueServiceClientOptions,
+};
 use clap::Parser;
 use opentelemetry_sdk::trace::SdkTracerProvider;
 use std::{env, sync::Arc};
@@ -122,8 +125,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let service_client =
-        QueueServiceClient::new(&endpoint, Some(credential), Some(client_options))?;
+    let service_client = QueueServiceClient::new(
+        Url::parse(&endpoint)?,
+        Some(credential),
+        Some(client_options),
+    )?;
     let queue_client = service_client.queue_client(queue_name)?;
 
     // Create queue if it doesn't exist
@@ -141,7 +147,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         message_text: Some(message_text.to_string()),
     };
     let sent = queue_client.send_message(message.try_into()?, None).await?;
-    let sent_message = sent.into_model()?;
+    let sent_message: SentMessage = sent
+        .into_model()?
+        .items
+        .and_then(|v| v.into_iter().next())
+        .ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "Expected a sent message in the response",
+            )
+        })?;
     println!(
         "Message sent. ID: {}",
         sent_message.message_id.as_deref().unwrap_or("")

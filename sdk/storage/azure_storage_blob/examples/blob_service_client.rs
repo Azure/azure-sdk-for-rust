@@ -25,7 +25,7 @@
 
 use std::{collections::HashMap, env};
 
-use azure_core::http::RequestContent;
+use azure_core::http::{RequestContent, Url};
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
     models::{
@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let container_name = "test-container-service-client";
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let service_client = BlobServiceClient::new(&endpoint, Some(credential), None)?;
+    let service_client = BlobServiceClient::new(Url::parse(&endpoint)?, Some(credential), None)?;
     let container_client = service_client.blob_container_client(container_name);
 
     println!("Creating container '{container_name}'...");

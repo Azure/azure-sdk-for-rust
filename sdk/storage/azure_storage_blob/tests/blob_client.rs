@@ -546,9 +546,13 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     let container_name = get_container_name(recording);
     // Create Container & Container Client
+    let mut container_url = Url::parse(&endpoint)?;
+    container_url
+        .path_segments_mut()
+        .expect("Storage Endpoint must be a valid base URL with http/https scheme")
+        .push(&container_name);
     let container_client = BlobContainerClient::new(
-        &endpoint,
-        &container_name,
+        container_url,
         Some(recording.credential()),
         Some(container_client_options.clone()),
     )?;
@@ -572,25 +576,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         "data%20set%ferris%3D1%the%23crab%2D2",
     ];
     for blob_name in test_cases {
-        // Test Case 1: Initialize BlobClient using new() constructor
-        let blob_client_new = BlobClient::new(
-            &endpoint,
-            &container_name,
-            blob_name,
-            Some(recording.credential()),
-            Some(blob_client_options.clone()),
-        )?;
-
-        // Upload Blob
-        blob_client_new
-            .upload(RequestContent::from(b"hello rusty world".to_vec()), None)
-            .await?;
-
-        // Get Properties
-        let properties = blob_client_new.get_properties(None).await?;
-        assert_eq!(17, properties.content_length()?.unwrap());
-
-        // Test Case 2: Initialize BlobClient using from_blob_url(), separate path segments
+        // Test Case 1: Initialize BlobClient using new() with an explicit blob URL.
         let mut blob_url = Url::parse(&endpoint)?;
         blob_url
             .path_segments_mut()
@@ -598,7 +584,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             .push(&container_name)
             .push(blob_name);
 
-        let blob_client_from_url = BlobClient::from_url(
+        let blob_client_from_url = BlobClient::new(
             blob_url,
             Some(recording.credential()),
             Some(blob_client_options.clone()),
@@ -613,7 +599,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_from_url.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Test Case 3: Initialize BlobClient using ContainerClient accessor
+        // Test Case 2: Initialize BlobClient using ContainerClient accessor
         let blob_client_from_cc = container_client.blob_client(blob_name);
 
         // Upload Blob

@@ -99,6 +99,16 @@ pub struct GeoReplication {
     pub status: Option<GeoReplicationStatus>,
 }
 
+/// The response of send message.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "QueueMessagesList")]
+pub struct ListOfSentMessage {
+    /// The list of sent messages.
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<SentMessage>>,
+}
+
 /// The list queues response.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -362,7 +372,7 @@ pub struct RetentionPolicy {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "QueueMessage")]
-pub struct SentMessageInternal {
+pub struct SentMessage {
     /// The time that the message will expire and be automatically deleted.
     #[serde(
         default,

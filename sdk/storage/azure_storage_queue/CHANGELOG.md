@@ -1,14 +1,18 @@
 # Release History
 
-## 0.7.0 (Unreleased)
+## 0.7.0 (2026-05-13)
 
 ### Breaking Changes
 
+- Consolidated client constructors: `QueueClient::from_url()` has been renamed to `new()`, replacing the previous endpoint-plus-queue-name string overload. Each client now has a single `new()` that takes a fully-formed `Url`:
+  - `QueueClient::new(queue_url: Url, ...)`
+  - `QueueServiceClient::new(service_url: Url, ...)`
 - Renamed `QueueClient::endpoint()` and `QueueServiceClient::endpoint()` to `url()` for consistency with other Storage clients.
+- `QueueClient::send_message()` now returns `ListOfSentMessage` instead of a single `SentMessage`. Access the sent message via `ListOfSentMessage::items`.
 
 ### Bugs Fixed
 
-- `QueueClient::from_url()` and `QueueServiceClient::new()` now reject non-base URLs (e.g. `data:`, `mailto:`).
+- `QueueClient::new()` and `QueueServiceClient::new()` now reject non-base URLs (e.g. `data:`, `mailto:`).
 
 ## 0.6.0 (2026-04-22)
 

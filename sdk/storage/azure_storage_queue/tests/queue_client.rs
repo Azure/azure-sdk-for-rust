@@ -7,7 +7,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
-        Context, FixedRetryOptions, Response, RetryOptions, StatusCode,
+        Context, FixedRetryOptions, Response, RetryOptions, StatusCode, Url,
     },
     time::{parse_rfc3339, to_rfc3339, Duration, OffsetDateTime},
     Result,
@@ -384,7 +384,11 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
             response.status(),
         );
 
-        let sent: SentMessage = response.into_model()?;
+        let sent: SentMessage = response
+            .into_model()?
+            .items
+            .and_then(|v| v.into_iter().next())
+            .expect("Expected a sent message in the response");
         assert!(
             sent.message_id.is_some(),
             "Expected message_id to be set on the sent message"
@@ -551,7 +555,11 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
             response.status()
         );
 
-        let sent: SentMessage = response.into_model()?;
+        let sent: SentMessage = response
+            .into_model()?
+            .items
+            .and_then(|v| v.into_iter().next())
+            .expect("Expected a sent message in the response");
         assert!(
             sent.expiration_time.is_some(),
             "Expected expiration_time to be set for a message sent with message_time_to_live"
@@ -584,7 +592,11 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
             "Expected 201 Created for infinite TTL message, got {}",
             infinite_response.status()
         );
-        let infinite_sent: SentMessage = infinite_response.into_model()?;
+        let infinite_sent: SentMessage = infinite_response
+            .into_model()?
+            .items
+            .and_then(|v| v.into_iter().next())
+            .expect("Expected a sent message in the response");
         let expiry_year = infinite_sent
             .expiration_time
             .expect("Expected expiration_time to be set for infinite TTL message")
@@ -613,7 +625,11 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
             "Expected 201 Created for large TTL message, got {}",
             large_ttl_response.status()
         );
-        let large_ttl_sent: SentMessage = large_ttl_response.into_model()?;
+        let large_ttl_sent: SentMessage = large_ttl_response
+            .into_model()?
+            .items
+            .and_then(|v| v.into_iter().next())
+            .expect("Expected a sent message in the response");
         assert!(
             large_ttl_sent.expiration_time.is_some(),
             "Expected expiration_time to be set for a message with a large time-to-live"
@@ -1052,7 +1068,11 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        let sent_message = send_message_response.into_model()?;
+        let sent_message: SentMessage = send_message_response
+            .into_model()?
+            .items
+            .and_then(|v| v.into_iter().next())
+            .expect("Expected a sent message in the response");
 
         let option = Some(QueueClientUpdateMessageOptions {
             queue_message: Some(
@@ -1128,7 +1148,11 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
                 None,
             )
             .await?;
-        let sent: SentMessage = send_response.into_model()?;
+        let sent: SentMessage = send_response
+            .into_model()?
+            .items
+            .and_then(|v| v.into_iter().next())
+            .expect("Expected a sent message in the response");
         let message_id = sent.message_id.clone().expect("Expected message_id");
         let pop_receipt = sent.pop_receipt.clone().expect("Expected pop_receipt");
         let update_options = Some(QueueClientUpdateMessageOptions {
@@ -1196,7 +1220,11 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
 
-        let send_message = sent_message_response.into_model()?;
+        let send_message: SentMessage = sent_message_response
+            .into_model()?
+            .items
+            .and_then(|v| v.into_iter().next())
+            .expect("Expected a sent message in the response");
 
         // Act
         let delete_response = queue_client
@@ -1546,9 +1574,18 @@ async fn test_invalid_queue_name(ctx: TestContext) -> Result<()> {
     };
 
     // Act - queue names must be lowercase alphanumeric; Unicode characters are not valid.
+    let mut queue_url = Url::parse(&endpoint)?;
+    queue_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Invalid endpoint URL: cannot append queue name.",
+            )
+        })?
+        .push("啊齄丂狛狜");
     let queue_client = QueueClient::new(
-        &endpoint,
-        "啊齄丂狛狜",
+        queue_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )?;
@@ -1594,9 +1631,18 @@ async fn test_retry_on_io_error(ctx: TestContext) -> Result<()> {
         .insert(0, fail_first);
 
     let queue_name = get_queue_name(recording);
+    let mut queue_url = Url::parse(&endpoint)?;
+    queue_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Invalid endpoint URL: cannot append queue name.",
+            )
+        })?
+        .push(&queue_name);
     let queue_client = QueueClient::new(
-        &endpoint,
-        &queue_name,
+        queue_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )?;
@@ -1658,9 +1704,19 @@ async fn get_queue_client(recording: &Recording, queue_name: &str) -> Result<Que
         ..Default::default()
     };
 
+    let mut queue_url = Url::parse(&endpoint)?;
+    queue_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Invalid endpoint URL: cannot append queue name.",
+            )
+        })?
+        .push(queue_name);
+
     QueueClient::new(
-        &endpoint,
-        queue_name,
+        queue_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )

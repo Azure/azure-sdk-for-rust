@@ -14,46 +14,16 @@ use azure_core::{
 use std::sync::Arc;
 
 impl AppendBlobClient {
-    /// Creates a new AppendBlobClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `container_name` - The name of the container containing this Append blob.
-    /// * `blob_name` - The name of the Append blob to interact with.
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    pub fn new(
-        endpoint: &str,
-        container_name: &str,
-        blob_name: &str,
-        credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<AppendBlobClientOptions>,
-    ) -> Result<Self> {
-        let mut url = Url::parse(endpoint)?;
-
-        {
-            let mut path_segments = url.path_segments_mut().map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
-                )
-            })?;
-            path_segments.extend([container_name, blob_name]);
-        }
-
-        Self::from_url(url, credential, options)
-    }
-
     /// Creates a new AppendBlobClient from a blob URL.
     ///
     /// # Arguments
     ///
     /// * `blob_url` - The full URL of the Append blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.AppendBlob")]
-    pub fn from_url(
+    pub fn new(
         blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<AppendBlobClientOptions>,

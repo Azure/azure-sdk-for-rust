@@ -24,9 +24,9 @@
 //! AZURE_STORAGE_ACCOUNT_NAME="<your-storage-account>" cargo run --package azure_storage_blob --example storage_error
 //! ```
 
-use azure_core::error::ErrorKind;
+use azure_core::{error::ErrorKind, http::Url};
 use azure_identity::AzureCliCredential;
-use azure_storage_blob::{models::StorageErrorCode, BlobClient, StorageError};
+use azure_storage_blob::{models::StorageErrorCode, BlobServiceClient, StorageError};
 use std::env;
 
 #[tokio::main]
@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.blob.core.windows.net/", account);
+    let service_url = Url::parse(&format!("https://{account}.blob.core.windows.net/"))?;
     let container_name = "nonexistent-container";
     let blob_name = "nonexistent-blob.txt";
 
@@ -44,8 +44,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = AzureCliCredential::new(None)?;
 
     // Create a BlobClient pointing to a blob that doesn't exist
-    let blob_client =
-        BlobClient::new(&endpoint, container_name, blob_name, Some(credential), None)?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+    let blob_client = service_client.blob_client(container_name, blob_name);
 
     // Attempt to download a blob that doesn't exist to force an error
     println!("Attempting to download a blob that doesn't exist...");

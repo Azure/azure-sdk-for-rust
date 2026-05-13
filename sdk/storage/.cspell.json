@@ -21,6 +21,7 @@
     "FFFE",
     "FFFF",
     "GZRS",
+    "hostnames",
     "headerless",
     "immutabilitypolicy",
     "incrementalcopy",

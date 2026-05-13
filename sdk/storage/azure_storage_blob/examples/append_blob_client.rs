@@ -25,21 +25,21 @@
 
 use std::env;
 
-use azure_core::http::RequestContent;
+use azure_core::http::{RequestContent, Url};
 use azure_identity::DeveloperToolsCredential;
-use azure_storage_blob::{models::AppendBlobClientCreateOptions, BlobContainerClient};
+use azure_storage_blob::{models::AppendBlobClientCreateOptions, BlobServiceClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.blob.core.windows.net/", account);
+    let service_url = Url::parse(&format!("https://{account}.blob.core.windows.net/"))?;
     let container_name = "test-container-append-blob";
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let container_client =
-        BlobContainerClient::new(&endpoint, container_name, Some(credential), None)?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+    let container_client = service_client.blob_container_client(container_name);
 
     println!("Creating container '{container_name}'...");
     container_client.create(None).await?;
