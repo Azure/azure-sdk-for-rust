@@ -334,15 +334,31 @@ fn build_replace_sub_op(
 fn exhaustion_error(attempts: u8, last_412: Option<azure_core::Error>) -> azure_core::Error {
     let message = format!("patch_item: ETag conflict after {attempts} attempts");
     match last_412 {
-        Some(source) => azure_core::Error::with_error(
-            ErrorKind::HttpResponse {
-                status: StatusCode::PreconditionFailed,
-                error_code: None,
-                raw_response: None,
-            },
-            source,
-            message,
-        ),
+        Some(source) => {
+            // Forward the wrapped 412's `error_code` and `raw_response` onto
+            // the exhaustion error so callers that match on the standard
+            // `ErrorKind::HttpResponse` fields (e.g. `err.error_code()`,
+            // `err.raw_response()`) see the same shape they would from any
+            // other 412 path in this SDK — instead of having to walk
+            // `Error::source()` to recover them.
+            let (error_code, raw_response) = match source.kind() {
+                ErrorKind::HttpResponse {
+                    error_code,
+                    raw_response,
+                    ..
+                } => (error_code.clone(), raw_response.clone()),
+                _ => (None, None),
+            };
+            azure_core::Error::with_error(
+                ErrorKind::HttpResponse {
+                    status: StatusCode::PreconditionFailed,
+                    error_code,
+                    raw_response,
+                },
+                source,
+                message,
+            )
+        }
         None => azure_core::Error::with_message(
             ErrorKind::HttpResponse {
                 status: StatusCode::PreconditionFailed,
@@ -405,14 +421,34 @@ fn validate_partition_key_paths(
 }
 
 fn path_overlaps_partition_key(op_path: &str, pk_path: &str) -> bool {
-    // Both should already start with '/'. Equal paths overlap; an op path that
-    // is an ancestor (e.g., '/account' when PK is '/account/tenantId') also
-    // overlaps; an op path that descends into a PK subtree
-    // (e.g., '/account/tenantId/extra' on PK '/account/tenantId') also
-    // overlaps. The check is symmetric on prefixes split at '/'.
-    if op_path == pk_path {
+    // Normalize both paths so a caller-supplied op path missing the RFC 6901
+    // leading '/' (e.g. "pk" instead of "/pk") still matches a PK path
+    // ("/pk"). Without this, the byte-prefix comparison below would silently
+    // accept the malformed path here, dispatch the Read sub-op, and only
+    // fail later in `apply_patch_ops` via `parse_pointer` — wasting an RU on
+    // a request that should have been rejected up front.
+    //
+    // `parse_pointer` itself rejects empty paths and paths without a leading
+    // '/' once we reach the local-apply stage; this normalization closes
+    // only the *PK-overlap-guard escape* window, not the broader validation
+    // (which is still enforced at apply time).
+    fn normalize(p: &str) -> String {
+        if p.is_empty() || p.starts_with('/') {
+            p.to_string()
+        } else {
+            format!("/{p}")
+        }
+    }
+    let op = normalize(op_path);
+    let pk = normalize(pk_path);
+    if op == pk {
         return true;
     }
+    // Equal paths overlap; an op path that is an ancestor
+    // (e.g., '/account' when PK is '/account/tenantId') also overlaps; an op
+    // path that descends into a PK subtree
+    // (e.g., '/account/tenantId/extra' on PK '/account/tenantId') also
+    // overlaps. The check is symmetric on prefixes split at '/'.
     let with_slash = |p: &str| {
         if p.ends_with('/') {
             p.to_string()
@@ -420,8 +456,8 @@ fn path_overlaps_partition_key(op_path: &str, pk_path: &str) -> bool {
             format!("{p}/")
         }
     };
-    let a = with_slash(op_path);
-    let b = with_slash(pk_path);
+    let a = with_slash(&op);
+    let b = with_slash(&pk);
     a.starts_with(&b) || b.starts_with(&a)
 }
 
@@ -477,6 +513,25 @@ mod tests {
         // Sibling paths do not overlap.
         assert!(!path_overlaps_partition_key("/pkOther", "/pk"));
         assert!(!path_overlaps_partition_key("/other", "/pk"));
+    }
+
+    #[test]
+    fn path_overlap_normalizes_missing_leading_slash() {
+        // A caller-supplied op path missing the RFC 6901 leading '/' must
+        // still trip the PK guard. Without the normalization in
+        // `path_overlaps_partition_key`, a byte-prefix comparison of "pk"
+        // against "/pk" returns false, the PK guard silently accepts it,
+        // the handler dispatches a Read sub-op, and the call only fails
+        // later in `parse_pointer` — wasting an RU. Pin the fast-fail
+        // behavior.
+        assert!(path_overlaps_partition_key("pk", "/pk"));
+        assert!(path_overlaps_partition_key("pk/inner", "/pk"));
+        // The malformed direction is symmetric: a PK path missing the
+        // leading slash (shouldn't happen in practice, but the comparator
+        // is symmetric) still matches a properly-rooted op path.
+        assert!(path_overlaps_partition_key("/pk", "pk"));
+        // Sibling paths without leading slashes still don't overlap.
+        assert!(!path_overlaps_partition_key("other", "/pk"));
     }
 
     #[test]
@@ -733,6 +788,52 @@ mod tests {
             msg.contains("0"),
             "exhaustion message should still mention the attempts count: {msg}"
         );
+    }
+
+    #[test]
+    fn exhaustion_error_forwards_underlying_error_code_and_raw_response() {
+        // The top-level exhaustion error must expose the same
+        // `error_code` + `raw_response` fields as the wrapped 412, so
+        // callers matching on `ErrorKind::HttpResponse { error_code, .. }`
+        // (the same pattern they would use against any non-PATCH 412 path)
+        // see a consistent shape — instead of having to walk
+        // `Error::source()` to recover them.
+        use azure_core::Error;
+
+        let raw = azure_core::http::RawResponse::from_bytes(
+            azure_core::http::StatusCode::PreconditionFailed,
+            azure_core::http::headers::Headers::new(),
+            b"{\"code\":\"PreconditionFailed\",\"message\":\"server: stale etag\"}".to_vec(),
+        );
+        let underlying = Error::with_message(
+            ErrorKind::HttpResponse {
+                status: StatusCode::PreconditionFailed,
+                error_code: Some("EtagPreconditionFailed".into()),
+                raw_response: Some(Box::new(raw)),
+            },
+            "ETag mismatch from server",
+        );
+        let err = exhaustion_error(4, Some(underlying));
+
+        match err.kind() {
+            ErrorKind::HttpResponse {
+                status,
+                error_code,
+                raw_response,
+            } => {
+                assert_eq!(*status, StatusCode::PreconditionFailed);
+                assert_eq!(
+                    error_code.as_deref(),
+                    Some("EtagPreconditionFailed"),
+                    "exhaustion error must forward the wrapped 412's `error_code` field"
+                );
+                assert!(
+                    raw_response.is_some(),
+                    "exhaustion error must forward the wrapped 412's `raw_response`"
+                );
+            }
+            other => panic!("expected HttpResponse kind, got {other:?}"),
+        }
     }
 
     // ====== Dispatcher-driven loop coverage ======

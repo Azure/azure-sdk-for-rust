@@ -444,7 +444,24 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
             });
         }
         // Float delta on integer target — promote to f64.
+        //
+        // Integers outside ±2^53 are not exactly representable in f64, so the
+        // `as` cast on the next line would silently round (e.g.
+        // `9_007_199_254_740_993i64 as f64 == 9_007_199_254_740_992.0`).
+        // Round-tripping that back to JSON would durably mutate the value,
+        // including in the `Float(0.0)` no-op case. Reject up front rather
+        // than silently demote precision — the integer-delta arm above is
+        // available for callers that need exact arithmetic on large
+        // integers.
         (IncrValue::Float(d), Some(target), _) => {
+            const F64_INT_LIMIT: u64 = 1u64 << 53;
+            if target.unsigned_abs() > F64_INT_LIMIT {
+                return Err(PatchEvalError::TypeMismatch {
+                    expected: "integer target within ±2^53 for fractional Increment",
+                    actual: "integer outside ±2^53",
+                    path: path.to_string(),
+                });
+            }
             let sum = (target as f64) + d;
             match serde_json::Number::from_f64(sum) {
                 Some(n) => Value::Number(n),
@@ -622,6 +639,35 @@ mod tests {
         let doc = json!({"n": 2});
         let out = apply(doc, &[PatchOp::increment("/n", 0.5f64)]).unwrap();
         assert!((out["n"].as_f64().unwrap() - 2.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn increment_float_on_huge_int_rejects() {
+        // Integers outside ±2^53 are not exactly representable in f64, so
+        // promoting them via `(target as f64)` silently rounds. Without the
+        // range guard, `Increment(/n, 0.0)` against a stored value of
+        // `9_007_199_254_740_993i64` would silently mutate it to
+        // `9_007_199_254_740_992.0` — durably losing the value when written
+        // back as JSON. Pin the fast-fail behavior.
+        let doc = json!({ "n": 9_007_199_254_740_993i64 });
+        let err = apply(doc, &[PatchOp::increment("/n", 0.0f64)]).unwrap_err();
+        assert!(
+            matches!(err, PatchEvalError::TypeMismatch { .. }),
+            "Float-delta Increment on i64 outside ±2^53 must reject; got {err}"
+        );
+
+        // Negative side of the limit too.
+        let doc = json!({ "n": -9_007_199_254_740_993i64 });
+        let err = apply(doc, &[PatchOp::increment("/n", 0.0f64)]).unwrap_err();
+        assert!(
+            matches!(err, PatchEvalError::TypeMismatch { .. }),
+            "Float-delta Increment on negative i64 outside ±2^53 must reject; got {err}"
+        );
+
+        // Right at the limit (±2^53) is still representable and must succeed.
+        let doc = json!({ "n": 9_007_199_254_740_992i64 });
+        let out = apply(doc, &[PatchOp::increment("/n", 0.0f64)]).unwrap();
+        assert_eq!(out["n"].as_f64().unwrap(), 9_007_199_254_740_992.0);
     }
 
     #[test]
