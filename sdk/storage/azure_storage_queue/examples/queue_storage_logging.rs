@@ -52,7 +52,10 @@ use azure_core::{
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use azure_identity::AzureCliCredential;
-use azure_storage_queue::{models::QueueMessage, QueueServiceClient, QueueServiceClientOptions};
+use azure_storage_queue::{
+    models::{QueueMessage, SentMessage},
+    QueueServiceClient, QueueServiceClientOptions,
+};
 use clap::Parser;
 use opentelemetry_sdk::trace::SdkTracerProvider;
 use std::{env, sync::Arc};
@@ -144,7 +147,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         message_text: Some(message_text.to_string()),
     };
     let sent = queue_client.send_message(message.try_into()?, None).await?;
-    let sent_message = sent.into_model()?;
+    let sent_message: SentMessage = sent.into_model()?.try_into()?;
     println!(
         "Message sent. ID: {}",
         sent_message.message_id.as_deref().unwrap_or("")

@@ -5,42 +5,21 @@
 
 pub use crate::generated::models::*;
 
-use azure_core::fmt::SafeDebug;
-use serde::Deserialize;
-use std::ops::Deref;
+use azure_core::error::ErrorKind;
 
-#[derive(Clone, Default, SafeDebug)]
-pub struct SentMessage(SentMessageInternal);
+impl TryFrom<ListOfSentMessage> for SentMessage {
+    type Error = azure_core::Error;
 
-impl Deref for SentMessage {
-    type Target = SentMessageInternal;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-/// XML envelope used to deserialize the `QueueMessagesList` response for a put-message operation.
-#[derive(Deserialize)]
-#[serde(rename = "QueueMessagesList")]
-struct SentMessageEnvelope {
-    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
-    items: Option<Vec<SentMessageInternal>>,
-}
-
-impl<'de> Deserialize<'de> for SentMessage {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let list = SentMessageEnvelope::deserialize(deserializer)?;
-        let message = list
-            .items
+    fn try_from(list: ListOfSentMessage) -> Result<Self, Self::Error> {
+        list.items
             .unwrap_or_default()
             .into_iter()
             .next()
-            .ok_or_else(|| serde::de::Error::custom("No messages found in the response."))?;
-
-        Ok(Self(message))
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    ErrorKind::DataConversion,
+                    "No messages found in the response.",
+                )
+            })
     }
 }

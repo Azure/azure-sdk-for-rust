@@ -8,7 +8,7 @@
   - `QueueClient::new(queue_url: Url, ...)`
   - `QueueServiceClient::new(service_url: Url, ...)`
 - Renamed `QueueClient::endpoint()` and `QueueServiceClient::endpoint()` to `url()` for consistency with other Storage clients.
-- Removed the `SentMessageInternal` model from the public API.
+- `QueueClient::send_message()` now returns `ListOfSentMessage` instead of a single `SentMessage`. Use `ListOfSentMessage::try_into()` to extract the single `SentMessage` from the response.
 
 ### Bugs Fixed
 
