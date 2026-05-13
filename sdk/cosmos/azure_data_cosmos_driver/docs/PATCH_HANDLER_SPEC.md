@@ -34,15 +34,20 @@ normal pipeline stages run.
    - reject empty op lists.
 
 2. Capture the caller's session token (if any) from the outer PATCH
-   operation's request headers — see "Session-token threading" below.
+   operation's request headers as the loop's *effective* session token —
+   see "Session-token threading" below.
 
 loop up to max_attempts times:
-    3. read = execute_operation(Read, caller_options) with the caller's
-       session token applied to the Read sub-op.
+    3. read = execute_operation(Read, caller_options) with the loop's
+       *effective* session token applied to the Read sub-op (caller's
+       on attempt 1; carried-forward on subsequent attempts).
        The driver pipeline returns Err(ErrorKind::HttpResponse { .. })
        for any non-2xx Read response; the patch handler propagates that
        error verbatim (with its raw_response and diagnostics intact).
        if read.headers().etag is None: return Other("no ETag, cannot RMW").
+       advance the *effective* session token to read.headers().session_token
+       so the next attempt's Read never observes a strictly older session
+       view.
     4. value = serde_json::from_slice(read.body())
        apply_patch_ops(&mut value, &spec.operations)
        merged_bytes = serde_json::to_vec(&value)
@@ -58,7 +63,10 @@ loop up to max_attempts times:
     6. return CosmosResponse::new(merged_bytes,
                                   replace.headers(),
                                   replace.status(),
-                                  replace.diagnostics())
+                                  aggregated_diagnostics)
+       where aggregated_diagnostics is the concatenation, in dispatch
+       order, of every successful sub-op's per-request diagnostics —
+       see "Response Synthesis" below.
 
 if loop exhausted: return ErrorKind::HttpResponse{ status:
 PreconditionFailed, .. } with the last 412 chained as the source.
@@ -75,7 +83,8 @@ read. To close that window:
 1. The caller-provided `OperationOptions` (consistency, end-to-end
    latency budget, throughput control, etc.) are threaded through to
    the internal Read **and** to the internal Replace.
-2. The **caller's** session token (if any) is applied to the internal
+2. The **caller's** session token (if any) seeds the loop's
+   *effective* session token, which is applied to the first attempt's
    Read via `build_read_sub_op`, so the Read observes a session-
    consistent view of the item.
 3. The Replace's session token is **overridden** with the session token
@@ -84,6 +93,12 @@ read. To close that window:
    further client-supplied session token on the outer PATCH is
    intentionally discarded for the Replace; the Read's response token
    is by definition fresher.
+4. Across RMW attempts the loop monotonically advances the *effective*
+   session token to the freshest one observed (currently the Read's
+   response token on every attempt; the final Replace's response token
+   on the successful attempt). Attempt N's Read therefore never
+   regresses to a strictly older session view than attempt N-1 already
+   saw.
 
 This matters most for `Session` consistency, but is correct for
 `Eventual` too (a no-op there). For `Strong` / `BoundedStaleness` the
@@ -98,7 +113,17 @@ contains, the handler builds the returned `CosmosResponse` from:
 
 - **Body**: the locally-merged JSON it just sent in the successful Replace
   (the Replace's response body is *not* required to be present).
-- **Headers / status / diagnostics**: those of the successful Replace.
+- **Headers / status**: those of the successful Replace.
+- **Diagnostics**: an *aggregated* `DiagnosticsContext` synthesized via
+  `DiagnosticsContext::aggregate_sub_operations`, concatenating in
+  dispatch order the per-request `RequestDiagnostics` of every
+  successful sub-op the loop issued (every Read plus the final
+  Replace). One PATCH operation therefore surfaces as one
+  `DiagnosticsContext` with N `RequestDiagnostics` entries, instead of
+  the prior single-Replace-only view. Operation-level fields
+  (`activity_id`, options, `cpu_monitor`, `machine_id`, status) are
+  inherited from the final Replace's context; total `duration` is the
+  sum of all sources' durations (sub-ops are sequential).
 
 `from_local_body_and_driver_headers` is the single helper that builds this
 synthesized response. It is `pub(crate)` and lives in
@@ -129,6 +154,11 @@ as a JSON number without precision loss.
   into success; the final outcome is whichever of "internal sub-op error",
   "successful PATCH", or "exhausted RMW attempts (412)" terminated the
   loop.
+- The aggregated `DiagnosticsContext` described in "Response Synthesis"
+  applies to the *successful* path. On error paths the surfaced
+  `DiagnosticsContext` is whatever the failing sub-op already carried —
+  the handler does not synthesize an aggregated context for partial
+  failures.
 
 ## Why Driver-Side?
 

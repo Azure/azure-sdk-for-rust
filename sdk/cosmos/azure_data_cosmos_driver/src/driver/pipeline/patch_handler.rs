@@ -13,9 +13,15 @@
 //!    using [`apply_patch_ops`], and re-serialize.
 //! 5. Issue an internal ETag-guarded [`OperationType::Replace`].
 //! 6. On `412 Precondition Failed`, restart from step 2 — up to
-//!    `max_attempts` (default 5) total tries.
+//!    `max_attempts` (default 5) total tries. Across attempts the loop
+//!    monotonically advances the session token it threads into the next
+//!    Read so attempt N never observes a strictly older session view than
+//!    attempt N-1.
 //! 7. Synthesize a [`CosmosResponse`] from the locally-merged body plus the
-//!    transport headers/status/diagnostics of the final Replace.
+//!    transport headers/status of the final Replace and an aggregated
+//!    [`DiagnosticsContext`] that concatenates every successful sub-op's
+//!    per-request diagnostics — so callers see one PATCH operation = one
+//!    [`DiagnosticsContext`].
 //!
 //! This is the only place in the driver allowed to deserialize a data plane
 //! response body. It is gated behind the `Patch` operation type so the
@@ -25,7 +31,9 @@
 //! [`OperationType::Replace`]: crate::models::OperationType::Replace
 //! [`OperationType::Patch`]: crate::models::OperationType::Patch
 //! [`apply_patch_ops`]: super::patch_eval::apply_patch_ops
+//! [`DiagnosticsContext`]: crate::diagnostics::DiagnosticsContext
 
+use crate::diagnostics::DiagnosticsContext;
 use crate::driver::pipeline::from_local_body::from_local_body_and_driver_headers;
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::driver::CosmosDriver;
@@ -37,6 +45,7 @@ use async_trait::async_trait;
 use azure_core::error::ErrorKind;
 use azure_core::http::StatusCode;
 use std::num::NonZeroU8;
+use std::sync::Arc;
 
 /// Default cap on the number of RMW attempts before surfacing the latest
 /// `412 PreconditionFailed` to the caller.
@@ -140,13 +149,28 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // internal Read so we get a session-consistent view of the current item,
     // then override with the Read's response session token on the Replace —
     // closing the SE-004 TOCTOU window.
-    let caller_session_token = operation.request_headers().session_token.clone();
+    //
+    // Across RMW attempts we monotonically advance `effective_session_token`
+    // to the freshest one we observe (Read response on every attempt;
+    // Replace response on the final successful attempt). That way attempt
+    // N's Read does not regress to a strictly older session view than
+    // attempt N-1 already saw.
+    let mut effective_session_token = operation.request_headers().session_token.clone();
 
     // -- 2..6. RMW loop --
     let mut last_412: Option<azure_core::Error> = None;
+    // Aggregated diagnostics across every successful sub-op the loop
+    // dispatches. We hand this to `from_local_body_and_driver_headers`
+    // when we synthesize the success response so callers see one
+    // PATCH operation = one DiagnosticsContext containing every
+    // sub-op's per-request diagnostics, instead of just the final
+    // Replace's. See `DiagnosticsContext::aggregate_sub_operations`.
+    let mut sub_op_diagnostics: Vec<Arc<DiagnosticsContext>> = Vec::with_capacity(2);
     for _ in 0..attempts {
-        // Read the current item, propagating the caller's session token.
-        let read_op = build_read_sub_op(item_ref.clone(), caller_session_token.clone());
+        // Read the current item, propagating the freshest session token we
+        // have observed so far (caller's on attempt 1; carried-forward on
+        // subsequent attempts).
+        let read_op = build_read_sub_op(item_ref.clone(), effective_session_token.clone());
 
         // Any non-2xx Read response is mapped by the driver pipeline into
         // `Err(ErrorKind::HttpResponse { .. })` (see retry_evaluation.rs's
@@ -157,6 +181,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         let read_resp = dispatcher
             .execute_operation(read_op, options.clone())
             .await?;
+        sub_op_diagnostics.push(read_resp.diagnostics());
         let etag = read_resp.headers().etag.clone().ok_or_else(|| {
             azure_core::Error::with_message(
                 ErrorKind::Other,
@@ -168,6 +193,12 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         // just read from. This is what mitigates SE-004 (session token
         // TOCTOU across read->write).
         let read_session_token = read_resp.headers().session_token.clone();
+        // Carry the Read response's session token into the next attempt's
+        // Read so a subsequent retry never regresses to a strictly older
+        // session view.
+        if let Some(token) = read_session_token.clone() {
+            effective_session_token = Some(token);
+        }
 
         // Locally apply the patch ops.
         let mut value: serde_json::Value =
@@ -204,14 +235,29 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             .await
         {
             Ok(replace_resp) => {
-                // Synthesize the final response: use the merged body we just
-                // sent (the PATCH post-image) plus the driver-routed
-                // transport metadata from the Replace.
+                let replace_headers = replace_resp.headers().clone();
+                let replace_status = replace_resp.status();
+                sub_op_diagnostics.push(replace_resp.diagnostics());
+                // Aggregate the per-request diagnostics of every successful
+                // sub-op into a single DiagnosticsContext, so the synthesized
+                // response surfaces "one operation = one DiagnosticsContext"
+                // instead of just the Replace's view. Falls back to the
+                // Replace's own diagnostics if aggregation somehow fails
+                // (e.g. an empty source slice — which can't happen here, but
+                // we keep the safe fallback for forward-compat).
+                let diagnostics = DiagnosticsContext::aggregate_sub_operations(&sub_op_diagnostics)
+                    .map(Arc::new)
+                    .unwrap_or_else(|| {
+                        sub_op_diagnostics
+                            .last()
+                            .cloned()
+                            .expect("sub_op_diagnostics is non-empty after a successful Replace")
+                    });
                 return Ok(from_local_body_and_driver_headers(
                     merged_bytes,
-                    replace_resp.headers().clone(),
-                    replace_resp.status(),
-                    replace_resp.diagnostics(),
+                    replace_headers,
+                    replace_status,
+                    diagnostics,
                 ));
             }
             Err(err) if is_precondition_failed(&err) => {
@@ -711,9 +757,23 @@ mod tests {
         Ok {
             body: Vec<u8>,
             etag: Option<&'static str>,
+            session_token: Option<&'static str>,
             status: StatusCode,
         },
         Err(azure_core::Error),
+    }
+
+    impl ScriptedReply {
+        /// Convenience constructor for an `Ok` reply with no session token —
+        /// the most common shape used in the existing tests.
+        fn ok(body: Vec<u8>, etag: Option<&'static str>, status: StatusCode) -> Self {
+            ScriptedReply::Ok {
+                body,
+                etag,
+                session_token: None,
+                status,
+            }
+        }
     }
 
     /// Records every (operation_type, etag-on-precondition, body) the PATCH
@@ -730,6 +790,10 @@ mod tests {
         /// MUST set this on the Replace; absence here means the ETag guard was
         /// dropped, which would be a regression.
         if_match_etag: Option<String>,
+        /// The session token applied to the dispatched sub-op's request
+        /// headers, if any. Captured so tests can pin the cross-attempt
+        /// session-token carry-forward behavior.
+        session_token: Option<SessionToken>,
     }
 
     impl ScriptedDispatcher {
@@ -759,6 +823,7 @@ mod tests {
             self.calls.lock().unwrap().push(DispatchedCall {
                 op_type: operation.operation_type(),
                 if_match_etag: if_match,
+                session_token: operation.request_headers().session_token.clone(),
             });
 
             let reply =
@@ -768,10 +833,18 @@ mod tests {
 
             match reply {
                 ScriptedReply::Err(e) => Err(e),
-                ScriptedReply::Ok { body, etag, status } => {
+                ScriptedReply::Ok {
+                    body,
+                    etag,
+                    session_token,
+                    status,
+                } => {
                     let mut headers = CosmosResponseHeaders::new();
                     if let Some(tag) = etag {
                         headers.etag = Some(ETag::from(tag));
+                    }
+                    if let Some(token) = session_token {
+                        headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
                     }
                     headers.request_charge = Some(RequestCharge::new(1.0));
                     let diagnostics = Arc::new(
@@ -822,22 +895,22 @@ mod tests {
         //
         // Script: Read#1 ok -> Replace#1 412 -> Read#2 ok -> Replace#2 ok.
         let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                etag: Some("\"v1\""),
-                status: StatusCode::Ok,
-            },
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
             ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost the race")),
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
-                etag: Some("\"v2\""),
-                status: StatusCode::Ok,
-            },
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
-                etag: Some("\"v3\""),
-                status: StatusCode::Ok,
-            },
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
+                Some("\"v3\""),
+                StatusCode::Ok,
+            ),
         ]);
 
         let resp = execute_with_dispatcher(
@@ -879,25 +952,25 @@ mod tests {
         // success.
         let dispatcher = ScriptedDispatcher::new(vec![
             // Attempt 1
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                etag: Some("\"v1\""),
-                status: StatusCode::Ok,
-            },
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
             ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #1")),
             // Attempt 2
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                etag: Some("\"v2\""),
-                status: StatusCode::Ok,
-            },
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
             ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #2")),
             // Attempt 3
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                etag: Some("\"v3\""),
-                status: StatusCode::Ok,
-            },
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v3\""),
+                StatusCode::Ok,
+            ),
             ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #3")),
         ]);
 
@@ -929,11 +1002,11 @@ mod tests {
         // A 500 / 503 / etc. on the Replace must surface verbatim — no
         // retry, no remapping. The retry loop is ONLY for 412.
         let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                etag: Some("\"v1\""),
-                status: StatusCode::Ok,
-            },
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
             ScriptedReply::Err(http_error(StatusCode::InternalServerError, "boom")),
         ]);
 
@@ -997,11 +1070,11 @@ mod tests {
         // The Read response without an ETag is unrecoverable — we cannot
         // construct an If-Match precondition. Verify the handler aborts
         // *before* issuing a Replace.
-        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::Ok {
-            body: br#"{"id":"doc1","pk":"pk1"}"#.to_vec(),
-            etag: None,
-            status: StatusCode::Ok,
-        }]);
+        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
+            br#"{"id":"doc1","pk":"pk1"}"#.to_vec(),
+            None,
+            StatusCode::Ok,
+        )]);
 
         let err = execute_with_dispatcher(
             &dispatcher,
@@ -1077,24 +1150,23 @@ mod tests {
         // the Replace inherits the ETag captured from the Read, and the
         // post-image is produced from the locally-merged document.
         //
-        // The session-token wire-up (caller → Read; Read response → Replace)
-        // is covered by the per-builder unit tests
+        // Cross-attempt session-token carry-forward is covered by
+        // `rmw_carries_session_token_forward_across_412_retries`; the
+        // single-attempt caller→Read / Read-response→Replace wire-up is
+        // covered by the per-builder unit tests
         // `read_sub_op_propagates_caller_session_token` and
-        // `replace_sub_op_uses_read_response_session_token`. Pinning it at
-        // the loop level here would require expanding `ScriptedReply` to
-        // carry a synthetic session token; the helpers exercise the same
-        // code path with less fixture surface.
+        // `replace_sub_op_uses_read_response_session_token`.
         let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                etag: Some("\"v1\""),
-                status: StatusCode::Ok,
-            },
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
-                etag: Some("\"v2\""),
-                status: StatusCode::Ok,
-            },
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                Some("\"v2\""),
+                StatusCode::Ok,
+            ),
         ]);
 
         let caller_token = SessionToken(Cow::Owned("0:1#7".into()));
@@ -1110,5 +1182,173 @@ mod tests {
         assert_eq!(calls[0].if_match_etag, None);
         assert_eq!(calls[1].op_type, OperationType::Replace);
         assert_eq!(calls[1].if_match_etag.as_deref(), Some("\"v1\""));
+    }
+
+    #[tokio::test]
+    async fn rmw_carries_session_token_forward_across_412_retries() {
+        // The loop must monotonically advance the session token it threads
+        // into the next attempt's Read: attempt 2's Read should observe
+        // attempt 1's Read response token, not regress to the caller's
+        // (potentially older) token. This guards against a future
+        // regression that resets `effective_session_token` to the caller's
+        // value at the top of every iteration — which would silently
+        // weaken the session-consistency guarantees the PATCH handler
+        // promises after the first 412.
+        let dispatcher = ScriptedDispatcher::new(vec![
+            // Attempt 1
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                etag: Some("\"v1\""),
+                session_token: Some("0:1#100"),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost the race")),
+            // Attempt 2
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                etag: Some("\"v2\""),
+                session_token: Some("0:1#200"),
+                status: StatusCode::Ok,
+            },
+            ScriptedReply::Ok {
+                body: br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
+                etag: Some("\"v3\""),
+                session_token: Some("0:1#201"),
+                status: StatusCode::Ok,
+            },
+        ]);
+
+        let caller_token = SessionToken(Cow::Owned("0:1#1".into()));
+        let op = canonical_patch_op().with_session_token(caller_token.clone());
+
+        let _resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect("PATCH should succeed after one 412 retry");
+
+        let calls = dispatcher.calls();
+        assert_eq!(calls.len(), 4);
+
+        // Attempt 1, Read: uses caller's session token.
+        assert_eq!(calls[0].op_type, OperationType::Read);
+        assert_eq!(calls[0].session_token.as_ref(), Some(&caller_token));
+
+        // Attempt 1, Replace: uses Attempt 1 Read's response token (TOCTOU
+        // mitigation, unchanged behavior).
+        assert_eq!(calls[1].op_type, OperationType::Replace);
+        assert_eq!(
+            calls[1].session_token.as_ref().map(|t| t.0.as_ref()),
+            Some("0:1#100")
+        );
+
+        // Attempt 2, Read: MUST use the freshest observed token (Attempt 1
+        // Read's `0:1#100`), NOT the caller's stale `0:1#1`. This is the
+        // cross-attempt carry-forward.
+        assert_eq!(calls[2].op_type, OperationType::Read);
+        assert_eq!(
+            calls[2].session_token.as_ref().map(|t| t.0.as_ref()),
+            Some("0:1#100"),
+            "attempt 2 Read must use the carried-forward session token \
+             from attempt 1's Read response, not the caller's stale token"
+        );
+
+        // Attempt 2, Replace: uses Attempt 2 Read's response token.
+        assert_eq!(calls[3].op_type, OperationType::Replace);
+        assert_eq!(
+            calls[3].session_token.as_ref().map(|t| t.0.as_ref()),
+            Some("0:1#200")
+        );
+    }
+
+    #[tokio::test]
+    async fn rmw_aggregates_diagnostics_across_sub_operations() {
+        // The synthesized PATCH response's DiagnosticsContext must be the
+        // *aggregate* of every successful sub-op's DiagnosticsContext, not
+        // just the final Replace's. Pre-aggregation the handler returned
+        // `replace_resp.diagnostics()` directly, so callers saw activity
+        // for one HTTP request even though the loop made N sub-ops. We
+        // pin both shape (Arc identity differs from any single sub-op
+        // context) and behavior (aggregated activity_id matches the LAST
+        // sub-op's activity_id; status comes from the LAST sub-op).
+        use crate::models::CosmosResponseHeaders;
+
+        // We need to peek at the Arc identity of each sub-op's
+        // DiagnosticsContext, so use a bespoke dispatcher that captures
+        // the diagnostics it hands out instead of `ScriptedDispatcher`.
+        struct CapturingDispatcher {
+            handed_out: Mutex<Vec<Arc<DiagnosticsContext>>>,
+        }
+
+        #[async_trait]
+        impl SubOperationDispatcher for CapturingDispatcher {
+            async fn execute_operation(
+                &self,
+                operation: CosmosOperation,
+                _options: OperationOptions,
+            ) -> azure_core::Result<CosmosResponse> {
+                let body = match operation.operation_type() {
+                    OperationType::Read => br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    OperationType::Replace => br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                    other => panic!("unexpected sub-op {other:?}"),
+                };
+                let mut headers = CosmosResponseHeaders::new();
+                headers.etag = Some(ETag::from("\"v1\""));
+                let diagnostics = Arc::new(
+                    DiagnosticsContextBuilder::new(
+                        ActivityId::new_uuid(),
+                        Arc::new(DiagnosticsOptions::default()),
+                    )
+                    .complete(),
+                );
+                self.handed_out
+                    .lock()
+                    .unwrap()
+                    .push(Arc::clone(&diagnostics));
+                Ok(from_local_body_and_driver_headers(
+                    body,
+                    headers,
+                    CosmosStatus::from_parts(StatusCode::Ok, None),
+                    diagnostics,
+                ))
+            }
+        }
+
+        let dispatcher = CapturingDispatcher {
+            handed_out: Mutex::new(Vec::new()),
+        };
+
+        let resp = execute_with_dispatcher(
+            &dispatcher,
+            canonical_patch_op(),
+            OperationOptions::default(),
+            None,
+        )
+        .await
+        .expect("PATCH should succeed");
+
+        let handed_out = dispatcher.handed_out.lock().unwrap().clone();
+        assert_eq!(
+            handed_out.len(),
+            2,
+            "expected one Read + one Replace sub-op"
+        );
+
+        let returned = resp.diagnostics();
+
+        // Aggregation produces a fresh Arc that is identity-distinct from
+        // each individual sub-op context; a regression that returned
+        // `replace_resp.diagnostics()` directly would fail this check.
+        assert!(
+            !Arc::ptr_eq(&returned, &handed_out[0]),
+            "returned diagnostics must not be identity-equal to the Read sub-op's context"
+        );
+        assert!(
+            !Arc::ptr_eq(&returned, &handed_out[1]),
+            "returned diagnostics must not be identity-equal to the Replace sub-op's context \
+             (regression: handler used to return the Replace's context verbatim)"
+        );
+
+        // The aggregated context inherits its activity_id from the LAST
+        // source (the Replace), per `aggregate_sub_operations`'s contract.
+        assert_eq!(returned.activity_id(), handed_out[1].activity_id());
     }
 }
