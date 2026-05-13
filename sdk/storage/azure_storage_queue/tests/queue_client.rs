@@ -386,23 +386,23 @@ async fn test_send_message(ctx: TestContext) -> Result<()> {
 
         let sent: SentMessage = response.into_model()?;
         assert!(
-            sent.message_id.is_some(),
+            sent.message_id().is_some(),
             "Expected message_id to be set on the sent message"
         );
         assert!(
-            sent.pop_receipt.is_some(),
+            sent.pop_receipt().is_some(),
             "Expected pop_receipt to be set on the sent message"
         );
         assert!(
-            sent.insertion_time.is_some(),
+            sent.insertion_time().is_some(),
             "Expected insertion_time to be set on the sent message"
         );
         assert!(
-            sent.expiration_time.is_some(),
+            sent.expiration_time().is_some(),
             "Expected expiration_time to be set on the sent message"
         );
         assert!(
-            sent.time_next_visible.is_some(),
+            sent.time_next_visible().is_some(),
             "Expected time_next_visible to be set on the sent message"
         );
 
@@ -553,11 +553,11 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
 
         let sent: SentMessage = response.into_model()?;
         assert!(
-            sent.expiration_time.is_some(),
+            sent.expiration_time().is_some(),
             "Expected expiration_time to be set for a message sent with message_time_to_live"
         );
 
-        if let (Some(exp), Some(ins)) = (sent.expiration_time, sent.insertion_time) {
+        if let (Some(exp), Some(ins)) = (sent.expiration_time(), sent.insertion_time()) {
             assert!(
                 exp > ins,
                 "Expected expiration_time ({exp}) to be after insertion_time ({ins})"
@@ -586,7 +586,7 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
         );
         let infinite_sent: SentMessage = infinite_response.into_model()?;
         let expiry_year = infinite_sent
-            .expiration_time
+            .expiration_time()
             .expect("Expected expiration_time to be set for infinite TTL message")
             .year();
         assert_eq!(
@@ -615,12 +615,12 @@ async fn test_send_message_with_ttl(ctx: TestContext) -> Result<()> {
         );
         let large_ttl_sent: SentMessage = large_ttl_response.into_model()?;
         assert!(
-            large_ttl_sent.expiration_time.is_some(),
+            large_ttl_sent.expiration_time().is_some(),
             "Expected expiration_time to be set for a message with a large time-to-live"
         );
         if let (Some(exp), Some(ins)) = (
-            large_ttl_sent.expiration_time,
-            large_ttl_sent.insertion_time,
+            large_ttl_sent.expiration_time(),
+            large_ttl_sent.insertion_time(),
         ) {
             assert!(
                 exp > ins,
@@ -1067,8 +1067,8 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
         // Act
         let update_response = queue_client
             .update_message(
-                &sent_message.message_id.clone().unwrap(),
-                &sent_message.pop_receipt.clone().unwrap(),
+                sent_message.message_id().unwrap(),
+                sent_message.pop_receipt().unwrap(),
                 0,
                 option,
             )
@@ -1129,8 +1129,11 @@ async fn test_update_message(ctx: TestContext) -> Result<()> {
             )
             .await?;
         let sent: SentMessage = send_response.into_model()?;
-        let message_id = sent.message_id.clone().expect("Expected message_id");
-        let pop_receipt = sent.pop_receipt.clone().expect("Expected pop_receipt");
+        let message_id = sent.message_id().expect("Expected message_id").to_string();
+        let pop_receipt = sent
+            .pop_receipt()
+            .expect("Expected pop_receipt")
+            .to_string();
         let update_options = Some(QueueClientUpdateMessageOptions {
             queue_message: Some(
                 QueueMessage {
@@ -1201,8 +1204,8 @@ async fn test_delete_message(ctx: TestContext) -> Result<()> {
         // Act
         let delete_response = queue_client
             .delete_message(
-                &send_message.message_id.clone().unwrap(),
-                &send_message.pop_receipt.clone().unwrap(),
+                send_message.message_id().unwrap(),
+                send_message.pop_receipt().unwrap(),
                 None,
             )
             .await?;

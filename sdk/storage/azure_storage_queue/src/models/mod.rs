@@ -5,18 +5,37 @@
 
 pub use crate::generated::models::*;
 
-use azure_core::fmt::SafeDebug;
+use azure_core::{fmt::SafeDebug, time::OffsetDateTime};
 use serde::Deserialize;
-use std::ops::Deref;
 
 #[derive(Clone, Default, SafeDebug)]
 pub struct SentMessage(SentMessageInternal);
 
-impl Deref for SentMessage {
-    type Target = SentMessageInternal;
+impl SentMessage {
+    /// The ID of the message.
+    pub fn message_id(&self) -> Option<&str> {
+        self.0.message_id.as_deref()
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    /// An opaque value required to delete the message. If deletion fails using this
+    /// `PopReceipt` then the message has been dequeued by another client.
+    pub fn pop_receipt(&self) -> Option<&str> {
+        self.0.pop_receipt.as_deref()
+    }
+
+    /// The time the message was inserted into the queue.
+    pub fn insertion_time(&self) -> Option<OffsetDateTime> {
+        self.0.insertion_time
+    }
+
+    /// The time that the message will expire and be automatically deleted.
+    pub fn expiration_time(&self) -> Option<OffsetDateTime> {
+        self.0.expiration_time
+    }
+
+    /// The time that the message will again become visible in the queue.
+    pub fn time_next_visible(&self) -> Option<OffsetDateTime> {
+        self.0.time_next_visible
     }
 }
 
