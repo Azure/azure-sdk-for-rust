@@ -499,6 +499,14 @@ impl ContainerClient {
     /// back. Callers that don't need the body can use
     /// [`ItemResponse::<serde_json::Value>`] or simply discard the response.
     ///
+    /// The synthesized body's `_etag` is reconciled with the Replace
+    /// response — it always reflects the post-image's authoritative ETag
+    /// (the same value surfaced on `ItemResponse::headers().etag`), not
+    /// the stale Read-time tag. When `content_response_on_write` is
+    /// enabled on the inner Replace, the service's response body is
+    /// surfaced verbatim instead — providing exact `_ts` and any
+    /// server-applied transforms.
+    ///
     /// # Failure Semantics
     ///
     /// PATCH is **not exactly-once** under transport failures. The driver

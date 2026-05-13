@@ -130,6 +130,32 @@ contains, the handler builds the returned `CosmosResponse` from:
   inherited from the final Replace's context; total `duration` is the
   sum of all sources' durations (sub-ops are sequential).
 
+### System-property reconciliation on the synthesized body
+
+The locally-merged body the handler synthesizes is the Read body with
+the patch ops applied — but the Read body's `_etag` is the **Read's**
+value, not the post-image's. Without reconciliation a caller that
+deserializes the response body and reads `_etag` from it would see a
+stale value that no longer matches the Replace's response header,
+breaking optimistic-concurrency round-tripping.
+
+The handler therefore reconciles the body's system properties with the
+Replace response before returning:
+
+1. If the inner Replace returned a non-empty response body
+   (`content_response_on_write` enabled on the caller's options), it is
+   surfaced verbatim — the service's post-image is the source of truth.
+2. Otherwise, the locally-merged body's `_etag` is overwritten with
+   `replace_headers.etag` (the value the Replace just minted) before
+   the body is handed to `from_local_body_and_driver_headers`.
+3. Other system properties (`_rid`, `_self`, `_attachments`) are stable
+   across edits to the same item, so the Read's values remain correct.
+4. `_ts` is not exposed on the Replace's response headers; when the
+   Replace body is absent, the Read's `_ts` is left intact. It may lag
+   the true post-image by the Read→Replace round-trip but never goes
+   backwards. Callers that need an exact `_ts` should enable
+   `content_response_on_write`.
+
 `from_local_body_and_driver_headers` is the single helper that builds this
 synthesized response. It is `pub(crate)` and lives in
 `driver::pipeline::from_local_body` (`src/driver/pipeline/from_local_body.rs`).

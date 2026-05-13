@@ -16,6 +16,7 @@
 
 ### Bugs Fixed
 
+- PATCH RMW loop now reconciles the synthesized response body's `_etag` system property with the inner Replace's response header. Previously the post-image returned to callers carried the *Read's* `_etag`, so `response.into_model::<T>()` on a type with an `_etag` field would yield a stale tag that no longer matched `response.headers().etag` — breaking optimistic-concurrency round-tripping. When the inner Replace returns a non-empty body (caller enabled `content_response_on_write`), the service's authoritative post-image is now surfaced verbatim. ([#4386](https://github.com/Azure/azure-sdk-for-rust/pull/4386))
 - PATCH RMW loop now folds the 412 response's `x-ms-session-token` (via `SessionToken::merge`) into the carry-forward token threaded into the next attempt's Read. Previously only the Read response's token was carried forward, so a retry could regress to a strictly older session view than the failed Replace already observed. ([#4386](https://github.com/Azure/azure-sdk-for-rust/pull/4386))
 - PPCB now records every 5xx failure for the affected partition, including the final failure that exhausts the failover retry budget. Previously the budget-exhausted abort path skipped emitting `MarkPartitionUnavailable`, causing the most diagnostic failure to be silently dropped from PPCB's per-partition counter. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 

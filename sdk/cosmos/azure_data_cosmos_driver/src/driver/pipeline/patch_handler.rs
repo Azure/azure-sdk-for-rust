@@ -239,7 +239,9 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             Ok(replace_resp) => {
                 let replace_headers = replace_resp.headers().clone();
                 let replace_status = replace_resp.status();
+                let replace_etag = replace_headers.etag.clone();
                 sub_op_diagnostics.push(replace_resp.diagnostics());
+                let replace_body = replace_resp.into_body();
                 // Aggregate the per-request diagnostics of every successful
                 // sub-op into a single DiagnosticsContext, so the synthesized
                 // response surfaces "one operation = one DiagnosticsContext"
@@ -255,8 +257,26 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                             .cloned()
                             .expect("sub_op_diagnostics is non-empty after a successful Replace")
                     });
+                // Reconcile the locally-merged body's system properties with
+                // the Replace response. The merged document still carries
+                // `_etag`/`_ts` from the *Read* (it is the Read body with
+                // the patch ops applied), but the post-image's authoritative
+                // `_etag` is the one the Replace just minted. Without this
+                // reconciliation a caller that deserializes the response
+                // body and reads `_etag` from it would see a stale value
+                // that no longer matches the Replace's response header,
+                // breaking optimistic-concurrency round-tripping.
+                //
+                // Preference order:
+                //   1. The Replace's response body, when present (the
+                //      service-authoritative post-image — set when
+                //      `content_response_on_write` is true).
+                //   2. Otherwise, the locally-merged body with `_etag`
+                //      overwritten from `replace_headers.etag`.
+                let synthesized_body =
+                    synthesize_post_image_body(merged_bytes, replace_body, replace_etag.as_ref());
                 return Ok(from_local_body_and_driver_headers(
-                    merged_bytes,
+                    synthesized_body,
                     replace_headers,
                     replace_status,
                     diagnostics,
@@ -345,6 +365,51 @@ fn session_token_from_error(err: &azure_core::Error) -> Option<SessionToken> {
             response_header_names::SESSION_TOKEN,
         ))
         .map(|s| SessionToken::new(s.to_owned()))
+}
+
+/// Reconciles the locally-merged post-image JSON with the Replace response so
+/// the response body the customer deserializes carries the server's
+/// authoritative system properties (`_etag` in particular) instead of the
+/// Read's stale ones.
+///
+/// Preference order:
+///
+/// 1. If `replace_body` is non-empty, return it verbatim — the service
+///    returned the full post-image (i.e., the caller did not disable
+///    `content_response_on_write`), and that body is the source of truth.
+/// 2. Otherwise, parse `merged_bytes` as a JSON object and overwrite its
+///    `_etag` member with `replace_etag` (the value the Replace minted).
+///    Other system properties (`_rid`, `_self`, `_attachments`) are stable
+///    across edits of the same item, so the Read's values remain correct.
+///    `_ts` is not exposed on the Replace response header path, so the
+///    Read's `_ts` is left intact; it may lag the true post-image by the
+///    Read→Replace round-trip but never goes backwards.
+/// 3. If `merged_bytes` is not a JSON object, or `replace_etag` is `None`,
+///    or any serde step fails, the merged bytes are returned unchanged —
+///    the body in that case is no worse than what the previous
+///    implementation produced.
+fn synthesize_post_image_body(
+    merged_bytes: Vec<u8>,
+    replace_body: Vec<u8>,
+    replace_etag: Option<&crate::models::ETag>,
+) -> Vec<u8> {
+    if !replace_body.is_empty() {
+        return replace_body;
+    }
+    let Some(etag) = replace_etag else {
+        return merged_bytes;
+    };
+    let Ok(mut value) = serde_json::from_slice::<serde_json::Value>(&merged_bytes) else {
+        return merged_bytes;
+    };
+    let serde_json::Value::Object(ref mut map) = value else {
+        return merged_bytes;
+    };
+    map.insert(
+        "_etag".to_string(),
+        serde_json::Value::String(etag.as_str().to_owned()),
+    );
+    serde_json::to_vec(&value).unwrap_or(merged_bytes)
 }
 
 /// Builds the internal Read sub-operation used by the RMW loop, propagating
@@ -1492,6 +1557,87 @@ mod tests {
             Some("0:1#300"),
             "attempt 2 Read must use the 412's session token (freshest), \
              not Read#1's older token"
+        );
+    }
+
+    #[tokio::test]
+    async fn synthesized_response_body_reflects_replace_etag_not_read_etag() {
+        // The locally-merged body the handler synthesizes is the Read body
+        // with patch ops applied — but the Read body's `_etag` is the Read's
+        // value, NOT the post-image's. The Replace just minted a fresh
+        // `_etag` (the value in `replace_resp.headers().etag`), and that is
+        // what the caller will see in the response header. The body MUST
+        // carry the same `_etag` so callers that round-trip the body
+        // (`.into_model::<MyTypeWithEtag>()`) see the authoritative value,
+        // not a stale Read-time tag that would be rejected as a future
+        // If-Match precondition.
+        //
+        // Script: Read returns body with _etag=\"v1\" + etag header \"v1\";
+        // Replace returns empty body (content_response_on_write=false
+        // semantics) + etag header \"v2\".
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0,"_etag":"\"v1\""}"#.to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
+        ]);
+
+        let op = canonical_patch_op();
+        let resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect("PATCH should succeed");
+
+        // Header carries the Replace's new etag (existing behavior).
+        assert_eq!(
+            resp.headers().etag.as_ref().map(|t| t.as_str()),
+            Some("\"v2\""),
+            "response header etag must be the Replace's etag"
+        );
+
+        // Body's `_etag` MUST match the header — the Read's `_etag` (`\"v1\"`)
+        // must have been overwritten with the Replace's (`\"v2\"`).
+        let body: serde_json::Value =
+            serde_json::from_slice(resp.body()).expect("body must be valid JSON");
+        assert_eq!(
+            body.get("_etag").and_then(|v| v.as_str()),
+            Some("\"v2\""),
+            "synthesized body's _etag must be the Replace's, not the Read's"
+        );
+        // Other patched fields are preserved.
+        assert_eq!(body.get("visits").and_then(|v| v.as_i64()), Some(1));
+    }
+
+    #[tokio::test]
+    async fn synthesized_response_body_prefers_replace_response_body_when_present() {
+        // When `content_response_on_write` is true on the inner Replace, the
+        // service returns the full post-image — that body is the source of
+        // truth for the whole document (including `_etag`, `_ts`, and any
+        // server-applied transforms). The handler must surface it verbatim
+        // rather than its locally-merged version.
+        let server_post_image =
+            br#"{"id":"doc1","pk":"pk1","visits":1,"_etag":"\"v2\"","_ts":1234567890}"#.to_vec();
+        let dispatcher = ScriptedDispatcher::new(vec![
+            ScriptedReply::ok(
+                br#"{"id":"doc1","pk":"pk1","visits":0,"_etag":"\"v1\"","_ts":1234567000}"#
+                    .to_vec(),
+                Some("\"v1\""),
+                StatusCode::Ok,
+            ),
+            ScriptedReply::ok(server_post_image.clone(), Some("\"v2\""), StatusCode::Ok),
+        ]);
+
+        let op = canonical_patch_op();
+        let resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect("PATCH should succeed");
+
+        assert_eq!(
+            resp.body(),
+            server_post_image.as_slice(),
+            "when the Replace returned a body, the handler must surface it \
+             verbatim (it's the service-authoritative post-image)"
         );
     }
 
