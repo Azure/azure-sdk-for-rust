@@ -141,7 +141,7 @@ fn hedging_started(&self) -> bool {
 **Why the disjunction (and not either predicate alone) — SE-023:**
 
 - **Why NOT `hedge_diagnostics.is_some()` alone.** PR #4330's `HedgeDiagnostics` may be `Some` whenever a hedging strategy is *configured for this operation*, including the **primary-wins-under-threshold** case — exactly one request launched, threshold delay never elapsed, no fan-out. The cross-SDK contract (`internal-spec.md` §3.1; per-SDK AC2 in `public-spec-dotnet.md` / `public-spec-java.md` / `public-spec-python.md`) requires `hedging_started() == true` iff the SDK **actually dispatched to a hedge region**, i.e., `total_requests_launched >= 2` — not "strategy was active". Returning `true` for `total_requests_launched == 1` would contradict the cross-SDK contract.
-- **Why NOT the `ExecutionContext::Hedging` predicate alone.** A future internal refactor to `HedgeDiagnostics` (e.g., a field rename, or a change of semantics around `total_requests_launched`) could silently desynchronize the two predicates. The disjunction is the **safe** definition: it returns `true` whenever *either* signal indicates fan-out occurred, and the mandatory invariant test in §8 enforces that the two signals stay equivalent after the implementation PR lands.
+- **Why NOT the `ExecutionContext::Hedging` predicate alone.** A future internal refactor to `HedgeDiagnostics` (e.g., a field rename, or a change of semantics around `total_requests_launched`) could silently cause the two predicates to drift out of sync. The disjunction is the **safe** definition: it returns `true` whenever *either* signal indicates fan-out occurred, and the mandatory invariant test in §8 enforces that the two signals stay equivalent after the implementation PR lands.
 - **Pre-implementation behavior.** Until the hedging implementation PR lands (the follow-up to PR #4330), no production code populates `hedge_diagnostics` and no production code emits `ExecutionContext::Hedging`. Therefore `hedging_started()` returns `false` for all operations — which is the correct answer: no fan-out has happened.
 
 ### 3.4 Pre-region-selection failures
@@ -213,7 +213,7 @@ The accessors live on `DiagnosticsContext` in the driver crate. `DiagnosticsCont
 | Matches "No Model Sharing" (AGENTS.md) | No (re-exports driver-internal model) | **Yes** |
 | Matches `DiagnosticsContext` precedent | Yes (PR #4376) | No (`DiagnosticsContext` is the only driver model re-exported) |
 | Symmetry with .NET / Java / Python | The other SDKs expose `RequestedRegion { region, reason }` pairs | This option still allows a *new* SDK-public `RequestedRegion { region, reason: RequestedRegionReason }` wrapper, with `RequestedRegionReason` being a one-to-one mirror of `ExecutionContext` that lives in `azure_data_cosmos` (driver-private `ExecutionContext` stays private) |
-| Effort to revisit | Easy: a future PR can add the re-export non-breakingly | Easy: a future PR can introduce the `RequestedRegion` wrapper non-breakingly |
+| Effort to revisit | Easy: a future PR can add the re-export without breaking changes | Easy: a future PR can introduce the `RequestedRegion` wrapper without breaking changes |
 
 **Recommendation: Option B.** Smallest public surface, honors the "No Model Sharing" principle, defers the per-region-reason exposure to a follow-up that can pick the wrapper-struct shape based on real customer feedback. The implementation PR adopts Option B as the baseline; Open Question (i) in §10 invites the team to confirm or override.
 
@@ -251,8 +251,8 @@ The two surfaces — the Rust-native `HedgeDiagnostics` field and the cross-SDK 
 |---|---|---|---|
 | "Did fan-out happen?" | `hedging_started() -> bool`                                 | `hedge_diagnostics.map(\|hd\| hd.total_requests_launched >= 2).unwrap_or(false)`                                          | **Equivalent** after implementation PR; equivalence is asserted by the invariant test in §8 (SE-023). |
 | "Was a hedging strategy configured?" | _not exposed_ (intentionally; see §3.3 doc-comment) | `hedge_diagnostics.is_some()` (or, more precisely, `.and_then(\|hd\| hd.strategy_config.as_ref()).is_some()`)             | `hedge_diagnostics.is_some()` is a **superset** of `hedging_started()` — true for primary-wins-under-threshold. |
-| Regions tried | `requested_regions() -> Vec<&Region>` (dispatch order, dups allowed, includes non-hedge attempts) | `hedge_diagnostics.regions_contacted: Vec<Region>` (hedge-specific) | Different scope: `requested_regions()` always reflects every dispatched attempt (initial + retries + transport-retries + region-failovers + hedge fan-out); `HedgeDiagnostics::regions_contacted` reflects only hedge fan-out. Both are useful. |
-| Regions that responded | `responded_regions() -> Vec<&Region>` (completion order, dups allowed) | `hedge_diagnostics.response_region: Option<Region>` (single winner) | Different shape: `responded_regions()` is a complete list (including late losers); `response_region` is the single winner. `responded_regions().first()` is the winner only if responses arrived strictly in completion order — see §10 Open Question (iii). |
+| Regions tried | `requested_regions() -> Vec<&Region>` (dispatch order, duplicates allowed, includes non-hedge attempts) | `hedge_diagnostics.regions_contacted: Vec<Region>` (hedge-specific) | Different scope: `requested_regions()` always reflects every dispatched attempt (initial + retries + transport-retries + region-failovers + hedge fan-out); `HedgeDiagnostics::regions_contacted` reflects only hedge fan-out. Both are useful. |
+| Regions that responded | `responded_regions() -> Vec<&Region>` (completion order, duplicates allowed) | `hedge_diagnostics.response_region: Option<Region>` (single winner) | Different shape: `responded_regions()` is a complete list (including late losers); `response_region` is the single winner. `responded_regions().first()` is the winner only if responses arrived strictly in completion order — see §10 Open Question (iii). |
 | Reason per region | _not exposed in Option B_; available via `ExecutionContext` in Option A; available via a future `RequestedRegion { region, reason }` wrapper if the team wants per-region-reason semantics | _not exposed_ (PR #4330 does not break out per-region reason) | Cross-SDK contract requires per-region reason; deferred via Open Question (i). |
 
 ### 6.2 Invariant after the implementation PR lands
@@ -292,7 +292,7 @@ Steps 3 and 4 may be combined or kept separate at the implementer's discretion; 
 
 The Hedging Detection API implementation PR (Step 4 in §7) MUST add:
 
-### 8.1 Non-hedging operation tests (well-definedness)
+### 8.1 Non-hedging operation tests (well-defined behavior)
 
 In `sdk/cosmos/azure_data_cosmos/tests/emulator_tests/cosmos_items.rs` and `cosmos_query.rs`, add cases asserting:
 
@@ -318,7 +318,7 @@ let from_requests = ctx
     .any(|r| matches!(r.execution_context(), ExecutionContext::Hedging));
 assert_eq!(
     from_hedge_diag, from_requests,
-    "SE-023: hedging_started disjunction predicates desynchronized; \
+    "SE-023: hedging_started disjunction predicates are out of sync; \
      hedge_diagnostics={:?} requests={:?}",
     ctx.hedge_diagnostics, ctx.requests,
 );
