@@ -14,7 +14,7 @@ use azure_data_cosmos::{
     clients::DatabaseClient,
     constants,
     options::{OperationOptions, QueryOptions},
-    query::QueryScope,
+    query::FeedScope,
     ContinuationToken, Query,
 };
 use framework::{test_data, MockItem, TestClient};
@@ -38,7 +38,7 @@ async fn execute_query_test<T>(
     db_client: &DatabaseClient,
     items: Vec<MockItem>,
     query: impl Into<Query>,
-    scope: QueryScope,
+    scope: FeedScope,
     expected_items: Vec<T>,
     options: QueryTestOptions,
 ) -> Result<(), Box<dyn Error>>
@@ -136,7 +136,7 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
                 db_client,
                 items,
                 "select * from docs c",
-                QueryScope::partition("partition0"),
+                FeedScope::partition("partition0"),
                 expected_items,
                 QueryTestOptions::default(),
             )
@@ -175,7 +175,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
                 db_client,
                 items,
                 query,
-                QueryScope::partition("partition1"),
+                FeedScope::partition("partition1"),
                 expected_items,
                 QueryTestOptions::default(),
             )
@@ -210,7 +210,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
                 db_client,
                 items,
                 "select c.id, c.mergeOrder from c",
-                QueryScope::partition("partition1"),
+                FeedScope::partition("partition1"),
                 expected_items,
                 QueryTestOptions::default(),
             )
@@ -242,7 +242,7 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
                 db_client,
                 items,
                 "select value c.id from c where c.mergeOrder between 40 and 60",
-                QueryScope::full_container(),
+                FeedScope::full_container(),
                 expected_items,
                 QueryTestOptions::default(),
             )
@@ -270,7 +270,7 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
             let Err(err) = container_client
                 .query_items::<String>(
                     "select value c.id from c order by c.mergeOrder",
-                    QueryScope::full_container(),
+                    FeedScope::full_container(),
                     None,
                 )
                 .await
@@ -348,7 +348,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
             let mut pages = container_client
                 .query_items::<MockItem>(
                     "select * from c",
-                    QueryScope::partition("partition0"),
+                    FeedScope::partition("partition0"),
                     Some(options),
                 )
                 .await?
@@ -439,7 +439,7 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 db_client,
                 items,
                 "select * from c",
-                QueryScope::partition("partition0"),
+                FeedScope::partition("partition0"),
                 expected_items,
                 QueryTestOptions {
                     max_item_count: Some(1),
@@ -469,7 +469,7 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 db_client,
                 items.clone(),
                 "select * from c",
-                QueryScope::full_container(),
+                FeedScope::full_container(),
                 items,
                 QueryTestOptions {
                     max_item_count: Some(1),
@@ -502,7 +502,7 @@ pub async fn cross_partition_query_suspend_resume() -> Result<(), Box<dyn Error>
                 db_client,
                 items.clone(),
                 "select * from c",
-                QueryScope::full_container(),
+                FeedScope::full_container(),
                 items,
                 QueryTestOptions {
                     max_item_count: Some(1),
@@ -538,7 +538,7 @@ pub async fn query_rejects_newer_sdk_continuation_token() -> Result<(), Box<dyn 
             let Err(err) = container_client
                 .query_items::<MockItem>(
                     "select * from c",
-                    QueryScope::full_container(),
+                    FeedScope::full_container(),
                     Some(options),
                 )
                 .await
@@ -579,7 +579,7 @@ pub async fn query_rejects_server_token_for_cross_partition() -> Result<(), Box<
             let Err(err) = container_client
                 .query_items::<MockItem>(
                     "select * from c",
-                    QueryScope::full_container(),
+                    FeedScope::full_container(),
                     Some(options),
                 )
                 .await
@@ -622,7 +622,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
 
             let container_client =
                 test_data::create_container_with_items(db_client, items, None).await?;
-            let scope = QueryScope::partition("partition0");
+            let scope = FeedScope::partition("partition0");
 
             // --- Round 1: fetch the first page through the SDK and pull
             // the SDK-issued `c1.` token. ---

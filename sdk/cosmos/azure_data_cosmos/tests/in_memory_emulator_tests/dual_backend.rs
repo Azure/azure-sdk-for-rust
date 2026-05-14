@@ -162,7 +162,7 @@ impl DualBackend {
             let body = serde_json::to_vec(&serde_json::json!({"id": db_name}))?;
             let op = CosmosOperation::create_database(account.clone()).with_body(body);
             let result = driver
-                .execute_point_operation(op, OperationOptions::default())
+                .execute_trivial_operation(op, OperationOptions::default())
                 .await?;
             assert!(
                 result.status().is_success(),
@@ -212,7 +212,7 @@ impl DualBackend {
             }))?;
             let op = CosmosOperation::create_container(db_ref).with_body(body);
             let result = driver
-                .execute_point_operation(op, OperationOptions::default())
+                .execute_trivial_operation(op, OperationOptions::default())
                 .await?;
             assert!(
                 result.status().is_success(),
@@ -230,7 +230,7 @@ impl DualBackend {
         if let (Some(driver), Some(account)) = (&self.real_driver, &self.real_account) {
             let db_ref = DatabaseReference::from_name(account.clone(), db_name.to_string());
             let _ = driver
-                .execute_point_operation(
+                .execute_trivial_operation(
                     CosmosOperation::delete_database(db_ref),
                     OperationOptions::default(),
                 )
@@ -260,14 +260,14 @@ impl DualBackend {
         let (emu_op, emu_opts) = build_op(emulator_container);
         let emu_response = self
             .emulator_driver
-            .execute_point_operation(emu_op, emu_opts)
+            .execute_trivial_operation(emu_op, emu_opts)
             .await?;
 
         // Run against real account (if available)
         let real_response =
             if let (Some(driver), Some(real_ctr)) = (&self.real_driver, real_container) {
                 let (real_op, real_opts) = build_op(real_ctr);
-                let resp = driver.execute_point_operation(real_op, real_opts).await?;
+                let resp = driver.execute_trivial_operation(real_op, real_opts).await?;
                 Some(resp)
             } else {
                 None
@@ -297,13 +297,13 @@ impl DualBackend {
         let (emu_op, emu_opts) = build_op(&self.emulator_account);
         let emu_response = self
             .emulator_driver
-            .execute_point_operation(emu_op, emu_opts)
+            .execute_trivial_operation(emu_op, emu_opts)
             .await?;
 
         let real_response =
             if let (Some(driver), Some(account)) = (&self.real_driver, &self.real_account) {
                 let (real_op, real_opts) = build_op(account);
-                let resp = driver.execute_point_operation(real_op, real_opts).await?;
+                let resp = driver.execute_trivial_operation(real_op, real_opts).await?;
                 Some(resp)
             } else {
                 None

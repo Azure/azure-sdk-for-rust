@@ -210,7 +210,7 @@ pub(crate) fn logical_partition_target() -> RequestTarget {
 
 /// Creates a `RequestTarget` for an EPK range ("" to "80", partition key range ID "0").
 pub(crate) fn epk_range_target() -> RequestTarget {
-    RequestTarget::PartitionKeyRange {
+    RequestTarget::EffectivePartitionKeyRange {
         range: FeedRange::new(
             EffectivePartitionKey::min(),
             EffectivePartitionKey::from("80"),

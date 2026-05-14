@@ -13,37 +13,40 @@ use serde::Serialize;
 /// Queries that cross physical partition boundaries require the client to fan out the query to
 /// multiple partitions and aggregate the results, which can be expensive and slow for large datasets.
 #[derive(Clone)]
-pub enum QueryScope {
+pub enum FeedScope {
     Partition(PartitionKey),
-    FeedRange(FeedRange),
+    Range(FeedRange),
 }
 
-impl QueryScope {
-    /// Returns a [`QueryScope`] that represents the given partition key, which is used for targeting a specific partition in the container.
+impl FeedScope {
+    /// Returns a [`FeedScope`] that represents the given partition key, which is used for targeting a specific partition in the container.
+    ///
+    /// The provided [`PartitionKey`] MUST specify all levels of the hierarchy (e.g. in a multi-level hierarchical partition key, you must provide values for all levels, not just a prefix).
+    /// Use [`feed_range()`](FeedScope::feed_range) with a [`FeedRange`] that covers the desired partition(s) to specify anything beyond a single logical partition.
     pub fn partition(pk: impl Into<PartitionKey>) -> Self {
         Self::Partition(pk.into())
     }
 
-    /// Returns a [`QueryScope`] that represents the given feed range, which can be used for partition-specific or cross-partition queries depending on the feed range provided.
+    /// Returns a [`FeedScope`] that represents the given feed range, which can be used for partition-specific or cross-partition queries depending on the feed range provided.
     ///
     /// WARNING: Using a feed range that covers multiple partitions may result in a full scan of those partitions, which can be expensive and slow for large datasets. Use with caution.
-    pub fn feed_range(fr: FeedRange) -> Self {
-        Self::FeedRange(fr)
+    pub fn range(fr: impl Into<FeedRange>) -> Self {
+        Self::Range(fr.into())
     }
 
-    /// Returns a [`QueryScope`] that represents the full container, which is used for cross-partition queries.
+    /// Returns a [`FeedScope`] that represents the full container, which is used for cross-partition queries.
     ///
     /// WARNING: Using this query scope may result in a full scan of the container, which can be expensive and slow for large datasets. Use with caution.
     pub fn full_container() -> Self {
-        Self::FeedRange(FeedRange::full())
+        Self::Range(FeedRange::full())
     }
 }
 
-impl From<QueryScope> for OperationTarget {
-    fn from(value: QueryScope) -> Self {
+impl From<FeedScope> for OperationTarget {
+    fn from(value: FeedScope) -> Self {
         match value {
-            QueryScope::Partition(pk) => Self::PartitionKey(pk),
-            QueryScope::FeedRange(fr) => Self::FeedRange(fr),
+            FeedScope::Partition(pk) => Self::PartitionKey(pk),
+            FeedScope::Range(fr) => Self::FeedRange(fr),
         }
     }
 }

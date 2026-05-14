@@ -83,7 +83,7 @@ impl DatabaseClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(
@@ -172,7 +172,7 @@ impl DatabaseClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, operation_options)
+            .execute_trivial_operation(operation, operation_options)
             .await?;
 
         Ok(ResourceResponse::new(
@@ -196,7 +196,7 @@ impl DatabaseClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(

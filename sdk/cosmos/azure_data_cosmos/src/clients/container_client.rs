@@ -10,7 +10,7 @@ use crate::{
         BatchOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
         SessionToken,
     },
-    query::QueryScope,
+    query::FeedScope,
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, FeedRange, ItemReadOptions, ItemWriteOptions,
     PartitionKey, Query, ReplaceContainerOptions, ThroughputOptions,
@@ -84,7 +84,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(
@@ -138,7 +138,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, operation_options)
+            .execute_trivial_operation(operation, operation_options)
             .await?;
 
         Ok(ResourceResponse::new(
@@ -230,7 +230,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(
@@ -328,7 +328,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, options.operation)
+            .execute_trivial_operation(operation, options.operation)
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -426,7 +426,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, options.operation)
+            .execute_trivial_operation(operation, options.operation)
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -528,7 +528,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, options.operation)
+            .execute_trivial_operation(operation, options.operation)
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -588,7 +588,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, options.operation)
+            .execute_trivial_operation(operation, options.operation)
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -640,7 +640,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, options.operation)
+            .execute_trivial_operation(operation, options.operation)
             .await?;
 
         // Bridge the driver response to the SDK response type.
@@ -714,7 +714,7 @@ impl ContainerClient {
     pub async fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
         query: impl Into<Query>,
-        scope: QueryScope,
+        scope: FeedScope,
         options: Option<QueryOptions>,
     ) -> azure_core::Result<FeedItemIterator<T>> {
         let options = options.unwrap_or_default();
@@ -807,7 +807,7 @@ impl ContainerClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, options.operation)
+            .execute_trivial_operation(operation, options.operation)
             .await?;
 
         Ok(BatchResponse::new(

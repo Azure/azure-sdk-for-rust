@@ -124,7 +124,7 @@ After a merge, multiple leaf nodes may point to different EPK ranges on the same
 
 ## 6. Current Implementation Focus
 
-The initial implementation targets `SELECT * [WHERE <predicate>]` queries:
+The initial implementation targets `SELECT [...] [WHERE <predicate>]` queries:
 
 - **Single-partition**: trivial pipeline (one leaf node). The server evaluates the full SQL including any WHERE clause. Paginated via server continuations.
 - **Cross-partition**: `SequentialDrain` intermediate node over N leaf nodes (one per physical partition). Drains partitions in EPK order. No query plan fetch required for passthrough SELECT/WHERE.
@@ -175,6 +175,6 @@ These capabilities must be achievable without redesigning the pipeline model:
 - **Buffered ORDER BY**: collect all partition results, sort client-side. Same query plan requirement. Different intermediate node.
 - **Vector / Hybrid Search**: may require preliminary requests to fetch full-text statistics before issuing the main query. Multi-phase pipeline execution.
 - **Read Many Items**: fan-out by (ID, PK) pairs grouped by partition. Concurrent leaf execution with an unordered merge intermediate node.
-- **Change Feed**: per-range continuation tokens (O(N) token size, unlike sequential drain's O(1)). Different resumption semantics.
+- **Change Feed**: per-range continuation tokens. Different resumption semantics.
 
 The pipeline's tree structure, typed node hierarchy, and separation of planning from execution accommodate all of these as new node types and planning strategies without changing the core execution loop.

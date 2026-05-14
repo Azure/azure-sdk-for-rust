@@ -24,15 +24,8 @@ pub(crate) enum RequestTarget {
     /// A single logical partition key.
     LogicalPartitionKey(PartitionKey),
 
-    /// A physical partition key range whose full EPK coverage is owned by this request.
-    PartitionKeyRange {
-        /// Full EPK range covered by the physical partition this request owns.
-        range: FeedRange,
-        /// Partition key range ID for the owned physical partition.
-        partition_key_range_id: String,
-    },
-
-    /// An EPK slice that must be queried inside a broader physical partition key range.
+    /// An EPK slice that must be queried inside a broader physical partition key range
+    /// (assuming the cached topology remains valid).
     EffectivePartitionKeyRange {
         /// EPK range scoped by this request.
         range: FeedRange,
@@ -45,8 +38,7 @@ impl RequestTarget {
     /// Returns the EPK slice owned by this request target, if any.
     fn owned_range(&self) -> Option<&FeedRange> {
         match self {
-            RequestTarget::PartitionKeyRange { range, .. }
-            | RequestTarget::EffectivePartitionKeyRange { range, .. } => Some(range),
+            RequestTarget::EffectivePartitionKeyRange { range, .. } => Some(range),
             _ => None,
         }
     }
@@ -248,8 +240,7 @@ impl Request {
                         self.handle_response(response)
                     })
             }
-            RequestTarget::PartitionKeyRange { range, .. }
-            | RequestTarget::EffectivePartitionKeyRange { range, .. } => {
+            RequestTarget::EffectivePartitionKeyRange { range, .. } => {
                 let range = range.clone();
                 self.split_for_topology_change(context, &range).await
             }
@@ -278,17 +269,11 @@ impl Request {
                     "topology provider must return ranges that overlap the request's owned EPK range",
                 );
 
-                let target = if owned_range == resolved_range {
-                    RequestTarget::PartitionKeyRange {
-                        range: resolved_range,
-                        partition_key_range_id,
-                    }
-                } else {
-                    RequestTarget::EffectivePartitionKeyRange {
-                        range: owned_range,
-                        partition_key_range_id,
-                    }
+                let target = RequestTarget::EffectivePartitionKeyRange {
+                    range: owned_range,
+                    partition_key_range_id,
                 };
+
                 // Carry over the server continuation to the first replacement that
                 // covers the same starting EPK. For a split, only the left-most child
                 // inherits the continuation since it resumes where this node left off.
@@ -414,20 +399,6 @@ mod tests {
         }
     }
 
-    fn partition_key_range_target(
-        min: &str,
-        max: &str,
-        partition_key_range_id: &str,
-    ) -> RequestTarget {
-        RequestTarget::PartitionKeyRange {
-            range: FeedRange::new(
-                EffectivePartitionKey::from(min),
-                EffectivePartitionKey::from(max),
-            ),
-            partition_key_range_id: partition_key_range_id.to_string(),
-        }
-    }
-
     fn physical_partition(
         min: &str,
         max: &str,
@@ -456,7 +427,7 @@ mod tests {
         continuation: Option<&str>,
     ) -> RequestSpec {
         request_spec(
-            partition_key_range_target(min, max, partition_key_range_id),
+            effective_partition_key_range_target(min, max, partition_key_range_id),
             continuation,
         )
     }

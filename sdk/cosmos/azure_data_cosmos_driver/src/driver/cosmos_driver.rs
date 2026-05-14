@@ -65,20 +65,11 @@ fn request_target_overrides(
             continuation,
             ..Default::default()
         },
-        RequestTarget::PartitionKeyRange {
+        RequestTarget::EffectivePartitionKeyRange {
             partition_key_range_id,
             ..
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
-            continuation,
-            ..Default::default()
-        },
-        RequestTarget::EffectivePartitionKeyRange {
-            range,
-            partition_key_range_id,
-        } => OperationOverrides {
-            partition_key_range_id: Some(partition_key_range_id),
-            feed_range: Some(range),
             continuation,
             ..Default::default()
         },
@@ -684,7 +675,7 @@ impl CosmosDriver {
         let options = OperationOptions::default();
 
         let db_result = self
-            .execute_point_operation(
+            .execute_trivial_operation(
                 CosmosOperation::read_database(db_ref.clone()),
                 options.clone(),
             )
@@ -699,7 +690,7 @@ impl CosmosDriver {
         })?;
 
         let container_result = self
-            .execute_point_operation(
+            .execute_trivial_operation(
                 CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
                 options,
             )
@@ -736,7 +727,7 @@ impl CosmosDriver {
         let options = OperationOptions::default();
 
         let db_result = self
-            .execute_point_operation(
+            .execute_trivial_operation(
                 CosmosOperation::read_database(db_ref.clone()),
                 options.clone(),
             )
@@ -750,7 +741,7 @@ impl CosmosDriver {
             .unwrap_or_else(|| db_rid.to_owned());
 
         let container_result = self
-            .execute_point_operation(
+            .execute_trivial_operation(
                 CosmosOperation::read_container_by_rid(db_ref, container_rid.to_owned()),
                 options,
             )
@@ -1240,11 +1231,11 @@ impl CosmosDriver {
         .await
     }
 
-    /// Executes a point operation (read/write item, read database, etc.) without a pre-planned pipeline.
+    /// Executes a trivial operation (operations which require only a single request, such as read/write item, read database, etc.) without a pre-planned pipeline.
     ///
     /// This is a convenience method around [`execute_operation`](CosmosDriver::execute_operation) that asserts at debug-time that the operation
     /// does not return an empty page.
-    pub async fn execute_point_operation(
+    pub async fn execute_trivial_operation(
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
@@ -1253,11 +1244,11 @@ impl CosmosDriver {
             Ok(Some(r)) => Ok(r),
             Ok(None) => {
                 if cfg!(debug_assertions) {
-                    panic!("point operation returned an empty page")
+                    panic!("trivial operation returned an empty page")
                 }
                 Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    "internal error: point operation returned an empty page",
+                    "internal error: trivial operation returned an empty page",
                 ))
             }
             Err(e) => Err(e),
@@ -2458,7 +2449,7 @@ mod tests {
         fn assert_send<T: Send>(_: T) {}
         let driver: &CosmosDriver = todo!();
         assert_send(driver.execute_operation(todo!(), todo!()));
-        assert_send(driver.execute_point_operation(todo!(), todo!()));
+        assert_send(driver.execute_trivial_operation(todo!(), todo!()));
         assert_send(driver.execute_plan(todo!(), todo!(), todo!()));
         assert_send(driver.plan_operation(todo!(), todo!(), todo!()));
     }
@@ -2493,7 +2484,7 @@ mod tests {
     #[test]
     fn partition_key_range_override_does_not_set_feed_range() {
         let overrides = request_target_overrides(
-            RequestTarget::PartitionKeyRange {
+            RequestTarget::EffectivePartitionKeyRange {
                 range: crate::models::FeedRange::new(
                     EffectivePartitionKey::from("10"),
                     EffectivePartitionKey::from("20"),

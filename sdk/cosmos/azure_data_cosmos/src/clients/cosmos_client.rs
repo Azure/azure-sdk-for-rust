@@ -181,7 +181,7 @@ impl CosmosClient {
         let driver_response = self
             .context
             .driver
-            .execute_point_operation(operation, operation_options)
+            .execute_trivial_operation(operation, operation_options)
             .await?;
 
         Ok(ResourceResponse::new(

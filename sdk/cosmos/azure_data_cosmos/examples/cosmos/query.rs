@@ -3,7 +3,7 @@
 
 use std::error::Error;
 
-use azure_data_cosmos::{query::QueryScope, CosmosClient};
+use azure_data_cosmos::{query::FeedScope, CosmosClient};
 use clap::{Args, Subcommand};
 use futures::TryStreamExt;
 
@@ -56,8 +56,8 @@ impl QueryCommand {
                 let container_client = db_client.container_client(&container).await?;
 
                 let scope = match partition_key {
-                    Some(pk) => QueryScope::partition(pk),
-                    None => QueryScope::full_container(),
+                    Some(pk) => FeedScope::partition(pk),
+                    None => FeedScope::full_container(),
                 };
 
                 let mut items = container_client

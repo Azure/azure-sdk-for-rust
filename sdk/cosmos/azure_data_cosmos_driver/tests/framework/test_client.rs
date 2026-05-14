@@ -303,7 +303,7 @@ impl DriverTestRunContext {
             .with_body(body.into_bytes());
 
         let result = driver
-            .execute_point_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
@@ -333,7 +333,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::delete_database(database.clone());
 
         let result = driver
-            .execute_point_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (204 No Content)
@@ -367,7 +367,7 @@ impl DriverTestRunContext {
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
         let result = driver
-            .execute_point_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
@@ -410,7 +410,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
-            .execute_point_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)
@@ -450,7 +450,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_point_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)

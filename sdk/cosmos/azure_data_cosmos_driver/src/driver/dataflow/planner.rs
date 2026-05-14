@@ -12,8 +12,11 @@
 
 use std::sync::Arc;
 
-use crate::models::{
-    effective_partition_key::EffectivePartitionKey, CosmosOperation, FeedRange, OperationTarget,
+use crate::{
+    driver::dataflow::query_plan::DistinctType,
+    models::{
+        effective_partition_key::EffectivePartitionKey, CosmosOperation, FeedRange, OperationTarget,
+    },
 };
 
 use super::{
@@ -264,6 +267,9 @@ fn validate_query_info(info: &QueryInfo) -> azure_core::Result<()> {
     }
     if !info.group_by_expressions.is_empty() {
         return Err(unsupported_feature("GROUP BY in cross-partition queries"));
+    }
+    if info.distinct_type != DistinctType::None {
+        return Err(unsupported_feature("DISTINCT in cross-partition queries"));
     }
     Ok(())
 }
