@@ -35,7 +35,6 @@ pub mod effective_partition_key;
 mod feed_range;
 #[allow(dead_code)]
 mod murmur_hash;
-mod operation_target;
 #[allow(dead_code)]
 pub mod partition_key_range;
 #[allow(dead_code)]
@@ -60,7 +59,6 @@ pub use cosmos_status::SubStatusCode;
 pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
 pub use feed_range::FeedRange;
-pub use operation_target::OperationTarget;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
@@ -164,6 +162,11 @@ impl PartitionKeyDefinition {
     /// Returns the partition key kind.
     pub fn kind(&self) -> PartitionKeyKind {
         self.kind
+    }
+
+    /// Returns true if the given partition key value is complete for this definition (i.e. has values for all paths).
+    pub fn is_complete(&self, pk: &PartitionKey) -> bool {
+        pk.len() == self.paths.len()
     }
 }
 

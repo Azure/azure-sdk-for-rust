@@ -24,8 +24,7 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
         ActivityId, ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        DatabaseProperties, DatabaseReference, OperationTarget, PartitionKey, ResolvedToken,
-        ResourceType,
+        DatabaseProperties, DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
@@ -1146,9 +1145,8 @@ impl CosmosDriver {
 
         // Need both a container reference and a partition key.
         let container = operation.container()?;
-        let partition_key = match operation.target() {
-            OperationTarget::PartitionKey(ref pk) => pk,
-            _ => return None,
+        let Some(partition_key) = operation.target().and_then(|t| t.partition_key()) else {
+            return None;
         };
 
         self.pk_range_cache

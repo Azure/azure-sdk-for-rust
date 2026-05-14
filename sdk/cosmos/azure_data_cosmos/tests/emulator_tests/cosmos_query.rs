@@ -654,19 +654,23 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             // to the on-the-wire format so we can recover the underlying
             // server continuation without exposing extra public APIs.
             //
-            // Format: `c1.` + base64url-no-pad(JSON of `PipelineNodeState`).
-            // For a trivial single-partition query the JSON is shaped like
+            // Format: `c1.` + base64url-no-pad(JSON envelope). The envelope
+            // is shaped like `{"op":"Query","rid":"<rid>","root":<node>}`,
+            // and for a trivial single-partition query the `root` node is
             // `{"kind":"request","server_continuation":"<token>"}`.
             let payload = raw.strip_prefix("c1.").unwrap();
             let json_bytes = URL_SAFE_NO_PAD
                 .decode(payload)
                 .expect("c1. payload must be valid base64url-no-pad");
-            let snapshot: serde_json::Value = serde_json::from_slice(&json_bytes)
+            let envelope: serde_json::Value = serde_json::from_slice(&json_bytes)
                 .expect("decoded c1. payload must be valid JSON");
+            let snapshot = envelope
+                .get("root")
+                .expect("c1. envelope must contain a `root` node");
             assert_eq!(
                 snapshot.get("kind").and_then(|v| v.as_str()),
                 Some("request"),
-                "trivial single-partition pipeline should snapshot as a single Request node, got: {snapshot}"
+                "trivial single-partition pipeline should snapshot as a single Request node, got: {envelope}"
             );
             let server_token = snapshot
                 .get("server_continuation")
@@ -724,9 +728,13 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
                 let json_bytes = URL_SAFE_NO_PAD
                     .decode(payload)
                     .expect("c1. payload must be valid base64url-no-pad");
-                let snapshot: serde_json::Value =
+                let envelope: serde_json::Value =
                     serde_json::from_slice(&json_bytes).expect("payload must be valid JSON");
-                let kind = snapshot.get("kind").and_then(|v| v.as_str()).unwrap_or("");
+                let kind = envelope
+                    .get("root")
+                    .and_then(|root| root.get("kind"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 if kind == "drained" || was_empty {
                     break;
                 }

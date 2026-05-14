@@ -3,7 +3,7 @@
 
 //! Models and components used to represents and execute queries.
 
-use azure_data_cosmos_driver::models::{FeedRange, OperationTarget, PartitionKey};
+use azure_data_cosmos_driver::models::{FeedRange, PartitionKey, PartitionKeyDefinition};
 use serde::Serialize;
 
 /// Represents the scope of a query, which determines which partitions it targets.
@@ -40,13 +40,15 @@ impl FeedScope {
     pub fn full_container() -> Self {
         Self::Range(FeedRange::full())
     }
-}
 
-impl From<FeedScope> for OperationTarget {
-    fn from(value: FeedScope) -> Self {
-        match value {
-            FeedScope::Partition(pk) => Self::PartitionKey(pk),
-            FeedScope::Range(fr) => Self::FeedRange(fr),
+    /// Converts this [`FeedScope`] into a [`FeedRange`] that can be used for query execution, using the provided partition key definition to compute effective partition keys as needed.
+    pub(crate) fn into_feed_range(
+        self,
+        partition_key_definition: &PartitionKeyDefinition,
+    ) -> FeedRange {
+        match self {
+            FeedScope::Partition(pk) => FeedRange::for_partition(pk, partition_key_definition),
+            FeedScope::Range(fr) => fr,
         }
     }
 }

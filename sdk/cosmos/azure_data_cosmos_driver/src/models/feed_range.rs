@@ -13,8 +13,8 @@ use base64::Engine;
 use serde::{Deserialize, Serialize};
 use std::{cmp, fmt, str::FromStr};
 
-use crate::models::effective_partition_key::EffectivePartitionKey;
-use crate::models::partition_key_range::PartitionKeyRange;
+use crate::models::{effective_partition_key::EffectivePartitionKey, ItemReference, PartitionKey};
+use crate::models::{partition_key_range::PartitionKeyRange, PartitionKeyDefinition};
 
 /// A contiguous range of the effective partition key space.
 ///
@@ -25,9 +25,29 @@ use crate::models::partition_key_range::PartitionKeyRange;
 /// Use [`FeedRange::full()`] for the entire key space (`""..FF`).
 #[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
 #[safe(true)]
-pub struct FeedRange {
-    min_inclusive: EffectivePartitionKey,
-    max_exclusive: EffectivePartitionKey,
+pub struct FeedRange(FeedRangeRepr);
+
+#[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
+#[safe(true)]
+enum FeedRangeRepr {
+    /// The range represents a logical partition key prefix.
+    ///
+    /// If the number of keys in [`FeedRangeRepr::LogicalPartition::partition_key`]
+    /// is less than the number of levels in the container's partition key definition,
+    /// the feed range represents all logical partitions that share that prefix.
+    /// Otherwise, if the number of keys matches the number of levels, the feed range represents exactly one logical partition.
+    ///
+    /// This variant exists to preserve the logical partition key semantics for feed ranges that target a single logical partition or prefix, which is important for certain operations.
+    LogicalPartition {
+        partition_key: PartitionKey,
+        effective_partition_key: EffectivePartitionKey,
+    },
+
+    /// The range is defined by explicit EPK bounds.
+    Range {
+        min_inclusive: EffectivePartitionKey,
+        max_exclusive: EffectivePartitionKey,
+    },
 }
 
 #[derive(Serialize, Deserialize)]
@@ -49,40 +69,91 @@ struct RangeJson {
 impl FeedRange {
     /// Creates a feed range from explicit EPK bounds.
     pub fn new(min_inclusive: EffectivePartitionKey, max_exclusive: EffectivePartitionKey) -> Self {
-        Self {
+        Self(FeedRangeRepr::Range {
             min_inclusive,
             max_exclusive,
-        }
+        })
     }
 
     /// Creates a feed range covering the entire partition key space (`""..FF`).
     pub fn full() -> Self {
-        Self {
+        Self(FeedRangeRepr::Range {
             min_inclusive: EffectivePartitionKey::min(),
             max_exclusive: EffectivePartitionKey::max(),
+        })
+    }
+
+    /// Creates a feed range for the logical partition key of the given item.
+    pub fn for_item(item: &ItemReference) -> Self {
+        Self::for_partition(
+            item.partition_key().clone(),
+            item.container().partition_key_definition(),
+        )
+    }
+
+    /// Creates a feed range for the given logical partition key or prefix.
+    ///
+    /// Because we need to know the version of the partition hashing scheme to compute the effective partition key,
+    /// the caller must provide a reference to the partition key definition.
+    pub fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self {
+        let effective_partition_key = EffectivePartitionKey::compute(
+            partition_key.values(),
+            definition.kind,
+            definition.version,
+        );
+        Self(FeedRangeRepr::LogicalPartition {
+            partition_key,
+            effective_partition_key,
+        })
+    }
+
+    /// Returns the logical partition key if this feed range represents a single logical partition or prefix.
+    ///
+    /// It is the caller's responsibility to determine whether the returned partition key represents a full logical partition (i.e. has values for all levels of the hierarchy)
+    /// or a prefix that covers multiple logical partitions (i.e. has values for only a subset of the levels).
+    pub(crate) fn partition_key(&self) -> Option<&PartitionKey> {
+        match &self.0 {
+            FeedRangeRepr::LogicalPartition { partition_key, .. } => Some(partition_key),
+            FeedRangeRepr::Range { .. } => None,
         }
     }
 
     /// Returns the inclusive lower bound of this range.
     pub fn min_inclusive(&self) -> &EffectivePartitionKey {
-        &self.min_inclusive
+        match &self.0 {
+            FeedRangeRepr::LogicalPartition {
+                effective_partition_key,
+                ..
+            } => effective_partition_key,
+            FeedRangeRepr::Range { min_inclusive, .. } => min_inclusive,
+        }
     }
 
     /// Returns the exclusive upper bound of this range.
+    ///
+    /// NOTE: The [`min_inclusive`] value overrides this limit. Thus, a range with
+    /// `min_inclusive == max_exclusive` is valid and represents exactly one EPK value, not an empty range.
     pub fn max_exclusive(&self) -> &EffectivePartitionKey {
-        &self.max_exclusive
+        match &self.0 {
+            FeedRangeRepr::LogicalPartition {
+                effective_partition_key,
+                ..
+            } => effective_partition_key,
+            FeedRangeRepr::Range { max_exclusive, .. } => max_exclusive,
+        }
     }
 
     /// Returns `true` if this feed range is entirely contained within `other`.
     pub fn is_subset_of(&self, other: &FeedRange) -> bool {
-        other.min_inclusive <= self.min_inclusive && other.max_exclusive >= self.max_exclusive
+        other.min_inclusive() <= self.min_inclusive()
+            && other.max_exclusive() >= self.max_exclusive()
     }
 
     /// Returns `true` if this feed range and `other` share any portion of the EPK space.
     ///
     /// Two feed ranges overlap when one starts before the other ends and vice versa.
     pub fn overlaps(&self, other: &FeedRange) -> bool {
-        self.min_inclusive < other.max_exclusive && other.min_inclusive < self.max_exclusive
+        self.min_inclusive() < other.max_exclusive() && other.min_inclusive() < self.max_exclusive()
     }
 
     /// Returns `true` if this feed range can be combined with `other`.
@@ -90,26 +161,35 @@ impl FeedRange {
     /// Two ranges can be combined when they overlap or are adjacent
     /// (one's max equals the other's min).
     pub fn can_merge(&self, other: &FeedRange) -> bool {
-        self.max_exclusive >= other.min_inclusive && other.max_exclusive >= self.min_inclusive
+        match self {
+            FeedRange(FeedRangeRepr::LogicalPartition { .. }) => {
+                // Logical partition feed ranges cannot be merged with any other range, even an identical one, because they carry the implicit expectation of targeting a single logical partition.
+                false
+            }
+            FeedRange(FeedRangeRepr::Range { max_exclusive, .. }) => {
+                max_exclusive == other.min_inclusive() || self.overlaps(other)
+            }
+        }
     }
 
     /// Combines this feed range with `other` into a bounding range.
     pub fn merge_with(&self, other: &FeedRange) -> FeedRange {
         debug_assert!(
             self.can_merge(other),
-            "merge_with called on disjoint ranges"
+            "merge_with called on disjoint ranges or logical partition range: self={:?}, other={:?}",
+            self, other
         );
-        FeedRange {
-            min_inclusive: cmp::min(self.min_inclusive.clone(), other.min_inclusive.clone()),
-            max_exclusive: cmp::max(self.max_exclusive.clone(), other.max_exclusive.clone()),
-        }
+        Self(FeedRangeRepr::Range {
+            min_inclusive: cmp::min(self.min_inclusive().clone(), other.min_inclusive().clone()),
+            max_exclusive: cmp::max(self.max_exclusive().clone(), other.max_exclusive().clone()),
+        })
     }
 
     fn to_json(&self) -> FeedRangeJson {
         FeedRangeJson {
             range: RangeJson {
-                min: self.min_inclusive.as_str().to_owned(),
-                max: self.max_exclusive.as_str().to_owned(),
+                min: self.min_inclusive().as_str().to_owned(),
+                max: self.max_exclusive().as_str().to_owned(),
                 is_min_inclusive: true,
                 is_max_inclusive: false,
             },
@@ -134,10 +214,10 @@ impl FeedRange {
             ));
         }
 
-        Ok(Self {
+        Ok(Self(FeedRangeRepr::Range {
             min_inclusive: min,
             max_exclusive: max,
-        })
+        }))
     }
 }
 
@@ -156,10 +236,10 @@ impl TryFrom<&PartitionKeyRange> for FeedRange {
             ));
         }
 
-        Ok(Self {
+        Ok(Self(FeedRangeRepr::Range {
             min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),
             max_exclusive: EffectivePartitionKey::from(pkr.max_exclusive.as_str()),
-        })
+        }))
     }
 }
 

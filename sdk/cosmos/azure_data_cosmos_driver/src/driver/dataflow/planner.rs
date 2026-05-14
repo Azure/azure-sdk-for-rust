@@ -14,9 +14,7 @@ use std::sync::Arc;
 
 use crate::{
     driver::dataflow::query_plan::DistinctType,
-    models::{
-        effective_partition_key::EffectivePartitionKey, CosmosOperation, FeedRange, OperationTarget,
-    },
+    models::{effective_partition_key::EffectivePartitionKey, CosmosOperation, FeedRange},
 };
 
 use super::{
@@ -76,10 +74,16 @@ pub(crate) fn build_trivial_pipeline(
         }
     };
 
+    // We should only have been called when is_trivial() is true, which guarantees that the target is either None (non-partitioned)
+    // or it holds a specific, complete, logical partition key.
+
     let request_target = match target {
-        OperationTarget::None => RequestTarget::NonPartitioned,
-        OperationTarget::PartitionKey(pk) => RequestTarget::LogicalPartitionKey(pk.clone()),
-        OperationTarget::FeedRange(_) => {
+        None => RequestTarget::NonPartitioned,
+        Some(f) if let Some(pk) = f.partition_key() => {
+            RequestTarget::LogicalPartitionKey(pk.clone())
+        }
+        Some(FeedRange { .. }) => {
+            // This shouldn't have passed the `.is_trivial()` assert, but we don't want to panic.
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "FeedRange targeting requires a fan-out pipeline; \

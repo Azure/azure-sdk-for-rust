@@ -661,7 +661,7 @@ impl ContainerClient {
     /// # Arguments
     ///
     /// * `query` - The query to execute.
-    /// * `scope` - The [`QueryScope`] specifying the scope of the query.
+    /// * `scope` - The [`FeedScope`] specifying the scope of the query.
     /// * `options` - Optional parameters for the request.
     ///
     /// # Cross Partition Queries
@@ -677,7 +677,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # use azure_data_cosmos::query::QueryScope;
+    /// # use azure_data_cosmos::query::FeedScope;
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
@@ -686,7 +686,7 @@ impl ContainerClient {
     /// }
     /// let items = container_client.query_items::<Customer>(
     ///     "SELECT * FROM c",
-    ///     QueryScope::partition("some_partition_key"),
+    ///     FeedScope::partition("some_partition_key"),
     ///     None,
     /// ).await?;
     /// # }
@@ -696,7 +696,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// use azure_data_cosmos::{query::QueryScope, Query};
+    /// use azure_data_cosmos::{query::FeedScope, Query};
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
@@ -706,7 +706,7 @@ impl ContainerClient {
     /// let query = Query::from("SELECT COUNT(*) FROM c WHERE c.customer_id = @customer_id")
     ///     .with_parameter("@customer_id", 42)?;
     /// let items = container_client
-    ///     .query_items::<Customer>(query, QueryScope::partition("some_partition_key"), None).await?;
+    ///     .query_items::<Customer>(query, FeedScope::partition("some_partition_key"), None).await?;
     /// # }
     /// ```
     ///
@@ -724,9 +724,11 @@ impl ContainerClient {
 
         // The first operation to execute in the query items flow.
         // This holds the session token provided by the user, if any.
-        let mut initial_operation =
-            CosmosOperation::query_items(container_ref.clone(), scope.into())
-                .with_body(serde_json::to_vec(&query)?);
+        let mut initial_operation = CosmosOperation::query_items(
+            container_ref.clone(),
+            Some(scope.into_feed_range(self.container_ref.partition_key_definition())),
+        )
+        .with_body(serde_json::to_vec(&query)?);
         if let Some(token) = options.session_token {
             initial_operation = initial_operation.with_session_token(token);
         }
