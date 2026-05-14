@@ -131,6 +131,8 @@
     "qself",
     "RAII",
     "readfeed",
+    "refetch",
+    "refetched",
     "Replicaset",
     "reqs",
     "Retriable",

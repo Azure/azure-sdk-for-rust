@@ -433,6 +433,8 @@ pub struct CosmosDriverRuntimeBuilder {
         feature = "__internal_mocking"
     ))]
     http_client_factory: Option<Arc<dyn HttpClientFactory>>,
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    account_metadata_staleness_threshold: Option<Duration>,
 }
 
 impl CosmosDriverRuntimeBuilder {
@@ -519,6 +521,18 @@ impl CosmosDriverRuntimeBuilder {
     #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
     pub(crate) fn with_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
         self.http_client_factory = Some(factory);
+        self
+    }
+
+    /// Test-only override for the account-metadata-cache staleness threshold.
+    ///
+    /// Production callers always get the default 10-minute threshold.
+    /// Exposed under the same internal feature flag the in-memory emulator uses
+    /// so integration tests can simulate "long-running workload" timing in
+    /// milliseconds instead of waiting 10 real minutes per refresh window.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    pub fn with_account_metadata_staleness_threshold(mut self, threshold: Duration) -> Self {
+        self.account_metadata_staleness_threshold = Some(threshold);
         self
     }
 
@@ -761,7 +775,19 @@ impl CosmosDriverRuntimeBuilder {
             throughput_control_groups: self.throughput_control_groups,
             driver_registry: RwLock::new(HashMap::new()),
             container_cache: ContainerCache::new(),
-            account_metadata_cache: Arc::new(AccountMetadataCache::new()),
+            account_metadata_cache: Arc::new({
+                #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+                {
+                    match self.account_metadata_staleness_threshold {
+                        Some(t) => AccountMetadataCache::with_staleness_threshold(t),
+                        None => AccountMetadataCache::new(),
+                    }
+                }
+                #[cfg(not(any(test, feature = "__internal_in_memory_emulator")))]
+                {
+                    AccountMetadataCache::new()
+                }
+            }),
             cpu_monitor,
             machine_id: Arc::new(vm_metadata.machine_id().to_owned()),
             fault_injection_enabled,

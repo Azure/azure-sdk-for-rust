@@ -247,7 +247,7 @@ impl AccountMetadataCache {
     /// Test-only constructor allowing callers to override the staleness
     /// threshold. Production code uses [`Self::new`] which applies the
     /// default 10-minute threshold.
-    #[cfg(test)]
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
     pub(crate) fn with_staleness_threshold(threshold: Duration) -> Self {
         Self {
             cache: AsyncCache::new(),
@@ -264,7 +264,7 @@ impl AccountMetadataCache {
     ///
     /// **Does NOT honor the staleness threshold** — once a value is cached
     /// it is returned forever (until [`Self::invalidate`] is called).
-    /// Suitable only for one-time seeding or post-invalidate refetches.
+    /// Suitable only for one-time seeding or post-invalidate re-fetches.
     /// For per-operation lookups that must periodically re-fetch from the
     /// service, use [`Self::refresh_if_stale`].
     pub(crate) async fn get_or_fetch<F, Fut>(
@@ -314,20 +314,31 @@ impl AccountMetadataCache {
     ///
     /// When the entry is considered stale, this method attempts to refresh it
     /// using `fetch_fn`. If the fetch fails, the existing cached value (if any)
-    /// is preserved and returned. Returns `None` only when there is no cached
-    /// value and the entry is not considered stale.
+    /// is preserved and returned. Errors are propagated only when there is no
+    /// cached value to fall back on.
+    ///
+    /// Always returns either a cached or freshly-fetched `Arc<AccountProperties>`,
+    /// never `None`. A TOCTOU race where another task invalidates the cache
+    /// between the staleness check and the cache lookup is handled internally
+    /// by falling through to the fetch path, so callers never observe a
+    /// "cache fresh but missing" condition.
     pub(crate) async fn refresh_if_stale<F, Fut>(
         &self,
         endpoint: AccountEndpoint,
         fetch_fn: F,
-    ) -> azure_core::Result<Option<Arc<AccountProperties>>>
+    ) -> azure_core::Result<Arc<AccountProperties>>
     where
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = azure_core::Result<AccountProperties>>,
     {
         // First check: fast path without exclusive locking.
+        // If the entry is fresh and present, return it directly. The TOCTOU
+        // race between is_stale() and cache.get() is benign — if the entry
+        // was just invalidated we fall through to the slow path and re-fetch.
         if !self.is_stale(&endpoint).await {
-            return Ok(self.cache.get(&endpoint).await);
+            if let Some(cached) = self.cache.get(&endpoint).await {
+                return Ok(cached);
+            }
         }
 
         // Acquire refresh mutex to serialize concurrent refresh attempts.
@@ -335,7 +346,9 @@ impl AccountMetadataCache {
 
         // Second check: another caller may have refreshed while we waited.
         if !self.is_stale(&endpoint).await {
-            return Ok(self.cache.get(&endpoint).await);
+            if let Some(cached) = self.cache.get(&endpoint).await {
+                return Ok(cached);
+            }
         }
 
         // We are the sole refresher — fetch from the service.
@@ -345,8 +358,8 @@ impl AccountMetadataCache {
             Err(e) => {
                 // On fetch failure, return the existing cached value (if any)
                 // so stale data is preferred over no data.
-                if cached.is_some() {
-                    return Ok(cached);
+                if let Some(c) = cached {
+                    return Ok(c);
                 }
                 return Err(e);
             }
@@ -358,18 +371,29 @@ impl AccountMetadataCache {
             .cache
             .get_or_refresh_with(
                 endpoint,
-                |_existing| true, // We already determined staleness above
+                |_existing| true, // We already determined staleness above.
                 || async { properties },
             )
             .await;
 
-        // Update the refresh timestamp.
-        if result.is_some() {
-            let mut timestamps = self.last_refresh.write().await;
-            timestamps.insert(endpoint_for_timestamp, Instant::now());
+        match result {
+            Some(arc) => {
+                // Update the refresh timestamp.
+                let mut timestamps = self.last_refresh.write().await;
+                timestamps.insert(endpoint_for_timestamp, Instant::now());
+                Ok(arc)
+            }
+            None => {
+                // `get_or_refresh_with` with an unconditional refresh predicate
+                // and a successful compute is not expected to return None; if
+                // the cache eviction policy ever changes such that this can
+                // occur, surface a structured error rather than panicking.
+                Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "AccountMetadataCache::refresh_if_stale: cache failed to retain freshly fetched value",
+                ))
+            }
         }
-
-        Ok(result)
     }
 
     /// Returns `true` if the cached metadata for `endpoint` is stale or absent.
@@ -624,8 +648,7 @@ mod tests {
             .unwrap();
 
         // Should return the cached value without calling the factory
-        assert!(result.is_some());
-        assert_eq!(result.unwrap().write_region().unwrap().as_str(), "westus");
+        assert_eq!(result.write_region().unwrap().as_str(), "westus");
         assert_eq!(counter.load(Ordering::SeqCst), 0);
     }
 
@@ -652,8 +675,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(result.is_some());
-        assert_eq!(result.unwrap().write_region().unwrap().as_str(), "eastus");
+        assert_eq!(result.write_region().unwrap().as_str(), "eastus");
     }
 
     #[tokio::test]
@@ -685,8 +707,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(result.is_some());
-        assert_eq!(result.unwrap().write_region().unwrap().as_str(), "westus");
+        assert_eq!(result.write_region().unwrap().as_str(), "westus");
     }
 
     #[tokio::test]
@@ -749,8 +770,8 @@ mod tests {
                 })
                 .await
                 .unwrap();
-            assert!(result.is_some());
-            // Sleep past the staleness threshold so the next call must refetch.
+            assert_eq!(result.write_region().unwrap().as_str(), "westus");
+            // Sleep past the staleness threshold so the next call must re-fetch.
             tokio::time::sleep(threshold * 2).await;
         }
 
