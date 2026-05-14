@@ -64,6 +64,13 @@ type AccountRefreshFn = Arc<
         + Sync,
 >;
 
+/// Interval between iterations of the background account-metadata refresh
+/// loop. Independent of `LocationStateStore::refresh_interval` (which
+/// rate-limits the event-driven refresh emitted by
+/// `LocationEffect::RefreshAccountProperties`).
+#[cfg(feature = "tokio")]
+pub(crate) const BACKGROUND_REFRESH_INTERVAL: Duration = Duration::from_secs(300);
+
 /// Unified location state store with lock-free reads and CAS-loop writes.
 pub(crate) struct LocationStateStore {
     account: Atomic<AccountEndpointState>,
@@ -76,11 +83,6 @@ pub(crate) struct LocationStateStore {
     gateway20_enabled: bool,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
-    /// Interval between iterations of the background account-metadata
-    /// refresh loop. Independent of `refresh_interval` (which rate-limits
-    /// the event-driven refresh emitted by `LocationEffect::RefreshAccountProperties`).
-    /// Default is 5 minutes, matching Java/.NET.
-    background_refresh_interval: Duration,
     last_refresh_epoch_ms: AtomicU64,
     /// The etag of the last `AccountProperties` that was synced.
     /// Used to skip the CAS loop when the account metadata hasn't changed.
@@ -149,7 +151,6 @@ impl LocationStateStore {
         endpoint_unavailability_ttl: Duration,
         partition_failover_config: PartitionFailoverConfig,
         preferred_regions: Vec<Region>,
-        background_refresh_interval: Duration,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
         let partition_state = PartitionEndpointState::new(partition_failover_config);
@@ -172,9 +173,9 @@ impl LocationStateStore {
             // Rate limit for event-driven refreshes emitted by
             // `LocationEffect::RefreshAccountProperties` (e.g. retry policies
             // hitting WriteForbidden). Kept at 5 s — urgent recovery cadence,
-            // independent of the periodic background loop below.
+            // independent of the periodic background loop driven by
+            // `BACKGROUND_REFRESH_INTERVAL`.
             refresh_interval: Duration::from_secs(5),
-            background_refresh_interval,
             last_refresh_epoch_ms: AtomicU64::new(0),
             last_synced_etag: std::sync::Mutex::new(String::new()),
             last_synced_properties: std::sync::Mutex::new(None),
@@ -557,17 +558,15 @@ impl LocationStateStore {
     ///
     /// Mirrors `start_failback_loop` (`Weak<Self>` for self-termination,
     /// `BackgroundTaskManager` for abort-on-drop). The loop sleeps for
-    /// `background_refresh_interval`, then unconditionally refreshes the
+    /// [`BACKGROUND_REFRESH_INTERVAL`], then unconditionally refreshes the
     /// database account metadata via `force_refresh_account_properties`
     /// (the timer interval IS the rate limit, so the event-driven
-    /// `refresh_interval` check is bypassed). Matches the periodic-refresh
-    /// design of the Java and .NET Cosmos DB SDKs (5-minute default).
+    /// `refresh_interval` check is bypassed).
     #[cfg(feature = "tokio")]
     pub fn start_account_refresh_loop(self: &Arc<Self>) {
         let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
-        let interval = self.background_refresh_interval;
         self.background_task_manager.spawn(async move {
-            account_refresh_loop(weak_store, interval).await;
+            account_refresh_loop(weak_store, BACKGROUND_REFRESH_INTERVAL).await;
         });
     }
 }
@@ -683,7 +682,6 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
-            Duration::from_secs(300),
         );
 
         store
@@ -722,7 +720,6 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
-            Duration::from_secs(300),
         );
 
         store
@@ -777,7 +774,6 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
-            Duration::from_secs(300),
         );
 
         // First refresh: fails. Should NOT advance last_refresh_epoch_ms,
@@ -818,7 +814,6 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
-            Duration::from_secs(300),
         );
 
         let properties = Arc::new(test_refresh_payload());
@@ -881,7 +876,6 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
-            Duration::from_secs(300),
         );
 
         let canary = Arc::new(());

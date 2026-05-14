@@ -10,13 +10,17 @@
 //! hit. They guard against two regressions:
 //!
 //! 1. **No periodic refresh** — the original bug. A long-running client must
-//!    re-fetch database-account metadata on a timer (5-minute default,
-//!    matching Java/.NET) rather than only when an operation triggers a
-//!    lazy refresh path.
+//!    re-fetch database-account metadata on a timer rather than only when an
+//!    operation triggers a lazy refresh path.
 //! 2. **Refresh on every operation** — the over-correction. Per-operation
 //!    lookups hit `AccountMetadataCache::get_or_fetch`, which is a cheap
 //!    fast path; freshness is owned by the timer, so back-to-back operations
 //!    must NOT each issue a `GET /`.
+//!
+//! The tests use [`tokio::time::pause()`] so virtual time advances under the
+//! test's control. This makes them deterministic regardless of CI load and
+//! avoids waiting through real wall-clock intervals (the production refresh
+//! period is 5 minutes — far too long to wait for in unit-style tests).
 
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -31,9 +35,13 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     VirtualRegion,
 };
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation, DatabaseReference};
-use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder};
+use azure_data_cosmos_driver::options::OperationOptions;
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
+
+/// Production refresh interval, kept in sync with
+/// `LocationStateStore::BACKGROUND_REFRESH_INTERVAL`.
+const REFRESH_INTERVAL: Duration = Duration::from_secs(300);
 
 /// Counts requests whose URL path is `/` and method is `GET` — the database
 /// account read endpoint that the driver hits on every refresh.
@@ -60,6 +68,8 @@ impl RequestObserver for AccountReadCounter {
     }
 }
 
+/// Builds an in-memory emulator with a single region, a pre-provisioned
+/// `testdb` database, and the supplied [`RequestObserver`] attached.
 fn build_emulator_with_observer(
     counter: Arc<AccountReadCounter>,
 ) -> Arc<InMemoryEmulatorHttpClient> {
@@ -83,28 +93,23 @@ fn account() -> AccountReference {
 /// operations, the driver must periodically re-fetch database-account
 /// metadata once the background refresh loop has spawned.
 ///
-/// This exercises the timer path end-to-end —
-/// `CosmosDriver::new` constructs the `LocationStateStore` with the
-/// configured `account_metadata_refresh_interval_in_seconds` and
-/// `start_account_refresh_loop` spawns the loop via `BackgroundTaskManager`.
+/// Uses `start_paused = true` so virtual time advances deterministically.
+/// Because the production refresh interval is 5 minutes, only a paused-time
+/// runtime can validate this scenario in test-suite-friendly time. The test
+/// fast-forwards through several refresh windows and asserts the
+/// `RequestObserver` saw at least that many additional `GET /` requests
+/// purely from the timer.
+///
 /// The original bug had no timer at all, so a client with zero operations
 /// would have observed exactly one `GET /` (the init fetch) for its
 /// lifetime; this test fails on that behavior.
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn background_loop_refetches_database_account_with_no_traffic() {
-    // OperationOptions only accept whole-second granularity, so 1 second is
-    // the smallest interval we can configure through the public API.
-    let interval_secs: u32 = 1;
     let counter = AccountReadCounter::new();
     let emulator = build_emulator_with_observer(counter.clone());
 
     let runtime = emulator
         .runtime_builder()
-        .with_operation_options(
-            OperationOptionsBuilder::new()
-                .with_account_metadata_refresh_interval_in_seconds(interval_secs)
-                .build(),
-        )
         .build()
         .await
         .expect("runtime should build");
@@ -120,19 +125,18 @@ async fn background_loop_refetches_database_account_with_no_traffic() {
         "expected at least one account-read during driver init, got {after_init}"
     );
 
-    // Wait long enough for several timer ticks. Issue NO operations.
-    // We pad generously beyond the minimum expected ticks (`MIN_TICKS`) so
-    // the assertion is not flaky under load on slow CI runners; the test's
-    // purpose is to prove the timer fires AT ALL (the original bug had no
-    // timer), not to land on an exact tick count.
-    const MIN_TICKS: u32 = 2;
-    let wait_secs: u64 = (MIN_TICKS as u64 + 4) * interval_secs as u64;
-    tokio::time::sleep(Duration::from_secs(wait_secs)).await;
+    // Fast-forward through several refresh intervals. With paused time,
+    // `tokio::time::sleep` here auto-advances virtual time and wakes the
+    // background loop's sleep at each tick. We add an extra interval of
+    // headroom so the final refresh has time to complete before the
+    // assertion runs.
+    const TICKS: u32 = 3;
+    tokio::time::sleep(REFRESH_INTERVAL * (TICKS + 1)).await;
 
     let post_init_account_reads = counter.count() - after_init;
     assert!(
-        post_init_account_reads >= MIN_TICKS as usize,
-        "expected at least {MIN_TICKS} additional account-read calls from the background timer with no traffic, \
+        post_init_account_reads >= TICKS as usize,
+        "expected at least {TICKS} additional account-read calls from the background timer with no traffic, \
          got {post_init_account_reads}; total observed = {}, after_init = {after_init}",
         counter.count()
     );
@@ -140,23 +144,16 @@ async fn background_loop_refetches_database_account_with_no_traffic() {
 
 /// Companion regression test: per-operation lookups must NOT issue a
 /// `GET /` on every operation, because freshness is owned by the
-/// background refresh loop. Configures the timer with a long interval
-/// (so it does not fire during the test) and confirms the per-operation
-/// path adds zero account reads on top of the init fetch.
-#[tokio::test]
+/// background refresh loop. Issues several back-to-back operations under
+/// paused time (so the timer cannot fire) and asserts exactly zero
+/// additional account reads happen on top of the init fetch.
+#[tokio::test(start_paused = true)]
 async fn back_to_back_operations_do_not_trigger_per_request_account_reads() {
     let counter = AccountReadCounter::new();
     let emulator = build_emulator_with_observer(counter.clone());
 
     let runtime = emulator
         .runtime_builder()
-        .with_operation_options(
-            OperationOptionsBuilder::new()
-                // Long enough that the background loop does not fire during
-                // the back-to-back operations below.
-                .with_account_metadata_refresh_interval_in_seconds(3600)
-                .build(),
-        )
         .build()
         .await
         .expect("runtime should build");
@@ -170,10 +167,11 @@ async fn back_to_back_operations_do_not_trigger_per_request_account_reads() {
 
     let db_ref = DatabaseReference::from_name(driver.account().clone(), "testdb".to_string());
 
-    // Issue several back-to-back operations with no sleep between them.
-    // Per-operation lookup hits AccountMetadataCache::get_or_fetch (cheap
-    // fast path) — the background timer is the freshness owner and is
-    // configured not to fire during this test.
+    // Issue several back-to-back operations. Under paused time the
+    // background timer cannot fire because we never await a sleep that
+    // would advance virtual time. Per-operation lookup hits
+    // AccountMetadataCache::get_or_fetch (cheap fast path) — the
+    // background timer is the freshness owner.
     for _ in 0..10 {
         driver
             .execute_operation(
@@ -185,15 +183,9 @@ async fn back_to_back_operations_do_not_trigger_per_request_account_reads() {
     }
 
     let post_init_account_reads = counter.count() - after_init;
-    // We assert `<= 1` rather than `== 0` to remain robust if the very-long
-    // (1-hour) timer somehow fires once (e.g., wall-clock jump). The purpose
-    // of the assertion is to prove that the per-operation hot path itself
-    // is NOT issuing GET / per request — even one extra account-read across
-    // 10 back-to-back operations would still demonstrate that property.
-    assert!(
-        post_init_account_reads <= 1,
+    assert_eq!(
+        post_init_account_reads, 0,
         "expected the per-operation hot path to issue 0 account-read calls during \
-         back-to-back operations (background timer was configured for 1 hour); \
-         got {post_init_account_reads}"
+         back-to-back operations under paused virtual time; got {post_init_account_reads}"
     );
 }
