@@ -76,6 +76,11 @@ pub(crate) struct LocationStateStore {
     gateway20_enabled: bool,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
+    /// Interval between iterations of the background account-metadata
+    /// refresh loop. Independent of `refresh_interval` (which rate-limits
+    /// the event-driven refresh emitted by `LocationEffect::RefreshAccountProperties`).
+    /// Default is 5 minutes, matching Java/.NET.
+    background_refresh_interval: Duration,
     last_refresh_epoch_ms: AtomicU64,
     /// The etag of the last `AccountProperties` that was synced.
     /// Used to skip the CAS loop when the account metadata hasn't changed.
@@ -144,6 +149,7 @@ impl LocationStateStore {
         endpoint_unavailability_ttl: Duration,
         partition_failover_config: PartitionFailoverConfig,
         preferred_regions: Vec<Region>,
+        background_refresh_interval: Duration,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
         let partition_state = PartitionEndpointState::new(partition_failover_config);
@@ -163,8 +169,12 @@ impl LocationStateStore {
             preferred_regions,
             gateway20_enabled,
             endpoint_unavailability_ttl,
-            // TODO(refresh-config): Make refresh interval configurable.
+            // Rate limit for event-driven refreshes emitted by
+            // `LocationEffect::RefreshAccountProperties` (e.g. retry policies
+            // hitting WriteForbidden). Kept at 5 s — urgent recovery cadence,
+            // independent of the periodic background loop below.
             refresh_interval: Duration::from_secs(5),
+            background_refresh_interval,
             last_refresh_epoch_ms: AtomicU64::new(0),
             last_synced_etag: std::sync::Mutex::new(String::new()),
             last_synced_properties: std::sync::Mutex::new(None),
@@ -352,6 +362,28 @@ impl LocationStateStore {
             return;
         }
 
+        self.refresh_account_properties_inner().await;
+    }
+
+    /// Force-refresh account properties without consulting the
+    /// `refresh_interval` rate limit. Intended for the periodic background
+    /// timer loop (the timer interval IS the rate limit). The event-driven
+    /// path from retry policies must continue to use
+    /// [`refresh_account_properties_if_due`] to throttle bursts.
+    async fn force_refresh_account_properties(&self) {
+        // Bump the rate-limit clock so a closely-following event-driven
+        // refresh sees a recent timestamp and skips redundant work.
+        self.last_refresh_epoch_ms
+            .store(epoch_millis(), Ordering::Release);
+        self.refresh_account_properties_inner().await;
+    }
+
+    /// Shared implementation of both `refresh_account_properties_if_due`
+    /// (rate-limited, event-driven) and `force_refresh_account_properties`
+    /// (timer-driven). Invalidates the cache, calls the refresh callback,
+    /// and on success CAS-updates the routing snapshot. Logs a warning on
+    /// failure but keeps the previous snapshot intact.
+    async fn refresh_account_properties_inner(&self) {
         // Capture the previous properties before invalidation so the refresh
         // callback can use them for regional fallback if the primary fails.
         let previous_props = self
@@ -367,8 +399,16 @@ impl LocationStateStore {
             })
             .await;
 
-        let Ok(properties) = refreshed else {
-            return;
+        let properties = match refreshed {
+            Ok(properties) => properties,
+            Err(e) => {
+                tracing::warn!(
+                    endpoint = %self.account_endpoint,
+                    error = %e,
+                    "LocationStateStore: account metadata refresh failed; routing snapshot not updated",
+                );
+                return;
+            }
         };
 
         let default_endpoint = self.default_endpoint.clone();
@@ -475,6 +515,50 @@ impl LocationStateStore {
             failback_loop(weak_store, config).await;
         });
     }
+
+    /// Starts the background account-metadata refresh loop.
+    ///
+    /// Mirrors `start_failback_loop` (`Weak<Self>` for self-termination,
+    /// `BackgroundTaskManager` for abort-on-drop). The loop sleeps for
+    /// `background_refresh_interval`, then unconditionally refreshes the
+    /// database account metadata via `force_refresh_account_properties`
+    /// (the timer interval IS the rate limit, so the event-driven
+    /// `refresh_interval` check is bypassed). Matches the periodic-refresh
+    /// design of the Java and .NET Cosmos DB SDKs (5-minute default).
+    #[cfg(feature = "tokio")]
+    pub fn start_account_refresh_loop(self: &Arc<Self>) {
+        let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
+        let interval = self.background_refresh_interval;
+        self.background_task_manager.spawn(async move {
+            account_refresh_loop(weak_store, interval).await;
+        });
+    }
+}
+
+/// Background account-metadata refresh loop. Periodically calls
+/// `force_refresh_account_properties` on the store. Exits when the
+/// `LocationStateStore` is dropped (`Weak::upgrade()` returns `None`).
+///
+/// Each successful iteration emits `tracing::debug!` so operators can confirm
+/// the timer is alive without flooding logs (debug, not info, since this
+/// fires every 5 minutes per driver in steady state).
+#[cfg(feature = "tokio")]
+async fn account_refresh_loop(weak_store: Weak<LocationStateStore>, interval: Duration) {
+    loop {
+        tokio::time::sleep(interval).await;
+
+        let Some(store) = weak_store.upgrade() else {
+            // LocationStateStore was dropped — exit the loop.
+            break;
+        };
+
+        store.force_refresh_account_properties().await;
+        tracing::debug!(
+            endpoint = %store.account_endpoint,
+            interval_secs = interval.as_secs(),
+            "LocationStateStore: background account metadata refresh tick complete",
+        );
+    }
 }
 
 /// Background failback loop that periodically sweeps expired partition overrides.
@@ -562,6 +646,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
+            Duration::from_secs(300),
         );
 
         store
@@ -600,6 +685,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
+            Duration::from_secs(300),
         );
 
         store
@@ -632,6 +718,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
+            Duration::from_secs(300),
         );
 
         let properties = Arc::new(test_refresh_payload());
@@ -694,6 +781,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
+            Duration::from_secs(300),
         );
 
         let canary = Arc::new(());

@@ -172,6 +172,22 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")]
     pub per_partition_circuit_breaker_enabled: Option<bool>,
 
+    /// Interval (in seconds) between iterations of the background loop that
+    /// refreshes database-account metadata (regional endpoint list, write
+    /// region, consistency policy, etc.) from the service.
+    ///
+    /// **Default**: `300` seconds (5 minutes), matching the Java and .NET
+    /// Cosmos DB SDKs.
+    ///
+    /// **Tuning**: Smaller values shorten the window during which the driver
+    /// can be unaware of region failovers or topology changes, at the cost of
+    /// one extra HTTP `GET <account-endpoint>/` per driver per interval.
+    /// Larger values reduce that traffic but extend the staleness window.
+    /// Shared across all operations on a given driver — the loop runs once
+    /// per [`CosmosDriver`](crate::CosmosDriver), not per request.
+    #[option(env = "AZURE_COSMOS_ACCOUNT_METADATA_REFRESH_INTERVAL_IN_SECONDS")]
+    pub account_metadata_refresh_interval_in_seconds: Option<u32>,
+
     // Additional headers beyond those natively supported by the driver.
     // May be removed in the future as we analyze exactly what options are needed.
     custom_headers: Option<HashMap<HeaderName, HeaderValue>>,

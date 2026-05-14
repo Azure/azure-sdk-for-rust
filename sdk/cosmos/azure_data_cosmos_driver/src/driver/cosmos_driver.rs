@@ -765,6 +765,15 @@ impl CosmosDriver {
 
         let partition_failover_config = PartitionFailoverConfig::from_options(&init_view);
 
+        // Resolve the background account-metadata refresh interval from the
+        // layered options (driver → runtime → env). Default 5 minutes,
+        // matching Java/.NET.
+        let background_refresh_interval = init_view
+            .account_metadata_refresh_interval_in_seconds()
+            .copied()
+            .map(|secs| Duration::from_secs(secs as u64))
+            .unwrap_or_else(|| Duration::from_secs(300));
+
         let location_state_store = Arc::new(LocationStateStore::new(
             runtime.account_metadata_cache().clone(),
             account_endpoint,
@@ -774,11 +783,21 @@ impl CosmosDriver {
             endpoint_unavailability_ttl,
             partition_failover_config,
             options.preferred_regions().to_vec(),
+            background_refresh_interval,
         ));
 
         // Spawn the background failback loop for partition-level overrides.
         #[cfg(feature = "tokio")]
         location_state_store.start_failback_loop();
+
+        // Spawn the background account-metadata refresh loop so long-running
+        // workloads see periodic re-fetch of the database account properties
+        // without paying the latency on the request hot path. Matches the
+        // Java/.NET SDKs (5 min default). Per-operation lookups in
+        // `execute_operation` use the cheap `get_or_fetch` fast path because
+        // freshness is owned by this loop.
+        #[cfg(feature = "tokio")]
+        location_state_store.start_account_refresh_loop();
 
         Self {
             runtime,
@@ -1177,16 +1196,17 @@ impl CosmosDriver {
         let auth = account.auth();
 
         // Step 4.1: Resolve account metadata and select write-region endpoint.
-        // Uses `refresh_if_stale` so long-running workloads periodically re-fetch
-        // database-account metadata from the service after the staleness threshold
-        // (default 10 minutes), keeping regional endpoint information up to date.
-        // `get_or_fetch` would cache the first response forever and is only safe
-        // for one-time seeding or post-invalidate re-fetches.
+        // Uses `get_or_fetch` (cheap, no staleness check) because the
+        // background account-metadata refresh loop spawned in
+        // `CosmosDriver::new` keeps this cache fresh on a 5-minute timer.
+        // The lazy `refresh_if_stale` variant is intentionally NOT used here
+        // — the timer owns freshness so the per-operation hot path stays
+        // free of network round-trips.
         let account_endpoint = AccountEndpoint::from(account);
         let account_properties = self
             .runtime
             .account_metadata_cache()
-            .refresh_if_stale(account_endpoint, || self.fetch_account_properties(account))
+            .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
             .await?;
 
         // Keep the operation routing snapshot in sync with current account metadata.
