@@ -133,6 +133,7 @@
     "readfeed",
     "refetch",
     "refetched",
+    "refetches",
     "Replicaset",
     "reqs",
     "Retriable",
