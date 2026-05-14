@@ -1560,7 +1560,11 @@ impl CosmosDriver {
         let resume_state = match continuation {
             None => None,
             Some(token) => match token.resolve()? {
-                ResolvedToken::ClientV1(state) => Some(state),
+                ResolvedToken::ClientV1(state) => {
+                    // Validate the state is valid for this operation.
+                    state.is_valid_for_operation(&operation)?;
+                    Some(state.into_root_node_state())
+                }
                 ResolvedToken::ServerOpaque(server_token) => {
                     if !operation.is_trivial() {
                         return Err(azure_core::Error::with_message(
@@ -1579,8 +1583,8 @@ impl CosmosDriver {
 
         // Trivial plan: anything that isn't a cross-partition query.
         if operation.is_trivial() {
-            let pipeline = planner::build_trivial_pipeline(operation, resume_state)?;
-            return Ok(OperationPlan::new(pipeline));
+            let pipeline = planner::build_trivial_pipeline(operation.clone(), resume_state)?;
+            return Ok(OperationPlan::new(pipeline, operation));
         }
 
         // Cross-partition query: fetch query plan from backend.
@@ -1621,7 +1625,7 @@ impl CosmosDriver {
         let pipeline =
             planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
                 .await?;
-        Ok(OperationPlan::new(pipeline))
+        Ok(OperationPlan::new(pipeline, operation))
     }
 
     /// Returns all partition key ranges for a container, ordered by min EPK.

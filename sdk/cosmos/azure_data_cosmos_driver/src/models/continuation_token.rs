@@ -24,7 +24,10 @@
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 
-use crate::driver::dataflow::PipelineNodeState;
+use crate::{
+    driver::dataflow::PipelineNodeState,
+    models::{CosmosOperation, OperationType},
+};
 
 /// Current SDK token version prefix.
 const SDK_V1_PREFIX: &str = "c1.";
@@ -53,8 +56,29 @@ impl ContinuationToken {
     }
 
     /// Encodes a [`PipelineNodeState`] as a `c1.`-prefixed token.
-    pub(crate) fn encode_v1(state: &PipelineNodeState) -> azure_core::Result<Self> {
-        let json = serde_json::to_vec(state).map_err(|e| {
+    pub(crate) fn encode_v1(
+        operation: &CosmosOperation,
+        root_state: &PipelineNodeState,
+    ) -> azure_core::Result<Self> {
+        if operation.operation_type() != OperationType::Query {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "client-side continuation tokens are only supported for query operations",
+            ));
+        }
+        let container = operation.container().ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "client-side continuation tokens require a query operation targeting a container",
+            )
+        })?;
+        let state = TokenState {
+            operation: TokenOperation::Query,
+            rid: container.rid().to_string(),
+            root: root_state.clone(),
+        };
+
+        let json = serde_json::to_vec(&state).map_err(|e| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 format!("failed to serialize continuation token state: {e}"),
@@ -78,7 +102,7 @@ impl ContinuationToken {
                         format!("continuation token has invalid base64 payload: {e}"),
                     )
                 })?;
-            let state: PipelineNodeState = serde_json::from_slice(&json).map_err(|e| {
+            let state: TokenState = serde_json::from_slice(&json).map_err(|e| {
                 azure_core::Error::with_message(
                     azure_core::error::ErrorKind::DataConversion,
                     format!("continuation token has invalid JSON payload: {e}"),
@@ -102,10 +126,80 @@ impl ContinuationToken {
     }
 }
 
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+pub enum TokenOperation {
+    Query,
+}
+
+/// The decoded state of a continuation token that can be used to resume an operation.
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+pub struct TokenState {
+    /// The kind of operation this token is for (e.g. query, read feed, etc.). This is used to ensure the token is only used with a compatible operation.
+    #[serde(rename = "op")]
+    operation: TokenOperation,
+
+    /// The resource id (RID) of the container the operation was targeting.
+    /// Validated on resume to ensure the token is being used against the same container.
+    rid: String,
+
+    /// The root node's state at the point of snapshotting.
+    root: PipelineNodeState,
+}
+
+impl TokenState {
+    /// Validates that this token state is compatible with the provided query
+    pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> azure_core::Result<()> {
+        if operation.operation_type() != OperationType::Query {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!(
+                    "operation type {op:?} is not compatible with client-side continuation tokens",
+                    op = self.operation
+                ),
+            ));
+        }
+
+        if self.operation != TokenOperation::Query {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!(
+                    "token operation type {op:?} is not compatible with a query operation; \
+                     expected {expected_op:?}",
+                    op = self.operation,
+                    expected_op = TokenOperation::Query,
+                ),
+            ));
+        }
+        let container = operation.container().ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "client-side continuation tokens require a query operation targeting a container",
+            )
+        })?;
+        if self.rid != container.rid() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!(
+                    "token container rid {token_rid:?} does not match the operation's container rid {op_rid:?}; \
+                     this token was generated against a different container and cannot be used to resume this one",
+                    token_rid = self.rid,
+                    op_rid = container.rid(),
+                ),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Extracts the root node state from this token for use in planning a resume pipeline.
+    pub fn into_root_node_state(self) -> PipelineNodeState {
+        self.root
+    }
+}
+
 /// Resolved form of a [`ContinuationToken`] for use during planning.
 pub(crate) enum ResolvedToken {
     /// A client-issued v1 token containing a snapshot of pipeline state.
-    ClientV1(PipelineNodeState),
+    ClientV1(TokenState),
 
     /// An opaque server continuation string. Only valid for trivial operations.
     ServerOpaque(String),
@@ -155,6 +249,35 @@ impl<'de> Deserialize<'de> for ContinuationToken {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{
+        AccountReference, ContainerProperties, ContainerReference, FeedRange, ItemReference,
+        OperationTarget, PartitionKey, PartitionKeyDefinition, SystemProperties,
+    };
+
+    use url::Url;
+
+    fn test_container() -> ContainerReference {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "test-key",
+        );
+        let partition_key: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let props = ContainerProperties {
+            id: "coll".into(),
+            partition_key,
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new(account, "db", "db_rid", "coll", "coll_rid", &props)
+    }
+
+    /// Builds a query-items operation against `test_container()` (rid `coll_rid`).
+    fn query_op() -> CosmosOperation {
+        CosmosOperation::query_items(
+            test_container(),
+            OperationTarget::FeedRange(FeedRange::full()),
+        )
+    }
 
     /// Decodes the base64url-no-pad payload of a `c1.`-prefixed token into
     /// its raw JSON bytes for inspection.
@@ -179,82 +302,138 @@ mod tests {
 
     #[test]
     fn encode_v1_drained_state() {
-        let token = ContinuationToken::encode_v1(&PipelineNodeState::Drained).unwrap();
-        assert_eq!(decode_v1_payload(&token), r#"{"kind":"drained"}"#);
+        let token = ContinuationToken::encode_v1(&query_op(), &PipelineNodeState::Drained).unwrap();
+        assert_eq!(
+            decode_v1_payload(&token),
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"}}"#,
+        );
     }
 
     #[test]
     fn encode_v1_request_state_omits_absent_server_continuation() {
-        let token = ContinuationToken::encode_v1(&PipelineNodeState::Request {
-            server_continuation: None,
-        })
+        let token = ContinuationToken::encode_v1(
+            &query_op(),
+            &PipelineNodeState::Request {
+                server_continuation: None,
+            },
+        )
         .unwrap();
-        assert_eq!(decode_v1_payload(&token), r#"{"kind":"request"}"#);
+        assert_eq!(
+            decode_v1_payload(&token),
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"}}"#,
+        );
     }
 
     #[test]
     fn encode_v1_request_state_includes_server_continuation() {
-        let token = ContinuationToken::encode_v1(&PipelineNodeState::Request {
-            server_continuation: Some("server-token-1".to_string()),
-        })
+        let token = ContinuationToken::encode_v1(
+            &query_op(),
+            &PipelineNodeState::Request {
+                server_continuation: Some("server-token-1".to_string()),
+            },
+        )
         .unwrap();
         assert_eq!(
             decode_v1_payload(&token),
-            r#"{"kind":"request","server_continuation":"server-token-1"}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request","server_continuation":"server-token-1"}}"#,
         );
     }
 
     #[test]
     fn encode_v1_sequential_drain_state() {
-        let token = ContinuationToken::encode_v1(&PipelineNodeState::SequentialDrain {
-            current_min_epk: "3F".to_string(),
-            left_most: Box::new(PipelineNodeState::Request {
-                server_continuation: None,
-            }),
-        })
+        let token = ContinuationToken::encode_v1(
+            &query_op(),
+            &PipelineNodeState::SequentialDrain {
+                current_min_epk: "3F".to_string(),
+                left_most: Box::new(PipelineNodeState::Request {
+                    server_continuation: None,
+                }),
+            },
+        )
         .unwrap();
         assert_eq!(
             decode_v1_payload(&token),
-            r#"{"kind":"sequential_drain","current_min_epk":"3F","left_most":{"kind":"request"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","current_min_epk":"3F","left_most":{"kind":"request"}}}"#,
         );
+    }
+
+    #[test]
+    fn encode_v1_includes_rid_regardless_of_query_body() {
+        // The token only identifies the container by rid; the query text
+        // itself is not hashed into the token.
+        let token = ContinuationToken::encode_v1(
+            &query_op().with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec()),
+            &PipelineNodeState::Drained,
+        )
+        .unwrap();
+        assert_eq!(
+            decode_v1_payload(&token),
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"}}"#,
+        );
+    }
+
+    #[test]
+    fn encode_v1_rejects_non_query_operation() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let read = CosmosOperation::read_item(item);
+        let err = ContinuationToken::encode_v1(&read, &PipelineNodeState::Drained).unwrap_err();
+        assert!(matches!(
+            err.kind(),
+            azure_core::error::ErrorKind::DataConversion
+        ));
     }
 
     // ── Deserialization ─────────────────────────────────────────────────
 
     #[test]
     fn resolve_v1_drained_state() {
-        let token = encode_v1_payload(r#"{"kind":"drained"}"#);
+        let token =
+            encode_v1_payload(r#"{"op":"Query","rid":"coll_rid","root":{"kind":"drained"}}"#);
         match token.resolve().unwrap() {
-            ResolvedToken::ClientV1(state) => assert_eq!(state, PipelineNodeState::Drained),
+            ResolvedToken::ClientV1(state) => {
+                assert_eq!(state.operation, TokenOperation::Query);
+                assert_eq!(state.rid, "coll_rid");
+                assert_eq!(state.root, PipelineNodeState::Drained);
+            }
             other => panic!("expected ClientV1, got {other:?}"),
         }
     }
 
     #[test]
     fn resolve_v1_request_state_with_server_continuation() {
-        let token =
-            encode_v1_payload(r#"{"kind":"request","server_continuation":"opaque-srv-token"}"#);
+        let token = encode_v1_payload(
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request","server_continuation":"opaque-srv-token"}}"#,
+        );
         match token.resolve().unwrap() {
-            ResolvedToken::ClientV1(state) => assert_eq!(
-                state,
-                PipelineNodeState::Request {
-                    server_continuation: Some("opaque-srv-token".to_string()),
-                }
-            ),
+            ResolvedToken::ClientV1(state) => {
+                assert_eq!(state.operation, TokenOperation::Query);
+                assert_eq!(state.rid, "coll_rid");
+                assert_eq!(
+                    state.root,
+                    PipelineNodeState::Request {
+                        server_continuation: Some("opaque-srv-token".to_string()),
+                    },
+                );
+            }
             other => panic!("expected ClientV1, got {other:?}"),
         }
     }
 
     #[test]
     fn resolve_v1_request_state_without_server_continuation() {
-        let token = encode_v1_payload(r#"{"kind":"request"}"#);
+        let token =
+            encode_v1_payload(r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"}}"#);
         match token.resolve().unwrap() {
-            ResolvedToken::ClientV1(state) => assert_eq!(
-                state,
-                PipelineNodeState::Request {
-                    server_continuation: None,
-                }
-            ),
+            ResolvedToken::ClientV1(state) => {
+                assert_eq!(state.operation, TokenOperation::Query);
+                assert_eq!(state.rid, "coll_rid");
+                assert_eq!(
+                    state.root,
+                    PipelineNodeState::Request {
+                        server_continuation: None,
+                    },
+                );
+            }
             other => panic!("expected ClientV1, got {other:?}"),
         }
     }
@@ -262,20 +441,68 @@ mod tests {
     #[test]
     fn resolve_v1_sequential_drain_state() {
         let token = encode_v1_payload(
-            r#"{"kind":"sequential_drain","current_min_epk":"3F","left_most":{"kind":"request"}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","current_min_epk":"3F","left_most":{"kind":"request"}}}"#,
         );
         match token.resolve().unwrap() {
-            ResolvedToken::ClientV1(state) => assert_eq!(
-                state,
-                PipelineNodeState::SequentialDrain {
-                    current_min_epk: "3F".to_string(),
-                    left_most: Box::new(PipelineNodeState::Request {
-                        server_continuation: None,
-                    }),
-                }
-            ),
+            ResolvedToken::ClientV1(state) => {
+                assert_eq!(state.operation, TokenOperation::Query);
+                assert_eq!(state.rid, "coll_rid");
+                assert_eq!(
+                    state.root,
+                    PipelineNodeState::SequentialDrain {
+                        current_min_epk: "3F".to_string(),
+                        left_most: Box::new(PipelineNodeState::Request {
+                            server_continuation: None,
+                        }),
+                    },
+                );
+            }
             other => panic!("expected ClientV1, got {other:?}"),
         }
+    }
+
+    // ── Container-rid validation ────────────────────────────────────────
+
+    #[test]
+    fn is_valid_for_operation_accepts_matching_rid() {
+        let state = TokenState {
+            operation: TokenOperation::Query,
+            rid: "coll_rid".to_string(),
+            root: PipelineNodeState::Drained,
+        };
+        state.is_valid_for_operation(&query_op()).unwrap();
+    }
+
+    #[test]
+    fn is_valid_for_operation_rejects_mismatched_rid() {
+        let state = TokenState {
+            operation: TokenOperation::Query,
+            rid: "different_rid".to_string(),
+            root: PipelineNodeState::Drained,
+        };
+        let err = state.is_valid_for_operation(&query_op()).unwrap_err();
+        assert!(matches!(
+            err.kind(),
+            azure_core::error::ErrorKind::DataConversion
+        ));
+        assert!(err.to_string().contains("different_rid"));
+        assert!(err.to_string().contains("coll_rid"));
+    }
+
+    #[test]
+    fn is_valid_for_operation_rejects_non_query_operation() {
+        let state = TokenState {
+            operation: TokenOperation::Query,
+            rid: "coll_rid".to_string(),
+            root: PipelineNodeState::Drained,
+        };
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let read = CosmosOperation::read_item(item);
+        let err = state.is_valid_for_operation(&read).unwrap_err();
+        assert!(matches!(
+            err.kind(),
+            azure_core::error::ErrorKind::DataConversion
+        ));
     }
 
     // ── Error and fallback paths ────────────────────────────────────────
@@ -314,7 +541,8 @@ mod tests {
 
     #[test]
     fn rejects_invalid_json_in_v1_token() {
-        let token = encode_v1_payload(r#"{"kind":"unknown_variant"}"#);
+        // Missing the required `op` and `root` fields of `TokenState`.
+        let token = encode_v1_payload(r#"{"kind":"drained"}"#);
         let err = token.resolve().unwrap_err();
         assert!(matches!(
             err.kind(),

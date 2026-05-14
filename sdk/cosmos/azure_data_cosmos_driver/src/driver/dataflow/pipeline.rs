@@ -3,7 +3,9 @@
 
 //! [`Pipeline`] (driver-internal) and [`OperationPlan`] (driver-public).
 
-use crate::models::{ContinuationToken, CosmosResponse};
+use std::sync::Arc;
+
+use crate::models::{ContinuationToken, CosmosOperation, CosmosResponse};
 
 use super::context::PipelineContext;
 use super::node::{PageResult, PipelineNode};
@@ -70,12 +72,16 @@ impl Pipeline {
 /// Produced by [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation).
 pub struct OperationPlan {
     pub(crate) pipeline: Pipeline,
+    operation: Arc<CosmosOperation>,
 }
 
 impl OperationPlan {
     /// Creates an operation plan wrapping the given pipeline.
-    pub(crate) fn new(pipeline: Pipeline) -> Self {
-        Self { pipeline }
+    pub(crate) fn new(pipeline: Pipeline, operation: Arc<CosmosOperation>) -> Self {
+        Self {
+            pipeline,
+            operation,
+        }
     }
 
     /// Snapshots this plan into a [`ContinuationToken`] suitable for cross-process
@@ -86,6 +92,6 @@ impl OperationPlan {
     /// [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation)
     /// (with the same operation) to resume where this plan left off.
     pub fn to_continuation_token(&self) -> azure_core::Result<ContinuationToken> {
-        ContinuationToken::encode_v1(&self.pipeline.snapshot_state())
+        ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state())
     }
 }
