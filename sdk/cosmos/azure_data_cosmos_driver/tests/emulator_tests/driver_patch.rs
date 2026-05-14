@@ -1049,11 +1049,20 @@ pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
                 .await
                 .expect_err("PATCH should fail with 412 after exhausting max_attempts");
 
-            let msg = format!("{err}").to_ascii_lowercase();
-            assert!(
-                msg.contains("412")
-                    || msg.contains("preconditionfailed")
-                    || msg.contains("precondition failed"),
+            // Check the typed status code rather than the message string:
+            // `exhaustion_error` builds an `ErrorKind::HttpResponse { status:
+            // PreconditionFailed, .. }` whose `Display` is the human-readable
+            // attempts-count message (not "412" / "PreconditionFailed"), so
+            // callers identify the 412 via `err.http_status()` — the same
+            // accessor every other SDK caller uses. The framework wraps the
+            // driver's `azure_core::Error` in a `Box<dyn Error>` via `?`, so
+            // downcast to recover the typed accessor.
+            let azure_err = err
+                .downcast_ref::<azure_core::Error>()
+                .expect("framework wraps an azure_core::Error from execute_operation");
+            assert_eq!(
+                azure_err.http_status(),
+                Some(azure_core::http::StatusCode::PreconditionFailed),
                 "exhausted error should be a 412 / PreconditionFailed; got: {err}",
             );
 
