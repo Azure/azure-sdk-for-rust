@@ -226,12 +226,10 @@ pub(crate) struct AccountMetadataCache {
     last_refresh: async_lock::RwLock<std::collections::HashMap<AccountEndpoint, Instant>>,
 
     /// Minimum interval between refresh attempts to rate-limit requests.
-    #[allow(dead_code)] // Used by refresh_if_stale, consumer coming once Driver is used
     staleness_threshold: Duration,
 
     /// Serializes refresh attempts so that concurrent callers share a single
     /// network fetch instead of each issuing redundant requests.
-    #[allow(dead_code)] // Used by refresh_if_stale, consumer coming once Driver is used
     refresh_mutex: async_lock::Mutex<()>,
 }
 
@@ -246,10 +244,29 @@ impl AccountMetadataCache {
         }
     }
 
+    /// Test-only constructor allowing callers to override the staleness
+    /// threshold. Production code uses [`Self::new`] which applies the
+    /// default 10-minute threshold.
+    #[cfg(test)]
+    pub(crate) fn with_staleness_threshold(threshold: Duration) -> Self {
+        Self {
+            cache: AsyncCache::new(),
+            last_refresh: async_lock::RwLock::new(std::collections::HashMap::new()),
+            staleness_threshold: threshold,
+            refresh_mutex: async_lock::Mutex::new(()),
+        }
+    }
+
     /// Gets account properties from cache, or fetches and caches them.
     ///
     /// If the fetch fails, the error is propagated and nothing is cached,
     /// so the next call will try fetching again.
+    ///
+    /// **Does NOT honor the staleness threshold** — once a value is cached
+    /// it is returned forever (until [`Self::invalidate`] is called).
+    /// Suitable only for one-time seeding or post-invalidate refetches.
+    /// For per-operation lookups that must periodically re-fetch from the
+    /// service, use [`Self::refresh_if_stale`].
     pub(crate) async fn get_or_fetch<F, Fut>(
         &self,
         endpoint: AccountEndpoint,
@@ -299,7 +316,6 @@ impl AccountMetadataCache {
     /// using `fetch_fn`. If the fetch fails, the existing cached value (if any)
     /// is preserved and returned. Returns `None` only when there is no cached
     /// value and the entry is not considered stale.
-    #[allow(dead_code)] // Consumer coming in cutover
     pub(crate) async fn refresh_if_stale<F, Fut>(
         &self,
         endpoint: AccountEndpoint,
@@ -357,7 +373,6 @@ impl AccountMetadataCache {
     }
 
     /// Returns `true` if the cached metadata for `endpoint` is stale or absent.
-    #[allow(dead_code)] // Used by refresh_if_stale
     async fn is_stale(&self, endpoint: &AccountEndpoint) -> bool {
         let cached = self.cache.get(endpoint).await;
         let timestamps = self.last_refresh.read().await;
@@ -697,5 +712,84 @@ mod tests {
             .await;
 
         assert!(result.is_err());
+    }
+
+    /// Regression test for the long-running-workload scenario: callers that
+    /// look up account metadata for every operation must see periodic
+    /// refreshes after the staleness threshold elapses, rather than reusing
+    /// the very first cached value forever.
+    ///
+    /// This test exists because the per-operation lookup in
+    /// `CosmosDriver::execute_operation` was originally calling
+    /// `get_or_fetch` (which never re-fetches), causing
+    /// `GET <account-endpoint>/` to fire exactly once per process lifetime.
+    /// Switching that call site to `refresh_if_stale` restored periodic
+    /// refresh; this test guards against regressing back to a non-staleness-
+    /// aware API on that path.
+    #[tokio::test]
+    async fn refresh_if_stale_refreshes_repeatedly_for_long_running_workload() {
+        // Use a very small threshold so the test can simulate many "stale"
+        // windows in a fraction of a second.
+        let threshold = Duration::from_millis(20);
+        let cache = AccountMetadataCache::with_staleness_threshold(threshold);
+        let endpoint = test_endpoint("myaccount");
+
+        let counter = Arc::new(AtomicUsize::new(0));
+
+        // Simulate 5 operations spaced beyond the staleness threshold.
+        // Each call must trigger a fresh fetch, modeling a long-running
+        // workload that periodically re-reads the database account.
+        const ITERATIONS: usize = 5;
+        for _ in 0..ITERATIONS {
+            let counter_clone = counter.clone();
+            let result = cache
+                .refresh_if_stale(endpoint.clone(), || async move {
+                    counter_clone.fetch_add(1, Ordering::SeqCst);
+                    Ok(test_properties("westus"))
+                })
+                .await
+                .unwrap();
+            assert!(result.is_some());
+            // Sleep past the staleness threshold so the next call must refetch.
+            tokio::time::sleep(threshold * 2).await;
+        }
+
+        assert_eq!(
+            counter.load(Ordering::SeqCst),
+            ITERATIONS,
+            "expected one fetch per call once staleness threshold elapses; \
+             got {} fetches across {} iterations",
+            counter.load(Ordering::SeqCst),
+            ITERATIONS
+        );
+    }
+
+    /// Companion regression test: within a single staleness window the
+    /// fetch_fn must NOT be invoked more than once, so we don't accidentally
+    /// invert the regression and start hammering the service on every call.
+    #[tokio::test]
+    async fn refresh_if_stale_within_threshold_reuses_cached_value() {
+        let cache = AccountMetadataCache::with_staleness_threshold(Duration::from_secs(60));
+        let endpoint = test_endpoint("myaccount");
+
+        let counter = Arc::new(AtomicUsize::new(0));
+
+        // Ten back-to-back lookups within the same fresh window.
+        for _ in 0..10 {
+            let counter_clone = counter.clone();
+            cache
+                .refresh_if_stale(endpoint.clone(), || async move {
+                    counter_clone.fetch_add(1, Ordering::SeqCst);
+                    Ok(test_properties("westus"))
+                })
+                .await
+                .unwrap();
+        }
+
+        assert_eq!(
+            counter.load(Ordering::SeqCst),
+            1,
+            "fetch_fn should fire exactly once within the staleness window"
+        );
     }
 }

@@ -1177,12 +1177,28 @@ impl CosmosDriver {
         let auth = account.auth();
 
         // Step 4.1: Resolve account metadata and select write-region endpoint.
+        // Uses `refresh_if_stale` so long-running workloads periodically re-fetch
+        // database-account metadata from the service after the staleness threshold
+        // (default 10 minutes), keeping regional endpoint information up to date.
+        // `get_or_fetch` would cache the first response forever and is only safe
+        // for one-time seeding or post-invalidate refetches.
         let account_endpoint = AccountEndpoint::from(account);
         let account_properties = self
             .runtime
             .account_metadata_cache()
-            .get_or_fetch(account_endpoint, || self.fetch_account_properties(account))
-            .await?;
+            .refresh_if_stale(account_endpoint.clone(), || {
+                self.fetch_account_properties(account)
+            })
+            .await?
+            .ok_or_else(|| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!(
+                        "account metadata cache returned no value for {account_endpoint} \
+                         (cache was reported fresh but contains no entry)"
+                    ),
+                )
+            })?;
 
         // Keep the operation routing snapshot in sync with current account metadata.
         // Uses CAS to preserve unavailable_endpoints marks set by concurrent operations.

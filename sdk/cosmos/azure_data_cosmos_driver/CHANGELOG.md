@@ -17,6 +17,7 @@
 
 ### Bugs Fixed
 
+- Restored periodic database-account metadata refresh on long-running clients. The per-operation lookup in `CosmosDriver::execute_operation` was calling `AccountMetadataCache::get_or_fetch`, which caches the first response forever; as a result `GET <account-endpoint>/` fired exactly once per process and the cached regional endpoint information was never updated. The lookup now uses `AccountMetadataCache::refresh_if_stale`, which honors the existing 10-minute staleness threshold.
 - PPCB now records every 5xx failure for the affected partition, including the final failure that exhausts the failover retry budget. Previously the budget-exhausted abort path skipped emitting `MarkPartitionUnavailable`, causing the most diagnostic failure to be silently dropped from PPCB's per-partition counter. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 
 ### Other Changes
