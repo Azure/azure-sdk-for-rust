@@ -440,11 +440,54 @@ impl AccountMetadataCache {
     }
 
     /// Invalidates cached account properties for an endpoint.
+    ///
+    /// Currently unused by production code paths — the
+    /// [`LocationStateStore`](crate::driver::routing::LocationStateStore)
+    /// background refresh loop atomically replaces cache entries via
+    /// [`Self::get_or_refresh_with`] rather than using an
+    /// invalidate-then-fetch sequence (which had a race where concurrent
+    /// readers could repopulate the cache with stale data in the gap).
+    /// Retained as a primitive for future callers that genuinely need
+    /// "remove this entry without immediately re-fetching" semantics.
+    #[allow(dead_code)]
     pub(crate) async fn invalidate(
         &self,
         endpoint: &AccountEndpoint,
     ) -> Option<Arc<AccountProperties>> {
         self.cache.invalidate(endpoint).await
+    }
+
+    /// Returns the currently cached account properties for an endpoint, if
+    /// any. Does NOT trigger a fetch — callers that want to populate on miss
+    /// should use [`Self::get_or_fetch`] instead.
+    pub(crate) async fn get(&self, endpoint: &AccountEndpoint) -> Option<Arc<AccountProperties>> {
+        self.cache.get(endpoint).await
+    }
+
+    /// Atomically replaces the cached account properties for an endpoint by
+    /// running the supplied factory under the cache's single-pending-I/O
+    /// lock. Use this when the caller has already produced fresh data
+    /// (e.g. via a fallible network fetch performed outside the cache lock)
+    /// and wants to install it without risking the invalidate-then-fetch
+    /// race that would otherwise let concurrent readers re-populate the
+    /// cache with stale data in the gap.
+    ///
+    /// `should_force_refresh` is invoked with the existing value (if any);
+    /// returning `true` always triggers the factory.
+    pub(crate) async fn get_or_refresh_with<F, Fut, P>(
+        &self,
+        endpoint: AccountEndpoint,
+        should_force_refresh: P,
+        factory: F,
+    ) -> Option<Arc<AccountProperties>>
+    where
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = AccountProperties>,
+        P: FnOnce(Option<&AccountProperties>) -> bool,
+    {
+        self.cache
+            .get_or_refresh_with(endpoint, should_force_refresh, factory)
+            .await
     }
 }
 

@@ -370,37 +370,47 @@ impl LocationStateStore {
     /// timer loop (the timer interval IS the rate limit). The event-driven
     /// path from retry policies must continue to use
     /// [`refresh_account_properties_if_due`] to throttle bursts.
+    ///
+    /// The `last_refresh_epoch_ms` clock is updated by
+    /// [`refresh_account_properties_inner`] only on a successful fetch — if
+    /// this timer-driven refresh fails (network error, service 5xx, …), the
+    /// event-driven path is NOT throttled and is free to retry recovery
+    /// immediately.
     async fn force_refresh_account_properties(&self) {
-        // Bump the rate-limit clock so a closely-following event-driven
-        // refresh sees a recent timestamp and skips redundant work.
-        self.last_refresh_epoch_ms
-            .store(epoch_millis(), Ordering::Release);
         self.refresh_account_properties_inner().await;
     }
 
     /// Shared implementation of both `refresh_account_properties_if_due`
     /// (rate-limited, event-driven) and `force_refresh_account_properties`
-    /// (timer-driven). Invalidates the cache, calls the refresh callback,
-    /// and on success CAS-updates the routing snapshot. Logs a warning on
-    /// failure but keeps the previous snapshot intact.
+    /// (timer-driven).
+    ///
+    /// Performs the fallible network fetch first (outside any cache lock),
+    /// then atomically replaces the cached value via
+    /// [`AccountMetadataCache::replace`] / `get_or_refresh_with`. This avoids
+    /// the race where a concurrent `execute_operation` thread could hit the
+    /// cache during the gap between an `invalidate` and a follow-up
+    /// `get_or_fetch` — a bug pattern present in earlier revisions of this
+    /// code. On success the routing snapshot is CAS-updated and the
+    /// rate-limit clock advances; on failure the previous snapshot and
+    /// rate-limit timestamp are left intact so the event-driven path can
+    /// retry recovery immediately.
     async fn refresh_account_properties_inner(&self) {
-        // Capture the previous properties before invalidation so the refresh
-        // callback can use them for regional fallback if the primary fails.
+        // Capture the previous properties so the refresh callback can use
+        // them for regional fallback if the primary endpoint fails. We
+        // intentionally do NOT invalidate the cache here — concurrent
+        // `execute_operation` callers should keep getting the prior value
+        // until the new one is ready, rather than seeing a hole and racing
+        // to refill it themselves.
         let previous_props = self
             .account_metadata_cache
-            .invalidate(&self.account_endpoint)
+            .get(&self.account_endpoint)
             .await;
 
         let refresh_fn = Arc::clone(&self.account_refresh_fn);
-        let refreshed = self
-            .account_metadata_cache
-            .get_or_fetch(self.account_endpoint.clone(), || async move {
-                (refresh_fn)(previous_props).await
-            })
-            .await;
+        let fetched = (refresh_fn)(previous_props).await;
 
-        let properties = match refreshed {
-            Ok(properties) => properties,
+        let new_properties = match fetched {
+            Ok(props) => props,
             Err(e) => {
                 tracing::warn!(
                     endpoint = %self.account_endpoint,
@@ -410,6 +420,33 @@ impl LocationStateStore {
                 return;
             }
         };
+
+        // Atomically replace the cache entry under the cache's internal
+        // single-pending-I/O lock. `_existing` is provided for the predicate
+        // but we always replace because we just produced fresh data.
+        let cached_arc = self
+            .account_metadata_cache
+            .get_or_refresh_with(
+                self.account_endpoint.clone(),
+                |_existing| true,
+                || async { new_properties },
+            )
+            .await;
+
+        // Only advance the rate-limit clock once a fresh value is in the
+        // cache — if the cache somehow returned None (logically impossible
+        // here since the factory always produces a value) we don't want to
+        // throttle the event-driven path either.
+        let Some(properties) = cached_arc else {
+            tracing::warn!(
+                endpoint = %self.account_endpoint,
+                "LocationStateStore: account metadata cache produced no value after refresh; routing snapshot not updated",
+            );
+            return;
+        };
+
+        self.last_refresh_epoch_ms
+            .store(epoch_millis(), Ordering::Release);
 
         let default_endpoint = self.default_endpoint.clone();
         self.sync_account_properties(properties, &default_endpoint);
@@ -697,6 +734,69 @@ mod tests {
 
         // The second call should be throttled by refresh_interval.
         assert_eq!(refresh_calls.load(Ordering::SeqCst), 1);
+    }
+
+    /// Regression guard: a failed timer-driven refresh must NOT advance the
+    /// rate-limit clock, so the event-driven path (`LocationEffect::RefreshAccountProperties`)
+    /// can attempt recovery immediately rather than waiting out the
+    /// 5-second `refresh_interval` window.
+    #[tokio::test]
+    async fn failed_refresh_does_not_throttle_event_driven_path() {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let success_refreshes = Arc::new(AtomicUsize::new(0));
+        let total_refreshes = Arc::new(AtomicUsize::new(0));
+        let success_refreshes_clone = Arc::clone(&success_refreshes);
+        let total_refreshes_clone = Arc::clone(&total_refreshes);
+        // First call fails; subsequent calls succeed.
+        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let total = Arc::clone(&total_refreshes_clone);
+            let success = Arc::clone(&success_refreshes_clone);
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+                Box::pin(async move {
+                    let n = total.fetch_add(1, Ordering::SeqCst);
+                    if n == 0 {
+                        Err(azure_core::Error::with_message(
+                            azure_core::error::ErrorKind::Other,
+                            "simulated network failure",
+                        ))
+                    } else {
+                        success.fetch_add(1, Ordering::SeqCst);
+                        Ok(payload)
+                    }
+                });
+            fut
+        });
+
+        let store = LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
+            Duration::from_secs(300),
+        );
+
+        // First refresh: fails. Should NOT advance last_refresh_epoch_ms,
+        // so the next event-driven refresh is free to retry immediately.
+        store.force_refresh_account_properties().await;
+        assert_eq!(total_refreshes.load(Ordering::SeqCst), 1);
+        assert_eq!(success_refreshes.load(Ordering::SeqCst), 0);
+
+        // Immediate event-driven refresh — must NOT be throttled by the
+        // failed timer-driven attempt above.
+        store
+            .apply(&[LocationEffect::RefreshAccountProperties])
+            .await;
+        assert_eq!(
+            total_refreshes.load(Ordering::SeqCst),
+            2,
+            "event-driven refresh was incorrectly throttled by a previously-failed timer-driven refresh"
+        );
+        assert_eq!(success_refreshes.load(Ordering::SeqCst), 1);
     }
 
     #[test]

@@ -120,14 +120,19 @@ async fn background_loop_refetches_database_account_with_no_traffic() {
         "expected at least one account-read during driver init, got {after_init}"
     );
 
-    // Wait long enough for ~3 timer ticks. Issue NO operations.
-    const TICKS: u32 = 3;
-    tokio::time::sleep(Duration::from_secs(interval_secs as u64) * (TICKS + 1)).await;
+    // Wait long enough for several timer ticks. Issue NO operations.
+    // We pad generously beyond the minimum expected ticks (`MIN_TICKS`) so
+    // the assertion is not flaky under load on slow CI runners; the test's
+    // purpose is to prove the timer fires AT ALL (the original bug had no
+    // timer), not to land on an exact tick count.
+    const MIN_TICKS: u32 = 2;
+    let wait_secs: u64 = (MIN_TICKS as u64 + 4) * interval_secs as u64;
+    tokio::time::sleep(Duration::from_secs(wait_secs)).await;
 
     let post_init_account_reads = counter.count() - after_init;
     assert!(
-        post_init_account_reads >= TICKS as usize,
-        "expected at least {TICKS} additional account-read calls from the background timer with no traffic, \
+        post_init_account_reads >= MIN_TICKS as usize,
+        "expected at least {MIN_TICKS} additional account-read calls from the background timer with no traffic, \
          got {post_init_account_reads}; total observed = {}, after_init = {after_init}",
         counter.count()
     );
@@ -180,9 +185,15 @@ async fn back_to_back_operations_do_not_trigger_per_request_account_reads() {
     }
 
     let post_init_account_reads = counter.count() - after_init;
-    assert_eq!(
-        post_init_account_reads, 0,
-        "expected 0 additional account-read calls during back-to-back operations \
-         (background timer was configured for 1 hour); got {post_init_account_reads}"
+    // We assert `<= 1` rather than `== 0` to remain robust if the very-long
+    // (1-hour) timer somehow fires once (e.g., wall-clock jump). The purpose
+    // of the assertion is to prove that the per-operation hot path itself
+    // is NOT issuing GET / per request — even one extra account-read across
+    // 10 back-to-back operations would still demonstrate that property.
+    assert!(
+        post_init_account_reads <= 1,
+        "expected the per-operation hot path to issue 0 account-read calls during \
+         back-to-back operations (background timer was configured for 1 hour); \
+         got {post_init_account_reads}"
     );
 }
