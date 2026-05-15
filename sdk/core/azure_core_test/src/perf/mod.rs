@@ -401,7 +401,7 @@ impl PerfRunner {
                 self.options.duration
             );
 
-            let (operations_per_second, latencies) = self
+            let (operations_per_second, mut latencies) = self
                 .run_test_for(
                     &test_instances,
                     &test_contexts,
@@ -410,8 +410,9 @@ impl PerfRunner {
                 )
                 .await?;
             if self.options.latency {
-                Self::print_latencies("Latency Distribution", latencies.clone());
+                Self::print_latencies("Latency Distribution", &mut latencies);
 
+                // Still useful to print the latencies above even if we're not writing them to a file.
                 if !self.options.results_file.is_empty() {
                     // Detect size from the selected test's subcommand args, defaulting to -1.
                     let size: i64 = self
@@ -573,7 +574,7 @@ impl PerfRunner {
         Ok((operations_per_second, all_latencies))
     }
 
-    fn print_latencies(header: &str, mut latencies: Vec<tokio::time::Duration>) {
+    fn print_latencies(header: &str, latencies: &mut [tokio::time::Duration]) {
         if latencies.is_empty() {
             return;
         }
