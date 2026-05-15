@@ -33,16 +33,30 @@ fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
 }
 
 /// Extracts the SDK's per-operation `DiagnosticsContext` from the error (if
-/// the driver attached one) and serializes it as a JSON `Value` so it can be
-/// stored as an ADX `dynamic` column rather than a quoted string.
+/// the driver attached one) and returns:
+/// 1. the full diagnostics serialized as a JSON `Value` (stored as ADX
+///    `dynamic` rather than a quoted string),
+/// 2. the final HTTP status code (after retries / failovers), and
+/// 3. the Cosmos sub-status code, if any.
 ///
-/// Returns `None` when the error did not carry diagnostics (e.g. it escaped
-/// the driver pipeline before they were initialized) or when the JSON the
-/// SDK produced is malformed (should never happen — defensive only).
-fn extract_diagnostics_json(error: &azure_core::Error) -> Option<serde_json::Value> {
-    let ctx = azure_data_cosmos::try_extract_diagnostics(error)?;
-    let json_str = ctx.to_json_string(None);
-    serde_json::from_str(json_str).ok()
+/// All three fields are `None` when the error did not carry diagnostics
+/// (e.g. it escaped the driver pipeline before they were initialized) or
+/// when the JSON the SDK produced is malformed (defensive only).
+fn extract_error_diagnostics(
+    error: &azure_core::Error,
+) -> (Option<serde_json::Value>, Option<u16>, Option<u32>) {
+    let Some(ctx) = azure_data_cosmos::try_extract_diagnostics(error) else {
+        return (None, None, None);
+    };
+    let json = serde_json::from_str(ctx.to_json_string(None)).ok();
+    let (status_code, sub_status) = match ctx.status() {
+        Some(s) => (
+            Some(u16::from(s.status_code())),
+            s.sub_status().map(|ss| ss.value()),
+        ),
+        None => (None, None),
+    };
+    (json, status_code, sub_status)
 }
 
 /// Structured perf result document stored in Cosmos DB for long-term monitoring.
@@ -123,6 +137,18 @@ struct ErrorResult {
     operation: String,
     error_message: String,
     source_message: Option<String>,
+    /// Final HTTP status code recorded on the diagnostics context (after
+    /// retries and failovers). `None` for errors that escaped the pipeline
+    /// before diagnostics were initialized. Promoted to a top-level column
+    /// so dashboards can group/filter without parsing `diagnostics_json`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    status_code: Option<u16>,
+    /// Cosmos sub-status code (from the `x-ms-substatus` response header or
+    /// synthetic transport sub-status). Only present when the response
+    /// included one — many errors (notably plain HTTP 500 with no body)
+    /// have no sub-status.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sub_status: Option<u32>,
     /// Full per-operation `DiagnosticsContext` JSON (activity_id, region,
     /// transport shard, per-attempt events, etc.) — populated when the
     /// driver pipeline attached diagnostics to the error via
@@ -448,6 +474,8 @@ async fn upsert_error(
         .expect("RFC 3339 formatting should never fail");
     let id = Uuid::new_v4().to_string();
 
+    let (diagnostics_json, status_code, sub_status) = extract_error_diagnostics(error);
+
     let doc = ErrorResult {
         id: id.clone(),
         partition_key: Uuid::new_v4().to_string(),
@@ -458,7 +486,9 @@ async fn upsert_error(
         operation: operation.to_string(),
         error_message: format!("{error}"),
         source_message: error_source_chain(error),
-        diagnostics_json: extract_diagnostics_json(error),
+        status_code,
+        sub_status,
+        diagnostics_json,
     };
     if let Err(e) = container
         .upsert_item(&doc.partition_key, &id, &doc, None)

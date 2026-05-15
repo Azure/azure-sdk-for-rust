@@ -39,9 +39,13 @@ pub use azure_data_cosmos_driver::diagnostics::DiagnosticsContext as CosmosDiagn
 // Re-export the error-side diagnostics helpers so callers can recover the
 // `CosmosDiagnosticsContext` from a failed operation's `azure_core::Error`.
 #[doc(inline)]
-pub use azure_data_cosmos_driver::diagnostics::{
-    try_extract_diagnostics, ErrorWithDiagnostics,
-};
+pub use azure_data_cosmos_driver::diagnostics::{try_extract_diagnostics, ErrorWithDiagnostics};
+
+// Re-export the Cosmos status types so callers (e.g. perf binaries dumping
+// errors to telemetry) can read the final HTTP status code and Cosmos
+// sub-status code recorded on the diagnostics context.
+#[doc(inline)]
+pub use azure_data_cosmos_driver::models::{CosmosStatus, SubStatusCode};
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where

@@ -1666,5 +1666,15 @@ async fn error_carries_extractable_diagnostics() {
         "diagnostics JSON should include activity_id, got: {json}",
     );
 
+    let final_status = diagnostics
+        .status()
+        .expect("diagnostics must record the final operation status");
+    assert_eq!(
+        u16::from(final_status.status_code()),
+        404,
+        "diagnostics status_code should be 404 for missing item, got: {:?}",
+        final_status.status_code(),
+    );
+
     backend.cleanup_real_database(&db_name).await;
 }

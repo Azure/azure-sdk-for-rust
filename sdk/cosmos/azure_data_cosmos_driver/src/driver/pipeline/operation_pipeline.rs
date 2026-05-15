@@ -329,9 +329,7 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                if let Err(err) =
-                    enforce_deadline_or_timeout(deadline, options, &mut diagnostics)
-                {
+                if let Err(err) = enforce_deadline_or_timeout(deadline, options, &mut diagnostics) {
                     return_with_diagnostics!(err);
                 }
             }
@@ -348,9 +346,7 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                if let Err(err) =
-                    enforce_deadline_or_timeout(deadline, options, &mut diagnostics)
-                {
+                if let Err(err) = enforce_deadline_or_timeout(deadline, options, &mut diagnostics) {
                     return_with_diagnostics!(err);
                 }
             }

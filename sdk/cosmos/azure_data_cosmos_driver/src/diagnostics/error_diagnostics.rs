@@ -161,8 +161,10 @@ mod tests {
 
     #[test]
     fn preserves_kind() {
-        let original =
-            azure_core::Error::with_message(ErrorKind::Credential, "creds bad".to_string());
+        let original = azure_core::Error::with_message(
+            ErrorKind::Credential,
+            "credential bad".to_string(),
+        );
         let diagnostics = make_diagnostics_for_test();
         let wrapped = attach_diagnostics(original, diagnostics);
         assert!(matches!(wrapped.kind(), ErrorKind::Credential));

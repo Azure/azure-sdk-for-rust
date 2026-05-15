@@ -31,8 +31,8 @@ pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
 pub use models::{
-    try_extract_diagnostics, BatchResponse, CosmosDiagnosticsContext, ErrorWithDiagnostics,
-    ItemResponse, ResourceResponse,
+    try_extract_diagnostics, BatchResponse, CosmosDiagnosticsContext, CosmosStatus,
+    ErrorWithDiagnostics, ItemResponse, ResourceResponse, SubStatusCode,
 };
 pub use options::*;
 pub use partition_key::*;
