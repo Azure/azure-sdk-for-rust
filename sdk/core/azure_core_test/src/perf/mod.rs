@@ -410,7 +410,8 @@ impl PerfRunner {
                 )
                 .await?;
             if self.options.latency {
-                Self::print_latencies("Latency Distribution", &mut latencies);
+                latencies.sort();
+                Self::print_latencies("Latency Distribution", &latencies);
 
                 // Still useful to print the latencies above even if we're not writing them to a file.
                 if !self.options.results_file.is_empty() {
@@ -574,11 +575,11 @@ impl PerfRunner {
         Ok((operations_per_second, all_latencies))
     }
 
-    fn print_latencies(header: &str, latencies: &mut [tokio::time::Duration]) {
+    /// Print latency percentiles to the console. Requires the latencies to be pre-sorted.
+    fn print_latencies(header: &str, latencies: &[tokio::time::Duration]) {
         if latencies.is_empty() {
             return;
         }
-        latencies.sort();
         println!("=== {} ===", header);
         let percentiles = [0.5, 0.75, 0.9, 0.99, 0.999, 0.9999, 0.99999, 1.0];
         for percentile in percentiles {
