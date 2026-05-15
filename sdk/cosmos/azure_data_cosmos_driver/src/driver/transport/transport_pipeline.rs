@@ -297,10 +297,7 @@ pub(crate) async fn execute_transport_pipeline(
             let body_str = String::from_utf8_lossy(body);
             tracing::warn!(%status, "transport request resulted in HTTP error: {}", body_str);
         } else {
-            tracing::warn!(
-                ?result.result.outcome,
-                "transport attempt failed"
-            );
+            tracing::warn!("transport attempt failed");
         }
 
         if result.shard_id.is_some_and(|failed_shard_id| {

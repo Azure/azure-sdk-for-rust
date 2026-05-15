@@ -262,7 +262,7 @@ pub struct QueryOptions {
     /// In a cross-partition query, each partition may return up to this many items,
     /// so the total page size could be up to this value times the number of partitions involved.
     /// Some server operations may return fewer, or even more, items than this value based on internal heuristics.
-    pub max_item_count: Option<u32>,
+    pub max_server_item_count: Option<u32>,
 
     /// Continuation token from a prior page iterator, used to resume the query.
     ///
@@ -284,8 +284,8 @@ impl QueryOptions {
     }
 
     /// Sets the maximum number of items to return per page.
-    pub fn with_max_item_count(mut self, max_item_count: u32) -> Self {
-        self.max_item_count = Some(max_item_count);
+    pub fn with_max_server_item_count(mut self, max_item_count: u32) -> Self {
+        self.max_server_item_count = Some(max_item_count);
         self
     }
 

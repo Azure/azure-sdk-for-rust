@@ -49,7 +49,7 @@ use std::borrow::Cow;
 /// // 3. Build and execute item operations
 /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
 /// let result = driver
-///     .execute_point_operation(CosmosOperation::read_item(item), OperationOptions::default())
+///     .execute_trivial_operation(CosmosOperation::read_item(item), OperationOptions::default())
 ///     .await?;
 /// # Ok(())
 /// # }
@@ -152,8 +152,8 @@ impl CosmosOperation {
     /// (the `x-ms-max-item-count` request header).
     ///
     /// Applies to feed-style operations such as queries and read-feed.
-    pub fn with_max_item_count(mut self, max_item_count: u32) -> Self {
-        self.request_headers.max_item_count = Some(max_item_count);
+    pub fn with_max_server_item_count(mut self, max_item_count: u32) -> Self {
+        self.request_headers.max_server_item_count = Some(max_item_count);
         self
     }
 
@@ -360,7 +360,7 @@ impl CosmosOperation {
     /// let container = driver.resolve_container("my-database", "my-container").await?;
     ///
     /// let result = driver
-    ///     .execute_point_operation(
+    ///     .execute_trivial_operation(
     ///         CosmosOperation::delete_container(container),
     ///         OperationOptions::default(),
     ///     )
@@ -445,7 +445,7 @@ impl CosmosOperation {
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
-    ///     .execute_point_operation(
+    ///     .execute_trivial_operation(
     ///         CosmosOperation::create_item(item)
     ///             .with_body(br#"{"id": "doc1", "pk": "pk-value", "data": "hello"}"#.to_vec()),
     ///         OperationOptions::default(),
@@ -485,7 +485,7 @@ impl CosmosOperation {
     ///
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk-value"), "doc1");
     /// let result = driver
-    ///     .execute_point_operation(CosmosOperation::read_item(item), OperationOptions::default())
+    ///     .execute_trivial_operation(CosmosOperation::read_item(item), OperationOptions::default())
     ///     .await?;
     /// # Ok(())
     /// # }

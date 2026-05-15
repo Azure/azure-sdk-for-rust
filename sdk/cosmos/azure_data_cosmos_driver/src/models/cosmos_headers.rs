@@ -134,7 +134,7 @@ pub struct CosmosRequestHeaders {
     /// (`x-ms-max-item-count`).
     ///
     /// Applies to feed-style operations such as queries and read-feed.
-    pub max_item_count: Option<u32>,
+    pub max_server_item_count: Option<u32>,
 }
 
 impl CosmosRequestHeaders {
@@ -192,7 +192,7 @@ impl CosmosRequestHeaders {
                 },
             );
         }
-        if let Some(max_item_count) = self.max_item_count {
+        if let Some(max_item_count) = self.max_server_item_count {
             headers.insert(
                 request_header_names::MAX_ITEM_COUNT,
                 HeaderValue::from(max_item_count.to_string()),
@@ -786,7 +786,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
-            max_item_count: None,
+            max_server_item_count: None,
         };
 
         assert_eq!(
@@ -808,7 +808,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
-            max_item_count: None,
+            max_server_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -833,7 +833,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
-            max_item_count: None,
+            max_server_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -858,7 +858,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
-            max_item_count: None,
+            max_server_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -883,7 +883,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
-            max_item_count: None,
+            max_server_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -908,7 +908,7 @@ mod tests {
             offer_throughput: None,
             offer_autopilot_settings: None,
             supported_query_features: None,
-            max_item_count: None,
+            max_server_item_count: None,
         };
         let mut headers = Headers::new();
 
@@ -934,7 +934,7 @@ mod tests {
     #[test]
     fn write_to_headers_emits_max_item_count() {
         let cosmos_headers = CosmosRequestHeaders {
-            max_item_count: Some(7),
+            max_server_item_count: Some(7),
             ..Default::default()
         };
         let mut headers = Headers::new();

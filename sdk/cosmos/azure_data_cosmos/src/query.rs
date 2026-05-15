@@ -13,6 +13,7 @@ use serde::Serialize;
 /// Queries that cross physical partition boundaries require the client to fan out the query to
 /// multiple partitions and aggregate the results, which can be expensive and slow for large datasets.
 #[derive(Clone)]
+#[non_exhaustive]
 pub enum FeedScope {
     Partition(PartitionKey),
     Range(FeedRange),

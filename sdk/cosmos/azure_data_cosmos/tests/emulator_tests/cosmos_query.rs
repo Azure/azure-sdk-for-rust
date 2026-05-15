@@ -51,7 +51,7 @@ where
     let build_options = || -> QueryOptions {
         let mut o = QueryOptions::default();
         if let Some(max_item_count) = options.max_item_count {
-            o = o.with_max_item_count(max_item_count);
+            o = o.with_max_server_item_count(max_item_count);
         }
         o
     };
@@ -630,7 +630,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
                 .query_items::<MockItem>(
                     "select * from c",
                     scope.clone(),
-                    Some(QueryOptions::default().with_max_item_count(1)),
+                    Some(QueryOptions::default().with_max_server_item_count(1)),
                 )
                 .await?
                 .into_pages();
@@ -693,7 +693,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             let mut continuation = Some(ContinuationToken::from_string(server_token));
             let mut page_count: usize = 1;
             loop {
-                let mut options = QueryOptions::default().with_max_item_count(1);
+                let mut options = QueryOptions::default().with_max_server_item_count(1);
                 if let Some(t) = continuation.take() {
                     options = options.with_continuation_token(t);
                 }
