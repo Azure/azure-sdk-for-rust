@@ -20,17 +20,17 @@
 
 - Added `#[non_exhaustive]` to `UserAssignedId`.
 
-## 0.34.0 (2026-04-08)
-
-### Other Changes
-
-- Upgraded dependencies
-
 ## 0.35.0 (2026-04-022)
 
 ### Other Changes
 
 - Updated dependencies.
+
+## 0.34.0 (2026-04-08)
+
+### Other Changes
+
+- Upgraded dependencies
 
 ## 0.33.0 (2026-03-09)
 

@@ -40,7 +40,7 @@ $cargoAuditVersionParams = Get-VersionParamsFromCgManifest cargo-audit
 Invoke-LoggedCommand "cargo install cargo-audit --locked $($cargoAuditVersionParams -join ' ')" -GroupOutput
 Invoke-LoggedCommand "cargo audit" -GroupOutput
 
-Invoke-LoggedCommand "cargo check --package azure_core $packageArgs --all-features --all-targets --keep-going" -GroupOutput
+Invoke-LoggedCommand "cargo check --manifest-path sdk/core/azure_core/Cargo.toml $packageArgs --all-features --all-targets --keep-going" -GroupOutput
 
 Invoke-LoggedCommand "cargo fmt $packageArgs -- --check" -GroupOutput
 
@@ -133,7 +133,7 @@ if (!$SkipPackageAnalysis) {
     Invoke-LoggedCommand "&$verifyKeywordsScript $packageManifestPath" -GroupOutput
 
     if ($Toolchain -eq 'nightly') {
-      Invoke-LoggedCommand "cargo +nightly docs-rs --package $($package.Name)" -GroupOutput
+      Invoke-LoggedCommand "cargo +nightly docs-rs --manifest-path $packageManifestPath" -GroupOutput
     }
 
     if ($checkApiSupersetCrates -contains $package.Name) {

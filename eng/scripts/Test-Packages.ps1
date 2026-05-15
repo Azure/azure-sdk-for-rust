@@ -102,8 +102,9 @@ foreach ($package in $packagesToTest) {
     -PackageName $package.Name `
     -OutputFile $allTargetsOutput
 
+  $manifestPath = [System.IO.Path]::Combine($packageDirectory, 'Cargo.toml')
   Invoke-LoggedCommand `
-    "cargo test --benches --package $($package.Name) --all-features --no-fail-fast" `
+    "cargo test --benches --manifest-path $manifestPath --all-features --no-fail-fast" `
     -GroupOutput
 
   $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
