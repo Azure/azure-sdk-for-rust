@@ -130,6 +130,15 @@ struct PerfTestOutputs {
     pub average_memory_use: Option<f64>,
 }
 
+/// Per-operation latency result matching the PerfAutomation JSON format.
+#[derive(Serialize)]
+struct OperationResult {
+    #[serde(rename = "Time")]
+    time: f64,
+    #[serde(rename = "Size")]
+    size: i64,
+}
+
 #[derive(Debug, Clone)]
 struct PerfRunnerOptions {
     no_cleanup: bool,
@@ -140,13 +149,14 @@ struct PerfRunnerOptions {
     disable_progress: bool,
     latency: bool,
     test_results_filename: String,
+    results_file: String,
 }
 
 impl Display for PerfRunnerOptions {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "PerfRunnerOptions {{ no_cleanup: {}, iterations: {}, parallel: {}, duration: {}, warmup: {}, disable_progress: {}, latency: {}, test_results_filename: '{}' }}",
+            "PerfRunnerOptions {{ no_cleanup: {}, iterations: {}, parallel: {}, duration: {}, warmup: {}, disable_progress: {}, latency: {}, test_results_filename: '{}', results_file: '{}' }}",
             self.no_cleanup,
             self.iterations,
             self.parallel,
@@ -154,7 +164,8 @@ impl Display for PerfRunnerOptions {
             self.warmup,
             self.disable_progress,
             self.latency,
-            self.test_results_filename
+            self.test_results_filename,
+            self.results_file
         )
     }
 }
@@ -183,6 +194,10 @@ impl From<&ArgMatches> for PerfRunnerOptions {
                 .get_one::<String>("test-results")
                 .expect("defaulted by clap")
                 .to_string(),
+            results_file: matches
+                .get_one::<String>("results-file")
+                .cloned()
+                .unwrap_or_default(),
         }
     }
 }
@@ -395,7 +410,33 @@ impl PerfRunner {
                 )
                 .await?;
             if self.options.latency {
-                Self::print_latencies("Latency Distribution", latencies);
+                Self::print_latencies("Latency Distribution", latencies.clone());
+
+                if !self.options.results_file.is_empty() {
+                    // Detect size from the selected test's subcommand args, defaulting to -1.
+                    let size: i64 = self
+                        .try_get_test_arg::<usize>("size")
+                        .ok()
+                        .flatten()
+                        .map(|s| s as i64)
+                        .unwrap_or(-1);
+
+                    let results: Vec<OperationResult> = latencies
+                        .iter()
+                        .map(|l| OperationResult {
+                            time: l.as_secs_f64() * 1000.0,
+                            size,
+                        })
+                        .collect();
+
+                    let json = serde_json::to_string_pretty(&results).with_context(
+                        ErrorKind::DataConversion,
+                        "Failed to serialize latency results to JSON.",
+                    )?;
+
+                    std::fs::write(&self.options.results_file, json)
+                        .with_context(ErrorKind::Io, "Failed to write latency results to file.")?;
+                }
             }
             if !self.options.no_cleanup {
                 println!("========== Starting test cleanup ==========");
@@ -618,6 +659,11 @@ impl PerfRunner {
             .required(false).global(true))
             .arg(clap::arg!(-l --latency "Track and print per-operation latency statistics")
             .required(false).global(true))
+            .arg(
+                clap::arg!(--"results-file" <FILE> "File path to store per-operation latency results (requires --latency)")
+                    .required(false)
+                    .global(true),
+            )
         ;
         for test in tests {
             let mut subcommand = clap::Command::new(test.name).about(test.description);
