@@ -13,8 +13,9 @@ use crate::{
         CosmosEndpoint, LocationStateStore,
     },
     models::{
-        AccountEndpoint, AccountReference, ActivityId, ContainerProperties, ContainerReference,
-        CosmosOperation, DatabaseProperties, DatabaseReference, ResourceType,
+        effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
+        ActivityId, ContainerProperties, ContainerReference, CosmosOperation, DatabaseProperties,
+        DatabaseReference, PartitionKey, ResourceType,
     },
     options::{
         ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
@@ -1358,6 +1359,89 @@ impl CosmosDriver {
             .await?;
 
         Ok(resolved.as_ref().clone())
+    }
+
+    /// Returns all partition key ranges for a container, ordered by min EPK.
+    ///
+    /// Uses the driver's internal `PartitionKeyRangeCache`. When `force_refresh`
+    /// is `true`, the cached routing map is refreshed from the service before
+    /// returning results. Returns `None` if the routing map cannot be resolved.
+    pub async fn resolve_all_partition_key_ranges(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+        let routing_map = self
+            .pk_range_cache
+            .try_lookup(container, force_refresh, |c, cont| {
+                Box::pin(self.fetch_pk_ranges_from_service(c, cont))
+            })
+            .await?;
+
+        let ranges = routing_map.ranges();
+        if ranges.is_empty() {
+            // A valid container always has at least one partition key range.
+            // An empty routing map indicates a service/parse failure.
+            return None;
+        }
+        Some(ranges.to_vec())
+    }
+
+    /// Returns the partition key ranges covering the given partition key.
+    ///
+    /// Handles both full keys (single range via point lookup) and prefix keys
+    /// on MultiHash containers (multiple ranges via overlapping range lookup).
+    ///
+    /// Returns `None` if the partition key is empty or the routing map cannot
+    /// be resolved. When `force_refresh` is `true`, the cached routing map is
+    /// refreshed from the service before lookup.
+    pub async fn resolve_partition_key_ranges_for_key(
+        &self,
+        container: &ContainerReference,
+        partition_key: &PartitionKey,
+        force_refresh: bool,
+    ) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+        if partition_key.is_empty() {
+            return None;
+        }
+
+        let pk_def = container.partition_key_definition();
+        let epk_range = match EffectivePartitionKey::compute_range(partition_key.values(), pk_def) {
+            Ok(range) => range,
+            Err(e) => {
+                tracing::warn!("EPK computation failed for partition key: {e}");
+                return None;
+            }
+        };
+
+        if epk_range.start == epk_range.end {
+            // Full key — point lookup
+            let routing_map = self
+                .pk_range_cache
+                .try_lookup(container, force_refresh, |c, cont| {
+                    Box::pin(self.fetch_pk_ranges_from_service(c, cont))
+                })
+                .await?;
+            if routing_map.ranges().is_empty() {
+                return None;
+            }
+            Some(
+                routing_map
+                    .get_range_by_effective_partition_key(&epk_range.start)
+                    .cloned()
+                    .map_or_else(Vec::new, |r| vec![r]),
+            )
+        } else {
+            // Prefix key — overlapping range lookup
+            self.pk_range_cache
+                .resolve_overlapping_ranges(
+                    container,
+                    &epk_range.start..&epk_range.end,
+                    force_refresh,
+                    |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
+                )
+                .await
+        }
     }
 }
 

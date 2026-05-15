@@ -119,7 +119,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_fault_injection_rules(rules)
+            .with_fault_injection_rules(rules)?
             .build()
             .await?;
 
@@ -211,7 +211,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_fault_injection_rules(rules)
+            .with_fault_injection_rules(rules)?
             .with_operation_options(operation_options)
             .build()
             .await?;
@@ -300,7 +300,8 @@ impl DriverTestRunContext {
             .await?;
 
         // Check for success status (201 Created)
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to create database, status: {:?}", status).into());
         }
@@ -329,7 +330,8 @@ impl DriverTestRunContext {
             .await?;
 
         // Check for success status (204 No Content)
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to delete database, status: {:?}", status).into());
         }
@@ -362,7 +364,8 @@ impl DriverTestRunContext {
             .await?;
 
         // Check for success status (201 Created)
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to create container, status: {:?}", status).into());
         }

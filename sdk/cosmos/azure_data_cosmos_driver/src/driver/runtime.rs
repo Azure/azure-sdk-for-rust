@@ -427,7 +427,11 @@ pub struct CosmosDriverRuntimeBuilder {
     cpu_refresh_interval: Option<Duration>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
-    #[cfg(any(test, feature = "__internal_mocking"))]
+    #[cfg(any(
+        test,
+        feature = "__internal_in_memory_emulator",
+        feature = "__internal_mocking"
+    ))]
     http_client_factory: Option<Arc<dyn HttpClientFactory>>,
 }
 
@@ -512,7 +516,7 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    #[cfg(test)]
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
     pub(crate) fn with_http_client_factory(mut self, factory: Arc<dyn HttpClientFactory>) -> Self {
         self.http_client_factory = Some(factory);
         self
@@ -590,13 +594,56 @@ impl CosmosDriverRuntimeBuilder {
     /// When set, all HTTP clients created by the transport layer will
     /// evaluate these rules before delegating to the real transport
     /// (per Transport Pipeline Spec §7).
+    /// Appends the supplied rules to any rules already configured on this
+    /// builder (additive). Calling this multiple times accumulates rules in
+    /// insertion order. Mirrors the additive semantics of
+    /// [`Self::register_throughput_control_group`] so callers that compose a
+    /// runtime builder from multiple sources (e.g. the
+    /// `azure_data_cosmos::CosmosClientBuilder` adding its own rules on top of
+    /// a user-supplied builder) do not silently lose previously-configured
+    /// rules.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` when any rule's `id` collides with another rule already
+    /// configured on this builder, or with another rule in the same call.
+    /// Rule ids identify a fault injection rule across reconfigure /
+    /// disable / re-enable operations, so silently keeping one of two rules
+    /// with the same id would surface as "my fault injection didn't fire"
+    /// long after the duplicate was introduced — and depend on insertion
+    /// order. Surfacing the collision at builder time keeps the failure
+    /// local to the misconfiguration.
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection_rules(
         mut self,
         rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
-    ) -> Self {
-        self.fault_injection_rules = Some(rules);
-        self
+    ) -> azure_core::Result<Self> {
+        if rules.is_empty() {
+            return Ok(self);
+        }
+
+        // Build the set of ids already present so collisions across both
+        // (existing-vs-new) and (new-vs-new) are caught in one pass.
+        let mut seen: std::collections::HashSet<String> = self
+            .fault_injection_rules
+            .as_ref()
+            .map(|existing| existing.iter().map(|r| r.id().to_string()).collect())
+            .unwrap_or_default();
+
+        for rule in &rules {
+            if !seen.insert(rule.id().to_string()) {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    format!("duplicate fault injection rule id: {}", rule.id()),
+                ));
+            }
+        }
+
+        match &mut self.fault_injection_rules {
+            Some(existing) => existing.extend(rules),
+            None => self.fault_injection_rules = Some(rules),
+        }
+        Ok(self)
     }
 
     /// Builds the [`CosmosDriverRuntime`].
@@ -630,13 +677,21 @@ impl CosmosDriverRuntimeBuilder {
         let mut fault_injection_enabled = false;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             let base_factory: Arc<dyn HttpClientFactory> = {
-                #[cfg(any(test, feature = "__internal_mocking"))]
+                #[cfg(any(
+                    test,
+                    feature = "__internal_in_memory_emulator",
+                    feature = "__internal_mocking"
+                ))]
                 {
                     self.http_client_factory
                         .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
                 }
 
-                #[cfg(not(any(test, feature = "__internal_mocking")))]
+                #[cfg(not(any(
+                    test,
+                    feature = "__internal_in_memory_emulator",
+                    feature = "__internal_mocking"
+                )))]
                 {
                     Arc::new(DefaultHttpClientFactory::new())
                 }
@@ -743,5 +798,54 @@ mod tests {
             .expect_err("failed initialization should not poison the driver registry");
         assert!(!second_error.to_string().is_empty());
         assert!(runtime.driver_registry.read().unwrap().is_empty());
+    }
+
+    /// Verifies that the user-agent suffix set on the runtime appears in the
+    /// `User-Agent` HTTP header that the driver attaches to outgoing requests.
+    ///
+    /// This mirrors how `fetch_account_properties_with_runtime` (and other
+    /// driver internals) build the header value: they call
+    /// `runtime.user_agent().as_str()` and pass it to `apply_cosmos_headers`.
+    ///
+    /// Coverage for `runtime.user_agent().suffix()` itself is provided by
+    /// `cosmos_driver::tests::user_agent_computed_from_suffix`; this test
+    /// covers the additional hop into the request headers, which is otherwise
+    /// untested.
+    #[tokio::test]
+    async fn user_agent_suffix_appears_in_request_headers() {
+        use crate::driver::transport::{
+            cosmos_headers::apply_cosmos_headers, cosmos_transport_client::HttpRequest,
+        };
+        use azure_core::http::headers::{HeaderValue, Headers, USER_AGENT};
+        use azure_core::http::Method;
+
+        let suffix = UserAgentSuffix::try_new("test-app").expect("valid suffix");
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_user_agent_suffix(suffix)
+            .build()
+            .await
+            .unwrap();
+
+        // Replicate the header construction used in driver request paths.
+        let user_agent_hv = HeaderValue::from(runtime.user_agent().as_str().to_owned());
+        let mut request = HttpRequest {
+            url: Url::parse("https://test.documents.azure.com/").unwrap(),
+            method: Method::Get,
+            headers: Headers::new(),
+            body: None,
+            timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
+        };
+        apply_cosmos_headers(&mut request, &user_agent_hv);
+
+        let header_value = request
+            .headers
+            .get_optional_str(&USER_AGENT)
+            .expect("User-Agent header should be set by apply_cosmos_headers");
+        assert!(
+            header_value.contains("test-app"),
+            "User-Agent header '{header_value}' should contain the suffix 'test-app'"
+        );
     }
 }

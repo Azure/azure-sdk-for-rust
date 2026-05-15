@@ -6,7 +6,14 @@
 
 ### Breaking Changes
 
+- Removed the `request_url()` accessor (gated on the `fault_injection` feature) from `ItemResponse`/`ResourceResponse`/`BatchResponse`. Driver-routed operations never populated it, so it always returned `None` in current usage.
+- `CosmosClientBuilder::with_user_agent_suffix` (and `CosmosClientOptions::with_user_agent_suffix`) now take `UserAgentSuffix` instead of `impl Into<String>`. Callers passing a `&str` or `String` must construct the value explicitly via `UserAgentSuffix::new` (panics on invalid input) or `UserAgentSuffix::try_new` (returns `Option`). Validation rules (max 25 characters, HTTP-header-safe) are now enforced at the construction site instead of being applied silently inside the builder. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
+- Replaced `CosmosDiagnostics` with `CosmosDiagnosticsContext` (a re-export of `azure_data_cosmos_driver::diagnostics::DiagnosticsContext`). All response types now return `Arc<CosmosDiagnosticsContext>` from `diagnostics()` (the returned `Arc` derefs transparently to `CosmosDiagnosticsContext` for read-only inspection, and can be retained alongside a consumed response body). The previous `activity_id() -> Option<&str>` and `server_duration_ms() -> Option<f64>` accessors on `CosmosDiagnostics` are replaced by `CosmosDiagnosticsContext::activity_id() -> &ActivityId` and per-request server timing via `CosmosDiagnosticsContext::requests()[i].server_duration_ms()`.
+- Removed `azure_data_cosmos::constants::SubStatusCode` and its `new`/`value`/`from_header_value`/`From`/`Display`/`Debug` API. The SDK no longer maintains a parallel sub-status-code type — fault-injection (the only remaining consumer) now uses `azure_data_cosmos_driver::models::SubStatusCode` directly. Callers that referenced the SDK type should switch to the driver re-export.
+
 ### Bugs Fixed
+
+- Fixed `CosmosClientBuilder::with_user_agent_suffix` not propagating the suffix to data-plane requests. The suffix was only applied to the SDK's account-metadata pipeline; requests issued through the driver transport pipeline (the vast majority of operations) had a `User-Agent` header without the configured suffix. The suffix is now forwarded to `CosmosDriverRuntimeBuilder` so it appears on every outgoing request. ([#4368](https://github.com/Azure/azure-sdk-for-rust/pull/4368))
 
 ### Other Changes
 

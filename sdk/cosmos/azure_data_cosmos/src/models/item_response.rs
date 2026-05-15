@@ -3,7 +3,9 @@
 
 //! Provides the [`ItemResponse`] type for point item operation responses.
 
-use crate::models::{CosmosDiagnostics, CosmosResponse};
+use std::sync::Arc;
+
+use crate::models::{CosmosDiagnosticsContext, CosmosResponse};
 use crate::SessionToken;
 use azure_core::http::{headers::Headers, response::ResponseBody, Etag, StatusCode};
 use serde::de::DeserializeOwned;
@@ -43,14 +45,6 @@ impl<T> ItemResponse<T> {
         self.response.headers()
     }
 
-    /// Returns the final request URL used to fulfill the operation.
-    /// Returns `None` for driver-routed operations.
-    /// This api is subject to change without a major version bump.
-    #[cfg(feature = "fault_injection")]
-    pub fn request_url(&self) -> Option<azure_core::http::Url> {
-        self.response.request_url()
-    }
-
     /// Consumes the response and returns the response body.
     pub fn into_body(self) -> ResponseBody {
         self.response.into_body()
@@ -67,7 +61,11 @@ impl<T> ItemResponse<T> {
     }
 
     /// Returns the diagnostics for this operation.
-    pub fn diagnostics(&self) -> &CosmosDiagnostics {
+    ///
+    /// The returned [`CosmosDiagnosticsContext`] surfaces the full per-operation
+    /// diagnostics produced by the driver pipeline (request tracking, retries,
+    /// regions contacted, RU charges, status, etc.).
+    pub fn diagnostics(&self) -> Arc<CosmosDiagnosticsContext> {
         self.response.diagnostics()
     }
 

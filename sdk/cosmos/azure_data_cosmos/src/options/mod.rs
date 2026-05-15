@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 use crate::models::ThroughputProperties;
-use azure_core::http::headers::Headers;
 use std::fmt;
 use std::fmt::Display;
 
@@ -15,7 +14,7 @@ pub use azure_data_cosmos_driver::models::{
 pub use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
     OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
-    ThroughputControlGroupOptions,
+    ThroughputControlGroupOptions, UserAgentSuffix,
 };
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
@@ -29,33 +28,19 @@ pub struct CosmosClientOptions {
     /// Default [`OperationOptions`] applied to all requests made by this client,
     /// unless overridden by per-request options.
     pub(crate) operation: OperationOptions,
-    pub(crate) user_agent_suffix: Option<String>,
+    pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
     pub(crate) application_region: Option<Region>,
 }
 
 impl CosmosClientOptions {
-    pub fn with_user_agent_suffix(mut self, suffix: impl Into<String>) -> Self {
-        self.user_agent_suffix = Some(suffix.into());
+    pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
+        self.user_agent_suffix = Some(suffix);
         self
     }
 
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
         self
-    }
-
-    // Temporary: extracts custom headers from the embedded OperationOptions and
-    // applies them to the HTTP request. Will be removed when operations use the
-    // internal pipeline directly.
-    pub(crate) fn apply_headers(&self, headers: &mut Headers) {
-        if let Some(custom_headers) = self.operation.custom_headers() {
-            for (header_name, header_value) in custom_headers {
-                // Only insert if not already set — SDK/request headers take priority.
-                if headers.get_optional_str(header_name).is_none() {
-                    headers.insert(header_name.clone(), header_value.clone());
-                }
-            }
-        }
     }
 }
 
@@ -314,46 +299,5 @@ impl ReadFeedRangesOptions {
 
     pub(crate) fn force_refresh(&self) -> bool {
         self.force_refresh
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use azure_core::http::headers::{HeaderName, HeaderValue};
-    use std::collections::HashMap;
-
-    fn headers_to_map<I>(headers: I) -> HashMap<HeaderName, HeaderValue>
-    where
-        I: IntoIterator<Item = (HeaderName, HeaderValue)>,
-    {
-        headers.into_iter().collect()
-    }
-
-    #[test]
-    fn client_options_as_headers() {
-        let mut custom_headers = HashMap::new();
-        custom_headers.insert(
-            HeaderName::from_static("x-custom-header"),
-            HeaderValue::from_static("custom_value"),
-        );
-
-        let operation = OperationOptions::default().with_custom_headers(custom_headers);
-
-        let client_options = CosmosClientOptions {
-            operation,
-            ..Default::default()
-        };
-
-        let mut headers_result = Headers::new();
-        client_options.apply_headers(&mut headers_result);
-
-        let headers_expected: Vec<(HeaderName, HeaderValue)> =
-            vec![("x-custom-header".into(), "custom_value".into())];
-
-        assert_eq!(
-            headers_to_map(headers_result),
-            headers_to_map(headers_expected)
-        );
     }
 }

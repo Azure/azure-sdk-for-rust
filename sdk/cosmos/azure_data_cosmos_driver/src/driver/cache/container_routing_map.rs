@@ -348,22 +348,9 @@ mod tests {
         max_exclusive: &str,
         parents: Option<Vec<String>>,
     ) -> PartitionKeyRange {
-        PartitionKeyRange {
-            id: id.into(),
-            resource_id: None,
-            self_link: None,
-            etag: None,
-            timestamp: None,
-            min_inclusive: min_inclusive.into(),
-            max_exclusive: max_exclusive.into(),
-            rid_prefix: None,
-            throughput_fraction: 0.0,
-            target_throughput: None,
-            status: Default::default(),
-            lsn: 0,
-            parents,
-            owned_archival_pk_range_ids: None,
-        }
+        let mut r = PartitionKeyRange::new(id.into(), min_inclusive, max_exclusive);
+        r.parents = parents;
+        r
     }
 
     fn single_range() -> Vec<PartitionKeyRange> {
@@ -617,6 +604,96 @@ mod tests {
 
         let result = map.try_combine(new_ranges, Some("etag".into()));
         assert!(matches!(result, Err(RoutingMapError::OverlappingRanges)));
+    }
+
+    /// Builds a range with an explicit lifecycle status. Used by the
+    /// `highest_non_offline_pk_range_id` regression tests below; not exposed
+    /// through the slim `PartitionKeyRange::new` API because production
+    /// callers should not be hand-stamping `status`.
+    fn make_range_with_status(
+        id: &str,
+        min_inclusive: &str,
+        max_exclusive: &str,
+        parents: Option<Vec<String>>,
+        status: PartitionKeyRangeStatus,
+    ) -> PartitionKeyRange {
+        let mut r = PartitionKeyRange::new(id.into(), min_inclusive, max_exclusive);
+        r.parents = parents;
+        r.status = status;
+        r
+    }
+
+    #[test]
+    fn highest_non_offline_pk_range_id_picks_max_online_id() {
+        // Three online ranges, ids "1", "2", "3" — highest should be 3.
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(map.highest_non_offline_pk_range_id(), 3);
+    }
+
+    /// Regression guard: when an incremental change-feed merge re-publishes
+    /// an existing range with `status = Offline`, the cached
+    /// `highest_non_offline_pk_range_id` must be recomputed from the merged
+    /// view (not stay pinned at the pre-merge value). This is the exact
+    /// path that would silently break if we ever stripped `status` without
+    /// a replacement plumbed through `try_combine`.
+    #[test]
+    fn try_combine_online_to_offline_recomputes_highest_non_offline() {
+        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(map.highest_non_offline_pk_range_id(), 3);
+
+        // Service marks range "3" as Offline. Same id/EPK extents, no
+        // parents — this is a status flip, not a split.
+        let new_ranges = vec![make_range_with_status(
+            "3",
+            "7F",
+            "FF",
+            None,
+            PartitionKeyRangeStatus::Offline,
+        )];
+
+        let merged = map
+            .try_combine(new_ranges, Some("etag".into()))
+            .unwrap()
+            .unwrap();
+
+        // Range "3" is still in the routing map (offline ranges are NOT
+        // gone — they're in a transient state and may flip back).
+        assert!(
+            merged.range_by_id.contains_key("3"),
+            "Offline range should remain in the routing map"
+        );
+        // But it must no longer count toward the highest non-offline id.
+        assert_eq!(
+            merged.highest_non_offline_pk_range_id(),
+            2,
+            "Highest non-offline id should drop from 3 to 2 after the status flip"
+        );
+
+        // Recovery path: the same range comes back Online (e.g., after a
+        // planned failover completes). The highest-non-offline id must
+        // bump back to 3 — `validate_and_build_index` recomputes from
+        // scratch on every merge, so this should "just work", but a
+        // future caching-of-highest optimization could silently break it.
+        let recovered_ranges = vec![make_range_with_status(
+            "3",
+            "7F",
+            "FF",
+            None,
+            PartitionKeyRangeStatus::Online,
+        )];
+        let recovered = merged
+            .try_combine(recovered_ranges, Some("etag2".into()))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            recovered.highest_non_offline_pk_range_id(),
+            3,
+            "Highest non-offline id should bump back to 3 after the range recovers"
+        );
     }
 
     // -- Length-aware EPK ordering tests --
