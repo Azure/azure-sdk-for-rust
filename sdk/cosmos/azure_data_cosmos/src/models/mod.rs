@@ -36,6 +36,13 @@ pub use azure_data_cosmos_driver::models::{
 #[doc(inline)]
 pub use azure_data_cosmos_driver::diagnostics::DiagnosticsContext as CosmosDiagnosticsContext;
 
+// Re-export the error-side diagnostics helpers so callers can recover the
+// `CosmosDiagnosticsContext` from a failed operation's `azure_core::Error`.
+#[doc(inline)]
+pub use azure_data_cosmos_driver::diagnostics::{
+    try_extract_diagnostics, ErrorWithDiagnostics,
+};
+
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where
     D: Deserializer<'de>,

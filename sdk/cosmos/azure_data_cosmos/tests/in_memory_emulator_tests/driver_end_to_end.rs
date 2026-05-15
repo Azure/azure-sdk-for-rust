@@ -1628,3 +1628,43 @@ async fn v1_writes_distribute_across_partitions() {
 
     backend.cleanup_real_database(&db_name).await;
 }
+
+/// Asserts that a failed operation's `azure_core::Error` carries the rich
+/// per-operation `DiagnosticsContext` so callers can recover ActivityId,
+/// region, transport shard, and per-attempt event history on the error path.
+#[tokio::test]
+async fn error_carries_extractable_diagnostics() {
+    use azure_data_cosmos::try_extract_diagnostics;
+
+    let (backend, db_name, emu_container, _real_container) = setup_with_container().await;
+
+    let read_missing = backend
+        .emulator_driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk-not-here"),
+                "id-that-does-not-exist",
+            )),
+            OperationOptions::default(),
+        )
+        .await;
+
+    let err = read_missing.expect_err("read of missing item must fail");
+    assert_eq!(
+        err.http_status(),
+        Some(azure_core::http::StatusCode::NotFound),
+        "missing-item read should surface as 404",
+    );
+
+    let diagnostics = try_extract_diagnostics(&err)
+        .expect("error must carry diagnostics context attached by the pipeline");
+
+    let json = diagnostics.to_json_string(None);
+    assert!(
+        json.contains("\"activity_id\""),
+        "diagnostics JSON should include activity_id, got: {json}",
+    );
+
+    backend.cleanup_real_database(&db_name).await;
+}

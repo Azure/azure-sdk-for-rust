@@ -76,6 +76,28 @@ pub(crate) async fn execute_operation_pipeline(
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
 
+    // Helper: when an early-exit error is about to escape the pipeline,
+    // wrap it with the in-progress diagnostics context so callers can
+    // recover the per-attempt history via `try_extract_diagnostics`. The
+    // builder is consumed (it's no longer needed after we return); the
+    // borrow checker is satisfied because every use of this macro occurs
+    // on a diverging branch.
+    macro_rules! return_with_diagnostics {
+        ($err:expr) => {{
+            let ctx = std::sync::Arc::new(diagnostics.complete());
+            return Err(crate::diagnostics::attach_diagnostics($err, ctx));
+        }};
+    }
+
+    macro_rules! try_with_diagnostics {
+        ($expr:expr) => {
+            match $expr {
+                Ok(v) => v,
+                Err(err) => return_with_diagnostics!(err),
+            }
+        };
+    }
+
     // Determine if session consistency is active for this operation.
     let session_capturing_disabled = options
         .session_capturing_disabled()
@@ -183,7 +205,8 @@ pub(crate) async fn execute_operation_pipeline(
                 .flatten(),
             throughput_control,
         };
-        let mut transport_request = build_transport_request(operation, custom_headers, &ctx)?;
+        let mut transport_request =
+            try_with_diagnostics!(build_transport_request(operation, custom_headers, &ctx));
 
         apply_optional_request_headers(&mut transport_request, operation, options);
 
@@ -193,10 +216,12 @@ pub(crate) async fn execute_operation_pipeline(
             "transport request created");
 
         let selected_transport = match pipeline_type {
-            PipelineType::DataPlane => {
-                transport.get_dataplane_transport(account_endpoint, routing.transport_mode)?
+            PipelineType::DataPlane => try_with_diagnostics!(
+                transport.get_dataplane_transport(account_endpoint, routing.transport_mode)
+            ),
+            PipelineType::Metadata => {
+                try_with_diagnostics!(transport.get_metadata_transport(account_endpoint))
             }
-            PipelineType::Metadata => transport.get_metadata_transport(account_endpoint)?,
         };
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
@@ -304,7 +329,11 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                if let Err(err) =
+                    enforce_deadline_or_timeout(deadline, options, &mut diagnostics)
+                {
+                    return_with_diagnostics!(err);
+                }
             }
             OperationAction::SessionRetry { new_state } => {
                 // Retry to a different region — the 404/1002 is likely a
@@ -319,7 +348,11 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                if let Err(err) =
+                    enforce_deadline_or_timeout(deadline, options, &mut diagnostics)
+                {
+                    return_with_diagnostics!(err);
+                }
             }
             OperationAction::Abort { error, status } => {
                 // Flush deferred write-path effects if the abort status
@@ -355,7 +388,7 @@ pub(crate) async fn execute_operation_pipeline(
                         cosmos_status.sub_status(),
                     );
                 }
-                return Err(error);
+                return_with_diagnostics!(error);
             }
         }
     }

@@ -32,6 +32,19 @@ fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
     }
 }
 
+/// Extracts the SDK's per-operation `DiagnosticsContext` from the error (if
+/// the driver attached one) and serializes it as a JSON `Value` so it can be
+/// stored as an ADX `dynamic` column rather than a quoted string.
+///
+/// Returns `None` when the error did not carry diagnostics (e.g. it escaped
+/// the driver pipeline before they were initialized) or when the JSON the
+/// SDK produced is malformed (should never happen — defensive only).
+fn extract_diagnostics_json(error: &azure_core::Error) -> Option<serde_json::Value> {
+    let ctx = azure_data_cosmos::try_extract_diagnostics(error)?;
+    let json_str = ctx.to_json_string(None);
+    serde_json::from_str(json_str).ok()
+}
+
 /// Structured perf result document stored in Cosmos DB for long-term monitoring.
 #[derive(Debug, Serialize)]
 struct PerfResult {
@@ -110,6 +123,13 @@ struct ErrorResult {
     operation: String,
     error_message: String,
     source_message: Option<String>,
+    /// Full per-operation `DiagnosticsContext` JSON (activity_id, region,
+    /// transport shard, per-attempt events, etc.) — populated when the
+    /// driver pipeline attached diagnostics to the error via
+    /// `try_extract_diagnostics`. `None` for errors that escaped the
+    /// pipeline before diagnostics were initialized.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    diagnostics_json: Option<serde_json::Value>,
 }
 
 /// Configuration for a perf test run.
@@ -438,6 +458,7 @@ async fn upsert_error(
         operation: operation.to_string(),
         error_message: format!("{error}"),
         source_message: error_source_chain(error),
+        diagnostics_json: extract_diagnostics_json(error),
     };
     if let Err(e) = container
         .upsert_item(&doc.partition_key, &id, &doc, None)
