@@ -273,10 +273,7 @@ fn test_perf_runner_with_command_line_results_file() {
     );
 
     let runner = result.unwrap();
-    assert_eq!(
-        runner.options.results_file,
-        "/tmp/latency-results.json"
-    );
+    assert_eq!(runner.options.results_file, "/tmp/latency-results.json");
 }
 
 #[test]
