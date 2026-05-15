@@ -154,7 +154,7 @@ where
 ///
 /// ```no_run
 /// # use azure_core::{credentials::TokenCredential, http::Transport};
-/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use azure_core_examples::secrets::{ResourceExt, SecretClient, SecretClientOptions};
 /// # use futures::TryStreamExt;
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
@@ -176,7 +176,7 @@ where
 ///
 /// ```no_run
 /// # use azure_core::{credentials::TokenCredential, http::Transport};
-/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use azure_core_examples::secrets::{ResourceExt, SecretClient, SecretClientOptions};
 /// # use futures::TryStreamExt;
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
@@ -217,6 +217,8 @@ pub struct PagerOptions<'a> {
     /// # Examples
     ///
     /// ``` no_run
+    /// # use azure_core_examples::identity as azure_identity;
+    /// # use azure_core_examples::secrets as azure_security_keyvault_secrets;
     /// use azure_core::http::pager::PagerOptions;
     /// use azure_identity::DeveloperToolsCredential;
     /// use azure_security_keyvault_secrets::{
@@ -280,7 +282,7 @@ impl<'a> Default for PagerOptions<'a> {
 ///
 /// ```no_run
 /// # use azure_core::{credentials::TokenCredential, http::Transport};
-/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use azure_core_examples::secrets::{ResourceExt, SecretClient, SecretClientOptions};
 /// # use futures::TryStreamExt;
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
@@ -302,7 +304,7 @@ impl<'a> Default for PagerOptions<'a> {
 ///
 /// ```no_run
 /// # use azure_core::{credentials::TokenCredential, http::Transport};
-/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use azure_core_examples::secrets::{ResourceExt, SecretClient, SecretClientOptions};
 /// # use futures::TryStreamExt;
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
@@ -478,7 +480,7 @@ where
     ///
     /// ```no_run
     /// # use azure_core::http::pager::PagerOptions;
-    /// # use azure_security_keyvault_secrets::{SecretClient, models::SecretClientListSecretPropertiesOptions};
+    /// # use azure_core_examples::secrets::{models::SecretClientListSecretPropertiesOptions, SecretClient};
     /// # use futures::stream::TryStreamExt;
     /// # #[tokio::main] async fn main() -> azure_core::Result<()> {
     /// # let client: SecretClient = unimplemented!();
@@ -598,7 +600,7 @@ where
 ///
 /// ```no_run
 /// # use azure_core::{credentials::TokenCredential, http::Transport};
-/// # use azure_security_keyvault_secrets::{ResourceExt, SecretClient, SecretClientOptions};
+/// # use azure_core_examples::secrets::{ResourceExt, SecretClient, SecretClientOptions};
 /// # use futures::TryStreamExt;
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
@@ -757,7 +759,7 @@ where
     ///
     /// ```no_run
     /// # use azure_core::http::pager::PagerOptions;
-    /// # use azure_security_keyvault_secrets::{SecretClient, models::SecretClientListSecretPropertiesOptions};
+    /// # use azure_core_examples::secrets::{models::SecretClientListSecretPropertiesOptions, SecretClient};
     /// # use futures::stream::TryStreamExt;
     /// # #[tokio::main] async fn main() -> azure_core::Result<()> {
     /// # let client: SecretClient = unimplemented!();

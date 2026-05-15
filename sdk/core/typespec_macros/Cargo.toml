@@ -27,7 +27,7 @@ cargo_metadata.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
-typespec_client_core = { path = "../typespec_client_core", features = [
+typespec_client_core = { workspace = true, features = [
   "http",
   "json",
   "xml",
