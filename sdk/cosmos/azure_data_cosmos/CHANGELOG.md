@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `ContainerClient::patch_item()` for applying JSON-Patch-style mutations to a single item. Supports `add`/`set`/`replace`/`remove`/`increment`/`move` ops via the new `PatchSpec`/`PatchOp`/`IncrValue` types (re-exported at the crate root). Added `PatchItemOptions` for per-request configuration (`max_attempts`, `session_token`, etc.). The method's rustdoc documents the non-idempotent-under-transport-failure caveat. ([#4386](https://github.com/Azure/azure-sdk-for-rust/pull/4386))
+- Added `ContainerClient::patch_item()` for applying JSON-Patch-style mutations to a single item. Supports `add`/`set`/`replace`/`remove`/`increment`/`move` ops via the new `PatchSpec`/`PatchOp`/`IncrValue` types (re-exported at the crate root). Added `PatchItemOptions` for per-request configuration (`max_attempts`, `session_token`, etc.). `PatchItemOptions` intentionally does not expose a `Precondition` or SQL filter predicate — the driver-side PATCH handler owns the internal `If-Match` end-to-end, and predicate evaluation is out of scope for this preview. The method's rustdoc documents the non-idempotent-under-transport-failure caveat. ([#4386](https://github.com/Azure/azure-sdk-for-rust/pull/4386))
 
 ### Breaking Changes
 

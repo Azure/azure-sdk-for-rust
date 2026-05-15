@@ -28,6 +28,15 @@ normal pipeline stages run.
 
 ```text
 1. Pre-flight validation:
+   - reject any caller-set Precondition on the outer PATCH operation. The
+     handler owns the If-Match precondition on the internal Replace and
+     captures the ETag off the matching Read; honoring a caller-set value
+     would either shadow that ETag (silently breaking the RMW guarantee)
+     or require resolving it against the handler's own ETag (no sensible
+     merge). The SDK wrapper already drops any Precondition before
+     reaching this layer; the guard fail-fasts a driver-level user that
+     constructed `CosmosOperation::patch_item(..).with_precondition(..)`
+     directly.
    - reject ops whose path overlaps any partition-key path (we cannot
      move a document between physical partitions). For MoveOp this
      covers BOTH the source (`from`) and the destination (`path`).
@@ -212,6 +221,12 @@ as a JSON number without precision loss.
   routing/throttling pipeline. The internal Read and Replace ops re-enter
   the pipeline normally, but they are never themselves `Patch`, so there
   is no recursive loop.
+- The handler owns the `If-Match` precondition on the internal Replace.
+  A caller-set `Precondition` on the outer PATCH `CosmosOperation` is
+  rejected by the pre-flight guard before any sub-operation is dispatched.
+  Likewise, the PATCH wire format (`PatchSpec`) has no `condition` field,
+  so a SQL filter predicate (peer SDKs' `FilterPredicate`) cannot be
+  attached to a PATCH request in this preview.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's
   RMW retry is internal and never depends on the global policy.
 - **PATCH is not exactly-once under transport failures.** The internal

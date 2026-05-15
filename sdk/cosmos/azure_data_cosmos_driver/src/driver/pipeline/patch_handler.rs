@@ -6,18 +6,21 @@
 //! See `docs/PATCH_HANDLER_SPEC.md` for the full behavior contract. The
 //! short version:
 //!
-//! 1. Validate the patch spec (no ops that target partition-key paths).
-//! 2. Issue an internal [`OperationType::Read`] for the target item.
-//! 3. Capture the response ETag (refuse to RMW if there isn't one).
-//! 4. Parse the JSON body into a [`serde_json::Value`], apply the ops locally
+//! 1. Reject any caller-set [`Precondition`] on the outer PATCH operation —
+//!    the handler manages `If-Match` internally, so honoring a caller's
+//!    value would silently break the RMW guarantee.
+//! 2. Validate the patch spec (no ops that target partition-key paths).
+//! 3. Issue an internal [`OperationType::Read`] for the target item.
+//! 4. Capture the response ETag (refuse to RMW if there isn't one).
+//! 5. Parse the JSON body into a [`serde_json::Value`], apply the ops locally
 //!    using [`apply_patch_ops`], and re-serialize.
-//! 5. Issue an internal ETag-guarded [`OperationType::Replace`].
-//! 6. On `412 Precondition Failed`, restart from step 2 — up to
+//! 6. Issue an internal ETag-guarded [`OperationType::Replace`].
+//! 7. On `412 Precondition Failed`, restart from step 3 — up to
 //!    `max_attempts` (default 5) total tries. Across attempts the loop
 //!    monotonically advances the session token it threads into the next
 //!    Read so attempt N never observes a strictly older session view than
 //!    attempt N-1.
-//! 7. Synthesize a [`CosmosResponse`] from the locally-merged body plus the
+//! 8. Synthesize a [`CosmosResponse`] from the locally-merged body plus the
 //!    transport headers/status of the final Replace and an aggregated
 //!    [`DiagnosticsContext`] that concatenates every successful sub-op's
 //!    per-request diagnostics — so callers see one PATCH operation = one
@@ -110,7 +113,27 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
 ) -> azure_core::Result<CosmosResponse> {
-    // -- 1. Parse and validate the patch spec --
+    // -- 1. Reject caller-set preconditions --
+    //
+    // PATCH manages its own `If-Match` precondition internally — the handler
+    // captures the current item's ETag on the internal Read and threads it
+    // into the internal Replace. Honoring a caller-set `Precondition` would
+    // either shadow that ETag (silently breaking the RMW guarantees) or
+    // require resolving it against the handler's own ETag (no sensible
+    // merge). The SDK's `ContainerClient::patch_item` already drops any
+    // precondition before reaching this layer; this guard fail-fasts on any
+    // driver-level user that constructed
+    // `CosmosOperation::patch_item(..).with_precondition(..)` directly,
+    // instead of silently ignoring it.
+    if operation.precondition().is_some() {
+        return Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "PATCH does not support caller-set preconditions; \
+             the handler manages If-Match internally",
+        ));
+    }
+
+    // -- 2. Parse and validate the patch spec --
     let body = operation
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchSpec body"))?;
@@ -159,7 +182,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // attempt N-1 already saw.
     let mut effective_session_token = operation.request_headers().session_token.clone();
 
-    // -- 2..6. RMW loop --
+    // -- 3..7. RMW loop --
     let mut last_412: Option<azure_core::Error> = None;
     // Aggregated diagnostics across every successful sub-op the loop
     // dispatches. We hand this to `from_local_body_and_driver_headers`
@@ -1382,6 +1405,36 @@ mod tests {
             "error should mention the empty-ops constraint: {err}"
         );
         assert!(dispatcher.calls().is_empty());
+    }
+
+    #[tokio::test]
+    async fn caller_set_precondition_is_rejected_before_any_sub_op() {
+        // PATCH manages its own If-Match internally — letting a caller-set
+        // precondition through would either shadow the handler's ETag
+        // (silently breaking RMW) or require resolving against it (no
+        // sensible merge). The guard must fail fast before issuing any
+        // sub-operation so a misuse never makes it onto the wire.
+        let dispatcher = ScriptedDispatcher::new(vec![]);
+        let op = patch_op_for(
+            test_item_ref(),
+            vec![PatchOp::set("/x", serde_json::json!(1))],
+        )
+        .with_precondition(Precondition::if_match(ETag::from("\"abc\"")));
+
+        let err = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
+            .await
+            .expect_err("PATCH with caller-set precondition must be rejected");
+
+        let msg = format!("{err}").to_ascii_lowercase();
+        assert!(
+            msg.contains("precondition"),
+            "error should mention the precondition rejection: {err}"
+        );
+        assert!(
+            dispatcher.calls().is_empty(),
+            "precondition rejection must issue zero sub-operations; got: {:?}",
+            dispatcher.calls()
+        );
     }
 
     #[tokio::test]

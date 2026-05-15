@@ -202,8 +202,25 @@ impl ItemWriteOptions {
 ///
 /// The optional [`max_attempts`](Self::max_attempts) field bounds how many
 /// times that loop may retry; `None` falls back to the driver default (5).
-/// PATCH never exposes [`Precondition`] directly — the handler always
-/// manages the IfMatch internally.
+///
+/// # Conditions are not exposed
+///
+/// PATCH intentionally does **not** expose either flavor of "condition" that
+/// peer SDKs surface on their PATCH options:
+///
+/// * **`Precondition` (`If-Match` / `If-None-Match`).** The handler owns the
+///   `If-Match` precondition on the internal Replace and captures the ETag
+///   off the matching Read; honoring a caller-set value would either shadow
+///   that ETag (silently breaking the RMW guarantee) or require resolving
+///   it against the handler's own ETag (no sensible merge). The driver-side
+///   PATCH handler rejects any caller-set precondition with an error before
+///   issuing any sub-operation.
+/// * **SQL filter predicate** (peer SDKs' `FilterPredicate`). Predicate
+///   evaluation requires either native wire-level PATCH (so the server
+///   evaluates the predicate inside the same transaction) or a client-side
+///   SQL subset evaluator; neither is in scope for this preview. The
+///   driver's [`PatchSpec`](crate::PatchSpec) has no `condition` field, so
+///   there is no way to attach a predicate to a PATCH request.
 ///
 /// The session token lives on the dedicated
 /// [`session_token`](Self::session_token) field (mirroring
