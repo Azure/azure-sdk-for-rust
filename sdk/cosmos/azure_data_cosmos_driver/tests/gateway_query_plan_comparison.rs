@@ -137,21 +137,19 @@ async fn fetch_gateway_plan(
 
     // Headers required for a query-plan request are folded in by
     // `CosmosOperation::query_plan` (see #12). We pre-populate the
-    // cross-partition toggle (specific to gateway-comparison tests) and let
-    // the factory merge the four mandatory query-plan headers on top.
-    let mut custom_headers = std::collections::HashMap::new();
-    custom_headers.insert(
-        HeaderName::from("x-ms-documentdb-query-enablecrosspartition"),
-        HeaderValue::from("True"),
-    );
-    let caller_options = OperationOptions::default().with_custom_headers(custom_headers);
+    // cross-partition toggle (specific to gateway-comparison tests) via the
+    // typed request-headers field, and let the factory merge the four
+    // mandatory query-plan headers on top.
+    let caller_options = OperationOptions::default();
     let (operation, op_options) = CosmosOperation::query_plan(container.clone(), caller_options);
-    let operation = operation.with_body(body);
+    let mut request_headers = operation.request_headers().clone();
+    request_headers.enable_cross_partition_query = true;
+    let operation = operation
+        .with_request_headers(request_headers)
+        .with_body(body);
 
     let response = driver.execute_operation(operation, op_options).await?;
-    let body_bytes = response.into_body();
-    serde_json::from_slice(&body_bytes)
-        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))
+    response.into_body().single_item()
 }
 
 /// Compare a locally-generated `queryInfo` JSON object against what the Cosmos DB

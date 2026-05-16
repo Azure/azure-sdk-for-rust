@@ -32,7 +32,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
     VirtualRegion,
 };
-use azure_data_cosmos_driver::models::{ConnectionString, CosmosResponseHeaders};
+use azure_data_cosmos_driver::models::ConnectionString;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use uuid::Uuid;
@@ -63,11 +63,11 @@ struct PaddedTestItem {
 /// Builds a [`ResponseSnapshot`] from an SDK [`ItemResponse`] so the shared
 /// validation framework in [`super::validation`] can be reused.
 fn snapshot_from_item_response<T>(resp: &ItemResponse<T>, label: &str) -> ResponseSnapshot {
-    let headers = CosmosResponseHeaders::from_headers(resp.headers());
+    let headers = resp.headers().clone();
     ResponseSnapshot {
         status_code: u16::from(resp.status()),
-        sub_status_code: headers.substatus.as_ref().map(|s| s.value()),
-        headers,
+        sub_status_code: headers.substatus().map(|s| s.value()),
+        headers: headers.into(),
         body: None, // body comparison handled separately via deserialization
         label: label.to_owned(),
     }
@@ -479,7 +479,10 @@ async fn sdk_create_and_read_item() {
         .await
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
-    assert!(emu_read.etag().is_some(), "emulator read should have etag");
+    assert!(
+        emu_read.headers().etag().is_some(),
+        "emulator read should have etag"
+    );
 
     if let Some(ref real) = real_container {
         let real_read = real
@@ -488,12 +491,12 @@ async fn sdk_create_and_read_item() {
             .unwrap();
         compare_item_responses(&real_read, &emu_read);
 
-        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        let real_doc: TestItem = real_read.into_body().json_single().unwrap();
         assert_eq!(real_doc.id, "sdk-item-1");
         assert_eq!(real_doc.value, 42);
     }
 
-    let emu_doc: TestItem = emu_read.into_body().json().unwrap();
+    let emu_doc: TestItem = emu_read.into_body().json_single().unwrap();
     assert_eq!(emu_doc.id, "sdk-item-1");
     assert_eq!(emu_doc.value, 42);
 
@@ -562,11 +565,11 @@ async fn sdk_replace_item() {
             .unwrap();
         compare_item_responses(&real_replace, &emu_replace);
 
-        let real_doc: TestItem = real_replace.into_body().json().unwrap();
+        let real_doc: TestItem = real_replace.into_body().json_single().unwrap();
         assert_eq!(real_doc.value, 99);
     }
 
-    let emu_doc: TestItem = emu_replace.into_body().json().unwrap();
+    let emu_doc: TestItem = emu_replace.into_body().json_single().unwrap();
     assert_eq!(emu_doc.value, 99);
 
     let emu_read = emu_container
@@ -582,11 +585,11 @@ async fn sdk_replace_item() {
             .unwrap();
         compare_item_responses(&real_read, &emu_read);
 
-        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        let real_doc: TestItem = real_read.into_body().json_single().unwrap();
         assert_eq!(real_doc.value, 99);
     }
 
-    let emu_read_doc: TestItem = emu_read.into_body().json().unwrap();
+    let emu_read_doc: TestItem = emu_read.into_body().json_single().unwrap();
     assert_eq!(emu_read_doc.value, 99);
 
     backend.cleanup_real_database(&db_name).await;
@@ -654,11 +657,11 @@ async fn sdk_upsert_item() {
             .unwrap();
         compare_item_responses(&real_upsert_update, &emu_upsert_update);
 
-        let real_doc: TestItem = real_upsert_update.into_body().json().unwrap();
+        let real_doc: TestItem = real_upsert_update.into_body().json_single().unwrap();
         assert_eq!(real_doc.value, 20);
     }
 
-    let emu_doc: TestItem = emu_upsert_update.into_body().json().unwrap();
+    let emu_doc: TestItem = emu_upsert_update.into_body().json_single().unwrap();
     assert_eq!(emu_doc.value, 20);
 
     let emu_read = emu_container
@@ -674,11 +677,11 @@ async fn sdk_upsert_item() {
             .unwrap();
         compare_item_responses(&real_read, &emu_read);
 
-        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        let real_doc: TestItem = real_read.into_body().json_single().unwrap();
         assert_eq!(real_doc.value, 20);
     }
 
-    let emu_read_doc: TestItem = emu_read.into_body().json().unwrap();
+    let emu_read_doc: TestItem = emu_read.into_body().json_single().unwrap();
     assert_eq!(emu_read_doc.value, 20);
 
     backend.cleanup_real_database(&db_name).await;
@@ -772,12 +775,12 @@ async fn sdk_create_multiple_items_and_read_back() {
             .unwrap();
         assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
-        let emu_doc: TestItem = emu_read.into_body().json().unwrap();
+        let emu_doc: TestItem = emu_read.into_body().json_single().unwrap();
         assert_eq!(emu_doc.value, i);
 
         if let Some(ref real) = real_container {
             let real_read = real.read_item::<TestItem>("pk1", &id, None).await.unwrap();
-            let real_doc: TestItem = real_read.into_body().json().unwrap();
+            let real_doc: TestItem = real_read.into_body().json_single().unwrap();
             assert_eq!(real_doc.value, i);
         }
     }
@@ -864,11 +867,10 @@ async fn sdk_read_with_stale_session_token_returns_error() {
         .create_item("pk1", &seed.id, &seed, Some(write_options_with_content()))
         .await
         .expect("emulator seed create should succeed");
-    let emu_seed_headers = CosmosResponseHeaders::from_headers(emu_seed.headers());
+    let emu_seed_headers = emu_seed.headers().clone();
     let emu_stale_token = make_stale_session_token(
         emu_seed_headers
-            .session_token
-            .as_ref()
+            .session_token()
             .expect("emulator seed create should return a session token")
             .as_str(),
     );
@@ -890,11 +892,10 @@ async fn sdk_read_with_stale_session_token_returns_error() {
             .create_item("pk1", &seed.id, &seed, Some(write_options_with_content()))
             .await
             .expect("real seed create should succeed");
-        let real_seed_headers = CosmosResponseHeaders::from_headers(real_seed.headers());
+        let real_seed_headers = real_seed.headers().clone();
         let real_stale_token = make_stale_session_token(
             real_seed_headers
-                .session_token
-                .as_ref()
+                .session_token()
                 .expect("real seed create should return a session token")
                 .as_str(),
         );
@@ -914,7 +915,7 @@ async fn sdk_read_with_stale_session_token_returns_error() {
                 compare_sdk_errors(&real_err, &emu_err);
             }
             Ok(real_resp) => {
-                let real_doc: TestItem = real_resp.into_body().json().unwrap();
+                let real_doc: TestItem = real_resp.into_body().json_single().unwrap();
                 assert_eq!(real_doc.id, "seed-for-session");
                 assert_eq!(real_doc.pk, "pk1");
             }
@@ -1002,7 +1003,7 @@ async fn sdk_create_retries_after_429_throttling() {
     );
     assert_emulator_item_response(&emu_create, StatusCode::Created);
 
-    let emu_doc: PaddedTestItem = emu_create.into_body().json().unwrap();
+    let emu_doc: PaddedTestItem = emu_create.into_body().json_single().unwrap();
     assert_eq!(emu_doc.value, 42);
     assert_eq!(emu_doc.padding.len(), 8 * 1024);
 
@@ -1012,7 +1013,7 @@ async fn sdk_create_retries_after_429_throttling() {
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
-    let emu_read_doc: PaddedTestItem = emu_read.into_body().json().unwrap();
+    let emu_read_doc: PaddedTestItem = emu_read.into_body().json_single().unwrap();
     assert_eq!(emu_read_doc.value, 42);
     assert_eq!(emu_read_doc.padding.len(), 8 * 1024);
 }
@@ -1165,7 +1166,10 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
 
     // Verify response headers.
-    assert!(emu_read.etag().is_some(), "etag should be present");
+    assert!(
+        emu_read.headers().etag().is_some(),
+        "etag should be present"
+    );
     let snap = snapshot_from_item_response(&emu_read, "emulator");
     assert!(snap.headers.activity_id.is_some(), "activity_id present");
     assert!(snap.headers.etag.is_some(), "etag present");
@@ -1187,7 +1191,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
 
     // Verify typed body.
-    let emu_doc: TestItem = emu_read.into_body().json().unwrap();
+    let emu_doc: TestItem = emu_read.into_body().json_single().unwrap();
     assert_eq!(emu_doc.id, "fi-item");
     assert_eq!(emu_doc.pk, "pk1");
     assert_eq!(emu_doc.value, 42);
@@ -1227,7 +1231,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
             &HeaderValidationSpec::for_point_operation(),
             BodyValidationSpec::DocumentMatch,
         );
-        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        let real_doc: TestItem = real_read.into_body().json_single().unwrap();
         assert_eq!(real_doc.id, "fi-item");
         assert_eq!(real_doc.value, 42);
 

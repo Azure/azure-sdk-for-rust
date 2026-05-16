@@ -7,16 +7,13 @@
 //! replace throughput offers. All operations go through the Cosmos driver.
 
 use crate::{
-    constants,
     feed::FeedBody,
     models::{CosmosResponse, ThroughputProperties},
     Query,
 };
-use azure_core::http::headers::{HeaderValue, CONTENT_TYPE};
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation};
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
-use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Queries the offer for a given resource ID (RID) via the driver.
@@ -32,11 +29,7 @@ pub(crate) async fn find_offer(
     let body = serde_json::to_vec(&query)?;
 
     let operation = CosmosOperation::query_offers(account.clone()).with_body(body);
-
-    let mut headers = HashMap::new();
-    headers.insert(constants::QUERY, HeaderValue::from("True"));
-    headers.insert(CONTENT_TYPE, HeaderValue::from("application/query+json"));
-    let options = OperationOptions::default().with_custom_headers(headers);
+    let options = OperationOptions::default();
 
     let driver_response = driver.execute_operation(operation, options).await?;
     tracing::debug!(
@@ -44,7 +37,7 @@ pub(crate) async fn find_offer(
         request_charge = ?driver_response.headers().request_charge,
         "offer query completed"
     );
-    let feed: FeedBody<ThroughputProperties> = serde_json::from_slice(driver_response.body())?;
+    let feed: FeedBody<ThroughputProperties> = driver_response.into_body().json_single()?;
     Ok(feed.items.into_iter().next())
 }
 
@@ -53,7 +46,7 @@ pub(crate) async fn read_offer_by_id(
     driver: &CosmosDriver,
     account: &AccountReference,
     offer_id: &str,
-) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
+) -> azure_core::Result<CosmosResponse> {
     let operation = CosmosOperation::read_offer(account.clone(), offer_id.to_owned());
     let driver_response = driver
         .execute_operation(operation, OperationOptions::default())

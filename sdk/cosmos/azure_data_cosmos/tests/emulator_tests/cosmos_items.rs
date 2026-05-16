@@ -55,7 +55,7 @@ fn assert_response<T>(
     );
     if read_operation {
         // ETag is only returned on read operations
-        let etag = response.etag();
+        let etag = response.headers().etag();
         assert!(etag.is_some(), "expected etag to be present");
         assert!(
             !etag.unwrap().to_string().is_empty(),
@@ -203,7 +203,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = response.into_body().json()?;
+            let updated_item: TestItem = response.into_body().json_single()?;
             assert_eq!(item, updated_item);
 
             // Delete the item
@@ -410,7 +410,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = upsert_response.into_body().json()?;
+            let updated_item: TestItem = upsert_response.into_body().json_single()?;
             assert_eq!(item, updated_item);
 
             Ok(())
@@ -553,8 +553,9 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Replace item with correct Etag
@@ -647,8 +648,9 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Upsert item with correct Etag
@@ -741,8 +743,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Delete item with correct Etag
@@ -1057,7 +1060,7 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
             );
 
             // Deserialize the body and verify it matches the original item.
-            let created: TestItem = response.into_body().json()?;
+            let created: TestItem = response.into_body().json_single()?;
             assert_eq!(item, created);
 
             Ok(())

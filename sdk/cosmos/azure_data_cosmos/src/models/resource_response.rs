@@ -3,36 +3,41 @@
 
 //! Provides the [`ResourceResponse`] type for resource management operation responses.
 
-use std::sync::Arc;
+use std::{marker::PhantomData, sync::Arc};
 
-use crate::models::{CosmosDiagnosticsContext, CosmosResponse};
+use crate::models::{
+    CosmosResponse, CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders,
+};
 use crate::SessionToken;
-use azure_core::http::{headers::Headers, response::ResponseBody, StatusCode};
 use serde::de::DeserializeOwned;
 
 /// A response from a resource management operation (databases, containers, throughput).
 ///
-/// Provides access to common response metadata.
-/// Currently has no operation-specific fields, but using a dedicated type ensures
-/// future fields can be added without breaking changes.
+/// Provides access to common Cosmos response metadata. Currently has no
+/// operation-specific fields, but using a dedicated type ensures future fields
+/// can be added without breaking changes.
 #[derive(Debug)]
 pub struct ResourceResponse<T> {
-    response: CosmosResponse<T>,
+    response: CosmosResponse,
+    _marker: PhantomData<fn() -> T>,
 }
 
 impl<T> ResourceResponse<T> {
-    pub(crate) fn new(response: CosmosResponse<T>) -> Self {
-        Self { response }
+    pub(crate) fn new(response: CosmosResponse) -> Self {
+        Self {
+            response,
+            _marker: PhantomData,
+        }
     }
 
-    /// Returns the HTTP status code of the response.
-    pub fn status(&self) -> StatusCode {
+    /// Returns the operation status.
+    pub fn status(&self) -> CosmosStatus {
         self.response.status()
     }
 
-    /// Returns a reference to all response headers.
-    pub fn headers(&self) -> &Headers {
-        self.response.headers()
+    /// Returns a reference to the parsed Cosmos-specific response headers.
+    pub fn headers(&self) -> &ResponseHeaders {
+        self.response.cosmos_headers()
     }
 
     /// Consumes the response and returns the response body.
@@ -52,10 +57,10 @@ impl<T> ResourceResponse<T> {
 
     /// Returns the diagnostics for this operation.
     ///
-    /// The returned [`CosmosDiagnosticsContext`] surfaces the full per-operation
+    /// The returned [`DiagnosticsContext`] surfaces the full per-operation
     /// diagnostics produced by the driver pipeline (request tracking, retries,
     /// regions contacted, RU charges, status, etc.).
-    pub fn diagnostics(&self) -> Arc<CosmosDiagnosticsContext> {
+    pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         self.response.diagnostics()
     }
 }
@@ -63,6 +68,6 @@ impl<T> ResourceResponse<T> {
 impl<T: DeserializeOwned> ResourceResponse<T> {
     /// Deserializes the response body into a model type.
     pub fn into_model(self) -> azure_core::Result<T> {
-        self.response.into_model()
+        self.response.into_model::<T>()
     }
 }

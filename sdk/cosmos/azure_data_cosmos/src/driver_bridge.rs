@@ -7,10 +7,7 @@
 //! operation/response types and the SDK's public-facing types. It is the shared
 //! foundation for routing SDK operations through the driver.
 
-use azure_core::{
-    http::{headers::Headers, response::Response, RawResponse, StatusCode},
-    Bytes,
-};
+use azure_core::http::headers::Headers;
 use azure_data_cosmos_driver::models::{CosmosResponse as DriverResponse, CosmosResponseHeaders};
 
 use crate::{
@@ -22,37 +19,26 @@ use crate::{
     models::CosmosResponse,
 };
 
-/// Converts a driver [`DriverResponse`] into the SDK's typed [`CosmosResponse<T>`].
+/// Converts a driver [`DriverResponse`] into the SDK's typed [`CosmosResponse`].
 ///
-/// This reconstructs an `azure_core::Response<T>` from the driver's raw bytes,
-/// status code, and headers, then wraps it in the SDK's response type.
-///
-/// The driver's pre-parsed [`CosmosResponseHeaders`] are passed directly to
-/// avoid double-parsing. Some headers (e.g., `index_metrics`) are base64-decoded
-/// by the driver; re-parsing from raw headers would fail on already-decoded values.
-/// The driver's [`DiagnosticsContext`](azure_data_cosmos_driver::diagnostics::DiagnosticsContext)
-/// is plumbed through unchanged so that all SDK response wrappers expose the
-/// rich per-operation diagnostics produced by the driver pipeline.
-pub(crate) fn driver_response_to_cosmos_response<T>(
+/// The driver-owned body, status, headers, and diagnostics are plumbed through
+/// unchanged — the SDK no longer synthesizes an `azure_core::http::Response<T>`
+/// for its own response wrappers. Headers are already decoded by the driver
+/// (e.g., base64 for index metrics) and are stored as-is.
+pub(crate) fn driver_response_to_cosmos_response(
     driver_response: DriverResponse,
-) -> CosmosResponse<T> {
-    let status_code: StatusCode = driver_response.status().status_code();
-    let cosmos_headers = driver_response.headers().clone();
-    let diagnostics = driver_response.diagnostics();
-    let headers = driver_response_headers_to_headers(&cosmos_headers);
-    let body = driver_response.into_body();
-
-    let raw_response = RawResponse::from_bytes(status_code, headers, Bytes::from(body));
-    let typed_response: Response<T> = raw_response.into();
-
-    CosmosResponse::from_driver_response(typed_response, cosmos_headers, diagnostics)
+) -> CosmosResponse {
+    CosmosResponse::from_driver_response(driver_response)
 }
 
-/// Converts driver [`CosmosResponseHeaders`] into raw [`Headers`] for the SDK response.
+/// Synthesizes raw [`Headers`] from driver-parsed [`CosmosResponseHeaders`].
 ///
-/// Only headers that were parsed by the driver are included. Any "extra" headers
-/// from the server that the driver did not capture are lost.
-fn driver_response_headers_to_headers(cosmos_headers: &CosmosResponseHeaders) -> Headers {
+/// Used by the feed pager path, which still exposes `&Headers` on its public
+/// API. Only headers that were parsed by the driver are included; any "extra"
+/// headers from the server that the driver did not capture are lost.
+pub(crate) fn driver_response_headers_to_headers(
+    cosmos_headers: &CosmosResponseHeaders,
+) -> Headers {
     let mut headers = Headers::new();
 
     if let Some(activity_id) = &cosmos_headers.activity_id {
@@ -295,16 +281,13 @@ mod tests {
 
     /// Regression test: index_metrics (base64-decoded by the driver) must survive
     /// the driver→SDK bridge without double-decoding.
-    ///
-    /// Exercises `CosmosResponse::from_driver_response` which accepts pre-parsed
-    /// headers, ensuring that already-decoded index_metrics are preserved rather
-    /// than being base64-decoded a second time (which would silently return None).
     #[test]
     fn driver_response_preserves_index_metrics() {
-        use crate::feed::{FeedBody, QueryFeedPage};
+        use crate::feed::QueryFeedPage;
         use crate::models::CosmosResponse;
+        use azure_core::http::StatusCode;
         use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
-        use azure_data_cosmos_driver::models::ActivityId;
+        use azure_data_cosmos_driver::models::{ActivityId, CosmosStatus, ResponseBody};
         use std::sync::Arc;
 
         let mut cosmos_headers = CosmosResponseHeaders::new();
@@ -312,29 +295,23 @@ mod tests {
         cosmos_headers.query_metrics =
             Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01".to_string());
 
-        // Build a minimal raw response with synthesized headers (as the bridge does).
-        let raw_headers = driver_response_headers_to_headers(&cosmos_headers);
-        let raw_response = azure_core::http::RawResponse::from_bytes(
-            StatusCode::Ok,
-            raw_headers,
-            Bytes::from_static(br#"{"Documents":[]}"#),
-        );
-        let typed_response: azure_core::http::response::Response<FeedBody<serde_json::Value>> =
-            raw_response.into();
-
-        // This is the code path used by driver_response_to_cosmos_response:
-        // pre-parsed headers are passed directly, skipping re-parsing.
+        let body = ResponseBody::Bytes(azure_core::Bytes::from_static(br#"{"Documents":[]}"#));
+        let status = CosmosStatus::new(StatusCode::Ok);
         let diagnostics = Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid()));
-        let cosmos_response =
-            CosmosResponse::from_driver_response(typed_response, cosmos_headers, diagnostics);
+        let cosmos_response = CosmosResponse::from_driver_parts(
+            body.into(),
+            cosmos_headers.into(),
+            status,
+            diagnostics,
+        );
 
         assert_eq!(
-            cosmos_response.cosmos_headers().index_metrics.as_deref(),
+            cosmos_response.cosmos_headers().index_metrics(),
             Some(r#"{"UtilizedSingleIndexes":[]}"#),
             "index_metrics should survive the driver bridge without double base64-decoding"
         );
         assert_eq!(
-            cosmos_response.cosmos_headers().query_metrics.as_deref(),
+            cosmos_response.cosmos_headers().query_metrics(),
             Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01"),
         );
 

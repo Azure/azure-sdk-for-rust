@@ -728,7 +728,12 @@ impl ContainerClient {
             factory,
             query,
             options.operation,
-            options.session_token,
+            crate::query::QueryExecutorConfig {
+                session_token: options.session_token,
+                populate_index_metrics: options.populate_index_metrics,
+                populate_query_metrics: options.populate_query_metrics,
+                max_item_count: options.max_item_count,
+            },
         )
         .into_stream()
     }

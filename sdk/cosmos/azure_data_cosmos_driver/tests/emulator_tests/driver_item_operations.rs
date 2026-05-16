@@ -75,8 +75,7 @@ pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
             context.validate_data_plane_diagnostics(&read_diagnostics, 200);
 
             // Verify the body matches
-            let body = read_result.body();
-            let read_item: TestItem = serde_json::from_slice(body)?;
+            let read_item: TestItem = read_result.into_body().json_single()?;
             assert_eq!(read_item.id, item.id);
             assert_eq!(read_item.pk, item.pk);
             assert_eq!(read_item.value, item.value);

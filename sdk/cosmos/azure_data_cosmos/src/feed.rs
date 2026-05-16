@@ -13,8 +13,7 @@ use futures::Stream;
 use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::{
-    constants,
-    models::{CosmosDiagnosticsContext, CosmosResponse},
+    models::{CosmosResponse, DiagnosticsContext},
     SessionToken,
 };
 
@@ -41,7 +40,7 @@ pub struct FeedPage<T> {
     headers: CosmosResponseHeaders,
 
     /// Diagnostics for this page.
-    diagnostics: Arc<CosmosDiagnosticsContext>,
+    diagnostics: Arc<DiagnosticsContext>,
 }
 
 impl<T> FeedPage<T> {
@@ -51,7 +50,7 @@ impl<T> FeedPage<T> {
         continuation: Option<String>,
         raw_headers: Headers,
         headers: CosmosResponseHeaders,
-        diagnostics: Arc<CosmosDiagnosticsContext>,
+        diagnostics: Arc<DiagnosticsContext>,
     ) -> Self {
         Self {
             items,
@@ -97,10 +96,10 @@ impl<T> FeedPage<T> {
 
     /// Returns the diagnostics for this page.
     ///
-    /// The returned [`CosmosDiagnosticsContext`] surfaces the full per-operation
+    /// The returned [`DiagnosticsContext`] surfaces the full per-operation
     /// diagnostics produced by the driver pipeline (request tracking, retries,
     /// regions contacted, RU charges, status, etc.).
-    pub fn diagnostics(&self) -> Arc<CosmosDiagnosticsContext> {
+    pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         Arc::clone(&self.diagnostics)
     }
 }
@@ -169,10 +168,10 @@ impl<T> QueryFeedPage<T> {
 
     /// Returns the diagnostics for this page.
     ///
-    /// The returned [`CosmosDiagnosticsContext`] surfaces the full per-operation
+    /// The returned [`DiagnosticsContext`] surfaces the full per-operation
     /// diagnostics produced by the driver pipeline (request tracking, retries,
     /// regions contacted, RU charges, status, etc.).
-    pub fn diagnostics(&self) -> Arc<CosmosDiagnosticsContext> {
+    pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         self.page.diagnostics()
     }
 
@@ -217,15 +216,16 @@ pub(crate) struct FeedBody<T> {
 }
 
 impl<T: DeserializeOwned> QueryFeedPage<T> {
-    pub(crate) async fn from_response(
-        response: CosmosResponse<FeedBody<T>>,
-    ) -> azure_core::Result<Self> {
-        let raw_headers = response.headers().clone();
-        let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
-        let cosmos_headers = response.cosmos_headers().clone();
+    pub(crate) async fn from_response(response: CosmosResponse) -> azure_core::Result<Self> {
+        // Convert once to the driver header struct: this module owns the
+        // FeedPage wire-up and needs every parsed field, so reaching for the
+        // SDK wrapper accessors here would be pure ceremony.
+        let cosmos_headers: CosmosResponseHeaders = response.cosmos_headers().clone().into();
+        let continuation = cosmos_headers.continuation.clone();
         let index_metrics = cosmos_headers.index_metrics.clone();
         let query_metrics = cosmos_headers.query_metrics.clone();
         let diagnostics = response.diagnostics();
+        let raw_headers = crate::driver_bridge::driver_response_headers_to_headers(&cosmos_headers);
         let body: FeedBody<T> = response.into_model()?;
 
         Ok(Self {
@@ -327,7 +327,7 @@ mod tests {
                 continuation,
                 Headers::new(),
                 CosmosResponseHeaders::default(),
-                Arc::new(CosmosDiagnosticsContext::for_testing(ActivityId::new_uuid())),
+                Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid())),
             ),
             index_metrics: None,
             query_metrics: None,

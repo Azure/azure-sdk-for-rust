@@ -49,7 +49,7 @@ pub const EMULATOR_HOST: &str = "127.0.0.1";
 /// successfully retry on the original. Used for failover scenarios where
 /// either landing is valid.
 pub fn assert_region_contacted_with_retry(
-    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    diagnostics: &azure_data_cosmos::DiagnosticsContext,
     expected_region: &Region,
 ) {
     assert!(
@@ -73,7 +73,7 @@ pub fn assert_region_contacted_with_retry(
 /// stay on `expected_region` (the driver may still fail over to an alternate
 /// region after exhausting its local retry budget).
 pub fn assert_local_retry_attempted_on_region(
-    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    diagnostics: &azure_data_cosmos::DiagnosticsContext,
     expected_region: &Region,
 ) {
     let requests = diagnostics.requests();

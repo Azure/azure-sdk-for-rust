@@ -4,6 +4,7 @@
 use crate::models::ThroughputProperties;
 use std::fmt;
 use std::fmt::Display;
+use std::num::NonZeroI32;
 
 // Re-exported types that form part of the azure_data_cosmos public API.
 #[doc(inline)]
@@ -251,6 +252,21 @@ pub struct QueryOptions {
 
     /// Session token for session-consistent queries.
     pub session_token: Option<SessionToken>,
+
+    /// When `true`, request that the service include index utilization metrics
+    /// in the response (`x-ms-cosmos-populateindexmetrics`). The decoded JSON is
+    /// surfaced via `QueryFeedPage::index_metrics()`.
+    pub populate_index_metrics: bool,
+
+    /// When `true`, request that the service include per-query metrics in the
+    /// response (`x-ms-documentdb-populatequerymetrics`). Surfaced via
+    /// `QueryFeedPage::query_metrics()`.
+    pub populate_query_metrics: bool,
+
+    /// Maximum number of items to return per page (`x-ms-max-item-count`).
+    ///
+    /// `None` omits the header (SDK / service uses its default). `NonZeroI32::new(-1).unwrap()` is the documented "server decides" sentinel.
+    pub max_item_count: Option<NonZeroI32>,
 }
 
 impl QueryOptions {
@@ -263,6 +279,27 @@ impl QueryOptions {
     /// Sets the [`OperationOptions`] for this request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
+        self
+    }
+
+    /// Enables or disables index-utilization metric collection for this query.
+    pub fn with_populate_index_metrics(mut self, enable: bool) -> Self {
+        self.populate_index_metrics = enable;
+        self
+    }
+
+    /// Enables or disables per-query metric collection for this query.
+    pub fn with_populate_query_metrics(mut self, enable: bool) -> Self {
+        self.populate_query_metrics = enable;
+        self
+    }
+
+    /// Sets the maximum number of items the service should return per page.
+    ///
+    /// Pass NonZeroI32::new(100).unwrap() for a concrete page size, or
+    /// NonZeroI32::new(-1).unwrap() to ask the service to decide.
+    pub fn with_max_item_count(mut self, max_item_count: NonZeroI32) -> Self {
+        self.max_item_count = Some(max_item_count);
         self
     }
 }

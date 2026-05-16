@@ -20,6 +20,7 @@ use azure_data_cosmos::options::{
     ExcludedRegions, ItemReadOptions, ItemWriteOptions, OperationOptions,
 };
 use azure_data_cosmos::regions::Region;
+use azure_data_cosmos::ResponseHeaders;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
@@ -32,15 +33,24 @@ pub use crate::operations::upsert_item::UpsertItemOperation;
 use crate::seed::SharedItems;
 
 /// `x-ms-request-duration-ms` — server-reported request processing time in
-/// milliseconds (floating-point string).
+/// milliseconds (floating-point string). Used by [`extract_backend_duration_raw`]
+/// for response surfaces that only expose untyped headers (e.g. `FeedPage`).
 const REQUEST_DURATION_MS: HeaderName = HeaderName::from_static("x-ms-request-duration-ms");
 
 /// Extracts the server-reported request duration from a Cosmos response.
 ///
 /// Returns `None` when the header is missing (e.g., on responses served
 /// from cache or when the gateway omitted the diagnostic header) or when
-/// the value cannot be parsed as `f64`.
-pub(crate) fn extract_backend_duration(headers: &Headers) -> Option<Duration> {
+/// the value is non-finite or negative.
+pub(crate) fn extract_backend_duration(headers: &ResponseHeaders) -> Option<Duration> {
+    headers
+        .server_duration_ms()
+        .map(|ms| Duration::from_secs_f64(ms / 1000.0))
+}
+
+/// Variant of [`extract_backend_duration`] for response surfaces that only
+/// expose raw [`Headers`] (e.g. `FeedPage`).
+pub(crate) fn extract_backend_duration_raw(headers: &Headers) -> Option<Duration> {
     headers
         .get_optional_str(&REQUEST_DURATION_MS)
         .and_then(|s| s.parse::<f64>().ok())
