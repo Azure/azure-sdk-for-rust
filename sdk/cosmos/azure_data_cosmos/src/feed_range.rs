@@ -14,7 +14,7 @@
 //!
 //! ```rust,no_run
 //! # use azure_data_cosmos::clients::ContainerClient;
-//! # async fn example(container: ContainerClient) -> azure_core::Result<()> {
+//! # async fn example(container: ContainerClient) -> azure_data_cosmos::CosmosResult<()> {
 //! // Get physical partition feed ranges
 //! let ranges = container.read_feed_ranges(None).await?;
 //! println!("Container has {} physical partitions", ranges.len());
@@ -133,12 +133,13 @@ impl FeedRange {
     ///
     /// Partition key ranges from the service always use `[min, max)` semantics
     /// (min inclusive, max exclusive). Returns an error if the range is inverted.
-    pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> azure_core::Result<Self> {
+    pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> crate::CosmosResult<Self> {
         if pkr.min_inclusive > pkr.max_exclusive {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 "partition key range min_inclusive must be <= max_exclusive",
-            ));
+            )
+            .into());
         }
         Ok(Self {
             min_inclusive: EffectivePartitionKey::from(pkr.min_inclusive.as_str()),
@@ -161,12 +162,12 @@ impl FeedRange {
     /// Validates and constructs a `FeedRange` from deserialized JSON fields.
     ///
     /// Checks inclusivity flags and min ≤ max ordering.
-    fn from_json(json: FeedRangeJson) -> azure_core::Result<Self> {
+    fn from_json(json: FeedRangeJson) -> crate::CosmosResult<Self> {
         if !json.range.is_min_inclusive || json.range.is_max_inclusive {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
-            ));
+            ).into());
         }
 
         let min = EffectivePartitionKey::from(json.range.min);
@@ -176,7 +177,8 @@ impl FeedRange {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 "feed range min must be less than or equal to max",
-            ));
+            )
+            .into());
         }
 
         Ok(Self {
@@ -199,7 +201,7 @@ impl fmt::Display for FeedRange {
 }
 
 impl FromStr for FeedRange {
-    type Err = azure_core::Error;
+    type Err = crate::CosmosError;
 
     /// Parses a feed range from a base64-encoded JSON string.
     ///

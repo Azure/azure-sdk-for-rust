@@ -47,7 +47,7 @@ impl DatabaseClient {
     /// # Errors
     ///
     /// Returns an error if the container does not exist or the metadata cannot be resolved.
-    pub async fn container_client(&self, name: &str) -> azure_core::Result<ContainerClient> {
+    pub async fn container_client(&self, name: &str) -> crate::CosmosResult<ContainerClient> {
         ContainerClient::new(self.context.clone(), name, &self.database_id).await
     }
 
@@ -77,7 +77,7 @@ impl DatabaseClient {
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
-    ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
+    ) -> crate::CosmosResult<ResourceResponse<DatabaseProperties>> {
         let operation = CosmosOperation::read_database(self.database_ref.clone());
 
         let driver_response = self
@@ -119,7 +119,7 @@ impl DatabaseClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryContainersOptions>,
-    ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
+    ) -> crate::CosmosResult<FeedItemIterator<ContainerProperties>> {
         let db_ref = DatabaseReference::from_name(
             self.context.driver.account().clone(),
             self.database_id.clone(),
@@ -147,7 +147,7 @@ impl DatabaseClient {
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions>,
-    ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
+    ) -> crate::CosmosResult<ResourceResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&properties)?;
         let mut operation =
@@ -186,7 +186,7 @@ impl DatabaseClient {
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions>,
-    ) -> azure_core::Result<ResourceResponse<()>> {
+    ) -> crate::CosmosResult<ResourceResponse<()>> {
         let operation = CosmosOperation::delete_database(self.database_ref.clone());
 
         let driver_response = self
@@ -210,7 +210,7 @@ impl DatabaseClient {
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<Option<ThroughputProperties>> {
+    ) -> crate::CosmosResult<Option<ThroughputProperties>> {
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
@@ -240,7 +240,7 @@ impl DatabaseClient {
     ///
     /// ```rust,no_run
     /// # use azure_data_cosmos::models::ThroughputProperties;
-    /// # async fn example(db_client: azure_data_cosmos::clients::DatabaseClient) -> azure_core::Result<()> {
+    /// # async fn example(db_client: azure_data_cosmos::clients::DatabaseClient) -> azure_data_cosmos::CosmosResult<()> {
     /// let throughput = db_client
     ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
     ///     .await? // start the replace operation
@@ -253,7 +253,7 @@ impl DatabaseClient {
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<ThroughputPoller> {
+    ) -> crate::CosmosResult<ThroughputPoller> {
         #[allow(
             unused_variables,
             reason = "The 'options' variable may be used in the future"

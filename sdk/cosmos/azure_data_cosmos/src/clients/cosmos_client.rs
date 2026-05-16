@@ -128,7 +128,7 @@ impl CosmosClient {
         &self,
         query: impl Into<Query>,
         _options: Option<QueryDatabasesOptions>,
-    ) -> azure_core::Result<FeedItemIterator<DatabaseProperties>> {
+    ) -> crate::CosmosResult<FeedItemIterator<DatabaseProperties>> {
         let account = self.context.driver.account().clone();
         let factory = move || CosmosOperation::query_databases(account.clone());
 
@@ -154,7 +154,7 @@ impl CosmosClient {
         id: &str,
         #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<CreateDatabaseOptions>,
-    ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
+    ) -> crate::CosmosResult<ResourceResponse<DatabaseProperties>> {
         #[derive(Serialize)]
         struct RequestBody<'a> {
             id: &'a str,

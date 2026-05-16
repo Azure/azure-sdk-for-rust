@@ -104,7 +104,17 @@ impl<T> CosmosResponse<T> {
 
 impl<T: DeserializeOwned> CosmosResponse<T> {
     /// Deserializes the response body into a model type.
-    pub(crate) fn into_model(self) -> azure_core::Result<T> {
-        self.response.into_body().json()
+    ///
+    /// On parse failure, the operation diagnostics are attached to the
+    /// returned [`CosmosError`](crate::CosmosError) so callers can correlate
+    /// the deserialization failure with the underlying HTTP exchange
+    /// (ActivityId, region, status, per-attempt history, etc.).
+    pub(crate) fn into_model(self) -> crate::CosmosResult<T> {
+        let diagnostics = Arc::clone(&self.diagnostics);
+        self.response.into_body().json().map_err(|e| {
+            let azure_err =
+                azure_data_cosmos_driver::diagnostics::attach_diagnostics(e, diagnostics);
+            crate::CosmosError::from(azure_err)
+        })
     }
 }

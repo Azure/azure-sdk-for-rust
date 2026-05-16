@@ -1566,6 +1566,27 @@ impl DiagnosticsContext {
         self.status.as_ref()
     }
 
+    /// Returns the final HTTP status code recorded for the operation
+    /// (after all retries and failovers), if any.
+    ///
+    /// Convenience accessor that lets callers read the status without
+    /// importing the driver's `CosmosStatus` / `StatusCode` types.
+    pub fn status_code(&self) -> Option<u16> {
+        self.status.as_ref().map(|s| u16::from(s.status_code()))
+    }
+
+    /// Returns the Cosmos sub-status code (`x-ms-substatus` response
+    /// header) recorded for the operation, if any.
+    ///
+    /// Convenience accessor that lets callers read the sub-status
+    /// without importing the driver's `SubStatusCode` type.
+    pub fn sub_status(&self) -> Option<u32> {
+        self.status
+            .as_ref()
+            .and_then(|s| s.sub_status())
+            .map(|ss| ss.value())
+    }
+
     /// Returns the total request charge (RU) across all requests.
     pub fn total_request_charge(&self) -> RequestCharge {
         self.requests.iter().map(|r| r.request_charge).sum()

@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::CosmosError;
 use rand::RngExt;
 use serde::Serialize;
 use sysinfo::System;
@@ -32,8 +33,8 @@ fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
     }
 }
 
-/// Extracts the SDK's per-operation `DiagnosticsContext` from the error (if
-/// the driver attached one) and returns:
+/// Extracts the SDK's per-operation diagnostics from the error (if the
+/// driver attached one) and returns:
 /// 1. the full diagnostics serialized as a JSON `Value` (stored as ADX
 ///    `dynamic` rather than a quoted string),
 /// 2. the final HTTP status code (after retries / failovers), and
@@ -43,20 +44,16 @@ fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
 /// (e.g. it escaped the driver pipeline before they were initialized) or
 /// when the JSON the SDK produced is malformed (defensive only).
 fn extract_error_diagnostics(
-    error: &azure_core::Error,
+    error: &CosmosError,
 ) -> (Option<serde_json::Value>, Option<u16>, Option<u32>) {
-    let Some(ctx) = azure_data_cosmos::try_extract_diagnostics(error) else {
-        return (None, None, None);
+    let Some(diagnostics) = error.diagnostics() else {
+        // Even without a diagnostics context, the error itself may carry
+        // an HTTP status code (e.g. credential failures don't go through
+        // the diagnostics pipeline). Surface what we can.
+        return (None, error.status_code(), error.sub_status());
     };
-    let json = serde_json::from_str(ctx.to_json_string(None)).ok();
-    let (status_code, sub_status) = match ctx.status() {
-        Some(s) => (
-            Some(u16::from(s.status_code())),
-            s.sub_status().map(|ss| ss.value()),
-        ),
-        None => (None, None),
-    };
-    (json, status_code, sub_status)
+    let json = serde_json::from_str::<serde_json::Value>(diagnostics.to_json_string(None)).ok();
+    (json, error.status_code(), error.sub_status())
 }
 
 /// Structured perf result document stored in Cosmos DB for long-term monitoring.
@@ -464,7 +461,7 @@ async fn upsert_results(
 async fn upsert_error(
     container: &ContainerClient,
     operation: &str,
-    error: &azure_core::Error,
+    error: &CosmosError,
     workload_id: &str,
     commit_sha: &str,
     hostname: &str,

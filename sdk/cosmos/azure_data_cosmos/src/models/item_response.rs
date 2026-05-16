@@ -84,7 +84,7 @@ impl<T> ItemResponse<T> {
 
 impl<T: DeserializeOwned> ItemResponse<T> {
     /// Deserializes the response body into a model type.
-    pub fn into_model(self) -> azure_core::Result<T> {
+    pub fn into_model(self) -> crate::CosmosResult<T> {
         self.response.into_model()
     }
 }

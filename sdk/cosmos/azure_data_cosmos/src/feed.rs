@@ -219,7 +219,7 @@ pub(crate) struct FeedBody<T> {
 impl<T: DeserializeOwned> QueryFeedPage<T> {
     pub(crate) async fn from_response(
         response: CosmosResponse<FeedBody<T>>,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::CosmosResult<Self> {
         let raw_headers = response.headers().clone();
         let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
         let cosmos_headers = response.cosmos_headers().clone();
@@ -248,14 +248,14 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
 #[pin_project::pin_project]
 pub struct FeedItemIterator<T: Send> {
     #[pin]
-    pages: BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>,
+    pages: BoxStream<'static, crate::CosmosResult<QueryFeedPage<T>>>,
     current: Option<std::vec::IntoIter<T>>,
 }
 
 impl<T: Send> FeedItemIterator<T> {
     /// Creates a new `FeedItemIterator` from a stream of pages.
     pub(crate) fn new(
-        stream: impl Stream<Item = azure_core::Result<QueryFeedPage<T>>> + Send + 'static,
+        stream: impl Stream<Item = crate::CosmosResult<QueryFeedPage<T>>> + Send + 'static,
     ) -> Self {
         Self {
             pages: Box::pin(stream),
@@ -269,7 +269,7 @@ impl<T: Send> FeedItemIterator<T> {
 }
 
 impl<T: Send> Stream for FeedItemIterator<T> {
-    type Item = azure_core::Result<T>;
+    type Item = crate::CosmosResult<T>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -301,10 +301,10 @@ impl<T: Send> Stream for FeedItemIterator<T> {
     }
 }
 
-pub struct FeedPageIterator<T: Send>(BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>);
+pub struct FeedPageIterator<T: Send>(BoxStream<'static, crate::CosmosResult<QueryFeedPage<T>>>);
 
 impl<T: Send> Stream for FeedPageIterator<T> {
-    type Item = azure_core::Result<QueryFeedPage<T>>;
+    type Item = crate::CosmosResult<QueryFeedPage<T>>;
 
     fn poll_next(
         mut self: Pin<&mut Self>,
@@ -377,10 +377,7 @@ mod tests {
     async fn item_iterator_propagates_errors() {
         let pages = vec![
             Ok(create_test_page(vec![1, 2], Some("token".to_string()))),
-            Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                "test error",
-            )),
+            Err(azure_core::Error::new(azure_core::error::ErrorKind::Other, "test error").into()),
         ];
 
         let stream = futures::stream::iter(pages);

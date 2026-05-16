@@ -95,7 +95,7 @@ fn compare_item_responses<T>(real: &ItemResponse<T>, emu: &ItemResponse<T>) {
 }
 
 /// Compares two SDK error responses: both must have the same HTTP status.
-fn compare_sdk_errors(real: &azure_core::Error, emu: &azure_core::Error) {
+fn compare_sdk_errors(real: &azure_data_cosmos::CosmosError, emu: &azure_data_cosmos::CosmosError) {
     assert_eq!(
         real.http_status(),
         emu.http_status(),
@@ -126,7 +126,7 @@ fn make_stale_session_token(token: &str) -> String {
     }
 }
 
-fn assert_read_session_not_available(err: &azure_core::Error, label: &str) {
+fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label: &str) {
     assert_eq!(
         err.http_status(),
         Some(StatusCode::NotFound),
@@ -174,7 +174,7 @@ async fn read_item_with_503_retry(
     label: &str,
 ) -> ItemResponse<TestItem> {
     const MAX_ATTEMPTS: usize = 5;
-    let mut last_err: Option<azure_core::Error> = None;
+    let mut last_err: Option<azure_data_cosmos::CosmosError> = None;
     for attempt in 1..=MAX_ATTEMPTS {
         match container.read_item::<TestItem>(pk, id, None).await {
             Ok(resp) => {

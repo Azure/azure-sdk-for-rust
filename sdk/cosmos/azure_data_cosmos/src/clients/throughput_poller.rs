@@ -43,7 +43,7 @@ const DEFAULT_POLLING_INTERVAL: Duration = Duration::seconds(5);
 ///
 /// ```rust,no_run
 /// # use azure_data_cosmos::models::ThroughputProperties;
-/// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_core::Result<()> {
+/// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::CosmosResult<()> {
 /// // Simple: just await the final result
 /// let throughput = container_client
 ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
@@ -65,7 +65,7 @@ const DEFAULT_POLLING_INTERVAL: Duration = Duration::seconds(5);
 /// # }
 /// ```
 pub struct ThroughputPoller {
-    stream: BoxStream<'static, azure_core::Result<CosmosResponse<ThroughputProperties>>>,
+    stream: BoxStream<'static, crate::CosmosResult<CosmosResponse<ThroughputProperties>>>,
 }
 
 impl ThroughputPoller {
@@ -152,7 +152,7 @@ enum PollState {
 }
 
 impl Stream for ThroughputPoller {
-    type Item = azure_core::Result<ResourceResponse<ThroughputProperties>>;
+    type Item = crate::CosmosResult<ResourceResponse<ThroughputProperties>>;
 
     fn poll_next(
         mut self: Pin<&mut Self>,
@@ -165,9 +165,11 @@ impl Stream for ThroughputPoller {
 }
 
 impl IntoFuture for ThroughputPoller {
-    type Output = azure_core::Result<ResourceResponse<ThroughputProperties>>;
+    type Output = crate::CosmosResult<ResourceResponse<ThroughputProperties>>;
     type IntoFuture = Pin<
-        Box<dyn Future<Output = azure_core::Result<ResourceResponse<ThroughputProperties>>> + Send>,
+        Box<
+            dyn Future<Output = crate::CosmosResult<ResourceResponse<ThroughputProperties>>> + Send,
+        >,
     >;
 
     fn into_future(self) -> Self::IntoFuture {
@@ -182,6 +184,7 @@ impl IntoFuture for ThroughputPoller {
                     azure_core::error::ErrorKind::Other,
                     "throughput poller stream ended without yielding a response",
                 )
+                .into()
             })
         })
     }

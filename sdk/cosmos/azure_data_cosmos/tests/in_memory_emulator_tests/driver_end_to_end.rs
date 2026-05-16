@@ -1634,7 +1634,7 @@ async fn v1_writes_distribute_across_partitions() {
 /// region, transport shard, and per-attempt event history on the error path.
 #[tokio::test]
 async fn error_carries_extractable_diagnostics() {
-    use azure_data_cosmos::try_extract_diagnostics;
+    use azure_data_cosmos_driver::diagnostics::try_extract_diagnostics;
 
     let (backend, db_name, emu_container, _real_container) = setup_with_container().await;
 

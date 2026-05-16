@@ -93,7 +93,7 @@ impl Query {
         mut self,
         name: impl Into<String>,
         value: impl Serialize,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::CosmosResult<Self> {
         let parameter = QueryParameter {
             name: name.into(),
             value: serde_json::to_value(value)?,

@@ -271,7 +271,7 @@ impl CosmosClientBuilder {
         mut self,
         account: impl Into<CosmosAccountReference>,
         routing_strategy: RoutingStrategy,
-    ) -> azure_core::Result<CosmosClient> {
+    ) -> crate::CosmosResult<CosmosClient> {
         // Apply the region selection strategy to internal options.
         match routing_strategy {
             RoutingStrategy::ProximityTo(region) => {

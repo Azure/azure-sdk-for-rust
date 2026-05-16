@@ -11,7 +11,6 @@ use azure_core::http::{
 };
 
 use crate::constants;
-use azure_data_cosmos_driver::models::SubStatusCode;
 
 use super::FaultInjectionErrorType;
 
@@ -76,14 +75,10 @@ impl CustomResponseBuilder {
 
     /// Sets the `x-ms-substatus` header to the given numeric sub-status code.
     ///
-    /// This is a convenience method equivalent to calling
-    /// `with_header("x-ms-substatus", code.value().to_string())`.
-    pub fn with_sub_status(self, code: impl Into<SubStatusCode>) -> Self {
-        let code = code.into();
-        // Use the numeric value directly: the driver's `Display` impl
-        // formats known sub-statuses as `"NAME (NUMBER)"`, but the wire
-        // format requires only the integer.
-        self.with_header(constants::SUB_STATUS, code.value().to_string())
+    /// Accepts the raw integer value documented at
+    /// <https://learn.microsoft.com/en-us/rest/api/cosmos-db/http-status-codes-for-cosmosdb>.
+    pub fn with_sub_status(self, code: u32) -> Self {
+        self.with_header(constants::SUB_STATUS, code.to_string())
     }
 
     /// Sets the response body.

@@ -300,7 +300,7 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<SessionT
 ///
 /// ```rust,no_run
 /// # use azure_data_cosmos::{clients::ContainerClient, FeedRange, SessionToken};
-/// # async fn example(container: ContainerClient) -> azure_core::Result<()> {
+/// # async fn example(container: ContainerClient) -> azure_data_cosmos::CosmosResult<()> {
 /// // After read/write operations, capture session tokens from response headers.
 /// // When using multiple clients against the same container, merge their tokens
 /// // to get the most up-to-date session state.

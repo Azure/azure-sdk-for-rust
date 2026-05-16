@@ -39,7 +39,7 @@ pub trait Operation: Send + Sync {
     fn name(&self) -> &'static str;
 
     /// Executes one instance of the operation.
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<()>;
+    async fn execute(&self, container: &ContainerClient) -> azure_data_cosmos::CosmosResult<()>;
 }
 
 /// The item type used for seeding, reading, querying, and upserting.

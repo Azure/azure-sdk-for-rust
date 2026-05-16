@@ -26,7 +26,7 @@ pub(crate) async fn find_offer(
     driver: &CosmosDriver,
     account: &AccountReference,
     resource_id: &str,
-) -> azure_core::Result<Option<ThroughputProperties>> {
+) -> crate::CosmosResult<Option<ThroughputProperties>> {
     let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
         .with_parameter("@rid", resource_id)?;
     let body = serde_json::to_vec(&query)?;
@@ -44,7 +44,17 @@ pub(crate) async fn find_offer(
         request_charge = ?driver_response.headers().request_charge,
         "offer query completed"
     );
-    let feed: FeedBody<ThroughputProperties> = serde_json::from_slice(driver_response.body())?;
+    let diagnostics = driver_response.diagnostics();
+    let feed: FeedBody<ThroughputProperties> = serde_json::from_slice(driver_response.body())
+        .map_err(|e| {
+            // Attach the operation's diagnostics to the parse failure so
+            // callers can correlate the deserialization error with the
+            // underlying HTTP exchange (ActivityId, region, status, etc.).
+            crate::CosmosError::from(azure_data_cosmos_driver::diagnostics::attach_diagnostics(
+                e.into(),
+                diagnostics,
+            ))
+        })?;
     Ok(feed.items.into_iter().next())
 }
 
@@ -53,7 +63,7 @@ pub(crate) async fn read_offer_by_id(
     driver: &CosmosDriver,
     account: &AccountReference,
     offer_id: &str,
-) -> azure_core::Result<CosmosResponse<ThroughputProperties>> {
+) -> crate::CosmosResult<CosmosResponse<ThroughputProperties>> {
     let operation = CosmosOperation::read_offer(account.clone(), offer_id.to_owned());
     let driver_response = driver
         .execute_operation(operation, OperationOptions::default())
@@ -72,7 +82,7 @@ pub(crate) async fn begin_replace(
     account: AccountReference,
     resource_id: &str,
     throughput: ThroughputProperties,
-) -> azure_core::Result<crate::clients::ThroughputPoller> {
+) -> crate::CosmosResult<crate::clients::ThroughputPoller> {
     let mut current_throughput = find_offer(&driver, &account, resource_id)
         .await?
         .ok_or_else(|| {
@@ -86,7 +96,8 @@ pub(crate) async fn begin_replace(
         return Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "throughput offer has an empty id",
-        ));
+        )
+        .into());
     }
 
     let offer_id = current_throughput.offer_id.clone();

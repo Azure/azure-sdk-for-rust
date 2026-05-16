@@ -31,7 +31,7 @@ impl Operation for ReadItemOperation {
         "ReadItem"
     }
 
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<()> {
+    async fn execute(&self, container: &ContainerClient) -> azure_data_cosmos::CosmosResult<()> {
         let item = self.items.random();
 
         container

@@ -28,5 +28,5 @@ pub use diagnostics_context::{
     RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
     TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
 };
-pub use error_diagnostics::{attach_diagnostics, try_extract_diagnostics, ErrorWithDiagnostics};
+pub use error_diagnostics::{attach_diagnostics, source_skipping_carrier, try_extract_diagnostics};
 pub use proxy_configuration::ProxyConfiguration;

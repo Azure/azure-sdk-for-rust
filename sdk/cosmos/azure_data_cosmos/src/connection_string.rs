@@ -5,6 +5,8 @@ use std::str::FromStr;
 
 use azure_core::{credentials::Secret, fmt::SafeDebug, Error};
 
+use crate::CosmosError;
+
 /// Represents a Cosmos DB connection string.
 #[derive(Clone, PartialEq, Eq, SafeDebug)]
 pub struct ConnectionString {
@@ -13,20 +15,21 @@ pub struct ConnectionString {
 }
 
 impl TryFrom<&Secret> for ConnectionString {
-    type Error = azure_core::Error;
+    type Error = CosmosError;
     fn try_from(secret: &Secret) -> Result<Self, Self::Error> {
         secret.secret().parse()
     }
 }
 
 impl FromStr for ConnectionString {
-    type Err = azure_core::Error;
+    type Err = CosmosError;
     fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
             return Err(Error::new(
                 azure_core::error::ErrorKind::Other,
                 "connection string cannot be empty",
-            ));
+            )
+            .into());
         }
 
         let splat = connection_string.split(';');
@@ -38,10 +41,12 @@ impl FromStr for ConnectionString {
                 continue;
             }
 
-            let (key, value) = part.split_once('=').ok_or(Error::new(
-                azure_core::error::ErrorKind::Other,
-                "invalid connection string",
-            ))?;
+            let (key, value) = part.split_once('=').ok_or_else(|| {
+                Error::new(
+                    azure_core::error::ErrorKind::Other,
+                    "invalid connection string",
+                )
+            })?;
 
             if key.eq_ignore_ascii_case("AccountEndpoint") {
                 account_endpoint = Some(value.to_string())
@@ -56,14 +61,16 @@ impl FromStr for ConnectionString {
             return Err(Error::new(
                 azure_core::error::ErrorKind::Other,
                 "invalid connection string, missing 'AccountEndpoint'",
-            ));
+            )
+            .into());
         };
 
         let Some(key) = account_key else {
             return Err(Error::new(
                 azure_core::error::ErrorKind::Other,
                 "invalid connection string, missing 'AccountKey'",
-            ));
+            )
+            .into());
         };
 
         Ok(Self {
