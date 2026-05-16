@@ -48,3 +48,10 @@ pub use crate::driver::routing::partition_endpoint_state::{
     PartitionFailoverEntry,
 };
 pub use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
+
+// Routing state-store primitives exposed for end-to-end memory benchmarks
+// that need to layer synthetic PPCB state on top of a real `CosmosDriver`
+// instance. The store is reachable from a real driver via
+// [`crate::driver::CosmosDriver::location_state_store`], also feature-gated.
+pub use crate::driver::routing::account_endpoint_state::AccountEndpointState;
+pub use crate::driver::routing::location_state_store::LocationStateStore;

@@ -10,8 +10,15 @@ use url::Url;
 use super::{CosmosEndpoint, UnavailableReason};
 
 /// Immutable account-level endpoint routing state.
+//
+// `pub` (rather than `pub(crate)`) so that `crate::testing` can surface
+// this type for memory benchmarks under the `__internal_testing` feature
+// flag. The enclosing `routing` module is `pub(crate)` and
+// `account_endpoint_state` is a private `mod`, so external consumers still
+// cannot reach this via `crate::driver::routing::*`; it remains accessible
+// only through the `crate::testing::*` re-exports.
 #[derive(Clone, Debug)]
-pub(crate) struct AccountEndpointState {
+pub struct AccountEndpointState {
     /// Monotonically increasing generation for stale index detection.
     pub generation: u64,
     /// Ordered preferred read endpoints.
@@ -19,7 +26,12 @@ pub(crate) struct AccountEndpointState {
     /// Ordered preferred write endpoints.
     pub preferred_write_endpoints: Arc<[CosmosEndpoint]>,
     /// Endpoints marked temporarily unavailable, keyed by their primary URL.
-    pub unavailable_endpoints: HashMap<Url, (Instant, UnavailableReason)>,
+    //
+    // Field-level `pub(crate)` because the value type `UnavailableReason`
+    // is itself crate-private; benchmarks consuming `AccountEndpointState`
+    // through `crate::testing` only need read access to the endpoint lists,
+    // not this internal bookkeeping map.
+    pub(crate) unavailable_endpoints: HashMap<Url, (Instant, UnavailableReason)>,
     /// Whether account supports multiple write locations.
     pub multiple_write_locations_enabled: bool,
     /// Fallback endpoint when no preferred endpoint is available.

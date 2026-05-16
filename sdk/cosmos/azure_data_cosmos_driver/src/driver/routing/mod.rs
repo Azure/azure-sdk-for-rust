@@ -3,16 +3,19 @@
 
 //! Routing state and systems for operation-level endpoint selection.
 
-mod account_endpoint_state;
+pub(crate) mod account_endpoint_state;
 pub(crate) mod endpoint;
 mod location_effects;
-mod location_state_store;
+pub(crate) mod location_state_store;
 pub(crate) mod partition_endpoint_state;
 pub(crate) mod partition_key_range_id;
 mod routing_systems;
 pub(crate) mod session_container;
 pub(crate) mod session_manager;
 
+// Re-export the `pub` items as `pub(crate)` so that the rest of the crate
+// (and `crate::testing` re-exports gated behind `__internal_testing`)
+// can name them without going through the private module paths.
 pub(crate) use account_endpoint_state::AccountEndpointState;
 pub(crate) use endpoint::{CosmosEndpoint, LocationIndex, UnavailableReason};
 pub(crate) use location_effects::{LocationEffect, UnavailablePartition};

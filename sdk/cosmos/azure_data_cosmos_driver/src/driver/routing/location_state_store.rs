@@ -65,7 +65,14 @@ type AccountRefreshFn = Arc<
 >;
 
 /// Unified location state store with lock-free reads and CAS-loop writes.
-pub(crate) struct LocationStateStore {
+//
+// `pub` (rather than `pub(crate)`) so that `crate::testing` can surface
+// this type for memory benchmarks under the `__internal_testing` feature
+// flag. The enclosing `routing` module is `pub(crate)` and
+// `location_state_store` is a private `mod`, so external consumers still
+// cannot reach this via `crate::driver::routing::*`; it remains accessible
+// only through the `crate::testing::*` re-exports.
+pub struct LocationStateStore {
     account: Atomic<AccountEndpointState>,
     partitions: Atomic<PartitionEndpointState>,
     account_metadata_cache: Arc<AccountMetadataCache>,
@@ -132,6 +139,13 @@ impl Drop for LocationStateStore {
     }
 }
 
+// `allow(private_interfaces)`: several inherent methods take or return
+// crate-private value types (`AccountProperties`, `LocationEffect`,
+// `AccountEndpoint`, `LocationSnapshot`, `AccountMetadataCache`). Those
+// types are intentionally not part of any public surface — only the
+// `apply_partition` / `account_snapshot` paths are reachable from the
+// `__internal_testing` re-exports, and those use types we *do* re-export.
+#[allow(private_interfaces)]
 impl LocationStateStore {
     /// Creates a new location store with a single-endpoint account snapshot.
     #[allow(clippy::too_many_arguments)]
@@ -301,7 +315,12 @@ impl LocationStateStore {
     }
 
     /// CAS loop on partition-level state.
-    pub(crate) fn apply_partition(
+    //
+    // `pub` (rather than `pub(crate)`) so that benchmark / measurement
+    // harnesses re-exported via `crate::testing` can drive synthetic state
+    // into the real driver's `PartitionEndpointState`. The enclosing module
+    // is private, so this is not callable from non-testing consumers.
+    pub fn apply_partition(
         &self,
         mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState,
     ) {

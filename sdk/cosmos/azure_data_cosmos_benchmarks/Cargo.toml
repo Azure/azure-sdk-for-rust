@@ -25,6 +25,10 @@ required-features = ["dhat-heap"]
 name = "ppcb_state_dhat"
 required-features = ["dhat-heap"]
 
+[[example]]
+name = "ppcb_state_real_dhat"
+required-features = ["dhat-heap"]
+
 [features]
 default = []
 # Enables the dhat-rs heap-profiling allocator. Off by default so that the
@@ -40,7 +44,7 @@ azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", features = [
   "__internal_testing",
 ] }
 dhat = { workspace = true, optional = true }
-tokio = { workspace = true, features = ["rt-multi-thread", "time"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "time", "macros"] }
 url.workspace = true
 
 [dev-dependencies]

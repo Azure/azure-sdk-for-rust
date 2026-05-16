@@ -74,6 +74,17 @@ pub struct CosmosDriver {
 }
 
 impl CosmosDriver {
+    /// Returns the driver's location state store.
+    ///
+    /// Exposed only when the `__internal_testing` feature is enabled so that
+    /// memory-profiling harnesses can inject synthetic PPCB / PPAF state into
+    /// the real driver's `PartitionEndpointState` for end-to-end heap
+    /// measurement. Not part of the supported public API.
+    #[cfg(feature = "__internal_testing")]
+    pub fn location_state_store(&self) -> &Arc<LocationStateStore> {
+        &self.location_state_store
+    }
+
     #[cfg(feature = "reqwest")]
     fn has_explicit_http2_incompatibility(error: &azure_core::Error) -> bool {
         let mut source = error.source();
