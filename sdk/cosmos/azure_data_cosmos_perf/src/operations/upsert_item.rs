@@ -4,13 +4,14 @@
 //! Upsert operation.
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::options::ItemWriteOptions;
 use rand::RngExt;
 
-use super::{Operation, PerfItem};
+use super::{extract_backend_duration, Operation, PerfItem};
 use crate::seed::SharedItems;
 
 /// Upserts an item into a random seeded partition.
@@ -32,7 +33,10 @@ impl Operation for UpsertItemOperation {
         "UpsertItem"
     }
 
-    async fn execute(&self, container: &ContainerClient) -> azure_data_cosmos::CosmosResult<()> {
+    async fn execute(
+        &self,
+        container: &ContainerClient,
+    ) -> azure_data_cosmos::CosmosResult<Option<Duration>> {
         let seeded = self.items.random();
         let value = rand::rng().random_range(0..u64::MAX);
 
@@ -43,9 +47,9 @@ impl Operation for UpsertItemOperation {
             payload: "perf-test-payload".to_string(),
         };
 
-        container
+        let response = container
             .upsert_item(&item.partition_key, &seeded.id, &item, self.options.clone())
             .await?;
-        Ok(())
+        Ok(extract_backend_duration(response.headers()))
     }
 }
