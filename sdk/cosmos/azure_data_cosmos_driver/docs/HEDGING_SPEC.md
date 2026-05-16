@@ -217,7 +217,7 @@ user has not specified a custom availability strategy, the .NET SDK
 alongside PPAF's failover protection.
 
 **Default values used by .NET (PPAF-driven)**
-([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/docs/Cross%20Region%20Request%20Hedging.md)):
+([source](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/0830090ca4dc47b71398ea0871cbe00b591aa8fc/docs/Cross%20Region%20Request%20Hedging.md)):
 
 - **Threshold:** `min(1000ms, RequestTimeout / 2)` (falls back to `1000ms` if
   `RequestTimeout == 0`)
@@ -227,7 +227,7 @@ alongside PPAF's failover protection.
 PPCB (Per-Partition Circuit Breaker) on its own does **not** auto-enable
 hedging in .NET. However, .NET implicitly turns PPCB on whenever PPAF is
 enabled
-([CosmosClientOptions.cs `EnablePartitionLevelCircuitBreaker`](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/Microsoft.Azure.Cosmos/src/CosmosClientOptions.cs)),
+([CosmosClientOptions.cs `EnablePartitionLevelCircuitBreaker`](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/71d317ffc6b6d62199b35c06a372825849e406fc/Microsoft.Azure.Cosmos/src/CosmosClientOptions.cs)),
 so a PPAF-enabled deployment ends up running with all three (PPAF + PPCB +
 hedging) active simultaneously.
 
@@ -1190,7 +1190,7 @@ returning the cancellation error.
 > a different region than the one targeted by that hedge.
 
 This matches the .NET v3 behavior documented in
-[Cross Region Request Hedging.md](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/main/docs/Cross%20Region%20Request%20Hedging.md):
+[Cross Region Request Hedging.md](https://github.com/Azure/azure-cosmos-dotnet-v3/blob/0830090ca4dc47b71398ea0871cbe00b591aa8fc/docs/Cross%20Region%20Request%20Hedging.md):
 *"hedged requests are restricted to the region they are sent out in so no
 cross region retries will be made, only local retries."*
 
