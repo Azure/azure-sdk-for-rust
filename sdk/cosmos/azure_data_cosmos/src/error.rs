@@ -34,6 +34,30 @@
 //!   surface a Cosmos error through an existing
 //!   `Result<T, azure_core::Error>` can use `?` to convert upward.
 //!
+//! ## `From` impls and the `?` operator
+//!
+//! The Rust `?` operator only performs a *single* `From` hop, so
+//! `?`-chaining a non-`azure_core` error (e.g. `serde_json::Error`)
+//! into a function returning `CosmosResult<T>` requires either a
+//! direct `From<E> for CosmosError` impl or an explicit
+//! `.map_err(azure_core::Error::from)?`.
+//!
+//! `CosmosError` provides `From` impls for the conversions that
+//! recur the most often inside the SDK itself:
+//!
+//! - `From<azure_core::Error>` (the boundary type)
+//! - `From<serde_json::Error>` (request/response body
+//!   serialize/deserialize is the dominant `?` site)
+//!
+//! Other conversion-error types (`base64::DecodeError`,
+//! `url::ParseError`, `std::num::ParseIntError`, …) intentionally do
+//! **not** have a direct impl. Reach for
+//! `.map_err(azure_core::Error::from)?` at those call sites — the
+//! existing `From<azure_core::Error> for CosmosError` then completes
+//! the conversion. This keeps the `From` surface narrow enough that
+//! reviewers can reason about it locally without scanning every
+//! `?` in the crate.
+//!
 //! ## Example
 //!
 //! ```ignore
@@ -59,7 +83,6 @@
 use std::sync::Arc;
 
 use azure_core::error::ErrorKind;
-use azure_core::http::StatusCode;
 
 use crate::models::CosmosDiagnosticsContext;
 
@@ -103,23 +126,18 @@ impl CosmosError {
     /// Returns the [`ErrorKind`] of the wrapped [`azure_core::Error`].
     ///
     /// For HTTP failures this is [`ErrorKind::HttpResponse`] and
-    /// includes the status, error code, and (if available) the raw
+    /// includes the status, error code, and (when retained) the raw
     /// response body.
+    ///
+    /// **Note on driver-type hiding.** [`ErrorKind`] is re-exported
+    /// directly from [`azure_core`]; the `CosmosError` newtype hides
+    /// driver-internal types (`ErrorWithDiagnostics`, `CosmosStatus`,
+    /// `SubStatusCode`) but does **not** abstract over `azure_core`'s
+    /// public error vocabulary. Callers that need richer inspection
+    /// than the convenience accessors below provide should reach for
+    /// [`Self::as_azure_error`] explicitly.
     pub fn kind(&self) -> &ErrorKind {
         self.0.kind()
-    }
-
-    /// Returns the HTTP status code from the wrapped error's
-    /// [`ErrorKind::HttpResponse`], if any.
-    ///
-    /// This reflects the status code carried by the error itself.
-    /// Operations that are aborted before any HTTP response is
-    /// received (e.g. credential failures, transport errors) will
-    /// return `None` here. For a status that always reflects the
-    /// driver's last-observed final status (after retries and
-    /// failovers), prefer [`Self::status_code`].
-    pub fn http_status(&self) -> Option<StatusCode> {
-        self.0.http_status()
     }
 
     /// Returns the per-operation [`CosmosDiagnosticsContext`] attached
@@ -136,8 +154,12 @@ impl CosmosError {
     ///
     /// Prefers the status recorded on the diagnostics context (which
     /// reflects the final outcome after retries and failovers); falls
-    /// back to [`Self::http_status`] when no diagnostics are
-    /// available.
+    /// back to the [`ErrorKind::HttpResponse`] status on the wrapped
+    /// [`azure_core::Error`] when no diagnostics are available.
+    ///
+    /// The pre-retry / head-of-line status (which can differ when a
+    /// retry recovered then ultimately failed for a different reason)
+    /// is reachable via `err.as_azure_error().http_status()`.
     pub fn status_code(&self) -> Option<u16> {
         if let Some(diag) = self.diagnostics() {
             if let Some(code) = diag.status_code() {
@@ -167,19 +189,44 @@ impl std::fmt::Debug for CosmosError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Build a stable public Debug representation that does NOT delegate
         // to `azure_core::Error::Debug`. The underlying Debug walks the
-        // entire `source()` chain and would expose the internal
-        // `ErrorWithDiagnostics` carrier verbatim — including its private
-        // fields — to anyone who logs `format!("{err:?}")`.
+        // entire `source()` chain and would (a) expose the internal
+        // `ErrorWithDiagnostics` carrier verbatim and (b) print the
+        // `raw_response` bytes/headers nested under `ErrorKind::HttpResponse`
+        // — including session tokens, `WWW-Authenticate` challenges, and
+        // (on 403/2) the masked-key reason text. Neither belongs in
+        // user-facing `format!("{err:?}")` output.
+        let diag = self.diagnostics();
+        let status = diag
+            .as_ref()
+            .and_then(|d| d.status_code())
+            .or_else(|| self.0.http_status().map(u16::from));
+        let sub_status = diag.as_ref().and_then(|d| d.sub_status());
+
         let mut s = f.debug_struct("CosmosError");
-        s.field("kind", self.0.kind())
-            .field("message", &self.0.to_string());
-        if let Some(status) = self.status_code() {
-            s.field("status_code", &status);
+        match self.0.kind() {
+            // Strip `raw_response` so headers / body bytes never enter
+            // log output through `{:?}`. Callers that need them must
+            // reach for `as_azure_error().kind()` explicitly.
+            ErrorKind::HttpResponse {
+                status,
+                error_code,
+                raw_response: _,
+            } => {
+                s.field("http_status", status)
+                    .field("error_code", error_code);
+            }
+            other => {
+                s.field("kind", other);
+            }
         }
-        if let Some(sub_status) = self.sub_status() {
-            s.field("sub_status", &sub_status);
+        s.field("message", &self.0.to_string());
+        if let Some(code) = status {
+            s.field("status_code", &code);
         }
-        s.field("has_diagnostics", &self.diagnostics().is_some());
+        if let Some(code) = sub_status {
+            s.field("sub_status", &code);
+        }
+        s.field("has_diagnostics", &diag.is_some());
         s.finish()
     }
 }
@@ -241,7 +288,12 @@ mod tests {
     }
 
     #[test]
-    fn http_status_falls_through_to_inner() {
+    fn status_code_falls_through_to_inner_http_status() {
+        // Without a diagnostics context attached, status_code() must
+        // surface the HTTP status carried by the wrapped
+        // `azure_core::Error` so 4xx/5xx responses are still
+        // observable through the SDK accessor.
+        use azure_core::http::StatusCode;
         let err = ErrorKind::HttpResponse {
             status: StatusCode::NotFound,
             error_code: None,
@@ -249,9 +301,12 @@ mod tests {
         }
         .into_error();
         let cosmos = CosmosError::from(err);
-        assert_eq!(cosmos.http_status(), Some(StatusCode::NotFound));
-        // Without diagnostics attached, status_code() falls back to http_status.
         assert_eq!(cosmos.status_code(), Some(404));
+        // The escape hatch still surfaces the typed StatusCode.
+        assert_eq!(
+            cosmos.as_azure_error().http_status(),
+            Some(StatusCode::NotFound),
+        );
     }
 
     #[test]

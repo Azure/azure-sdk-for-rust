@@ -50,11 +50,11 @@ pub async fn create_container_with_items(
             .await
         {
             Ok(_) => break,
-            Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
+            Err(e) if e.as_azure_error().http_status() == Some(StatusCode::TooManyRequests) => {
                 println!("Create container got 429 (Too Many Requests). Retrying...");
                 tokio::time::sleep(Duration::from_secs(1)).await;
             }
-            Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+            Err(e) if e.as_azure_error().http_status() == Some(StatusCode::Conflict) => {
                 // Container already exists, continue
                 break;
             }

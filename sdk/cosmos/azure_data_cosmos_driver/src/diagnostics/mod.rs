@@ -28,5 +28,12 @@ pub use diagnostics_context::{
     RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
     TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
 };
+// The error-diagnostics carrier and helpers are wrapper-crate plumbing.
+// They are reachable from `azure_data_cosmos` (which wraps them behind
+// `CosmosError`) but are not part of this driver crate's intended
+// public surface — `#[doc(hidden)]` keeps them out of the published
+// rustdoc so they do not become semver-stable surface area that
+// external driver-crate consumers can rely on.
+#[doc(hidden)]
 pub use error_diagnostics::{attach_diagnostics, source_skipping_carrier, try_extract_diagnostics};
 pub use proxy_configuration::ProxyConfiguration;

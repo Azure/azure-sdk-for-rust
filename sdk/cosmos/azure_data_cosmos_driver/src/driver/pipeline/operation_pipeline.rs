@@ -882,6 +882,13 @@ fn build_transport_request(
 }
 
 /// Builds a `CosmosResponse` from a successful `TransportResult`.
+///
+/// **Panics** (via `unreachable!`) if `result.outcome` is not
+/// `TransportOutcome::Success`. The pipeline only calls this after a
+/// `is_success`-gated branch, so any other variant indicates a logic
+/// error in the caller — and crashing loudly is better than returning a
+/// silent diagnostics-less error that would mask the bug in production
+/// telemetry.
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
@@ -903,13 +910,9 @@ fn build_cosmos_response(
                 diagnostics_ctx,
             ))
         }
-        _ => {
-            // This should only be called with a Complete(Success) result
-            Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "build_cosmos_response called with non-success result",
-            ))
-        }
+        other => unreachable!(
+            "build_cosmos_response must only be called with TransportOutcome::Success; got {other}",
+        ),
     }
 }
 
