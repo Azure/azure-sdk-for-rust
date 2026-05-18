@@ -116,6 +116,57 @@ async fn or_init_cell<T>(
         .clone()
 }
 
+/// Describes which per-connection caches an [`ErrorRecoveryAction`] must invalidate.
+///
+/// Splitting "which caches" from "actually clearing them" lets the cache-clearing happen
+/// inside async lock acquisitions while the policy stays a pure value that's easy to
+/// unit-test for regressions (e.g. forgetting to drop the management client when the
+/// entire connection is being reset).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct RecoveryPlan {
+    drop_connection: bool,
+    clear_authorizer: bool,
+    clear_sessions: bool,
+    clear_senders: bool,
+    clear_receivers: bool,
+    drop_mgmt_client: bool,
+}
+
+impl RecoveryPlan {
+    /// Returns the recovery plan for an action, or `None` if the action does not
+    /// require any cache invalidation (i.e. `RetryAction` / `ReturnError`, which
+    /// should never reach `recover_from_error`).
+    fn for_action(action: &ErrorRecoveryAction) -> Option<Self> {
+        match action {
+            ErrorRecoveryAction::ReconnectConnection => Some(Self {
+                drop_connection: true,
+                clear_authorizer: true,
+                clear_sessions: true,
+                clear_senders: true,
+                clear_receivers: true,
+                drop_mgmt_client: false,
+            }),
+            ErrorRecoveryAction::ReconnectSession => Some(Self {
+                drop_connection: false,
+                clear_authorizer: false,
+                clear_sessions: true,
+                clear_senders: true,
+                clear_receivers: true,
+                drop_mgmt_client: false,
+            }),
+            ErrorRecoveryAction::ReconnectLink => Some(Self {
+                drop_connection: false,
+                clear_authorizer: false,
+                clear_sessions: true,
+                clear_senders: true,
+                clear_receivers: true,
+                drop_mgmt_client: true,
+            }),
+            ErrorRecoveryAction::RetryAction | ErrorRecoveryAction::ReturnError => None,
+        }
+    }
+}
+
 impl RecoverableConnection {
     pub fn new(
         url: Url,
@@ -597,7 +648,6 @@ impl RecoverableConnection {
         connection: Weak<RecoverableConnection>,
         reason: ErrorRecoveryAction,
     ) -> azure_core_amqp::error::Result<()> {
-        // If the connection is None, we cannot recover.
         let Some(connection) = connection.upgrade() else {
             warn!(
                 "Connection is None, cannot recover from error: {:?}",
@@ -606,42 +656,39 @@ impl RecoverableConnection {
             return Err(AmqpError::with_message("Missing Connection"));
         };
 
-        // Log the error and attempt to recover.
         warn!(err=?reason, "Recovering from error: {:?}", reason);
-        // Upgrade the weak reference to a strong reference.
-        match reason {
-            ErrorRecoveryAction::ReconnectConnection => {
-                debug!("Recovering from connection error: {:?}", reason);
-                connection.connections.lock().await.take();
-                connection.authorizer.clear().await;
-                connection.session_instances.write().await.clear();
-                connection.sender_instances.write().await.clear();
-                connection.receiver_instances.write().await.clear();
-            }
-            ErrorRecoveryAction::ReconnectSession => {
-                debug!("Recovering from session error: {:?}", reason);
-                // Recreate the session and sender/receiver as needed.
-                connection.session_instances.write().await.clear();
-                connection.sender_instances.write().await.clear();
-                connection.receiver_instances.write().await.clear();
-            }
-            ErrorRecoveryAction::ReconnectLink => {
-                debug!("Recovering from link error: {:?}", reason);
-                // Recreate the session and sender/receiver as needed.
-                connection.session_instances.write().await.clear();
-                connection.sender_instances.write().await.clear();
-                connection.receiver_instances.write().await.clear();
-                connection.mgmt_client.lock().await.take();
-            }
-            _ => {
-                warn!("Recover action {reason:?} should already have been handled.");
-                return Err(AmqpError::with_message(format!(
-                    "Unknown error recovery action: {reason:?}"
-                )));
-            }
-        }
 
+        let Some(plan) = RecoveryPlan::for_action(&reason) else {
+            warn!("Recover action {reason:?} should already have been handled.");
+            return Err(AmqpError::with_message(format!(
+                "Unknown error recovery action: {reason:?}"
+            )));
+        };
+
+        debug!("Applying recovery plan {plan:?} for {reason:?}");
+        connection.apply_recovery_plan(plan).await;
         Ok(())
+    }
+
+    async fn apply_recovery_plan(&self, plan: RecoveryPlan) {
+        if plan.drop_connection {
+            self.connections.lock().await.take();
+        }
+        if plan.clear_authorizer {
+            self.authorizer.clear().await;
+        }
+        if plan.clear_sessions {
+            self.session_instances.write().await.clear();
+        }
+        if plan.clear_senders {
+            self.sender_instances.write().await.clear();
+        }
+        if plan.clear_receivers {
+            self.receiver_instances.write().await.clear();
+        }
+        if plan.drop_mgmt_client {
+            self.mgmt_client.lock().await.take();
+        }
     }
 
     pub(super) fn should_retry_amqp_error(amqp_error: &AmqpError) -> ErrorRecoveryAction {
@@ -705,15 +752,6 @@ impl RecoverableConnection {
                         described_error
                     );
                     ErrorRecoveryAction::ReconnectConnection
-                } else if matches!(
-                    described_error.condition,
-                    AmqpErrorCondition::EntityDisabledError
-                ) {
-                    debug!(
-                        "AMQP described error triggers a disconnect: {:?}",
-                        described_error
-                    );
-                    ErrorRecoveryAction::RetryAction
                 } else {
                     debug!(
                         "AMQP described error cannot be retried: {:?}",
@@ -928,5 +966,48 @@ mod tests {
             RecoverableConnection::should_retry_amqp_error(&err),
             ErrorRecoveryAction::ReconnectConnection
         );
+
+        // Test EntityDisabledError -> RetryAction (matched by the first arm of the
+        // described-error branch; a removed-but-unreachable elif previously also
+        // listed it).
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::EntityDisabledError,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::RetryAction
+        );
+    }
+
+    #[test]
+    fn recovery_plan_reconnect_link_drops_mgmt_client_but_keeps_connection() {
+        let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectLink)
+            .expect("ReconnectLink has a recovery plan");
+        assert!(!plan.drop_connection);
+        assert!(!plan.clear_authorizer);
+        assert!(plan.clear_sessions);
+        assert!(plan.clear_senders);
+        assert!(plan.clear_receivers);
+        assert!(plan.drop_mgmt_client);
+    }
+
+    #[test]
+    fn recovery_plan_reconnect_session_keeps_mgmt_client_and_connection() {
+        let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectSession)
+            .expect("ReconnectSession has a recovery plan");
+        assert!(!plan.drop_connection);
+        assert!(!plan.clear_authorizer);
+        assert!(plan.clear_sessions);
+        assert!(plan.clear_senders);
+        assert!(plan.clear_receivers);
+        assert!(!plan.drop_mgmt_client);
+    }
+
+    #[test]
+    fn recovery_plan_none_for_non_reconnect_actions() {
+        assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::RetryAction).is_none());
+        assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::ReturnError).is_none());
     }
 }
