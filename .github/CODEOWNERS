@@ -68,16 +68,16 @@
 # ServiceOwners: @Azure/azure-sdk-write-keyvault
 
 # PRLabel: %Storage
-/sdk/storage/            @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
+/sdk/storage/            @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft @jaschrep-msft
 
 # ServiceLabel: %Storage
-# AzureSDKOwners: @vincenttran-msft @jalauzon-msft
+# AzureSDKOwners: @vincenttran-msft @jalauzon-msft @jaschrep-msft
 
 # PRLabel: %Event Hubs
 /sdk/eventhubs/          @j7nw4r
 
 # PRLabel: %Event Hubs %Storage
-/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/    @j7nw4r @jalauzon-msft @vincenttran-msft
+/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob/    @j7nw4r @jalauzon-msft @vincenttran-msft @jaschrep-msft
 
 # ServiceLabel: %Event Hubs
 # AzureSDKOwners: @LarryOsterman
