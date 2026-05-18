@@ -1,178 +1,209 @@
-<!-- markdownlint-disable MD033 MD041 MD060 -->
-## Cosmos DB Rust Driver – Proposed Error Codes and Retries
+# Cosmos DB Rust Driver — Retry Mechanisms and Error Code Handling
 
-This document is a **proposal** for the target retry behavior of the Cosmos DB Rust Driver, based on the Python SDK's retry semantics as the source of truth. Where Rust-specific adaptations are needed (e.g., `RequestSentStatus` instead of `ServiceRequestError`/`ServiceResponseError`), those are noted.
+This document describes the target retry behavior for the Azure Cosmos DB Rust driver (`azure_data_cosmos_driver`). It serves as the authoritative specification for how the driver handles errors, retries, and cross-region failover.
 
-| Status code | Cause of exception and retry behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-|:------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 400         | For all operations: </br><ul><li> This exception is encountered when the request is invalid, which could be for any of the following reasons: </br><ul><li>Syntax error in query text</li><li>Malformed JSON document for a write request</li><li>Incorrectly formatted REST API request body etc.</li></ul></li><li>The driver does NOT retry the request when a Bad Request (400) exception is thrown by the server.</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| 401         | For all operations: </br><ul><li> This is an unauthorized exception due to invalid auth tokens being used for the request. The driver does NOT retry requests when this exception is encountered.</li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| 403         | <ul><li>For Substatus 3 (Write Forbidden) and Substatus 1008 (Database Account Not Found): </br><ul><li>This exception occurs when a geo-replicated database account runs into writable/readable location changes (say, after a failover).</li><li>This exception can occur regardless of the Consistency level set for the account.</li><li>The driver refreshes account properties so that the endpoint list is refreshed with the latest writable and readable locations.</li><li>The current endpoint is marked as unavailable for its operation type (read or write).</li><li>The driver retries the request using account locations (not preferred locations) as the source of truth, since 403/3 is expected only for write region failover in single-writer accounts. The maximum retry attempt count is 120.</li></ul></li></li><ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| 404/1002    | <ul><li>For multi-write accounts (both read and write operations): </br><ul><li>The driver fetches the ordered read or write endpoints (depending on operation type) and retries once per each location. </li><li>On the last attempt, the driver clears the session token to avoid stale token propagation.</li><li>If endpoint discovery is enabled (default), the driver refreshes its location endpoints.</li></ul></li><li>For single-write accounts (both read and write operations): </br><ul><li>The driver retries only once, routing to the account primary region using account locations (not preferred locations) as the source of truth. </li><li>The session token is cleared on this retry attempt.</li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| 408         | <ul><li>For Write Operations: <br><ul><li>Timeout exceptions can be encountered by both the client as well as the server. Server-side timeout exceptions are not retried for write operations as it is not possible to determine if the write was in fact successfully committed on the server.</li><li>The driver does NOT retry write operations for 408. This behavior is the same for both single-write and multi-write accounts.</li></ul><li>For Query and Point Read Operations:</br><ul><li>The driver will retry on the next preferred region, if any is available. The total number of attempts is equal to the number of available read regions plus one.</li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| 409         | <ul><li>For Write Operations: </br><ul><li>This exception occurs when an attempt is made by the application to Create/Insert an Item that already exists.</li><li>This exception can occur regardless of the Consistency level set for the account. </li><li>This exception can occur for write operations when an attempt is made to create an existing item or when a unique key constraint violation occurs. </li><li>The driver does NOT retry on Conflict exceptions. </li></ul></li><li>For Query and Point Read Operations: </br><ul><li>N/A as this exception is only encountered for Create/Insert operations. </li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                                         |
-| 410/1002    | <ul><li>For all operations: </br><ul><li>This exception occurs when a partition is split (or merged) and no longer exists, and can occur regardless of the Consistency level set for the account.</li><li>The driver refreshes its partition key range cache and re-raises the exception. In query execution contexts, the driver handles 410/1002 in an inner retry loop: it refreshes the routing map and resets the query iterator state to continue with the new partition key ranges.</li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                            |
-| 410/1007    | <ul><li>For change feed operations: </br><ul><li>This exception (Completing Split/Merge) occurs during partition splits or merges when the operation is in progress.</li><li>The driver handles this in the change feed pipeline by refreshing the feed-range state and restarting the change feed iteration.</li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 412         | <ul><li>For Write Operations: </br><ul><li>This exception is encountered when the etag that is sent to the server for validation prior to updating an Item, does not match the etag of the Item on the server. </li><li>The driver does NOT retry this operation locally or against any of the remote regions for the account as retries would not help alleviate the etag mismatch. </li><li>The application would need to trigger a retry by first reading the Item, fetching the latest etag and issuing the Upsert/Replace operation. </br><ul><li>This operation can continue to fail with the same exception when multiple updates are executed concurrently for the same Item. </li><li>An upper bound on the number of retries before handing off the Item to a dead letter queue should be implemented by the application. </li></ul></li></ul></li><li>For Query and point read Operations: </br><ul><li>N/A as this exception is only encountered for Create/Insert/Replace/Upsert operations. </li></ul></li></ul> |
-| 429         | For all Operations: </br><ul><li>By default, the driver retries the request for a maximum of 9 times (or for a maximum of 30 seconds, whichever limit is reached first). </li><li>Retry delay uses the server-provided `x-ms-retry-after-ms` header when available, otherwise falls back to exponential backoff (5ms base, 2x factor, +/-25% jitter, capped at 5s per retry). </li><li>After all the retries are exhausted, one additional "forced final retry" may be attempted if deadline budget remains. </li><li>After all the retries are exhausted, the driver bubbles up the exception to the application. </li><li>**For a multi-region account**, the driver does NOT retry the request against a remote region for the account. </li><li>When the application receives a Request Rate too large exception (429), the application would need to instrument its own retry logic and dead letter queues. </li></ul>                                                                                                                                |
-| 449         | <ul><li>For Write Operations: </br><ul><li>This exception is encountered when a resource is concurrently updated on the server, which can happen due to concurrent writes, user triggered while conflicts are concurrently being resolved etc. </li><li>Only one update can be executed at a time per item. The other concurrent requests will fail with a Concurrent Execution Exception (449). </li><li>The driver does NOT retry requests that failed with a 449. </li></ul></li><li>For Query and point read Operations: </br><ul><li>N/A as this exception is only encountered for Create/Insert/Replace/Upsert operations. </li></ul></li></ul>                                                                                                                                                                                                                                                                                                                                                                          |
-| 500+        | <ul><li>For Write Operations: </br><ul><li>The driver does NOT retry write requests.</li></ul></li><li>For Read Operations: </br><ul><li>The request will be retried by the driver on the next preferred regions. The total number of attempts is equal to the number of available read regions plus one.</li></ul></li><li>Note: 503 is handled by a dedicated policy (see below) and is NOT handled by this policy.</li></ul>                                                                                                                                                                                                                                                                                                    |
-| 503         | When a Service Unavailable exception is encountered, for all operations: </br><ul><li>The request will be retried by the driver on the next preferred region, regardless of whether the operation is a read or write. Writes are always retried for 503.</li><li>The total number of attempts is equal to the number of available read regions plus one for read operations, or the number of available write regions plus one for write operations. For single-write accounts with one write region, this means one retry attempt for writes. For multi-write accounts, writes can cycle through all write regions.</li><li>The retry delay is 500ms between attempts.</li><li>The policy does NOT differentiate between multi-write and single-write accounts — the only difference is the size of the write region list used to compute the retry budget.</li></ul>                                                                                                                                                                                                                                                                                                         |
-| Container Recreate | <ul><li>For all operations: </br><ul><li>This is triggered when the driver detects either: (a) a 400 with substatus 1024 (Collection RID Mismatch), indicating the container was deleted and recreated with a different Resource ID, or (b) a 404 with substatus 10004 (Throughput Offer Not Found), indicating the throughput properties link is stale.</li><li>The driver refreshes the container properties cache and retries the request once.</li><li>On retry, if the partition key was previously extracted from the document definition, the driver re-extracts the partition key using the updated partition key definition from the refreshed cache.</li><li>If the request was for throughput properties, the driver updates the container link in the request body with the refreshed cache.</li><li>The retry is a one-shot gate: the driver retries at most once for container recreate scenarios.</li></ul></li></ul> |
+## Design Philosophy
 
-### Connection Issues Retry Flow And Marking Unavailable
+The Rust driver **prefers availability over idempotency concerns**. Unlike other Azure Cosmos SDKs that gate write retries behind opt-in flags or idempotency checks, the Rust driver retries writes by default for retryable status codes. This decision was made explicitly by the team, acknowledging that:
 
-Connection errors are handled at two levels: the transport-level pipeline (same endpoint retries) and the operation-level pipeline (cross-region retries). The Rust driver uses `RequestSentStatus` (an enum with `NotSent`, `Sent`, `Unknown` variants) to determine retry eligibility, rather than separate exception types.
+- Cosmos DB intentionally returns 503 when a write was **not processed** — it is safe to retry.
+- For 500/408, the service team explicitly requested write retries. We extend this to be all 500 status codes for convenience.
 
-#### Transport-Level Retry
+## Status Code Handling
 
-The transport pipeline handles low-level connection failures before the operation retry loop sees them. On a connectivity error (connection refused, reset, timeout, etc.), the driver can retry using a different connection to the same regional endpoint:
+### Non-Retryable (Abort Immediately)
 
-- **Request not sent (`RequestSentStatus::NotSent`)**: Retried locally on a different connection to the same endpoint (one local connectivity retry).
-- **Request sent or unknown (`RequestSentStatus::Sent` / `Unknown`), read-only or idempotent write operations**: Retried locally on a different connection to the same endpoint (one local connectivity retry).
-- **Request sent or unknown, non-idempotent write operations (Create, Upsert, Batch, Execute)**: NOT retried at the transport level — propagated immediately to the operation-level retry.
+| Status | Substatus | Meaning | Action |
+|--------|-----------|---------|--------|
+| 400 | — | Bad Request | Abort |
+| 401 | — | Unauthorized | Abort |
+| 409 | — | Conflict | Abort |
+| 412 | — | Precondition Failed | Abort |
+| 449 | — | Retry With (client must fix request) | Abort |
 
-#### Operation-Level Cross-Region Retry
+These are deterministic client errors. No retry will change the outcome.
 
-After transport retries are exhausted, connection errors bubble up to the operation retry loop. The `RequestSentStatus` determines what can be retried:
+### 403 — Forbidden
 
-- **`RequestSentStatus::NotSent`**: Since the request never reached the service, the driver marks the current endpoint as unavailable and retries on the next preferred region, regardless of operation type. This is equivalent to Python's `ServiceRequestRetryPolicy`.
-- **`RequestSentStatus::Sent` or `Unknown`, read-only or idempotent write operations**: The driver retries on the next preferred endpoint and marks the current endpoint as unavailable. The total number of attempts equals the number of applicable read or write regional routing contexts.
-- **`RequestSentStatus::Sent` or `Unknown`, non-idempotent write operations (Create, Upsert, Batch, Execute)**: The driver does NOT retry. The error is returned to the caller. This is equivalent to Python's `ServiceResponseRetryPolicy` behavior for writes without `retry_write`.
+| Substatus | Meaning | Action | Budget |
+|-----------|---------|--------|--------|
+| 3 | Write Forbidden (region failover) | Cross-region failover retry | 3 failover attempts |
+| 1008 | Write Forbidden (partition moved) | Cross-region failover retry | 3 failover attempts |
+| Other | Permission denied | Abort | — |
 
-### Transient Issues Retry Flow And Marking Unavailable
+403/3 and 403/1008 indicate the current write endpoint is no longer valid. The driver refreshes account properties to discover the new write region and retries there.
 
-Transient issues include 408 (Request Timeout) and 5xx errors excluding 503. These are handled by the operation-level retry evaluation.
+### 404/1002 — Read Session Not Available
 
-- Read operations are retried on the next preferred region. The total number of attempts is equal to the number of available read regions plus one.
-- Write operations are NOT retried for 408/5xx.
+| Account Type | Action | Budget |
+|--------------|--------|--------|
+| Single-write | Session retry to account primary | 2 attempts |
+| Multi-write | Session retry, advance through preferred endpoints | `preferred_endpoints.len()` attempts |
 
-### Driver Health Checks
+On the final attempt, the session token is cleared to allow the target region to serve a potentially stale read rather than failing.
 
-The driver performs health checks on the account regions to make decisions on where to route requests. A health check is performed during driver initialization and then whenever the endpoint cache determines a refresh is needed.
+### 408 — Request Timeout
 
-- Health checks probe the read endpoints and the first write endpoint by sending a Database Account read request to each region.
-- If a health check call fails after three retries (configurable), the endpoint is marked as unavailable.
-- If a health check call succeeds, the endpoint is marked as available.
-- Health check retries use an additive backoff: the initial delay is 500ms (configurable), and subsequent retry delays increase by `2^retry_count` milliseconds, up to a maximum of 3 minutes.
-- For each health check retry, the read timeout is also increased.
-- Health checks are the primary mechanism for the driver to mark a previously-unavailable endpoint as available again.
+| Operation | Action | Budget |
+|-----------|--------|--------|
+| Reads | Cross-region failover retry | 3 failover attempts |
+| Writes (all) | **Cross-region failover retry** | 3 failover attempts |
 
-### Default Retry Limits
+408 indicates a server-side timeout. The Rust driver retries writes on 408 because:
 
-| Policy                                    | Max Total Attempts                                                        |
-|:------------------------------------------|:--------------------------------------------------------------------------|
-| Endpoint Discovery (403/3, 403/1008)      | 120                                                                       |
-| Resource Throttle (429)                   | 9 (or 30 seconds cumulative, whichever first)                             |
-| Session (404/1002)                        | 1 additional retry (single-write) / all locations (multi-write)           |
-| Partition Key Range Gone (410/1002)       | 1 (cache refresh then re-raise to higher-level retry)                     |
-| Service Unavailable (503)                 | read_regions + 1 (reads) / write_regions + 1 (writes)                    |
-| Timeout Failover (408/5xx)                | read_regions + 1 (reads) / no write retry                                |
-| Transport NotSent (cross-region)          | Number of applicable regional routing contexts                            |
-| Transport Sent/Unknown (cross-region)     | Number of applicable routing contexts (reads + idempotent writes only)    |
-| Health Check                              | 3 (configurable)                                                          |
-| Container Recreate                        | 1 additional retry                                                        |
+- The team explicitly agreed to retry writes for 408.
+- Availability is preferred over the theoretical risk of duplicate processing.
+- Cosmos DB's conflict detection (409/412) catches actual duplicates.
 
----
+For single-write accounts, retry cycles through the available endpoint(s). For multi-write accounts, retry advances to the next preferred write region.
 
-## Per Partition Circuit Breaker (PPCB)
+### 410 — Gone
 
-The Per Partition Circuit Breaker provides granular failure tracking and endpoint exclusion at the partition level. It tracks failure rates and consecutive failures per partition per region, and can exclude unhealthy regions from routing for specific partitions. PPCB is enabled by default.
+| Operation | Action | Budget |
+|-----------|--------|--------|
+| Reads | Cross-region failover retry | 3 failover attempts |
+| Writes (all) | **Cross-region failover retry** | 3 failover attempts |
 
-### Applicability
+410 indicates the partition has moved or is undergoing a split/merge. All operations retry, regardless of idempotency.
 
-PPCB applies when ALL of the following conditions are met:
+### 429 — Too Many Requests (Throttling)
 
-- For **write operations**: the account must support multiple write locations. **Writes on single-write accounts are excluded from PPCB.**
-- For **read operations**: no multi-write requirement — reads are eligible on both single-write and multi-write accounts.
-- The request targets `Document` or `PartitionKey` resources.
-- The request has partition routing information (partition key range ID or partition key).
+| Substatus | Action | Budget |
+|-----------|--------|--------|
+| — (standard) | Local retry with backoff | 9 attempts / 30s total |
+| 3092 (global throttle) | Cross-region failover retry | 3 failover attempts |
 
-### How PPCB Works
+Standard 429 is handled entirely within the transport pipeline — the operation pipeline never sees it. The transport layer respects `x-ms-retry-after-ms` headers and falls back to exponential backoff (5ms base, 5s cap per attempt).
 
-- **Per-partition per-region health tracking**: The driver maintains health information for each combination of partition key range and region. It tracks:
-  - Failure rate (percentage of failed requests), calculated over a rolling 1-minute window with statistics reset periodically.
-  - Consecutive failure count.
-  - Failure-rate-based transitions only kick in after a minimum of 100 requests in the current window.
-- **Thresholds** (configurable):
-  - **Failure percentage tolerated**: Default 90%. Only evaluated after 100+ requests.
-  - **Consecutive failure threshold**: Default 10 for reads, 5 for writes.
-- **Circuit states**:
-  - **Healthy**: Normal operation.
-  - **Unhealthy Tentative**: Initial failure detection. The partition-region pair is monitored.
-  - **Unhealthy**: Confirmed unhealthy. The region is excluded from routing for this partition. The unavailability timeout grows exponentially up to a maximum of 20 minutes.
-- **Recovery (half-open probing)**: After the unavailability timeout expires, the driver checks for stale partition info. When an expired unhealthy entry is found, the driver marks the next request to that partition as a half-open probe. Transport-level retries are NOT performed for probe requests — the result (success or failure) must be observed to update the circuit breaker state. On success, the unavailability info is cleared. On failure, the partition-region reverts to unhealthy with an extended timeout.
-- **Endpoint exclusion**: Unhealthy regions for a partition are excluded from the endpoint resolution, which causes the location cache to skip those regions.
+429/3092 indicates a global/partition-level throttle that cannot be resolved locally. It is escalated to the operation pipeline and treated identically to 503 (cross-region failover).
 
-### Failure Recording
+**No cross-region retry for standard 429.** Throttling is account-wide; moving to another region would not help.
 
-- **503 errors**: Tracked specifically for circuit breaker.
-- **408, 5xx errors, and transport errors**: Recorded for PPCB tracking.
-- **Success**: May update PPCB circuit breaker state.
+### 5xx — Server Errors (500, 502, 503, 504)
 
-### PPCB Integration with Retry Evaluation
+| Operation | Action | Budget |
+|-----------|--------|--------|
+| Reads | Cross-region failover retry | 3 failover attempts |
+| Writes (all) | **Cross-region failover retry** | 3 failover attempts |
 
-PPCB primarily influences routing rather than retry decisions:
+All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signal from Cosmos DB — when the service intentionally returns 503, it guarantees the write was not processed. The team decided all other 5xx codes (500, 502, 504) should be retried identically, applying the "availability over idempotency" philosophy. 502/504 may be raised by intermediate proxies (e.g., Envoy), but Cosmos DB's conflict detection (409/412) catches actual duplicates.
 
-- **Location Cache**: During endpoint resolution, unhealthy regions for the affected partition are excluded from the candidate list.
-- **Transport Pipeline**: Requests targeting a half-open probe location are NOT retried at the transport level — the failure/success result must be observed to update the circuit breaker state.
-- **Stale partition info**: Expired unhealthy entries are promoted to half-open state, enabling recovery probes.
+**This is the key divergence from other SDKs**: Python gates write retries behind `retry_write`; Java/.NET only retry for multi-write accounts. The Rust driver always retries.
 
----
+**Note on in-region retries**: Other SDKs (Python, .NET) typically perform 1 local/in-region retry with a delay for 503/500 before escalating to cross-region failover. The Rust driver currently skips this step and goes straight to cross-region failover on the first failure. This may be worth revisiting — a single in-region retry could resolve transient issues without the latency cost of switching regions.
 
-## Multi-Write vs Single-Write Account Behavioral Differences
+### Transport Errors (Connection Failures)
 
-The following is a comprehensive summary of every behavioral difference between multi-write (multi-master) and single-write accounts.
+| Sent Status | Operation | Action | Budget |
+|-------------|-----------|--------|--------|
+| **Not sent** (request never left client) | Any | Cross-region failover retry | 3 failover attempts |
+| **Sent** or unknown | Reads | Cross-region failover retry | 3 failover attempts |
+| **Sent** or unknown | Writes (all) | **Cross-region failover retry** | 3 failover attempts |
 
-### Endpoint Routing
+When the request was definitely not sent, no effects are applied because the failure may be transient and the endpoint is not necessarily unhealthy.
 
-| Aspect | Single-Write | Multi-Write |
-|:-------|:-------------|:------------|
-| **Write endpoint resolution** | Fails over only between the first two write locations. Preferred locations are NOT used for write routing. | Uses preferred location ordering for write routing, same as reads. |
-| **Read endpoint resolution** | Uses preferred location ordering. | Uses preferred location ordering. |
-| **Endpoint refresh trigger** | Refreshes when the current write endpoint is marked unavailable. | Refreshes when the preferred write location differs from the first write regional routing context, or when the preferred location is not found. |
-| **Preferred locations for writes** | Ignores preferred-location ordering; uses gateway `ordered_locations` order instead. | Uses preferred locations ordering, with unavailable endpoints pushed to the end. |
+When the request was possibly sent, endpoint/partition marks are applied to route subsequent requests away from the failing endpoint.
 
-### Session Retry (404/1002)
+For connectivity errors (connection refused, I/O errors), the transport layer performs 1 local retry on a different TCP shard to the same endpoint before escalating to the operation pipeline for cross-region failover.
 
-| Aspect | Single-Write | Multi-Write |
-|:-------|:-------------|:------------|
-| **Max retries** | 1 additional retry. | Retries through ALL ordered read/write locations (depending on op type). |
-| **Routing on retry** | Routes with `usePreferredLocations=false` (uses account locations as source of truth). | Routes with `usePreferredLocations` flag set based on whether retry count exceeds the max retry attempt count. |
-| **Session token clearing** | Cleared immediately on the first retry. | Cleared only on the last attempt (after all locations are tried). |
+**Note**: The Rust driver retries non-idempotent writes even when the request may have been sent. This aligns with the "availability over idempotency" philosophy.
 
-### Timeout Failover (408/5xx)
+### Deadline Exceeded (Client-Side Timeout)
 
-| Aspect | Single-Write | Multi-Write |
-|:-------|:-------------|:------------|
-| **Read retry** | Retried on next preferred region. | Retried on next preferred region. |
-| **Write retry** | NOT retried. | NOT retried. |
+| Operation | Action | Budget |
+|-----------|--------|--------|
+| Any | **Abort** — synthesize 408 / `CLIENT_OPERATION_TIMEOUT` | — |
 
-### Service Unavailable (503)
+When the client's end-to-end deadline is exceeded, no retry is attempted. The operation has already consumed its time budget.
 
-| Aspect | Single-Write | Multi-Write |
-|:-------|:-------------|:------------|
-| **Write retry** | Writes are retried. No additional gate. | Writes are retried. No additional gate. |
-| **Write retry budget** | `write_regions + 1` — typically 2 for a single-write account with 1 write region (1 retry). | `write_regions + 1` — can cycle through all write regions. |
+## Cross-Region Failover Behavior
 
-### Connection Errors (Transport Errors)
+### Single-Write Accounts
 
-| Aspect | Single-Write | Multi-Write |
-|:-------|:-------------|:------------|
-| **`NotSent` write retries** | Writes are retried across regions. Write routing falls back to first two write locations only. | Writes are retried across regions using preferred write location ordering. |
-| **`Sent`/`Unknown` idempotent write retries (Replace, Delete)** | Retried on next preferred region. | Retried on next preferred region. |
-| **`Sent`/`Unknown` non-idempotent write retries (Create, Upsert, Batch, Execute)** | NOT retried. | NOT retried. |
-| **Write retry budget (`NotSent`)** | Number of applicable write regional routing contexts (typically 1 for single-write). | Number of applicable write regional routing contexts (can be multiple). |
+For retryable errors (5xx, 408, 410, transport errors):
 
-### Endpoint Discovery (403/3)
+- **Writes**: There is only one write endpoint, so retries hit the same endpoint unless PPAF is enabled (which allows routing to read endpoints for write-region discovery).
+- **Reads**: The driver cycles through preferred read regions on each retry attempt.
+- Budget: 3 failover attempts total.
 
-| Aspect | Single-Write | Multi-Write |
-|:-------|:-------------|:------------|
-| **Routing on retry** | Routes with `usePreferredLocations=false` — uses account locations as source of truth, since 403/3 signals a write region failover. | Same — also routes with `usePreferredLocations=false`. The policy does not branch on multi-write. |
+### Multi-Write Accounts
 
-### PPCB
+For retryable errors on writes:
 
-| Aspect | Single-Write | Multi-Write |
-|:-------|:-------------|:------------|
-| **PPCB applicability for writes** | NOT applicable — writes on single-write accounts are excluded. | Applicable for write Document/PartitionKey ops. |
-| **PPCB applicability for reads** | Applicable. | Applicable. |
+1. First attempt goes to the current preferred write endpoint.
+2. On failure, advance to the next preferred write region (cross-region failover).
+3. Continue cycling through `write_regions` endpoints.
+4. Budget: 3 failover attempts total (or `preferred_endpoints.len()` for session retries).
+
+Cross-region retry is the natural behavior for multi-write accounts since any write region can accept writes.
+
+## Per-Partition Automatic Failover (PPAF)
+
+PPAF is an **opt-in** feature for **single-master write accounts only**. When enabled (via server account flag `enable_per_partition_failover_behavior`):
+
+- Partition-level routing overrides are recorded on **successful write confirmation** — not on failure.
+- If a write succeeds on a non-primary region during retry, that region is recorded as the partition's current primary.
+- PPAF entries do **not** participate in probe-based failback; they are updated only by success-time discovery.
+
+**With the Rust driver's "always retry writes" stance, PPAF primarily adds the partition-level routing intelligence** — the retry itself already happens regardless. PPAF makes the routing *smarter* by remembering which region last successfully served a given partition, and by providing further availability through processing writes in other read regions.
+
+## Per-Partition Circuit Breaker (PPCB)
+
+PPCB is an **opt-in** feature that provides partition-level health tracking and routing:
+
+| Account Type | Reads | Writes |
+|--------------|-------|--------|
+| Single-write | ✅ PPCB-managed | ❌ Not PPCB-managed (PPAF handles writes) |
+| Multi-write | ✅ PPCB-managed | ✅ PPCB-managed |
+
+### Behavior
+
+- Tracks per-partition failure counts (`read_failure_count`, `write_failure_count`) with timestamps.
+- When a partition's failure count crosses the configured threshold, the circuit "trips" and routes to the next preferred region.
+- **Recovery**: After `partition_unavailability_duration`, a single probe request is sent. Success removes the entry; failure resets the timer.
+- When PPCB is managing an endpoint, `MarkEndpointUnavailable` effects are **suppressed** — PPCB owns the routing decision.
+
+### PPCB vs Endpoint-Level Marking
+
+Without PPCB, the driver marks entire endpoints as unavailable when errors occur. With PPCB, the granularity improves to per-partition:
+
+- Individual partition failures don't poison the entire endpoint.
+- Other partitions on the same endpoint continue to be served normally.
+- Recovery is also per-partition rather than endpoint-wide.
+
+## Retry Budget Summary
+
+| Layer | Budget | Scope |
+|-------|--------|-------|
+| Transport (429) | 9 attempts or 30s | Per-request, local only |
+| Operation failover | 3 attempts | Per-operation, cross-region |
+| Session retry (404/1002) | 2 (single-write) or `preferred_endpoints.len()` (multi-write) | Per-operation |
+
+## Comparison with Other SDKs
+
+| Behavior | Python | Java | .NET | **Rust (Target)** |
+|----------|--------|------|------|-------------------|
+| 503 write retry | Always (no gate) | Multi-write only | Multi-write only | **Always** |
+| 500 write retry | Only with `retry_write` | No | No | **Always** |
+| 408 write retry | Only with `retry_write` | No | No | **Always** |
+| 502/504 write retry | Only with `retry_write` | No | No | **Always** |
+| Non-idempotent write retry | Gated by `retry_write` | Gated by multi-write | Gated by multi-write | **Always (no gate)** |
+| Transport sent + write | Abort | Abort | Abort | **Retry** |
+| PPAF | Yes (single-master) | Yes | Yes | **Yes** |
+| PPCB | Yes | Yes | Yes | **Yes** |
+
+The Rust driver is intentionally more aggressive about retrying writes. This is a deliberate design choice for maximum availability, leveraging Cosmos DB's conflict detection as the safety net for the rare case of duplicate processing.
+
+## Implementation Status
+
+> **Note**: The current implementation does not fully match this specification. The following gaps exist and should be addressed:
+
+| Gap | Current Behavior | Target Behavior |
+|-----|-----------------|-----------------|
+| 503 non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
+| 500 non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
+| 408 non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
+| 502/504 non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
+| Transport sent + non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
+
+All of these gaps share the same root cause: the retry evaluation currently checks `is_idempotent() || ppaf_write_retry_allowed` before allowing write retries. The fix is to remove the idempotency gate entirely for retryable status codes, making the retry unconditional for all writes.
