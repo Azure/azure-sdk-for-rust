@@ -274,7 +274,7 @@ impl ContainerClient {
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
     /// If you want the new item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json_single`](crate::ResponseBody::json_single), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
@@ -296,10 +296,10 @@ impl ContainerClient {
     /// let mut operation = OperationOptions::default();
     /// operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
     /// let options = ItemWriteOptions::default().with_operation_options(operation);
-    /// let created_item = container_client
+    /// let created_item: Product = container_client
     ///     .create_item("category1", "product1", p, Some(options))
     ///     .await?
-    ///     .into_body().json::<Product>();
+    ///     .into_body().json_single::<Product>()?;
     /// # Ok(())
     /// # }
     /// ```
@@ -373,7 +373,7 @@ impl ContainerClient {
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
     /// If you want the replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json_single`](crate::ResponseBody::json_single), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
@@ -398,7 +398,7 @@ impl ContainerClient {
     /// let updated_product: Product = container_client
     ///     .replace_item("category1", "product1", p, Some(options))
     ///     .await?
-    ///     .into_body().json::<Product>()?;
+    ///     .into_body().json_single::<Product>()?;
     /// # }
     /// ```
     pub async fn replace_item<T: Serialize>(
@@ -475,7 +475,7 @@ impl ContainerClient {
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
     /// If you want the created/replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json_single`](crate::ResponseBody::json_single), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
@@ -500,7 +500,7 @@ impl ContainerClient {
     /// let updated_product = container_client
     ///     .upsert_item("category1", "product1", p, Some(options))
     ///     .await?
-    ///     .into_body().json::<Product>()?;
+    ///     .into_body().json_single::<Product>()?;
     /// Ok(())
     /// # }
     pub async fn upsert_item<T: Serialize>(
