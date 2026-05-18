@@ -146,17 +146,17 @@ All issues reaching this step proceed through label prediction and ownership rou
 Labels are distinguished by color. Actively inspect label colors when examining repository labels and previous issues:
 
 - **Category label** (color #ffeb77): exactly one of `Client`, `Mgmt`, or `Service`.
-    - `Client` — crates that do NOT start with `azure_resourcemanager_` (e.g., `azure_core`, `azure_identity`, `azure_security_keyvault_secrets`, `azure_storage_blob`).
-    - `Mgmt` — crates that start with `azure_resourcemanager_`, or any mention of ARM or Azure Resource Manager.
-    - `Service` — issues with the REST API or Azure service behavior outside SDK control.
+  - `Client` — crates that do NOT start with `azure_resourcemanager_` (e.g., `azure_core`, `azure_identity`, `azure_security_keyvault_secrets`, `azure_storage_blob`).
+  - `Mgmt` — crates that start with `azure_resourcemanager_`, or any mention of ARM or Azure Resource Manager.
+  - `Service` — issues with the REST API or Azure service behavior outside SDK control.
 - **Service label** (color #e99695): exactly one label identifying the Azure service. Match the service directory name under `sdk/<service>/`, for example:
-    - `sdk/storage/...` → `Storage`.
-    - `sdk/identity/...` → `Azure.Identity`.
-    - `sdk/core/...` → `Azure.Core`.
-    - `sdk/keyvault/...` → `KeyVault`.
-    - `sdk/cosmos/...` → `Cosmos`.
-    - `sdk/eventhubs/...` → `Event Hubs`.
-    - Engineering-system issues (scripts, workflows, pipelines under `/eng` but NOT under `/eng/common`) → service `EngSys`.
+  - `sdk/storage/...` → `Storage`.
+  - `sdk/identity/...` → `Azure.Identity`.
+  - `sdk/core/...` → `Azure.Core`.
+  - `sdk/keyvault/...` → `KeyVault`.
+  - `sdk/cosmos/...` → `Cosmos`.
+  - `sdk/eventhubs/...` → `Event Hubs`.
+  - Engineering-system issues (scripts, workflows, pipelines under `/eng` but NOT under `/eng/common`) → service `EngSys`.
 
 ### Excluded Category Labels
 
