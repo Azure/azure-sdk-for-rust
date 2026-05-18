@@ -713,7 +713,9 @@ impl RecoverableConnection {
             }
             AmqpErrorKind::ConnectionClosedByRemote(_)
             | AmqpErrorKind::ConnectionDetachedByRemote(_)
-            | AmqpErrorKind::ConnectionDropped(_) => {
+            | AmqpErrorKind::ConnectionDropped(_)
+            | AmqpErrorKind::FramingError(_)
+            | AmqpErrorKind::IdleTimeoutElapsed(_) => {
                 debug!("Connection dropped error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectConnection
             }
@@ -723,7 +725,8 @@ impl RecoverableConnection {
             }
             AmqpErrorKind::LinkClosedByRemote(_)
             | AmqpErrorKind::LinkDetachedByRemote(_)
-            | AmqpErrorKind::LinkStateError(_) => {
+            | AmqpErrorKind::LinkStateError(_)
+            | AmqpErrorKind::DetachError(_) => {
                 debug!("Link state error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectLink
             }
@@ -733,7 +736,6 @@ impl RecoverableConnection {
                 if matches!(
                     described_error.condition,
                     AmqpErrorCondition::ResourceLimitExceeded
-                        | AmqpErrorCondition::LinkStolen
                         | AmqpErrorCondition::ServerBusyError
                         | AmqpErrorCondition::EntityUpdated
                         | AmqpErrorCondition::EntityDisabledError
@@ -752,6 +754,18 @@ impl RecoverableConnection {
                         described_error
                     );
                     ErrorRecoveryAction::ReconnectConnection
+                } else if matches!(
+                    described_error.condition,
+                    AmqpErrorCondition::LinkStolen | AmqpErrorCondition::LinkDetachForced
+                ) {
+                    // The link is gone; retrying the same operation against it will keep
+                    // failing. Reattach. (LinkStolen was previously classified as a retry,
+                    // which guaranteed N spins through the backoff before bailing.)
+                    debug!(
+                        "AMQP described error requires link reattach: {:?}",
+                        described_error
+                    );
+                    ErrorRecoveryAction::ReconnectLink
                 } else {
                     debug!(
                         "AMQP described error cannot be retried: {:?}",
@@ -978,6 +992,62 @@ mod tests {
         assert_eq!(
             RecoverableConnection::should_retry_amqp_error(&err),
             ErrorRecoveryAction::RetryAction
+        );
+
+        // Test IdleTimeoutElapsed -> ReconnectConnection. Idle-timeout means the peer
+        // hasn't sent a frame inside the negotiated heartbeat window, so the transport
+        // is effectively dead.
+        let err = AmqpError::from(AmqpErrorKind::IdleTimeoutElapsed(Box::new(
+            std::io::Error::new(std::io::ErrorKind::TimedOut, "idle timeout"),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // Test FramingError -> ReconnectConnection. The wire protocol is corrupted;
+        // there is no recovery short of a fresh connection.
+        let err = AmqpError::from(AmqpErrorKind::FramingError(Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "framing error",
+        ))));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // Test DetachError -> ReconnectLink. The link's detach handshake failed;
+        // reattach is required to make any further use of it.
+        let err = AmqpError::from(AmqpErrorKind::DetachError(Box::new(
+            std::io::Error::other("detach error"),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectLink
+        );
+
+        // Test LinkStolen -> ReconnectLink. Behavior change: previously classified as
+        // RetryAction, which burned the entire backoff against a link that is gone.
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::LinkStolen,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectLink
+        );
+
+        // Test LinkDetachForced -> ReconnectLink. The peer force-detached the link;
+        // reattach is required.
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::LinkDetachForced,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectLink
         );
     }
 
