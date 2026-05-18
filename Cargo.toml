@@ -60,10 +60,6 @@ version = "1.0.0"
 [workspace.dependencies.azure_core_amqp]
 version = "1.0.0"
 
-[workspace.dependencies.azure_messaging_eventhubs]
-version = "0.15.0"
-path = "sdk/eventhubs/azure_messaging_eventhubs"
-
 [workspace.dependencies.azure_core_opentelemetry]
 # azure_core_opentelemetry should only ever be in dev-dependencies herein
 version = "1.0.0"
@@ -81,8 +77,7 @@ path = "sdk/core/azure_core_test_macros"
 version = "1.0.0"
 
 [workspace.dependencies.azure_storage_blob]
-path = "sdk/storage/azure_storage_blob"
-version = "1.1.0-beta.1"
+version = "1.0.0"
 
 [workspace.dependencies]
 async-lock = "3.4"
