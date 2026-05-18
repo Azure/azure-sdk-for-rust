@@ -80,6 +80,14 @@ pub(crate) struct OperationRetryState {
     /// Number of operation-level failover retries attempted.
     pub failover_retry_count: u32,
     /// Number of session-token retries attempted.
+    ///
+    /// **Invariant:** This counter is incremented only by
+    /// [`Self::advance_session_retry`] on the 404/1002 path. The
+    /// hub-region-processing-only latch trigger in
+    /// `retry_evaluation::try_handle_read_session_not_available` reads
+    /// `== 0` to detect the first 1002 within an operation; if a future
+    /// refactor adds another increment site, that trigger gate must be
+    /// re-validated.
     pub session_token_retry_count: u32,
     /// Maximum failover retries.
     pub max_failover_retries: u32,
@@ -87,6 +95,52 @@ pub(crate) struct OperationRetryState {
     pub max_session_retries: u32,
     /// Whether multiple write locations can be used.
     pub can_use_multiple_write_locations: bool,
+    /// Whether this operation is on the data-plane pipeline (vs metadata).
+    ///
+    /// Set once at the production call site in `execute_operation_pipeline`
+    /// from `pipeline_type.is_data_plane()`. Used to gate the
+    /// hub-region-processing-only latch so metadata-pipeline operations
+    /// (which ride the same `execute_operation_pipeline` but are scoped out
+    /// of the spec per HUB_REGION_PROCESSING_HEADER_SPEC.md §1.5) never
+    /// emit the header.
+    ///
+    /// LOAD-BEARING for the metadata-pipeline scope gate (AC-8).
+    /// The production call site MUST use the
+    /// `PipelineType::is_data_plane()` accessor — NOT `==` matching —
+    /// because `PipelineType` is `#[non_exhaustive]` and a future variant
+    /// would silently bypass an equality gate.
+    pub is_dataplane: bool,
+    /// Hub-region-processing-only latch.
+    ///
+    /// Sticky within a single operation. Set on the retry triggered by the
+    /// FIRST `404 / 1002 (READ_SESSION_NOT_AVAILABLE)` on a single-master
+    /// data-plane account; once set, every subsequent transport attempt
+    /// for this operation emits the
+    /// `x-ms-cosmos-hub-region-processing-only: True` header.
+    ///
+    /// Bounded by operation lifetime — `OperationRetryState` is
+    /// constructed fresh per call to `execute_operation_pipeline` (single
+    /// production call site), so the latch never leaks across operations.
+    ///
+    /// LOAD-BEARING for SE-003 mitigation — see
+    /// HUB_REGION_PROCESSING_HEADER_SPEC.md AG-1..AG-4. If a future
+    /// refactor adds a second production construction site for
+    /// `OperationRetryState`, the SE-003 mitigation argument needs to be
+    /// re-validated.
+    ///
+    /// **Cross-region hedging coordination.** The orchestrator added in
+    /// `azure_data_cosmos_driver/docs/HEDGING_SPEC.md` §9.5 constructs an
+    /// `OperationRetryState` *per hedge*, so this per-state latch is
+    /// per-hedge by default. The hedging spec requires augmenting this
+    /// state with a `shared_hub_region_latch: Option<Arc<AtomicBool>>`
+    /// that is `Some` only when running inside `execute_with_hedging()`,
+    /// is CAS-set alongside this field in `build_session_retry_state`,
+    /// and is OR'd into the emission decision in `apply_hub_region_header`.
+    /// This mirrors .NET v3's `CrossRegionAvailabilityContext` shared
+    /// object introduced by azure-cosmos-dotnet-v3#5815. Any change to
+    /// the latch trigger or emission rule here MUST update both call
+    /// sites and §9.5 of the hedging spec.
+    pub hub_region_processing_only: bool,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
     /// Session-retry routing override for read operations.
@@ -169,6 +223,8 @@ impl OperationRetryState {
             max_failover_retries,
             max_session_retries,
             can_use_multiple_write_locations,
+            is_dataplane: false,
+            hub_region_processing_only: false,
             excluded_regions,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
