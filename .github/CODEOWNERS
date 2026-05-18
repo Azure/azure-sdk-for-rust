@@ -19,10 +19,10 @@
 
 # Catch all for loose files in the root, which are mostly global configuration and
 # should not be changed without team discussion.
-/*                       @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/*                       @heaths @xirzec @RickWinter @ronniegeraghty @LarryOsterman
 
 # Catch all for non-code project files and unowned files | folders
-/**                      @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/**                      @heaths @xirzec @RickWinter @ronniegeraghty @LarryOsterman
 
 # Allow service owners to approve crate version updates, which impact Cargo.lock
 /Cargo.lock
@@ -32,23 +32,23 @@
 ##################
 
 # GitHub integration and bot rules
-/.github/                @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/.github/                @heaths @xirzec @RickWinter @ronniegeraghty @LarryOsterman
 
 ###########
 # SDK
 ###########
 # Catch all
-/sdk/                    @heaths @RickWinter @ronniegeraghty @LarryOsterman
+/sdk/                    @heaths @xirzec @RickWinter @ronniegeraghty @LarryOsterman
 
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Core
 # PRLabel: %Azure.Core
-/sdk/core/               @heaths @RickWinter @LarryOsterman
+/sdk/core/               @heaths @xirzec @RickWinter @LarryOsterman
 
 # AzureSDKOwners: @heaths
 # ServiceLabel: %Azure.Identity
 # PRLabel: %Azure.Identity
-/sdk/identity/           @heaths @RickWinter @LarryOsterman @chlowell
+/sdk/identity/           @heaths @xirzec @RickWinter @LarryOsterman @chlowell
 
 ####################
 # Client Libraries
@@ -68,7 +68,7 @@
 # ServiceOwners: @Azure/azure-sdk-write-keyvault
 
 # PRLabel: %Storage
-/sdk/storage/            @heaths @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
+/sdk/storage/            @heaths @xirzec @RickWinter @LarryOsterman @vincenttran-msft @jalauzon-msft
 
 # ServiceLabel: %Storage
 # AzureSDKOwners: @vincenttran-msft @jalauzon-msft
@@ -90,12 +90,12 @@
 ###########
 # Eng Sys
 ###########
-/eng/                    @danieljurek @weshaggard @heaths @RickWinter
+/eng/                    @danieljurek @weshaggard @heaths @xirzec @RickWinter
 /eng/common/             @Azure/azure-sdk-eng
 /.github/workflows/      @Azure/azure-sdk-eng
-/.github/CODEOWNERS      @RickWinter @ronniegeraghty @Azure/azure-sdk-eng
+/.github/CODEOWNERS      @xirzec @RickWinter @ronniegeraghty @Azure/azure-sdk-eng
 /.config/1espt/          @benbp @weshaggard
 /sdk/canary/             @danieljurek
 
 # Add owners for notifications for specific pipelines
-/eng/common/pipelines/codeowners-linter.yml       @rickwinter
+/eng/common/pipelines/codeowners-linter.yml       @xirzec @rickwinter
