@@ -193,26 +193,34 @@ impl CosmosError {
     /// Consume the `CosmosError` and return an owned [`azure_core::Error`].
     ///
     /// If this `CosmosError` is the sole owner of the wrapped
-    /// [`Arc`], the original error is returned losslessly. Otherwise
-    /// a fresh `azure_core::Error` is constructed from the wrapped
-    /// error's `kind()` (cloned) and `to_string()` — this preserves
-    /// the `ErrorKind` discriminant and the user-visible message but
-    /// drops the original inner source (callers walking
-    /// `Error::source()` will see an empty chain) **and** drops
-    /// `raw_response` from `ErrorKind::HttpResponse` (because the
-    /// inner `Box<RawResponse>` cannot be uniquely re-obtained from a
-    /// shared handle).
+    /// [`Arc`], the original error is returned unchanged. Otherwise a
+    /// fresh `azure_core::Error` is constructed from the wrapped
+    /// error's `kind()` (cloned, including any `raw_response`
+    /// payload) and `to_string()` — this preserves the `ErrorKind`
+    /// variant data and the user-visible message but drops the
+    /// original inner source (callers walking `Error::source()` will
+    /// see an empty chain on the shared-handle path).
+    ///
+    /// **Redaction note.** This converter is *not* a redaction
+    /// boundary. The returned `azure_core::Error` uses
+    /// `azure_core`'s derived `Debug`, which walks `ErrorKind` and
+    /// emits `HttpResponse::raw_response` verbatim — including any
+    /// captured response headers and body bytes. The
+    /// [`CosmosError::Debug`] implementation is the surface that
+    /// scrubs `raw_response`; if you need that guarantee, log
+    /// `{cosmos_err:?}` directly rather than converting first.
     ///
     /// Prefer [`Self::as_azure_error`] when you only need a borrow.
     pub fn into_azure_error_lossy(self) -> azure_core::Error {
         match Arc::try_unwrap(self.source) {
             Ok(err) => err,
             Err(shared) => {
-                // Lossy reconstruction: kind + message only, no inner,
-                // no raw_response on HttpResponse. The status_code /
-                // sub_status / diagnostics fields on this CosmosError
-                // remain reachable via the borrow accessors before
-                // calling this method.
+                // Shared-handle path: rebuild from the cloned kind +
+                // top-level message. The original inner source chain
+                // is dropped; raw_response (if any) is cloned through
+                // because `ErrorKind` derives `Clone` and so does
+                // `RawResponse`. See the redaction note in the
+                // rustdoc above.
                 let kind = shared.kind().clone();
                 let display = shared.to_string();
                 azure_core::Error::with_message(kind, display)
@@ -615,6 +623,88 @@ mod tests {
         // original 404 for callers that want the head-of-line status
         // explicitly.
         assert_eq!(cosmos.http_status(), Some(StatusCode::NotFound));
+    }
+
+    #[test]
+    fn from_falls_back_to_inner_http_status_when_diagnostics_has_no_status() {
+        // Middle precedence case: diagnostics IS attached (the error
+        // flowed through the pipeline far enough for the carrier to be
+        // produced) but the operation aborted before any final status
+        // was recorded into the context. The From impl must then fall
+        // back to the wrapped error's http_status() — not silently
+        // produce None on a 4xx/5xx response.
+        use azure_core::http::StatusCode;
+
+        let http_err = ErrorKind::HttpResponse {
+            status: StatusCode::NotFound,
+            error_code: None,
+            raw_response: None,
+        }
+        .into_error();
+        // `for_testing` produces a context whose `status` is None.
+        let diagnostics = make_test_diagnostics();
+        assert!(
+            diagnostics.status().is_none(),
+            "test precondition: for_testing must leave status unset",
+        );
+
+        let wrapped = azure_data_cosmos_driver::diagnostics::attach_diagnostics(
+            http_err,
+            Arc::clone(&diagnostics),
+        );
+        let cosmos = CosmosError::from(wrapped);
+
+        assert!(cosmos.diagnostics.is_some(), "diagnostics must survive");
+        assert_eq!(
+            cosmos.status_code,
+            Some(404),
+            "no recorded status in diagnostics: must fall back to wrapped http_status",
+        );
+        assert_eq!(
+            cosmos.sub_status, None,
+            "no diagnostics status means no sub_status",
+        );
+    }
+
+    #[test]
+    fn into_azure_error_lossy_preserves_raw_response_on_shared_path() {
+        // The doc on into_azure_error_lossy explicitly says the
+        // function is NOT a redaction boundary. Pin that contract:
+        // raw_response on HttpResponse survives the shared-handle
+        // rebuild because ErrorKind: Clone and RawResponse: Clone.
+        //
+        // The redaction guarantee belongs to CosmosError::Debug; this
+        // test prevents a future contributor from "tightening" the
+        // lossy path and silently introducing a behavior change that
+        // would surprise callers who learned the new redaction
+        // semantics from a release note.
+        use azure_core::http::{headers::Headers, response::RawResponse, StatusCode};
+        const PROBE: &[u8] = b"PROBE_PRESERVED_THROUGH_LOSSY_REBUILD";
+
+        let raw = RawResponse::from_bytes(
+            StatusCode::InternalServerError,
+            Headers::new(),
+            azure_core::Bytes::from_static(PROBE),
+        );
+        let http_err = ErrorKind::HttpResponse {
+            status: StatusCode::InternalServerError,
+            error_code: Some("InternalServerError".to_string()),
+            raw_response: Some(Box::new(raw)),
+        }
+        .into_error();
+        let cosmos = CosmosError::from(http_err);
+        let _alias = cosmos.clone(); // force the shared-handle path
+        let rebuilt = cosmos.into_azure_error_lossy();
+
+        match rebuilt.kind() {
+            ErrorKind::HttpResponse { raw_response, .. } => {
+                let raw = raw_response
+                    .as_ref()
+                    .expect("raw_response must be preserved through lossy rebuild");
+                assert_eq!(raw.body().as_ref(), PROBE);
+            }
+            other => panic!("expected HttpResponse kind, got {other:?}"),
+        }
     }
 
     #[test]

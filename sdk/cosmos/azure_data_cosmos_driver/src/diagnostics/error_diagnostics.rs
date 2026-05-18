@@ -122,6 +122,19 @@ pub fn attach_diagnostics(
 /// double-wrapping (e.g. a retry loop re-attaching after an inner
 /// attach) does not leave a carrier visible. Returns the original
 /// error unmodified plus `None` when no carrier is present.
+///
+/// **Precondition / contract.** Only the *head* of the chain is
+/// peeled. If a carrier ever appears below another `azure_core::Error`
+/// layer (e.g. some upstream code wrapping a driver error inside its
+/// own `with_error` before the carrier is attached), this function
+/// will not reach it and the inner carrier will survive into the
+/// public `CosmosError.source` chain. Today this cannot happen —
+/// [`attach_diagnostics`] is the only carrier producer and is called
+/// only at well-defined pipeline-escape sites — but any future code
+/// that adds a non-head wrap MUST either (a) call back into this
+/// helper at the boundary or (b) keep its `with_error` wrap *outside*
+/// of any subsequent `attach_diagnostics`, so the carrier always
+/// remains at the head when this function runs.
 #[doc(hidden)]
 pub fn split_diagnostics_carrier(
     mut err: azure_core::Error,
