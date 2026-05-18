@@ -144,7 +144,7 @@ impl RecoveryPlan {
                 clear_sessions: true,
                 clear_senders: true,
                 clear_receivers: true,
-                drop_mgmt_client: false,
+                drop_mgmt_client: true,
             }),
             ErrorRecoveryAction::ReconnectSession => Some(Self {
                 drop_connection: false,
@@ -979,6 +979,21 @@ mod tests {
             RecoverableConnection::should_retry_amqp_error(&err),
             ErrorRecoveryAction::RetryAction
         );
+    }
+
+    #[test]
+    fn recovery_plan_reconnect_connection_clears_everything() {
+        let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection)
+            .expect("ReconnectConnection has a recovery plan");
+        // Regression guard: a full reconnect must drop the management client too,
+        // otherwise it would be left holding a session attached to the just-dropped
+        // connection and the next management call would fail and re-trigger recovery.
+        assert!(plan.drop_mgmt_client);
+        assert!(plan.drop_connection);
+        assert!(plan.clear_authorizer);
+        assert!(plan.clear_sessions);
+        assert!(plan.clear_senders);
+        assert!(plan.clear_receivers);
     }
 
     #[test]
