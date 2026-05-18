@@ -26,9 +26,15 @@
 12. [Risk and Operational Implications](#12-risk-and-operational-implications)
 13. [Caveats and Methodology Notes](#13-caveats-and-methodology-notes)
 14. [Reproduction Steps](#14-reproduction-steps)
-15. [Appendix A — Raw DHAT Stack Frame Table](#appendix-a--raw-dhat-stack-frame-table)
-16. [Appendix B — Glossary](#appendix-b--glossary)
-17. [Verified Optimization Results (v2)](#15-verified-optimization-results-v2)
+15. [Verified Optimization Results (v2)](#15-verified-optimization-results-v2)
+16. [Real-Account Validation (v2)](#16-real-account-validation-v2)
+17. [Real-Account v1 vs v2 Comparison](#17-real-account-v1-vs-v2-comparison)
+18. [Simulated v1 vs v2 at 1k and 10k partitions](#18-simulated-v1-vs-v2-at-1k-and-10k-partitions)
+
+Appendices (placed inline after §14 for reference convenience):
+
+- [Appendix A — Raw DHAT Stack Frame Table](#appendix-a--raw-dhat-stack-frame-table)
+- [Appendix B — Glossary](#appendix-b--glossary)
 
 ---
 
@@ -70,6 +76,11 @@ per partition**.
 There is one specific, low-risk change (replacing
 `HashSet<CosmosEndpoint>` with a stack-bounded small vector) that would
 **halve the block-count pressure** with negligible code complexity.
+That change has since been **applied and measured**: see §15 for the
+verified v2 outcome, which exceeded the original projection — block
+count at peak dropped from 160 k to ~15 (−99.99 %) rather than just
+halving, because `SmallVec`'s `union` feature also let
+`PartitionFailoverEntry` shrink.
 
 ---
 
@@ -355,7 +366,7 @@ unchanged baseline.
 
 | PP | Live bytes | % of peak | Live blocks | Origin | What it is |
 |---:|---:|---:|---:|---|---|
-| **9** | **20,054,032** | **81.51 %** | **1** | `RawTable::with_capacity_in` | **The main `circuit_breaker_overrides` HashMap backing array.** 131,072 slots × ~152 B/slot (24 B `PartitionKeyRangeId` + 128 B inline `PartitionFailoverEntry`), power-of-2 over-reserved by hashbrown. |
+| **9** | **20,054,032** | **81.51 %** | **1** | `RawTable::with_capacity_in` | **The main `circuit_breaker_overrides` HashMap backing array.** Capacity is 131,072 slots (power-of-two over-reserved by hashbrown). The logical per-entry payload is ~152 B (24 B `PartitionKeyRangeId` + 128 B inline `PartitionFailoverEntry`), but the measured 20,054,032 B allocation also includes hashbrown table metadata (ctrl bytes, alignment, padding), so `24 + 128` is the logical payload size rather than the actual slot footprint. |
 | **8** | **4,160,000** | **16.91 %** | **80,000** | `RawTable::with_capacity_in` | **Per-entry `failed_endpoints: HashSet<CosmosEndpoint>` backing.** 52 B / entry — one tiny hashbrown table per partition holding 2 × 8 B Arc pointers + bucket overhead. |
 | **7** | **388,890** | **1.58 %** | **80,000** | `String` clone (collapsed symbol shows up as `ActivityId::from_str` because that crate-internal helper sits at the same return address as the cloned-in `String` in the release binary) | **Per-entry `PartitionKeyRangeId` String.** Avg 4.86 B/entry — short numeric ids `"0".."79999"`. |
 | 3 | 928 | 0.004 % | 4 | (carryover) | EndpointKey Arc payloads |
