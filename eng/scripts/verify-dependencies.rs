@@ -130,7 +130,7 @@ fn main() {
                     .join("\n* ")
             );
             println!("Add dependencies to workspace and change the package dependency to `{{ workspace = true }}`.");
-            println!("See <https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md#versions");
+            println!("See <https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md#versions> for more information.");
             println!();
 
             found = true;
