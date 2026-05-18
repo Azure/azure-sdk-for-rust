@@ -1634,7 +1634,7 @@ async fn v1_writes_distribute_across_partitions() {
 /// region, transport shard, and per-attempt event history on the error path.
 #[tokio::test]
 async fn error_carries_extractable_diagnostics() {
-    use azure_data_cosmos_driver::diagnostics::try_extract_diagnostics;
+    use azure_data_cosmos_driver::diagnostics::split_diagnostics_carrier;
 
     let (backend, db_name, emu_container, _real_container) = setup_with_container().await;
 
@@ -1657,8 +1657,9 @@ async fn error_carries_extractable_diagnostics() {
         "missing-item read should surface as 404",
     );
 
-    let diagnostics = try_extract_diagnostics(&err)
-        .expect("error must carry diagnostics context attached by the pipeline");
+    let (_clean, diagnostics) = split_diagnostics_carrier(err);
+    let diagnostics =
+        diagnostics.expect("error must carry diagnostics context attached by the pipeline");
 
     let json = diagnostics.to_json_string(None);
     assert!(

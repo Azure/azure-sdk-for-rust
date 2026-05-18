@@ -70,7 +70,7 @@ pub async fn seed_container(
     container: &ContainerClient,
     count: usize,
     concurrency: usize,
-) -> azure_core::Result<Vec<SeededItem>> {
+) -> azure_data_cosmos::CosmosResult<Vec<SeededItem>> {
     println!("Seeding {count} items (concurrency: {concurrency})...");
 
     let mut items = Vec::with_capacity(count);
@@ -124,15 +124,12 @@ pub async fn seed_container(
             Some(Ok((idx, Some(e)))) => {
                 eprintln!("Seed error for item {idx}: {e}");
                 workers.abort_all();
-                return Err(e.into());
+                return Err(e);
             }
             Some(Ok((_, None))) => {} // Task succeeded, continue
             Some(Err(e)) => {
                 workers.abort_all();
-                return Err(azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    e,
-                ));
+                return Err(azure_core::Error::new(azure_core::error::ErrorKind::Other, e).into());
             }
             None => {} // No more tasks
         }

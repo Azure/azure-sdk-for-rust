@@ -15,22 +15,29 @@
 //! string and (for HTTP errors) the `RawResponse` bytes.
 //!
 //! This module makes the diagnostics retrievable on error by wrapping the
-//! original error inside an `ErrorWithDiagnostics` and storing that as
-//! the inner error of an `azure_core::Error::with_error(...)`. Callers
-//! retrieve it with [`try_extract_diagnostics`].
+//! original error inside an `ErrorWithDiagnostics` carrier and storing
+//! that as the inner error of an `azure_core::Error::with_error(...)`.
+//! The wrapper crate (`azure_data_cosmos`) recovers it at the SDK
+//! boundary via [`split_diagnostics_carrier`], which atomically:
 //!
-//! Observable behavior of the wrapped error is preserved:
+//! 1. extracts the diagnostics out of the carrier (and returns them
+//!    separately), AND
+//! 2. rebuilds the `azure_core::Error` with the carrier removed so the
+//!    final `CosmosError`'s source chain contains only original errors.
+//!
+//! Observable behavior of the rebuilt error matches the pre-attachment
+//! error exactly:
 //! - [`azure_core::Error::kind`] is unchanged (including
 //!   `ErrorKind::HttpResponse { raw_response, .. }`).
 //! - The top-level `Display` / `to_string()` is the original message.
-//! - The original inner error (if any) is preserved as the source of
-//!   `ErrorWithDiagnostics`. When the original had no inner, `source()`
-//!   on the carrier returns `None` so error-chain walkers don't see a
-//!   duplicated message.
+//! - The original inner error (if any) is preserved as the inner of the
+//!   rebuilt error. When the original had no inner, the rebuilt error
+//!   has no inner either — no synthetic source nodes.
 //!
-//! `ErrorWithDiagnostics` is an internal carrier type; the public SDK
-//! surface (`azure_data_cosmos`) wraps it with a `CosmosError` newtype
-//! that exposes only stable accessors and never leaks this type.
+//! `ErrorWithDiagnostics` is `pub(crate)`; the carrier never leaves the
+//! driver crate. The public SDK surface (`azure_data_cosmos::CosmosError`)
+//! is a plain record with the diagnostics already extracted into a
+//! field, so consumers never need to know the carrier exists.
 
 use std::sync::Arc;
 
@@ -40,12 +47,10 @@ use crate::diagnostics::DiagnosticsContext;
 /// alongside the original error.
 ///
 /// Stored as the inner error of an [`azure_core::Error`] (constructed via
-/// [`azure_core::Error::with_error`]). Retrieve via [`try_extract_diagnostics`].
-///
-/// This type is `pub(crate)` so it cannot leak through the public Cosmos
-/// SDK surface; callers interact with it only via
-/// [`try_extract_diagnostics`] which returns the diagnostics context
-/// directly.
+/// [`azure_core::Error::with_error`]) by [`attach_diagnostics`], and
+/// later extracted by [`split_diagnostics_carrier`] at the wrapper-crate
+/// boundary. The carrier is `pub(crate)` and never appears on the
+/// public SDK surface.
 #[derive(Debug)]
 pub(crate) struct ErrorWithDiagnostics {
     /// The original error's inner, if it had one. `None` when the original
@@ -59,14 +64,6 @@ pub(crate) struct ErrorWithDiagnostics {
     /// no inner.
     display: String,
     diagnostics: Arc<DiagnosticsContext>,
-}
-
-impl ErrorWithDiagnostics {
-    /// Returns the diagnostics context this carrier holds (used by
-    /// [`try_extract_diagnostics`] after a successful downcast).
-    fn diagnostics(&self) -> &Arc<DiagnosticsContext> {
-        &self.diagnostics
-    }
 }
 
 impl std::fmt::Display for ErrorWithDiagnostics {
@@ -86,7 +83,7 @@ impl std::error::Error for ErrorWithDiagnostics {
 }
 
 /// Wraps `err` so that `diagnostics` can be retrieved later via
-/// [`try_extract_diagnostics`].
+/// [`split_diagnostics_carrier`].
 ///
 /// The returned `azure_core::Error` preserves the original `kind()`
 /// (including any `ErrorKind::HttpResponse { raw_response, .. }`) and the
@@ -109,67 +106,68 @@ pub fn attach_diagnostics(
     azure_core::Error::with_error(kind, wrapper, display)
 }
 
-/// Returns the [`DiagnosticsContext`] attached to `err` by
-/// [`attach_diagnostics`], if any.
+/// Splits an `azure_core::Error` produced by the driver pipeline into:
+/// 1. a "clean" `azure_core::Error` whose source chain no longer
+///    contains the [`ErrorWithDiagnostics`] carrier (callers walking
+///    `Error::source()` see only the original wrapped errors), and
+/// 2. the outermost [`DiagnosticsContext`] that was attached (if any).
 ///
-/// Walks the [`std::error::Error::source`] chain so that diagnostics remain
-/// reachable after callers add additional context to the error (for example
-/// via [`azure_core::Error::with_context`]). Returns `None` for errors that
-/// did not flow through the driver pipeline, or that escaped before
-/// diagnostics had been initialized.
-pub fn try_extract_diagnostics(err: &azure_core::Error) -> Option<Arc<DiagnosticsContext>> {
-    let mut current: Option<&(dyn std::error::Error + 'static)> = err.get_ref().map(|e| e as _);
-    while let Some(node) = current {
-        if let Some(wrapper) = node.downcast_ref::<ErrorWithDiagnostics>() {
-            return Some(Arc::clone(wrapper.diagnostics()));
-        }
-        current = node.source();
-    }
-    None
-}
-
-/// Returns the `source` of `err` with all diagnostics carriers
-/// (`ErrorWithDiagnostics`) skipped.
+/// This is the only public way to recover diagnostics from a driver
+/// error and is the single point used by the
+/// [`azure_data_cosmos::CosmosError`](https://docs.rs/azure_data_cosmos)
+/// wrapper's `From<azure_core::Error>` impl. Wrapper-crate plumbing —
+/// `#[doc(hidden)]` for that reason.
 ///
-/// Use this when implementing `std::error::Error::source` for a
-/// public Cosmos error wrapper: callers should not observe the
-/// internal carrier in the source chain. Walks any directly-nested
-/// `azure_core::Error → ErrorWithDiagnostics` pairs at the head of
-/// the chain and returns the first source that is neither.
-///
-/// **Note**: only the head of the chain is sanitized. Carriers that
-/// appear deeper in a chain (e.g. when `with_error` is layered on top
-/// of an already-attached error multiple times) still surface when
-/// callers walk `.source()` themselves. In normal SDK usage
-/// `attach_diagnostics` is the outermost wrap on the operation
-/// pipeline's escape sites, so this is sufficient.
-pub fn source_skipping_carrier(
-    err: &azure_core::Error,
-) -> Option<&(dyn std::error::Error + 'static)> {
-    use std::error::Error as _;
-    let mut current: &(dyn std::error::Error + 'static) = err
-        .get_ref()
-        .map(|e| e as &(dyn std::error::Error + 'static))?;
+/// Peels every directly-nested carrier from the head of the chain so
+/// double-wrapping (e.g. a retry loop re-attaching after an inner
+/// attach) does not leave a carrier visible. Returns the original
+/// error unmodified plus `None` when no carrier is present.
+#[doc(hidden)]
+pub fn split_diagnostics_carrier(
+    mut err: azure_core::Error,
+) -> (azure_core::Error, Option<Arc<DiagnosticsContext>>) {
+    let mut found: Option<Arc<DiagnosticsContext>> = None;
     loop {
-        if let Some(wrapper) = current.downcast_ref::<ErrorWithDiagnostics>() {
-            // Skip the carrier and continue with whatever it wrapped.
-            current = wrapper.source()?;
-            continue;
+        // Peek whether the immediate inner is the carrier; if not, we're done.
+        let is_carrier = err
+            .get_ref()
+            .map(|inner| inner.is::<ErrorWithDiagnostics>())
+            .unwrap_or(false);
+        if !is_carrier {
+            return (err, found);
         }
-        if let Some(inner_err) = current.downcast_ref::<azure_core::Error>() {
-            // The chain has nested an `azure_core::Error` — peek inside in
-            // case the next layer is another carrier we should skip.
-            let nested_inner = inner_err
-                .get_ref()
-                .map(|e| e as &(dyn std::error::Error + 'static));
-            if let Some(next) = nested_inner {
-                if next.is::<ErrorWithDiagnostics>() {
-                    current = next;
-                    continue;
-                }
+
+        // Take ownership of the carrier and rebuild err without it.
+        let kind = err.kind().clone();
+        let display = err.to_string();
+        let boxed = match err.into_inner() {
+            Ok(b) => b,
+            // Defensive: the is_carrier check guarantees Some, but if a
+            // future azure_core change broke that invariant we'd loop
+            // forever. Bail cleanly.
+            Err(original) => return (original, found),
+        };
+        let carrier: Box<ErrorWithDiagnostics> = match boxed.downcast::<ErrorWithDiagnostics>() {
+            Ok(c) => c,
+            Err(other) => {
+                // Same defensive bail: rebuild err with the inner intact
+                // so we don't lose information.
+                return (azure_core::Error::with_error(kind, other, display), found);
             }
+        };
+        let ErrorWithDiagnostics {
+            inner,
+            display: _,
+            diagnostics,
+        } = *carrier;
+        // Keep the OUTERMOST diagnostics (first seen = most recently attached).
+        if found.is_none() {
+            found = Some(diagnostics);
         }
-        return Some(current);
+        err = match inner {
+            Some(orig) => azure_core::Error::with_error(kind, orig, display),
+            None => azure_core::Error::with_message(kind, display),
+        };
     }
 }
 
@@ -211,31 +209,32 @@ mod tests {
         let original = azure_core::Error::with_message(ErrorKind::Other, "x".to_string());
         let diagnostics = make_diagnostics_for_test();
         let wrapped = attach_diagnostics(original, Arc::clone(&diagnostics));
-        let extracted = try_extract_diagnostics(&wrapped).expect("diagnostics should round-trip");
+        let (clean, extracted) = split_diagnostics_carrier(wrapped);
+        let extracted = extracted.expect("diagnostics should round-trip");
         assert!(Arc::ptr_eq(&extracted, &diagnostics));
+        // The clean error must have no carrier on its source chain.
+        let mut node: Option<&(dyn std::error::Error + 'static)> = clean.get_ref().map(|e| e as _);
+        while let Some(n) = node {
+            assert!(
+                !n.is::<ErrorWithDiagnostics>(),
+                "split_diagnostics_carrier must remove every carrier"
+            );
+            node = n.source();
+        }
     }
 
     #[test]
     fn extracts_none_for_non_wrapped_error() {
         let plain = azure_core::Error::with_message(ErrorKind::Other, "no diag".to_string());
-        assert!(try_extract_diagnostics(&plain).is_none());
+        let plain_display = plain.to_string();
+        let (clean, extracted) = split_diagnostics_carrier(plain);
+        assert!(extracted.is_none());
+        // Passing through is lossless when no carrier is present.
+        assert_eq!(clean.to_string(), plain_display);
     }
 
     #[test]
-    fn extracts_through_context_chain() {
-        // A caller layering additional context onto the error must not lose
-        // the attached diagnostics — the extractor walks the source chain.
-        let original = azure_core::Error::with_message(ErrorKind::Other, "x".to_string());
-        let diagnostics = make_diagnostics_for_test();
-        let wrapped = attach_diagnostics(original, Arc::clone(&diagnostics));
-        let with_context = wrapped.with_context("higher-level context");
-        let extracted = try_extract_diagnostics(&with_context)
-            .expect("diagnostics should survive context wrapping");
-        assert!(Arc::ptr_eq(&extracted, &diagnostics));
-    }
-
-    #[test]
-    fn preserves_http_response_kind_and_status() {
+    fn preserves_http_response_kind_and_status_round_trip() {
         use azure_core::http::{response::RawResponse, StatusCode};
 
         let raw_body = b"{\"code\":\"InternalServerError\"}".to_vec();
@@ -253,13 +252,15 @@ mod tests {
 
         let diagnostics = make_diagnostics_for_test();
         let wrapped = attach_diagnostics(original, diagnostics);
+        let (clean, extracted) = split_diagnostics_carrier(wrapped);
 
+        assert!(extracted.is_some());
         assert_eq!(
-            wrapped.http_status(),
+            clean.http_status(),
             Some(StatusCode::InternalServerError),
-            "http_status() must survive diagnostics wrapping",
+            "http_status() must survive the carrier strip",
         );
-        match wrapped.kind() {
+        match clean.kind() {
             ErrorKind::HttpResponse {
                 status,
                 error_code,
@@ -277,133 +278,55 @@ mod tests {
     }
 
     #[test]
-    fn double_wrap_does_not_lose_diagnostics() {
-        // If a caller (mistakenly) attaches diagnostics twice, the most-recent
-        // attachment wins. We don't promise anything about the inner one but
-        // we do guarantee try_extract_diagnostics returns *some* context.
-        let original = azure_core::Error::with_message(ErrorKind::Other, "x".to_string());
+    fn double_wrap_returns_outermost_diagnostics_and_strips_all_carriers() {
+        // The SDK only attaches once per operation, but if a retry path
+        // ever layers a second attach over a first one, the splitter
+        // must peel both off and return the outermost diagnostics —
+        // matching the convention "the most recently-attached context
+        // is the most relevant".
+        let original = azure_core::Error::with_error(
+            ErrorKind::Other,
+            std::io::Error::other("io boom"),
+            "outer message".to_string(),
+        );
         let diag1 = make_diagnostics_for_test();
         let diag2 = make_diagnostics_for_test();
         let wrapped_once = attach_diagnostics(original, diag1);
         let wrapped_twice = attach_diagnostics(wrapped_once, Arc::clone(&diag2));
-        let extracted =
-            try_extract_diagnostics(&wrapped_twice).expect("diagnostics should round-trip");
-        assert!(Arc::ptr_eq(&extracted, &diag2));
+
+        let (clean, extracted) = split_diagnostics_carrier(wrapped_twice);
+        assert!(Arc::ptr_eq(
+            &extracted.expect("must return diagnostics"),
+            &diag2
+        ));
+        // Every carrier must be gone.
+        let mut node: Option<&(dyn std::error::Error + 'static)> = clean.get_ref().map(|e| e as _);
+        while let Some(n) = node {
+            assert!(
+                !n.is::<ErrorWithDiagnostics>(),
+                "all carriers must be stripped, got: {n:?}",
+            );
+            node = n.source();
+        }
+        // Original inner must still be reachable.
+        assert!(
+            clean
+                .get_ref()
+                .map(|e| e.to_string().contains("io boom"))
+                .unwrap_or(false),
+            "original io::Error inner must survive the strip",
+        );
     }
 
     #[test]
-    fn source_chain_has_no_synthetic_node_when_original_had_no_inner() {
-        // The original error has no inner (Simple variant). After
-        // attach_diagnostics wraps it, the source chain must look like:
-        //
-        //   wrapped.source() -> Some(ErrorWithDiagnostics)
-        //   ErrorWithDiagnostics.source() -> None
-        //
-        // i.e. the carrier is present (so try_extract_diagnostics can
-        // find it via downcast) but it does NOT manufacture a child
-        // source from the preserved display text.
-        use std::error::Error as _;
-        let original = azure_core::Error::with_message(ErrorKind::Other, "no inner".to_string());
+    fn carrier_present_in_chain_before_split() {
+        // Sanity: the carrier IS present in the raw chain produced by
+        // attach_diagnostics — splitting is what removes it. This guards
+        // against accidentally making attach_diagnostics a no-op.
+        let original = azure_core::Error::with_message(ErrorKind::Other, "x".to_string());
         let diagnostics = make_diagnostics_for_test();
         let wrapped = attach_diagnostics(original, diagnostics);
-
-        let inner = wrapped
-            .get_ref()
-            .expect("wrapper must be present as inner of azure_core::Error");
-        let carrier = inner
-            .downcast_ref::<ErrorWithDiagnostics>()
-            .expect("inner must be the diagnostics carrier");
-        assert!(
-            carrier.source().is_none(),
-            "carrier must not synthesize a source when original had no inner",
-        );
-    }
-
-    #[test]
-    fn source_chain_preserves_original_inner() {
-        // When the original error has a real inner (Custom variant via
-        // with_error), the carrier's source() should be that original
-        // inner so error-chain walkers continue to see it.
-        use std::error::Error as _;
-        let original = azure_core::Error::with_error(
-            ErrorKind::Other,
-            std::io::Error::other("io boom"),
-            "outer message".to_string(),
-        );
-        let diagnostics = make_diagnostics_for_test();
-        let wrapped = attach_diagnostics(original, diagnostics);
-
-        let inner = wrapped
-            .get_ref()
-            .expect("wrapper must be present as inner of azure_core::Error");
-        let carrier = inner
-            .downcast_ref::<ErrorWithDiagnostics>()
-            .expect("inner must be the diagnostics carrier");
-        let inner_source = carrier
-            .source()
-            .expect("carrier must expose original inner as source");
-        // The original inner was an io::Error with text "io boom".
-        assert!(
-            inner_source.to_string().contains("io boom"),
-            "expected to find original inner's display, got: {inner_source}",
-        );
-    }
-
-    #[test]
-    fn source_skipping_carrier_returns_none_when_original_had_no_inner() {
-        // Sanity check the helper used by the public CosmosError wrapper:
-        // when the original had no inner, source_skipping_carrier returns
-        // None — so the public Error::source() chain is empty, matching
-        // the original's behavior.
-        let original = azure_core::Error::with_message(ErrorKind::Other, "no inner".to_string());
-        let diagnostics = make_diagnostics_for_test();
-        let wrapped = attach_diagnostics(original, diagnostics);
-        assert!(super::source_skipping_carrier(&wrapped).is_none());
-    }
-
-    #[test]
-    fn source_skipping_carrier_returns_original_inner_when_present() {
-        // When the original had a real inner, source_skipping_carrier
-        // skips the carrier and returns the original inner, so callers
-        // see the same chain they would have without diagnostics
-        // attachment.
-        let original = azure_core::Error::with_error(
-            ErrorKind::Other,
-            std::io::Error::other("io boom"),
-            "outer message".to_string(),
-        );
-        let diagnostics = make_diagnostics_for_test();
-        let wrapped = attach_diagnostics(original, diagnostics);
-        let src = super::source_skipping_carrier(&wrapped)
-            .expect("must expose the original inner via the helper");
-        assert!(src.to_string().contains("io boom"));
-    }
-
-    #[test]
-    fn source_skipping_carrier_walks_through_layered_carriers() {
-        // If the SDK ever attaches diagnostics on top of an already-attached
-        // error (e.g. a retry path that re-wraps), the helper must skip
-        // every carrier — not just the outermost one — so callers never
-        // observe `ErrorWithDiagnostics` in their `Error::source()` walk.
-        let original = azure_core::Error::with_error(
-            ErrorKind::Other,
-            std::io::Error::new(std::io::ErrorKind::Other, "io boom"),
-            "outer message".to_string(),
-        );
-        let diag1 = make_diagnostics_for_test();
-        let attached_once = attach_diagnostics(original, diag1);
-        let diag2 = make_diagnostics_for_test();
-        let attached_twice = attach_diagnostics(attached_once, diag2);
-
-        let src = super::source_skipping_carrier(&attached_twice)
-            .expect("nested carriers must still surface the original inner");
-        assert!(
-            !src.is::<ErrorWithDiagnostics>(),
-            "helper must not return an ErrorWithDiagnostics, got: {src:?}",
-        );
-        assert!(
-            src.to_string().contains("io boom"),
-            "expected to walk past both carriers to original io error, got: {src}",
-        );
+        let inner = wrapped.get_ref().expect("carrier present as inner");
+        assert!(inner.is::<ErrorWithDiagnostics>());
     }
 }

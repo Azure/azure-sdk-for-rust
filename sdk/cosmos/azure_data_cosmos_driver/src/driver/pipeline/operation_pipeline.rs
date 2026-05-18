@@ -78,10 +78,18 @@ pub(crate) async fn execute_operation_pipeline(
 
     // Helper: when an early-exit error is about to escape the pipeline,
     // wrap it with the in-progress diagnostics context so callers can
-    // recover the per-attempt history via `try_extract_diagnostics`. The
-    // builder is consumed (it's no longer needed after we return); the
-    // borrow checker is satisfied because every use of this macro occurs
-    // on a diverging branch.
+    // recover the per-attempt history via the `CosmosError::diagnostics`
+    // accessor on the wrapper crate. The builder is consumed (it is no
+    // longer needed after we return); the borrow checker is satisfied
+    // because every use of this macro occurs on a diverging branch.
+    //
+    // **Hygiene note:** `macro_rules!` does NOT alpha-rename identifiers
+    // captured from the enclosing function scope. This macro captures the
+    // outer `diagnostics: DiagnosticsContextBuilder` binding by name and
+    // consumes it via `.complete()`. Renaming that binding silently
+    // breaks both macros; the diverging-branch invariant (use only in
+    // contexts that immediately `return`/`break`) is enforced socially,
+    // not by the compiler.
     macro_rules! return_with_diagnostics {
         ($err:expr) => {{
             let ctx = std::sync::Arc::new(diagnostics.complete());
@@ -883,12 +891,13 @@ fn build_transport_request(
 
 /// Builds a `CosmosResponse` from a successful `TransportResult`.
 ///
-/// **Panics** (via `unreachable!`) if `result.outcome` is not
-/// `TransportOutcome::Success`. The pipeline only calls this after a
-/// `is_success`-gated branch, so any other variant indicates a logic
-/// error in the caller — and crashing loudly is better than returning a
-/// silent diagnostics-less error that would mask the bug in production
-/// telemetry.
+/// **Invariant:** must only be called after a `TransportOutcome::Success`
+/// gating check. Debug builds `debug_assert` that invariant and panic
+/// loudly if violated; release builds construct a synthetic error
+/// **with the in-progress diagnostics attached** so that production
+/// telemetry preserves the per-attempt context that motivated this
+/// PR — silently dropping diagnostics on the rarest failure would
+/// make the resulting bug effectively un-debuggable post-mortem.
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
@@ -910,9 +919,22 @@ fn build_cosmos_response(
                 diagnostics_ctx,
             ))
         }
-        other => unreachable!(
-            "build_cosmos_response must only be called with TransportOutcome::Success; got {other}",
-        ),
+        other => {
+            debug_assert!(
+                false,
+                "build_cosmos_response must only be called with TransportOutcome::Success; got {other}",
+            );
+            let err = azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!(
+                    "internal: build_cosmos_response called with non-success TransportOutcome ({other}); please file a bug",
+                ),
+            );
+            Err(crate::diagnostics::attach_diagnostics(
+                err,
+                Arc::new(diagnostics.complete()),
+            ))
+        }
     }
 }
 

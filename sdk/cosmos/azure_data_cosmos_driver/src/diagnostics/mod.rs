@@ -35,5 +35,5 @@ pub use diagnostics_context::{
 // rustdoc so they do not become semver-stable surface area that
 // external driver-crate consumers can rely on.
 #[doc(hidden)]
-pub use error_diagnostics::{attach_diagnostics, source_skipping_carrier, try_extract_diagnostics};
+pub use error_diagnostics::{attach_diagnostics, split_diagnostics_carrier};
 pub use proxy_configuration::ProxyConfiguration;

@@ -132,7 +132,7 @@ fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label
         Some(StatusCode::NotFound),
         "{label}: stale session read should return 404",
     );
-    match err.kind() {
+    match err.as_azure_error().kind() {
         azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
             assert_eq!(
                 error_code.as_deref(),
@@ -183,7 +183,7 @@ async fn read_item_with_503_retry(
             }
             Err(e) => {
                 let is_503 = matches!(
-                    e.kind(),
+                    e.as_azure_error().kind(),
                     azure_core::error::ErrorKind::HttpResponse {
                         status: StatusCode::ServiceUnavailable,
                         ..
