@@ -159,8 +159,9 @@ PPCB is an **opt-in** feature that provides partition-level health tracking and 
 ### Behavior
 
 - Tracks per-partition failure counts (`read_failure_count`, `write_failure_count`) with timestamps.
-- When a partition's failure count crosses the configured threshold, the circuit "trips" and routes to the next preferred region.
-- **Recovery**: After `partition_unavailability_duration`, a single probe request is sent. Success removes the entry; failure resets the timer.
+- **Endpoints are NOT marked unavailable on individual failures.** Unavailability is only triggered when a partition's failure count crosses the configured threshold (e.g., 10 consecutive failures for reads). Individual retry failures during an operation do not affect routing for other operations.
+- When the threshold is crossed, the circuit "trips" and routes subsequent requests for that partition to the next preferred region.
+- **Recovery (probes are for marking *available* only)**: Probes do not detect failures or mark endpoints unavailable — they only restore previously-tripped partitions. After `partition_unavailability_duration`, a single probe request is sent. Success removes the entry; failure resets the timer.
 - When PPCB is managing an endpoint, `MarkEndpointUnavailable` effects are **suppressed** — PPCB owns the routing decision.
 
 ### PPCB vs Endpoint-Level Marking
