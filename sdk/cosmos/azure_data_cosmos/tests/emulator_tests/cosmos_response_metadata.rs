@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+// cSpell:ignore STARTSWITH
 #![cfg(feature = "key_auth")]
 
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
@@ -11,7 +12,7 @@ use azure_core::{
     Uuid,
 };
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::constants::{ITEM_LSN, LSN, PARTITION_KEY_RANGE_ID, SESSION_TOKEN};
+use azure_data_cosmos::constants::{LSN, PARTITION_KEY_RANGE_ID, SESSION_TOKEN};
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::Query;
 use framework::{TestClient, TestRunContext};
@@ -220,11 +221,11 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 .lsn()
                 .expect("second read_item should surface partition LSN");
             assert!(second_read_partition_lsn >= second_write_lsn);
-            // ITEM_LSN should appear as a raw response header too.
-            assert!(
-                second_read.headers().get_optional_str(&ITEM_LSN).is_some(),
-                "expected ITEM_LSN response header on point read"
-            );
+            // Note: ITEM_LSN is intentionally NOT exposed as a raw header by
+            // the driver-to-SDK bridge (see `driver_response_headers_to_headers`
+            // in `src/driver_bridge.rs`, which forwards an explicit allowlist of
+            // headers). It is surfaced only through the typed `item_lsn()`
+            // accessor asserted above.
             let second_read_body: serde_json::Value = second_read.into_model()?;
             assert!(
                 second_read_body.get("_lsn").is_none(),
