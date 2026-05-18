@@ -509,12 +509,15 @@ impl ConnectionPoolOptionsBuilder {
     /// toggles Gateway 2.0 — the override must be applied programmatically
     /// via this method.
     ///
-    /// # Latency caveat
+    /// # Opting out
     ///
-    /// Gateway 2.0 traffic flows through a Gateway 2.0 proxy that is **not
-    /// currently covered by the regional Cosmos DB latency SLA**. Workloads
-    /// with strict P99 latency requirements should call this method with
-    /// `true` until the proxy reaches general availability.
+    /// Gateway 2.0 traffic flows through a regional thin-client proxy. Note
+    /// that the standard gateway (Gateway 1.0) does not provide any
+    /// per-request latency guarantees, so neither transport offers a latency
+    /// SLA today. Call this method with `true` if you need to keep traffic
+    /// on the standard gateway — for example to A/B test transport behavior,
+    /// isolate a transport-specific issue, or stay on Gateway 1.0 during a
+    /// controlled rollout.
     pub fn with_gateway20_disabled(mut self, value: bool) -> Self {
         self.gateway20_disabled = Some(value);
         self

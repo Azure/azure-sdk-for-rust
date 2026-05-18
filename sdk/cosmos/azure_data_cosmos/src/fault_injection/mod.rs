@@ -3,13 +3,14 @@
 
 //! Fault injection framework for testing Cosmos DB client behavior under error conditions.
 //!
-//! This module wraps the driver's fault-injection primitives — every type
-//! except [`FaultInjectionClientBuilder`] is re-exported directly from
-//! [`azure_data_cosmos_driver::fault_injection`]. The SDK only owns the
-//! [`FaultInjectionClientBuilder`] (which produces an [`azure_core::http::Transport`]
-//! that the SDK pipeline plugs in) and a small adapter for translating SDK-side
-//! `OperationType` / `ResourceType` pairs into the driver's
-//! [`FaultOperationType`].
+//! This module is a thin SDK-side facade over the driver's fault-injection
+//! primitives — every type except [`FaultInjectionClientBuilder`] is
+//! re-exported directly from [`azure_data_cosmos_driver::fault_injection`].
+//! The SDK only owns [`FaultInjectionClientBuilder`], which collects a set of
+//! [`FaultInjectionRule`]s that
+//! [`CosmosClientBuilder::with_fault_injection`](crate::CosmosClientBuilder::with_fault_injection)
+//! forwards into the driver runtime; the driver's own fault-injection
+//! transport client then evaluates the rules on every in-flight request.
 //!
 //! Below the transport layer, fault injection intercepts HTTP requests and
 //! triggers the same retry and failover behavior as a real service error.
@@ -102,7 +103,6 @@
 //! if no conditions are specified, the rule matches all requests.
 
 mod client_builder;
-mod http_client;
 
 pub use client_builder::FaultInjectionClientBuilder;
 

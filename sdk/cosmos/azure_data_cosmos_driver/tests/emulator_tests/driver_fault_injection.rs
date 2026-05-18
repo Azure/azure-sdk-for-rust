@@ -528,3 +528,166 @@ pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(
     })
     .await
 }
+
+/// Gateway 2.0: unknown RNTBD response tokens must be silently skipped.
+///
+/// Forward-compat contract: when the proxy/backend adds a new RNTBD response
+/// token that this client release does not recognize, the client MUST skip
+/// it and continue parsing the rest of the frame — including recognized
+/// tokens that appear AFTER the unknown one and the document body that
+/// follows. The unit test
+/// `unknown_token_id_is_silently_skipped` in
+/// `src/driver/transport/rntbd/response.rs` covers the parser in isolation;
+/// this test exercises the full end-to-end path:
+///
+///   driver -> HTTP/2 transport (fault client) -> synthetic RNTBD frame
+///   -> `unwrap_response_for_gateway20` -> `CosmosResponse` returned to the caller
+///
+/// The frame is built as raw bytes so the test does NOT depend on the
+/// `pub(crate)` codec types, and is shaped so the unknown token (id `0xFFFE`)
+/// sits BETWEEN two recognized tokens. The post-unknown `RequestCharge`
+/// (id `0x0015`, type `Double`) surfacing in `CosmosResponse::headers()`
+/// proves the parser resumed correctly after the skip.
+///
+/// The Cosmos DB emulator does not support Gateway 2.0, so this test is
+/// gated behind the `gateway20` test category and requires a real
+/// Gateway 2.0-enabled account in CI; the SDK in-memory emulator does not
+/// implement Gateway 2.0 either.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20'"
+)]
+pub async fn gateway20_unknown_rntbd_response_token_is_silently_skipped(
+) -> Result<(), Box<dyn Error>> {
+    const ITEM_JSON: &[u8] = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+    const EXPECTED_RU: f64 = 3.5;
+
+    let synthetic_response = build_rntbd_response_with_unknown_token(EXPECTED_RU, ITEM_JSON);
+
+    let custom = CustomResponseBuilder::new(azure_core::http::StatusCode::Ok)
+        .with_body(synthetic_response)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::Gateway20)
+        .build();
+
+    let result = FaultInjectionResultBuilder::new()
+        .with_custom_response(custom)
+        .with_probability(1.0)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("gateway20-unknown-rntbd-token", result)
+            .with_condition(condition)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
+
+        // No need to seed the item: the fault rule short-circuits the read
+        // with our synthetic response on every G2 attempt.
+        let response = context.read_item(&container, "item1", "pk1").await.expect(
+            "read must succeed: unknown RNTBD response token must be skipped, \
+                 and the recognized tokens around it must still parse",
+        );
+
+        // The body the SDK sees is the inner RNTBD body (post-unwrap), which
+        // is exactly the JSON we packed.
+        assert_eq!(
+            response.body(),
+            ITEM_JSON,
+            "inner RNTBD body must survive the unknown-token skip intact"
+        );
+
+        // The post-unknown-token RequestCharge surfacing here proves the
+        // parser resumed correctly after skipping the unknown token: a parser
+        // that stopped at the unknown token would NOT see the RequestCharge
+        // that follows it on the wire.
+        let request_charge =
+            response.headers().request_charge.as_ref().expect(
+                "RequestCharge token (placed AFTER the unknown token) must have been parsed",
+            );
+        assert!(
+            (request_charge.value() - EXPECTED_RU).abs() < f64::EPSILON,
+            "expected RequestCharge {EXPECTED_RU}, got {}",
+            request_charge.value()
+        );
+
+        assert!(
+            rule.hit_count() > 0,
+            "fault rule must have fired on the read attempt"
+        );
+
+        Ok(())
+    })
+    .await
+}
+
+/// Builds a synthetic RNTBD response frame whose token stream contains an
+/// unknown token ID (`0xFFFE`) sandwiched between two recognized tokens.
+///
+/// Wire layout (matches `RntbdResponse::deserialize` in
+/// `src/driver/transport/rntbd/response.rs`):
+///
+/// ```text
+///   u32 LE  total_len            (patched after building)
+///   u16 LE  http status          (200 OK)
+///   u16 LE  reserved             (0)
+///   16 B    activity_id          (nil UUID; format-agnostic when all zeros)
+///   token   unknown id 0xFFFE, type SmallString (0x07), value "future-feature"
+///   token   id 0x0015, type Double (0x0E), value `request_charge`   (RequestCharge)
+///   bytes   document body
+/// ```
+///
+/// Token IDs / type bytes are wire constants taken from
+/// `src/driver/transport/rntbd/tokens.rs`. The intentional ordering
+/// (unknown -> recognized) guarantees that a parser that stopped at the
+/// unknown token would NOT surface `request_charge`, making the assertion
+/// in the test load-bearing.
+fn build_rntbd_response_with_unknown_token(request_charge: f64, body: &[u8]) -> Vec<u8> {
+    const HTTP_STATUS_OK: u16 = 200;
+    const TOKEN_TYPE_SMALL_STRING: u8 = 0x07;
+    const TOKEN_TYPE_DOUBLE: u8 = 0x0E;
+    const UNKNOWN_TOKEN_ID: u16 = 0xFFFE;
+    const REQUEST_CHARGE_TOKEN_ID: u16 = 0x0015;
+
+    let unknown_value: &[u8] = b"future-feature";
+    assert!(
+        unknown_value.len() <= u8::MAX as usize,
+        "test fixture SmallString must fit in u8 length prefix"
+    );
+
+    let mut frame = Vec::with_capacity(64 + body.len());
+
+    // Frame header.
+    frame.extend_from_slice(&0_u32.to_le_bytes()); // total_len placeholder
+    frame.extend_from_slice(&HTTP_STATUS_OK.to_le_bytes());
+    frame.extend_from_slice(&0_u16.to_le_bytes()); // reserved / padding
+    frame.extend_from_slice(&[0_u8; 16]); // activity_id = nil UUID
+
+    // Unknown token first.
+    frame.extend_from_slice(&UNKNOWN_TOKEN_ID.to_le_bytes());
+    frame.push(TOKEN_TYPE_SMALL_STRING);
+    frame.push(unknown_value.len() as u8);
+    frame.extend_from_slice(unknown_value);
+
+    // Recognized RequestCharge token AFTER the unknown one.
+    frame.extend_from_slice(&REQUEST_CHARGE_TOKEN_ID.to_le_bytes());
+    frame.push(TOKEN_TYPE_DOUBLE);
+    frame.extend_from_slice(&request_charge.to_le_bytes());
+
+    // Inner body — surfaces verbatim through `unwrap_response_for_gateway20`.
+    frame.extend_from_slice(body);
+
+    let total_len = u32::try_from(frame.len()).expect("synthetic frame fits in u32");
+    frame[0..4].copy_from_slice(&total_len.to_le_bytes());
+    frame
+}

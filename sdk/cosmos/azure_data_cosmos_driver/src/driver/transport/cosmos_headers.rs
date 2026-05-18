@@ -13,16 +13,14 @@ const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json
 const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 const SDK_SUPPORTED_CAPABILITIES: HeaderName =
     HeaderName::from_static("x-ms-cosmos-sdk-supportedcapabilities");
-const PARTITION_MERGE_BIT: u32 = 1;
 const IGNORE_UNKNOWN_RNTBD_TOKENS_BIT: u32 = 8;
-pub(crate) const SUPPORTED_CAPABILITIES_BITS: u32 =
-    PARTITION_MERGE_BIT | IGNORE_UNKNOWN_RNTBD_TOKENS_BIT;
-const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 9);
+pub(crate) const SUPPORTED_CAPABILITIES_BITS: u32 = IGNORE_UNKNOWN_RNTBD_TOKENS_BIT;
+const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 8);
 /// String-encoded SDK capabilities bitmask.
 ///
-/// Derived from `PartitionMerge` (1) | `IgnoreUnknownRntbdTokens` (8), which
-/// advertises Gateway 2.0 forward compatibility with unknown RNTBD tokens.
-const SUPPORTED_CAPABILITIES_VALUE: &str = "9";
+/// Derived from `IgnoreUnknownRntbdTokens` (8), which advertises Gateway 2.0
+/// forward compatibility with unknown RNTBD tokens.
+const SUPPORTED_CAPABILITIES_VALUE: &str = "8";
 const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
 const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
 
@@ -73,7 +71,7 @@ mod tests {
 
         assert_eq!(
             SUPPORTED_CAPABILITIES_VALUE.parse::<u32>().unwrap(),
-            PARTITION_MERGE_BIT | IGNORE_UNKNOWN_RNTBD_TOKENS_BIT
+            IGNORE_UNKNOWN_RNTBD_TOKENS_BIT
         );
         assert_eq!(
             request

@@ -1021,26 +1021,26 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 // Gateway 2.0 fault injection coverage (Phase 6)
 // ----------------------------------------------------------------------------
 
-/// Gateway 2.0 ConnectionError should fall back to the standard gateway
-/// transparently — the client must not surface the connection failure to the
-/// caller when a usable fallback transport exists.
+/// Gateway 2.0 ConnectionError on every region must surface a connection
+/// failure to the caller — Rust does **not** silently fall back to the
+/// standard gateway. The driver attempts the request on every preferred
+/// region's Gateway 2.0 endpoint and, when all of them return a connection
+/// error, fails fast with the underlying connectivity error so that
+/// firewall / port-10250-blocked misconfigurations are visible to the
+/// operator rather than masked by a transparent fallback.
 ///
 /// The rule is scoped to [`TransportKind::Gateway20`] via
 /// `with_transport_kind`, so it only fires on Gateway 2.0 traffic and never
-/// on standard-gateway requests.
-///
-/// **Limitation**: the SDK does not yet expose a public Gateway 2.0 enable
-/// API on `CosmosClientOptions`, so the SDK currently never selects the
-/// Gateway 2.0 transport. Until that toggle lands, this test is gated behind
-/// the `gateway20` test category. Once the SDK toggle ships, the assertion
-/// should change from "rule never fires" to "read SUCCEEDS via the
-/// standard-gateway fallback".
+/// on standard-gateway requests. Because Gateway 2.0 is the default
+/// transport for eligible operations, the read attempts hit Gateway 2.0
+/// across every region the driver knows about; no fallback transport is
+/// engaged.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "gateway20"),
     ignore = "requires test_category 'gateway20'"
 )]
-pub async fn gateway20_connection_error_falls_back_to_standard_gateway(
+pub async fn gateway20_connection_error_fails_fast_after_all_regions_attempted(
 ) -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ConnectionError)
@@ -1052,7 +1052,7 @@ pub async fn gateway20_connection_error_falls_back_to_standard_gateway(
         .with_transport_kind(TransportKind::Gateway20)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("gateway20-conn-error-fallback", server_error)
+    let rule = FaultInjectionRuleBuilder::new("gateway20-conn-error-fail-fast", server_error)
         .with_condition(condition)
         .build();
 
@@ -1084,17 +1084,20 @@ pub async fn gateway20_connection_error_falls_back_to_standard_gateway(
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
-            // Once the SDK exposes a public Gateway 2.0 enable API, this read
-            // should SUCCEED via the standard-gateway fallback (the rule
-            // fires only on Gateway 2.0, leaving the fallback transport
-            // untouched).
+            // The rule fires on every Gateway 2.0 attempt across every
+            // region. With fail-fast semantics, the read must surface the
+            // connection error rather than silently retry on the standard
+            // gateway.
             let result = fault_container_client
                 .read_item::<TestItem>(&pk, &item_id, None)
                 .await;
+            let err = result.expect_err(
+                "read must fail fast after Gateway 2.0 connection errors on every region",
+            );
             assert!(
-                result.is_ok(),
-                "Read should succeed via the standard-gateway fallback when \
-                 the rule is scoped to Gateway 2.0"
+                matches!(err.kind(), azure_core::error::ErrorKind::Io)
+                    || err.to_string().to_lowercase().contains("connection"),
+                "expected a connection-failure error, got: {err:?}"
             );
 
             Ok(())

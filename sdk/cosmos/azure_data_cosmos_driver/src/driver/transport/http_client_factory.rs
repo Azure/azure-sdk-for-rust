@@ -31,7 +31,12 @@ pub struct HttpClientConfig {
     /// this `None` because they are not gateway/Gateway-2.0-specific.
     ///
     /// This is consumed by the fault-injection layer so rules can scope
-    /// themselves to a specific transport (`with_transport_kind`).
+    /// themselves to a specific transport (`with_transport_kind`). The field
+    /// has no readers when the `fault_injection` feature is disabled, so the
+    /// dead-code warning is silenced only for that build configuration —
+    /// when the feature is on, the field is read in
+    /// `fault_injection::fault_injecting_factory::FaultInjectingHttpClientFactory::build`.
+    #[cfg_attr(not(feature = "fault_injection"), allow(dead_code))]
     pub(crate) transport_kind: Option<TransportKind>,
 }
 

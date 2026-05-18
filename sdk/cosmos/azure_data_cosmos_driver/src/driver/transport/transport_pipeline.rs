@@ -244,11 +244,11 @@ pub(crate) async fn execute_transport_pipeline(
                 request_handle,
                 e.to_string(),
                 RequestSentStatus::NotSent,
-                CosmosStatus::CLIENT_GENERATED_401,
+                CosmosStatus::CLIENT_UNAUTHORIZED,
             );
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
-                    status: CosmosStatus::CLIENT_GENERATED_401,
+                    status: CosmosStatus::CLIENT_UNAUTHORIZED,
                     error: e,
                     request_sent: RequestSentStatus::NotSent,
                 },
@@ -618,7 +618,7 @@ fn gateway20_wrap_error_result(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    let status = CosmosStatus::CLIENT_GENERATED_400;
+    let status = CosmosStatus::CLIENT_BAD_REQUEST;
     let error_details = format_transport_error_details(&error);
     diagnostics.fail_transport_request(
         request_handle,
@@ -1292,7 +1292,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn execute_transport_pipeline_preserves_client_generated_401_in_diagnostics() {
+    async fn execute_transport_pipeline_preserves_client_unauthorized_in_diagnostics() {
         let client = AdaptiveTransport::Gateway(Arc::new(HangingTransportClient {
             delay: Duration::from_secs(1),
         }));
@@ -1325,7 +1325,8 @@ mod tests {
                 request_sent,
                 ..
             } => {
-                assert_eq!(status, CosmosStatus::CLIENT_GENERATED_401);
+                assert_eq!(status, CosmosStatus::CLIENT_UNAUTHORIZED);
+                assert_eq!(status.sub_status(), None);
                 assert_eq!(request_sent, RequestSentStatus::NotSent);
             }
             other => panic!("expected transport error, got {other:?}"),
@@ -1334,7 +1335,7 @@ mod tests {
         let completed = diagnostics.complete();
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
-        assert_eq!(requests[0].status(), &CosmosStatus::CLIENT_GENERATED_401);
+        assert_eq!(requests[0].status(), &CosmosStatus::CLIENT_UNAUTHORIZED);
         assert_eq!(requests[0].request_sent(), RequestSentStatus::NotSent);
     }
 

@@ -10,26 +10,29 @@
 //! HTTP/2 outer headers. The wire strings retain the historical
 //! `x-ms-thinclient-*` form because the proxy is server-defined; only the
 //! Rust identifier follows the `GATEWAY20_*` naming convention.
+//!
+//! `GATEWAY20_OPERATION_TYPE` and `GATEWAY20_RESOURCE_TYPE` are also
+//! consumed cross-crate by `azure_data_cosmos` for its
+//! `COSMOS_ALLOWED_HEADERS` logging allowlist — the public path
+//! (`azure_data_cosmos_driver::constants::*`) is part of that contract.
 
 use azure_core::http::headers::HeaderName;
 
 /// Gateway 2.0 proxy operation-type header.
 ///
-/// Contains the numeric operation type on every Gateway 2.0 request.
+/// Contains the numeric operation type on every Gateway 2.0 request. Listed
+/// in `azure_data_cosmos`'s `COSMOS_ALLOWED_HEADERS` allowlist so log
+/// scrubbers do not redact it.
 pub const GATEWAY20_OPERATION_TYPE: HeaderName =
     HeaderName::from_static("x-ms-thinclient-proxy-operation-type");
 
 /// Gateway 2.0 proxy resource-type header.
 ///
-/// Contains the numeric resource type on every Gateway 2.0 request.
+/// Contains the numeric resource type on every Gateway 2.0 request. Listed
+/// in `azure_data_cosmos`'s `COSMOS_ALLOWED_HEADERS` allowlist so log
+/// scrubbers do not redact it.
 pub const GATEWAY20_RESOURCE_TYPE: HeaderName =
     HeaderName::from_static("x-ms-thinclient-proxy-resource-type");
-
-/// Effective Partition Key header.
-///
-/// Sent for point Document operations only.
-pub const EFFECTIVE_PARTITION_KEY: HeaderName =
-    HeaderName::from_static("x-ms-effective-partition-key");
 
 /// Lower bound of the EPK range.
 ///
@@ -40,12 +43,6 @@ pub const GATEWAY20_RANGE_MIN: HeaderName = HeaderName::from_static("x-ms-thincl
 ///
 /// Sent for feed and cross-partition operations only.
 pub const GATEWAY20_RANGE_MAX: HeaderName = HeaderName::from_static("x-ms-thinclient-range-max");
-
-/// Account-metadata fetch hint.
-///
-/// Instructs the response to advertise Gateway 2.0 endpoints.
-pub const GATEWAY20_USE_THINCLIENT: HeaderName =
-    HeaderName::from_static("x-ms-cosmos-use-thinclient");
 
 #[cfg(test)]
 mod tests {
@@ -63,20 +60,12 @@ mod tests {
                 HeaderName::from_static("x-ms-thinclient-proxy-resource-type"),
             ),
             (
-                EFFECTIVE_PARTITION_KEY,
-                HeaderName::from_static("x-ms-effective-partition-key"),
-            ),
-            (
                 GATEWAY20_RANGE_MIN,
                 HeaderName::from_static("x-ms-thinclient-range-min"),
             ),
             (
                 GATEWAY20_RANGE_MAX,
                 HeaderName::from_static("x-ms-thinclient-range-max"),
-            ),
-            (
-                GATEWAY20_USE_THINCLIENT,
-                HeaderName::from_static("x-ms-cosmos-use-thinclient"),
             ),
         ];
 
@@ -90,10 +79,8 @@ mod tests {
         let constants = [
             ("GATEWAY20_OPERATION_TYPE", GATEWAY20_OPERATION_TYPE),
             ("GATEWAY20_RESOURCE_TYPE", GATEWAY20_RESOURCE_TYPE),
-            ("EFFECTIVE_PARTITION_KEY", EFFECTIVE_PARTITION_KEY),
             ("GATEWAY20_RANGE_MIN", GATEWAY20_RANGE_MIN),
             ("GATEWAY20_RANGE_MAX", GATEWAY20_RANGE_MAX),
-            ("GATEWAY20_USE_THINCLIENT", GATEWAY20_USE_THINCLIENT),
         ];
 
         for (index, (left_name, left_header)) in constants.iter().enumerate() {

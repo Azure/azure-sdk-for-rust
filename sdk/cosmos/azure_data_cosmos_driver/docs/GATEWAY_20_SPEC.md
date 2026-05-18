@@ -164,29 +164,21 @@ Today the `endpoint_is_available()` check in `operation_pipeline.rs` skips a *si
 
 Java and .NET both choose **fail-fast** here: `ThinClientStoreModel` extends `RxGatewayStoreModel` and inherits the standard regional retry stack, with **no automatic G2 → G1 fallback**. (Confirmed by inspection of `Azure/azure-sdk-for-java/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/ThinClientStoreModel.java` and the equivalent paths in `Azure/azure-cosmos-dotnet-v3`.)
 
-#### 4.3.2 Design space
+#### 4.3.2 Decision — fail-fast (parity with Java/.NET)
 
-**Option A — Fail-fast (recommended; parity with Java/.NET).**
 Keep the regional-retry behavior. A single attempt against an unreachable G2 endpoint fails, the endpoint is marked `TransportError`, the retry tries the next region's G2 endpoint, and the operation eventually fails with a transport error if all G2 regions are unreachable. The error and diagnostics surface a clear, actionable hint pointing the operator at `options.gateway20_disabled = true`. The operator must then explicitly opt out to route through G1.
 
-Pros: simple, matches Java/.NET semantics, no new state, no concurrency contract, no probe semantics, no recovery logic. Customers behind firewalls get a single deterministic verdict and a one-line remediation.
+Why fail-fast was chosen:
 
-Cons: customers in firewalled networks see a hard failure on every operation until they manually opt out. We mitigate this with a discoverable error message and connection-pool documentation.
+- **Java/.NET parity.** `ThinClientStoreModel` in Java extends `RxGatewayStoreModel` and inherits the standard regional retry stack with **no** automatic G2 → G1 fallback. .NET takes the same approach. (Confirmed by inspection of `Azure/azure-sdk-for-java/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/ThinClientStoreModel.java` and the equivalent paths in `Azure/azure-cosmos-dotnet-v3`.) Diverging without strong evidence would increase the support matrix and cause customer confusion when migrating SDKs.
+- **No silent latency surprise.** Auto-switching transport modes mid-workload would change the latency profile in ways the customer did not ask for. Customers tuning their workload around the selected transport would see a hidden regression they cannot attribute.
+- **Operational guarantees stay honest.** The guarantees published for the selected transport are tied to that transport staying selected for the duration of the workload. Auto-degrading would silently violate that contract for the affected client.
+- **No hidden state.** Firewall mis-configuration is exactly the kind of infrastructure problem that should bubble up loudly so the customer can react. A circuit breaker would mask it.
+- **Simplicity.** No new state, no concurrency contract, no probe semantics, no recovery logic. Customers behind firewalls get a single deterministic verdict and a one-line remediation: set `options.gateway20_disabled = true`.
 
-**Option B — Connectivity-failure circuit breaker (alternative; not taken at this time).**
-Add a client-scoped circuit breaker that observes transport-layer failures across G2 endpoints and, after a trip threshold is met, suppresses Gateway 2.0 routing for subsequent operations on that client. Functionally equivalent to flipping `gateway20_suppressed = true` at runtime.
+Cons we accept: customers in firewalled networks see a hard failure on every operation until they manually opt out. We mitigate this with a discoverable error message and connection-pool documentation.
 
-Reasons not taken in this iteration:
-
-- **Latency surprise**: silently switching transport modes mid-workload changes the latency profile in ways the customer didn't ask for. Gateway 2.0 has different latency characteristics than Gateway V1; customers who are tuning their workload around G2 latency would experience a hidden regression they cannot attribute.
-- **G2 latency SLA**: the operational guarantees we publish for G2 are tied to G2 staying selected. Auto-degrading violates that contract for the affected client.
-- **Hidden state** can mask intermittent infrastructure issues that the customer needs to see and react to (firewall mis-configuration is exactly the kind of thing that should bubble up loudly).
-- **Java/.NET parity**: neither has auto-fallback. Diverging without strong evidence increases the support matrix and customer confusion when migrating SDKs.
-- **API-additive deferral**: Option B can be added later as a connection-pool option (e.g. `gateway20_auto_fallback: bool`) defaulting to `false`. The fail-fast contract does not foreclose that path.
-
-Option B is parked under §4.3.5 Q4a. Reopen only with telemetry from the live bake-in showing widespread firewall scenarios that the fail-fast hint does not mitigate.
-
-#### 4.3.3 Recommended design (Option A)
+#### 4.3.3 Design
 
 ##### Behavior summary
 
@@ -327,7 +319,6 @@ A "firewall in CI" test (force outbound block to G2 hostnames) is **not** added 
 
 #### 4.3.5 Open sub-questions for this section
 
-- **Q4a — Revisit Option B (auto-fallback)?** Default position: only with telemetry from the live bake-in showing widespread firewall trouble that the fail-fast hint does not mitigate. Option B is API-additive — it can ship later as a connection-pool option (e.g. `gateway20_auto_fallback: bool`) defaulting to `false` so existing fail-fast semantics remain the default.
 - **Q4b — Should the firewall hint mention the specific port (`:444`)?** Default position: no — the test fixture uses `:444` but production may use a different port; the hint stays abstract ("Gateway 2.0 hostnames or ports") and the per-attempt diagnostics carry the exact endpoint URLs.
 - **Q4c — Should `gateway20_disabled` accept a structured reason for diagnostic logging instead of a `bool`?** Default position: no, scope creep. Operator-set settings are settings, not telemetry. If we want to record _why_ the operator opted out, that belongs in customer-side logs.
 
@@ -401,21 +392,21 @@ Phase 6's "RNTBD unknown-token tolerance" unit test pins this behavior: a hand-c
 
 The Rust SDK already wires the HTTP request header `x-ms-cosmos-sdk-supportedcapabilities` (`COSMOS_SDK_SUPPORTEDCAPABILITIES`, `azure_data_cosmos/src/constants.rs:157`) and emits it on every gateway request from `azure_data_cosmos_driver/src/driver/transport/cosmos_headers.rs:14-31`. Today the value sent over the wire is the literal string `"0"` — i.e., zero capabilities advertised.
 
-Phase 1 must change the emitted value to the bitmask `(PartitionMerge | IgnoreUnknownRntbdTokens)`, matching the minimum capability set the .NET SDK asserts in its contract tests (`SDKSupportedCapabilities.cs`). The header value is a string-encoded decimal of the bitwise OR of the enum bits; the precise integer value should be looked up against `SDKSupportedCapabilities.cs` at implementation time and committed as a Rust constant alongside the existing `COSMOS_SDK_SUPPORTEDCAPABILITIES` header name.
+Phase 1 must change the emitted value to `IgnoreUnknownRntbdTokens` (bit 3, decimal 8), matching the minimum capability set the .NET SDK asserts in its contract tests (`SDKSupportedCapabilities.cs`). The header value is a string-encoded decimal of the bitwise OR of the enum bits; the precise integer value should be looked up against `SDKSupportedCapabilities.cs` at implementation time and committed as a Rust constant alongside the existing `COSMOS_SDK_SUPPORTEDCAPABILITIES` header name.
 
 The `IgnoreUnknownRntbdTokens` bit is the contract that backs the silent-skip behavior in "Metadata token filtering" above: the proxy/backend uses this advertisement to decide whether it is safe to add new RNTBD tokens without coordinating with this SDK release. Advertising the bit while *also* failing or warning on unknown tokens would be a contract violation; advertising `"0"` while silently skipping unknown tokens is "merely conservative" but causes the proxy to assume zero forward-compat tolerance — both are wrong. Phase 1 must reconcile both ends.
 
-##### Capability bit composition (Rust = `9`, Java = `11`)
+##### Capability bit composition (Rust = `8`, Java = `11`)
 
-The bitmask the Rust driver advertises is **`9`** (`PartitionMerge | IgnoreUnknownRntbdTokens`). Pinned in `azure_data_cosmos_driver/src/driver/transport/cosmos_headers.rs:16-25` with a `const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 9);` invariant. The bits are sourced from .NET `SDKSupportedCapabilities.cs` and the C++ proxy enum:
+The bitmask the Rust driver advertises is **`8`** (`IgnoreUnknownRntbdTokens`). Pinned in `azure_data_cosmos_driver/src/driver/transport/cosmos_headers.rs:16-22` with a `const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 8);` invariant. The bits are sourced from .NET `SDKSupportedCapabilities.cs` and the C++ proxy enum:
 
 | Bit  | Decimal | Capability             | Rust advertises | Java advertises | Notes                                                                                                                                |
 | ---- | ------- | ---------------------- | --------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 0    | 1       | `PartitionMerge`       | yes             | yes             | Forward-compat with merged partition-key ranges; required for Gateway 2.0 because the proxy may surface merged ranges in routing.    |
+| 0    | 1       | `PartitionMerge`       | **no**          | yes             | Forward-compat with merged partition-key ranges. The Rust driver does not yet handle merged ranges in its partition-key routing, so advertising the bit without honoring the behavior could cause incorrect routing on accounts that surface merged ranges. Track in a follow-up when the driver grows merged-range support. |
 | 1    | 2       | (Java-only capability; name per Java `SDKSupportedCapabilities`) | **no**   | yes             | Java opts in to an additional capability the Rust driver does not yet consume. Unilaterally advertising it without honoring the corresponding behavior could cause mis-framing or unexpected proxy behavior. Verify the exact capability name against Java/.NET source before adding. Track in a follow-up if/when the driver grows the corresponding support. |
 | 3    | 8       | `IgnoreUnknownRntbdTokens` | yes          | yes             | Forward-compat with new RNTBD response tokens added by future proxy/backend versions; backed by the silent-skip behavior in "Metadata token filtering" above.                                            |
 
-Total: Rust `1 | 8 = 9`; Java `1 | 2 | 8 = 11`. The two-bit gap is intentional and conservative — the Rust driver only advertises capabilities it actually implements end-to-end. Adding bit 1 (or any future bit) requires implementing the corresponding behavior first, then incrementing the constant in `cosmos_headers.rs` and re-pinning `Phase 6`'s header-value test.
+Total: Rust `8`; Java `1 | 2 | 8 = 11`. The three-bit gap is intentional and conservative — the Rust driver only advertises capabilities it actually implements end-to-end. Adding any further bit requires implementing the corresponding behavior first, then updating the constant in `cosmos_headers.rs` and re-pinning `Phase 6`'s header-value test.
 
 Phase 6 test coverage: assert the header value emitted on Gateway 2.0 (and standard Gateway) requests is the expected bitmask string, not `"0"`.
 
@@ -471,7 +462,7 @@ This phase wires RNTBD serialization into the existing transport pipeline and ad
 
 #### What Will Be Done
 
-- **Operation filtering** — `is_operation_supported_by_gateway20(resource_type, operation_type) → bool`. Following Java (`ThinClientStoreModel`), only `ResourceType::Document` operations are eligible. All other resource types — including stored-procedure execution, which is **out of scope for Rust SDK GA** — fall through to the standard gateway via the eligibility-fallback path.
+- **Operation filtering** — `is_operation_supported_by_gateway20(resource_type, operation_type) → bool`. `ResourceType::Document` operations (CRUD, query, batch, read-feed) and `ResourceType::StoredProcedure` with `OperationType::Execute` are eligible, matching .NET's `ThinClientStoreClient` which forwards both document operations and `ExecuteJavaScript` through the thin client. StoredProcedure CRUD on the SP definition itself and every other resource type fall through to the standard gateway via the eligibility-fallback path.
 - **EPK computation** — Call `EffectivePartitionKey::compute()` (point) or `::compute_range()` (feed/cross-partition) from the driver layer. Do **not** call `azure_data_cosmos::hash::get_hashed_partition_key_string` (§3.5). SDK call sites that currently use it must route through the driver's implementation as part of this phase.
 - **EPK error propagation** — If EPK computation returns `Err` (MultiHash-requires-V2, component-count mismatch, etc.), surface as `CosmosStatus::BadRequest` to the caller. **Do not** fall back to standard gateway — the same inputs would be equally broken there.
 - **Header injection** — When `transport_mode == Gateway20`, inject the Gateway 2.0 headers listed below.
@@ -497,7 +488,7 @@ Only `ResourceType::Document` is eligible for gateway 2.0 (following Java's appr
 | ReadFeed | Yes | LatestVersion change feed only; excludes AllVersionsAndDeletes |
 | Batch | Yes | Transactional same-PK batch (single resource, single request). |
 | Bulk | Yes | SDK-side fan-out of independent CRUD ops; each fan-out leg is a separate eligible Document op. Distinct from Batch. |
-| StoredProcedure Execute | **No** | Stored-procedure execution is out of scope for Rust SDK GA. Eligibility fallback routes any incoming SPROC request to the standard gateway. |
+| StoredProcedure Execute | **Yes** | Stored-procedure execution routes via Gateway 2.0, matching .NET `ThinClientStoreClient` which forwards `ExecuteJavaScript` through the thin client. SP CRUD on the definition itself (`Create`/`Read`/`Replace`/`Delete`/`Upsert`) is **not** eligible and falls through to the standard gateway. |
 | All other resource types | **No** | Metadata operations use standard gateway |
 
 #### Header naming (proxy headers, in HTTP/2 request headers — not RNTBD tokens)
@@ -753,11 +744,11 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | RNTBD serialization | Yes | | | Round-trip, edge cases, malformed input |
 | RNTBD unknown-token tolerance | Yes | | | Inject synthetic unknown token IDs into a response frame; deserializer must skip + log, never panic / error / drop the rest of the response |
 | EPK computation | Yes | | | Single/hierarchical PK, hash versions 1 and 2, error cases (MultiHash V1, wrong component count) |
-| Operation filtering | Yes | | | All ResourceType × OperationType combos; asserts StoredProc Execute is rejected |
+| Operation filtering | Yes | | | All ResourceType × OperationType combos; asserts StoredProc Execute is **eligible** (routes via G2) while StoredProc CRUD is rejected |
 | Header injection | Yes | | | Point vs feed EPK headers, proxy type headers, range-header un-padded form |
 | HPK + Gateway 2.0: full vs partial PK | Yes | | Yes | Hierarchical container (2- and 3-component PK paths). **Full PK** (all components specified) on a point op → emits `x-ms-effective-partition-key` carrying the single EPK from `EffectivePartitionKey::compute()`. **Partial PK** (1- or 2-component prefix) on a feed / cross-partition / delete-by-PK op → emits `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` carrying the EPK range from `EffectivePartitionKey::compute_range()`. Asserted at unit level (header presence + exact wire form, range bounds for each prefix length) and E2E (round-trip against a live HPK container). |
 | Account-name RNTBD token | Yes | | | `GlobalDatabaseAccountName` (`0x00CE`, `String`) present in the RNTBD metadata stream of every Gateway 2.0 request (point, feed, batch, bulk, change feed). Value matches the host label of the account endpoint URL. |
-| SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `(PartitionMerge \| IgnoreUnknownRntbdTokens)`, **not** `"0"`. Pin against the integer value sourced from .NET `SDKSupportedCapabilities.cs`. |
+| SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `IgnoreUnknownRntbdTokens` (`"8"`), **not** `"0"`. Pin against the integer value sourced from .NET `SDKSupportedCapabilities.cs`. |
 | Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00F0` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
 | Consistency reconciliation: dual-header rejection | Yes | | | SDK never emits both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy` on V1; never emits both `ConsistencyLevel` and `ReadConsistencyStrategy` RNTBD tokens on V2. Verified across all 16 (CL × RCS, request-level × client-level) combinations. |
 | Consistency reconciliation: 4-source precedence | Yes | | | Request-RCS > Request-CL > Client-RCS > Client-CL > account default; `Default` at any RCS layer is a pass-through. Representative subset matching Java's data-provider tests. |
@@ -777,7 +768,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Retry: 410 Gone | | Yes | | PKRange refresh (sub-status specific); NameCacheStale → collection cache |
 | Retry: 404 / sub-status 1002 (ReadSessionNotAvailable) | | Yes | | Retry routes to a **remote-preferred** region (assert local-region retry only when no other region is available); assert PLF region wins when PLF has pinned the PKRangeId; assert that **no PKRange cache refresh** is triggered |
 | Operator override (`gateway20_disabled = true`) | Yes | Yes | | All eligible Document ops (point + feed + batch + change feed) route through standard gateway; default `false` does not change behavior |
-| Eligibility fallback | | Yes | | StoredProc Execute → standard gateway |
+| Eligibility fallback | | Yes | | StoredProc CRUD on the SP definition → standard gateway |
 | PLF precedence | | Yes | | Region without gw20_url + PLF override → standard gateway path |
 | Multi-region failover | | Yes | Yes | Preferred regions, failover |
 | Fault injection | | Yes | | Timeout, 503, network error |
@@ -810,4 +801,4 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 - **Q1 — HTTP/2 prior knowledge vs ALPN**: _Resolved_. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails and the existing retry policies handle it.
 - **Q2 — Live test account provisioning**: Cosmos DB account configuration flags required to enable Gateway 2.0 endpoints are not part of the standard Bicep templates. _Resolution_: hardcode a dedicated, pre-provisioned Gateway 2.0 account for the gateway 2.0 live tests pipeline and reuse it across runs (rather than provisioning per-run via Bicep). Account name and credentials stored in pipeline secrets (`AZURE_COSMOS_GW20_ENDPOINT`, `AZURE_COSMOS_GW20_KEY`); pipeline reads endpoint from environment variables.
 - **Q3 — EPK range header names**: _Resolved_. The Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. Phase 2 introduces new constants (`GATEWAY20_RANGE_MIN`, `GATEWAY20_RANGE_MAX`) on the Gateway 2.0 path; the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
-- **Q4 — Connectivity-failure handling (G2 → G1)**: _Specified, not yet implemented_. See §4.3 for the full design and test plan. Recommendation is **fail-fast** (parity with Java/.NET): when all G2 endpoints fail with connectivity-class errors, surface a consolidated error pointing the operator at `options.gateway20_disabled = true`. Auto-fallback (a client-scoped circuit breaker) is parked under §4.3.5 Q4a as a future API-additive option that ships only with telemetry justifying it. The fail-fast contract — and the structured `TransportFailureClass` classifier and the G1/G2 endpoint-cache isolation it depends on — must land before we can claim "Gateway 2.0 default-on is safe for customers behind firewalls".
+- **Q4 — Connectivity-failure handling (G2 → G1)**: _Specified, not yet implemented_. See §4.3 for the full design and test plan. Decision is **fail-fast** (parity with Java/.NET): when all G2 endpoints fail with connectivity-class errors, surface a consolidated error pointing the operator at `options.gateway20_disabled = true`. The fail-fast contract — and the structured `TransportFailureClass` classifier and the G1/G2 endpoint-cache isolation it depends on — must land before we can claim "Gateway 2.0 default-on is safe for customers behind firewalls".

@@ -39,8 +39,6 @@ impl AccountEndpoint {
     /// Returns `None` for emulator, IP literal, and custom-domain hosts. The parsed value is used
     /// as the RNTBD `GlobalDatabaseAccountName` metadata token on Gateway 2.0 requests; when it
     /// cannot be parsed, Gateway 2.0 requests fall back to standard Gateway for that account.
-    // Slice 3 reads this value when Gateway 2.0 dispatch is wired in.
-    #[allow(dead_code)]
     pub(crate) fn global_database_account_name(&self) -> Option<String> {
         let host = self.host();
         if host.is_empty() {

@@ -541,8 +541,12 @@ impl RequestDiagnostics {
             .as_millis() as u64;
     }
 
-    /// Records a transport-level failure using the synthetic Cosmos status
-    /// used across SDKs for client-generated gateway transport errors.
+    /// Records a transport-level failure with the caller-provided
+    /// [`CosmosStatus`]. The caller picks the status: real server-returned
+    /// codes flow through verbatim, while client-side construction failures
+    /// use neutral statuses such as [`CosmosStatus::CLIENT_BAD_REQUEST`] or
+    /// [`CosmosStatus::CLIENT_UNAUTHORIZED`] (HTTP status only, no sub-status —
+    /// see those constants for the cross-SDK parity rationale).
     pub(crate) fn fail_transport(
         &mut self,
         error: impl Into<String>,

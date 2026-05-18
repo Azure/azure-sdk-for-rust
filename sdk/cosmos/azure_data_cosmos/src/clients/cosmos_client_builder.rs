@@ -195,12 +195,13 @@ impl CosmosClientBuilder {
     ///
     /// # Latency caveat
     ///
-    /// Gateway 2.0 traffic flows through a proxy that is
-    /// **not currently covered by the regional Cosmos DB latency SLA**.
-    /// Workloads with strict P99 latency requirements should opt out via
-    /// `with_gateway20_disabled(true)` until the proxy reaches general
-    /// availability. The extra hop also means Gateway 2.0 may add measurable
-    /// latency relative to the standard gateway in some regions.
+    /// Gateway 2.0 traffic flows through a regional thin-client proxy.
+    /// Note that the standard gateway (Gateway 1.0) does not provide
+    /// any per-request latency guarantees, so neither transport offers
+    /// a latency SLA today. If you need to opt out of Gateway 2.0 — for
+    /// example to A/B test transport behavior, isolate a
+    /// transport-specific issue, or stay on the standard gateway during
+    /// a controlled rollout — set `with_gateway20_disabled(true)`.
     ///
     /// # Arguments
     ///
@@ -336,9 +337,6 @@ impl CosmosClientBuilder {
         let driver_fi_rules: Vec<
             std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
         > = if let Some(fault_builder) = self.fault_injection_builder {
-            // SDK fault-injection rules are already driver `FaultInjectionRule`s
-            // (re-exported through `crate::fault_injection`), so they flow
-            // directly to the driver without translation.
             fault_builder.rules().to_vec()
         } else {
             Vec::new()

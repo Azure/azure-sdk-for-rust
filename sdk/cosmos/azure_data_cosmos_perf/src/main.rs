@@ -287,8 +287,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // public SDK toggle (`CosmosClientOptions::with_gateway20_disabled`),
         // it inherits whatever default the SDK ships with — currently
         // disabled (pre-GA).
-        // TODO: Read the actual configured value from the SDK once the
-        // public toggle lands.
         gateway20_disabled: true,
         pyroscope_enabled: std::env::var("PYROSCOPE_SERVER_URL")
             .map(|v| !v.is_empty())

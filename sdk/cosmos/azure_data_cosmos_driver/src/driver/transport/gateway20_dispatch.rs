@@ -1093,11 +1093,11 @@ mod tests {
     }
 
     fn write_uuid(bytes: &mut Vec<u8>, value: Uuid) {
-        let value = value.as_u128();
-        let msb = (value >> 64) as u64;
-        let lsb = value as u64;
-        bytes.extend_from_slice(&msb.to_le_bytes());
-        bytes.extend_from_slice(&lsb.to_le_bytes());
+        let (data1, data2, data3, data4) = value.as_fields();
+        bytes.extend_from_slice(&data1.to_le_bytes());
+        bytes.extend_from_slice(&data2.to_le_bytes());
+        bytes.extend_from_slice(&data3.to_le_bytes());
+        bytes.extend_from_slice(data4);
     }
 
     fn take_u8(src: &mut &[u8]) -> u8 {
@@ -1119,9 +1119,11 @@ mod tests {
     }
 
     fn take_uuid(src: &mut &[u8]) -> Uuid {
-        let msb = u64::from_le_bytes(take_array(src));
-        let lsb = u64::from_le_bytes(take_array(src));
-        Uuid::from_u128(((msb as u128) << 64) | lsb as u128)
+        let data1 = u32::from_le_bytes(take_array(src));
+        let data2 = u16::from_le_bytes(take_array(src));
+        let data3 = u16::from_le_bytes(take_array(src));
+        let data4: [u8; 8] = take_array(src);
+        Uuid::from_fields(data1, data2, data3, &data4)
     }
 
     fn take_string(src: &mut &[u8], len: usize) -> String {

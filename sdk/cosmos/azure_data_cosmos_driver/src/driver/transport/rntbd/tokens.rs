@@ -180,7 +180,7 @@ impl TokenValue {
             Self::Long(value) => out.extend_from_slice(&value.to_le_bytes()),
             Self::ULongLong(value) => out.extend_from_slice(&value.to_le_bytes()),
             Self::LongLong(value) => out.extend_from_slice(&value.to_le_bytes()),
-            Self::Guid(value) => write_guid_ms(out, *value),
+            Self::Guid(value) => write_uuid_le(out, *value),
             Self::SmallString(value) => write_len_prefixed_u8(out, value.as_bytes())?,
             Self::String(value) => write_len_prefixed_u16(out, value.as_bytes())?,
             Self::ULongString(value) => write_len_prefixed_u32(out, value.as_bytes())?,
@@ -201,7 +201,7 @@ impl TokenValue {
             TokenType::Long => Ok(Self::Long(read_i32_le(src)?)),
             TokenType::ULongLong => Ok(Self::ULongLong(read_u64_le(src)?)),
             TokenType::LongLong => Ok(Self::LongLong(read_i64_le(src)?)),
-            TokenType::Guid => Ok(Self::Guid(read_guid_ms(src)?)),
+            TokenType::Guid => Ok(Self::Guid(read_uuid_le(src)?)),
             TokenType::SmallString => {
                 let len = read_u8(src)? as usize;
                 Ok(Self::SmallString(read_utf8(src, len)?))
@@ -621,23 +621,29 @@ pub(super) fn data_conversion_error(message: impl Into<String>) -> azure_core::E
     azure_core::Error::with_message(ErrorKind::DataConversion, message.into())
 }
 
-/// Writes a UUID using the Gateway 2.0 activity ID byte order.
+/// Writes a UUID using the Microsoft GUID wire format produced by
+/// `System.Guid.ToByteArray` (.NET) and `RntbdUUID.encode` (Java).
 ///
-/// The wire form is the UUID most-significant 64 bits in little-endian order
-/// followed by the least-significant 64 bits in little-endian order.
+/// The wire form is `Data1` (u32 LE), `Data2` (u16 LE), `Data3` (u16 LE),
+/// then the final 8 bytes (`Data4`) in their natural order. This is the
+/// same encoding used by the Cosmos DB RNTBD protocol for both the frame
+/// header `activityId` and `Guid`-typed token values.
 pub(super) fn write_uuid_le(out: &mut Vec<u8>, id: Uuid) {
-    let value = id.as_u128();
-    let msb = (value >> 64) as u64;
-    let lsb = value as u64;
-    out.extend_from_slice(&msb.to_le_bytes());
-    out.extend_from_slice(&lsb.to_le_bytes());
+    let (data1, data2, data3, data4) = id.as_fields();
+    out.extend_from_slice(&data1.to_le_bytes());
+    out.extend_from_slice(&data2.to_le_bytes());
+    out.extend_from_slice(&data3.to_le_bytes());
+    out.extend_from_slice(data4);
 }
 
-/// Reads a UUID using the Gateway 2.0 activity ID byte order.
+/// Reads a UUID using the Microsoft GUID wire format. See
+/// [`write_uuid_le`] for the byte layout.
 pub(super) fn read_uuid_le(src: &mut &[u8]) -> azure_core::Result<Uuid> {
-    let msb = read_u64_le(src)?;
-    let lsb = read_u64_le(src)?;
-    Ok(Uuid::from_u128(((msb as u128) << 64) | lsb as u128))
+    let data1 = u32::from_le_bytes(read_array(src)?);
+    let data2 = u16::from_le_bytes(read_array(src)?);
+    let data3 = u16::from_le_bytes(read_array(src)?);
+    let data4 = read_array(src)?;
+    Ok(Uuid::from_fields(data1, data2, data3, &data4))
 }
 
 /// Reads an unsigned byte from the input slice.
@@ -729,46 +735,9 @@ fn write_len_prefixed_u32(out: &mut Vec<u8>, bytes: &[u8]) -> azure_core::Result
     Ok(())
 }
 
-fn write_guid_ms(out: &mut Vec<u8>, id: Uuid) {
-    let (data1, data2, data3, data4) = id.as_fields();
-    out.extend_from_slice(&data1.to_le_bytes());
-    out.extend_from_slice(&data2.to_le_bytes());
-    out.extend_from_slice(&data3.to_le_bytes());
-    out.extend_from_slice(data4);
-}
-
-fn read_guid_ms(src: &mut &[u8]) -> azure_core::Result<Uuid> {
-    let data1 = u32::from_le_bytes(read_array(src)?);
-    let data2 = u16::from_le_bytes(read_array(src)?);
-    let data3 = u16::from_le_bytes(read_array(src)?);
-    let data4 = read_array(src)?;
-    Ok(Uuid::from_fields(data1, data2, data3, &data4))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn activity_id_uses_msb_lsb_little_endian_order() {
-        let id = Uuid::parse_str("0a1b2c3d-4e5f-6789-abcd-ef0123456789").unwrap();
-        let mut bytes = Vec::new();
-
-        write_uuid_le(&mut bytes, id);
-
-        assert_eq!(
-            bytes,
-            vec![
-                0x89, 0x67, 0x5f, 0x4e, 0x3d, 0x2c, 0x1b, 0x0a, 0x89, 0x67, 0x45, 0x23, 0x01, 0xef,
-                0xcd, 0xab,
-            ]
-        );
-
-        let mut src = bytes.as_slice();
-        let decoded = read_uuid_le(&mut src).unwrap();
-        assert_eq!(decoded, id);
-        assert!(src.is_empty());
-    }
 
     #[test]
     fn invalid_token_type_sentinel_is_rejected() {
@@ -786,5 +755,78 @@ mod tests {
         let err = Token::read_from(&mut src).unwrap_err();
 
         assert_eq!(*err.kind(), ErrorKind::DataConversion);
+    }
+
+    #[test]
+    fn all_token_types_round_trip_through_wire_id() {
+        // Mirrors the scenario from Java's
+        // `RntbdTokenTypeTests.allTokenTypes()`: every recognized `TokenType`
+        // value must round-trip from enum -> u8 -> enum without loss.
+        let all_token_types = [
+            TokenType::Byte,
+            TokenType::UShort,
+            TokenType::ULong,
+            TokenType::Long,
+            TokenType::ULongLong,
+            TokenType::LongLong,
+            TokenType::Guid,
+            TokenType::SmallString,
+            TokenType::String,
+            TokenType::ULongString,
+            TokenType::SmallBytes,
+            TokenType::Bytes,
+            TokenType::ULongBytes,
+            TokenType::Float,
+            TokenType::Double,
+            TokenType::Invalid,
+        ];
+
+        for token_type in all_token_types {
+            let wire_id: u8 = token_type.into();
+            let decoded = TokenType::try_from(wire_id).unwrap_or_else(|err| {
+                panic!("token type {token_type:?} (wire 0x{wire_id:02X}) did not round-trip: {err}")
+            });
+            assert_eq!(decoded, token_type);
+        }
+    }
+
+    #[test]
+    fn token_value_guid_matches_dotnet_and_java_reference_bytes() {
+        // Mirrors the scenario from Java's
+        // `RntbdTokenTypeTests.uuidConversion()`: a `Guid` token value must
+        // round-trip to the canonical 16-byte MS GUID layout produced by
+        // .NET's `Guid.ToByteArray()` and Java's `RntbdUUID.encode`. The
+        // reference UUID + bytes here are lifted verbatim from those tests
+        // so a future endianness regression in `write_guid_ms` is caught.
+        let id = Uuid::parse_str("8f3322cc-1786-4db4-9b97-b229c2c6f0aa").unwrap();
+        let expected_bytes: [u8; 16] = [
+            0xCC, 0x22, 0x33, 0x8F, 0x86, 0x17, 0xB4, 0x4D, 0x9B, 0x97, 0xB2, 0x29, 0xC2, 0xC6,
+            0xF0, 0xAA,
+        ];
+
+        let token = Token::new(
+            RntbdRequestToken::AuthorizationToken.into(),
+            TokenValue::Guid(id),
+        );
+        let mut encoded = Vec::new();
+        token.write_to(&mut encoded).unwrap();
+
+        // Token wire layout: u16 id + u8 type + payload. The first 3 bytes
+        // are framing; the remaining 16 must be the canonical MS GUID
+        // encoding.
+        let payload_offset = 2 + 1;
+        assert_eq!(
+            &encoded[payload_offset..payload_offset + 16],
+            expected_bytes.as_slice(),
+            "Guid token payload diverges from MS GUID wire format"
+        );
+
+        let mut src = encoded.as_slice();
+        let decoded = Token::read_from(&mut src).unwrap();
+        match &decoded.value {
+            TokenValue::Guid(round_tripped) => assert_eq!(*round_tripped, id),
+            other => panic!("expected TokenValue::Guid, got {other:?}"),
+        }
+        assert!(src.is_empty());
     }
 }
