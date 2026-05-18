@@ -68,10 +68,10 @@ jobs:
           cargo --version
 
           # Verify core can be built
-          cargo check --package azure_core --all-targets
+          cargo check --manifest-path sdk/core/azure_core/Cargo.toml --all-targets
 
           # Verify that core tests can be discovered
-          cargo test --package azure_core --no-run
+          cargo test --manifest-path sdk/core/azure_core/Cargo.toml --no-run
 
       - name: Environment summary
         run: |

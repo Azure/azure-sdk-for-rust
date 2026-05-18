@@ -6,10 +6,10 @@ use azure_core::{
     http::{StatusCode, Transport},
     json,
 };
-use azure_core_test::ErrorKind;
-use azure_security_keyvault_secrets::{
+use azure_core_examples::secrets::{
     models::SetSecretParameters, SecretClient, SecretClientOptions,
 };
+use azure_core_test::ErrorKind;
 use example::setup;
 
 /// This example demonstrates deserializing a standard Azure error response to get more details.
@@ -91,7 +91,8 @@ mod example {
         credentials::TokenCredential,
         http::{headers::Headers, AsyncRawResponse, HttpClient, StatusCode},
     };
-    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use azure_core_examples::identity::MockCredential;
+    use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
     use std::sync::Arc;
 
