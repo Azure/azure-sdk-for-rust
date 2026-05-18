@@ -1,5 +1,7 @@
 # PPCB Memory Footprint — DHAT Analysis
 
+<!-- cspell:words smallvec Smallvec SMALLVEC hashbrown Hashbrown ftbl FTBL gmax jemalloc MALLOC msvc Symbolicator -->
+
 **Crate:** `azure_data_cosmos_driver`
 **Subsystem:** Per-Partition Circuit Breaker (PPCB) routing state
 **Date:** 2026-05-06
@@ -51,7 +53,7 @@ per partition**.
 
 1. **PPCB-on with no failures has effectively zero overhead.** The empty
    `circuit_breaker_overrides` map consumes 0 bytes / 0 blocks on the
-   heap. The "PPCB enabled" tax materialises only when partitions
+   heap. The "PPCB enabled" tax materializes only when partitions
    actually fail.
 2. **At full saturation (every partition tripped), the driver carries
    ~23.5 MiB of routing state for an 80k-partition account.** This is
@@ -129,7 +131,7 @@ PPCB flag and the resulting populated state:
   `is_eligible_for_ppcb` check, so `circuit_breaker_overrides` stays
   empty.
 - **Enabled trace** — `circuit_breaker_option_enabled = true`. The
-  example synthesises the steady state the driver would reach after
+  example synthesizes the steady state the driver would reach after
   every partition has tripped past threshold and PPCB has advanced past
   K failed regions (described in §4.4 below).
 
@@ -215,7 +217,7 @@ dhat = { workspace = true, optional = true }
 PPCB's data structures are crate-private in production
 (`pub(crate) mod partition_endpoint_state`). The benchmark accesses them
 through the existing `__internal_testing` re-export pattern documented
-in [`testing.rs`](../azure_data_cosmos_driver/src/testing.rs):
+in `azure_data_cosmos_driver/src/testing.rs`:
 
 ```rust
 // In azure_data_cosmos_driver/src/testing.rs (only compiled when
@@ -289,7 +291,7 @@ This is documented prominently at the top of `ppcb_state_dhat.rs`.
 | `CosmosEndpoint` | 8 (Arc-backed) |
 
 These are stack sizes; heap allocations attached to each are
-characterised below.
+characterized below.
 
 ---
 
@@ -602,9 +604,9 @@ tripped**, which is unusual outside a coordinated regional event.
 A regional outage that trips PPCB on 80k partitions in a short window
 will trigger ~240k allocations (entries + transient) in that window.
 At ~1 µs per allocation on modern systems this is well under 250 ms of
-allocator time amortised across worker threads — not a bottleneck.
+allocator time amortized across worker threads — not a bottleneck.
 
-### 12.3 Cleanup behaviour
+### 12.3 Cleanup behavior
 
 The trace shows zero leaked blocks at process exit — `Drop` is
 implemented correctly. The failback loop (described in
@@ -623,7 +625,7 @@ below the worst-case measured here.
   microsecond-scale scan, but a dedicated benchmark would confirm.
 - **Concurrent-mutator stress.** The CAS-clone pattern in
   `mark_partition_unavailable` produces transient O(N) clones during
-  the swap. Contention behaviour under burst load is not measured here.
+  the swap. Contention behavior under burst load is not measured here.
 
 ---
 
@@ -656,7 +658,7 @@ sum) and the bytes/block ratio against the source.
 Both the main HashMap (PP9) and the per-entry HashSets (PP8) are sized
 by hashbrown to the next power of two. At N = 80,000 the main map is
 sized for 131,072 slots — about 64 % loaded. This means the per-entry
-average reported here (308 B) silently amortises ~38 % unused
+average reported here (308 B) silently amortizes ~38 % unused
 capacity into the per-entry number. Real-world entry counts that sit
 just below or just above a power-of-2 boundary will show meaningful
 discontinuities in per-entry cost.
@@ -925,9 +927,9 @@ This is the qualitative shift the §11 recommendations were aiming
 for: PPCB no longer puts allocator-contention pressure on the system
 during a partition-event storm.
 
-### 15.9 Behavioural correctness
+### 15.9 Behavioral correctness
 
-Behavioural changes worth noting:
+Behavioral changes worth noting:
 
 - `try_move_next_endpoint` now uses linear `contains()` instead of
   hash lookup when checking whether `failed_endpoint` was already
@@ -994,7 +996,7 @@ regional endpoints) rather than a stub.
 
 ### 16.2 Harness
 
-A new example, [`examples/ppcb_state_real_dhat.rs`](../examples/ppcb_state_real_dhat.rs),
+A new example, `examples/ppcb_state_real_dhat.rs`,
 constructs a real `CosmosDriverRuntime` + `CosmosDriver` against the
 account and runs in two modes:
 
@@ -1020,8 +1022,8 @@ without touching production API:
 
 Each row is the mean of 2 deterministic runs; variation between runs
 was 5 bytes on totals, 0 on peak. The DHAT JSON traces are at
-[`dhat-traces/dhat-heap-real-baseline-N115.json`](dhat-traces/dhat-heap-real-baseline-N115.json)
-and [`dhat-traces/dhat-heap-real-injected-N115.json`](dhat-traces/dhat-heap-real-injected-N115.json).
+`dhat-traces/dhat-heap-real-baseline-N115.json`
+and `dhat-traces/dhat-heap-real-injected-N115.json`.
 
 | Metric | baseline (driver only) | injected (driver + N=115 PPCB) | Δ (PPCB cost) |
 |---|---:|---:|---:|
@@ -1069,8 +1071,8 @@ Dividing the marginal Δ by partition count:
 
 | Quantity | Value | Notes |
 |---|---:|---|
-| Bytes per PPCB entry | **419 B** | 48,185 / 115. **Higher** than the §15 synthesized number (237 B) — the difference is hashbrown's small-table over-reservation at N = 115 (256 reserved slots vs. 131,072 at N = 80k where the amortisation is much better). |
-| Blocks per PPCB entry | **0.24** | 28 / 115. Confirms v2's inline-storage win: no per-entry heap blocks; the 28 blocks are amortised across all 115 entries inside the HashMap's bucket structure. |
+| Bytes per PPCB entry | **419 B** | 48,185 / 115. **Higher** than the §15 synthesized number (237 B) — the difference is hashbrown's small-table over-reservation at N = 115 (256 reserved slots vs. 131,072 at N = 80k where the amortization is much better). |
+| Blocks per PPCB entry | **0.24** | 28 / 115. Confirms v2's inline-storage win: no per-entry heap blocks; the 28 blocks are amortized across all 115 entries inside the HashMap's bucket structure. |
 | Buildup alloc events per entry | **1.23** | 141 / 115. Mostly the temporary `String::push_str` from `format!("pk-{i}")` plus a handful of HashMap rehash events. |
 
 ### 16.6 Comparison: synthesized vs. real-driver at N = 115
@@ -1126,7 +1128,7 @@ cost worth worrying about.
    HashMap, exactly as §15 predicted. No hidden per-entry heap
    blocks materialized once the driver was real instead of stubbed.
 2. **v2's `SmallVec` + `CompactString` win holds end-to-end.** Per-entry
-   blocks remain at 0 (amortised inside the HashMap buckets), even
+   blocks remain at 0 (amortized inside the HashMap buckets), even
    when the entries flow through the real `apply_partition` CAS path.
 3. **Hashbrown over-reservation dominates per-entry cost at small N.**
    At N = 115 the reserved capacity is 256 slots, so per-entry bytes
@@ -1163,7 +1165,7 @@ $env:PPCB_NUM_PARTITIONS = "115"
 ```
 
 Pass `PPCB_NUM_PARTITIONS=<N>` to drive other counts against the same
-account (no real partition splits are needed — the harness synthesises
+account (no real partition splits are needed — the harness synthesizes
 PK range IDs `pk-0..pk-{N-1}`).
 
 *End of section 16.*
@@ -1190,7 +1192,7 @@ apples-to-apples comparison §15 only had against synthesized state.
 | N | 115 |
 | K | 2 |
 | Allocator | Windows system default |
-| Harness | [`examples/ppcb_state_real_dhat.rs`](../examples/ppcb_state_real_dhat.rs) — same example, only the inner type alias changed (`HashSet<CosmosEndpoint>` instead of `FailedEndpoints`/`SmallVec<[…; 4]>`) |
+| Harness | `examples/ppcb_state_real_dhat.rs` — same example, only the inner type alias changed (`HashSet<CosmosEndpoint>` instead of `FailedEndpoints`/`SmallVec<[…; 4]>`) |
 
 The two non-functional adjustments needed to compile against v1
 (`pub` widening of routing types so `crate::testing` can re-export them,
@@ -1199,10 +1201,10 @@ the heap layout — they exist so the same example binary can be built
 against either driver version.
 
 DHAT JSON traces:
-- v1 baseline → [`dhat-traces/dhat-heap-real-baseline-v1-N115.json`](dhat-traces/dhat-heap-real-baseline-v1-N115.json)
-- v1 injected → [`dhat-traces/dhat-heap-real-injected-v1-N115.json`](dhat-traces/dhat-heap-real-injected-v1-N115.json)
-- v2 baseline → [`dhat-traces/dhat-heap-real-baseline-N115.json`](dhat-traces/dhat-heap-real-baseline-N115.json)
-- v2 injected → [`dhat-traces/dhat-heap-real-injected-N115.json`](dhat-traces/dhat-heap-real-injected-N115.json)
+- v1 baseline → `dhat-traces/dhat-heap-real-baseline-v1-N115.json`
+- v1 injected → `dhat-traces/dhat-heap-real-injected-v1-N115.json`
+- v2 baseline → `dhat-traces/dhat-heap-real-baseline-N115.json`
+- v2 injected → `dhat-traces/dhat-heap-real-injected-N115.json`
 
 Each row in the tables below is the mean of 2 deterministic runs;
 variation between runs was ≤ 14 bytes on totals, 0 on peak.
@@ -1246,7 +1248,7 @@ diluted into bucket headroom that exists either way.
 
 Per-entry blocks of **2.21** for v1 matches §15.4's "2 blocks per partition
 entry" exactly (1 for `failed_endpoints` HashSet + 1 for `PartitionKeyRangeId`
-String, plus a tiny amortised contribution from HashMap rehash); per-entry
+String, plus a tiny amortized contribution from HashMap rehash); per-entry
 blocks of **0.24** for v2 confirms inline storage of both `SmallVec` and
 `CompactString` payloads end-to-end on the live driver.
 
@@ -1279,7 +1281,7 @@ elimination of:
 
 §15.4 measured at N = 80,000 in the synthesized harness. Per-entry
 numbers from there (v1 308 B / 2 blocks, v2 237 B / 0 blocks) reflect
-the asymptotic behaviour as hashbrown's over-reservation amortises away.
+the asymptotic behavior as hashbrown's over-reservation amortizes away.
 Per-entry numbers measured here at N = 115 on a real driver
 (v1 503 B / 2.21 blocks, v2 419 B / 0.24 blocks) reflect the small-N
 regime where the 256-slot floor still dominates bytes.
@@ -1302,7 +1304,7 @@ The optimization shipped in §15 holds on the real driver:
 
 - **89 % fewer heap blocks** at PPCB peak on a real 115-partition account
   — operationally the most important number for allocator-contention
-  behaviour during partition-event storms.
+  behavior during partition-event storms.
 - **17 % fewer bytes** at PPCB peak — modest in absolute terms (10 KB
   saved at this N) but extrapolating to 80k partitions (§15.7) the same
   per-entry slope yields the measured **~5.6 MiB saved** at scale.
@@ -1311,7 +1313,7 @@ The optimization shipped in §15 holds on the real driver:
 
 No further action recommended. §11.3 (boxing the HashMap value) remains
 deferred for the same reasons stated in §16.9 — the contiguous-allocation
-risk does not materialise at the partition counts that matter in
+risk does not materialize at the partition counts that matter in
 practice.
 
 ### 17.7 Reproducing
@@ -1337,7 +1339,7 @@ $env:PPCB_NUM_PARTITIONS = "115"
 ```
 
 Rename the resulting JSONs to `*-v1-*` and place alongside the v2 ones
-in [`dhat-traces/`](dhat-traces/) for diffing in `dh_view.html`.
+in `dhat-traces/` for diffing in `dh_view.html`.
 
 *End of section 17.*
 
@@ -1397,8 +1399,8 @@ foreach ($n in 115, 1000, 10000, 80000) {
 
 Trace files (8 total):
 
-- v1 disabled: [`dhat-traces/dhat-heap-synth-disabled-v1-N{115,1000,10000,80000}.json`](dhat-traces/)
-- v1 enabled:  [`dhat-traces/dhat-heap-synth-enabled-v1-N{115,1000,10000,80000}.json`](dhat-traces/)
+- v1 disabled: `dhat-traces/dhat-heap-synth-disabled-v1-N{115,1000,10000,80000}.json`
+- v1 enabled:  `dhat-traces/dhat-heap-synth-enabled-v1-N{115,1000,10000,80000}.json`
 
 Headline (peak live bytes/blocks at `t-gmax`):
 
@@ -1414,7 +1416,7 @@ exactly what §15.4 found and proving that the workload sweep reaches
 identical resting state at every N. The enabled-mode per-entry blocks
 converge to **2.000** for all N ≥ 1,000 — exactly the §15.4 prediction.
 Per-entry bytes converge to **~307 B** at large N where hashbrown's
-power-of-two over-reservation amortises away.
+power-of-two over-reservation amortizes away.
 
 ### 18.3 The v2 prediction model
 
