@@ -456,6 +456,84 @@ mod tests {
     }
 
     #[test]
+    fn wrap_emits_tokens_in_thin_client_required_order() {
+        // Java's `RntbdTokenStreamTests.withReorderingForThinClient` mandates
+        // the relative ordering EffectivePartitionKey -> GlobalDatabaseAccountName
+        // -> PayloadPresent on every thin-client request (the fourth token
+        // Java tracks, CorrelatedActivityId, is not emitted by the Rust
+        // driver). Rust hard-codes the emission order in
+        // `wrap_request_for_gateway20`; pin the Java contract here so a
+        // future refactor that shuffles the token order is a compile-time
+        // failure rather than a silent wire-compat break.
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let partition_key = PartitionKey::from("pk-value");
+        let partition_key_definition = PartitionKeyDefinition::new(vec![Cow::from("/pk")]);
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(
+                &auth_context,
+                OperationType::Read,
+                Some(&partition_key),
+                Some(&partition_key_definition),
+            ),
+        )
+        .unwrap();
+
+        // Read the metadata token IDs in stream order (don't go through
+        // `parse_wrapped_request` which puts tokens into a HashMap and
+        // loses ordering).
+        let mut src = wrapped.body.as_ref().unwrap().as_ref();
+        let _total_len = take_u32(&mut src);
+        let _resource_type = take_u16(&mut src);
+        let _operation_type = take_u16(&mut src);
+        let _activity_id = take_uuid(&mut src);
+
+        let mut emitted_ids = Vec::new();
+        // Stop when the remaining bytes can't form a token header; the
+        // body (if any) comes last and is too short to be confused with a
+        // token frame here (a Read has no body).
+        while src.len() >= 3 {
+            let id = take_u16(&mut src);
+            emitted_ids.push(id);
+            let token_type = take_u8(&mut src);
+            // Consume the value bytes so the next iteration starts at the
+            // next token header. Mirrors `parse_token_value` for the
+            // token types this test fixture actually produces.
+            let _ = parse_token_value(token_type, &mut src);
+        }
+        assert!(
+            src.is_empty(),
+            "Read should have no inner body; leftover bytes {:?}",
+            src
+        );
+
+        let pos = |id: u16| -> usize {
+            emitted_ids
+                .iter()
+                .position(|&x| x == id)
+                .unwrap_or_else(|| panic!("token 0x{id:04X} not emitted; got {emitted_ids:?}"))
+        };
+        let epk = pos(0x005A); // EffectivePartitionKey
+        let global_account = pos(0x00CE); // GlobalDatabaseAccountName
+        let payload_present = pos(0x0002); // PayloadPresent
+
+        assert!(
+            epk < global_account,
+            "EffectivePartitionKey (0x005A) must precede GlobalDatabaseAccountName (0x00CE) per Java thin-client contract; got {emitted_ids:?}"
+        );
+        assert!(
+            global_account < payload_present,
+            "GlobalDatabaseAccountName (0x00CE) must precede PayloadPresent (0x0002) per Java thin-client contract; got {emitted_ids:?}"
+        );
+    }
+
+    #[test]
     fn wrap_builds_required_request_tokens_for_read() {
         let request = signed_request(None);
         let auth_context = AuthorizationContext::new(

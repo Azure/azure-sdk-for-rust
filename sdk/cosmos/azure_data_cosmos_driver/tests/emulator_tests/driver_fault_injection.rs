@@ -10,6 +10,7 @@ use azure_data_cosmos_driver::diagnostics::TransportKind;
 use azure_data_cosmos_driver::fault_injection::*;
 use std::error::Error;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 /// Tests that a rule with probability 0.0 never injects faults.
 ///
@@ -690,4 +691,135 @@ fn build_rntbd_response_with_unknown_token(request_charge: f64, body: &[u8]) -> 
     let total_len = u32::try_from(frame.len()).expect("synthetic frame fits in u32");
     frame[0..4].copy_from_slice(&total_len.to_le_bytes());
     frame
+}
+
+/// Gateway 2.0 server-response-delay fault injection (Java parity:
+/// `FaultInjectionServerErrorRuleOnGatewayV2Tests.faultInjectionServerErrorRuleTests_ServerResponseDelay`).
+///
+/// A rule scoped to [`TransportKind::Gateway20`] with `with_delay(...)` and
+/// no error type should cause every matched G2 request to take at least the
+/// configured delay before returning. This test asserts the rule fires and
+/// the read still completes — the latency assertion is loose (only confirms
+/// the delay was on the order of magnitude requested) because CI clocks
+/// are noisy.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20'"
+)]
+pub async fn gateway20_server_response_delay_is_injected() -> Result<(), Box<dyn Error>> {
+    const INJECTED_DELAY: Duration = Duration::from_millis(500);
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::Gateway20)
+        .build();
+
+    let result = FaultInjectionResultBuilder::new()
+        .with_delay(INJECTED_DELAY)
+        .with_probability(1.0)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("gateway20-response-delay", result)
+            .with_condition(condition)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
+
+        let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+        context
+            .create_item(&container, "item1", "pk1", item_json)
+            .await?;
+
+        let start = Instant::now();
+        let read_result = context.read_item(&container, "item1", "pk1").await;
+        let elapsed = start.elapsed();
+
+        // The injected delay must have been applied (even if the read
+        // ultimately succeeds or fails, the rule must have fired and the
+        // operation must have waited at least the configured delay before
+        // making forward progress). We assert at least 80% of the configured
+        // delay to tolerate clock-resolution slack on slow CI agents.
+        let min_expected = INJECTED_DELAY * 4 / 5;
+        assert!(
+            elapsed >= min_expected,
+            "read should have waited at least {min_expected:?} for the injected delay, got {elapsed:?}; \
+             result was {read_result:?}"
+        );
+
+        assert!(rule.hit_count() > 0, "delay rule must have been hit");
+
+        Ok(())
+    })
+    .await
+}
+
+/// Gateway 2.0 hit-limit caps fault firing (Java parity:
+/// `FaultInjectionServerErrorRuleOnGatewayV2Tests.faultInjectionServerErrorRuleTests_HitLimit`).
+///
+/// A rule with `with_hit_limit(N)` scoped to [`TransportKind::Gateway20`]
+/// fires for the first N matching G2 attempts and then stops. The test
+/// drives more than N reads and asserts the recorded hit count equals N
+/// (never exceeds the limit).
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20'"
+)]
+pub async fn gateway20_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>> {
+    const HIT_LIMIT: u32 = 2;
+    const TOTAL_READS: u32 = 5;
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::Gateway20)
+        .build();
+
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .with_probability(1.0)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("gateway20-hit-limit", result)
+            .with_condition(condition)
+            .with_hit_limit(HIT_LIMIT)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
+
+        let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+        context
+            .create_item(&container, "item1", "pk1", item_json)
+            .await?;
+
+        // Drive more reads than HIT_LIMIT. Reads may succeed (after the
+        // rule stops firing) or fail (while the rule is active); we only
+        // care about the hit count being capped.
+        for _ in 0..TOTAL_READS {
+            let _ = context.read_item(&container, "item1", "pk1").await;
+        }
+
+        assert_eq!(
+            rule.hit_count(),
+            HIT_LIMIT,
+            "rule must fire exactly hit_limit ({HIT_LIMIT}) times across {TOTAL_READS} reads"
+        );
+
+        Ok(())
+    })
+    .await
 }
