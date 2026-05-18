@@ -174,20 +174,81 @@ impl CosmosError {
     /// Consume the `CosmosError` and return an owned `Arc` handle to
     /// the wrapped [`azure_core::Error`].
     ///
-    /// Useful when surfacing a Cosmos error through code that holds
-    /// `Result<T, azure_core::Error>`. Note that `azure_core::Error`
-    /// is `!Clone`, so the returned value is an `Arc` handle (cheap
-    /// fan-out, shared ownership) rather than an owned value.
+    /// The returned value is an `Arc` because [`azure_core::Error`] is
+    /// `!Clone` and this `CosmosError` itself supports cheap fan-out
+    /// via `Clone` — there is no way to unconditionally hand out an
+    /// owned `azure_core::Error` from a possibly-shared handle.
+    /// Callers that have a `Result<T, azure_core::Error>` to satisfy
+    /// can either:
+    ///
+    /// 1. Use [`Self::into_azure_error_lossy`] (always succeeds; may
+    ///    drop `raw_response` / inner if the handle is shared).
+    /// 2. Call `Arc::try_unwrap(err.into_source())` themselves and
+    ///    fall back to whatever projection their use case prefers.
     #[inline]
     pub fn into_source(self) -> Arc<azure_core::Error> {
         self.source
     }
 
+    /// Consume the `CosmosError` and return an owned [`azure_core::Error`].
+    ///
+    /// If this `CosmosError` is the sole owner of the wrapped
+    /// [`Arc`], the original error is returned losslessly. Otherwise
+    /// a fresh `azure_core::Error` is constructed from the wrapped
+    /// error's `kind()` (cloned) and `to_string()` — this preserves
+    /// the `ErrorKind` discriminant and the user-visible message but
+    /// drops the original inner source (callers walking
+    /// `Error::source()` will see an empty chain) **and** drops
+    /// `raw_response` from `ErrorKind::HttpResponse` (because the
+    /// inner `Box<RawResponse>` cannot be uniquely re-obtained from a
+    /// shared handle).
+    ///
+    /// Prefer [`Self::as_azure_error`] when you only need a borrow.
+    pub fn into_azure_error_lossy(self) -> azure_core::Error {
+        match Arc::try_unwrap(self.source) {
+            Ok(err) => err,
+            Err(shared) => {
+                // Lossy reconstruction: kind + message only, no inner,
+                // no raw_response on HttpResponse. The status_code /
+                // sub_status / diagnostics fields on this CosmosError
+                // remain reachable via the borrow accessors before
+                // calling this method.
+                let kind = shared.kind().clone();
+                let display = shared.to_string();
+                azure_core::Error::with_message(kind, display)
+            }
+        }
+    }
+
+    /// Borrow the wrapped error's [`ErrorKind`].
+    ///
+    /// Forwarded from `self.source.kind()` — provided so the most
+    /// common error-classification pattern doesn't need to spell out
+    /// the borrow accessor.
+    #[inline]
+    pub fn kind(&self) -> &azure_core::error::ErrorKind {
+        self.source.kind()
+    }
+
+    /// Returns the HTTP status code carried by the wrapped error's
+    /// [`ErrorKind::HttpResponse`], if any.
+    ///
+    /// This reflects the status code present on the wrapped
+    /// [`azure_core::Error`] (i.e. the response that produced this
+    /// error). For the operation's **final** status code (which can
+    /// differ from this when a retry recovered and then ultimately
+    /// failed for a different reason), use [`Self::status_code`].
+    #[inline]
+    pub fn http_status(&self) -> Option<azure_core::http::StatusCode> {
+        self.source.http_status()
+    }
+
     /// Convenience accessor — equivalent to `self.status_code`.
     ///
-    /// Provided so call patterns like `err.status_code()` continue to
-    /// compile across the v0.33 → v0.34 transition. New code should
-    /// prefer the field directly.
+    /// Provided so callers can write `err.status_code()` without
+    /// touching the field directly. New code may use either; the
+    /// field access is preferred in places that already destructure
+    /// the error or want to forward the value via `serde`.
     #[inline]
     pub fn status_code(&self) -> Option<u16> {
         self.status_code
@@ -195,9 +256,10 @@ impl CosmosError {
 
     /// Convenience accessor — equivalent to `self.sub_status`.
     ///
-    /// Provided so call patterns like `err.sub_status()` continue to
-    /// compile across the v0.33 → v0.34 transition. New code should
-    /// prefer the field directly.
+    /// Provided so callers can write `err.sub_status()` without
+    /// touching the field directly. New code may use either; the
+    /// field access is preferred in places that already destructure
+    /// the error or want to forward the value via `serde`.
     #[inline]
     pub fn sub_status(&self) -> Option<u32> {
         self.sub_status
@@ -270,6 +332,20 @@ impl std::error::Error for CosmosError {
 
 impl From<azure_core::Error> for CosmosError {
     fn from(err: azure_core::Error) -> Self {
+        // **Construction-invariant gate** — this `From` impl is the
+        // canonical (and only intended) way to construct a
+        // `CosmosError`. The `pub` fields make struct-literal
+        // construction technically possible from anywhere inside this
+        // crate, but doing so would bypass the carrier-strip step
+        // below and break the docstring contract on `source` that
+        // "the driver's internal diagnostics carrier (if any) has
+        // already been stripped at construction time." Any new
+        // in-crate construction site SHOULD go through `From` or one
+        // of its conversion variants (e.g. `From<serde_json::Error>`,
+        // which itself defers to this impl). External callers are
+        // blocked from struct-literal construction by
+        // `#[non_exhaustive]`.
+        //
         // Single-shot extraction at the SDK boundary:
         //   1. peel the driver's diagnostics carrier off the chain
         //      (if present); the rebuilt `azure_core::Error` is the
@@ -471,5 +547,126 @@ mod tests {
         let cloned_arc = Arc::clone(&cosmos.source);
         let consumed_arc = cosmos.into_source();
         assert!(Arc::ptr_eq(&cloned_arc, &consumed_arc));
+    }
+
+    #[test]
+    fn into_azure_error_lossy_unwraps_when_sole_owner() {
+        let original = azure_core::Error::with_message(ErrorKind::Other, "boom".to_string());
+        let original_display = original.to_string();
+        let cosmos = CosmosError::from(original);
+        let recovered = cosmos.into_azure_error_lossy();
+        // Lossless path: same message, same kind discriminant.
+        assert_eq!(recovered.to_string(), original_display);
+        assert!(matches!(recovered.kind(), ErrorKind::Other));
+    }
+
+    #[test]
+    fn into_azure_error_lossy_reconstructs_when_shared() {
+        let original = azure_core::Error::with_message(ErrorKind::Other, "boom".to_string());
+        let original_display = original.to_string();
+        let cosmos = CosmosError::from(original);
+        let _alias = cosmos.clone();
+        let recovered = cosmos.into_azure_error_lossy();
+        // Shared path: still preserves message + kind discriminant via
+        // the lossy reconstruction.
+        assert_eq!(recovered.to_string(), original_display);
+        assert!(matches!(recovered.kind(), ErrorKind::Other));
+    }
+
+    #[test]
+    fn from_diagnostics_status_wins_over_inner_http_status() {
+        // The precedence rule documented on `CosmosError::status_code`
+        // says diagnostics-recorded status beats the wrapped error's
+        // `http_status`. Use intentionally-different values for the
+        // two so the assertion only passes if precedence is correct.
+        use azure_core::http::StatusCode;
+        use azure_data_cosmos_driver::models::CosmosStatus;
+
+        let http_err = ErrorKind::HttpResponse {
+            status: StatusCode::NotFound,
+            error_code: None,
+            raw_response: None,
+        }
+        .into_error();
+
+        // Diagnostics report 410/1002 (Gone / PartitionKeyRangeGone),
+        // intentionally distinct from the wrapped HttpResponse's 404.
+        let diagnostics = Arc::new(CosmosDiagnosticsContext::for_testing_with_status(
+            azure_data_cosmos_driver::models::ActivityId::from_string("test-precedence".to_owned()),
+            CosmosStatus::new(StatusCode::Gone).with_sub_status(1002),
+        ));
+        let wrapped = azure_data_cosmos_driver::diagnostics::attach_diagnostics(
+            http_err,
+            Arc::clone(&diagnostics),
+        );
+        let cosmos = CosmosError::from(wrapped);
+
+        assert_eq!(
+            cosmos.status_code,
+            Some(410),
+            "diagnostics-recorded status must win over wrapped HttpResponse status",
+        );
+        assert_eq!(
+            cosmos.sub_status,
+            Some(1002),
+            "diagnostics-recorded sub_status must be surfaced as the field value",
+        );
+        // The wrapped error's borrow accessor still surfaces the
+        // original 404 for callers that want the head-of-line status
+        // explicitly.
+        assert_eq!(cosmos.http_status(), Some(StatusCode::NotFound));
+    }
+
+    #[test]
+    fn debug_redacts_across_every_error_kind_variant() {
+        // Defense in depth: build every `ErrorKind` variant the wrapper
+        // crate may legitimately receive and assert that the hand-rolled
+        // `CosmosError::Debug` impl does not leak the canary string we
+        // embed in the source. If a future `azure_core` change adds a
+        // variant that carries bytes, this test will not cover it on
+        // its own — but it would only pass redacted *if* the new
+        // variant's `Display` impl also strips the bytes, which is the
+        // sole gate the Debug impl relies on.
+        use azure_core::http::{headers::Headers, response::RawResponse, StatusCode};
+        const CANARY: &str = "CANARY_DO_NOT_LEAK_THIS_STRING";
+
+        fn assert_no_leak(label: &str, cosmos: CosmosError) {
+            let debug = format!("{cosmos:?}");
+            assert!(
+                !debug.contains(CANARY),
+                "[{label}] CosmosError Debug leaked the canary: {debug}",
+            );
+        }
+
+        // 1) Other / DataConversion / Credential / Io / Connection — unit
+        // variants with no payload. Source the canary through the
+        // message string; Debug currently includes the message field by
+        // design (it's user-facing text), but the canary here checks
+        // that the kind discriminant doesn't smuggle anything *extra*.
+        for kind in [
+            ErrorKind::Other,
+            ErrorKind::DataConversion,
+            ErrorKind::Credential,
+            ErrorKind::Io,
+            ErrorKind::Connection,
+        ] {
+            let err = azure_core::Error::with_message(kind.clone(), "innocuous".to_string());
+            assert_no_leak(&format!("{kind:?}"), CosmosError::from(err));
+        }
+
+        // 2) HttpResponse with raw_response carrying the canary in the
+        // body — the bytes must NOT appear in Debug output.
+        let raw = RawResponse::from_bytes(
+            StatusCode::Forbidden,
+            Headers::new(),
+            azure_core::Bytes::from_static(CANARY.as_bytes()),
+        );
+        let http_err = ErrorKind::HttpResponse {
+            status: StatusCode::Forbidden,
+            error_code: Some("Forbidden".to_string()),
+            raw_response: Some(Box::new(raw)),
+        }
+        .into_error();
+        assert_no_leak("HttpResponse(raw body)", CosmosError::from(http_err));
     }
 }

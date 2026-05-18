@@ -524,7 +524,7 @@ impl TestClient {
                 // Emulator is always strong consistency, so we can skip the read check in that case
                 match run_context.client().create_database(db_id, None).await {
                     Ok(_) => {}
-                    Err(e) if e.as_azure_error().http_status() == Some(StatusCode::Conflict) => {}
+                    Err(e) if e.http_status() == Some(StatusCode::Conflict) => {}
                     Err(e) => return Err(e.into()),
                 }
                 let db_client = run_context.shared_db_client();
@@ -604,7 +604,7 @@ impl TestRunContext {
         let response = match self.client().create_database(&db_name, None).await {
             // The database creation was successful.
             Ok(props) => props,
-            Err(e) if e.as_azure_error().http_status() == Some(StatusCode::Conflict) => {
+            Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
                 // The database already exists, from a previous test run.
                 // Delete it and re-create it.
                 let db_client = self.client().database_client(&db_name);
@@ -653,10 +653,10 @@ impl TestRunContext {
                 .await
             {
                 Ok(response) => return Ok(response),
-                Err(e) if e.as_azure_error().http_status() == Some(StatusCode::NotFound) => {
+                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
                     println!(
                         "Read item failed with {:?}: {}. Retrying after {:?}...",
-                        e.as_azure_error().http_status(),
+                        e.http_status(),
                         e,
                         backoff
                     );
@@ -688,10 +688,10 @@ impl TestRunContext {
             match container.query_items::<T>(query.clone(), partition_key.clone(), None) {
                 Ok(pager) => match pager.try_collect::<Vec<T>>().await {
                     Ok(items) => return Ok(items),
-                    Err(e) if e.as_azure_error().http_status() == Some(StatusCode::NotFound) => {
+                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
                         println!(
                             "Query items failed with {:?}: {}. Retrying after {:?}...",
-                            e.as_azure_error().http_status(),
+                            e.http_status(),
                             e,
                             backoff
                         );
@@ -700,10 +700,10 @@ impl TestRunContext {
                     }
                     Err(e) => return Err(e),
                 },
-                Err(e) if e.as_azure_error().http_status() == Some(StatusCode::NotFound) => {
+                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
                     println!(
                         "Query items failed with {:?}: {}. Retrying after {:?}...",
-                        e.as_azure_error().http_status(),
+                        e.http_status(),
                         e,
                         backoff
                     );
@@ -735,7 +735,7 @@ impl TestRunContext {
                     let created = response.into_model()?;
                     return db_client.container_client(&created.id).await;
                 }
-                Err(e) if e.as_azure_error().http_status() == Some(StatusCode::TooManyRequests) => {
+                Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
                     println!(
                         "Create container got 429 (Too Many Requests). Retrying after {:?}...",
                         backoff
@@ -743,7 +743,7 @@ impl TestRunContext {
                     tokio::time::sleep(backoff).await;
                     backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
-                Err(e) if e.as_azure_error().http_status() == Some(StatusCode::Conflict) => {
+                Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
                     // Container already exists, delete and recreate it, then return a client
                     let container_client = db_client.container_client(&properties.id).await?;
                     container_client.delete(None).await?;

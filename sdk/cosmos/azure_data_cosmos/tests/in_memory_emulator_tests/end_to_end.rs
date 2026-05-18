@@ -97,11 +97,11 @@ fn compare_item_responses<T>(real: &ItemResponse<T>, emu: &ItemResponse<T>) {
 /// Compares two SDK error responses: both must have the same HTTP status.
 fn compare_sdk_errors(real: &azure_data_cosmos::CosmosError, emu: &azure_data_cosmos::CosmosError) {
     assert_eq!(
-        real.as_azure_error().http_status(),
-        emu.as_azure_error().http_status(),
+        real.http_status(),
+        emu.http_status(),
         "Error status mismatch: real={:?} emulator={:?}",
-        real.as_azure_error().http_status(),
-        emu.as_azure_error().http_status(),
+        real.http_status(),
+        emu.http_status(),
     );
 }
 
@@ -128,11 +128,11 @@ fn make_stale_session_token(token: &str) -> String {
 
 fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label: &str) {
     assert_eq!(
-        err.as_azure_error().http_status(),
+        err.http_status(),
         Some(StatusCode::NotFound),
         "{label}: stale session read should return 404",
     );
-    match err.as_azure_error().kind() {
+    match err.kind() {
         azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
             assert_eq!(
                 error_code.as_deref(),
@@ -183,7 +183,7 @@ async fn read_item_with_503_retry(
             }
             Err(e) => {
                 let is_503 = matches!(
-                    e.as_azure_error().kind(),
+                    e.kind(),
                     azure_core::error::ErrorKind::HttpResponse {
                         status: StatusCode::ServiceUnavailable,
                         ..
@@ -727,10 +727,7 @@ async fn sdk_delete_item() {
         .read_item::<TestItem>("pk1", &item.id, None)
         .await
         .expect_err("emulator: reading deleted item should fail");
-    assert_eq!(
-        emu_err.as_azure_error().http_status(),
-        Some(StatusCode::NotFound)
-    );
+    assert_eq!(emu_err.http_status(), Some(StatusCode::NotFound));
 
     if let Some(ref real) = real_container {
         let real_err = real
@@ -813,7 +810,7 @@ async fn sdk_create_duplicate_item_returns_conflict() {
         .await
         .expect_err("emulator: duplicate create should fail");
     assert_eq!(
-        emu_err.as_azure_error().http_status(),
+        emu_err.http_status(),
         Some(StatusCode::Conflict),
         "emulator: duplicate create should return 409",
     );
@@ -838,7 +835,7 @@ async fn sdk_read_nonexistent_item_returns_not_found() {
         .await
         .expect_err("emulator: reading nonexistent item should fail");
     assert_eq!(
-        emu_err.as_azure_error().http_status(),
+        emu_err.http_status(),
         Some(StatusCode::NotFound),
         "emulator: nonexistent item should return 404",
     );
