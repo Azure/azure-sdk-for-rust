@@ -110,7 +110,10 @@
     "webpki",
     "worktree",
     "decorrelates",
-    "finalizer"
+    "finalizer",
+    "callsite",
+    "callsites",
+    "footgun"
   ],
   "dictionaryDefinitions": [
     {
