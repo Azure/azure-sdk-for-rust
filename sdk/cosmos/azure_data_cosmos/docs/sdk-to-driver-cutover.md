@@ -301,18 +301,16 @@ The gateway pipeline tracked this via `CosmosRequest` (which held the final URL)
 
 The SDK no longer ships a parallel fault-injection type system. All fault-injection types — [`FaultInjectionRule`], [`FaultInjectionCondition`], [`FaultInjectionResult`], [`CustomResponse`], [`FaultInjectionErrorType`], [`FaultOperationType`], and the matching builders — are re-exported directly from the driver crate (`azure_data_cosmos_driver::fault_injection`) by `azure_data_cosmos::fault_injection`. The SDK only owns:
 
-- [`FaultInjectionClientBuilder`] — produces the `azure_core::http::Transport` that the SDK pipeline plugs in (i.e., a `FaultClient` HTTP client wrapper that evaluates driver rules against in-flight gateway requests).
 - A small private `fault_operation_for_sdk(SdkOperationType, SdkResourceType) → Option<FaultOperationType>` adapter so `CosmosRequest::add_fault_injection_headers` can stamp the right operation tag on the outbound headers.
 
-Because both transports (gateway and driver) consume the **same** `Arc<FaultInjectionRule>` instances now, there is no translation step and no shared-state plumbing — toggling `enable()`/`disable()`, hit-count increments, and `hit_limit` enforcement all happen against one canonical rule object.
+There is no SDK-side wrapper builder: `CosmosClientBuilder::with_fault_injection` accepts the driver's `Vec<Arc<FaultInjectionRule>>` directly, and the driver runtime is the single fault-injection evaluation path. Toggling `enable()`/`disable()`, hit-count increments, and `hit_limit` enforcement all happen against the same canonical rule object.
 
 ### Wiring in `CosmosClientBuilder`
 
 In `CosmosClientBuilder::build()`:
 
-1. The `FaultInjectionClientBuilder::rules()` accessor returns `&[Arc<FaultInjectionRule>]` — already the driver type, so the SDK simply clones the slice (`fault_builder.rules().to_vec()`).
-2. The cloned rules are passed to `CosmosDriverRuntimeBuilder::with_fault_injection_rules()` so the driver's own fault-injection HTTP client can evaluate them.
-3. The `FaultInjectionClientBuilder` is then consumed to build the gateway transport, which wraps the inner `HttpClient` with a `FaultClient` that evaluates the same rules.
+1. The `with_fault_injection(rules)` call stores `Vec<Arc<FaultInjectionRule>>` on the builder.
+2. The vector is moved into `CosmosDriverRuntimeBuilder::with_fault_injection_rules()` so the driver's own fault-injection HTTP client evaluates them on every in-flight request.
 
 ### Test Patterns for Future Cutover
 
@@ -346,5 +344,5 @@ This asymmetry will disappear once all operations are driver-routed, since there
 
 ### Final State After Cutover
 
-Once **all** operations are routed through the driver, the SDK-side `FaultInjectionClientBuilder` and `FaultClient` HTTP wrapper become unreachable too — the driver-runtime fault-injection HTTP client is the single source of truth. At that point `azure_data_cosmos::fault_injection` collapses into a pure `pub use azure_data_cosmos_driver::fault_injection;` re-export (or is dropped entirely).
+Once **all** operations are routed through the driver, the driver-runtime fault-injection HTTP client is the single source of truth, and `azure_data_cosmos::fault_injection` is already a pure `pub use azure_data_cosmos_driver::fault_injection::*;` re-export.
 

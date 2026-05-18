@@ -69,13 +69,3 @@ extends:
         Path: sdk/cosmos/live-platform-matrix.json
         Selection: sparse
         GenerateVMJobs: true
-      # Gateway 2.0 live tests run against a pre-provisioned account that is
-      # NOT created per-pipeline-run. The `ArmTemplateParameters` block in
-      # `live-gateway20-matrix.json` is kept so the deploy step still fires
-      # (the matrix machinery requires it), but the provisioned account is
-      # unused — tests connect to the dedicated Gateway 2.0 account via the
-      # `AZURE_COSMOS_GW20_ENDPOINT/_KEY` env vars wired above.
-      - Name: Cosmos_gateway20_live_test
-        Path: sdk/cosmos/live-gateway20-matrix.json
-        Selection: sparse
-        GenerateVMJobs: true

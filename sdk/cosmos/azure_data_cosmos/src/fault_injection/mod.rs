@@ -3,14 +3,15 @@
 
 //! Fault injection framework for testing Cosmos DB client behavior under error conditions.
 //!
-//! This module is a thin SDK-side facade over the driver's fault-injection
-//! primitives — every type except [`FaultInjectionClientBuilder`] is
-//! re-exported directly from [`azure_data_cosmos_driver::fault_injection`].
-//! The SDK only owns [`FaultInjectionClientBuilder`], which collects a set of
-//! [`FaultInjectionRule`]s that
-//! [`CosmosClientBuilder::with_fault_injection`](crate::CosmosClientBuilder::with_fault_injection)
-//! forwards into the driver runtime; the driver's own fault-injection
-//! transport client then evaluates the rules on every in-flight request.
+//! This module is a pure re-export facade over the driver's fault-injection
+//! primitives — every type is re-exported directly from
+//! [`azure_data_cosmos_driver::fault_injection`]. Build
+//! [`FaultInjectionRule`]s with [`FaultInjectionRuleBuilder`] and pass the
+//! `Vec<Arc<FaultInjectionRule>>` to
+//! [`CosmosClientBuilder::with_fault_injection`](crate::CosmosClientBuilder::with_fault_injection),
+//! which forwards them into the driver runtime; the driver's own
+//! fault-injection transport client evaluates the rules on every in-flight
+//! request.
 //!
 //! Below the transport layer, fault injection intercepts HTTP requests and
 //! triggers the same retry and failover behavior as a real service error.
@@ -32,23 +33,21 @@
 //!
 //! # Core Components
 //!
-//! - [`FaultInjectionClientBuilder`] — Entry point for configuring fault injection. Pass the
-//!   configured builder to [`CosmosClientBuilder::with_fault_injection()`](crate::CosmosClientBuilder::with_fault_injection)
-//!   to enable fault injection and wrap the HTTP transport with a fault-injecting client.
-//! - [`FaultInjectionCondition`] — Defines when a fault should be applied, filtering by
-//!   operation type, region, container ID, or transport kind.
-//! - [`FaultInjectionResult`] — Defines what error to inject, including error type, delay,
-//!   and probability.
-//! - [`FaultInjectionRule`] — Combines a condition with a result and additional controls
-//!   like duration, start delay, and hit limit.
+//! - [`FaultInjectionRule`] — Combines a condition with a result and
+//!   additional controls like duration, start delay, and hit limit. Build
+//!   with [`FaultInjectionRuleBuilder`]; pass a `Vec<Arc<FaultInjectionRule>>`
+//!   to [`CosmosClientBuilder::with_fault_injection`](crate::CosmosClientBuilder::with_fault_injection).
+//! - [`FaultInjectionCondition`] — Defines when a fault should be applied,
+//!   filtering by operation type, region, container ID, or transport kind.
+//! - [`FaultInjectionResult`] — Defines what error to inject, including
+//!   error type, delay, and probability.
 //!
 //! # Usage
 //!
 //! ```rust,no_run
 //! use azure_data_cosmos::fault_injection::{
-//!     FaultInjectionClientBuilder, FaultInjectionConditionBuilder,
-//!     FaultInjectionErrorType, FaultInjectionResultBuilder,
-//!     FaultInjectionRuleBuilder, FaultOperationType,
+//!     FaultInjectionConditionBuilder, FaultInjectionErrorType,
+//!     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
 //! };
 //! use azure_data_cosmos::CosmosClientBuilder;
 //! use azure_data_cosmos::CosmosAccountReference;
@@ -77,13 +76,10 @@
 //!     .with_end_time(Instant::now() + Duration::from_secs(30))
 //!     .build());
 //!
-//! // 4. Create the fault injection builder
-//! let fault_builder = FaultInjectionClientBuilder::new()
-//!     .with_rule(rule);
-//!
-//! // 5. Create the client with fault injection
+//! // 4. Create the client with fault injection — pass the rules directly,
+//! //    no SDK-side wrapper builder.
 //! let client = CosmosClientBuilder::new()
-//!     .with_fault_injection(fault_builder)
+//!     .with_fault_injection(vec![rule])
 //!     .build(
 //!         CosmosAccountReference::with_master_key(
 //!             "https://myaccount.documents.azure.com/".parse().unwrap(),
@@ -101,10 +97,6 @@
 //! Rules are evaluated in the order they were added. The first matching rule is applied.
 //! All specified conditions in a [`FaultInjectionCondition`] must match (AND logic):
 //! if no conditions are specified, the rule matches all requests.
-
-mod client_builder;
-
-pub use client_builder::FaultInjectionClientBuilder;
 
 #[doc(inline)]
 pub use azure_data_cosmos_driver::fault_injection::{

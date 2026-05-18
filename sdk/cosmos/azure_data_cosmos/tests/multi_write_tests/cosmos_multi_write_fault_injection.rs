@@ -7,7 +7,7 @@ use super::framework;
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::fault_injection::{
-    FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
+    FaultInjectionConditionBuilder, FaultInjectionErrorType,
     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
@@ -53,7 +53,7 @@ async fn verify_read_fails_with_injected_error(
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -109,7 +109,7 @@ async fn verify_read_fails_with_injected_error(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -204,7 +204,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -261,7 +261,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -288,7 +288,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
         .with_hit_limit(1)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -340,7 +340,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -374,7 +374,7 @@ pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<()
         .with_hit_limit(1)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -421,7 +421,7 @@ pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<()
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -451,7 +451,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
         .with_hit_limit(1)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -515,7 +515,7 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(SATELLITE_REGION),
         ),
     )
@@ -545,7 +545,7 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
         .with_hit_limit(4)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -592,7 +592,7 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -621,7 +621,7 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
         .with_hit_limit(4)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -679,7 +679,7 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -708,7 +708,7 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -753,7 +753,7 @@ pub async fn fault_injection_write_response_timeout_does_not_retry() -> Result<(
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -787,7 +787,7 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
         .with_hit_limit(1)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -850,7 +850,7 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -879,7 +879,7 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
         .with_hit_limit(4)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -924,7 +924,7 @@ pub async fn fault_injection_connection_error_reverse_failover() -> Result<(), B
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(SATELLITE_REGION),
         ),
     )
@@ -957,7 +957,7 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
         .with_hit_limit(2)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -1008,7 +1008,7 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )

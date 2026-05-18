@@ -8,7 +8,7 @@
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
+use azure_data_cosmos::fault_injection::FaultInjectionRule;
 use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemReadOptions;
 use azure_data_cosmos::Region;
@@ -97,13 +97,14 @@ pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 pub struct TestOptions {
     /// Application region for the normal (non-fault) client.
     pub client_application_region: Option<Region>,
-    /// Fault injection builder for the fault injection client.
-    /// If provided, a separate client will be created with fault injection capabilities.
-    /// The builder is applied after transport setup (e.g., invalid certificate acceptance)
-    /// so that the FaultClient wraps the correct inner HTTP client.
-    pub fault_injection_builder: Option<FaultInjectionClientBuilder>,
+    /// Fault injection rules for the fault injection client.
+    /// If non-empty, a separate client will be created with fault injection capabilities.
+    /// The rules are forwarded to the driver runtime after transport setup
+    /// (e.g., invalid certificate acceptance) so that the FaultClient wraps
+    /// the correct inner HTTP client.
+    pub fault_injection_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
     /// Application region for the fault injection client.
-    /// Used in combination with `fault_injection_builder`.
+    /// Used in combination with `fault_injection_rules`.
     pub fault_client_application_region: Option<Region>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
@@ -121,11 +122,14 @@ impl TestOptions {
         self
     }
 
-    /// Sets the fault injection builder for the fault injection client.
-    /// The builder will be applied after transport setup so the FaultClient
+    /// Sets the fault injection rules for the fault injection client.
+    /// The rules will be applied after transport setup so the FaultClient
     /// properly wraps the configured HTTP client (e.g., one that accepts invalid certificates).
-    pub fn with_fault_injection_builder(mut self, builder: FaultInjectionClientBuilder) -> Self {
-        self.fault_injection_builder = Some(builder);
+    pub fn with_fault_injection_rules(
+        mut self,
+        rules: Vec<std::sync::Arc<FaultInjectionRule>>,
+    ) -> Self {
+        self.fault_injection_rules = rules;
         self
     }
 
@@ -246,20 +250,20 @@ impl TestClient {
     pub async fn from_env_with_fault_options(
         fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, None, fault_client_application_region).await
+        Self::from_env_inner(None, Vec::new(), fault_client_application_region).await
     }
 
     pub async fn from_env(
         application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(application_region, None, None).await
+        Self::from_env_inner(application_region, Vec::new(), None).await
     }
 
-    pub async fn from_env_with_fault_builder(
-        fault_builder: FaultInjectionClientBuilder,
+    pub async fn from_env_with_fault_rules(
+        fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, Some(fault_builder), application_region).await
+        Self::from_env_inner(None, fault_rules, application_region).await
     }
 
     /// Creates a new [`TestClient`] from local environment variables.
@@ -269,7 +273,7 @@ impl TestClient {
     /// running on Azure Pipelines, when it will panic instead.
     async fn from_env_inner(
         application_region: Option<Region>,
-        fault_builder: Option<FaultInjectionClientBuilder>,
+        fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
@@ -292,7 +296,7 @@ impl TestClient {
                     EMULATOR_CONNECTION_STRING,
                     application_region,
                     true,
-                    fault_builder,
+                    fault_rules,
                     None,
                 )
                 .await
@@ -302,7 +306,7 @@ impl TestClient {
                     &env_var,
                     application_region,
                     false,
-                    fault_builder,
+                    fault_rules,
                     fault_client_application_region,
                 )
                 .await
@@ -314,7 +318,7 @@ impl TestClient {
         connection_string: &str,
         application_region: Option<Region>,
         mut allow_invalid_certificates: bool,
-        fault_builder: Option<FaultInjectionClientBuilder>,
+        fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
@@ -351,9 +355,9 @@ impl TestClient {
             );
         }
 
-        // Configure fault injection if builder provided
-        if let Some(fault_builder) = fault_builder {
-            builder = builder.with_fault_injection(fault_builder);
+        // Configure fault injection if rules provided
+        if !fault_rules.is_empty() {
+            builder = builder.with_fault_injection(fault_rules);
         }
 
         let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
@@ -422,14 +426,14 @@ impl TestClient {
 
         let test_client = Self::from_env(options.client_application_region.clone()).await?;
 
-        // Create fault injection client if builder or application region were provided
-        // builder should be passed in for emulator tests to ensure the FaultClient
+        // Create fault injection client if rules or application region were provided.
+        // Rules should be passed in for emulator tests to ensure the FaultClient
         // wraps the HTTP client with invalid cert acceptance,
-        // which is required for emulator connectivity
-        let fault_client = if let Some(builder) = options.fault_injection_builder {
+        // which is required for emulator connectivity.
+        let fault_client = if !options.fault_injection_rules.is_empty() {
             Some(
-                Self::from_env_with_fault_builder(
-                    builder,
+                Self::from_env_with_fault_rules(
+                    options.fault_injection_rules,
                     options.fault_client_application_region.clone(),
                 )
                 .await?,
@@ -541,7 +545,7 @@ impl TestClient {
 ///
 /// The normal client is always available via `client()` and `shared_db_client()`.
 /// The fault injection client is available via `fault_client()` and `fault_db_client()`
-/// if `TestOptions::with_fault_injection_builder()` was called
+/// if `TestOptions::with_fault_injection_rules()` was called
 /// or if `TestOptions::with_fault_client_application_region()` was called.
 pub struct TestRunContext {
     run_id: String,
@@ -575,7 +579,7 @@ impl TestRunContext {
 
     /// Gets the fault injection [`CosmosClient`], if configured.
     ///
-    /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_builder()` or
+    /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_rules()` or
     /// if `TestOptions::with_fault_client_application_region()` was called,
     /// otherwise returns `None`.
     pub fn fault_client(&self) -> Option<&CosmosClient> {
@@ -589,7 +593,7 @@ impl TestRunContext {
 
     /// Gets the shared database client using the fault injection client.
     ///
-    /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_injection_builder()` or
+    /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_injection_rules()` or
     /// if `TestOptions::with_fault_client_application_region()` was called,
     /// otherwise returns `None`.
     pub fn fault_db_client(&self) -> Option<DatabaseClient> {
