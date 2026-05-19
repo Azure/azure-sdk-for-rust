@@ -255,6 +255,79 @@ pub(super) fn parse_optional_duration_millis_from_env(
     }
 }
 
+/// Parses `AZURE_COSMOS_HEDGING_THRESHOLD_MS` into a [`Duration`], returning
+/// `None` when the variable is unset, empty, non-numeric, or zero.
+///
+/// Per `docs/HEDGING_SPEC.md` §4.4, invalid values are silently ignored
+/// (logged at WARN) rather than failing driver construction — the resolver
+/// then falls back to the built-in default.
+///
+/// Consumed by the availability-strategy resolver introduced in a later phase
+/// (see `docs/HEDGING_IMPLEMENTATION_PLAN.md` Part 3); allowed dead in Part 1.
+#[allow(dead_code)]
+pub(crate) fn parse_hedging_threshold_from_env() -> Option<Duration> {
+    parse_hedging_threshold_from_env_with(|name| std::env::var(name))
+}
+
+#[allow(dead_code)]
+fn parse_hedging_threshold_from_env_with(
+    env_var: impl Fn(&str) -> Result<String, std::env::VarError>,
+) -> Option<Duration> {
+    const NAME: &str = "AZURE_COSMOS_HEDGING_THRESHOLD_MS";
+    let raw = match env_var(NAME) {
+        Ok(value) => value,
+        Err(_) => return None,
+    };
+
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    match trimmed.parse::<u64>() {
+        Ok(0) => {
+            tracing::warn!(
+                env_var = NAME,
+                value = trimmed,
+                "hedging threshold of 0ms is invalid; ignoring",
+            );
+            None
+        }
+        Ok(ms) => Some(Duration::from_millis(ms)),
+        Err(_) => {
+            tracing::warn!(
+                env_var = NAME,
+                value = trimmed,
+                "failed to parse hedging threshold as u64; ignoring",
+            );
+            None
+        }
+    }
+}
+
+/// Parses `AZURE_COSMOS_HEDGING_DISABLED`. Returns `true` iff the variable is
+/// set to `"true"` (case-insensitive). Any other value (including unset,
+/// `"false"`, `"1"`, empty) returns `false`.
+///
+/// Per `docs/HEDGING_SPEC.md` §4.4, this is the env-var kill switch for
+/// hedging at the lowest layer.
+///
+/// Consumed by the availability-strategy resolver introduced in a later phase
+/// (see `docs/HEDGING_IMPLEMENTATION_PLAN.md` Part 3); allowed dead in Part 1.
+#[allow(dead_code)]
+pub(crate) fn parse_hedging_disabled_from_env() -> bool {
+    parse_hedging_disabled_from_env_with(|name| std::env::var(name))
+}
+
+#[allow(dead_code)]
+fn parse_hedging_disabled_from_env_with(
+    env_var: impl Fn(&str) -> Result<String, std::env::VarError>,
+) -> bool {
+    env_var("AZURE_COSMOS_HEDGING_DISABLED")
+        .map(|v| v.trim().eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -413,5 +486,67 @@ mod tests {
                 assert_eq!(value, Some(Duration::from_millis(450)));
             },
         );
+    }
+
+    #[test]
+    fn parse_hedging_threshold_returns_none_when_unset() {
+        let result = parse_hedging_threshold_from_env_with(|_| Err(std::env::VarError::NotPresent));
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn parse_hedging_threshold_parses_positive_value() {
+        let result = parse_hedging_threshold_from_env_with(|_| Ok("750".to_string()));
+        assert_eq!(result, Some(Duration::from_millis(750)));
+    }
+
+    #[test]
+    fn parse_hedging_threshold_trims_whitespace() {
+        let result = parse_hedging_threshold_from_env_with(|_| Ok("  250  ".to_string()));
+        assert_eq!(result, Some(Duration::from_millis(250)));
+    }
+
+    #[test]
+    fn parse_hedging_threshold_rejects_zero() {
+        let result = parse_hedging_threshold_from_env_with(|_| Ok("0".to_string()));
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn parse_hedging_threshold_rejects_non_numeric() {
+        let result = parse_hedging_threshold_from_env_with(|_| Ok("fast".to_string()));
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn parse_hedging_threshold_rejects_empty() {
+        let result = parse_hedging_threshold_from_env_with(|_| Ok(String::new()));
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn parse_hedging_disabled_false_when_unset() {
+        let result = parse_hedging_disabled_from_env_with(|_| Err(std::env::VarError::NotPresent));
+        assert!(!result);
+    }
+
+    #[test]
+    fn parse_hedging_disabled_true_for_true_case_insensitive() {
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok("true".into())));
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok("TRUE".into())));
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok("True".into())));
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok(
+            "  true ".into()
+        )));
+    }
+
+    #[test]
+    fn parse_hedging_disabled_false_for_other_values() {
+        assert!(!parse_hedging_disabled_from_env_with(
+            |_| Ok("false".into())
+        ));
+        assert!(!parse_hedging_disabled_from_env_with(|_| Ok("1".into())));
+        assert!(!parse_hedging_disabled_from_env_with(|_| Ok("yes".into())));
+        assert!(!parse_hedging_disabled_from_env_with(|_| Ok(String::new())));
     }
 }
