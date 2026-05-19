@@ -9,8 +9,8 @@ use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos::fault_injection::{
-    CustomResponseBuilder, FaultInjectionClientBuilder, FaultInjectionConditionBuilder,
-    FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+    CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
+    FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
 use azure_data_cosmos::{PatchItemOptions, PatchOp, PatchSpec};
@@ -312,8 +312,7 @@ async fn setup_fault_injected_container(
 )]
 pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
     let rule = build_replace_412_rule("sdk-patch-412-once", Some(1));
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::clone(&rule));
-    let options = TestOptions::new().with_fault_injection_builder(fault_builder);
+    let options = TestOptions::new().with_fault_injection_rules(vec![Arc::clone(&rule)]);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -382,8 +381,7 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
 pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<(), Box<dyn Error>>
 {
     let rule = build_replace_412_rule("sdk-patch-412-always", None);
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::clone(&rule));
-    let options = TestOptions::new().with_fault_injection_builder(fault_builder);
+    let options = TestOptions::new().with_fault_injection_rules(vec![Arc::clone(&rule)]);
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
