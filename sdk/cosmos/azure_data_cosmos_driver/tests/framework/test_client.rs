@@ -525,7 +525,8 @@ impl DriverTestRunContext {
 
         let result = driver
             .execute_operation(operation, OperationOptions::default())
-            .await?;
+            .await?
+            .expect("PATCH operation must return a response");
 
         Ok(result)
     }

@@ -20,17 +20,18 @@ use crate::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
             CosmosEndpoint, LocationStateStore,
         },
+        transport::{is_emulator_host, uses_dataplane_pipeline},
     },
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
-        ActivityId, ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
+        ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
         DatabaseProperties, DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
     },
     options::{
-        ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
-        OperationOptionsView, ThroughputControlGroupSnapshot,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
+        ThroughputControlGroupSnapshot,
     },
-    CosmosResponse,
+    ActivityId, CosmosResponse, DiagnosticsOptions,
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
@@ -43,8 +44,8 @@ use url::Url;
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
     transport::{
-        cosmos_headers, cosmos_transport_client::HttpRequest, is_emulator_host, request_signing,
-        uses_dataplane_pipeline, AuthorizationContext, CosmosTransport,
+        cosmos_headers, cosmos_transport_client::HttpRequest, request_signing,
+        AuthorizationContext, CosmosTransport,
     },
     CosmosDriverRuntime,
 };
@@ -1228,12 +1229,16 @@ impl CosmosDriver {
         // resulting async future has a fixed size even though it can recurse.
         if operation.operation_type() == crate::models::OperationType::Patch {
             let max_attempts = operation.patch_max_attempts();
-            return Box::pin(crate::driver::pipeline::patch_handler::execute(
-                self,
-                operation,
-                options,
-                max_attempts,
-            ))
+            return Box::pin(async {
+                let result = crate::driver::pipeline::patch_handler::execute(
+                    self,
+                    operation,
+                    options,
+                    max_attempts,
+                )
+                .await?;
+                Ok(Some(result))
+            })
             .await;
         }
 
@@ -1327,7 +1332,6 @@ impl CosmosDriver {
             overrides = ?overrides,
             body_length = operation.body().map(|b| b.len()),
             "executing operation");
->>>>>>> Conflict 1 of 1 ends
 
         // Step 1: Build the single OperationOptionsView for layered resolution.
         let effective_options = self.operation_options_view(options);

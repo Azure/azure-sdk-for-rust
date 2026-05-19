@@ -535,7 +535,7 @@ impl ContainerClient {
 
         let item_ref = ItemReference::from_name(
             &self.container_ref,
-            partition_key.into().into_driver_partition_key(),
+            partition_key.into(),
             item_id.to_owned(),
         );
 
@@ -553,7 +553,8 @@ impl ContainerClient {
             .context
             .driver
             .execute_operation(operation, options.operation)
-            .await?;
+            .await?
+            .expect("PATCH operation must return a response");
 
         Ok(ItemResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),

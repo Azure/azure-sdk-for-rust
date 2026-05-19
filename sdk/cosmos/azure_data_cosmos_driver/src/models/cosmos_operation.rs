@@ -121,6 +121,11 @@ impl CosmosOperation {
         self.target.as_ref()
     }
 
+    /// Returns the partition key for this operation, if applicable.
+    pub fn partition_key(&self) -> Option<&PartitionKey> {
+        self.target.as_ref().and_then(|t| t.partition_key())
+    }
+
     /// Returns the request headers.
     pub fn request_headers(&self) -> &CosmosRequestHeaders {
         &self.request_headers
@@ -220,7 +225,7 @@ impl CosmosOperation {
         }
     }
 
-    fn point(operation_type: OperationType, item: ItemReference) -> Self {
+    fn for_item(operation_type: OperationType, item: ItemReference) -> Self {
         let range = FeedRange::for_item(&item);
         Self::new(operation_type, item, Some(range))
     }
@@ -475,7 +480,7 @@ impl CosmosOperation {
     /// # }
     /// ```
     pub fn create_item(item: ItemReference) -> Self {
-        Self::point(OperationType::Create, item)
+        Self::for_item(OperationType::Create, item)
     }
 
     /// Reads an item (document) from a container.
@@ -511,7 +516,7 @@ impl CosmosOperation {
     /// # }
     /// ```
     pub fn read_item(item: ItemReference) -> Self {
-        Self::point(OperationType::Read, item)
+        Self::for_item(OperationType::Read, item)
     }
 
     /// Deletes an item (document) from a container.
@@ -519,7 +524,7 @@ impl CosmosOperation {
     /// The `ItemReference` contains the container, partition key, and item identifier,
     /// providing all the information needed for the operation.
     pub fn delete_item(item: ItemReference) -> Self {
-        Self::point(OperationType::Delete, item)
+        Self::for_item(OperationType::Delete, item)
     }
 
     /// Executes a transactional batch of operations against a single partition.
@@ -543,7 +548,7 @@ impl CosmosOperation {
     /// Use `with_body()` to provide the document JSON.
     /// If an item with the same ID exists, it will be replaced; otherwise, a new item is created.
     pub fn upsert_item(item: ItemReference) -> Self {
-        Self::point(OperationType::Upsert, item)
+        Self::for_item(OperationType::Upsert, item)
     }
 
     /// Replaces an existing item (document) in a container.
@@ -552,7 +557,7 @@ impl CosmosOperation {
     /// providing all the information needed for the operation.
     /// Use `with_body()` to provide the new document JSON.
     pub fn replace_item(item: ItemReference) -> Self {
-        Self::point(OperationType::Replace, item)
+        Self::for_item(OperationType::Replace, item)
     }
 
     /// Builds a virtual PATCH operation for an item.
@@ -566,8 +571,7 @@ impl CosmosOperation {
     /// handler deserializes it before issuing the underlying transport
     /// operations.
     pub fn patch_item(item: ItemReference) -> Self {
-        let partition_key = item.partition_key().clone();
-        Self::new(OperationType::Patch, item).with_partition_key(partition_key)
+        Self::for_item(OperationType::Patch, item)
     }
 
     /// Reads (lists) all items within a single partition.
