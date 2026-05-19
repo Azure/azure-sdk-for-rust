@@ -23,6 +23,11 @@ static EXEMPTIONS: &[(&str, &str)] = &[
     ("azure_core", "ureq"),
     ("azure_core_test", "dotenvy"),
     ("azure_canary", "serde"),
+    // Temporary: Allow azure_data_cosmos and friends to release depending on the latest release of azure_core and azure_identity
+    ("azure_data_cosmos_driver", "azure_core"),
+    ("azure_data_cosmos_driver", "azure_identity"),
+    ("azure_data_cosmos", "azure_core"),
+    ("azure_data_cosmos", "azure_identity"),
 ];
 
 fn main() {

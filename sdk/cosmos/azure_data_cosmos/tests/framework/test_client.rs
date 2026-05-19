@@ -9,14 +9,16 @@
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
-use azure_data_cosmos::models::{CosmosResponse, ThroughputProperties};
-use azure_data_cosmos::options::ItemOptions;
-use azure_data_cosmos::regions::{RegionName, EAST_US_2, WEST_US_3};
+use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
+use azure_data_cosmos::options::ItemReadOptions;
+use azure_data_cosmos::Region;
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
-    Query,
+    Query, RoutingStrategy,
 };
 use futures::TryStreamExt;
+use std::future::Future;
+use std::pin::Pin;
 use std::time::Duration;
 use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
@@ -35,11 +37,57 @@ pub const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
 pub const ACCOUNT_HOST_ENV_VAR: &str = "ACCOUNT_HOST";
 pub const ALLOW_INVALID_CERTS_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 pub const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
-pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
-pub const HUB_REGION: RegionName = EAST_US_2;
-pub const SATELLITE_REGION: RegionName = WEST_US_3;
+pub const EMULATOR_CONNECTION_STRING: &str = "AccountEndpoint=https://127.0.0.1:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;";
+pub const HUB_REGION: Region = Region::EAST_US_2;
+pub const SATELLITE_REGION: Region = Region::WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
-pub const EMULATOR_HOST: &str = "localhost";
+pub const EMULATOR_HOST: &str = "127.0.0.1";
+/// Asserts that the operation contacted `expected_region` at least once and
+/// that more than one request was tracked (i.e. some form of retry or
+/// failover happened). Does **not** require the *final* request to land on
+/// `expected_region` — the driver may probe an alternate region and
+/// successfully retry on the original. Used for failover scenarios where
+/// either landing is valid.
+pub fn assert_region_contacted_with_retry(
+    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    expected_region: &Region,
+) {
+    assert!(
+        diagnostics.request_count() > 1,
+        "expected multiple requests indicating retry/failover, got {} (regions contacted: {:?})",
+        diagnostics.request_count(),
+        diagnostics.regions_contacted()
+    );
+    assert!(
+        diagnostics.regions_contacted().contains(expected_region),
+        "expected at least one tracked request on region {:?}, but only contacted {:?}",
+        expected_region,
+        diagnostics.regions_contacted()
+    );
+}
+
+/// Asserts that local retry was attempted on `expected_region` before any
+/// cross-region failover: at least one tracked request must have landed on
+/// the expected region. Used to validate scenarios where a transient fault
+/// is exercised via local retry; this does **not** require the operation to
+/// stay on `expected_region` (the driver may still fail over to an alternate
+/// region after exhausting its local retry budget).
+pub fn assert_local_retry_attempted_on_region(
+    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    expected_region: &Region,
+) {
+    let requests = diagnostics.requests();
+    let on_region = requests
+        .iter()
+        .filter(|r| r.region() == Some(expected_region))
+        .count();
+    assert!(
+        on_region >= 1,
+        "expected at least one tracked request on region {:?}, but none did (regions contacted: {:?})",
+        expected_region,
+        diagnostics.regions_contacted()
+    );
+}
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
@@ -48,7 +96,7 @@ pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 #[derive(Default)]
 pub struct TestOptions {
     /// Application region for the normal (non-fault) client.
-    pub client_application_region: Option<RegionName>,
+    pub client_application_region: Option<Region>,
     /// Fault injection builder for the fault injection client.
     /// If provided, a separate client will be created with fault injection capabilities.
     /// The builder is applied after transport setup (e.g., invalid certificate acceptance)
@@ -56,7 +104,7 @@ pub struct TestOptions {
     pub fault_injection_builder: Option<FaultInjectionClientBuilder>,
     /// Application region for the fault injection client.
     /// Used in combination with `fault_injection_builder`.
-    pub fault_client_application_region: Option<RegionName>,
+    pub fault_client_application_region: Option<Region>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
 }
@@ -68,7 +116,7 @@ impl TestOptions {
     }
 
     /// Sets the application region for the normal (non-fault) client.
-    pub fn with_client_application_region(mut self, region: RegionName) -> Self {
+    pub fn with_client_application_region(mut self, region: Region) -> Self {
         self.client_application_region = Some(region);
         self
     }
@@ -82,7 +130,7 @@ impl TestOptions {
     }
 
     /// Sets the application region for the fault injection client.
-    pub fn with_fault_client_application_region(mut self, region: RegionName) -> Self {
+    pub fn with_fault_client_application_region(mut self, region: Region) -> Self {
         self.fault_client_application_region = Some(region);
         self
     }
@@ -110,6 +158,17 @@ enum CosmosTestMode {
 
 const DEFAULT_EMULATOR_DATABASE_NAME: &str = "emulator-test-db";
 
+/// Resolves the connection string from the environment, handling the `"emulator"` shorthand.
+pub fn resolve_connection_string() -> Option<ConnectionString> {
+    let env_var = std::env::var(CONNECTION_STRING_ENV_VAR).ok()?;
+    let raw = if env_var == "emulator" {
+        EMULATOR_CONNECTION_STRING
+    } else {
+        &env_var
+    };
+    raw.parse().ok()
+}
+
 fn get_shared_database_id() -> &'static str {
     static SHARED_DATABASE_ID: OnceLock<String> = OnceLock::new();
 
@@ -125,8 +184,8 @@ pub fn get_effective_hub_endpoint() -> String {
     let host = get_global_endpoint();
 
     if host == EMULATOR_HOST {
-        // The SDK resolves "localhost" to "127.0.0.1" in request URLs.
-        return "127.0.0.1".to_string();
+        // Return the IP address directly for emulator connections.
+        return host;
     }
 
     // Insert the hub region after the account name, before .documents.azure.com
@@ -149,7 +208,7 @@ pub fn get_global_endpoint() -> String {
 
     let account_endpoint = account_host.trim_end_matches('/');
 
-    // The emulator host is just "localhost" without a scheme, so return it directly.
+    // The emulator host is just "127.0.0.1" without a scheme, so return it directly.
     if account_endpoint == EMULATOR_HOST {
         return EMULATOR_HOST.to_string();
     }
@@ -185,20 +244,20 @@ fn is_azure_pipelines() -> bool {
 
 impl TestClient {
     pub async fn from_env_with_fault_options(
-        fault_client_application_region: Option<RegionName>,
+        fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(None, None, fault_client_application_region).await
     }
 
     pub async fn from_env(
-        application_region: Option<RegionName>,
+        application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(application_region, None, None).await
     }
 
     pub async fn from_env_with_fault_builder(
         fault_builder: FaultInjectionClientBuilder,
-        application_region: Option<RegionName>,
+        application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(None, Some(fault_builder), application_region).await
     }
@@ -209,9 +268,9 @@ impl TestClient {
     /// Calling `run` on such a client will skip running the closure (thus skipping the test), except when
     /// running on Azure Pipelines, when it will panic instead.
     async fn from_env_inner(
-        application_region: Option<RegionName>,
+        application_region: Option<Region>,
         fault_builder: Option<FaultInjectionClientBuilder>,
-        fault_client_application_region: Option<RegionName>,
+        fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
@@ -253,10 +312,10 @@ impl TestClient {
 
     async fn from_connection_string(
         connection_string: &str,
-        application_region: Option<RegionName>,
+        application_region: Option<Region>,
         mut allow_invalid_certificates: bool,
         fault_builder: Option<FaultInjectionClientBuilder>,
-        fault_client_application_region: Option<RegionName>,
+        fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
 
@@ -272,10 +331,11 @@ impl TestClient {
         let credential = connection_string.account_key.clone();
         let mut builder = azure_data_cosmos::CosmosClient::builder();
 
-        // Apply application region for the client
-        if let Some(region) = application_region.or(fault_client_application_region) {
-            builder = builder.with_application_region(region);
-        }
+        // Determine the region selection strategy
+        let region = application_region
+            .or(fault_client_application_region)
+            .unwrap_or(HUB_REGION);
+        let strategy = RoutingStrategy::ProximityTo(region);
 
         // Configure invalid certificate acceptance (e.g., for emulator)
         #[cfg(feature = "allow_invalid_certificates")]
@@ -299,9 +359,10 @@ impl TestClient {
         let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
             connection_string.account_endpoint.parse()?;
         let cosmos_client = builder
-            .build(azure_data_cosmos::CosmosAccountReference::with_master_key(
-                endpoint, credential,
-            ))
+            .build(
+                azure_data_cosmos::CosmosAccountReference::with_master_key(endpoint, credential),
+                strategy,
+            )
             .await?;
 
         Ok(TestClient {
@@ -392,7 +453,7 @@ impl TestClient {
                 const MAX_BACKOFF: Duration = Duration::from_secs(30);
 
                 loop {
-                    let test_result = test(&run).await;
+                    let test_result = Box::pin(test(&run)).await;
 
                     if let Err(e) = &test_result {
                         println!("Error running test: {}", e);
@@ -442,7 +503,7 @@ impl TestClient {
         Self::run_with_options(
             async |run_context| {
                 let db_client = run_context.create_db().await?;
-                test(run_context, &db_client).await
+                Box::pin(test(run_context, &db_client)).await
             },
             options.unwrap_or_default(),
         )
@@ -468,7 +529,7 @@ impl TestClient {
                 }
                 let db_client = run_context.shared_db_client();
                 db_client.read(None).await?;
-                test(run_context, &db_client).await
+                Box::pin(test(run_context, &db_client)).await
             },
             options.unwrap_or_default(),
         )
@@ -571,8 +632,8 @@ impl TestRunContext {
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-        options: Option<ItemOptions>,
-    ) -> azure_core::Result<CosmosResponse<T>>
+        options: Option<ItemReadOptions>,
+    ) -> azure_core::Result<ItemResponse<T>>
     where
         T: serde::de::DeserializeOwned,
     {
@@ -672,7 +733,7 @@ impl TestRunContext {
             {
                 Ok(response) => {
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id).await);
+                    return db_client.container_client(&created.id).await;
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
                     println!(
@@ -684,7 +745,7 @@ impl TestRunContext {
                 }
                 Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client = db_client.container_client(&properties.id).await;
+                    let container_client = db_client.container_client(&properties.id).await?;
                     container_client.delete(None).await?;
 
                     // recreate
@@ -692,7 +753,7 @@ impl TestRunContext {
                         .create_container(properties.clone(), options.clone())
                         .await?;
                     let created = response.into_model()?;
-                    return Ok(db_client.container_client(&created.id).await);
+                    return db_client.container_client(&created.id).await;
                 }
                 Err(e) => return Err(e),
             }
@@ -709,74 +770,85 @@ impl TestRunContext {
     ///
     /// This is useful for tests that need to ensure the container is fully available
     /// in multiple regions before performing operations on it.
-    pub async fn create_container_with_throughput(
-        &self,
-        db_client: &DatabaseClient,
+    pub fn create_container_with_throughput<'a>(
+        &'a self,
+        db_client: &'a DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         throughput: ThroughputProperties,
-    ) -> azure_core::Result<ContainerClient> {
-        let created_properties = db_client
-            .create_container(
-                properties,
-                Some(CreateContainerOptions::default().with_throughput(throughput)),
-            )
-            .await?
-            .into_model()?;
+    ) -> Pin<Box<dyn Future<Output = azure_core::Result<ContainerClient>> + Send + 'a>> {
+        Box::pin(async move {
+            let created_properties = db_client
+                .create_container(
+                    properties,
+                    Some(CreateContainerOptions::default().with_throughput(throughput)),
+                )
+                .await?
+                .into_model()?;
 
-        // Create two clients with different preferred regions to ensure container is available in both
-        let hub_client = Self::create_client_with_preferred_region(HUB_REGION).await?;
-        let satellite_client = Self::create_client_with_preferred_region(SATELLITE_REGION).await?;
+            // Create two clients with different preferred regions to ensure container is available in both
+            let hub_client = Self::create_client_with_preferred_region(HUB_REGION).await?;
+            let satellite_client =
+                Self::create_client_with_preferred_region(SATELLITE_REGION).await?;
 
-        let container_id = &created_properties.id;
+            let container_id = &created_properties.id;
 
-        // Wait for hub region client to successfully read the container
-        loop {
-            match hub_client
-                .database_client(db_client.id())
-                .container_client(container_id)
-                .await
-                .read(None)
-                .await
-            {
-                Ok(_) => break,
-                Err(e) => {
-                    println!(
-                        "waiting for container to be created in hub region ({}): {}",
-                        HUB_REGION.as_str(),
-                        e
-                    );
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+            // Wait for hub region client to successfully resolve and read the container.
+            // Both `container_client()` (which resolves metadata via the driver) and
+            // `read()` can fail with 404 while the container replicates.
+            loop {
+                let result = async {
+                    hub_client
+                        .database_client(db_client.id())
+                        .container_client(container_id)
+                        .await?
+                        .read(None)
+                        .await
+                }
+                .await;
+                match result {
+                    Ok(_) => break,
+                    Err(e) => {
+                        println!(
+                            "waiting for container to be created in hub region ({}): {}",
+                            HUB_REGION.as_str(),
+                            e
+                        );
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                    }
                 }
             }
-        }
 
-        // Wait for satellite region client to successfully read the container
-        loop {
-            match satellite_client
-                .database_client(db_client.id())
-                .container_client(container_id)
-                .await
-                .read(None)
-                .await
-            {
-                Ok(_) => break,
-                Err(e) => {
-                    println!(
-                        "waiting for container to be created in satellite region ({}): {}",
-                        SATELLITE_REGION.as_str(),
-                        e
-                    );
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+            // Wait for satellite region client to successfully resolve and read the container.
+            loop {
+                let result = async {
+                    satellite_client
+                        .database_client(db_client.id())
+                        .container_client(container_id)
+                        .await?
+                        .read(None)
+                        .await
+                }
+                .await;
+                match result {
+                    Ok(_) => break,
+                    Err(e) => {
+                        println!(
+                            "waiting for container to be created in satellite region ({}): {}",
+                            SATELLITE_REGION.as_str(),
+                            e
+                        );
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                    }
                 }
             }
-        }
 
-        Ok(db_client.container_client(container_id).await)
+            db_client.container_client(container_id).await
+        })
     }
 
     /// Creates a CosmosClient with a specific preferred region.
     async fn create_client_with_preferred_region(
-        region: RegionName,
+        region: Region,
     ) -> Result<CosmosClient, azure_core::Error> {
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
             .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
@@ -801,12 +873,21 @@ impl TestRunContext {
                     format!("Failed to parse account endpoint: {}", e),
                 )
             })?;
-        CosmosClient::builder()
-            .with_application_region(region)
-            .build(azure_data_cosmos::CosmosAccountReference::with_master_key(
-                endpoint,
-                parsed.account_key.clone(),
-            ))
+        let mut builder = CosmosClient::builder();
+
+        #[cfg(feature = "allow_invalid_certificates")]
+        if env_var == "emulator" {
+            builder = builder.with_allow_emulator_invalid_certificates(true);
+        }
+
+        builder
+            .build(
+                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                    endpoint,
+                    parsed.account_key.clone(),
+                ),
+                RoutingStrategy::ProximityTo(region),
+            )
             .await
     }
 

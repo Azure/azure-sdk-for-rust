@@ -14,6 +14,7 @@ use crate::models::{
 
 use std::borrow::Cow;
 use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 // =============================================================================
 // DatabaseReference
 // =============================================================================
@@ -38,6 +39,14 @@ impl DatabaseReference {
         Self {
             account,
             id: ResourceIdentifier::ByName(ResourceName::new(name)),
+        }
+    }
+
+    /// Creates a new database reference by RID.
+    pub fn from_rid(account: AccountReference, rid: impl Into<Cow<'static, str>>) -> Self {
+        Self {
+            account,
+            id: ResourceIdentifier::ByRid(ResourceId::new(rid)),
         }
     }
 
@@ -120,6 +129,12 @@ pub struct ContainerReference {
     container_rid: ResourceId,
     /// Partition key definition for this container.
     partition_key_definition: PartitionKeyDefinition,
+    /// Pre-computed name-based path: `/dbs/{db_name}/colls/{container_name}`.
+    ///
+    /// Stored as `Arc<str>` so cloning `ContainerReference` is cheap (atomic refcount).
+    name_based_path: Arc<str>,
+    /// Pre-computed RID-based path: `/dbs/{db_rid}/colls/{container_rid}`.
+    rid_based_path: Arc<str>,
 }
 
 impl PartialEq for ContainerReference {
@@ -160,13 +175,21 @@ impl ContainerReference {
         container_rid: impl Into<ResourceId>,
         container_properties: &crate::models::ContainerProperties,
     ) -> Self {
+        let db_name: ResourceName = db_name.into();
+        let db_rid: ResourceId = db_rid.into();
+        let container_name: ResourceName = container_name.into();
+        let container_rid: ResourceId = container_rid.into();
+        let name_based_path: Arc<str> = format!("/dbs/{}/colls/{}", db_name, container_name).into();
+        let rid_based_path: Arc<str> = format!("/dbs/{}/colls/{}", db_rid, container_rid).into();
         Self {
             account,
-            db_name: db_name.into(),
-            db_rid: db_rid.into(),
-            container_name: container_name.into(),
-            container_rid: container_rid.into(),
+            db_name,
+            db_rid,
+            container_name,
+            container_rid,
             partition_key_definition: container_properties.partition_key.clone(),
+            name_based_path,
+            rid_based_path,
         }
     }
 
@@ -200,22 +223,14 @@ impl ContainerReference {
         &self.partition_key_definition
     }
 
-    /// Returns a `DatabaseReference` for the parent database (name-based).
-    pub(crate) fn database(&self) -> DatabaseReference {
-        DatabaseReference {
-            account: self.account.clone(),
-            id: ResourceIdentifier::ByName(self.db_name.clone()),
-        }
-    }
-
     /// Returns the name-based relative path: `/dbs/{db_name}/colls/{container_name}`
-    pub fn name_based_path(&self) -> String {
-        format!("/dbs/{}/colls/{}", self.db_name, self.container_name)
+    pub fn name_based_path(&self) -> &str {
+        &self.name_based_path
     }
 
     /// Returns the RID-based relative path: `/dbs/{db_rid}/colls/{container_rid}`
-    pub fn rid_based_path(&self) -> String {
-        format!("/dbs/{}/colls/{}", self.db_rid, self.container_rid)
+    pub fn rid_based_path(&self) -> &str {
+        &self.rid_based_path
     }
 }
 
@@ -432,9 +447,7 @@ impl StoredProcedureReference {
 /// A reference to a Cosmos DB trigger resource.
 ///
 /// Contains the parent container and either the name or RID of the trigger.
-///
-/// Note: This is different from `TriggerInvocation` which specifies which trigger
-/// to invoke during an operation. This type is for referencing trigger definitions.
+/// This type is for referencing trigger definitions.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct TriggerReference {
@@ -645,8 +658,13 @@ mod tests {
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "test-key",
         );
-        let partition_key = PartitionKeyDefinition::new(["/tenantId"]);
-        let container_properties = ContainerProperties::new("my-container", partition_key);
+        let partition_key: PartitionKeyDefinition =
+            serde_json::from_str(r#"{"paths":["/tenantId"]}"#).unwrap();
+        let container_properties = ContainerProperties {
+            id: "my-container".into(),
+            partition_key,
+            system_properties: Default::default(),
+        };
 
         ContainerReference::new(
             account,

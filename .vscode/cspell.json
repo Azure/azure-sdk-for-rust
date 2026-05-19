@@ -89,6 +89,7 @@
     "schannel",
     "seekable",
     "servicebus",
+    "splitmix",
     "spector",
     "stylesheet",
     "subclient",
@@ -103,7 +104,13 @@
     "webpki",
     "windowspool",
     "windowsvmimage",
-    "worktree"
+    "webpki",
+    "worktree",
+    "decorrelates",
+    "finalizer",
+    "callsite",
+    "callsites",
+    "footgun"
   ],
   "dictionaryDefinitions": [
     {

@@ -3,10 +3,12 @@
 
 //! Emulator-based E2E tests for azure_data_cosmos_driver.
 //!
-//! These tests require a running Cosmos DB emulator and are gated by
-//! the `test_category = "emulator"` configuration.
+//! These tests require a running Cosmos DB emulator and are ignored when
+//! the `test_category = "emulator"` configuration is not set.
 
-#![cfg(test_category = "emulator")]
+// The framework module is shared across test binaries; not all exports are used
+// by every binary.
+#![allow(dead_code, unused_imports)]
 
 mod emulator_tests;
 mod framework;

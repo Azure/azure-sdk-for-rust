@@ -1,17 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore evals
+
 use super::result::FaultInjectionResult;
 use super::rule::FaultInjectionRule;
 use super::FaultInjectionErrorType;
 use super::FaultOperationType;
-use crate::constants::{self, SubStatusCode};
+use crate::constants;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
 use azure_core::http::{
     headers::Headers, AsyncRawResponse, HttpClient, RawResponse, Request, StatusCode,
 };
-use std::sync::atomic::{AtomicU32, Ordering};
+use azure_data_cosmos_driver::models::SubStatusCode;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -21,39 +23,21 @@ pub struct FaultClient {
     /// The inner HTTP client to which requests are delegated.
     inner: Arc<dyn HttpClient>,
     /// The fault injection rules to apply.
-    rules: Arc<Mutex<Vec<RuleState>>>,
-}
-
-/// Tracks the state of a fault injection rule.
-#[derive(Debug)]
-struct RuleState {
-    /// The fault injection rule.
-    rule: Arc<FaultInjectionRule>,
-    /// Number of times this rule has been applied.
-    hit_count: AtomicU32,
+    rules: Arc<Mutex<Vec<Arc<FaultInjectionRule>>>>,
 }
 
 impl FaultClient {
     /// Creates a new instance of the FaultClient.
     pub fn new(inner: Arc<dyn HttpClient>, rules: Vec<Arc<FaultInjectionRule>>) -> Self {
-        let rule_states = rules
-            .into_iter()
-            .map(|rule| RuleState {
-                rule,
-                hit_count: AtomicU32::new(0),
-            })
-            .collect();
-
         Self {
             inner,
-            rules: Arc::new(Mutex::new(rule_states)),
+            rules: Arc::new(Mutex::new(rules)),
         }
     }
 
     /// Checks if a rule is currently applicable based on timing constraints.
-    fn is_rule_applicable(&self, rule_state: &RuleState) -> bool {
+    fn is_rule_applicable(&self, rule: &FaultInjectionRule) -> bool {
         let now = Instant::now();
-        let rule = &rule_state.rule;
 
         // Check if the rule is enabled
         if !rule.is_enabled() {
@@ -74,7 +58,7 @@ impl FaultClient {
 
         // Check if we've exceeded the hit limit on the rule
         if let Some(hit_limit) = rule.hit_limit {
-            if rule_state.hit_count.load(Ordering::SeqCst) >= hit_limit {
+            if rule.hit_count() >= hit_limit {
                 return false;
             }
         }
@@ -217,7 +201,10 @@ impl FaultClient {
 
         let raw_response = sub_status.map(|ss| {
             let mut headers = Headers::new();
-            headers.insert(constants::SUB_STATUS, ss.to_string());
+            // The driver's `SubStatusCode::Display` formats as
+            // `"NAME (NUMBER)"` for known sub-statuses; the wire format
+            // requires only the numeric value, so write `value()` directly.
+            headers.insert(constants::SUB_STATUS, ss.value().to_string());
             Box::new(RawResponse::from_bytes(status_code, headers, vec![]))
         });
 
@@ -238,14 +225,15 @@ impl FaultClient {
 impl HttpClient for FaultClient {
     async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
         // Find applicable rule and clone the result if needed
-        let fault_result: Option<FaultInjectionResult> = {
+        let (fault_result, matched_rule): (
+            Option<FaultInjectionResult>,
+            Option<Arc<FaultInjectionRule>>,
+        ) = {
             let rules = self.rules.lock().unwrap();
             let mut applicable_rule_index: Option<usize> = None;
 
-            for (index, rule_state) in rules.iter().enumerate() {
-                if self.is_rule_applicable(rule_state)
-                    && self.matches_condition(request, &rule_state.rule)
-                {
+            for (index, rule) in rules.iter().enumerate() {
+                if self.is_rule_applicable(rule) && self.matches_condition(request, rule) {
                     applicable_rule_index = Some(index);
                     break;
                 }
@@ -253,13 +241,11 @@ impl HttpClient for FaultClient {
 
             // Apply fault if we found an applicable rule
             if let Some(index) = applicable_rule_index {
-                let rule_state = &rules[index];
-                // Increment hit count
-                rule_state.hit_count.fetch_add(1, Ordering::SeqCst);
-                // Clone and return the result
-                Some(rule_state.rule.result.clone())
+                let rule = &rules[index];
+                rule.increment_hit_count();
+                (Some(rule.result.clone()), Some(Arc::clone(rule)))
             } else {
-                None
+                (None, None)
             }
         };
 
@@ -280,7 +266,23 @@ impl HttpClient for FaultClient {
                 .remove(constants::FAULT_INJECTION_OPERATION);
 
             // No fault injection or delay-only fault, proceed with actual request
-            self.inner.execute_request(&clean_request).await
+            let result = self.inner.execute_request(&clean_request).await;
+
+            // Record response status only for true spy rules: no error_type,
+            // no custom_response, and no delay. This excludes probability-skipped
+            // faults and any rule that injected a delay.
+            if let (Some(rule), Some(ref fr), Ok(ref response)) =
+                (&matched_rule, &fault_result, &result)
+            {
+                if fr.error_type.is_none()
+                    && fr.custom_response.is_none()
+                    && fr.delay == Duration::ZERO
+                {
+                    rule.record_passthrough_status(response.status());
+                }
+            }
+
+            result
         };
 
         // Apply delay after the request is sent
@@ -301,12 +303,13 @@ impl HttpClient for FaultClient {
 #[cfg(test)]
 mod tests {
     use super::FaultClient;
-    use crate::constants::{SubStatusCode, SUB_STATUS};
+    use super::SubStatusCode;
+    use crate::constants::SUB_STATUS;
     use crate::fault_injection::{
         CustomResponse, FaultInjectionConditionBuilder, FaultInjectionErrorType,
         FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
     };
-    use crate::regions;
+    use crate::regions::Region;
     use async_trait::async_trait;
     use azure_core::error::ErrorKind;
     use azure_core::http::{headers::Headers, AsyncRawResponse, HttpClient, Method, Request, Url};
@@ -522,7 +525,7 @@ mod tests {
         let mock_client = Arc::new(MockHttpClient::new());
 
         let condition = FaultInjectionConditionBuilder::new()
-            .with_region(regions::WEST_US)
+            .with_region(Region::WEST_US)
             .build();
         let error = FaultInjectionResultBuilder::new()
             .with_error(FaultInjectionErrorType::ServiceUnavailable)

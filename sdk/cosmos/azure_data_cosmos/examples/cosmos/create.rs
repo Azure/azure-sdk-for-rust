@@ -1,11 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::error::Error;
+use std::{borrow::Cow, error::Error};
 
 use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
-    CosmosClient, CreateContainerOptions, CreateDatabaseOptions, ItemOptions, PartitionKey,
+    ContentResponseOnWrite, CosmosClient, CreateContainerOptions, ItemWriteOptions,
+    OperationOptions, PartitionKey,
 };
 use clap::{Args, Subcommand};
 
@@ -32,6 +33,10 @@ pub enum Subcommands {
         #[arg(long, short)]
         partition_key: String,
 
+        /// The id of the new item.
+        #[arg(long, short)]
+        item_id: String,
+
         /// The JSON of the new item.
         #[arg(long, short)]
         json: String,
@@ -45,9 +50,6 @@ pub enum Subcommands {
     Database {
         /// The ID of the new database to create.
         id: String,
-
-        #[command(flatten)]
-        throughput_options: ThroughputOptions,
     },
 
     /// Create a container (does not support Entra ID).
@@ -79,20 +81,26 @@ impl CreateCommand {
                 database,
                 container,
                 partition_key,
+                item_id,
                 json,
                 show_updated,
             } => {
                 let db_client = client.database_client(&database);
-                let container_client = db_client.container_client(&container).await;
+                let container_client = db_client.container_client(&container).await?;
 
                 let pk = PartitionKey::from(&partition_key);
                 let item: serde_json::Value = serde_json::from_str(&json)?;
 
-                let options =
-                    ItemOptions::default().with_content_response_on_write_enabled(show_updated);
+                let options = if show_updated {
+                    let mut operation = OperationOptions::default();
+                    operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+                    Some(ItemWriteOptions::default().with_operation_options(operation))
+                } else {
+                    None
+                };
 
                 let response = container_client
-                    .create_item(pk, item, Some(options))
+                    .create_item(pk, &item_id, item, options)
                     .await?;
 
                 println!("Created item successfully");
@@ -105,16 +113,8 @@ impl CreateCommand {
                 Ok(())
             }
 
-            Subcommands::Database {
-                id,
-                throughput_options,
-            } => {
-                let throughput_properties: Option<ThroughputProperties> =
-                    throughput_options.try_into()?;
-                let options = throughput_properties
-                    .map(|p| CreateDatabaseOptions::default().with_throughput(p));
-
-                let db = client.create_database(&id, options).await?.into_model()?;
+            Subcommands::Database { id } => {
+                let db = client.create_database(&id, None).await?.into_model()?;
                 println!("Created database:");
                 println!("{:#?}", db);
                 Ok(())
@@ -145,7 +145,9 @@ impl CreateCommand {
 
                         ContainerProperties::new(
                             id.expect("the ID is required when not using '--json'"),
-                            PartitionKeyDefinition::new(partition_key),
+                            PartitionKeyDefinition::new(
+                                partition_key.into_iter().map(Cow::Owned).collect(),
+                            ),
                         )
                     }
                 };

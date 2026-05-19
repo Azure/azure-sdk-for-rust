@@ -6,14 +6,19 @@ use crate::murmur_hash::{murmurhash3_128, murmurhash3_32};
 use std::fmt::Write;
 
 const MAX_STRING_BYTES_TO_APPEND: usize = 100;
-const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
-const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
+pub(crate) const MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "";
+pub(crate) const MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY: &str = "FF";
 
 /// A strongly-typed wrapper around the hex-encoded effective partition key string.
 ///
 /// Use [`AsRef<str>`] to obtain the underlying string when passing to APIs
 /// that accept `&str`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Ordering is lexicographic on the underlying hex string. This is correct because:
+/// - All actual EPK hash values are uppercase hex strings of consistent length
+/// - The sentinel MAX ("FF") sorts after all real hashes by the Cosmos DB EPK space design
+/// - The sentinel MIN ("") sorts before everything
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct EffectivePartitionKey(String);
 
 impl EffectivePartitionKey {
@@ -26,6 +31,18 @@ impl EffectivePartitionKey {
 impl AsRef<str> for EffectivePartitionKey {
     fn as_ref(&self) -> &str {
         &self.0
+    }
+}
+
+impl From<String> for EffectivePartitionKey {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl From<&str> for EffectivePartitionKey {
+    fn from(s: &str) -> Self {
+        Self(s.to_owned())
     }
 }
 
@@ -198,8 +215,8 @@ pub fn get_hashed_partition_key_string(
         return EffectivePartitionKey(MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY.to_string());
     }
 
-    let raw = if kind.as_str() == PartitionKeyKind::HASH {
-        match version {
+    let raw = match kind {
+        PartitionKeyKind::Hash => match version {
             1 => get_effective_partition_key_for_hash_partitioning_v1(pk_value),
             2 => get_effective_partition_key_for_hash_partitioning_v2(pk_value),
             _ => {
@@ -209,20 +226,22 @@ pub fn get_hashed_partition_key_string(
                 );
                 to_hex_encoded_binary_string(pk_value)
             }
+        },
+        PartitionKeyKind::MultiHash => {
+            // MultiHash is not yet implemented; use the non-hashed binary encoding
+            // as a deterministic fallback instead of panicking.
+            tracing::warn!(
+                "MultiHash partitioning is not yet supported, falling back to binary encoding."
+            );
+            to_hex_encoded_binary_string(pk_value)
         }
-    } else if kind.as_str() == PartitionKeyKind::MULTI_HASH {
-        // MultiHash is not yet implemented; use the non-hashed binary encoding
-        // as a deterministic fallback instead of panicking.
-        tracing::warn!(
-            "MultiHash partitioning is not yet supported, falling back to binary encoding."
-        );
-        to_hex_encoded_binary_string(pk_value)
-    } else {
-        tracing::warn!(
-            "Unknown partition key kind '{}', falling back to binary encoding.",
-            kind
-        );
-        to_hex_encoded_binary_string(pk_value)
+        _ => {
+            tracing::warn!(
+                "Unknown partition key kind '{:?}', falling back to binary encoding.",
+                kind
+            );
+            to_hex_encoded_binary_string(pk_value)
+        }
     };
     EffectivePartitionKey(raw)
 }
@@ -330,30 +349,21 @@ mod tests {
 
     #[test]
     fn test_empty_pk() {
-        let result =
-            get_hashed_partition_key_string(&[], PartitionKeyKind::new(PartitionKeyKind::HASH), 0);
+        let result = get_hashed_partition_key_string(&[], PartitionKeyKind::Hash, 0);
         assert_eq!(result.as_str(), MIN_INCLUSIVE_EFFECTIVE_PARTITION_KEY);
     }
 
     #[test]
     fn test_infinity_pk() {
         let inf = InnerPartitionKeyValue::Infinity;
-        let result = get_hashed_partition_key_string(
-            &[&inf],
-            PartitionKeyKind::new(PartitionKeyKind::HASH),
-            0,
-        );
+        let result = get_hashed_partition_key_string(&[&inf], PartitionKeyKind::Hash, 0);
         assert_eq!(result.as_str(), MAX_EXCLUSIVE_EFFECTIVE_PARTITION_KEY);
     }
 
     #[test]
     fn test_single_string_hash_v2() {
         let comp = InnerPartitionKeyValue::String("customer42".to_string());
-        let result = get_hashed_partition_key_string(
-            &[&comp],
-            PartitionKeyKind::new(PartitionKeyKind::HASH),
-            2,
-        );
+        let result = get_hashed_partition_key_string(&[&comp], PartitionKeyKind::Hash, 2);
         // result should be a hex string of length 32 (16 bytes * 2 chars)
         assert_eq!(result.as_str().len(), 32);
         assert_eq!(
@@ -446,11 +456,7 @@ mod tests {
         ];
 
         for (component, expected) in &cases {
-            let actual = get_hashed_partition_key_string(
-                &[component],
-                PartitionKeyKind::new(PartitionKeyKind::HASH),
-                2,
-            );
+            let actual = get_hashed_partition_key_string(&[component], PartitionKeyKind::Hash, 2);
             assert_eq!(actual.as_str(), *expected, "Mismatch for component hash");
         }
     }
@@ -466,11 +472,7 @@ mod tests {
         let expected = "3032DECBE2AB1768D8E0AEDEA35881DF";
 
         let refs: Vec<&InnerPartitionKeyValue> = component.iter().collect();
-        let actual = get_hashed_partition_key_string(
-            &refs,
-            PartitionKeyKind::new(PartitionKeyKind::HASH),
-            2,
-        );
+        let actual = get_hashed_partition_key_string(&refs, PartitionKeyKind::Hash, 2);
         assert_eq!(actual.as_str(), expected, "Mismatch for component hash");
     }
 
@@ -499,22 +501,14 @@ mod tests {
         ];
 
         for (component, expected) in &cases {
-            let actual = get_hashed_partition_key_string(
-                &[component],
-                PartitionKeyKind::new(PartitionKeyKind::HASH),
-                1,
-            );
+            let actual = get_hashed_partition_key_string(&[component], PartitionKeyKind::Hash, 1);
             assert_eq!(
                 actual.as_str(),
                 *expected,
                 "Mismatch for V1 component hash (enable test after implementation)"
             );
             // unspecified version defaults to V1
-            let actual = get_hashed_partition_key_string(
-                &[component],
-                PartitionKeyKind::new(PartitionKeyKind::HASH),
-                1,
-            );
+            let actual = get_hashed_partition_key_string(&[component], PartitionKeyKind::Hash, 1);
             assert_eq!(
                 actual.as_str(),
                 *expected,

@@ -75,10 +75,13 @@
 //! // 5. Create the client with fault injection
 //! let client = CosmosClientBuilder::new()
 //!     .with_fault_injection(fault_builder)
-//!     .build(CosmosAccountReference::with_master_key(
-//!         "https://myaccount.documents.azure.com/".parse().unwrap(),
-//!         Secret::new("my_account_key"),
-//!     ))
+//!     .build(
+//!         CosmosAccountReference::with_master_key(
+//!             "https://myaccount.documents.azure.com/".parse().unwrap(),
+//!             Secret::new("my_account_key"),
+//!         ),
+//!         azure_data_cosmos::RoutingStrategy::ProximityTo("East US".into()),
+//!     )
 //!     .await
 //!     .unwrap();
 //! # }
@@ -100,12 +103,11 @@ mod rule;
 use std::fmt;
 use std::str::FromStr;
 
-use crate::operation_context::OperationType;
-use crate::resource_context::ResourceType;
-
 pub use client_builder::FaultInjectionClientBuilder;
 pub use condition::{FaultInjectionCondition, FaultInjectionConditionBuilder};
-pub use result::{CustomResponse, FaultInjectionResult, FaultInjectionResultBuilder};
+pub use result::{
+    CustomResponse, CustomResponseBuilder, FaultInjectionResult, FaultInjectionResultBuilder,
+};
 pub use rule::{FaultInjectionRule, FaultInjectionRuleBuilder};
 
 /// Represents different server error types that can be injected for fault testing.
@@ -183,49 +185,6 @@ impl FaultOperationType {
             FaultOperationType::MetadataReadDatabaseAccount => "MetadataReadDatabaseAccount",
             FaultOperationType::MetadataQueryPlan => "MetadataQueryPlan",
             FaultOperationType::MetadataPartitionKeyRanges => "MetadataPartitionKeyRanges",
-        }
-    }
-
-    /// Converts an operation type and resource type pair into a fault injection operation type.
-    ///
-    /// Returns `None` if the combination does not map to a known fault operation type.
-    pub fn from_operation_and_resource(
-        operation_type: &OperationType,
-        resource_type: &ResourceType,
-    ) -> Option<Self> {
-        match (operation_type, resource_type) {
-            (OperationType::Read, ResourceType::Documents) => Some(FaultOperationType::ReadItem),
-            (OperationType::Query, ResourceType::Documents) => Some(FaultOperationType::QueryItem),
-            (OperationType::Create, ResourceType::Documents) => {
-                Some(FaultOperationType::CreateItem)
-            }
-            (OperationType::Upsert, ResourceType::Documents) => {
-                Some(FaultOperationType::UpsertItem)
-            }
-            (OperationType::Replace, ResourceType::Documents) => {
-                Some(FaultOperationType::ReplaceItem)
-            }
-            (OperationType::Delete, ResourceType::Documents) => {
-                Some(FaultOperationType::DeleteItem)
-            }
-            (OperationType::Patch, ResourceType::Documents) => Some(FaultOperationType::PatchItem),
-            (OperationType::Batch, ResourceType::Documents) => Some(FaultOperationType::BatchItem),
-            (OperationType::ReadFeed, ResourceType::Documents) => {
-                Some(FaultOperationType::ChangeFeedItem)
-            }
-            (OperationType::Read, ResourceType::Containers) => {
-                Some(FaultOperationType::MetadataReadContainer)
-            }
-            (OperationType::Read, ResourceType::DatabaseAccount) => {
-                Some(FaultOperationType::MetadataReadDatabaseAccount)
-            }
-            (OperationType::QueryPlan, ResourceType::Documents) => {
-                Some(FaultOperationType::MetadataQueryPlan)
-            }
-            (OperationType::ReadFeed, ResourceType::PartitionKeyRanges) => {
-                Some(FaultOperationType::MetadataPartitionKeyRanges)
-            }
-            _ => None,
         }
     }
 }

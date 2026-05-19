@@ -75,6 +75,11 @@ foreach ($package in $outputPackages) {
     continue
   }
 
+  if ($output -match 'not found in registry') {
+    LogWarning "$packageName has not been published yet and will be ignored"
+    continue
+  }
+
   $finalExitCode = $finalExitCode -bor $LASTEXITCODE
   $output | Write-Host
 }

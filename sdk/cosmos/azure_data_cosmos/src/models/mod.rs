@@ -6,19 +6,35 @@
 use azure_core::{fmt::SafeDebug, http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Deserializer, Serialize};
 
-mod account_properties;
+mod batch_response;
 mod container_properties;
 mod cosmos_response;
 mod indexing_policy;
-mod partition_key_definition;
+mod item_response;
+mod resource_response;
 mod throughput_properties;
 
-pub(crate) use account_properties::*;
+pub use batch_response::BatchResponse;
 pub use container_properties::*;
-pub use cosmos_response::CosmosResponse;
+pub(crate) use cosmos_response::CosmosResponse;
 pub use indexing_policy::*;
-pub use partition_key_definition::*;
+pub use item_response::ItemResponse;
+pub use resource_response::ResourceResponse;
 pub use throughput_properties::*;
+
+// Re-export partition key and container reference types from the driver crate.
+// These are the canonical definitions; the SDK does not duplicate them.
+#[doc(inline)]
+pub use azure_data_cosmos_driver::models::{
+    ContainerReference, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion,
+};
+
+// Re-export the driver's full diagnostics context as the canonical type for
+// per-operation diagnostics. The SDK no longer maintains a parallel header-only
+// diagnostics wrapper; instead it surfaces the rich context produced by the
+// driver pipeline (request tracking, retries, regions contacted, etc.).
+#[doc(inline)]
+pub use azure_data_cosmos_driver::diagnostics::DiagnosticsContext as CosmosDiagnosticsContext;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where
