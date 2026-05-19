@@ -122,6 +122,34 @@ impl CosmosResourceReference {
         self.container.as_ref()
     }
 
+    /// Reconstructs an [`ItemReference`] from this resource reference and the
+    /// provided partition key.
+    ///
+    /// Returns `None` unless the reference targets a [`ResourceType::Document`]
+    /// with both a container and a resource identifier — i.e. the kind of
+    /// reference the patch handler can faithfully translate into an internal
+    /// Read/Replace pair.
+    pub(crate) fn try_into_item_reference(
+        &self,
+        partition_key: crate::models::PartitionKey,
+    ) -> Option<ItemReference> {
+        if self.resource_type != ResourceType::Document || self.is_feed {
+            return None;
+        }
+        let container = self.container.as_ref()?;
+        let id = self.id.as_ref()?;
+        if let Some(name) = id.name() {
+            Some(ItemReference::from_name(
+                container,
+                partition_key,
+                name.to_owned(),
+            ))
+        } else {
+            id.rid()
+                .map(|rid| ItemReference::from_rid(container, partition_key, rid.to_owned()))
+        }
+    }
+
     /// Sets a name-based identifier on this reference.
     pub fn with_name(mut self, name: Cow<'static, str>) -> Self {
         self.id = Some(ResourceIdentifier::by_name(ResourceName::new(name)));

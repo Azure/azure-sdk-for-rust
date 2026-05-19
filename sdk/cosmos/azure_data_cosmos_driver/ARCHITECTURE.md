@@ -102,6 +102,28 @@ The driver currently:
 - ✅ Uses typed metadata models internally for cache resolution (`DatabaseProperties`, `ContainerProperties`)
 - ✅ Returns raw bytes for all data plane  and metadata operations
 
+#### Exception: PATCH (driver-side Read-Modify-Write)
+
+`OperationType::Patch` is the one data plane operation where the driver
+*must* deserialize a response body — the Cosmos DB service does not
+support arbitrary JSON-patch semantics natively, so the driver implements
+PATCH as a Read-Modify-Write loop. The dedicated patch handler
+(`driver::pipeline::patch_handler`) is the **only** code path allowed
+to parse a data plane body:
+
+1. Issue an internal `OperationType::Read` for the target item.
+2. Parse the JSON body into a `serde_json::Value`.
+3. Apply the supplied `PatchSpec` operations locally.
+4. Re-serialize and issue an `If-Match`-guarded `OperationType::Replace`.
+5. Restart on `412 PreconditionFailed`, up to `patch_max_attempts`
+   (default 5).
+
+Every other pipeline stage — retry, throttling, routing, region
+selection, diagnostics — continues to treat bodies as opaque
+`Vec<u8>` payloads. The opaque-body invariant is preserved in spirit
+by scoping the exception to a single, isolated handler that runs
+*before* the main pipeline and re-enters it for each internal sub-op.
+
 ---
 
 ## Code Examples

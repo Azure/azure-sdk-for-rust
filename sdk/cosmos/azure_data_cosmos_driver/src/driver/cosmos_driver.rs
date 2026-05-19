@@ -1156,6 +1156,23 @@ impl CosmosDriver {
                 ),
             ));
         }
+
+        // PATCH is a virtual operation type: dispatch it to the dedicated
+        // Read-Modify-Write handler before any of the standard pipeline steps
+        // run, because the handler issues its own Read/Replace operations
+        // through this same entry point. `Box::pin` is required so the
+        // resulting async future has a fixed size even though it can recurse.
+        if operation.operation_type() == crate::models::OperationType::Patch {
+            let max_attempts = operation.patch_max_attempts();
+            return Box::pin(crate::driver::pipeline::patch_handler::execute(
+                self,
+                operation,
+                options,
+                max_attempts,
+            ))
+            .await;
+        }
+
         tracing::debug!("operation started");
 
         // Step 1: Build the single OperationOptionsView for layered resolution.

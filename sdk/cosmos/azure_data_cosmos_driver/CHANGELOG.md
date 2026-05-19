@@ -9,6 +9,7 @@
 - Added per-partition automatic failover (PPAF) for writes on single-master accounts. On 403/3 WriteForbidden, 503 ServiceUnavailable, 429/3092 SystemResourceUnavailable, 410/1022 Gone, or 408 RequestTimeout from a region, the affected partition is failed over to the next preferred region; subsequent writes for that partition skip the failed region. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 - Added per-partition circuit breaker (PPCB) for reads (any account) and writes (multi-master accounts). Tracks failure counts per `(partition_key_range_id, region)` and routes to an alternate region once the threshold (default 10 reads, 5 writes) is exceeded. A background failback loop probes the original region for recovery. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 - Added `OperationOptions` fields for tuning PPCB: `circuit_breaker_failure_count_for_reads`, `circuit_breaker_failure_count_for_writes`, `circuit_breaker_timeout_counter_reset_window_in_minutes`, `allowed_partition_unavailability_duration_in_seconds`, `ppcb_stale_partition_unavailability_refresh_interval_in_seconds`, and `per_partition_circuit_breaker_enabled` (each also configurable via the corresponding `AZURE_COSMOS_*` environment variable). ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
+- Added `OperationType::Patch` plus `CosmosOperation::patch_item()` and the `PatchOp`/`IncrValue`/`PatchSpec` model types. Patches are executed driver-side as a Read-Modify-Write loop via a dedicated `patch_handler` pipeline stage; see `docs/PATCH_HANDLER_SPEC.md` for the full contract. The handler owns the internal `If-Match` precondition end-to-end and rejects any caller-set `Precondition` on the outer PATCH operation with a clear error before issuing any sub-operation. ([#4386](https://github.com/Azure/azure-sdk-for-rust/pull/4386))
 
 ### Breaking Changes
 
@@ -17,6 +18,8 @@
 
 ### Bugs Fixed
 
+- PATCH RMW loop now reconciles the synthesized response body's `_etag` system property with the inner Replace's response header. Previously the post-image returned to callers carried the *Read's* `_etag`, so `response.into_model::<T>()` on a type with an `_etag` field would yield a stale tag that no longer matched `response.headers().etag` — breaking optimistic-concurrency round-tripping. When the inner Replace returns a non-empty body (caller enabled `content_response_on_write`), the service's authoritative post-image is now surfaced verbatim. ([#4386](https://github.com/Azure/azure-sdk-for-rust/pull/4386))
+- PATCH RMW loop now folds the 412 response's `x-ms-session-token` (via `SessionToken::merge`) into the carry-forward token threaded into the next attempt's Read. Previously only the Read response's token was carried forward, so a retry could regress to a strictly older session view than the failed Replace already observed. ([#4386](https://github.com/Azure/azure-sdk-for-rust/pull/4386))
 - PPCB now records every 5xx failure for the affected partition, including the final failure that exhausts the failover retry budget. Previously the budget-exhausted abort path skipped emitting `MarkPartitionUnavailable`, causing the most diagnostic failure to be silently dropped from PPCB's per-partition counter. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 
 ### Other Changes
