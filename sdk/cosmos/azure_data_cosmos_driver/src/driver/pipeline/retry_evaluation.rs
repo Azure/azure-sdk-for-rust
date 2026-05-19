@@ -488,10 +488,10 @@ fn try_handle_server_error(
 /// Handles transport-layer errors (connection failures, TLS errors, etc.) —
 /// no HTTP response was produced.
 ///
-/// Three sub-cases mirror the retry-trigger-group helper:
+/// Two sub-cases:
 /// 1. Request definitely not sent → safe failover retry, no side effects.
-/// 2. Sent and read/idempotent/PPAF write → failover retry with marks.
-/// 3. Sent and non-idempotent without PPAF → abort with marks.
+/// 2. Request sent (or unknown) → failover retry with marks when budget
+///    allows, abort when budget is exhausted.
 fn evaluate_transport_layer_outcome(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
