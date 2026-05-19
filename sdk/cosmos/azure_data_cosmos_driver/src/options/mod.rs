@@ -19,7 +19,7 @@ mod availability_strategy;
 mod connection_pool;
 mod diagnostics_options;
 mod driver_options;
-mod env_parsing;
+pub(crate) mod env_parsing;
 mod identity;
 mod operation_options;
 mod policies;
