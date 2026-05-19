@@ -259,8 +259,6 @@ fn evaluate_http_outcome(
         endpoint,
         retry_state,
         &status,
-        &headers,
-        &body,
         request_sent,
     ) {
         return result;
@@ -393,23 +391,18 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
 /// Handles the retry-trigger group — 503 ServiceUnavailable, 410 Gone,
 /// 408 RequestTimeout, and 429/3092 SystemResourceUnavailable.
 ///
-/// Three sub-cases:
+/// Two sub-cases:
 ///
 /// 1. **Request not sent** — safe to retry against any region with no
 ///    location-state side effects (the failure is purely client-side).
-/// 2. **Sent + non-idempotent + no PPAF** — unsafe to retry. Aborts but
-///    still emits `MarkPartitionUnavailable` (and, when not PPCB-managed,
-///    `MarkEndpointUnavailable`) so future requests benefit from the
-///    updated routing state.
-/// 3. **Sent + (read || idempotent || PPAF write)** — failover retry with
-///    the same routing-state effects.
+/// 2. **Request sent** — failover retry with `MarkPartitionUnavailable`
+///    (and, when not PPCB-managed, `MarkEndpointUnavailable`) so future
+///    requests benefit from the updated routing state.
 fn try_handle_retry_trigger_group(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: &CosmosStatus,
-    headers: &Headers,
-    body: &[u8],
     request_sent: RequestSentStatus,
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     let is_system_resource_unavailable = status.is_throttled()
@@ -440,33 +433,6 @@ fn try_handle_retry_trigger_group(
     } else {
         UnavailableReason::ServiceUnavailable
     };
-
-    let safe_to_retry = operation.is_read_only()
-        || operation.is_idempotent()
-        || retry_state.ppaf_write_retry_allowed;
-
-    if !safe_to_retry {
-        // Non-idempotent write that was already sent and PPAF is not
-        // available — unsafe to retry. We still mark partition and endpoint
-        // unavailable so future requests benefit from the updated routing
-        // state.
-        let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-            make_partition_unavailable(operation, endpoint, retry_state, false),
-        )];
-        if !is_ppcb_managed(operation, retry_state) {
-            effects.push(LocationEffect::MarkEndpointUnavailable {
-                endpoint: endpoint.clone(),
-                reason: unavailable_reason,
-            });
-        }
-        return Some((
-            OperationAction::Abort {
-                error: build_http_error(status, headers, body),
-                status: Some(*status),
-            },
-            effects,
-        ));
-    }
 
     let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
         make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
@@ -558,10 +524,7 @@ fn evaluate_transport_layer_outcome(
         });
     }
 
-    let safe_to_retry = operation.is_read_only()
-        || operation.is_idempotent()
-        || retry_state.ppaf_write_retry_allowed;
-    if safe_to_retry && retry_state.can_retry_failover() {
+    if retry_state.can_retry_failover() {
         return (
             OperationAction::FailoverRetry {
                 new_state: retry_state.clone().advance_failover(),
@@ -571,9 +534,7 @@ fn evaluate_transport_layer_outcome(
         );
     }
 
-    // Non-idempotent write that was already sent and PPAF is not available —
-    // unsafe to retry. Marks are kept so future requests benefit from the
-    // updated routing state.
+    // Budget exhausted — no more failover attempts available.
     (
         OperationAction::Abort {
             error: build_transport_error(&status, error),
@@ -780,7 +741,7 @@ mod tests {
     }
 
     #[test]
-    fn transport_error_sent_non_idempotent_aborts() {
+    fn transport_error_sent_non_idempotent_retries() {
         let op = make_create_operation();
         let result = make_transport_error(RequestSentStatus::Sent);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -789,12 +750,7 @@ mod tests {
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
-        match action {
-            OperationAction::Abort { status, .. } => {
-                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
-            }
-            other => panic!("expected abort, got {other:?}"),
-        }
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
@@ -949,7 +905,7 @@ mod tests {
     }
 
     #[test]
-    fn service_unavailable_write_retries_and_marks_partition() {
+    fn service_unavailable_non_idempotent_write_retries() {
         let op = make_create_operation();
         let result = make_http_error(StatusCode::ServiceUnavailable);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -958,7 +914,7 @@ mod tests {
         );
 
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
-        assert!(matches!(action, OperationAction::Abort { .. }));
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
@@ -968,7 +924,9 @@ mod tests {
     }
 
     #[test]
-    fn service_unavailable_non_idempotent_retries_when_ppaf_enabled() {
+    fn service_unavailable_non_idempotent_retries_with_ppaf() {
+        // With PPAF enabled, behavior is the same as without — non-idempotent
+        // writes always retry. This test validates PPAF doesn't interfere.
         let op = make_create_operation();
         let result = make_http_error(StatusCode::ServiceUnavailable);
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -988,7 +946,9 @@ mod tests {
     }
 
     #[test]
-    fn transport_error_non_idempotent_retries_when_ppaf_enabled() {
+    fn transport_error_non_idempotent_retries_with_ppaf() {
+        // With PPAF enabled, behavior is the same as without — non-idempotent
+        // writes always retry. This test validates PPAF doesn't interfere.
         let op = make_create_operation();
         let result = make_transport_error(RequestSentStatus::Sent);
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
