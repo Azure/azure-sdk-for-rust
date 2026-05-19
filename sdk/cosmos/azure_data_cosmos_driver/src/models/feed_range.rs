@@ -161,13 +161,16 @@ impl FeedRange {
     /// Two ranges can be combined when they overlap or are adjacent
     /// (one's max equals the other's min).
     pub fn can_merge(&self, other: &FeedRange) -> bool {
-        match self {
-            FeedRange(FeedRangeRepr::LogicalPartition { .. }) => {
-                // Logical partition feed ranges cannot be merged with any other range, even an identical one, because they carry the implicit expectation of targeting a single logical partition.
-                false
-            }
-            FeedRange(FeedRangeRepr::Range { max_exclusive, .. }) => {
-                max_exclusive == other.min_inclusive() || self.overlaps(other)
+        match (&self.0, &other.0) {
+            // Logical partition feed ranges cannot be merged with any other range,
+            // even an identical one, because they carry the implicit expectation
+            // of targeting a single logical partition.
+            (FeedRangeRepr::LogicalPartition { .. }, _)
+            | (_, FeedRangeRepr::LogicalPartition { .. }) => false,
+            (FeedRangeRepr::Range { .. }, FeedRangeRepr::Range { .. }) => {
+                self.overlaps(other)
+                    || self.max_exclusive() == other.min_inclusive()
+                    || other.max_exclusive() == self.min_inclusive()
             }
         }
     }
@@ -373,6 +376,50 @@ mod tests {
 
         assert!(a.can_merge(&b));
         assert!(b.can_merge(&a));
+    }
+
+    #[test]
+    fn can_merge_overlapping_is_commutative() {
+        let a = FeedRange::new(
+            EffectivePartitionKey::from("00"),
+            EffectivePartitionKey::from("70"),
+        );
+        let b = FeedRange::new(
+            EffectivePartitionKey::from("40"),
+            EffectivePartitionKey::from("FF"),
+        );
+
+        assert!(a.can_merge(&b));
+        assert!(b.can_merge(&a));
+    }
+
+    #[test]
+    fn can_merge_disjoint_is_false_both_directions() {
+        let a = FeedRange::new(
+            EffectivePartitionKey::from("00"),
+            EffectivePartitionKey::from("30"),
+        );
+        let b = FeedRange::new(
+            EffectivePartitionKey::from("50"),
+            EffectivePartitionKey::from("FF"),
+        );
+
+        assert!(!a.can_merge(&b));
+        assert!(!b.can_merge(&a));
+    }
+
+    #[test]
+    fn can_merge_rejects_logical_partition_ranges_symmetrically() {
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let logical = FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
+        let explicit = FeedRange::new(
+            EffectivePartitionKey::from(""),
+            EffectivePartitionKey::from("FF"),
+        );
+
+        assert!(!logical.can_merge(&explicit));
+        assert!(!explicit.can_merge(&logical));
+        assert!(!logical.can_merge(&logical));
     }
 
     #[test]

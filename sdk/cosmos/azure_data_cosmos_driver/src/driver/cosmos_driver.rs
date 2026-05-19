@@ -66,9 +66,11 @@ fn request_target_overrides(
         },
         RequestTarget::EffectivePartitionKeyRange {
             partition_key_range_id,
+            range,
             ..
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
+            feed_range: Some(range),
             continuation,
             ..Default::default()
         },
@@ -2481,24 +2483,6 @@ mod tests {
 
     fn multi_region_previous_props() -> Arc<CachedAccountProperties> {
         Arc::new(serde_json::from_str(MULTI_REGION_ACCOUNT_PROPERTIES).unwrap())
-    }
-
-    #[test]
-    fn partition_key_range_override_does_not_set_feed_range() {
-        let overrides = request_target_overrides(
-            RequestTarget::EffectivePartitionKeyRange {
-                range: crate::models::FeedRange::new(
-                    EffectivePartitionKey::from("10"),
-                    EffectivePartitionKey::from("20"),
-                ),
-                partition_key_range_id: "7".to_string(),
-            },
-            Some("ct".to_string()),
-        );
-
-        assert_eq!(overrides.partition_key_range_id.as_deref(), Some("7"));
-        assert_eq!(overrides.continuation.as_deref(), Some("ct"));
-        assert_eq!(overrides.feed_range, None);
     }
 
     #[test]
