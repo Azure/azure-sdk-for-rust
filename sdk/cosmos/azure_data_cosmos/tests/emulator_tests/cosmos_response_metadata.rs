@@ -80,7 +80,7 @@ pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
             // the framework's TestRunContext::read_item 404 retry loop, which would
             // otherwise spin forever on a non-existent item.
             let error = container_client
-                .read_item::<ResponseMetadataItem>(&pk, &item_id, None)
+                .read_item(&pk, &item_id, None)
                 .await
                 .expect_err("expected 404 when reading non-existent item");
 
@@ -135,7 +135,7 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
             // Pre-write read of a not-yet-existent item — capture the partition LSN
             // baseline from the 404 headers.
             let pre_write_error = container_client
-                .read_item::<ResponseMetadataItem>(&pk, &item_id, None)
+                .read_item(&pk, &item_id, None)
                 .await
                 .expect_err("expected 404 for pre-write read");
             assert_eq!(pre_write_error.http_status(), Some(StatusCode::NotFound));
@@ -168,7 +168,7 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
             // _lsn key in the item body. The body must NOT contain _lsn — that
             // header belongs in response metadata, not the item payload.
             let read_response = run_context
-                .read_item::<serde_json::Value>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_eq!(read_response.status(), StatusCode::Ok);
             assert!(
@@ -213,7 +213,7 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
             // A subsequent point read of the original item still reports
             // item_lsn == the first-write LSN (the item was not touched).
             let second_read = run_context
-                .read_item::<serde_json::Value>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_eq!(second_read.item_lsn(), Some(write_lsn));
             let second_read_partition_lsn = second_read
