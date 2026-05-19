@@ -120,9 +120,7 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
 
             // Round-trip: a fresh read sees the same merged state, which
             // means the RMW Replace actually persisted.
-            let read_response = container_client
-                .read_item(&pk, &item_id, None)
-                .await?;
+            let read_response = container_client.read_item(&pk, &item_id, None).await?;
             assert_eq!(read_response.status(), StatusCode::Ok);
             let read_item: PatchTestItem = read_response.into_model()?;
             assert_eq!(read_item, post_image);
@@ -355,9 +353,7 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
 
             // A fresh read sees the same merged state — the retry's
             // Replace actually persisted on the service.
-            let read_response = regular
-                .read_item(&pk, &item_id, None)
-                .await?;
+            let read_response = regular.read_item(&pk, &item_id, None).await?;
             let read_item: PatchTestItem = read_response.into_model()?;
             assert_eq!(read_item, merged);
 
