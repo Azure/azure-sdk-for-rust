@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `backtrace` field to `Error` capturing a `std::backtrace::Backtrace` at construction time.
+
 ### Breaking Changes
 
 ### Bugs Fixed

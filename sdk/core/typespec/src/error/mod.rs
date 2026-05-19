@@ -5,6 +5,7 @@
 
 #[cfg(feature = "http")]
 use crate::http::{RawResponse, StatusCode};
+use std::backtrace::Backtrace;
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 
@@ -45,6 +46,7 @@ impl ErrorKind {
     pub fn into_error(self) -> Error {
         Error {
             context: Repr::Simple(self),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 }
@@ -73,6 +75,8 @@ impl Display for ErrorKind {
 #[derive(Debug)]
 pub struct Error {
     context: Repr,
+    // Boxed to keep `Error` small enough to satisfy `clippy::result_large_err`.
+    backtrace: Box<Backtrace>,
 }
 
 impl Error {
@@ -86,6 +90,7 @@ impl Error {
                 kind,
                 error: error.into(),
             }),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -104,6 +109,7 @@ impl Error {
                 },
                 message.into(),
             ),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -126,6 +132,7 @@ impl Error {
     {
         Self {
             context: Repr::SimpleMessage(kind, message.into()),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 
@@ -227,6 +234,11 @@ impl Error {
     pub fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T> {
         self.get_mut()?.downcast_mut()
     }
+
+    /// Returns the backtrace captured when this error was created.
+    pub fn backtrace(&self) -> &Backtrace {
+        &self.backtrace
+    }
 }
 
 impl std::error::Error for Error {
@@ -244,6 +256,7 @@ impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
             context: Repr::Simple(kind),
+            backtrace: Box::new(Backtrace::capture()),
         }
     }
 }
@@ -367,6 +380,7 @@ where
                 },
                 message.into(),
             ),
+            backtrace: Box::new(Backtrace::capture()),
         })
     }
 
@@ -481,5 +495,18 @@ mod tests {
         let result = std::result::Result::<(), _>::Err(create_error());
         let result = result.with_kind(ErrorKind::Io);
         assert_eq!(&ErrorKind::Io, result.unwrap_err().kind());
+    }
+
+    #[test]
+    fn backtrace_captured_when_enabled() {
+        use std::backtrace::BacktraceStatus;
+
+        let error = Error::new(ErrorKind::Other, "test error");
+        let status = error.backtrace().status();
+        if std::env::var("RUST_BACKTRACE").is_ok() {
+            assert_eq!(status, BacktraceStatus::Captured);
+        } else {
+            assert_ne!(status, BacktraceStatus::Captured);
+        }
     }
 }
