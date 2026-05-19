@@ -833,7 +833,9 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
 
                 match (&case.expected, result) {
                     (Expected::PostImageProps(expected_props), Ok(response)) => {
-                        let body: Value = response.into_body().single_item()
+                        let body: Value = response
+                            .into_body()
+                            .single_item()
                             .unwrap_or_else(|e| panic!("[{}] body parse: {e}", case.id));
                         assert_post_image_props(&body, expected_props, case.id);
                     }
@@ -849,8 +851,7 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
                         );
                     }
                     (Expected::ErrorContains(_), Ok(response)) => {
-                        let body: Value =
-                            response.into_body().single_item().unwrap_or_default();
+                        let body: Value = response.into_body().single_item().unwrap_or_default();
                         panic!(
                             "[{}] expected error but patch succeeded; body={body}",
                             case.id,

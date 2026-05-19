@@ -1706,7 +1706,10 @@ mod tests {
             .await
             .expect("PATCH should succeed");
 
-        let body_bytes = resp.into_body().single().expect("body should be a single payload");
+        let body_bytes = resp
+            .into_body()
+            .single()
+            .expect("body should be a single payload");
         assert_eq!(
             body_bytes.as_ref(),
             server_post_image.as_slice(),
