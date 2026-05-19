@@ -146,9 +146,7 @@ impl CosmosClientBuilder {
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection(
         mut self,
-        rules: Vec<
-            std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
-        >,
+        rules: Vec<std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
     ) -> Self {
         self.fault_injection_rules = rules;
         self

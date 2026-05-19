@@ -1042,7 +1042,6 @@ async fn sdk_create_retries_after_429_throttling() {
 /// compared via [`compare_item_responses`].
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
-#[ignore = "TODO(@FabianMeiswinkel): re-enable — tracked by https://github.com/Azure/azure-sdk-for-rust/issues/4365"]
 async fn sdk_read_failover_on_503_via_fault_injection() {
     use azure_data_cosmos_driver::fault_injection::{
         FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,

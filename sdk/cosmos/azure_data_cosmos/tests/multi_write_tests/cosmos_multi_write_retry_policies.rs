@@ -17,8 +17,8 @@ use super::framework;
 use azure_core::http::StatusCode;
 use azure_core::Uuid;
 use azure_data_cosmos::fault_injection::{
-    FaultInjectionConditionBuilder, FaultInjectionErrorType,
-    FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+    FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+    FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::Query;

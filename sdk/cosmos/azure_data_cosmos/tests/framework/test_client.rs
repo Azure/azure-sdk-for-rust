@@ -98,11 +98,14 @@ pub struct TestOptions {
     /// Application region for the normal (non-fault) client.
     pub client_application_region: Option<Region>,
     /// Fault injection rules for the fault injection client.
-    /// If non-empty, a separate client will be created with fault injection capabilities.
-    /// The rules are forwarded to the driver runtime after transport setup
-    /// (e.g., invalid certificate acceptance) so that the FaultClient wraps
-    /// the correct inner HTTP client.
-    pub fault_injection_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
+    ///
+    /// Setting this to `Some(rules)` — even an empty `Vec` — provisions a
+    /// dedicated fault-injection [`CosmosClient`] alongside the regular
+    /// test client; the rules are forwarded to the driver runtime after
+    /// transport setup (e.g., invalid-certificate acceptance) so that the
+    /// driver's `FaultClient` wraps the correct inner HTTP client.
+    /// `None` (the default) means no fault-injection client is created.
+    pub fault_injection_rules: Option<Vec<std::sync::Arc<FaultInjectionRule>>>,
     /// Application region for the fault injection client.
     /// Used in combination with `fault_injection_rules`.
     pub fault_client_application_region: Option<Region>,
@@ -123,13 +126,17 @@ impl TestOptions {
     }
 
     /// Sets the fault injection rules for the fault injection client.
-    /// The rules will be applied after transport setup so the FaultClient
-    /// properly wraps the configured HTTP client (e.g., one that accepts invalid certificates).
+    ///
+    /// The rules will be applied after transport setup so the `FaultClient`
+    /// properly wraps the configured HTTP client (e.g., one that accepts
+    /// invalid certificates). Passing an empty `Vec` still provisions the
+    /// fault-injection client — useful for tests that exercise the
+    /// "no rules configured" path.
     pub fn with_fault_injection_rules(
         mut self,
         rules: Vec<std::sync::Arc<FaultInjectionRule>>,
     ) -> Self {
-        self.fault_injection_rules = rules;
+        self.fault_injection_rules = Some(rules);
         self
     }
 
@@ -430,10 +437,13 @@ impl TestClient {
         // Rules should be passed in for emulator tests to ensure the FaultClient
         // wraps the HTTP client with invalid cert acceptance,
         // which is required for emulator connectivity.
-        let fault_client = if !options.fault_injection_rules.is_empty() {
+        // An explicitly-set empty Vec still provisions the fault client (some
+        // tests exercise the "no rules configured" path); `None` means
+        // `with_fault_injection_rules` was never called.
+        let fault_client = if let Some(rules) = options.fault_injection_rules {
             Some(
                 Self::from_env_with_fault_rules(
-                    options.fault_injection_rules,
+                    rules,
                     options.fault_client_application_region.clone(),
                 )
                 .await?,
