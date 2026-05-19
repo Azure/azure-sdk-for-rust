@@ -18,7 +18,7 @@ use serde::de::DeserializeOwned;
 pub struct ResponseBody(DriverResponseBody);
 
 impl ResponseBody {
-    /// Returns `true` if the body carries no inspectable content.
+    /// Returns `true` if the body carries no readable content.
     ///
     /// True for the no-payload response shape, for a single-payload body of
     /// zero bytes, and for a feed envelope with zero items.

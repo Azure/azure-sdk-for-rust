@@ -70,7 +70,7 @@ impl ResponseBody {
         Self::Items(items)
     }
 
-    /// Returns `true` if the body carries no inspectable content.
+    /// Returns `true` if the body carries no readable content.
     ///
     /// * [`NoPayload`](Self::NoPayload) is always empty.
     /// * [`Bytes`](Self::Bytes) is empty when the single buffer has zero bytes.
