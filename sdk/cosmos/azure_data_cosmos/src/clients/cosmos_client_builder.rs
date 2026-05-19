@@ -78,9 +78,14 @@ pub struct CosmosClientBuilder {
     /// Whether to accept invalid TLS certificates when connecting to the emulator.
     #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls",))]
     allow_emulator_invalid_certificates: bool,
-    /// Fault injection builder for testing error handling
+    /// Fault injection rules for testing error handling.
+    ///
+    /// Forwarded to the driver runtime at `build()` time and evaluated by
+    /// the driver's transport-layer fault-injection client. Empty by
+    /// default.
     #[cfg(feature = "fault_injection")]
-    fault_injection_builder: Option<crate::fault_injection::FaultInjectionClientBuilder>,
+    fault_injection_rules:
+        Vec<std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
     /// Custom driver runtime builder for testing (e.g., in-memory emulator transport).
@@ -116,18 +121,25 @@ impl CosmosClientBuilder {
 
     /// Configures fault injection for testing.
     ///
-    /// Pass a [`FaultInjectionClientBuilder`](crate::fault_injection::FaultInjectionClientBuilder)
-    /// configured with the desired fault injection rules. The builder will be used
-    /// to construct the transport internally when [`build()`](Self::build) is called.
+    /// Accepts a vector of [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)
+    /// values (the driver type re-exported through
+    /// [`fault_injection`](crate::fault_injection)). Build each rule with
+    /// [`FaultInjectionRuleBuilder`](crate::fault_injection::FaultInjectionRuleBuilder).
+    /// The rules are forwarded to the driver runtime at
+    /// [`build()`](Self::build) time and evaluated by the driver's
+    /// transport-layer fault-injection client.
+    ///
+    /// Calling this multiple times replaces the previously-configured rule
+    /// set; pass the complete final set on the last call.
     ///
     /// This is only available when the `fault_injection` feature is enabled.
     #[doc(hidden)]
     #[cfg(feature = "fault_injection")]
     pub fn with_fault_injection(
         mut self,
-        builder: crate::fault_injection::FaultInjectionClientBuilder,
+        rules: Vec<std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
     ) -> Self {
-        self.fault_injection_builder = Some(builder);
+        self.fault_injection_rules = rules;
         self
     }
 
@@ -285,17 +297,13 @@ impl CosmosClientBuilder {
         // Clone credential for the driver before the SDK consumes it for auth policy.
         let driver_credential = credential.clone();
 
-        // Translate any SDK-side fault-injection rules into driver rules
-        // before the builder is consumed. (The SDK pipeline is gone; rules
-        // now flow only through the driver.)
+        // Fault-injection rules flow directly to the driver runtime; no
+        // SDK-side translation needed now that the SDK fault-injection types
+        // are pure re-exports of the driver types.
         #[cfg(feature = "fault_injection")]
         let driver_fi_rules: Vec<
             std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
-        > = if let Some(fault_builder) = self.fault_injection_builder {
-            crate::driver_bridge::sdk_fi_rules_to_driver_fi_rules(fault_builder.rules())
-        } else {
-            Vec::new()
-        };
+        > = self.fault_injection_rules;
 
         let preferred_regions = if let Some(ref region) = self.options.application_region {
             crate::region_proximity::generate_preferred_region_list(region)

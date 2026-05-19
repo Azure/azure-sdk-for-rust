@@ -11,8 +11,8 @@ use super::framework;
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::fault_injection::{
-    FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
-    FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+    FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+    FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use framework::{TestClient, TestOptions};
@@ -69,7 +69,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -110,7 +110,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -135,7 +135,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -178,7 +178,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -204,7 +204,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
         .with_hit_limit(2)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -246,7 +246,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -270,7 +270,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -332,7 +332,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -358,7 +358,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -424,7 +424,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -458,9 +458,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
         .with_condition(condition2)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new()
-        .with_rule(Arc::new(rule1))
-        .with_rule(Arc::new(rule2));
+    let fault_builder = vec![Arc::new(rule1), Arc::new(rule2)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -500,7 +498,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -536,9 +534,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
         .with_condition(condition2)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new()
-        .with_rule(Arc::new(rule1))
-        .with_rule(Arc::new(rule2));
+    let fault_builder = vec![Arc::new(rule1), Arc::new(rule2)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -578,7 +574,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -614,9 +610,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
         .with_condition(condition2)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new()
-        .with_rule(Arc::new(rule1))
-        .with_rule(Arc::new(rule2));
+    let fault_builder = vec![Arc::new(rule1), Arc::new(rule2)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -659,7 +653,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -687,7 +681,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
         .with_hit_limit(8)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -741,7 +735,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -753,7 +747,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
     ignore = "requires test_category 'emulator'"
 )]
 pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
-    let fault_builder = FaultInjectionClientBuilder::new();
+    let fault_builder: Vec<Arc<FaultInjectionRule>> = Vec::new();
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -792,7 +786,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -828,7 +822,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
     rule.disable();
 
     let rule_handle = Arc::clone(&rule);
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
+    let fault_builder = vec![rule];
 
     TestClient::run_with_unique_db(
         async move |run_context, db_client| {
@@ -900,7 +894,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -927,12 +921,12 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             .build(),
     );
 
-    assert_eq!(rule.id, "enable-disable-test");
+    assert_eq!(rule.id(), "enable-disable-test");
     assert!(rule.is_enabled());
 
     let rule_handle = Arc::clone(&rule);
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
+    let fault_builder = vec![rule];
 
     TestClient::run_with_unique_db(
         async move |run_context, db_client| {
@@ -986,7 +980,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
