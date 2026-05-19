@@ -120,7 +120,10 @@ pub(crate) fn build_trivial_pipeline(
 /// `resume` is an optional [`PipelineNodeState`] from a continuation token.
 /// When present, ranges whose `max_exclusive <= current_min_epk` are skipped
 /// and the server continuation from `left_most` is propagated to the front
-/// (resumed) leaf only.
+/// (resumed) leaf only. The cursor also preserves the active child's original
+/// max EPK so resume can split a merged physical range into
+/// `[current_min_epk, current_max_epk)` (continued) and
+/// `[current_max_epk, merged_max)` (fresh).
 pub(crate) async fn build_sequential_drain(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
@@ -136,6 +139,7 @@ pub(crate) async fn build_sequential_drain(
         }
         Some(PipelineNodeState::SequentialDrain {
             current_min_epk,
+            current_max_epk,
             left_most,
         }) => {
             let server_continuation = match *left_most {
@@ -153,8 +157,17 @@ pub(crate) async fn build_sequential_drain(
                     ));
                 }
             };
+            let current_min_epk = EffectivePartitionKey::from(current_min_epk);
+            let current_max_epk = EffectivePartitionKey::from(current_max_epk);
+            if current_min_epk > current_max_epk {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "continuation token has invalid SequentialDrain range (min > max)",
+                ));
+            }
             Some(ResumeCursor {
-                current_min_epk: EffectivePartitionKey::from(current_min_epk),
+                current_min_epk,
+                current_max_epk,
                 server_continuation,
             })
         }
@@ -165,6 +178,7 @@ pub(crate) async fn build_sequential_drain(
             // a single child — apply it as a cursor at the minimum EPK.
             Some(ResumeCursor {
                 current_min_epk: EffectivePartitionKey::min(),
+                current_max_epk: EffectivePartitionKey::max(),
                 server_continuation,
             })
         }
@@ -185,6 +199,44 @@ pub(crate) async fn build_sequential_drain(
             // Skip ranges that are entirely below the resume cursor.
             if let Some(cursor) = resume.as_ref() {
                 if resolved_range.range.max_exclusive() <= &cursor.current_min_epk {
+                    continue;
+                }
+            }
+
+            // If we resumed inside a range that later merged with neighbors,
+            // keep the continuation scoped to the original child range and
+            // enqueue the remaining tail as a fresh request.
+            if let Some(cursor) = resume.as_mut() {
+                if cursor.server_continuation.is_some()
+                    && resolved_range.range.min_inclusive() <= &cursor.current_min_epk
+                    && &cursor.current_max_epk < resolved_range.range.max_exclusive()
+                {
+                    let resumed_target = RequestTarget::EffectivePartitionKeyRange {
+                        range: FeedRange::new(
+                            cursor.current_min_epk.clone(),
+                            cursor.current_max_epk.clone(),
+                        ),
+                        partition_key_range_id: resolved_range.partition_key_range_id.clone(),
+                    };
+                    let resumed_continuation = cursor.server_continuation.take();
+                    request_nodes.push(Box::new(Request::new(
+                        Arc::clone(operation),
+                        resumed_target,
+                        resumed_continuation,
+                    )));
+
+                    let tail_target = RequestTarget::EffectivePartitionKeyRange {
+                        range: FeedRange::new(
+                            cursor.current_max_epk.clone(),
+                            resolved_range.range.max_exclusive().clone(),
+                        ),
+                        partition_key_range_id: resolved_range.partition_key_range_id,
+                    };
+                    request_nodes.push(Box::new(Request::new(
+                        Arc::clone(operation),
+                        tail_target,
+                        None,
+                    )));
                     continue;
                 }
             }
@@ -230,6 +282,7 @@ pub(crate) async fn build_sequential_drain(
 /// Resume cursor extracted from a `SequentialDrain` continuation snapshot.
 struct ResumeCursor {
     current_min_epk: EffectivePartitionKey,
+    current_max_epk: EffectivePartitionKey,
     server_continuation: Option<String>,
 }
 
@@ -334,11 +387,8 @@ mod tests {
     }
 
     fn cross_partition_query_operation() -> CosmosOperation {
-        CosmosOperation::query_items(
-            test_container(),
-            OperationTarget::FeedRange(FeedRange::full()),
-        )
-        .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
     }
 
     // --- build_trivial_pipeline tests ---
@@ -482,6 +532,48 @@ mod tests {
                 },
                 "mismatch for pk range {pk_range_id}"
             );
+        }
+    }
+
+    /// Asserts that each `Request` child targets the given range and has the
+    /// expected server continuation snapshot state.
+    fn assert_drain_requests_with_continuation(
+        pipeline: Pipeline,
+        expected: &[(&str, &str, &str, Option<&str>)],
+    ) {
+        let drain = pipeline
+            .into_root()
+            .downcast::<SequentialDrain>()
+            .expect("expected SequentialDrain root");
+        let children = drain.into_children();
+        assert_eq!(
+            children.len(),
+            expected.len(),
+            "expected {} request nodes, got {}",
+            expected.len(),
+            children.len(),
+        );
+
+        for (child, &(min, max, pk_range_id, continuation)) in children.into_iter().zip(expected) {
+            let request = child
+                .downcast::<Request>()
+                .expect("expected Request child node");
+            assert_eq!(
+                *request.target(),
+                RequestTarget::EffectivePartitionKeyRange {
+                    range: FeedRange::new(
+                        EffectivePartitionKey::from(min),
+                        EffectivePartitionKey::from(max),
+                    ),
+                    partition_key_range_id: pk_range_id.to_string(),
+                },
+                "mismatch for pk range {pk_range_id}"
+            );
+
+            let expected_state = PipelineNodeState::Request {
+                server_continuation: continuation.map(ToOwned::to_owned),
+            };
+            assert_eq!(request.snapshot_state(), expected_state);
         }
     }
 
@@ -819,6 +911,7 @@ mod tests {
         // range (max_exclusive == "55") must be skipped, the others kept.
         let resume = PipelineNodeState::SequentialDrain {
             current_min_epk: "55".to_owned(),
+            current_max_epk: "AA".to_owned(),
             left_most: Box::new(PipelineNodeState::Request {
                 server_continuation: None,
             }),
@@ -842,6 +935,7 @@ mod tests {
 
         let resume = PipelineNodeState::SequentialDrain {
             current_min_epk: "55".to_owned(),
+            current_max_epk: "AA".to_owned(),
             left_most: Box::new(PipelineNodeState::Request {
                 server_continuation: Some("server-token-xyz".to_owned()),
             }),
@@ -871,6 +965,7 @@ mod tests {
 
         let resume = PipelineNodeState::SequentialDrain {
             current_min_epk: "FF".to_owned(),
+            current_max_epk: "FF".to_owned(),
             left_most: Box::new(PipelineNodeState::Drained),
         };
 
@@ -891,8 +986,10 @@ mod tests {
 
         let resume = PipelineNodeState::SequentialDrain {
             current_min_epk: "00".to_owned(),
+            current_max_epk: "80".to_owned(),
             left_most: Box::new(PipelineNodeState::SequentialDrain {
                 current_min_epk: "00".to_owned(),
+                current_max_epk: "80".to_owned(),
                 left_most: Box::new(PipelineNodeState::Request {
                     server_continuation: None,
                 }),
@@ -905,6 +1002,33 @@ mod tests {
         assert!(
             err.to_string().contains("unsupported nested shape"),
             "unexpected error message: {err}",
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_on_merged_range_splits_resumed_slice_and_tail() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-merged")])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            current_min_epk: "55".to_owned(),
+            current_max_epk: "AA".to_owned(),
+            left_most: Box::new(PipelineNodeState::Request {
+                server_continuation: Some("server-token-xyz".to_owned()),
+            }),
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+
+        assert_drain_requests_with_continuation(
+            pipeline,
+            &[
+                ("55", "AA", "pk-merged", Some("server-token-xyz")),
+                ("AA", "FF", "pk-merged", None),
+            ],
         );
     }
 }

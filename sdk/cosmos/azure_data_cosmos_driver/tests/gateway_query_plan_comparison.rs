@@ -29,12 +29,12 @@ use std::sync::Arc;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use tokio::sync::OnceCell;
 
+use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, PartitionKeyDefinition,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
-use azure_data_cosmos_driver::{driver::CosmosDriverRuntime, models::OperationTarget};
 
 use framework::resolve_test_env;
 

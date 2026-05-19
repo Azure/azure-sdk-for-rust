@@ -5,10 +5,10 @@
 //! tokens.
 //!
 //! Each variant captures only the information required to reconstruct an
-//! equivalent pipeline on resume. In particular, [`SequentialDrain`] only
-//! preserves its left-most child plus an EPK floor; the planner reconstructs
-//! the remaining (yet-to-drain) children from the operation's query ranges
-//! and the current topology.
+//! equivalent pipeline on resume. In particular, [`SequentialDrain`] preserves
+//! its left-most child plus the active child's original EPK bounds; the
+//! planner reconstructs the remaining (yet-to-drain) children from the
+//! operation's query ranges and the current topology.
 
 use serde::{Deserialize, Serialize};
 
@@ -35,10 +35,14 @@ pub(crate) enum PipelineNodeState {
     /// A sequential drain over EPK-ordered children.
     ///
     /// Only the left-most (currently-active) child's snapshot is preserved.
-    /// `current_min_epk` is the minimum EPK still left to drain; the planner
-    /// uses it to skip ranges that are entirely below the cursor on resume.
+    /// `current_min_epk` / `current_max_epk` are the original bounds of the
+    /// active child when the snapshot was taken. The planner uses
+    /// `current_min_epk` to skip already-drained ranges, and `current_max_epk`
+    /// to recover correct continuation behavior if that child's partition has
+    /// merged before resume.
     SequentialDrain {
         current_min_epk: String,
+        current_max_epk: String,
         left_most: Box<PipelineNodeState>,
     },
 }

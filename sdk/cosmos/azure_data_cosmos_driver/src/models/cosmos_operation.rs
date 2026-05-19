@@ -783,7 +783,9 @@ mod tests {
             ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let op = CosmosOperation::read_item(item_ref);
 
-        assert!(matches!(op.target(), OperationTarget::PartitionKey(_)));
+        assert!(op
+            .target()
+            .is_some_and(|target| target.partition_key().is_some()));
     }
 
     #[test]

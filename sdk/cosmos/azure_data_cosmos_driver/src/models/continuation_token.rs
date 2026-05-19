@@ -251,7 +251,7 @@ mod tests {
     use super::*;
     use crate::models::{
         AccountReference, ContainerProperties, ContainerReference, FeedRange, ItemReference,
-        OperationTarget, PartitionKey, PartitionKeyDefinition, SystemProperties,
+        PartitionKey, PartitionKeyDefinition, SystemProperties,
     };
 
     use url::Url;
@@ -273,10 +273,7 @@ mod tests {
 
     /// Builds a query-items operation against `test_container()` (rid `coll_rid`).
     fn query_op() -> CosmosOperation {
-        CosmosOperation::query_items(
-            test_container(),
-            OperationTarget::FeedRange(FeedRange::full()),
-        )
+        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
     }
 
     /// Decodes the base64url-no-pad payload of a `c1.`-prefixed token into
@@ -345,6 +342,7 @@ mod tests {
             &query_op(),
             &PipelineNodeState::SequentialDrain {
                 current_min_epk: "3F".to_string(),
+                current_max_epk: "7F".to_string(),
                 left_most: Box::new(PipelineNodeState::Request {
                     server_continuation: None,
                 }),
@@ -353,7 +351,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             decode_v1_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","current_min_epk":"3F","left_most":{"kind":"request"}}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","current_min_epk":"3F","current_max_epk":"7F","left_most":{"kind":"request"}}}"#,
         );
     }
 
@@ -441,7 +439,7 @@ mod tests {
     #[test]
     fn resolve_v1_sequential_drain_state() {
         let token = encode_v1_payload(
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","current_min_epk":"3F","left_most":{"kind":"request"}}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","current_min_epk":"3F","current_max_epk":"7F","left_most":{"kind":"request"}}}"#,
         );
         match token.resolve().unwrap() {
             ResolvedToken::ClientV1(state) => {
@@ -451,6 +449,7 @@ mod tests {
                     state.root,
                     PipelineNodeState::SequentialDrain {
                         current_min_epk: "3F".to_string(),
+                        current_max_epk: "7F".to_string(),
                         left_most: Box::new(PipelineNodeState::Request {
                             server_continuation: None,
                         }),

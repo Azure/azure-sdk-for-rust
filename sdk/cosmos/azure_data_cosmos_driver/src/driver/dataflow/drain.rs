@@ -121,6 +121,7 @@ impl PipelineNode for SequentialDrain {
         };
         PipelineNodeState::SequentialDrain {
             current_min_epk: range.min_inclusive().as_str().to_string(),
+            current_max_epk: range.max_exclusive().as_str().to_string(),
             left_most: Box::new(front.snapshot_state()),
         }
     }
