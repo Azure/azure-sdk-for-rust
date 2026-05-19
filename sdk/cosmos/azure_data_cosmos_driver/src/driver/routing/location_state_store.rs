@@ -26,6 +26,7 @@ use super::{
     build_account_endpoint_state, expire_partition_overrides, expire_unavailable_endpoints,
     mark_endpoint_unavailable, mark_partition_unavailable,
     partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
+    partition_key_range_id::PartitionKeyRangeId,
     AccountEndpointState, CosmosEndpoint, LocationEffect,
 };
 
@@ -568,6 +569,59 @@ impl LocationStateStore {
         self.background_task_manager.spawn(async move {
             account_refresh_loop(weak_store, BACKGROUND_REFRESH_INTERVAL).await;
         });
+    }
+
+    /// Records that the alternate (secondary) hedge attempt completed before
+    /// the primary in
+    /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
+    ///
+    /// Per [`docs/HEDGING_SPEC.md`] §9.5: repeated alternate-region wins on
+    /// the same `(partition, primary_region)` pair are signal that the
+    /// primary partition is degraded. Once the PPCB-side threshold and
+    /// state-transition rules are co-designed with the PPCB owner
+    /// (tracking issue TBD), this will atomically increment a per-pair
+    /// counter and transition the partition to `Unhealthy` once N
+    /// consecutive wins accumulate. Until that lands, the method is a
+    /// tracing-only stub so the load-bearing callsite in `execute_hedged`
+    /// can compile and ship (`HEDGING_IMPLEMENTATION_PLAN.md` sub-plan 6a).
+    ///
+    /// `primary_region` is `None` for default-endpoint accounts whose
+    /// snapshot does not carry a named region (matches the spec invariant
+    /// that the counter key is `(partition, primary_region)`).
+    pub fn record_consecutive_hedge_win(
+        &self,
+        partition: &PartitionKeyRangeId,
+        primary_region: Option<&Region>,
+    ) {
+        tracing::debug!(
+            partition = %partition,
+            primary_region = ?primary_region.map(Region::as_str),
+            "cosmos.hedge.recorded_alternate_win",
+        );
+        // TODO(ppcb-co-design): increment per-(partition, primary_region)
+        // counter and transition to `Unhealthy` when threshold N is reached.
+    }
+
+    /// Records that the primary attempt won in
+    /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
+    ///
+    /// Per [`docs/HEDGING_SPEC.md`] §9.5 invariant #2: a direct
+    /// primary-region win on the same `(partition, primary_region)` pair
+    /// resets the consecutive-hedge-win counter so transient cross-region
+    /// latency spikes do not accumulate over time. Tracing-only stub
+    /// until the PPCB-side counter lands
+    /// (`HEDGING_IMPLEMENTATION_PLAN.md` sub-plan 6a).
+    pub fn record_primary_win(
+        &self,
+        partition: &PartitionKeyRangeId,
+        primary_region: Option<&Region>,
+    ) {
+        tracing::debug!(
+            partition = %partition,
+            primary_region = ?primary_region.map(Region::as_str),
+            "cosmos.hedge.recorded_primary_win",
+        );
+        // TODO(ppcb-co-design): reset per-(partition, primary_region) counter.
     }
 }
 

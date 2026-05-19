@@ -440,6 +440,8 @@ pub(crate) async fn execute_operation_pipeline(
                     deadline,
                     can_use_multiple_write_locations: retry_state.can_use_multiple_write_locations,
                     hub_region_processing_only_initial: retry_state.hub_region_processing_only,
+                    partition_key_range_id: retry_state.partition_key_range_id.clone(),
+                    hedge_outcome_recorder: location_state_store,
                 };
                 return execute_hedged(
                     &attempt_ctx,
@@ -1316,6 +1318,95 @@ fn try_cleanup_probe_candidate(
 /// can be called without 14-argument call sites. The `'a` lifetime is
 /// the outer `execute_operation_pipeline` invocation's lifetime — every
 /// field is borrowed from there.
+/// Sink for hedge-outcome feedback used by [`execute_hedged`].
+///
+/// Per spec [`docs/HEDGING_SPEC.md`] §9.5 the outcome of every hedge
+/// race feeds back into PPCB so that repeated alternate-region wins on
+/// the same `(partition, primary_region)` pair eventually trip the
+/// primary partition to `Unhealthy`. The trait exists so that:
+///
+/// 1. The hedge race in [`execute_hedged`] depends on a minimal sink
+///    interface rather than on the full
+///    [`LocationStateStore`] surface, and
+/// 2. Unit tests can substitute a record-into-`Vec` fake recorder
+///    without needing the heavyweight
+///    [`LocationStateStore::new`] dependencies.
+///
+/// Production uses the [`LocationStateStore`] impl which today tracing-
+/// logs the events; the real counter / state-transition wiring is
+/// deferred to PPCB-owner co-design
+/// (`HEDGING_IMPLEMENTATION_PLAN.md` sub-plan 6c).
+pub(crate) trait HedgeOutcomeRecorder: Send + Sync {
+    /// Record an alternate-region win.
+    fn record_consecutive_hedge_win(
+        &self,
+        partition: &PartitionKeyRangeId,
+        primary_region: Option<&Region>,
+    );
+
+    /// Record a primary-region win (resets the consecutive-hedge-win
+    /// counter — spec §9.5 invariant #2).
+    fn record_primary_win(&self, partition: &PartitionKeyRangeId, primary_region: Option<&Region>);
+}
+
+impl HedgeOutcomeRecorder for LocationStateStore {
+    fn record_consecutive_hedge_win(
+        &self,
+        partition: &PartitionKeyRangeId,
+        primary_region: Option<&Region>,
+    ) {
+        LocationStateStore::record_consecutive_hedge_win(self, partition, primary_region);
+    }
+
+    fn record_primary_win(&self, partition: &PartitionKeyRangeId, primary_region: Option<&Region>) {
+        LocationStateStore::record_primary_win(self, partition, primary_region);
+    }
+}
+
+/// Dispatches a hedge-race outcome to the [`HedgeOutcomeRecorder`].
+///
+/// Spec §9.5 keys feedback by `(partition, primary_region)`. When the
+/// operation never resolved a partition key range ID (first attempt
+/// against an unresolved item — see [`AttemptContext::partition_key_range_id`])
+/// the call is a no-op: there is no key to attribute feedback against.
+/// The same gating applies to both alternate-wins and primary-wins so
+/// the reset (invariant #2) only fires on pairs that could ever
+/// accumulate a count in the first place.
+fn record_hedge_outcome(
+    recorder: &dyn HedgeOutcomeRecorder,
+    outcome: HedgeOutcome,
+    partition: Option<&PartitionKeyRangeId>,
+    primary_region: Option<&Region>,
+) {
+    let Some(partition) = partition else {
+        return;
+    };
+    match outcome {
+        HedgeOutcome::AlternateWin => {
+            recorder.record_consecutive_hedge_win(partition, primary_region)
+        }
+        HedgeOutcome::PrimaryWin => recorder.record_primary_win(partition, primary_region),
+    }
+}
+
+/// Hedge race outcome reported to the [`HedgeOutcomeRecorder`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum HedgeOutcome {
+    /// The primary attempt produced the operation result (whether
+    /// pre-threshold in the zero-overhead happy path or post-threshold
+    /// after racing the secondary).
+    PrimaryWin,
+    /// The alternate (secondary) attempt produced the operation result.
+    AlternateWin,
+}
+
+/// Per-operation context shared across hedge attempts.
+///
+/// Bundles the read-only references that every per-attempt transport
+/// invocation needs so [`execute_hedged`] and [`perform_single_attempt`]
+/// can be called without 14-argument call sites. The `'a` lifetime is
+/// the outer `execute_operation_pipeline` invocation's lifetime — every
+/// field is borrowed from there.
 struct AttemptContext<'a> {
     operation: &'a CosmosOperation,
     custom_headers: Option<&'a std::collections::HashMap<HeaderName, HeaderValue>>,
@@ -1348,6 +1439,20 @@ struct AttemptContext<'a> {
     /// pipeline before hedging fired carries forward into both hedge
     /// attempts (spec [`docs/HEDGING_SPEC.md`] §9.6.2).
     hub_region_processing_only_initial: bool,
+    /// Identifies the physical partition serving this operation. Used by
+    /// [`execute_hedged`] to attribute hedge-win signals back to the
+    /// `(partition, primary_region)` pair consumed by PPCB feedback
+    /// (spec [`docs/HEDGING_SPEC.md`] §9.5). `None` for operations
+    /// dispatched before any response captured the partition key range
+    /// ID (first attempt of an unresolved item) — in that case no
+    /// feedback can be attributed and the recorder calls become no-ops.
+    partition_key_range_id: Option<PartitionKeyRangeId>,
+    /// Sink for hedge-outcome feedback. Always backed by the real
+    /// `LocationStateStore` in production; the indirection is via the
+    /// [`HedgeOutcomeRecorder`] trait so unit tests can substitute a
+    /// fake without standing up a full store (spec
+    /// [`docs/HEDGING_SPEC.md`] §9.5).
+    hedge_outcome_recorder: &'a dyn HedgeOutcomeRecorder,
 }
 
 /// Result classification used by [`execute_hedged`] to decide whether a
@@ -1736,11 +1841,16 @@ fn deadline_elapsed(deadline: Option<Instant>) -> bool {
 /// futures are dropped — structural cancellation propagates through
 /// the transport pipeline (spec §6.5 #5).
 ///
+/// PPCB feedback (spec §6.5 #8 / §9.5) is wired here via
+/// [`record_hedge_outcome`]: every Final outcome routed to either side
+/// is reported to the [`HedgeOutcomeRecorder`] so the PPCB side can
+/// count consecutive alternate-wins and reset on primary-wins. The
+/// real counter / state-transition machinery is a no-op stub today
+/// (sub-plan 6a); the load-bearing callsites are these branches.
+///
 /// Spec items NOT yet implemented (tracked for follow-up commits per
 /// [`docs/HEDGING_IMPLEMENTATION_PLAN.md`]):
 ///
-/// - §6.5 #8 / §9.5 `record_hedge_win` PPCB feedback on secondary win.
-/// - §8.2 / §9.6 shared hub-region-processing latch.
 /// - Operation-level retry inside each hedge (§8.4); we rely on
 ///   per-attempt transport-pipeline retry only.
 async fn execute_hedged(
@@ -1820,6 +1930,18 @@ async fn execute_hedged(
                 activity_id = %ctx.activity_id,
                 "execute_hedged: primary won pre-threshold (zero-overhead happy path)",
             );
+            // Spec §9.5: primary-region win resets the consecutive-hedge-win
+            // counter on this (partition, primary_region) pair. Recorded
+            // even in the zero-overhead path because a streak of fast
+            // primaries should clear any prior alternate-win backlog.
+            if result.is_ok() {
+                record_hedge_outcome(
+                    ctx.hedge_outcome_recorder,
+                    HedgeOutcome::PrimaryWin,
+                    ctx.partition_key_range_id.as_ref(),
+                    primary_region.as_ref(),
+                );
+            }
             return finalize_hedge_attempt(Box::new(result?), parent_diagnostics);
         }
         Either::Right((TimerEvent::ThresholdElapsed, remaining_primary)) => remaining_primary,
@@ -1901,6 +2023,12 @@ async fn execute_hedged(
                         activity_id = %ctx.activity_id,
                         "execute_hedged: primary won after threshold",
                     );
+                    record_hedge_outcome(
+                        ctx.hedge_outcome_recorder,
+                        HedgeOutcome::PrimaryWin,
+                        ctx.partition_key_range_id.as_ref(),
+                        primary_region.as_ref(),
+                    );
                     finalize_hedge_attempt(tr, parent_diagnostics)
                 }
                 HedgeClass::Transient => {
@@ -1929,7 +2057,9 @@ async fn execute_hedged(
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
                     match classify_hedge_result(secondary_result) {
                         HedgeClass::Final(tr) => {
-                            if let (Some(p), Some(s)) = (primary_region, secondary_region) {
+                            if let (Some(p), Some(s)) =
+                                (primary_region.clone(), secondary_region.clone())
+                            {
                                 parent_diagnostics.set_hedge_diagnostics(
                                     HedgeDiagnostics::hedge_won(strategy_config, p, s),
                                 );
@@ -1937,6 +2067,12 @@ async fn execute_hedged(
                             tracing::debug!(
                                 activity_id = %ctx.activity_id,
                                 "execute_hedged: secondary won after primary transient",
+                            );
+                            record_hedge_outcome(
+                                ctx.hedge_outcome_recorder,
+                                HedgeOutcome::AlternateWin,
+                                ctx.partition_key_range_id.as_ref(),
+                                primary_region.as_ref(),
                             );
                             finalize_hedge_attempt(tr, parent_diagnostics)
                         }
@@ -1984,6 +2120,12 @@ async fn execute_hedged(
                         activity_id = %ctx.activity_id,
                         "execute_hedged: secondary won race",
                     );
+                    record_hedge_outcome(
+                        ctx.hedge_outcome_recorder,
+                        HedgeOutcome::AlternateWin,
+                        ctx.partition_key_range_id.as_ref(),
+                        primary_region.as_ref(),
+                    );
                     finalize_hedge_attempt(tr, parent_diagnostics)
                 }
                 HedgeClass::Transient => {
@@ -2011,7 +2153,9 @@ async fn execute_hedged(
                     parent_diagnostics.merge_hedge_attempt(primary_diag);
                     match classify_hedge_result(primary_result) {
                         HedgeClass::Final(tr) => {
-                            if let (Some(p), Some(s)) = (primary_region, secondary_region) {
+                            if let (Some(p), Some(s)) =
+                                (primary_region.clone(), secondary_region.clone())
+                            {
                                 parent_diagnostics.set_hedge_diagnostics(
                                     HedgeDiagnostics::primary_won_after_hedge(
                                         strategy_config,
@@ -2023,6 +2167,12 @@ async fn execute_hedged(
                             tracing::debug!(
                                 activity_id = %ctx.activity_id,
                                 "execute_hedged: primary won after secondary transient",
+                            );
+                            record_hedge_outcome(
+                                ctx.hedge_outcome_recorder,
+                                HedgeOutcome::PrimaryWin,
+                                ctx.partition_key_range_id.as_ref(),
+                                primary_region.as_ref(),
                             );
                             finalize_hedge_attempt(tr, parent_diagnostics)
                         }
@@ -4309,5 +4459,170 @@ mod tests {
             request_header_names::HUB_REGION_PROCESSING_ONLY,
         ));
         assert!(value.is_none());
+    }
+
+    // -----------------------------------------------------------------
+    // Part 6 — PPCB hedge-win feedback (spec §9.5).
+    // Tests the `HedgeOutcomeRecorder` dispatch performed by
+    // `record_hedge_outcome` using a Vec-backed fake recorder. The
+    // real `LocationStateStore` impl is tracing-only today; once the
+    // PPCB-side counter lands (sub-plan 6c), spec §15.2/§15.3
+    // integration tests replace these unit tests as the authoritative
+    // PPCB-feedback verification.
+    // -----------------------------------------------------------------
+
+    #[derive(Debug, Default)]
+    struct FakeHedgeRecorder {
+        events: std::sync::Mutex<Vec<(super::HedgeOutcome, String, Option<String>)>>,
+    }
+
+    impl FakeHedgeRecorder {
+        fn drain(&self) -> Vec<(super::HedgeOutcome, String, Option<String>)> {
+            std::mem::take(&mut *self.events.lock().unwrap())
+        }
+    }
+
+    impl super::HedgeOutcomeRecorder for FakeHedgeRecorder {
+        fn record_consecutive_hedge_win(
+            &self,
+            partition: &super::PartitionKeyRangeId,
+            primary_region: Option<&crate::options::Region>,
+        ) {
+            self.events.lock().unwrap().push((
+                super::HedgeOutcome::AlternateWin,
+                partition.as_str().to_owned(),
+                primary_region.map(|r| r.as_str().to_owned()),
+            ));
+        }
+
+        fn record_primary_win(
+            &self,
+            partition: &super::PartitionKeyRangeId,
+            primary_region: Option<&crate::options::Region>,
+        ) {
+            self.events.lock().unwrap().push((
+                super::HedgeOutcome::PrimaryWin,
+                partition.as_str().to_owned(),
+                primary_region.map(|r| r.as_str().to_owned()),
+            ));
+        }
+    }
+
+    /// T-P1 (spec §15.1: record_hedge_win_increments_ppcb_counter).
+    /// An alternate-region win dispatches exactly one
+    /// `record_consecutive_hedge_win` call against the primary partition.
+    #[test]
+    fn alternate_win_dispatches_consecutive_hedge_win() {
+        let recorder = FakeHedgeRecorder::default();
+        let pk_range: super::PartitionKeyRangeId = "0".parse().unwrap();
+        let region = crate::options::Region::WEST_US_2;
+
+        super::record_hedge_outcome(
+            &recorder,
+            super::HedgeOutcome::AlternateWin,
+            Some(&pk_range),
+            Some(&region),
+        );
+
+        let events = recorder.drain();
+        assert_eq!(
+            events,
+            vec![(
+                super::HedgeOutcome::AlternateWin,
+                "0".to_owned(),
+                Some("westus2".to_owned()),
+            )]
+        );
+    }
+
+    /// T-P2 (spec §15.1: primary_win_resets_hedge_win_counter).
+    /// A primary-region win dispatches exactly one `record_primary_win`
+    /// call (which, on the real recorder, would reset the
+    /// consecutive-hedge-win counter per §9.5 invariant #2).
+    #[test]
+    fn primary_win_dispatches_record_primary_win() {
+        let recorder = FakeHedgeRecorder::default();
+        let pk_range: super::PartitionKeyRangeId = "5".parse().unwrap();
+        let region = crate::options::Region::EAST_US;
+
+        super::record_hedge_outcome(
+            &recorder,
+            super::HedgeOutcome::PrimaryWin,
+            Some(&pk_range),
+            Some(&region),
+        );
+
+        let events = recorder.drain();
+        assert_eq!(
+            events,
+            vec![(
+                super::HedgeOutcome::PrimaryWin,
+                "5".to_owned(),
+                Some("eastus".to_owned()),
+            )]
+        );
+    }
+
+    /// T-P3. Without a partition key range ID (first attempt against an
+    /// unresolved item — `retry_state.partition_key_range_id == None`),
+    /// the helper is a no-op for both outcomes. Spec §9.5 keys feedback
+    /// by `(partition, primary_region)`; without a partition there is
+    /// nothing to attribute to.
+    #[test]
+    fn record_hedge_outcome_noop_when_partition_missing() {
+        let recorder = FakeHedgeRecorder::default();
+        let region = crate::options::Region::WEST_US_2;
+
+        super::record_hedge_outcome(
+            &recorder,
+            super::HedgeOutcome::AlternateWin,
+            None,
+            Some(&region),
+        );
+        super::record_hedge_outcome(
+            &recorder,
+            super::HedgeOutcome::PrimaryWin,
+            None,
+            Some(&region),
+        );
+
+        assert!(recorder.drain().is_empty());
+    }
+
+    /// T-P4. Default-endpoint accounts whose snapshot carries no named
+    /// region still attribute feedback to the partition — the
+    /// `primary_region` argument is `Option` precisely to handle that
+    /// case (spec §9.5: the counter key is
+    /// `(partition, primary_region)` with `primary_region` allowed to
+    /// be `None`).
+    #[test]
+    fn record_hedge_outcome_dispatches_when_primary_region_missing() {
+        let recorder = FakeHedgeRecorder::default();
+        let pk_range: super::PartitionKeyRangeId = "7".parse().unwrap();
+
+        super::record_hedge_outcome(
+            &recorder,
+            super::HedgeOutcome::AlternateWin,
+            Some(&pk_range),
+            None,
+        );
+
+        let events = recorder.drain();
+        assert_eq!(
+            events,
+            vec![(super::HedgeOutcome::AlternateWin, "7".to_owned(), None)]
+        );
+    }
+
+    /// T-P5. The production `LocationStateStore` impl of
+    /// `HedgeOutcomeRecorder` is reachable through trait dispatch (i.e.
+    /// the trait impl in `operation_pipeline.rs` compiles and the
+    /// inherent stubs on `LocationStateStore` are visible). We only
+    /// type-check this here — the actual stubs are tracing-only no-ops
+    /// pending PPCB-side co-design (sub-plan 6c).
+    #[test]
+    fn location_state_store_implements_hedge_outcome_recorder() {
+        fn assert_impl<T: super::HedgeOutcomeRecorder + ?Sized>() {}
+        assert_impl::<super::LocationStateStore>();
     }
 }
