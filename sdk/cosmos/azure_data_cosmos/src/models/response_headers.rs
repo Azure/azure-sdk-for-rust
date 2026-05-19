@@ -25,9 +25,9 @@ use azure_data_cosmos_driver::models::{
 /// SDK does not maintain parallel wrappers for them.
 ///
 /// Construction from the driver type is `From`-based for the bridge layer; the
-/// reverse direction is intentionally `pub(crate)`-scoped (see
-/// [`crate::models::response_headers::into_driver_headers`]) so the driver
-/// representation is not part of the SDK's public surface.
+/// reverse direction is intentionally `pub(crate)`-scoped (the crate-internal
+/// `into_driver_headers` helper) so the driver representation is not part of
+/// the SDK's public surface.
 #[derive(Clone, Debug, Default)]
 pub struct ResponseHeaders(DriverCosmosResponseHeaders);
 
