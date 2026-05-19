@@ -7,11 +7,12 @@
 //! session retry, endpoint unavailability tracking, partition-level failover
 //! (PPAF/PPCB), and deadline enforcement.
 
+use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
-use futures::future::{select, Either};
+use futures::future::{pending, select, Either, Future};
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
@@ -1496,6 +1497,134 @@ async fn perform_single_attempt(
     Ok(result)
 }
 
+/// Upper bound on how long [`execute_hedged`] waits for in-flight hedge
+/// attempts to land their diagnostics after the application-cancel
+/// deadline fires. Per spec §6.5 #7 / §14.2 the Rust hedge path
+/// deliberately bounds this — .NET v3 awaits the most-recently-completed
+/// task with no timeout, but the Rust path trades slightly less-rich
+/// diagnostics-on-cancel for predictable user-visible cancel latency
+/// when a transport future is stuck.
+const HARVEST_WINDOW: Duration = Duration::from_millis(50);
+
+/// Discriminator returned by the Stage-2 threshold-vs-deadline nested
+/// race so the outer `select` against the primary can branch cleanly
+/// without unwrapping a nested [`Either`].
+enum TimerEvent {
+    /// The hedge threshold elapsed first — Stage 3 should launch the
+    /// secondary.
+    ThresholdElapsed,
+    /// The end-to-end deadline elapsed first — [`execute_hedged`] should
+    /// harvest the still-pending primary within [`HARVEST_WINDOW`] and
+    /// re-raise an [`application_cancelled_error`].
+    DeadlineFired,
+}
+
+/// Builds a future that resolves when the supplied `deadline` elapses,
+/// or never resolves when `deadline` is `None`. Used by [`execute_hedged`]
+/// to layer end-to-end-deadline observation onto its `select`-based
+/// races without changing those races' shapes when no deadline is set.
+fn deadline_signal(deadline: Option<Instant>) -> Pin<Box<dyn Future<Output = ()> + Send>> {
+    let Some(d) = deadline else {
+        return Box::pin(pending::<()>());
+    };
+    let remaining_std = d.saturating_duration_since(Instant::now());
+    match azure_core::time::Duration::try_from(remaining_std) {
+        Ok(remaining) => Box::pin(azure_core::sleep(remaining)),
+        Err(_) => Box::pin(futures::future::ready(())),
+    }
+}
+
+/// Races `attempt` against [`HARVEST_WINDOW`] and, if `attempt` completes
+/// within the window, merges its diagnostics into `parent` so the
+/// returned [`application_cancelled_error`] carries the most-advanced
+/// attempt's request trail (spec §6.5 #7 / §14.2). The result itself is
+/// discarded — once the application cancellation has fired the operation
+/// outcome is the cancellation error regardless of whether the in-flight
+/// pipeline would have produced a final response.
+async fn harvest_remaining_attempt<F>(attempt: F, parent: &mut DiagnosticsContextBuilder)
+where
+    F: Future<
+            Output = (
+                azure_core::Result<TransportResult>,
+                DiagnosticsContextBuilder,
+            ),
+        > + Unpin
+        + Send,
+{
+    let window = match azure_core::time::Duration::try_from(HARVEST_WINDOW) {
+        Ok(d) => d,
+        Err(_) => return,
+    };
+    let timer = Box::pin(azure_core::sleep(window));
+    if let Either::Left(((_result, diag), _timer)) = select(attempt, timer).await {
+        parent.merge_hedge_attempt(diag);
+    }
+    // Timer arm: harvest window exceeded; loser future is dropped and its
+    // Drop chain cancels the in-flight transport (spec §6.5 #5).
+}
+
+/// Synthetic operation error returned by [`execute_hedged`] when the
+/// application-cancellation deadline fires while one or both hedge
+/// attempts are still racing. Mirrors the .NET v3 cancellation behavior
+/// described in spec §6.5 #7 / §14.2. The actual diagnostics from the
+/// most-advanced in-flight pipeline (when harvested within
+/// [`HARVEST_WINDOW`]) are attached to the operation's
+/// [`DiagnosticsContextBuilder`] before this error is returned — they
+/// are not carried inside the error itself, matching the rest of the
+/// operation pipeline's diagnostics model.
+fn application_cancelled_error() -> azure_core::Error {
+    azure_core::Error::with_message(
+        azure_core::error::ErrorKind::Other,
+        "operation cancelled by application deadline during cross-region hedging",
+    )
+}
+
+/// Races a still-pending hedge attempt against the end-to-end deadline.
+/// Returns `Some(result)` when the attempt completes first (normal
+/// path); returns `None` after harvesting the attempt's diagnostics
+/// within [`HARVEST_WINDOW`] when the deadline wins (spec §6.5 #7 / §14.2).
+///
+/// Used by [`execute_hedged`] in Stage 4's transient-fallthrough
+/// branches where one side has already classified as transient and the
+/// loop is `.await`-ing the other side — without this wrap a stuck
+/// transport future would block the operation past the deadline.
+async fn await_attempt_or_deadline_harvest<F>(
+    attempt: F,
+    deadline: Option<Instant>,
+    parent: &mut DiagnosticsContextBuilder,
+) -> Option<(
+    azure_core::Result<TransportResult>,
+    DiagnosticsContextBuilder,
+)>
+where
+    F: Future<
+            Output = (
+                azure_core::Result<TransportResult>,
+                DiagnosticsContextBuilder,
+            ),
+        > + Unpin
+        + Send,
+{
+    let deadline_fut = deadline_signal(deadline);
+    match select(attempt, deadline_fut).await {
+        Either::Left((result, _deadline)) => Some(result),
+        Either::Right(((), remaining)) => {
+            harvest_remaining_attempt(remaining, parent).await;
+            None
+        }
+    }
+}
+
+/// Returns `true` when `deadline` has elapsed relative to "now". A
+/// `None` deadline never elapses. Used by [`execute_hedged`]'s
+/// terminal both-transient branches to choose between surfacing
+/// [`application_cancelled_error`] (when the deadline drove the
+/// outcome) and [`transient_outcome_error`] (genuine transport-side
+/// transient failure on both regions).
+fn deadline_elapsed(deadline: Option<Instant>) -> bool {
+    deadline.is_some_and(|d| Instant::now() >= d)
+}
+
 /// Races a primary attempt against a single cross-region secondary
 /// attempt per [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md)
 /// §6.4. Returns the first **final** result; surfaces the most recent
@@ -1519,10 +1648,20 @@ async fn perform_single_attempt(
 ///    transient on the first-to-complete side simply `.await`s the
 ///    other side. Both transient → most recent error.
 ///
-/// Spec items NOT yet implemented in Part 4b (tracked for follow-up
-/// commits per [`docs/HEDGING_IMPLEMENTATION_PLAN.md`]):
+/// Application-cancellation (observed via [`AttemptContext::deadline`])
+/// is layered onto both races: the deadline future is wrapped into a
+/// 3-way `select` with the threshold timer (Stage 2) and the
+/// primary/secondary pair (Stage 4). When the deadline wins,
+/// [`harvest_remaining_attempt`] / [`harvest_remaining_pair`] give the
+/// most-advanced in-flight pipeline up to `HARVEST_WINDOW` to complete
+/// so its diagnostics can be attached to the returned
+/// [`application_cancelled_error`] (spec §6.5 #7 / §14.2). Loser
+/// futures are dropped — structural cancellation propagates through
+/// the transport pipeline (spec §6.5 #5).
 ///
-/// - §6.5 #7 application-cancel harvest within `HARVEST_WINDOW` (50ms).
+/// Spec items NOT yet implemented (tracked for follow-up commits per
+/// [`docs/HEDGING_IMPLEMENTATION_PLAN.md`]):
+///
 /// - §6.5 #8 / §9.5 `record_hedge_win` PPCB feedback on secondary win.
 /// - §8.2 / §9.6 shared hub-region-processing latch.
 /// - Operation-level retry inside each hedge (§8.4); we rely on
@@ -1559,6 +1698,10 @@ async fn execute_hedged(
     });
 
     // ── Stage 2: Threshold race (zero-overhead happy path) ────────────
+    // 3-way race: primary attempt vs threshold timer vs deadline. The
+    // deadline arm enables the §6.5 #7 application-cancel path; when
+    // the deadline has no value the deadline future never resolves and
+    // the race collapses to the 2-way primary-vs-threshold semantics.
     let threshold_duration =
         azure_core::time::Duration::try_from(threshold.get()).map_err(|_| {
             azure_core::Error::with_message(
@@ -1567,11 +1710,21 @@ async fn execute_hedged(
             )
         })?;
     let threshold_timer = Box::pin(azure_core::sleep(threshold_duration));
+    let deadline_timer = deadline_signal(ctx.deadline);
 
-    let primary_attempt = match select(primary_attempt, threshold_timer).await {
+    // Nest threshold-vs-deadline first so the outer select against the
+    // primary returns a single tagged event.
+    let timer_event = Box::pin(async move {
+        match select(threshold_timer, deadline_timer).await {
+            Either::Left(((), _)) => TimerEvent::ThresholdElapsed,
+            Either::Right(((), _)) => TimerEvent::DeadlineFired,
+        }
+    });
+
+    let primary_attempt = match select(primary_attempt, timer_event).await {
         Either::Left(((result, diag), _timer)) => {
-            // Primary completed before the threshold elapsed — no
-            // secondary attempt was constructed (spec §6.5 #3).
+            // Primary completed before either timer — no secondary attempt
+            // was constructed (spec §6.5 #3).
             parent_diagnostics.merge_hedge_attempt(diag);
             if let Some(region) = primary_region.clone() {
                 parent_diagnostics
@@ -1583,7 +1736,22 @@ async fn execute_hedged(
             );
             return finalize_hedge_attempt(Box::new(result?), parent_diagnostics);
         }
-        Either::Right(((), remaining_primary)) => remaining_primary,
+        Either::Right((TimerEvent::ThresholdElapsed, remaining_primary)) => remaining_primary,
+        Either::Right((TimerEvent::DeadlineFired, remaining_primary)) => {
+            // §6.5 #7 / §14.2: app-cancel observed at Stage 2 — only the
+            // primary is in-flight (no secondary was ever built). Harvest
+            // it within HARVEST_WINDOW for diagnostics, then re-raise.
+            tracing::debug!(
+                activity_id = %ctx.activity_id,
+                "execute_hedged: deadline fired pre-threshold; harvesting primary",
+            );
+            harvest_remaining_attempt(remaining_primary, &mut parent_diagnostics).await;
+            if let Some(region) = primary_region.clone() {
+                parent_diagnostics
+                    .set_hedge_diagnostics(HedgeDiagnostics::primary_only(strategy_config, region));
+            }
+            return Err(application_cancelled_error());
+        }
     };
 
     // ── Stage 3: Launch secondary ─────────────────────────────────────
@@ -1602,6 +1770,16 @@ async fn execute_hedged(
     );
 
     // ── Stage 4: Primary vs secondary race ────────────────────────────
+    // Per-attempt deadline observation lives inside the transport
+    // pipeline (TPS §5.1) — when the end-to-end deadline fires while an
+    // attempt is in flight, the transport returns `DeadlineExceeded`
+    // which classifies as transient. The two `.await` calls in the
+    // transient-fallthrough branches below are wrapped with
+    // [`await_attempt_or_deadline_harvest`] so a deadline that fires
+    // while we're waiting on the still-pending side triggers the
+    // §6.5 #7 harvest path instead of blocking. The both-transient
+    // terminal branches inspect the deadline to choose between
+    // [`application_cancelled_error`] and [`transient_outcome_error`].
     match select(primary_attempt, secondary_attempt).await {
         Either::Left(((primary_result, primary_diag), secondary_remaining)) => {
             parent_diagnostics.merge_hedge_attempt(primary_diag);
@@ -1620,8 +1798,28 @@ async fn execute_hedged(
                     finalize_hedge_attempt(tr, parent_diagnostics)
                 }
                 HedgeClass::Transient => {
-                    // Primary transient — wait for secondary.
-                    let (secondary_result, secondary_diag) = secondary_remaining.await;
+                    // Primary transient — wait for secondary (observing deadline).
+                    let Some((secondary_result, secondary_diag)) =
+                        await_attempt_or_deadline_harvest(
+                            secondary_remaining,
+                            ctx.deadline,
+                            &mut parent_diagnostics,
+                        )
+                        .await
+                    else {
+                        tracing::debug!(
+                            activity_id = %ctx.activity_id,
+                            "execute_hedged: deadline fired awaiting secondary after primary transient",
+                        );
+                        if let (Some(p), Some(s)) = (primary_region, secondary_region) {
+                            parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
+                                strategy_config,
+                                p,
+                                s,
+                            ));
+                        }
+                        return Err(application_cancelled_error());
+                    };
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
                     match classify_hedge_result(secondary_result) {
                         HedgeClass::Final(tr) => {
@@ -1637,24 +1835,29 @@ async fn execute_hedged(
                             finalize_hedge_attempt(tr, parent_diagnostics)
                         }
                         HedgeClass::Transient => {
-                            // Both transient — surface the most recent
-                            // attempt's outcome as the operation error.
-                            // Diagnostics are attached for observability;
-                            // the operation error doesn't carry them.
+                            // Both transient — attach hedge diagnostics for
+                            // observability and surface either the app-cancel
+                            // error (§6.5 #7) or the synthetic
+                            // both-transient error depending on whether the
+                            // deadline drove the outcome.
                             if let (Some(p), Some(s)) = (primary_region, secondary_region) {
                                 parent_diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::primary_won_after_hedge(
-                                        strategy_config,
-                                        p,
-                                        s,
-                                    ),
+                                    HedgeDiagnostics::hedge_won(strategy_config, p, s),
                                 );
                             }
-                            tracing::warn!(
-                                activity_id = %ctx.activity_id,
-                                "execute_hedged: both primary and secondary transient; surfacing secondary error",
-                            );
-                            Err(transient_outcome_error())
+                            if deadline_elapsed(ctx.deadline) {
+                                tracing::debug!(
+                                    activity_id = %ctx.activity_id,
+                                    "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
+                                );
+                                Err(application_cancelled_error())
+                            } else {
+                                tracing::warn!(
+                                    activity_id = %ctx.activity_id,
+                                    "execute_hedged: both primary and secondary transient; surfacing secondary error",
+                                );
+                                Err(transient_outcome_error())
+                            }
                         }
                     }
                 }
@@ -1678,8 +1881,27 @@ async fn execute_hedged(
                     finalize_hedge_attempt(tr, parent_diagnostics)
                 }
                 HedgeClass::Transient => {
-                    // Secondary transient — wait for primary.
-                    let (primary_result, primary_diag) = primary_remaining.await;
+                    // Secondary transient — wait for primary (observing deadline).
+                    let Some((primary_result, primary_diag)) = await_attempt_or_deadline_harvest(
+                        primary_remaining,
+                        ctx.deadline,
+                        &mut parent_diagnostics,
+                    )
+                    .await
+                    else {
+                        tracing::debug!(
+                            activity_id = %ctx.activity_id,
+                            "execute_hedged: deadline fired awaiting primary after secondary transient",
+                        );
+                        if let (Some(p), Some(s)) = (primary_region, secondary_region) {
+                            parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
+                                strategy_config,
+                                p,
+                                s,
+                            ));
+                        }
+                        return Err(application_cancelled_error());
+                    };
                     parent_diagnostics.merge_hedge_attempt(primary_diag);
                     match classify_hedge_result(primary_result) {
                         HedgeClass::Final(tr) => {
@@ -1701,18 +1923,22 @@ async fn execute_hedged(
                         HedgeClass::Transient => {
                             if let (Some(p), Some(s)) = (primary_region, secondary_region) {
                                 parent_diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::primary_won_after_hedge(
-                                        strategy_config,
-                                        p,
-                                        s,
-                                    ),
+                                    HedgeDiagnostics::hedge_won(strategy_config, p, s),
                                 );
                             }
-                            tracing::warn!(
-                                activity_id = %ctx.activity_id,
-                                "execute_hedged: both secondary and primary transient; surfacing primary error",
-                            );
-                            Err(transient_outcome_error())
+                            if deadline_elapsed(ctx.deadline) {
+                                tracing::debug!(
+                                    activity_id = %ctx.activity_id,
+                                    "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
+                                );
+                                Err(application_cancelled_error())
+                            } else {
+                                tracing::warn!(
+                                    activity_id = %ctx.activity_id,
+                                    "execute_hedged: both secondary and primary transient; surfacing primary error",
+                                );
+                                Err(transient_outcome_error())
+                            }
                         }
                     }
                 }
@@ -3714,5 +3940,152 @@ mod tests {
         // After merge the parent reflects the absorbed request and the
         // child is consumed.
         assert_eq!(parent.request_count(), 1);
+    }
+
+    // ── application-cancel harvest (Part 4c) ───────────────────────────
+
+    #[test]
+    fn deadline_elapsed_none_is_false() {
+        assert!(!super::deadline_elapsed(None));
+    }
+
+    #[test]
+    fn deadline_elapsed_future_is_false() {
+        let d = std::time::Instant::now() + Duration::from_secs(60);
+        assert!(!super::deadline_elapsed(Some(d)));
+    }
+
+    #[test]
+    fn deadline_elapsed_past_is_true() {
+        let d = std::time::Instant::now() - Duration::from_millis(1);
+        assert!(super::deadline_elapsed(Some(d)));
+    }
+
+    #[test]
+    fn application_cancelled_error_is_other_kind_with_app_cancel_message() {
+        let err = super::application_cancelled_error();
+        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
+        let msg = err.to_string();
+        assert!(
+            msg.contains("cancelled by application deadline"),
+            "unexpected error message: {msg}"
+        );
+    }
+
+    #[test]
+    fn harvest_window_is_50ms() {
+        // Load-bearing spec constant — surfaced as a test so the
+        // hedging_spec.md §6.5 #7 / §14.2 contract is enforced.
+        assert_eq!(super::HARVEST_WINDOW, Duration::from_millis(50));
+    }
+
+    #[tokio::test]
+    async fn deadline_signal_none_does_not_complete() {
+        // A `None` deadline must produce a never-resolving future so
+        // `select` against deadline collapses to whatever the other arm
+        // is awaiting (zero deadline observation overhead when unset).
+        let fut = super::deadline_signal(None);
+        let timer = Box::pin(azure_core::sleep(
+            azure_core::time::Duration::try_from(Duration::from_millis(20)).unwrap(),
+        ));
+        match futures::future::select(fut, timer).await {
+            futures::future::Either::Right(((), _)) => { /* expected */ }
+            futures::future::Either::Left(((), _)) => {
+                panic!("deadline_signal(None) must never resolve");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn deadline_signal_past_resolves_immediately() {
+        let past = std::time::Instant::now() - Duration::from_millis(10);
+        let fut = super::deadline_signal(Some(past));
+        // A short timer that should NOT win this race.
+        let timer = Box::pin(azure_core::sleep(
+            azure_core::time::Duration::try_from(Duration::from_millis(50)).unwrap(),
+        ));
+        match futures::future::select(fut, timer).await {
+            futures::future::Either::Left(((), _)) => { /* expected */ }
+            futures::future::Either::Right(((), _)) => {
+                panic!("deadline_signal(past) must resolve before a 50ms sleep");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn harvest_remaining_attempt_merges_diagnostics_when_attempt_completes_in_window() {
+        // Simulates a hedge attempt that produces a result quickly after
+        // the app-cancel deadline fires — the harvest window MUST capture
+        // its diagnostics into the parent.
+        use crate::diagnostics::{TransportHttpVersion, TransportKind};
+
+        let mut parent = test_diagnostics();
+        let mut child = parent.clone_for_hedge_attempt();
+        let endpoint = crate::driver::routing::CosmosEndpoint::global(
+            url::Url::parse("https://acct.example/").unwrap(),
+        );
+        let _ = child.start_request(
+            super::ExecutionContext::Hedging,
+            super::PipelineType::DataPlane,
+            super::TransportSecurity::Secure,
+            TransportKind::Gateway,
+            TransportHttpVersion::Http11,
+            &endpoint,
+        );
+
+        // The "attempt" completes immediately (well within HARVEST_WINDOW).
+        let attempt = Box::pin(async move {
+            (
+                Err::<super::TransportResult, _>(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "synthetic transport error",
+                )),
+                child,
+            )
+        });
+
+        super::harvest_remaining_attempt(attempt, &mut parent).await;
+        assert_eq!(parent.request_count(), 1);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn harvest_remaining_attempt_drops_attempt_when_window_exceeded() {
+        // A hedge attempt that never completes within HARVEST_WINDOW
+        // must be dropped — the parent diagnostics MUST NOT be mutated.
+        use crate::diagnostics::{TransportHttpVersion, TransportKind};
+
+        let mut parent = test_diagnostics();
+        let mut child = parent.clone_for_hedge_attempt();
+        let endpoint = crate::driver::routing::CosmosEndpoint::global(
+            url::Url::parse("https://acct.example/").unwrap(),
+        );
+        let _ = child.start_request(
+            super::ExecutionContext::Hedging,
+            super::PipelineType::DataPlane,
+            super::TransportSecurity::Secure,
+            TransportKind::Gateway,
+            TransportHttpVersion::Http11,
+            &endpoint,
+        );
+
+        // The "attempt" sleeps far beyond HARVEST_WINDOW.
+        let attempt = Box::pin(async move {
+            azure_core::sleep(
+                azure_core::time::Duration::try_from(Duration::from_secs(60)).unwrap(),
+            )
+            .await;
+            (
+                Err::<super::TransportResult, _>(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "should not reach here",
+                )),
+                child,
+            )
+        });
+
+        // Drive the test clock past HARVEST_WINDOW.
+        let parent_before = parent.request_count();
+        super::harvest_remaining_attempt(attempt, &mut parent).await;
+        assert_eq!(parent.request_count(), parent_before);
     }
 }
