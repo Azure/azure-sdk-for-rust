@@ -103,11 +103,26 @@ impl ResponseBody {
         }
     }
 
+    /// Returns the per-item raw buffers of a feed response, or wraps a
+    /// single-payload body as a one-element vector. A
+    /// [`NoPayload`](Self::NoPayload) body yields an empty `Vec`.
+    ///
+    /// This is the raw-bytes counterpart to
+    /// [`into_items`](Self::into_items); use it when callers want to decode
+    /// each item themselves instead of going through JSON.
+    pub fn items(self) -> azure_core::Result<Vec<Bytes>> {
+        match self {
+            Self::NoPayload => Ok(Vec::new()),
+            Self::Bytes(b) => Ok(vec![b]),
+            Self::Items(items) => Ok(items),
+        }
+    }
+
     /// Deserializes a single-payload body as JSON of type `T`.
     ///
     /// Returns an error if the body is a feed [`Items`](Self::Items) response
     /// or if the body is [`NoPayload`](Self::NoPayload) (nothing to parse).
-    pub fn single_item<T: DeserializeOwned>(self) -> azure_core::Result<T> {
+    pub fn into_single<T: DeserializeOwned>(self) -> azure_core::Result<T> {
         let bytes = self.single()?;
         serde_json::from_slice(&bytes).map_err(azure_core::Error::from)
     }
@@ -126,29 +141,6 @@ impl ResponseBody {
                 .into_iter()
                 .map(|b| serde_json::from_slice(&b).map_err(azure_core::Error::from))
                 .collect(),
-        }
-    }
-
-    /// Decodes a single-payload body as a UTF-8 string. A
-    /// [`NoPayload`](Self::NoPayload) body yields an empty `String`.
-    ///
-    /// Returns an error if the body is a feed [`Items`](Self::Items) response.
-    pub fn into_string(self) -> azure_core::Result<String> {
-        match self {
-            Self::NoPayload => Ok(String::new()),
-            Self::Bytes(b) => String::from_utf8(b.to_vec()).map_err(|e| {
-                azure_core::Error::with_message(
-                    ErrorKind::DataConversion,
-                    format!("response body was not valid UTF-8: {e}"),
-                )
-            }),
-            Self::Items(items) => Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
-                format!(
-                    "expected single response body, found feed response with {} item(s)",
-                    items.len()
-                ),
-            )),
         }
     }
 }
@@ -191,21 +183,16 @@ mod tests {
     }
 
     #[test]
-    fn no_payload_into_string_yields_empty_string() {
-        assert_eq!(ResponseBody::NoPayload.into_string().unwrap(), "");
-    }
-
-    #[test]
     fn no_payload_into_items_yields_empty_vec() {
         let items: Vec<serde_json::Value> = ResponseBody::NoPayload.into_items().unwrap();
         assert!(items.is_empty());
     }
 
     #[test]
-    fn no_payload_single_item_errors() {
+    fn no_payload_into_item_errors() {
         // No bytes to deserialize.
         let body = ResponseBody::NoPayload;
-        let result: azure_core::Result<serde_json::Value> = body.single_item();
+        let result: azure_core::Result<serde_json::Value> = body.into_single();
         assert!(result.is_err());
     }
 
@@ -255,13 +242,13 @@ mod tests {
     }
 
     #[test]
-    fn single_item_deserializes() {
+    fn into_item_deserializes() {
         #[derive(serde::Deserialize, PartialEq, Debug)]
         struct Foo {
             id: u32,
         }
         let body = ResponseBody::Bytes(Bytes::from_static(br#"{"id":7}"#));
-        let foo: Foo = body.single_item().unwrap();
+        let foo: Foo = body.into_single().unwrap();
         assert_eq!(foo, Foo { id: 7 });
     }
 
@@ -336,11 +323,5 @@ mod tests {
     #[test]
     fn is_empty_false_for_non_empty_bytes() {
         assert!(!ResponseBody::Bytes(Bytes::from_static(b"x")).is_empty());
-    }
-
-    #[test]
-    fn into_string_on_items_errors() {
-        let body = ResponseBody::from_items(vec![Bytes::from_static(b"a")]);
-        assert!(body.into_string().is_err());
     }
 }

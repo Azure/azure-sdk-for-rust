@@ -41,7 +41,7 @@ impl ItemResponse {
 
     /// Consumes the response and returns the response body.
     ///
-    /// Use [`ResponseBody::single_item`] to deserialize the contained
+    /// Use [`ResponseBody::into_single`] to deserialize the contained
     /// item, or [`into_model::<T>`](Self::into_model) for a one-shot convenience.
     pub fn into_body(self) -> ResponseBody {
         self.response.into_body()

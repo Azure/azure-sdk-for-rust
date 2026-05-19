@@ -149,7 +149,7 @@ async fn fetch_gateway_plan(
         .with_body(body);
 
     let response = driver.execute_operation(operation, op_options).await?;
-    response.into_body().single_item()
+    response.into_body().into_single()
 }
 
 /// Compare a locally-generated `queryInfo` JSON object against what the Cosmos DB

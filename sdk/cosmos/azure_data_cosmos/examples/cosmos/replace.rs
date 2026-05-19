@@ -98,7 +98,7 @@ impl ReplaceCommand {
                         println!("Replaced item successfully");
 
                         if show_updated {
-                            let created: serde_json::Value = r.into_body().single_item()?;
+                            let created: serde_json::Value = r.into_body().into_single()?;
                             println!("Newly replaced item:");
                             println!("{:#?}", created);
                         }

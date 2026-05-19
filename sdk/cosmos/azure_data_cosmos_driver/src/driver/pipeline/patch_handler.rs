@@ -1205,7 +1205,7 @@ mod tests {
 
         // The handler synthesizes the final response from the post-image
         // it computed locally on attempt #2 (visits=1 + 1 = 2).
-        let body: serde_json::Value = resp.into_body().single_item().unwrap();
+        let body: serde_json::Value = resp.into_body().into_single().unwrap();
         assert_eq!(body["visits"], serde_json::json!(2));
 
         let calls = dispatcher.calls();
@@ -1671,7 +1671,7 @@ mod tests {
         // must have been overwritten with the Replace's (`\"v2\"`).
         let body: serde_json::Value = resp
             .into_body()
-            .single_item()
+            .into_single()
             .expect("body must be valid JSON");
         assert_eq!(
             body.get("_etag").and_then(|v| v.as_str()),

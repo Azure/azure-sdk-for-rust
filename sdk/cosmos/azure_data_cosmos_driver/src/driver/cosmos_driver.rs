@@ -622,7 +622,7 @@ impl CosmosDriver {
             .await?;
         let db_props: DatabaseProperties = db_result
             .into_body()
-            .single_item()
+            .into_single()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let db_rid = db_props.system_properties.rid.ok_or_else(|| {
             azure_core::Error::with_message(
@@ -639,7 +639,7 @@ impl CosmosDriver {
             .await?;
         let container_props: ContainerProperties = container_result
             .into_body()
-            .single_item()
+            .into_single()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let container_rid = container_props
             .system_properties
@@ -678,7 +678,7 @@ impl CosmosDriver {
             .await?;
         let db_props: DatabaseProperties = db_result
             .into_body()
-            .single_item()
+            .into_single()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let resolved_db_rid = db_props
             .system_properties
@@ -694,7 +694,7 @@ impl CosmosDriver {
             .await?;
         let container_props: ContainerProperties = container_result
             .into_body()
-            .single_item()
+            .into_single()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let resolved_container_rid = container_props
             .system_properties
@@ -988,10 +988,10 @@ impl CosmosDriver {
                 .with_precondition(crate::models::Precondition::if_none_match(token.to_owned()));
         }
 
-        // Typed changefeed headers (`a-im: Incremental feed`, max-item-count = -1).
+        // Typed changefeed headers (`a-im: Incremental feed`, server-decides page size).
         let mut request_headers = operation.request_headers().clone();
         request_headers.incremental_feed = true;
-        request_headers.max_item_count = Some(-1);
+        request_headers.max_item_count = Some(crate::models::MaxItemCount::ServerDecides);
         operation = operation.with_request_headers(request_headers);
 
         let options = OperationOptions::default();

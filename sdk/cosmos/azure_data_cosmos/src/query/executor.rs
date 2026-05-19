@@ -136,8 +136,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
                 request_headers.populate_query_metrics = self.config.populate_query_metrics;
             }
             if request_headers.max_item_count.is_none() {
-                request_headers.max_item_count =
-                    self.config.max_item_count.map(|c| c.to_header_value());
+                request_headers.max_item_count = self.config.max_item_count;
             }
             operation = operation.with_request_headers(request_headers);
         }

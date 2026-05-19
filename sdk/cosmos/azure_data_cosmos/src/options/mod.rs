@@ -4,12 +4,11 @@
 use crate::models::ThroughputProperties;
 use std::fmt;
 use std::fmt::Display;
-use std::num::NonZeroI32;
 
 // Re-exported types that form part of the azure_data_cosmos public API.
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
-    ETag, Precondition, SessionToken, ThroughputControlGroupName,
+    ETag, MaxItemCount as MaxItemCountHint, Precondition, SessionToken, ThroughputControlGroupName,
 };
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{
@@ -355,32 +354,6 @@ pub struct QueryOptions {
     /// `None` omits the header so the SDK / service defaults apply. See
     /// [`MaxItemCountHint`] for the two explicit values.
     pub max_item_count: Option<MaxItemCountHint>,
-}
-
-/// Hint for the per-page item limit on Cosmos feed-style operations
-/// (`x-ms-max-item-count`).
-///
-/// Used by query options and (in a follow-up) changefeed options. Modeled as
-/// an explicit enum so callers don't have to traffic in the `-1` wire sentinel
-/// directly.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[non_exhaustive]
-pub enum MaxItemCountHint {
-    /// Let the service decide the page size (emits `x-ms-max-item-count: -1`).
-    ServerDecides,
-
-    /// Cap the page at `N` items.
-    Limit(NonZeroI32),
-}
-
-impl MaxItemCountHint {
-    /// Returns the wire-encoded value used for the `x-ms-max-item-count` header.
-    pub(crate) fn to_header_value(self) -> i32 {
-        match self {
-            Self::ServerDecides => -1,
-            Self::Limit(n) => n.get(),
-        }
-    }
 }
 
 impl QueryOptions {

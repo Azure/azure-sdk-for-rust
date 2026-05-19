@@ -35,7 +35,7 @@ use crate::seed::SharedItems;
 ///
 /// Returns `None` when the header is missing (e.g., on responses served
 /// from cache or when the gateway omitted the diagnostic header) or when
-/// the value is non-finite or negative.
+/// the value is infinite or negative.
 pub(crate) fn extract_backend_duration(headers: &ResponseHeaders) -> Option<Duration> {
     headers
         .server_duration_ms()

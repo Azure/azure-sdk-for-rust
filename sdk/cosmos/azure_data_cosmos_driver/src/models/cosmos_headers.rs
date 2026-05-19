@@ -7,6 +7,22 @@ use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken,
 use azure_core::http::headers::{HeaderValue, Headers};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::Serialize;
+use std::num::NonZeroU32;
+
+/// Per-page item-count hint for Cosmos feed-style operations
+/// (`x-ms-max-item-count`).
+///
+/// Used by query and changefeed reads. Modeled as an explicit enum so callers
+/// don't have to traffic in the `-1` wire sentinel directly.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum MaxItemCount {
+    /// Let the service decide the page size (emits `x-ms-max-item-count: -1`).
+    ServerDecides,
+
+    /// Cap the page at `N` items.
+    Limit(NonZeroU32),
+}
 
 /// Standard Cosmos DB request header names.
 ///
@@ -121,10 +137,10 @@ pub struct CosmosRequestHeaders {
 
     /// Maximum number of items to return per page (`x-ms-max-item-count`).
     ///
-    /// Used by feed/query/changefeed reads. A value of `-1` means "no limit"
-    /// (server decides). Callers should prefer setting this via the typed
-    /// field rather than passing the raw header through `custom_headers`.
-    pub max_item_count: Option<i32>,
+    /// Used by feed/query/changefeed reads. See [`MaxItemCount`] for the two
+    /// explicit values; the `-1` wire sentinel for "server decides" is
+    /// represented by [`MaxItemCount::ServerDecides`].
+    pub max_item_count: Option<MaxItemCount>,
 
     /// Requests an incremental change feed read (`a-im: Incremental feed`).
     ///
@@ -202,9 +218,13 @@ impl CosmosRequestHeaders {
             }
         }
         if let Some(count) = self.max_item_count {
+            let wire = match count {
+                MaxItemCount::ServerDecides => "-1".to_string(),
+                MaxItemCount::Limit(n) => n.get().to_string(),
+            };
             headers.insert(
                 request_header_names::MAX_ITEM_COUNT,
-                HeaderValue::from(count.to_string()),
+                HeaderValue::from(wire),
             );
         }
         if self.incremental_feed {
@@ -213,16 +233,16 @@ impl CosmosRequestHeaders {
                 HeaderValue::from_static(request_header_names::INCREMENTAL_FEED),
             );
         }
-        if self.populate_index_metrics == Some(true) {
+        if let Some(v) = self.populate_index_metrics {
             headers.insert(
                 request_header_names::POPULATE_INDEX_METRICS,
-                HeaderValue::from_static("true"),
+                HeaderValue::from_static(if v { "true" } else { "false" }),
             );
         }
-        if self.populate_query_metrics == Some(true) {
+        if let Some(v) = self.populate_query_metrics {
             headers.insert(
                 request_header_names::POPULATE_QUERY_METRICS,
-                HeaderValue::from_static("true"),
+                HeaderValue::from_static(if v { "true" } else { "false" }),
             );
         }
         if self.enable_cross_partition_query {

@@ -489,12 +489,12 @@ async fn sdk_create_and_read_item() {
         let real_read = real.read_item("pk1", "sdk-item-1", None).await.unwrap();
         compare_item_responses(&real_read, &emu_read);
 
-        let real_doc: TestItem = real_read.into_body().single_item().unwrap();
+        let real_doc: TestItem = real_read.into_body().into_single().unwrap();
         assert_eq!(real_doc.id, "sdk-item-1");
         assert_eq!(real_doc.value, 42);
     }
 
-    let emu_doc: TestItem = emu_read.into_body().single_item().unwrap();
+    let emu_doc: TestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_doc.id, "sdk-item-1");
     assert_eq!(emu_doc.value, 42);
 
@@ -563,11 +563,11 @@ async fn sdk_replace_item() {
             .unwrap();
         compare_item_responses(&real_replace, &emu_replace);
 
-        let real_doc: TestItem = real_replace.into_body().single_item().unwrap();
+        let real_doc: TestItem = real_replace.into_body().into_single().unwrap();
         assert_eq!(real_doc.value, 99);
     }
 
-    let emu_doc: TestItem = emu_replace.into_body().single_item().unwrap();
+    let emu_doc: TestItem = emu_replace.into_body().into_single().unwrap();
     assert_eq!(emu_doc.value, 99);
 
     let emu_read = emu_container
@@ -580,11 +580,11 @@ async fn sdk_replace_item() {
         let real_read = real.read_item("pk1", &updated.id, None).await.unwrap();
         compare_item_responses(&real_read, &emu_read);
 
-        let real_doc: TestItem = real_read.into_body().single_item().unwrap();
+        let real_doc: TestItem = real_read.into_body().into_single().unwrap();
         assert_eq!(real_doc.value, 99);
     }
 
-    let emu_read_doc: TestItem = emu_read.into_body().single_item().unwrap();
+    let emu_read_doc: TestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_read_doc.value, 99);
 
     backend.cleanup_real_database(&db_name).await;
@@ -652,11 +652,11 @@ async fn sdk_upsert_item() {
             .unwrap();
         compare_item_responses(&real_upsert_update, &emu_upsert_update);
 
-        let real_doc: TestItem = real_upsert_update.into_body().single_item().unwrap();
+        let real_doc: TestItem = real_upsert_update.into_body().into_single().unwrap();
         assert_eq!(real_doc.value, 20);
     }
 
-    let emu_doc: TestItem = emu_upsert_update.into_body().single_item().unwrap();
+    let emu_doc: TestItem = emu_upsert_update.into_body().into_single().unwrap();
     assert_eq!(emu_doc.value, 20);
 
     let emu_read = emu_container
@@ -669,11 +669,11 @@ async fn sdk_upsert_item() {
         let real_read = real.read_item("pk1", &updated.id, None).await.unwrap();
         compare_item_responses(&real_read, &emu_read);
 
-        let real_doc: TestItem = real_read.into_body().single_item().unwrap();
+        let real_doc: TestItem = real_read.into_body().into_single().unwrap();
         assert_eq!(real_doc.value, 20);
     }
 
-    let emu_read_doc: TestItem = emu_read.into_body().single_item().unwrap();
+    let emu_read_doc: TestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_read_doc.value, 20);
 
     backend.cleanup_real_database(&db_name).await;
@@ -764,12 +764,12 @@ async fn sdk_create_multiple_items_and_read_back() {
         let emu_read = emu_container.read_item("pk1", &id, None).await.unwrap();
         assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
-        let emu_doc: TestItem = emu_read.into_body().single_item().unwrap();
+        let emu_doc: TestItem = emu_read.into_body().into_single().unwrap();
         assert_eq!(emu_doc.value, i);
 
         if let Some(ref real) = real_container {
             let real_read = real.read_item("pk1", &id, None).await.unwrap();
-            let real_doc: TestItem = real_read.into_body().single_item().unwrap();
+            let real_doc: TestItem = real_read.into_body().into_single().unwrap();
             assert_eq!(real_doc.value, i);
         }
     }
@@ -904,7 +904,7 @@ async fn sdk_read_with_stale_session_token_returns_error() {
                 compare_sdk_errors(&real_err, &emu_err);
             }
             Ok(real_resp) => {
-                let real_doc: TestItem = real_resp.into_body().single_item().unwrap();
+                let real_doc: TestItem = real_resp.into_body().into_single().unwrap();
                 assert_eq!(real_doc.id, "seed-for-session");
                 assert_eq!(real_doc.pk, "pk1");
             }
@@ -992,7 +992,7 @@ async fn sdk_create_retries_after_429_throttling() {
     );
     assert_emulator_item_response(&emu_create, StatusCode::Created);
 
-    let emu_doc: PaddedTestItem = emu_create.into_body().single_item().unwrap();
+    let emu_doc: PaddedTestItem = emu_create.into_body().into_single().unwrap();
     assert_eq!(emu_doc.value, 42);
     assert_eq!(emu_doc.padding.len(), 8 * 1024);
 
@@ -1002,7 +1002,7 @@ async fn sdk_create_retries_after_429_throttling() {
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
-    let emu_read_doc: PaddedTestItem = emu_read.into_body().single_item().unwrap();
+    let emu_read_doc: PaddedTestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_read_doc.value, 42);
     assert_eq!(emu_read_doc.padding.len(), 8 * 1024);
 }
@@ -1180,7 +1180,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
 
     // Verify typed body.
-    let emu_doc: TestItem = emu_read.into_body().single_item().unwrap();
+    let emu_doc: TestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_doc.id, "fi-item");
     assert_eq!(emu_doc.pk, "pk1");
     assert_eq!(emu_doc.value, 42);
@@ -1220,7 +1220,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
             &HeaderValidationSpec::for_point_operation(),
             BodyValidationSpec::DocumentMatch,
         );
-        let real_doc: TestItem = real_read.into_body().single_item().unwrap();
+        let real_doc: TestItem = real_read.into_body().into_single().unwrap();
         assert_eq!(real_doc.id, "fi-item");
         assert_eq!(real_doc.value, 42);
 

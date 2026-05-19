@@ -305,7 +305,7 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 
             // Force 1 item per page to exercise continuation token pagination
             let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
-                std::num::NonZeroI32::new(1).unwrap(),
+                std::num::NonZeroU32::new(1).unwrap(),
             ));
 
             let mut pages = container_client
@@ -355,7 +355,7 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 
             // Force 1 item per page for cross-partition query
             let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
-                std::num::NonZeroI32::new(1).unwrap(),
+                std::num::NonZeroU32::new(1).unwrap(),
             ));
 
             let mut pages = container_client

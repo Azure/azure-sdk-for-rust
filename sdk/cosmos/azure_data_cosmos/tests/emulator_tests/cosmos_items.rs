@@ -155,8 +155,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Try to read the item
             let read_response = run_context
@@ -184,8 +183,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Update again, but this time ask for the response
             item.value = 12;
@@ -203,7 +201,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = response.into_body().single_item()?;
+            let updated_item: TestItem = response.into_body().into_single()?;
             assert_eq!(item, updated_item);
 
             // Delete the item
@@ -214,8 +212,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Try to read the item again, expecting a 404
             // loop with backoff to avoid test flakes due to eventual consistency
@@ -407,7 +404,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = upsert_response.into_body().single_item()?;
+            let updated_item: TestItem = upsert_response.into_body().into_single()?;
             assert_eq!(item, updated_item);
 
             Ok(())
@@ -1057,7 +1054,7 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
             );
 
             // Deserialize the body and verify it matches the original item.
-            let created: TestItem = response.into_body().single_item()?;
+            let created: TestItem = response.into_body().into_single()?;
             assert_eq!(item, created);
 
             Ok(())
@@ -1145,8 +1142,7 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
             );
 
             // Response body should be empty when ContentResponseOnWrite is not enabled.
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             Ok(())
         },

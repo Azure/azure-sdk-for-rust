@@ -46,7 +46,7 @@ pub use connection_string::ConnectionString;
 pub(crate) use consistency_level::DefaultConsistencyLevel;
 pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
-    CosmosResponseHeaders, OfferAutoscaleSettings,
+    CosmosResponseHeaders, MaxItemCount, OfferAutoscaleSettings,
 };
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;

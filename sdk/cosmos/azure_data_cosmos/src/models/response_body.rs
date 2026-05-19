@@ -31,21 +31,22 @@ impl ResponseBody {
         self.0.single()
     }
 
+    /// Returns the per-item raw buffers of a feed response, or wraps a
+    /// single-payload body as a one-element vector. A no-payload body yields
+    /// an empty `Vec`.
+    pub fn items(self) -> azure_core::Result<Vec<Bytes>> {
+        self.0.items()
+    }
+
     /// Deserializes a single-payload body as JSON of type `T`.
-    pub fn single_item<T: DeserializeOwned>(self) -> azure_core::Result<T> {
-        self.0.single_item()
+    pub fn into_single<T: DeserializeOwned>(self) -> azure_core::Result<T> {
+        self.0.into_single()
     }
 
     /// Deserializes every item in a feed response, or the single payload, as
     /// JSON of type `T`.
     pub fn into_items<T: DeserializeOwned>(self) -> azure_core::Result<Vec<T>> {
         self.0.into_items()
-    }
-
-    /// Decodes a single-payload body as a UTF-8 string. Returns an error if
-    /// the body is a feed response.
-    pub fn into_string(self) -> azure_core::Result<String> {
-        self.0.into_string()
     }
 }
 
