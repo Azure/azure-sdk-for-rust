@@ -37,8 +37,8 @@ struct TestItem {
 /// Helper function to assert common response properties.
 /// Verifies status code, that request charge is present and positive, endpoint is correct,
 /// and that session token, activity ID, and server duration are present.
-fn assert_response<T>(
-    response: &ItemResponse<T>,
+fn assert_response(
+    response: &ItemResponse,
     expected_status: StatusCode,
     _expected_endpoint: &str,
     read_operation: bool,
@@ -160,7 +160,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 
             // Try to read the item
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -220,10 +220,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             // Try to read the item again, expecting a 404
             // loop with backoff to avoid test flakes due to eventual consistency
             loop {
-                match container_client
-                    .read_item::<TestItem>(&pk, &item_id, None)
-                    .await
-                {
+                match container_client.read_item(&pk, &item_id, None).await {
                     Ok(_) => {
                         println!("expected a 404 error when reading the deleted item, retrying...");
                         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
@@ -281,7 +278,7 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<serde_json::Value>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -342,7 +339,7 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -467,7 +464,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, PartitionKey::NULL, &item_id, None)
+                .read_item(&container_client, PartitionKey::NULL, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -491,7 +488,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             // loop with backoff to avoid test flakes due to eventual consistency
             loop {
                 match container_client
-                    .read_item::<()>(PartitionKey::NULL, &item_id, None)
+                    .read_item(PartitionKey::NULL, &item_id, None)
                     .await
                 {
                     Ok(_) => {
@@ -889,7 +886,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Read the undefined-PK item using UNDEFINED - should succeed.
             let read_response = run_context
-                .read_item::<UndefinedPkItem>(
+                .read_item(
                     &container_client,
                     PartitionKey::UNDEFINED,
                     &item_no_pk_id,
@@ -907,7 +904,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Reading the undefined-PK item with NULL should fail (wrong partition).
             let result = container_client
-                .read_item::<serde_json::Value>(PartitionKey::NULL, &item_no_pk_id, None)
+                .read_item(PartitionKey::NULL, &item_no_pk_id, None)
                 .await;
             assert_eq!(
                 Some(azure_core::http::StatusCode::NotFound),
@@ -918,7 +915,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Read the null-PK item using NULL - should succeed.
             let read_response = run_context
-                .read_item::<TestItem>(
+                .read_item(
                     &container_client,
                     PartitionKey::NULL,
                     &item_null_pk_id,
@@ -936,7 +933,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Reading the null-PK item with UNDEFINED should fail (wrong partition).
             let result = container_client
-                .read_item::<serde_json::Value>(PartitionKey::UNDEFINED, &item_null_pk_id, None)
+                .read_item(PartitionKey::UNDEFINED, &item_null_pk_id, None)
                 .await;
             assert_eq!(
                 Some(azure_core::http::StatusCode::NotFound),

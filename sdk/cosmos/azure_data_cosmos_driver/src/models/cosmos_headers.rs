@@ -133,13 +133,21 @@ pub struct CosmosRequestHeaders {
     /// continuation token.
     pub incremental_feed: bool,
 
-    /// When `true`, request index-utilization metrics on the response
-    /// (`x-ms-cosmos-populateindexmetrics`). Only meaningful for query operations.
-    pub populate_index_metrics: bool,
+    /// Request index-utilization metrics on the response
+    /// (`x-ms-cosmos-populateindexmetrics`). Only meaningful for query
+    /// operations.
+    ///
+    /// `None` omits the header (service default); `Some(true)` / `Some(false)`
+    /// explicitly opt in or out. Using `Option<bool>` mirrors
+    /// [`max_item_count`](Self::max_item_count) and lets the query executor
+    /// distinguish "caller already chose" from "caller did not say".
+    pub populate_index_metrics: Option<bool>,
 
-    /// When `true`, request per-query metrics on the response
-    /// (`x-ms-documentdb-populatequerymetrics`). Only meaningful for query operations.
-    pub populate_query_metrics: bool,
+    /// Request per-query metrics on the response
+    /// (`x-ms-documentdb-populatequerymetrics`). Only meaningful for query
+    /// operations. See [`populate_index_metrics`](Self::populate_index_metrics)
+    /// for the `Option<bool>` semantics.
+    pub populate_query_metrics: Option<bool>,
 
     /// When `true`, the Gateway is allowed to route the query across multiple
     /// partitions (`x-ms-documentdb-query-enablecrosspartition`). Required for
@@ -205,13 +213,13 @@ impl CosmosRequestHeaders {
                 HeaderValue::from_static(request_header_names::INCREMENTAL_FEED),
             );
         }
-        if self.populate_index_metrics {
+        if self.populate_index_metrics == Some(true) {
             headers.insert(
                 request_header_names::POPULATE_INDEX_METRICS,
                 HeaderValue::from_static("true"),
             );
         }
-        if self.populate_query_metrics {
+        if self.populate_query_metrics == Some(true) {
             headers.insert(
                 request_header_names::POPULATE_QUERY_METRICS,
                 HeaderValue::from_static("true"),

@@ -3,7 +3,7 @@
 
 //! Provides the [`ItemResponse`] type for point item operation responses.
 
-use std::{marker::PhantomData, sync::Arc};
+use std::sync::Arc;
 
 use crate::models::{
     CosmosResponse, CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders,
@@ -17,19 +17,16 @@ use serde::de::DeserializeOwned;
 ///
 /// Headers are exposed via the typed [`ResponseHeaders`] struct; use
 /// `response.headers().etag()` to access the ETag for optimistic concurrency
-/// control.
+/// control. The item payload is consumed via [`into_body`](Self::into_body)
+/// or deserialized in one shot via [`into_model::<T>`](Self::into_model).
 #[derive(Debug)]
-pub struct ItemResponse<T> {
+pub struct ItemResponse {
     response: CosmosResponse,
-    _marker: PhantomData<fn() -> T>,
 }
 
-impl<T> ItemResponse<T> {
+impl ItemResponse {
     pub(crate) fn new(response: CosmosResponse) -> Self {
-        Self {
-            response,
-            _marker: PhantomData,
-        }
+        Self { response }
     }
 
     /// Returns the operation status.
@@ -45,7 +42,7 @@ impl<T> ItemResponse<T> {
     /// Consumes the response and returns the response body.
     ///
     /// Use [`ResponseBody::single_item`] to deserialize the contained
-    /// item, or [`into_model`](Self::into_model) for a one-shot convenience.
+    /// item, or [`into_model::<T>`](Self::into_model) for a one-shot convenience.
     pub fn into_body(self) -> ResponseBody {
         self.response.into_body()
     }
@@ -80,11 +77,13 @@ impl<T> ItemResponse<T> {
     pub fn item_lsn(&self) -> Option<u64> {
         self.response.cosmos_headers().item_lsn()
     }
-}
 
-impl<T: DeserializeOwned> ItemResponse<T> {
     /// Deserializes the response body into a model type.
-    pub fn into_model(self) -> azure_core::Result<T> {
+    ///
+    /// The target type `T` is supplied at the call site (turbofish) because
+    /// `ItemResponse` no longer carries a type parameter; this lets callers
+    /// inspect status / headers / diagnostics without committing to a `T`.
+    pub fn into_model<T: DeserializeOwned>(self) -> azure_core::Result<T> {
         self.response.into_model::<T>()
     }
 }

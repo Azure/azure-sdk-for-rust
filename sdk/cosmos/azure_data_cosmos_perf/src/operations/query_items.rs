@@ -11,7 +11,7 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::Query;
 use futures::StreamExt;
 
-use super::{extract_backend_duration_raw, Operation};
+use super::{extract_backend_duration, Operation};
 use crate::seed::SharedItems;
 
 /// Runs a single-partition query against a random seeded partition key.
@@ -49,7 +49,7 @@ impl Operation for QueryItemsOperation {
         let mut backend_total: Option<Duration> = None;
         while let Some(result) = stream.next().await {
             let page = result?;
-            if let Some(d) = extract_backend_duration_raw(page.headers()) {
+            if let Some(d) = extract_backend_duration(page.headers()) {
                 backend_total = Some(backend_total.unwrap_or_default() + d);
             }
         }

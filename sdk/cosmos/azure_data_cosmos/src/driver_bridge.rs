@@ -7,81 +7,19 @@
 //! operation/response types and the SDK's public-facing types. It is the shared
 //! foundation for routing SDK operations through the driver.
 
-use azure_core::http::headers::Headers;
-use azure_data_cosmos_driver::models::{CosmosResponse as DriverResponse, CosmosResponseHeaders};
+use azure_data_cosmos_driver::models::CosmosResponse as DriverResponse;
 
-use crate::{
-    constants::{
-        ACTIVITY_ID, CONTINUATION, COSMOS_INTERNAL_PARTITION_ID, INDEX_METRICS, ITEM_COUNT,
-        OFFER_REPLACE_PENDING, PARTITION_KEY_RANGE_ID, QUERY_METRICS, REQUEST_CHARGE,
-        REQUEST_DURATION_MS, SESSION_TOKEN, SUB_STATUS,
-    },
-    models::CosmosResponse,
-};
+use crate::models::CosmosResponse;
 
-/// Converts a driver [`DriverResponse`] into the SDK's typed [`CosmosResponse`].
+/// Converts a driver [`DriverResponse`] into the SDK's [`CosmosResponse`].
 ///
-/// The driver-owned body, status, headers, and diagnostics are plumbed through
-/// unchanged — the SDK no longer synthesizes an `azure_core::http::Response<T>`
-/// for its own response wrappers. Headers are already decoded by the driver
-/// (e.g., base64 for index metrics) and are stored as-is.
+/// Thin passthrough over [`CosmosResponse::from_driver_response`]; kept as the
+/// single import point so call sites stay short and the bridge module remains
+/// the conventional place to look when chasing driver↔SDK conversions.
 pub(crate) fn driver_response_to_cosmos_response(
     driver_response: DriverResponse,
 ) -> CosmosResponse {
     CosmosResponse::from_driver_response(driver_response)
-}
-
-/// Synthesizes raw [`Headers`] from driver-parsed [`CosmosResponseHeaders`].
-///
-/// Used by the feed pager path, which still exposes `&Headers` on its public
-/// API. Only headers that were parsed by the driver are included; any "extra"
-/// headers from the server that the driver did not capture are lost.
-pub(crate) fn driver_response_headers_to_headers(
-    cosmos_headers: &CosmosResponseHeaders,
-) -> Headers {
-    let mut headers = Headers::new();
-
-    if let Some(activity_id) = &cosmos_headers.activity_id {
-        headers.insert(ACTIVITY_ID, activity_id.as_str().to_owned());
-    }
-    if let Some(charge) = &cosmos_headers.request_charge {
-        headers.insert(REQUEST_CHARGE, charge.value().to_string());
-    }
-    if let Some(session_token) = &cosmos_headers.session_token {
-        headers.insert(SESSION_TOKEN, session_token.as_str().to_owned());
-    }
-    if let Some(etag) = &cosmos_headers.etag {
-        headers.insert(azure_core::http::headers::ETAG, etag.as_str().to_owned());
-    }
-    if let Some(continuation) = &cosmos_headers.continuation {
-        headers.insert(CONTINUATION, continuation.clone());
-    }
-    if let Some(item_count) = cosmos_headers.item_count {
-        headers.insert(ITEM_COUNT, item_count.to_string());
-    }
-    if let Some(substatus) = &cosmos_headers.substatus {
-        headers.insert(SUB_STATUS, substatus.value().to_string());
-    }
-    if let Some(server_duration) = cosmos_headers.server_duration_ms {
-        headers.insert(REQUEST_DURATION_MS, server_duration.to_string());
-    }
-    if let Some(index_metrics) = &cosmos_headers.index_metrics {
-        headers.insert(INDEX_METRICS, index_metrics.clone());
-    }
-    if let Some(query_metrics) = &cosmos_headers.query_metrics {
-        headers.insert(QUERY_METRICS, query_metrics.clone());
-    }
-    if let Some(pending) = cosmos_headers.offer_replace_pending {
-        headers.insert(OFFER_REPLACE_PENDING, pending.to_string());
-    }
-    if let Some(pk_range_id) = &cosmos_headers.partition_key_range_id {
-        headers.insert(PARTITION_KEY_RANGE_ID, pk_range_id.clone());
-    }
-    if let Some(internal_id) = &cosmos_headers.internal_partition_id {
-        headers.insert(COSMOS_INTERNAL_PARTITION_ID, internal_id.clone());
-    }
-
-    headers
 }
 
 /// Translates SDK fault injection rules into driver fault injection rules.
@@ -208,76 +146,7 @@ pub(crate) fn sdk_fi_rules_to_driver_fi_rules(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use azure_data_cosmos_driver::models::{
-        ActivityId, CosmosResponseHeaders, ETag, RequestCharge, SessionToken as DriverSessionToken,
-        SubStatusCode,
-    };
-
-    fn make_headers_all_some() -> CosmosResponseHeaders {
-        let mut h = CosmosResponseHeaders::new();
-        h.activity_id = Some(ActivityId::from_string("act-123".to_string()));
-        h.request_charge = Some(RequestCharge::new(4.2));
-        h.session_token = Some(DriverSessionToken::new("session-token".to_string()));
-        h.etag = Some(ETag::new("\"etag-value\"".to_string()));
-        h.continuation = Some("cont-token".to_string());
-        h.item_count = Some(42);
-        h.substatus = Some(SubStatusCode::new(0));
-        h.offer_replace_pending = Some(true);
-        h.partition_key_range_id = Some("5".to_string());
-        h.internal_partition_id = Some("int-part-99".to_string());
-        h
-    }
-
-    #[test]
-    fn headers_all_some() {
-        let headers = driver_response_headers_to_headers(&make_headers_all_some());
-
-        assert_eq!(headers.get_optional_str(&ACTIVITY_ID), Some("act-123"));
-        assert_eq!(headers.get_optional_str(&REQUEST_CHARGE), Some("4.2"));
-        assert_eq!(
-            headers.get_optional_str(&SESSION_TOKEN),
-            Some("session-token")
-        );
-        assert_eq!(
-            headers.get_optional_str(&azure_core::http::headers::ETAG),
-            Some("\"etag-value\""),
-        );
-        assert_eq!(headers.get_optional_str(&CONTINUATION), Some("cont-token"));
-        assert_eq!(headers.get_optional_str(&ITEM_COUNT), Some("42"));
-        assert_eq!(headers.get_optional_str(&SUB_STATUS), Some("0"));
-        assert_eq!(
-            headers.get_optional_str(&OFFER_REPLACE_PENDING),
-            Some("true")
-        );
-        assert_eq!(headers.get_optional_str(&PARTITION_KEY_RANGE_ID), Some("5"));
-        assert_eq!(
-            headers.get_optional_str(&COSMOS_INTERNAL_PARTITION_ID),
-            Some("int-part-99")
-        );
-    }
-
-    #[test]
-    fn headers_all_none() {
-        let headers = driver_response_headers_to_headers(&CosmosResponseHeaders::new());
-
-        assert_eq!(headers.get_optional_str(&ACTIVITY_ID), None);
-        assert_eq!(headers.get_optional_str(&REQUEST_CHARGE), None);
-        assert_eq!(headers.get_optional_str(&SESSION_TOKEN), None);
-        assert_eq!(
-            headers.get_optional_str(&azure_core::http::headers::ETAG),
-            None
-        );
-        assert_eq!(headers.get_optional_str(&CONTINUATION), None);
-        assert_eq!(headers.get_optional_str(&ITEM_COUNT), None);
-        assert_eq!(headers.get_optional_str(&SUB_STATUS), None);
-        assert_eq!(headers.get_optional_str(&OFFER_REPLACE_PENDING), None);
-        assert_eq!(headers.get_optional_str(&PARTITION_KEY_RANGE_ID), None);
-        assert_eq!(
-            headers.get_optional_str(&COSMOS_INTERNAL_PARTITION_ID),
-            None
-        );
-    }
+    use azure_data_cosmos_driver::models::CosmosResponseHeaders;
 
     /// Regression test: index_metrics (base64-decoded by the driver) must survive
     /// the driver→SDK bridge without double-decoding.

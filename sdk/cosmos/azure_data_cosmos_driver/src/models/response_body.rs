@@ -45,11 +45,35 @@ impl ResponseBody {
         Self::Bytes(Bytes::new())
     }
 
-    /// Returns `true` if the body carries no bytes.
+    /// Builds a single-payload [`Bytes`](Self::Bytes) body.
+    ///
+    /// Use this for point reads/writes, batches, and any other operation that
+    /// returns a single document or envelope.
+    pub fn from_bytes(bytes: impl Into<Bytes>) -> Self {
+        Self::Bytes(bytes.into())
+    }
+
+    /// Builds a feed-style [`Items`](Self::Items) body from pre-sliced
+    /// per-document buffers.
+    ///
+    /// Use this for Query / ChangeFeed responses where the pipeline has
+    /// already split the `Documents` array via zero-copy
+    /// [`Bytes::slice`](bytes::Bytes::slice).
+    pub fn from_items(items: Vec<Bytes>) -> Self {
+        Self::Items(items)
+    }
+
+    /// Returns `true` if the body carries no response payload from the
+    /// service.
+    ///
+    /// * [`Bytes`](Self::Bytes) is empty when the single buffer is empty.
+    /// * [`Items`](Self::Items) is empty when the feed contains zero
+    ///   documents. Note: individual document slices are not inspected; a
+    ///   feed of one or more (possibly empty) items is *not* empty.
     pub fn is_empty(&self) -> bool {
         match self {
             Self::Bytes(b) => b.is_empty(),
-            Self::Items(items) => items.iter().all(|b| b.is_empty()),
+            Self::Items(items) => items.is_empty(),
         }
     }
 
@@ -113,9 +137,15 @@ impl ResponseBody {
     }
 }
 
-impl<B: Into<Bytes>> From<B> for ResponseBody {
-    fn from(bytes: B) -> Self {
-        Self::Bytes(bytes.into())
+impl From<Bytes> for ResponseBody {
+    fn from(bytes: Bytes) -> Self {
+        Self::Bytes(bytes)
+    }
+}
+
+impl From<Vec<u8>> for ResponseBody {
+    fn from(bytes: Vec<u8>) -> Self {
+        Self::Bytes(Bytes::from(bytes))
     }
 }
 
@@ -211,5 +241,35 @@ mod tests {
             ResponseBody::Bytes(b) => assert_eq!(&b[..], &[1u8, 2, 3]),
             _ => panic!("expected Bytes variant"),
         }
+    }
+
+    #[test]
+    fn from_bytes_constructor() {
+        let body = ResponseBody::from_bytes(Bytes::from_static(b"abc"));
+        match &body {
+            ResponseBody::Bytes(b) => assert_eq!(&b[..], b"abc"),
+            _ => panic!("expected Bytes variant"),
+        }
+    }
+
+    #[test]
+    fn from_items_constructor() {
+        let body = ResponseBody::from_items(vec![Bytes::from_static(b"a")]);
+        match &body {
+            ResponseBody::Items(v) => assert_eq!(v.len(), 1),
+            _ => panic!("expected Items variant"),
+        }
+    }
+
+    #[test]
+    fn is_empty_for_empty_items_vec() {
+        assert!(ResponseBody::from_items(Vec::new()).is_empty());
+    }
+
+    #[test]
+    fn is_empty_false_for_items_with_any_entry() {
+        // Even an empty payload counts as "the feed contained a document".
+        let body = ResponseBody::from_items(vec![Bytes::new()]);
+        assert!(!body.is_empty());
     }
 }

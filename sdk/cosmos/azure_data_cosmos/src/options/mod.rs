@@ -4,7 +4,7 @@
 use crate::models::ThroughputProperties;
 use std::fmt;
 use std::fmt::Display;
-use std::num::NonZeroI32;
+use std::num::NonZeroU32;
 
 // Re-exported types that form part of the azure_data_cosmos public API.
 #[doc(inline)]
@@ -263,10 +263,42 @@ pub struct QueryOptions {
     /// `QueryFeedPage::query_metrics()`.
     pub populate_query_metrics: bool,
 
-    /// Maximum number of items to return per page (`x-ms-max-item-count`).
+    /// Maximum number of items the service should return per page
+    /// (`x-ms-max-item-count`).
     ///
-    /// `None` omits the header (SDK / service uses its default). `NonZeroI32::new(-1).unwrap()` is the documented "server decides" sentinel.
-    pub max_item_count: Option<NonZeroI32>,
+    /// `None` omits the header so the SDK / service defaults apply. See
+    /// [`MaxItemCountHint`] for the two explicit values.
+    pub max_item_count: Option<MaxItemCountHint>,
+}
+
+/// Hint for the per-page item limit on Cosmos feed-style operations
+/// (`x-ms-max-item-count`).
+///
+/// Used by query options and (in a follow-up) changefeed options. Modeled as
+/// an explicit enum so callers don't have to traffic in the `-1` wire sentinel
+/// directly.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum MaxItemCountHint {
+    /// Let the service decide the page size (emits `x-ms-max-item-count: -1`).
+    ServerDecides,
+
+    /// Cap the page at `N` items.
+    Limit(NonZeroU32),
+}
+
+impl MaxItemCountHint {
+    /// Returns the wire-encoded value used for the `x-ms-max-item-count` header.
+    pub(crate) fn to_header_value(self) -> i32 {
+        match self {
+            Self::ServerDecides => -1,
+            // `NonZeroU32 -> i32` may overflow only for values above
+            // `i32::MAX`. Cosmos does not accept anything that large, and the
+            // type constraint already excludes 0, so saturating is the safe
+            // and faithful conversion.
+            Self::Limit(n) => i32::try_from(n.get()).unwrap_or(i32::MAX),
+        }
+    }
 }
 
 impl QueryOptions {
@@ -296,9 +328,9 @@ impl QueryOptions {
 
     /// Sets the maximum number of items the service should return per page.
     ///
-    /// Pass NonZeroI32::new(100).unwrap() for a concrete page size, or
-    /// NonZeroI32::new(-1).unwrap() to ask the service to decide.
-    pub fn with_max_item_count(mut self, max_item_count: NonZeroI32) -> Self {
+    /// Pass [`MaxItemCountHint::Limit`] with a concrete page size, or
+    /// [`MaxItemCountHint::ServerDecides`] to let the service choose.
+    pub fn with_max_item_count(mut self, max_item_count: MaxItemCountHint) -> Self {
         self.max_item_count = Some(max_item_count);
         self
     }

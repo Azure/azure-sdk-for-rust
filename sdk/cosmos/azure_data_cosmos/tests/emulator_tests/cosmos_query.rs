@@ -8,7 +8,11 @@ use super::framework;
 use std::error::Error;
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::{constants, options::QueryOptions, Query};
+use azure_data_cosmos::{
+    constants,
+    options::{MaxItemCountHint, QueryOptions},
+    Query,
+};
 use framework::{test_data, MockItem, TestClient};
 use futures::{StreamExt, TryStreamExt};
 
@@ -300,8 +304,9 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
             );
 
             // Force 1 item per page to exercise continuation token pagination
-            let options =
-                QueryOptions::default().with_max_item_count(std::num::NonZeroI32::new(1).unwrap());
+            let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(1).unwrap(),
+            ));
 
             let mut pages = container_client
                 .query_items::<MockItem>("select * from c", "partition0", Some(options))?
@@ -349,8 +354,9 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
             // Force 1 item per page for cross-partition query
-            let options =
-                QueryOptions::default().with_max_item_count(std::num::NonZeroI32::new(1).unwrap());
+            let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(1).unwrap(),
+            ));
 
             let mut pages = container_client
                 .query_items::<MockItem>("select * from c", (), Some(options))?

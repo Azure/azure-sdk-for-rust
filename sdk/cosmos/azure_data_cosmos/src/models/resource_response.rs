@@ -13,9 +13,13 @@ use serde::de::DeserializeOwned;
 
 /// A response from a resource management operation (databases, containers, throughput).
 ///
-/// Provides access to common Cosmos response metadata. Currently has no
-/// operation-specific fields, but using a dedicated type ensures future fields
-/// can be added without breaking changes.
+/// Carries common Cosmos response metadata plus a type parameter `T` that names
+/// the model the body deserializes into. Unlike [`ItemResponse`](crate::ItemResponse)
+/// — where the payload type is user-defined and the SDK never knows it — every
+/// `ResourceResponse`-returning client method statically knows its model
+/// (`DatabaseProperties`, `ContainerProperties`, `ThroughputProperties`, …), so
+/// keeping `T` on the response type lets callers write `.into_model()?` without
+/// a turbofish.
 #[derive(Debug)]
 pub struct ResourceResponse<T> {
     response: CosmosResponse,
@@ -66,7 +70,8 @@ impl<T> ResourceResponse<T> {
 }
 
 impl<T: DeserializeOwned> ResourceResponse<T> {
-    /// Deserializes the response body into a model type.
+    /// Deserializes the response body into the model type `T` named by this
+    /// response.
     pub fn into_model(self) -> azure_core::Result<T> {
         self.response.into_model::<T>()
     }

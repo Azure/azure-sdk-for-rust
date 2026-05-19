@@ -627,16 +627,13 @@ impl TestRunContext {
 
     /// Reads an item from the specified container with exponential backoff retries on 404 errors.
     /// This is useful for tests where eventual consistency may cause transient read failures.
-    pub async fn read_item<T>(
+    pub async fn read_item(
         &self,
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemReadOptions>,
-    ) -> azure_core::Result<ItemResponse<T>>
-    where
-        T: serde::de::DeserializeOwned,
-    {
+    ) -> azure_core::Result<ItemResponse> {
         // Own the inputs so no borrowed data must live across `.await`.
         let partition_key = partition_key.into().to_owned();
         let item_id = item_id.to_owned();
@@ -732,7 +729,8 @@ impl TestRunContext {
                 .await
             {
                 Ok(response) => {
-                    let created = response.into_model()?;
+                    let created =
+                        response.into_model()?;
                     return db_client.container_client(&created.id).await;
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
@@ -752,7 +750,8 @@ impl TestRunContext {
                     let response = db_client
                         .create_container(properties.clone(), options.clone())
                         .await?;
-                    let created = response.into_model()?;
+                    let created =
+                        response.into_model()?;
                     return db_client.container_client(&created.id).await;
                 }
                 Err(e) => return Err(e),

@@ -224,6 +224,51 @@ mod tests {
         assert!(!is_offer_replace_pending(&response));
     }
 
+    /// End-to-end regression for the case-insensitive `x-ms-offer-replace-pending`
+    /// parsing fix: a Pascal-case `True` from the wire must drive the poller's
+    /// pending check, not silently drop to `None` (which previously caused the
+    /// poller to declare the replace done while it was still in progress).
+    #[test]
+    fn is_offer_replace_pending_handles_pascal_case_true_from_headers() {
+        use azure_core::http::headers::Headers;
+        use azure_data_cosmos_driver::models::CosmosResponseHeaders;
+
+        for raw in ["True", "TRUE", "tRuE"] {
+            let mut wire_headers = Headers::new();
+            wire_headers.insert(crate::constants::OFFER_REPLACE_PENDING, raw.to_owned());
+            let parsed = CosmosResponseHeaders::from_headers(&wire_headers);
+            assert_eq!(
+                parsed.offer_replace_pending,
+                Some(true),
+                "{raw:?} should parse as Some(true) from the wire"
+            );
+            let response = build_mock_response_from_parsed_headers(StatusCode::Ok, parsed);
+            assert!(
+                is_offer_replace_pending(&response),
+                "{raw:?} must keep the poller marked as pending"
+            );
+        }
+    }
+
+    fn build_mock_response_from_parsed_headers(
+        status: StatusCode,
+        cosmos_headers: azure_data_cosmos_driver::models::CosmosResponseHeaders,
+    ) -> CosmosResponse {
+        use crate::DiagnosticsContext;
+        use azure_data_cosmos_driver::models::{ActivityId, CosmosStatus, ResponseBody};
+        use std::sync::Arc;
+
+        let body = ResponseBody::from_bytes(azure_core::Bytes::from_static(b"{}"));
+        let cosmos_status = CosmosStatus::new(status);
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid()));
+        CosmosResponse::from_driver_parts(
+            body.into(),
+            cosmos_headers.into(),
+            cosmos_status,
+            diagnostics,
+        )
+    }
+
     #[tokio::test]
     async fn completed_poller_yields_one_item() {
         let response = create_mock_response(StatusCode::Ok, None);

@@ -3,7 +3,7 @@
 
 //! Query execution implementation.
 
-use std::{collections::HashMap, num::NonZeroI32, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_driver::{
@@ -13,7 +13,7 @@ use azure_data_cosmos_driver::{
 };
 use serde::de::DeserializeOwned;
 
-use crate::{constants, driver_bridge, Query, QueryFeedPage};
+use crate::{constants, driver_bridge, options::MaxItemCountHint, Query, QueryFeedPage};
 
 /// Per-execution configuration for [`QueryExecutor`].
 ///
@@ -29,8 +29,8 @@ pub(crate) struct QueryExecutorConfig {
     pub populate_index_metrics: bool,
     /// Request `x-ms-documentdb-populatequerymetrics` on each page.
     pub populate_query_metrics: bool,
-    /// Page size for `x-ms-max-item-count` (`-1` means "server decides").
-    pub max_item_count: Option<NonZeroI32>,
+    /// Page size for `x-ms-max-item-count`.
+    pub max_item_count: Option<MaxItemCountHint>,
 }
 
 /// A query executor that sends queries through the Cosmos driver.
@@ -120,18 +120,28 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
             operation = operation.with_session_token(session_token.clone());
         }
 
-        // Typed per-query request headers, applied additively: caller-supplied
-        // values already set on the operation always win, and the executor
-        // only fills in fields that are not already set / are not already true.
+        // Typed per-query request headers, applied additively with consistent
+        // precedence: anything the caller has already set on the operation
+        // (`is_some()` for `Option` fields) wins, and the executor only fills
+        // in fields that are not already set.
         if self.config.populate_index_metrics
             || self.config.populate_query_metrics
             || self.config.max_item_count.is_some()
         {
             let mut request_headers = operation.request_headers().clone();
-            request_headers.populate_index_metrics |= self.config.populate_index_metrics;
-            request_headers.populate_query_metrics |= self.config.populate_query_metrics;
+            if request_headers.populate_index_metrics.is_none()
+                && self.config.populate_index_metrics
+            {
+                request_headers.populate_index_metrics = Some(true);
+            }
+            if request_headers.populate_query_metrics.is_none()
+                && self.config.populate_query_metrics
+            {
+                request_headers.populate_query_metrics = Some(true);
+            }
             if request_headers.max_item_count.is_none() {
-                request_headers.max_item_count = self.config.max_item_count.map(|c| c.get());
+                request_headers.max_item_count =
+                    self.config.max_item_count.map(|c| c.to_header_value());
             }
             operation = operation.with_request_headers(request_headers);
         }

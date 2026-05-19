@@ -230,7 +230,17 @@ impl ResponseSnapshot {
         let body = match response.body() {
             ResponseBody::Bytes(b) if b.is_empty() => None,
             ResponseBody::Bytes(b) => serde_json::from_slice(b).ok(),
-            ResponseBody::Items(_) => None,
+            // No production path emits `Items` for the operations exercised by
+            // this validation framework today (point ops / batch / metadata).
+            // Until the in-memory emulator harness grows query/changefeed
+            // coverage and we decide how to stitch the per-document slices
+            // into a comparable snapshot, fail loudly rather than silently
+            // dropping the body and letting tests pass on a regression.
+            ResponseBody::Items(_) => panic!(
+                "ResponseSnapshot::capture: received Items response body but the validation \
+                 framework currently only supports single-payload responses. Add feed-aware \
+                 body comparison before exercising this path."
+            ),
         };
         Self {
             status_code: u16::from(response.status()),

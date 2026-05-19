@@ -57,8 +57,10 @@ impl From<DriverResponseBody> for ResponseBody {
     }
 }
 
-impl From<ResponseBody> for DriverResponseBody {
-    fn from(body: ResponseBody) -> Self {
-        body.0
-    }
+// Intentionally `pub(crate)`: SDK consumers must go through the typed
+// accessors on `ResponseBody`; the driver type stays an implementation detail.
+// No `From<ResponseBody> for DriverResponseBody` is exposed.
+#[allow(dead_code)]
+pub(crate) fn into_driver_response_body(body: ResponseBody) -> DriverResponseBody {
+    body.0
 }

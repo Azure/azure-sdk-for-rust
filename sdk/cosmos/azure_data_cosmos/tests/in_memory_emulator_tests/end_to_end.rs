@@ -62,20 +62,21 @@ struct PaddedTestItem {
 
 /// Builds a [`ResponseSnapshot`] from an SDK [`ItemResponse`] so the shared
 /// validation framework in [`super::validation`] can be reused.
-fn snapshot_from_item_response<T>(resp: &ItemResponse<T>, label: &str) -> ResponseSnapshot {
+fn snapshot_from_item_response(resp: &ItemResponse, label: &str) -> ResponseSnapshot {
     let headers = resp.headers().clone();
+    let sub_status_code = headers.substatus().map(|s| s.value());
     ResponseSnapshot {
         status_code: u16::from(resp.status()),
-        sub_status_code: headers.substatus().map(|s| s.value()),
-        headers: headers.into(),
+        sub_status_code,
+        headers: headers.__into_driver_headers(),
         body: None, // body comparison handled separately via deserialization
         label: label.to_owned(),
     }
 }
 
-fn compare_item_responses_with_spec<T>(
-    real: &ItemResponse<T>,
-    emu: &ItemResponse<T>,
+fn compare_item_responses_with_spec(
+    real: &ItemResponse,
+    emu: &ItemResponse,
     header_spec: &HeaderValidationSpec,
 ) {
     let real_snap = snapshot_from_item_response(real, "real");
@@ -90,7 +91,7 @@ fn compare_item_responses_with_spec<T>(
 
 /// Compares an emulator and real [`ItemResponse`] using the shared header
 /// validation spec for point operations.
-fn compare_item_responses<T>(real: &ItemResponse<T>, emu: &ItemResponse<T>) {
+fn compare_item_responses(real: &ItemResponse, emu: &ItemResponse) {
     compare_item_responses_with_spec(real, emu, &HeaderValidationSpec::for_point_operation());
 }
 
@@ -145,7 +146,7 @@ fn assert_read_session_not_available(err: &azure_core::Error, label: &str) {
 }
 
 /// Asserts emulator-only response metadata when no real account is available.
-fn assert_emulator_item_response<T>(resp: &ItemResponse<T>, expected_status: StatusCode) {
+fn assert_emulator_item_response(resp: &ItemResponse, expected_status: StatusCode) {
     assert_eq!(resp.status(), expected_status);
     let snap = snapshot_from_item_response(resp, "emulator");
     assert!(
@@ -172,11 +173,11 @@ async fn read_item_with_503_retry(
     pk: &'static str,
     id: &'static str,
     label: &str,
-) -> ItemResponse<TestItem> {
+) -> ItemResponse {
     const MAX_ATTEMPTS: usize = 5;
     let mut last_err: Option<azure_core::Error> = None;
     for attempt in 1..=MAX_ATTEMPTS {
-        match container.read_item::<TestItem>(pk, id, None).await {
+        match container.read_item(pk, id, None).await {
             Ok(resp) => {
                 eprintln!("[{label}] read_item succeeded on attempt {attempt}/{MAX_ATTEMPTS}",);
                 return resp;
@@ -475,7 +476,7 @@ async fn sdk_create_and_read_item() {
 
     // ── Read item back ───────────────────────────────────────────
     let emu_read = emu_container
-        .read_item::<TestItem>("pk1", "sdk-item-1", None)
+        .read_item("pk1", "sdk-item-1", None)
         .await
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
@@ -485,10 +486,7 @@ async fn sdk_create_and_read_item() {
     );
 
     if let Some(ref real) = real_container {
-        let real_read = real
-            .read_item::<TestItem>("pk1", "sdk-item-1", None)
-            .await
-            .unwrap();
+        let real_read = real.read_item("pk1", "sdk-item-1", None).await.unwrap();
         compare_item_responses(&real_read, &emu_read);
 
         let real_doc: TestItem = real_read.into_body().json_single().unwrap();
@@ -573,16 +571,13 @@ async fn sdk_replace_item() {
     assert_eq!(emu_doc.value, 99);
 
     let emu_read = emu_container
-        .read_item::<TestItem>("pk1", &updated.id, None)
+        .read_item("pk1", &updated.id, None)
         .await
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
     if let Some(ref real) = real_container {
-        let real_read = real
-            .read_item::<TestItem>("pk1", &updated.id, None)
-            .await
-            .unwrap();
+        let real_read = real.read_item("pk1", &updated.id, None).await.unwrap();
         compare_item_responses(&real_read, &emu_read);
 
         let real_doc: TestItem = real_read.into_body().json_single().unwrap();
@@ -665,16 +660,13 @@ async fn sdk_upsert_item() {
     assert_eq!(emu_doc.value, 20);
 
     let emu_read = emu_container
-        .read_item::<TestItem>("pk1", &updated.id, None)
+        .read_item("pk1", &updated.id, None)
         .await
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
     if let Some(ref real) = real_container {
-        let real_read = real
-            .read_item::<TestItem>("pk1", &updated.id, None)
-            .await
-            .unwrap();
+        let real_read = real.read_item("pk1", &updated.id, None).await.unwrap();
         compare_item_responses(&real_read, &emu_read);
 
         let real_doc: TestItem = real_read.into_body().json_single().unwrap();
@@ -727,14 +719,14 @@ async fn sdk_delete_item() {
     }
 
     let emu_err = emu_container
-        .read_item::<TestItem>("pk1", &item.id, None)
+        .read_item("pk1", &item.id, None)
         .await
         .expect_err("emulator: reading deleted item should fail");
     assert_eq!(emu_err.http_status(), Some(StatusCode::NotFound));
 
     if let Some(ref real) = real_container {
         let real_err = real
-            .read_item::<TestItem>("pk1", &item.id, None)
+            .read_item("pk1", &item.id, None)
             .await
             .expect_err("real: reading deleted item should fail");
         compare_sdk_errors(&real_err, &emu_err);
@@ -769,17 +761,14 @@ async fn sdk_create_multiple_items_and_read_back() {
 
     for i in 0..3 {
         let id = format!("multi-{i}");
-        let emu_read = emu_container
-            .read_item::<TestItem>("pk1", &id, None)
-            .await
-            .unwrap();
+        let emu_read = emu_container.read_item("pk1", &id, None).await.unwrap();
         assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
         let emu_doc: TestItem = emu_read.into_body().json_single().unwrap();
         assert_eq!(emu_doc.value, i);
 
         if let Some(ref real) = real_container {
-            let real_read = real.read_item::<TestItem>("pk1", &id, None).await.unwrap();
+            let real_read = real.read_item("pk1", &id, None).await.unwrap();
             let real_doc: TestItem = real_read.into_body().json_single().unwrap();
             assert_eq!(real_doc.value, i);
         }
@@ -834,7 +823,7 @@ async fn sdk_read_nonexistent_item_returns_not_found() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
     let emu_err = emu_container
-        .read_item::<TestItem>("pk1", "does-not-exist", None)
+        .read_item("pk1", "does-not-exist", None)
         .await
         .expect_err("emulator: reading nonexistent item should fail");
     assert_eq!(
@@ -845,7 +834,7 @@ async fn sdk_read_nonexistent_item_returns_not_found() {
 
     if let Some(ref real) = real_container {
         let real_err = real
-            .read_item::<TestItem>("pk1", "does-not-exist", None)
+            .read_item("pk1", "does-not-exist", None)
             .await
             .expect_err("real: reading nonexistent item should fail");
         compare_sdk_errors(&real_err, &emu_err);
@@ -882,7 +871,7 @@ async fn sdk_read_with_stale_session_token_returns_error() {
         .with_operation_options(operation);
 
     let emu_err = emu_container
-        .read_item::<TestItem>("pk1", "seed-for-session", Some(read_options.clone()))
+        .read_item("pk1", "seed-for-session", Some(read_options.clone()))
         .await
         .expect_err("emulator should return error for stale session read");
     assert_read_session_not_available(&emu_err, "emulator");
@@ -907,7 +896,7 @@ async fn sdk_read_with_stale_session_token_returns_error() {
             .with_operation_options(operation);
 
         match real
-            .read_item::<TestItem>("pk1", "seed-for-session", Some(real_read_options))
+            .read_item("pk1", "seed-for-session", Some(real_read_options))
             .await
         {
             Err(real_err) => {
@@ -1008,7 +997,7 @@ async fn sdk_create_retries_after_429_throttling() {
     assert_eq!(emu_doc.padding.len(), 8 * 1024);
 
     let emu_read = emu_container
-        .read_item::<PaddedTestItem>("pk1", &throttled.id, None)
+        .read_item("pk1", &throttled.id, None)
         .await
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);

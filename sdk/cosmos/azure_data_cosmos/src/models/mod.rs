@@ -13,7 +13,7 @@ mod indexing_policy;
 mod item_response;
 mod resource_response;
 mod response_body;
-mod response_headers;
+pub(crate) mod response_headers;
 mod throughput_properties;
 
 pub use batch_response::BatchResponse;

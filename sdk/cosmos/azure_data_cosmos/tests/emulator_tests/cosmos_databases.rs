@@ -31,7 +31,10 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
         assert_eq!(&test_db_id, &properties.id);
 
         let db_client = cosmos_client.database_client(&test_db_id);
-        let read_properties = db_client.read(None).await?.into_model()?;
+        let read_properties = db_client
+            .read(None)
+            .await?
+            .into_model()?;
 
         assert_eq!(&test_db_id, &read_properties.id);
 
