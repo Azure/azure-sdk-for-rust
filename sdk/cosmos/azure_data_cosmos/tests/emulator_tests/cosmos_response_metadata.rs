@@ -152,7 +152,7 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 create_response.session_token().is_some(),
                 "expected session_token on create"
             );
-            assert!(create_response.etag().is_some(), "expected etag on create");
+            assert!(create_response.headers().etag().is_some(), "expected etag on create");
             let write_lsn = create_response
                 .lsn()
                 .expect("create_item should surface partition LSN");
@@ -175,7 +175,7 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 read_response.session_token().is_some(),
                 "expected session_token on read"
             );
-            assert!(read_response.etag().is_some(), "expected etag on read");
+            assert!(read_response.headers().etag().is_some(), "expected etag on read");
             assert_eq!(
                 read_response.item_lsn(),
                 Some(write_lsn),
