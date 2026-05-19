@@ -74,10 +74,7 @@ impl ReadCommand {
             }
             Subcommands::Database { database } => {
                 let db_client = client.database_client(&database);
-                let response = db_client
-                    .read(None)
-                    .await?
-                    .into_model()?;
+                let response = db_client.read(None).await?.into_model()?;
                 println!("Database:");
                 println!(" {:#?}", response);
 
@@ -98,10 +95,7 @@ impl ReadCommand {
             } => {
                 let db_client = client.database_client(&database);
                 let container_client = db_client.container_client(&container).await?;
-                let response = container_client
-                    .read(None)
-                    .await?
-                    .into_model()?;
+                let response = container_client.read(None).await?.into_model()?;
                 println!("Container:");
                 println!("  {:#?}", response);
 

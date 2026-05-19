@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore activityid llsn gatewayversion
+
 //! SDK-owned wrapper around the driver's `CosmosResponseHeaders`.
 
 use azure_data_cosmos_driver::models::{

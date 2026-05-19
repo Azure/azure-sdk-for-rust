@@ -729,8 +729,7 @@ impl TestRunContext {
                 .await
             {
                 Ok(response) => {
-                    let created =
-                        response.into_model()?;
+                    let created = response.into_model()?;
                     return db_client.container_client(&created.id).await;
                 }
                 Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
@@ -750,8 +749,7 @@ impl TestRunContext {
                     let response = db_client
                         .create_container(properties.clone(), options.clone())
                         .await?;
-                    let created =
-                        response.into_model()?;
+                    let created = response.into_model()?;
                     return db_client.container_client(&created.id).await;
                 }
                 Err(e) => return Err(e),

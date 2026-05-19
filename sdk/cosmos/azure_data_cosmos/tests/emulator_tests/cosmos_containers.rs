@@ -46,10 +46,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             // Read the container to get its properties
-            let created_properties = container_client
-                .read(None)
-                .await?
-                .into_model()?;
+            let created_properties = container_client.read(None).await?.into_model()?;
 
             assert_eq!(&properties.id, &created_properties.id);
             assert_eq!(1, created_properties.partition_key.paths().len());
@@ -166,10 +163,7 @@ pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             // Read the container to get its properties
-            let created_properties = container_client
-                .read(None)
-                .await?
-                .into_model()?;
+            let created_properties = container_client.read(None).await?.into_model()?;
 
             assert_eq!(&properties.id, &created_properties.id);
             let paths: Vec<&str> = created_properties

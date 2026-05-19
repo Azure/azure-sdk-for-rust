@@ -114,10 +114,7 @@ impl CreateCommand {
             }
 
             Subcommands::Database { id } => {
-                let db = client
-                    .create_database(&id, None)
-                    .await?
-                    .into_model()?;
+                let db = client.create_database(&id, None).await?.into_model()?;
                 println!("Created database:");
                 println!("{:#?}", db);
                 Ok(())
