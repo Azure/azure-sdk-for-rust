@@ -21,15 +21,20 @@ function Get-CargoPackages() {
   return $metadata.packages
 }
 
-function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
-  $names = @()
+function Get-PackagesFromPackageInfo($packageInfoDirectory) {
+  $packages = @()
   $packageInfoFiles = Get-ChildItem -Path $packageInfoDirectory -Filter '*.json' -File
   foreach ($packageInfoFile in $packageInfoFiles) {
     $packageInfo = Get-Content -Path $packageInfoFile.FullName | ConvertFrom-Json
-    $names += $packageInfo.name
+    $packages += $packageInfo
   }
 
-  return $names
+  return $packages
+}
+
+function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
+  $packages = Get-PackagesFromPackageInfo($packageInfoDirectory)
+  $packages.name
 }
 
 function Get-VersionParamsFromCgManifest(

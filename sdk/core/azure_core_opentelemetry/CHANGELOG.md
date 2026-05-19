@@ -1,6 +1,6 @@
 # Release History
 
-## 0.10.0 (Unreleased)
+## 1.1.0-beta.1 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,12 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 1.0.0 (2026-05-11)
+
+### Features Added
+
+- Initial stable release.
 
 ## 0.9.0 (2026-04-22)
 

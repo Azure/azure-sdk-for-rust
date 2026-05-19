@@ -36,11 +36,6 @@ pub struct QueueServiceClientOptions {
 }
 
 impl QueueServiceClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
     /// Retrieves properties of a storage account's Queue service, including properties for Storage Analytics and
     /// CORS (Cross-Origin Resource Sharing) rules.
     ///

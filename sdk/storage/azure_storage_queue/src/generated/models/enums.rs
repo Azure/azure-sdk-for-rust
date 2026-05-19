@@ -25,3 +25,181 @@ pub enum ListQueuesIncludeType {
     /// Include queue metadata.
     Metadata,
 }
+
+/// Error codes returned by the service
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum StorageErrorCode {
+    /// AccountAlreadyExists
+    AccountAlreadyExists,
+
+    /// AccountBeingCreated
+    AccountBeingCreated,
+
+    /// AccountIsDisabled
+    AccountIsDisabled,
+
+    /// AuthenticationFailed
+    AuthenticationFailed,
+
+    /// AuthorizationFailure
+    AuthorizationFailure,
+
+    /// AuthorizationPermissionMismatch
+    AuthorizationPermissionMismatch,
+
+    /// AuthorizationProtocolMismatch
+    AuthorizationProtocolMismatch,
+
+    /// AuthorizationResourceTypeMismatch
+    AuthorizationResourceTypeMismatch,
+
+    /// AuthorizationServiceMismatch
+    AuthorizationServiceMismatch,
+
+    /// AuthorizationSourceIPMismatch
+    AuthorizationSourceIPMismatch,
+
+    /// ConditionHeadersNotSupported
+    ConditionHeadersNotSupported,
+
+    /// ConditionNotMet
+    ConditionNotMet,
+
+    /// EmptyMetadataKey
+    EmptyMetadataKey,
+
+    /// FeatureVersionMismatch
+    FeatureVersionMismatch,
+
+    /// InsufficientAccountPermissions
+    InsufficientAccountPermissions,
+
+    /// InternalError
+    InternalError,
+
+    /// InvalidAuthenticationInfo
+    InvalidAuthenticationInfo,
+
+    /// InvalidHeaderValue
+    InvalidHeaderValue,
+
+    /// InvalidHttpVerb
+    InvalidHttpVerb,
+
+    /// InvalidInput
+    InvalidInput,
+
+    /// InvalidMarker
+    InvalidMarker,
+
+    /// InvalidMd5
+    InvalidMd5,
+
+    /// InvalidMetadata
+    InvalidMetadata,
+
+    /// InvalidQueryParameterValue
+    InvalidQueryParameterValue,
+
+    /// InvalidRange
+    InvalidRange,
+
+    /// InvalidResourceName
+    InvalidResourceName,
+
+    /// InvalidUri
+    InvalidUri,
+
+    /// InvalidXmlDocument
+    InvalidXmlDocument,
+
+    /// InvalidXmlNodeValue
+    InvalidXmlNodeValue,
+
+    /// Md5Mismatch
+    Md5Mismatch,
+
+    /// MessageNotFound
+    MessageNotFound,
+
+    /// MessageTooLarge
+    MessageTooLarge,
+
+    /// MetadataTooLarge
+    MetadataTooLarge,
+
+    /// MissingContentLengthHeader
+    MissingContentLengthHeader,
+
+    /// MissingRequiredHeader
+    MissingRequiredHeader,
+
+    /// MissingRequiredQueryParameter
+    MissingRequiredQueryParameter,
+
+    /// MissingRequiredXmlNode
+    MissingRequiredXmlNode,
+
+    /// MultipleConditionHeadersNotSupported
+    MultipleConditionHeadersNotSupported,
+
+    /// OperationTimedOut
+    OperationTimedOut,
+
+    /// OutOfRangeInput
+    OutOfRangeInput,
+
+    /// OutOfRangeQueryParameterValue
+    OutOfRangeQueryParameterValue,
+
+    /// PopReceiptMismatch
+    PopReceiptMismatch,
+
+    /// QueueAlreadyExists
+    QueueAlreadyExists,
+
+    /// QueueBeingDeleted
+    QueueBeingDeleted,
+
+    /// QueueDisabled
+    QueueDisabled,
+
+    /// QueueNotEmpty
+    QueueNotEmpty,
+
+    /// QueueNotFound
+    QueueNotFound,
+
+    /// RequestBodyTooLarge
+    RequestBodyTooLarge,
+
+    /// RequestUrlFailedToParse
+    RequestUrlFailedToParse,
+
+    /// ResourceAlreadyExists
+    ResourceAlreadyExists,
+
+    /// ResourceNotFound
+    ResourceNotFound,
+
+    /// ResourceTypeMismatch
+    ResourceTypeMismatch,
+
+    /// ServerBusy
+    ServerBusy,
+
+    /// UnsupportedHeader
+    UnsupportedHeader,
+
+    /// UnsupportedHttpVerb
+    UnsupportedHttpVerb,
+
+    /// UnsupportedQueryParameter
+    UnsupportedQueryParameter,
+
+    /// UnsupportedXmlNode
+    UnsupportedXmlNode,
+
+    /// Any other value not defined in `StorageErrorCode`.
+    UnknownValue(String),
+}

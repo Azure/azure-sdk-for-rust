@@ -14,7 +14,8 @@ use crate::generated::models::{
     BlobContainerClientListBlobsOptions, BlobContainerClientReleaseLeaseOptions,
     BlobContainerClientReleaseLeaseResult, BlobContainerClientRenewLeaseOptions,
     BlobContainerClientRenewLeaseResult, BlobContainerClientSetAccessPolicyOptions,
-    BlobContainerClientSetMetadataOptions, FilterBlobSegment, ListBlobsResponse, SignedIdentifiers,
+    BlobContainerClientSetMetadataOptions, FilteredBlobResponse, ListBlobsResponse,
+    SignedIdentifiers,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -46,18 +47,12 @@ pub struct BlobContainerClientOptions {
 }
 
 impl BlobContainerClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// The Acquire Lease operation requests a new lease on a container. The lease lock duration can be 15 to 60 seconds, or can
-    /// be infinite.
+    /// Requests a new lease on the specified container.
     ///
     /// # Arguments
     ///
     /// * `duration` - Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A
-    ///   non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change.
+    ///   non-infinite lease can be between 15 and 60 seconds.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -136,8 +131,7 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// The Break Lease operation ends a lease and ensures that another client can't acquire a new lease until the current lease
-    /// period has expired.
+    /// Ends a lease and ensures that another client can't acquire a new lease until the current lease period has expired.
     ///
     /// # Arguments
     ///
@@ -217,13 +211,12 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// The Change Lease operation is used to change the ID of an existing lease.
+    /// Change the ID of an existing lease.
     ///
     /// # Arguments
     ///
-    /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
-    ///   lease ID must match.
-    /// * `proposed_lease_id` - Required. The proposed lease ID for the container.
+    /// * `lease_id` - A lease ID for the resource. The resource must have an active lease and the lease ID must match.
+    /// * `proposed_lease_id` - The proposed lease ID for the lease.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -301,8 +294,7 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// Creates a new container under the specified account. If the container with the same name already exists, the operation
-    /// fails.
+    /// Creates a new container in the specified account. If the container with the same name already exists, the operation fails.
     ///
     /// # Arguments
     ///
@@ -356,8 +348,7 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// operation marks the specified container for deletion. The container and any blobs contained within it are later deleted
-    /// during garbage collection
+    /// Deletes the specified container.
     ///
     /// # Arguments
     ///
@@ -403,23 +394,22 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// The Filter Blobs operation enables callers to list blobs in a container whose tags match a given search expression. Filter
-    /// blobs searches within the given container.
+    /// Lists blobs in the specified container whose tags match a given search expression.
     ///
     /// # Arguments
     ///
-    /// * `filter_expression` - Filters the results to return only to return only blobs whose tags match the specified expression.
+    /// * `filter_expression` - Filters the results to return only blobs whose tags match the specified expression.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlobContainerClient.findBlobsByTags")]
-    pub async fn find_blobs_by_tags(
+    pub fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
         options: Option<BlobContainerClientFindBlobsByTagsOptions<'_>>,
-    ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
+    ) -> Result<Pager<FilteredBlobResponse, XmlFormat>> {
+        let options = options.unwrap_or_default().into_owned();
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        let mut query_builder = first_url.query_builder();
         query_builder
             .append_pair("comp", "blobs")
             .append_pair("restype", "container");
@@ -444,26 +434,49 @@ impl BlobContainerClient {
         }
         query_builder.set_pair("where", filter_expression);
         query_builder.build();
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[200],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
+        let version = self.version.clone();
+        Ok(Pager::new(
+            move |marker: PagerState, pager_options| {
+                let mut url = first_url.clone();
+                if let PagerState::More(marker) = marker {
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", marker.as_ref());
+                    query_builder.build();
+                }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", "application/xml");
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
+                Box::pin(async move {
+                    let rsp = pipeline
+                        .send(
+                            &pager_options.context,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    let (status, headers, body) = rsp.deconstruct();
+                    let res: FilteredBlobResponse = xml::from_xml(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
+                    Ok(match res.next_marker {
+                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                            response: rsp,
+                            continuation: PagerContinuation::Token(next_marker),
+                        },
+                        _ => PagerResult::Done { response: rsp },
+                    })
+                })
+            },
+            Some(options.method_options),
+        ))
     }
 
-    /// gets the permissions for the specified container. The permissions indicate whether container data may be accessed publicly.
+    /// Gets the permissions for the specified container.
     ///
     /// # Arguments
     ///
@@ -537,7 +550,7 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// Returns the sku name and account kind
+    /// Returns information about the storage account.
     ///
     /// # Arguments
     ///
@@ -607,8 +620,8 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// returns all user-defined metadata and system properties for the specified container. The data returned does not include
-    /// the container's list of blobs
+    /// Returns all user-defined metadata and system properties for the specified container. The data returned does not include
+    /// the container's list of blobs.
     ///
     /// # Arguments
     ///
@@ -688,7 +701,7 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// The List Blobs operation returns a list of the blobs under the specified container.
+    /// Returns a list of the blobs in the specified container.
     ///
     /// # Arguments
     ///
@@ -773,13 +786,11 @@ impl BlobContainerClient {
         ))
     }
 
-    /// The Release Lease operation frees the lease if it's no longer needed, so that another client can immediately acquire a
-    /// lease against the container.
+    /// Frees the lease if it's no longer needed, so that another client can immediately acquire a lease against the container.
     ///
     /// # Arguments
     ///
-    /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
-    ///   lease ID must match.
+    /// * `lease_id` - A lease ID for the resource. The resource must have an active lease and the lease ID must match.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -851,12 +862,11 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// The Renew Lease operation renews an existing lease.
+    /// Renews an existing lease.
     ///
     /// # Arguments
     ///
-    /// * `lease_id` - Required. A lease ID for the source path. If specified, the source path must have an active lease and the
-    ///   lease ID must match.
+    /// * `lease_id` - A lease ID for the resource. The resource must have an active lease and the lease ID must match.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -932,8 +942,7 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// sets the permissions for the specified container. The permissions indicate whether blobs in a container may be accessed
-    /// publicly.
+    /// Sets the permissions for the specified container.
     ///
     /// # Arguments
     ///
@@ -988,7 +997,7 @@ impl BlobContainerClient {
         Ok(rsp.into())
     }
 
-    /// operation sets one or more user-defined name-value pairs for the specified container.
+    /// Sets user-defined metadata for the specified container.
     ///
     /// # Arguments
     ///

@@ -6,49 +6,49 @@
 /// The access tiers.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AccessTier {
-    /// The archive access tier.
+    /// The Archive access tier.
     Archive,
 
     /// The Cold access tier.
     Cold,
 
-    /// The cool access tier.
+    /// The Cool access tier.
     Cool,
 
-    /// The hot access tier.
+    /// The Hot access tier.
     Hot,
 
-    /// The hot P10 tier.
+    /// The P10 access tier.
     P10,
 
-    /// The hot P15 tier.
+    /// The P15 access tier.
     P15,
 
-    /// The hot P20 tier.
+    /// The P20 access tier.
     P20,
 
-    /// The hot P30 tier.
+    /// The P30 access tier.
     P30,
 
-    /// The hot P4 tier.
+    /// The P4 access tier.
     P4,
 
-    /// The hot P40 tier.
+    /// The P40 access tier.
     P40,
 
-    /// The hot P50 tier.
+    /// The P50 access tier.
     P50,
 
-    /// The hot P6 tier.
+    /// The P6 access tier.
     P6,
 
-    /// The hot P60 tier.
+    /// The P60 access tier.
     P60,
 
-    /// The hot P70 tier.
+    /// The P70 access tier.
     P70,
 
-    /// The hot P80 tier.
+    /// The P80 access tier.
     P80,
 
     /// The Premium access tier.
@@ -61,32 +61,32 @@ pub enum AccessTier {
 /// The account kind.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AccountKind {
-    /// The storage account is a blob storage account.
+    /// A blob storage account.
     BlobStorage,
 
-    /// The storage account is a block blob storage account.
+    /// A block blob storage account.
     BlockBlobStorage,
 
-    /// The storage account is a file storage account.
+    /// A file storage account.
     FileStorage,
 
-    /// The storage account is a general-purpose account.
+    /// A general-purpose account.
     Storage,
 
-    /// The storage account is a storage V2 account.
+    /// A storage V2 account.
     StorageV2,
 }
 
 /// The archive status.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ArchiveStatus {
-    /// The archive status is rehydrating pending to cold.
+    /// The archive status is rehydrating pending to Cold.
     RehydratePendingToCold,
 
-    /// The archive status is rehydrating pending to cool.
+    /// The archive status is rehydrating pending to Cool.
     RehydratePendingToCool,
 
-    /// The archive status is rehydrating pending to hot.
+    /// The archive status is rehydrating pending to Hot.
     RehydratePendingToHot,
 
     /// Any other value not defined in `ArchiveStatus`.
@@ -96,10 +96,10 @@ pub enum ArchiveStatus {
 /// The blob copy source tags types.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BlobCopySourceTags {
-    /// The copy blob source tags option.
+    /// The blob tags will be copied from the source.
     Copy,
 
-    /// The replace blob source tags option.
+    /// The blob tags will be replaced.
     Replace,
 }
 
@@ -126,20 +126,20 @@ pub enum BlobType {
 /// The block list types.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BlockListType {
-    /// Both lists together.
+    /// Both committed and uncommitted blocks.
     All,
 
-    /// The list of committed blocks.
+    /// Committed blocks.
     Committed,
 
-    /// The list of uncommitted blocks.
+    /// Uncommitted blocks.
     Uncommitted,
 }
 
 /// The copy status.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CopyStatus {
-    /// The copy operation is aborted.
+    /// The copy operation was aborted.
     Aborted,
 
     /// The copy operation failed.
@@ -152,18 +152,17 @@ pub enum CopyStatus {
     Success,
 }
 
-/// The delete snapshots option type.
+/// Specifies the delete behavior of blob snapshots.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DeleteSnapshotsOptionType {
-    /// The delete snapshots include option is include.
+    /// Delete the blob and snapshots.
     Include,
 
-    /// The delete snapshots include option is only.
+    /// Only delete the snapshots.
     Only,
 }
 
-/// The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided
-/// if the x-ms-encryption-key header is provided.
+/// The algorithm used to produce the encryption key hash.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum EncryptionAlgorithmType {
     /// The AES256 encryption algorithm.
@@ -180,39 +179,39 @@ pub enum FileShareTokenIntent {
     UnknownValue(String),
 }
 
-/// The filter blobs includes.
+/// Specifies what type of blobs should be returned as part of the filter operation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FilterBlobsIncludeItem {
     /// The filter includes no versions.
     None,
 
-    /// The filter includes n versions.
+    /// The filter includes versions.
     Versions,
 }
 
-/// The geo replication status.
+/// The geo-replication status.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GeoReplicationStatusType {
-    /// The geo replication is bootstrap.
+    /// Geo-replication is bootstrap.
     Bootstrap,
 
-    /// The geo replication is live.
+    /// Geo-replication is live.
     Live,
 
-    /// The geo replication is unavailable.
+    /// Geo-replication is unavailable.
     Unavailable,
 
     /// Any other value not defined in `GeoReplicationStatusType`.
     UnknownValue(String),
 }
 
-/// The immutability policy mode used in requests and responses.
+/// The immutability policy mode.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ImmutabilityPolicyMode {
     /// The immutability policy is locked.
     Locked,
 
-    /// The immutability policy is mutable. Should never be set, only returned.
+    /// Response only. The immutability policy is mutable.
     Mutable,
 
     /// The immutability policy is unlocked.
@@ -258,50 +257,50 @@ pub enum LeaseStatus {
     Unlocked,
 }
 
-/// The list blob includes parameter values.
+/// Specifies additional datasets to include when listing blobs in a container.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ListBlobsIncludeItem {
-    /// The include copies.
+    /// Include copies.
     Copy,
 
-    /// The include deleted blobs.
+    /// Include deleted blobs.
     Deleted,
 
-    /// The include deleted with versions.
+    /// Include deleted with versions.
     DeletedWithVersions,
 
-    /// The include immutable policy.
+    /// Include immutability policies.
     ImmutabilityPolicy,
 
-    /// The include legal hold.
+    /// Include legal hold.
     LegalHold,
 
-    /// The include metadata.
+    /// Include metadata.
     Metadata,
 
-    /// The include snapshots.
+    /// Include snapshots.
     Snapshots,
 
-    /// The include tags.
+    /// Include tags.
     Tags,
 
-    /// The include uncommitted blobs.
+    /// Include uncommitted blobs.
     UncommittedBlobs,
 
-    /// The include versions.
+    /// Include versions.
     Versions,
 }
 
-/// Include this parameter to specify that the container's metadata be returned as part of the response body.
+/// Specifies what additional information should be returned as part of the list operation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ListContainersIncludeType {
-    /// Include deleted
+    /// Include soft-deleted containers.
     Deleted,
 
-    /// Include metadata
+    /// Include metadata.
     Metadata,
 
-    /// Include system
+    /// Include system containers.
     System,
 }
 
@@ -345,7 +344,7 @@ pub enum PremiumPageBlobAccessTier {
     UnknownValue(String),
 }
 
-/// The public access types.
+/// The public access type.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PublicAccessType {
     /// Blob access.
@@ -358,8 +357,7 @@ pub enum PublicAccessType {
     UnknownValue(String),
 }
 
-/// If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High
-/// and Standard.
+/// The priority of the rehydrate operation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum RehydratePriority {
     /// The rehydrate priority is high.
@@ -385,7 +383,7 @@ pub enum SequenceNumberActionType {
     Update,
 }
 
-/// The SKU types
+/// The account SKU.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SkuName {
     /// The premium LRS SKU.
@@ -530,7 +528,7 @@ pub enum StorageErrorCode {
     /// Incremental copy of an earlier snapshot is not allowed.
     IncrementalCopyOfEarlierSnapshotNotAllowed,
 
-    /// Incremental copy of earlier version snapshot not allowed.
+    /// Incremental copy of an earlier version snapshot is not allowed.
     IncrementalCopyOfEarlierVersionSnapshotNotAllowed,
 
     /// Incremental copy source must be snapshot.

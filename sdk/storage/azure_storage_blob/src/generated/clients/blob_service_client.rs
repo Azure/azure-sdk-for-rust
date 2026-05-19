@@ -7,8 +7,8 @@ use crate::generated::models::{
     BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
     BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
     BlobServiceClientGetStatisticsOptions, BlobServiceClientListContainersOptions,
-    BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilterBlobSegment,
-    ListContainersSegmentResponse, StorageServiceStats,
+    BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilteredBlobResponse,
+    ListContainersResponse, StorageServiceStats,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -38,27 +38,22 @@ pub struct BlobServiceClientOptions {
 }
 
 impl BlobServiceClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// The Filter Blobs operation enables callers to list blobs across all containers whose tags match a given search expression.
+    /// Lists blobs across all containers whose tags match a given search expression.
     ///
     /// # Arguments
     ///
-    /// * `filter_expression` - Filters the results to return only to return only blobs whose tags match the specified expression.
+    /// * `filter_expression` - Filters the results to return only blobs whose tags match the specified expression.
     /// * `options` - Optional parameters for the request.
     #[tracing::function("Storage.Blob.BlobServiceClient.findBlobsByTags")]
-    pub async fn find_blobs_by_tags(
+    pub fn find_blobs_by_tags(
         &self,
         filter_expression: &str,
         options: Option<BlobServiceClientFindBlobsByTagsOptions<'_>>,
-    ) -> Result<Response<FilterBlobSegment, XmlFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
+    ) -> Result<Pager<FilteredBlobResponse, XmlFormat>> {
+        let options = options.unwrap_or_default().into_owned();
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        let mut query_builder = first_url.query_builder();
         query_builder.append_pair("comp", "blobs");
         if let Some(include) = options.include.as_ref() {
             query_builder.set_pair(
@@ -81,26 +76,49 @@ impl BlobServiceClient {
         }
         query_builder.set_pair("where", filter_expression);
         query_builder.build();
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[200],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
+        let version = self.version.clone();
+        Ok(Pager::new(
+            move |marker: PagerState, pager_options| {
+                let mut url = first_url.clone();
+                if let PagerState::More(marker) = marker {
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", marker.as_ref());
+                    query_builder.build();
+                }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", "application/xml");
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
+                Box::pin(async move {
+                    let rsp = pipeline
+                        .send(
+                            &pager_options.context,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    let (status, headers, body) = rsp.deconstruct();
+                    let res: FilteredBlobResponse = xml::from_xml(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
+                    Ok(match res.next_marker {
+                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                            response: rsp,
+                            continuation: PagerContinuation::Token(next_marker),
+                        },
+                        _ => PagerResult::Done { response: rsp },
+                    })
+                })
+            },
+            Some(options.method_options),
+        ))
     }
 
-    /// Returns the sku name and account kind.
+    /// Returns information about the storage account.
     ///
     /// # Arguments
     ///
@@ -252,7 +270,7 @@ impl BlobServiceClient {
         Ok(rsp.into())
     }
 
-    /// The List Containers Segment operation returns a list of the containers under the specified account
+    /// Returns a list of the containers in the specified account.
     ///
     /// # Arguments
     ///
@@ -261,7 +279,7 @@ impl BlobServiceClient {
     pub fn list_containers(
         &self,
         options: Option<BlobServiceClientListContainersOptions<'_>>,
-    ) -> Result<Pager<ListContainersSegmentResponse, XmlFormat>> {
+    ) -> Result<Pager<ListContainersResponse, XmlFormat>> {
         let options = options.unwrap_or_default().into_owned();
         let pipeline = self.pipeline.clone();
         let mut first_url = self.endpoint.clone();
@@ -317,7 +335,7 @@ impl BlobServiceClient {
                         )
                         .await?;
                     let (status, headers, body) = rsp.deconstruct();
-                    let res: ListContainersSegmentResponse = xml::from_xml(&body)?;
+                    let res: ListContainersResponse = xml::from_xml(&body)?;
                     let rsp = RawResponse::from_bytes(status, headers, body).into();
                     Ok(match res.next_marker {
                         Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
@@ -333,7 +351,7 @@ impl BlobServiceClient {
     }
 
     /// Sets properties for a storage account's Blob service endpoint, including properties for Storage Analytics and CORS (Cross-Origin
-    /// Resource Sharing) rules
+    /// Resource Sharing) rules.
     ///
     /// # Arguments
     ///

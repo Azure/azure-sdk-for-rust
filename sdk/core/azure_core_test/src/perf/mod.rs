@@ -23,16 +23,19 @@ use tokio::{select, task::JoinSet};
 /// A trait representing a performance test.
 ///
 /// Performance tests have three phases:
-/// 1. `setup`: Prepare the test environment. This is called once per iteration.
+/// 1. `setup`: Prepare the test environment.
 /// 2. `run`: Execute the performance test. This is called repeatedly for the duration of the test.
-/// 3. `cleanup`: Clean up the test environment. This is called once
+/// 3. `cleanup`: Clean up the test environment.
 ///
-/// Note that the "run" phase will be executed in parallel across multiple tasks, so it must be thread-safe.
+/// One instance of the test is created per parallel task. Each instance owns its own resources
+/// (e.g., clients, containers, blobs) and is not shared across tasks. This allows each task to
+/// set up dedicated resources in `setup` without worrying about concurrent access.
 #[async_trait::async_trait]
 pub trait PerfTest: Send + Sync {
     /// Set up the test environment.
     ///
-    /// Performs whatever steps are needed to set up the test environment. This method is called once per iteration of the test.
+    /// Performs whatever steps are needed to set up the test environment.
+    /// Called once per instance (i.e., once per parallel task) per iteration.
     ///
     /// # Arguments
     /// - `context`: An `Arc` to a `TestContext` that provides context information for the test.
@@ -127,6 +130,15 @@ struct PerfTestOutputs {
     pub average_memory_use: Option<f64>,
 }
 
+/// Per-operation latency result matching the PerfAutomation JSON format.
+#[derive(Serialize)]
+struct OperationResult {
+    #[serde(rename = "Time")]
+    time: f64,
+    #[serde(rename = "Size")]
+    size: i64,
+}
+
 #[derive(Debug, Clone)]
 struct PerfRunnerOptions {
     no_cleanup: bool,
@@ -135,21 +147,25 @@ struct PerfRunnerOptions {
     duration: Duration,
     warmup: Duration,
     disable_progress: bool,
+    latency: bool,
     test_results_filename: String,
+    results_file: String,
 }
 
 impl Display for PerfRunnerOptions {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "PerfRunnerOptions {{ no_cleanup: {}, iterations: {}, parallel: {}, duration: {}, warmup: {}, disable_progress: {}, test_results_filename: '{}' }}",
+            "PerfRunnerOptions {{ no_cleanup: {}, iterations: {}, parallel: {}, duration: {}, warmup: {}, disable_progress: {}, latency: {}, test_results_filename: '{}', results_file: '{}' }}",
             self.no_cleanup,
             self.iterations,
             self.parallel,
             self.duration,
             self.warmup,
             self.disable_progress,
-            self.test_results_filename
+            self.latency,
+            self.test_results_filename,
+            self.results_file
         )
     }
 }
@@ -165,6 +181,7 @@ impl From<&ArgMatches> for PerfRunnerOptions {
                 .get_one::<u32>("parallel")
                 .expect("defaulted by clap"),
             disable_progress: matches.get_flag("no-progress"),
+            latency: matches.get_flag("latency"),
             duration: Duration::seconds(
                 *matches
                     .get_one::<i64>("duration")
@@ -177,6 +194,10 @@ impl From<&ArgMatches> for PerfRunnerOptions {
                 .get_one::<String>("test-results")
                 .expect("defaulted by clap")
                 .to_string(),
+            results_file: matches
+                .get_one::<String>("results-file")
+                .cloned()
+                .unwrap_or_default(),
         }
     }
 }
@@ -327,21 +348,8 @@ impl PerfRunner {
                     format!("Test '{}' not found.", test_name),
                 )
             })?;
-        let test_instance = (test.create_test)(self.clone()).await?;
-        let test_instance: Arc<dyn PerfTest> = Arc::from(test_instance);
 
         let test_mode = crate::TestMode::current_opt()?.unwrap_or(crate::TestMode::Live);
-
-        let context = Arc::new(
-            crate::recorded::start(
-                test_mode,
-                self.package_dir,
-                self.module_name,
-                test.name,
-                None,
-            )
-            .await?,
-        );
 
         println!("Test Configuration: {:#}", self.options);
 
@@ -352,16 +360,14 @@ impl PerfRunner {
                 self.options.iterations
             );
 
+            // Create one test instance and context per parallel task.
+            let mut test_instances: Vec<Arc<dyn PerfTest>> = Vec::new();
+            let mut test_contexts: Vec<Arc<TestContext>> = Vec::new();
+
             println!("========== Starting test setup ==========");
-            test_instance.setup(context.clone()).await?;
-
-            println!(
-                "========== Starting test warmup for {} ==========",
-                self.options.warmup
-            );
-
-            let mut test_contexts = Vec::new();
-            for _ in 0..self.options.parallel {
+            for i in 0..self.options.parallel {
+                let instance = (test.create_test)(self.clone()).await?;
+                let instance: Arc<dyn PerfTest> = Arc::from(instance);
                 let context = Arc::new(
                     crate::recorded::start(
                         test_mode,
@@ -372,10 +378,22 @@ impl PerfRunner {
                     )
                     .await?,
                 );
+                instance.setup(context.clone()).await?;
+                println!(
+                    "Setup complete for parallel task {}/{}",
+                    i + 1,
+                    self.options.parallel
+                );
+                test_instances.push(instance);
                 test_contexts.push(context);
             }
 
-            self.run_test_for(test_instance.clone(), &test_contexts, self.options.warmup)
+            println!(
+                "========== Starting test warmup for {} ==========",
+                self.options.warmup
+            );
+
+            self.run_test_for(&test_instances, &test_contexts, self.options.warmup, false)
                 .await?;
 
             println!(
@@ -383,16 +401,50 @@ impl PerfRunner {
                 self.options.duration
             );
 
-            let operations_per_second = self
+            let (operations_per_second, mut latencies) = self
                 .run_test_for(
-                    Arc::clone(&test_instance),
+                    &test_instances,
                     &test_contexts,
                     self.options.duration,
+                    self.options.latency,
                 )
                 .await?;
+            if self.options.latency {
+                latencies.sort();
+                Self::print_latencies("Latency Distribution", &latencies);
+
+                // Still useful to print the latencies above even if we're not writing them to a file.
+                if !self.options.results_file.is_empty() {
+                    // Detect size from the selected test's subcommand args, defaulting to -1.
+                    let size: i64 = self
+                        .try_get_test_arg::<usize>("size")
+                        .ok()
+                        .flatten()
+                        .map(|s| s as i64)
+                        .unwrap_or(-1);
+
+                    let results: Vec<OperationResult> = latencies
+                        .iter()
+                        .map(|l| OperationResult {
+                            time: l.as_secs_f64() * 1000.0,
+                            size,
+                        })
+                        .collect();
+
+                    let json = serde_json::to_string_pretty(&results).with_context(
+                        ErrorKind::DataConversion,
+                        "Failed to serialize latency results to JSON.",
+                    )?;
+
+                    std::fs::write(&self.options.results_file, json)
+                        .with_context(ErrorKind::Io, "Failed to write latency results to file.")?;
+                }
+            }
             if !self.options.no_cleanup {
                 println!("========== Starting test cleanup ==========");
-                test_instance.cleanup(context.clone()).await?;
+                for (instance, context) in test_instances.iter().zip(test_contexts.iter()) {
+                    instance.cleanup(context.clone()).await?;
+                }
             }
 
             println!(
@@ -428,59 +480,77 @@ impl PerfRunner {
         Ok(())
     }
 
-    /// Runs the provided test instance for the specified duration using the provided test contexts.
+    /// Runs the provided test instances for the specified duration using the provided test contexts.
+    ///
+    /// Each parallel task runs its own dedicated test instance, allowing per-task resource isolation.
     ///
     /// # Arguments
-    /// * `test_instance` - The test instance to run.
+    /// * `test_instances` - One test instance per parallel task.
     /// * `test_contexts` - The test contexts to use for each parallel task.
     /// * `duration` - The duration to run the test for.
+    /// * `track_latency` - Whether to track per-operation latency.
     ///
     /// # Returns
-    /// The operations per second achieved during the test.
+    /// A tuple of (operations per second, per-operation latencies). Latencies is empty if `track_latency` is false.
     pub async fn run_test_for(
         &self,
-        test_instance: Arc<dyn PerfTest>,
+        test_instances: &[Arc<dyn PerfTest>],
         test_contexts: &[Arc<TestContext>],
         duration: Duration,
-    ) -> azure_core::Result<f64> {
+        track_latency: bool,
+    ) -> azure_core::Result<(f64, Vec<tokio::time::Duration>)> {
         // Reset the performance measurements before starting the test.
         self.progress.store(0, Ordering::SeqCst);
-        let mut tasks: JoinSet<Result<(i64, tokio::time::Duration)>> = JoinSet::new();
+        let mut tasks: JoinSet<Result<(i64, tokio::time::Duration, Vec<tokio::time::Duration>)>> =
+            JoinSet::new();
         (0..self.options.parallel).for_each(|i| {
-            let test_instance_clone = Arc::clone(&test_instance);
+            let test_instance = Arc::clone(&test_instances[i as usize]);
             let progress = self.progress.clone();
             let test_context = test_contexts[i as usize].clone();
             tasks.spawn(async move {
                 let start = tokio::time::Instant::now();
                 let mut count = 0i64;
+                let mut latencies = Vec::new();
                 let timeout = tokio::time::Duration::from_secs_f64(duration.as_seconds_f64());
                 loop {
-                    test_instance_clone.run(test_context.clone()).await?;
+                    let op_start = if track_latency {
+                        Some(tokio::time::Instant::now())
+                    } else {
+                        None
+                    };
+                    test_instance.run(test_context.clone()).await?;
+                    if let Some(op_start) = op_start {
+                        latencies.push(op_start.elapsed());
+                    }
                     progress.fetch_add(1, Ordering::SeqCst);
                     count += 1;
                     if start.elapsed() >= timeout {
                         break;
                     }
                 }
-                Ok((count, start.elapsed()))
+                Ok((count, start.elapsed(), latencies))
             });
         });
         let start = tokio::time::Instant::now();
 
-        let operations_per_second = select!(
+        let (operations_per_second, all_latencies) = select!(
                 results = tasks.join_all() =>  {
                     println!("All test tasks completed: {:?}", start.elapsed());
-                    // Collect the results of the test tasks.
                     let collected_results: Result<Vec<_>> = results.into_iter().collect();
+                    let collected = collected_results?;
 
-                    // Calculate the operations/second for each of the tasks and sum them to a single result.
-                    let total_ops:f64 = collected_results?
-                        .into_iter()
-                        .map(|(count, duration)| {count as f64 / duration.as_secs_f64()})
+                    let total_ops:f64 = collected
+                        .iter()
+                        .map(|(count, duration, _)| {*count as f64 / duration.as_secs_f64()})
                         .sum();
 
+                    let all_latencies: Vec<tokio::time::Duration> = collected
+                        .into_iter()
+                        .flat_map(|(_, _, latencies)| latencies)
+                        .collect();
+
                     println!("Total operations per second: {total_ops}");
-                    Ok(total_ops)
+                    Ok((total_ops, all_latencies))
                 },
                 _ = async {
                         let mut last_count = 0;
@@ -502,7 +572,26 @@ impl PerfRunner {
                         "Progress reporting task exited unexpectedly.",
                     ))},
         )?;
-        Ok(operations_per_second)
+        Ok((operations_per_second, all_latencies))
+    }
+
+    /// Print latency percentiles to the console. Requires the latencies to be pre-sorted.
+    fn print_latencies(header: &str, latencies: &[tokio::time::Duration]) {
+        if latencies.is_empty() {
+            return;
+        }
+        println!("=== {} ===", header);
+        let percentiles = [0.5, 0.75, 0.9, 0.99, 0.999, 0.9999, 0.99999, 1.0];
+        for percentile in percentiles {
+            let index = ((latencies.len() as f64 * percentile) as usize).saturating_sub(1);
+            let latency = latencies[index];
+            println!(
+                "{:>9.3}%   {:>8.2}ms",
+                percentile * 100.0,
+                latency.as_secs_f64() * 1000.0
+            );
+        }
+        println!();
     }
 
     // Future command line switches:
@@ -511,7 +600,6 @@ impl PerfRunner {
     //   * Allow untrusted TLS certificates
     // * Advanced options
     //   * Print job statistics (?)
-    //   * Track latency and print per-operation latency statistics
     //   * Target throughput (operations/second) (?)
     // * Language specific options
     //   * Max I/O completion threads
@@ -571,6 +659,13 @@ impl PerfRunner {
             )
             .arg(clap::arg!(--"no-cleanup" "Disable test cleanup")
             .required(false).global(true))
+            .arg(clap::arg!(-l --latency "Track and print per-operation latency statistics")
+            .required(false).global(true))
+            .arg(
+                clap::arg!(--"results-file" <FILE> "File path to store per-operation latency results (requires --latency)")
+                    .required(false)
+                    .global(true),
+            )
         ;
         for test in tests {
             let mut subcommand = clap::Command::new(test.name).about(test.description);
