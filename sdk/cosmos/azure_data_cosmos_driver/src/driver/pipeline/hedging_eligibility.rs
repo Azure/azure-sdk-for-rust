@@ -25,7 +25,13 @@
 use std::time::Duration;
 
 use crate::{
-    driver::routing::AccountEndpointState,
+    driver::{
+        pipeline::{
+            components::{RoutingDecision, TransportMode},
+            hedging_diagnostics::HedgingStrategyConfig,
+        },
+        routing::AccountEndpointState,
+    },
     models::{CosmosOperation, CosmosStatus, OperationType, ResourceType},
     options::{
         env_parsing, AvailabilityStrategy, HedgeThreshold, HedgingStrategy, OperationOptionsView,
@@ -230,6 +236,127 @@ pub(crate) fn build_secondary_excluded_regions(
         }
     }
     excluded
+}
+
+/// Outcome of [`evaluate_hedge_eligibility`] — everything the pipeline
+/// needs to dispatch [`OperationAction::Hedge`] for a single attempt.
+///
+/// Returned only when all five gates from spec §6.1 hold:
+///
+/// 1. A [`HedgingStrategy`] resolved via §11.3.1.
+/// 2. [`should_hedge`] is `true` for the operation + post-exclusion
+///    applicable-region count.
+/// 3. The post-filter applicable list has ≥ 2 entries (i.e. an
+///    alternate region exists at all).
+/// 4. The alternate endpoint at index 1 of the applicable list resolves
+///    to a concrete [`CosmosEndpoint`] in `account_state`.
+///
+/// `secondary_excluded_regions` is the per-hedge `ExcludeRegions` set
+/// computed by [`build_secondary_excluded_regions`] (spec §6.3); the
+/// secondary attempt is pinned to the alternate region by excluding
+/// *every other* applicable region on top of the user's own exclusions.
+///
+/// [`OperationAction::Hedge`]:
+/// crate::driver::pipeline::components::OperationAction::Hedge
+#[derive(Debug)]
+#[allow(dead_code)] // wired in Part 4b
+pub(crate) struct HedgeUpgrade {
+    /// Routing decision for the alternate-region hedge.
+    pub(crate) secondary_routing: RoutingDecision,
+    /// `ExcludeRegions` set to pin the hedge to its alternate region.
+    pub(crate) secondary_excluded_regions: Vec<Region>,
+    /// The resolved hedge threshold (used to schedule the timer).
+    pub(crate) threshold: HedgeThreshold,
+    /// Snapshot of the strategy config for `HedgeDiagnostics` (§10.1).
+    pub(crate) strategy_config: HedgingStrategyConfig,
+}
+
+/// Evaluates whether the per-attempt transient outcome should be upgraded
+/// to a cross-region hedge per spec §6.1, returning the materialized
+/// [`HedgeUpgrade`] when all gates hold.
+///
+/// `primary` is the routing decision for the just-completed attempt; it is
+/// used to honor the same gateway-version preference when constructing the
+/// secondary [`RoutingDecision`]. `request_timeout` is plumbed through to
+/// [`resolve_availability_strategy`] so the §5.2 driver default
+/// (`min(1000ms, request_timeout / 2)`) can be computed.
+///
+/// Returns `None` when hedging is disabled, the operation is ineligible,
+/// or no alternate region can be selected — in all cases the caller
+/// falls back to its non-hedged decision (typically `FailoverRetry`).
+#[allow(dead_code)] // wired in Part 4b
+pub(crate) fn evaluate_hedge_eligibility(
+    operation: &CosmosOperation,
+    options: &OperationOptionsView<'_>,
+    account_state: &AccountEndpointState,
+    primary: &RoutingDecision,
+    request_timeout: Option<Duration>,
+) -> Option<HedgeUpgrade> {
+    // Gate 1 — strategy resolution (§11.3.1).
+    let strategy = resolve_availability_strategy(options, request_timeout)?;
+
+    // Per-operation user `ExcludeRegions` (post-resolution view).
+    let user_excluded: Vec<Region> = options
+        .excluded_regions()
+        .map(|r| r.0.clone())
+        .unwrap_or_default();
+
+    // Gate 2 — should_hedge against post-exclusion applicable count.
+    if !should_hedge(Some(&strategy), operation, account_state, &user_excluded) {
+        return None;
+    }
+
+    // Build the applicable list (preferred reads minus user exclusions).
+    // Order matches `preferred_read_endpoints`; index 1 is the alternate.
+    let applicable_regions: Vec<Region> = account_state
+        .preferred_read_endpoints
+        .iter()
+        .filter_map(|ep| ep.region().cloned())
+        .filter(|r| !user_excluded.contains(r))
+        .collect();
+
+    // Gate 3 — we need an alternate. `should_hedge` already enforced
+    // `applicable >= 2`, but re-check defensively to keep this function
+    // independently sound (the test seam may bypass `should_hedge`).
+    if applicable_regions.len() < 2 {
+        return None;
+    }
+
+    // Gate 4 — resolve the alternate region back to its `CosmosEndpoint`.
+    // The applicable list is built from regional endpoints; the lookup
+    // must succeed unless the account_state mutated between filter and
+    // find (impossible — we hold `&AccountEndpointState`).
+    let secondary_region = applicable_regions[1].clone();
+    let secondary_ep = account_state
+        .preferred_read_endpoints
+        .iter()
+        .find(|ep| ep.region() == Some(&secondary_region))?
+        .clone();
+
+    // Match the primary's gateway-version preference so a Gateway20-capable
+    // account uses Gateway20 for both legs (and downgrades cleanly for legacy).
+    let prefer_gateway20 = matches!(primary.transport_mode, TransportMode::Gateway20);
+    let use_gateway20 = secondary_ep.uses_gateway20(prefer_gateway20);
+    let transport_mode = if use_gateway20 {
+        TransportMode::Gateway20
+    } else {
+        TransportMode::Gateway
+    };
+    let secondary_routing = RoutingDecision {
+        selected_url: secondary_ep.selected_url(use_gateway20).clone(),
+        transport_mode,
+        endpoint: secondary_ep,
+    };
+
+    let secondary_excluded_regions =
+        build_secondary_excluded_regions(&user_excluded, &applicable_regions, 1);
+
+    Some(HedgeUpgrade {
+        secondary_routing,
+        secondary_excluded_regions,
+        threshold: strategy.threshold(),
+        strategy_config: HedgingStrategyConfig::new(strategy.threshold()),
+    })
 }
 
 #[cfg(test)]
@@ -638,5 +765,134 @@ mod tests {
             &state,
             &excluded.0,
         ));
+    }
+
+    // ───────────────────────── evaluate_hedge_eligibility ─────────────────────────
+
+    fn primary_routing_for(account: &AccountEndpointState) -> RoutingDecision {
+        let ep = account
+            .preferred_read_endpoints
+            .first()
+            .cloned()
+            .unwrap_or_else(|| account.default_endpoint.clone());
+        let url = ep.selected_url(false).clone();
+        RoutingDecision {
+            selected_url: url,
+            transport_mode: TransportMode::Gateway,
+            endpoint: ep,
+        }
+    }
+
+    #[test]
+    fn evaluate_returns_some_for_eligible_read_multi_region() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_item_operation();
+        let primary = primary_routing_for(&state);
+
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+            .expect("eligible multi-region read");
+
+        // Secondary pinned to applicable[1] = WEST_US_2.
+        assert_eq!(
+            upgrade.secondary_routing.endpoint.region(),
+            Some(&Region::WEST_US_2)
+        );
+        // Driver default threshold applies (no env, no request_timeout).
+        assert_eq!(upgrade.threshold.get(), Duration::from_millis(1000));
+        assert_eq!(
+            upgrade.strategy_config,
+            HedgingStrategyConfig::new(upgrade.threshold)
+        );
+        // Per §6.3, the alternate is pinned by excluding every *other*
+        // applicable region (here, just the primary EAST_US).
+        assert_eq!(upgrade.secondary_excluded_regions, vec![Region::EAST_US]);
+    }
+
+    #[test]
+    fn evaluate_returns_none_for_single_region_account() {
+        let state = account_state_with_regions(&[Region::EAST_US]);
+        let op = read_item_operation();
+        let primary = primary_routing_for(&state);
+
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+    }
+
+    #[test]
+    fn evaluate_returns_none_for_write_operation() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = create_item_operation();
+        let primary = primary_routing_for(&state);
+
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+    }
+
+    #[test]
+    fn evaluate_returns_none_when_strategy_disabled() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_item_operation();
+        let primary = primary_routing_for(&state);
+
+        let op_opts = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+    }
+
+    #[test]
+    fn evaluate_returns_none_when_user_exclusion_leaves_one_region() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_item_operation();
+        let primary = primary_routing_for(&state);
+
+        let mut op_opts = OperationOptions::default();
+        op_opts.excluded_regions = Some([Region::WEST_US_2].into_iter().collect());
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+    }
+
+    #[test]
+    fn evaluate_secondary_routing_uses_secondary_endpoint_url() {
+        // Confirm the secondary RoutingDecision is constructed from the
+        // alternate endpoint (not the primary): the URL must point at
+        // the WEST_US_2 host, and `endpoint.region()` must agree.
+        let state =
+            account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2, Region::CENTRAL_US]);
+        let op = read_item_operation();
+        let primary = primary_routing_for(&state);
+
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+            .expect("eligible three-region read");
+
+        let url_str = upgrade.secondary_routing.selected_url.as_str();
+        assert!(
+            url_str.contains(Region::WEST_US_2.as_str()),
+            "secondary URL {} did not contain westus2 region tag",
+            url_str
+        );
+        // Gateway20 not enabled on the test endpoints — falls back to Gateway.
+        assert_eq!(
+            upgrade.secondary_routing.transport_mode,
+            TransportMode::Gateway
+        );
+        // Alternate region pinned: exclude primary + tertiary.
+        assert_eq!(
+            upgrade.secondary_excluded_regions,
+            vec![Region::EAST_US, Region::CENTRAL_US]
+        );
     }
 }

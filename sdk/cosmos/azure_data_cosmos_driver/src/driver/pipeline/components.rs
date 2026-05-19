@@ -16,6 +16,7 @@ use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
     driver::{
         jitter::with_jitter,
+        pipeline::hedging_diagnostics::HedgingStrategyConfig,
         routing::{
             partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint, LocationEffect,
             LocationIndex,
@@ -23,7 +24,7 @@ use crate::{
         transport::AuthorizationContext,
     },
     models::{CosmosResponseHeaders, CosmosStatus},
-    options::Region,
+    options::{HedgeThreshold, Region},
 };
 
 // ── Operation-Level Components ─────────────────────────────────────────
@@ -553,6 +554,36 @@ pub(crate) enum OperationAction {
     },
     /// Retry for session consistency.
     SessionRetry { new_state: OperationRetryState },
+    /// Race the primary attempt against a single secondary cross-region hedge.
+    ///
+    /// Emitted by `evaluate_transport_result` per [`docs/HEDGING_SPEC.md`]
+    /// §6.1 when:
+    ///
+    /// 1. The per-attempt result was *transient* (would otherwise produce
+    ///    `FailoverRetry`/`SessionRetry`).
+    /// 2. `should_hedge` (§5.1) is `true` and an alternate read endpoint
+    ///    can be pinned.
+    /// 3. A `HedgingStrategy` resolved via §11.3.1.
+    ///
+    /// STAGE 7 of the operation pipeline dispatches this to
+    /// `execute_hedged()`, which races a fresh primary attempt against the
+    /// `secondary_routing` after `threshold` elapses. Both
+    /// `secondary_excluded_regions` (the per-hedge `ExcludeRegions` set
+    /// computed by `build_secondary_excluded_regions`) and
+    /// `strategy_config` (snapshot for the winning response's
+    /// `HedgeDiagnostics`, §10.1) ride along.
+    ///
+    /// **Wired in Part 4b** — the evaluator does not produce this variant
+    /// in Part 4a, and STAGE 7 currently aborts with a placeholder error
+    /// if it ever sees one. The variant exists now so the rest of the
+    /// hedging plumbing can compile against a stable enum shape.
+    #[allow(dead_code)]
+    Hedge {
+        secondary_routing: RoutingDecision,
+        secondary_excluded_regions: Vec<Region>,
+        threshold: HedgeThreshold,
+        strategy_config: HedgingStrategyConfig,
+    },
     /// Abort the operation with this error.
     Abort {
         error: azure_core::Error,

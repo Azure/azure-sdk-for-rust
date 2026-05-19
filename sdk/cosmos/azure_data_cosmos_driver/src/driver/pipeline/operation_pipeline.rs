@@ -377,6 +377,22 @@ pub(crate) async fn execute_operation_pipeline(
                 }
                 return Err(error);
             }
+            OperationAction::Hedge { .. } => {
+                // Part 4a placeholder. `evaluate_transport_result` does not
+                // emit `OperationAction::Hedge` yet (that wiring lands in
+                // Part 4b), but the variant exists so the match stays
+                // exhaustive against the stable enum shape. If we ever see
+                // it here today it is a programmer error, not a runtime
+                // condition — surface it loudly and abort.
+                tracing::error!(
+                    activity_id = %activity_id,
+                    "OperationAction::Hedge dispatched but execute_hedged() is not implemented yet (Part 4b); aborting",
+                );
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "hedging dispatch not yet wired (Part 4a placeholder)",
+                ));
+            }
         }
     }
 }
