@@ -36,11 +36,11 @@ pub use azure_data_cosmos_driver::models::PartitionKeyValue;
 pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
+pub use hash::EffectivePartitionKey;
 pub use models::{
     BatchResponse, CosmosDiagnosticsContext, IncrValue, ItemResponse, PatchOp, PatchSpec,
     ResourceResponse,
 };
-pub use hash::EffectivePartitionKey;
 pub use options::*;
 pub use query::Query;
 pub use routing_strategy::RoutingStrategy;

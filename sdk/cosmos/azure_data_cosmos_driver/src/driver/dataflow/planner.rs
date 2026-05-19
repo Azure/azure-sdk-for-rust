@@ -79,16 +79,16 @@ pub(crate) fn build_trivial_pipeline(
 
     let request_target = match target {
         None => RequestTarget::NonPartitioned,
-        Some(f) if let Some(pk) = f.partition_key() => {
-            RequestTarget::LogicalPartitionKey(pk.clone())
-        }
-        Some(FeedRange { .. }) => {
-            // This shouldn't have passed the `.is_trivial()` assert, but we don't want to panic.
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "FeedRange targeting requires a fan-out pipeline; \
+        Some(f) => {
+            if let Some(pk) = f.partition_key() {
+                RequestTarget::LogicalPartitionKey(pk.clone())
+            } else {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "FeedRange targeting requires a fan-out pipeline; \
                  use plan_operation for cross-partition queries",
-            ));
+                ));
+            }
         }
     };
 
