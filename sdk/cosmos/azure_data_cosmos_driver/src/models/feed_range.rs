@@ -131,7 +131,7 @@ impl FeedRange {
 
     /// Returns the exclusive upper bound of this range.
     ///
-    /// NOTE: The [`min_inclusive`] value overrides this limit. Thus, a range with
+    /// NOTE: The [`min_inclusive`](FeedRange::min_inclusive) value overrides this limit. Thus, a range with
     /// `min_inclusive == max_exclusive` is valid and represents exactly one EPK value, not an empty range.
     pub fn max_exclusive(&self) -> &EffectivePartitionKey {
         match &self.0 {

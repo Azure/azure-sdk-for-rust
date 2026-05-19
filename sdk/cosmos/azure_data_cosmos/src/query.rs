@@ -23,7 +23,7 @@ impl FeedScope {
     /// Returns a [`FeedScope`] that represents the given partition key, which is used for targeting a specific partition in the container.
     ///
     /// The provided [`PartitionKey`] MUST specify all levels of the hierarchy (e.g. in a multi-level hierarchical partition key, you must provide values for all levels, not just a prefix).
-    /// Use [`feed_range()`](FeedScope::feed_range) with a [`FeedRange`] that covers the desired partition(s) to specify anything beyond a single logical partition.
+    /// Use [`range()`](FeedScope::range) with a [`FeedRange`] that covers the desired partition(s) to specify anything beyond a single logical partition.
     pub fn partition(pk: impl Into<PartitionKey>) -> Self {
         Self::Partition(pk.into())
     }

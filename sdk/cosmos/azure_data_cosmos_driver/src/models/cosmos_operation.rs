@@ -607,10 +607,6 @@ impl CosmosOperation {
 
     /// Queries items in a container.
     ///
-    /// The `target` determines partition scope: use
-    /// [`OperationTarget::PartitionKey`] for single-partition queries, or
-    /// [`OperationTarget::FeedRange`] for cross-partition queries.
-    ///
     /// Use `with_body()` to provide the query JSON.
     pub fn query_items(container: ContainerReference, target: Option<FeedRange>) -> Self {
         let resource_ref: CosmosResourceReference = CosmosResourceReference::from(container)
