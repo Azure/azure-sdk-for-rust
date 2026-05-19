@@ -76,6 +76,8 @@ impl Display for ErrorKind {
 pub struct Error {
     context: Repr,
     // Boxed to keep `Error` small enough to satisfy `clippy::result_large_err`.
+    // Visible via `{:?}` formatting when RUST_BACKTRACE is set.
+    #[allow(dead_code)]
     backtrace: Box<Backtrace>,
 }
 
@@ -233,11 +235,6 @@ impl Error {
     /// Returns a mutable reference to the inner error, if any, downcasting to the type provided.
     pub fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T> {
         self.get_mut()?.downcast_mut()
-    }
-
-    /// Returns the backtrace captured when this error was created.
-    pub fn backtrace(&self) -> &Backtrace {
-        &self.backtrace
     }
 }
 
@@ -502,7 +499,7 @@ mod tests {
         use std::backtrace::BacktraceStatus;
 
         let error = Error::new(ErrorKind::Other, "test error");
-        let status = error.backtrace().status();
+        let status = error.backtrace.status();
         if std::env::var("RUST_BACKTRACE").is_ok() {
             assert_eq!(status, BacktraceStatus::Captured);
         } else {
