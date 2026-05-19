@@ -16,51 +16,32 @@ use azure_core::{
 use std::sync::Arc;
 
 impl BlobContainerClient {
-    /// Creates a new BlobContainerClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `container_name` - The name of the container.
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    pub fn new(
-        endpoint: &str,
-        container_name: &str,
-        credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<BlobContainerClientOptions>,
-    ) -> Result<Self> {
-        let mut url = Url::parse(endpoint)?;
-
-        {
-            let mut path_segments = url.path_segments_mut().map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
-                )
-            })?;
-            path_segments.extend([container_name]);
-        }
-
-        Self::from_url(url, credential, options)
-    }
-
     /// Creates a new BlobContainerClient from a container URL.
     ///
     /// # Arguments
     ///
     /// * `container_url` - The full URL of the container, for example `https://myaccount.blob.core.windows.net/mycontainer`.
+    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.Container")]
-    pub fn from_url(
+    pub fn new(
         container_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobContainerClientOptions>,
     ) -> Result<Self> {
+        // Storage endpoints must be base URLs.
+        if container_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{container_url} is not a valid base URL"),
+            ));
+        }
+
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
 
+        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
         if let Some(token_credential) = credential {
             if !container_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
@@ -68,11 +49,10 @@ impl BlobContainerClient {
                     format!("{container_url} must use https"),
                 ));
             }
-            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
-            ));
-            options.client_options.per_try_policies.push(auth_policy);
+            )));
         }
 
         let pipeline = Pipeline::new(
@@ -80,7 +60,7 @@ impl BlobContainerClient {
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            Vec::default(),
+            per_retry_policies,
             None,
         );
 
@@ -133,5 +113,33 @@ impl BlobContainerClient {
             },
             Err(e) => Err(e),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_url_rejects_cannot_be_a_base_url() {
+        let url = Url::parse("data:text/plain,hello").unwrap();
+        assert!(BlobContainerClient::new(url, None, None).is_err());
+    }
+
+    #[test]
+    fn from_url_accepts_http_without_credential() {
+        let url = Url::parse("http://127.0.0.1:10000/devstoreaccount1/container").unwrap();
+        let container = BlobContainerClient::new(url, None, None).unwrap();
+        assert_eq!(
+            container.blob_client("blob").url().path(),
+            "/devstoreaccount1/container/blob"
+        );
+    }
+
+    #[test]
+    fn from_url_accepts_https_custom_hostname() {
+        // CDN / Front Door / private endpoint hostnames are still https URLs.
+        let url = Url::parse("https://cdn.contoso.com/container").unwrap();
+        assert!(BlobContainerClient::new(url, None, None).is_ok());
     }
 }

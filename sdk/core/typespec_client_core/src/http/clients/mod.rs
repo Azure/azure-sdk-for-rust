@@ -3,13 +3,9 @@
 
 //! Built-in HTTP clients.
 
-#[cfg(not(feature = "reqwest"))]
-mod noop;
 #[cfg(feature = "reqwest")]
 mod reqwest;
 
-#[cfg(not(feature = "reqwest"))]
-use self::noop::new_noop_client;
 #[cfg(feature = "reqwest")]
 use self::reqwest::new_reqwest_client;
 
@@ -55,7 +51,7 @@ pub fn new_http_client(options: Option<HttpClientOptions>) -> Arc<dyn HttpClient
     }
     #[cfg(not(feature = "reqwest"))]
     {
-        new_noop_client()
+        panic!("The `reqwest` feature is required to use the default HTTP client. Please enable the `reqwest` feature or provide a custom `HttpClient` implementation.")
     }
 }
 

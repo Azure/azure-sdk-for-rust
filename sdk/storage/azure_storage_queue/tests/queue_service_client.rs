@@ -3,7 +3,11 @@
 
 mod common;
 
-use azure_core::{http::StatusCode, time::OffsetDateTime, Result};
+use azure_core::{
+    http::{StatusCode, Url},
+    time::OffsetDateTime,
+    Result,
+};
 use azure_core_test::{recorded, Recording, TestContext};
 use azure_storage_queue::{
     models::{
@@ -633,8 +637,9 @@ pub async fn get_queue_service_client(recording: &Recording) -> Result<QueueServ
         client_options: options.clone(),
         ..Default::default()
     };
+    let service_url = Url::parse(&endpoint)?;
     let queue_client = QueueServiceClient::new(
-        &endpoint,
+        service_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )?;
@@ -655,8 +660,9 @@ pub async fn get_queue_service_client_secondary(
         client_options: options.clone(),
         ..Default::default()
     };
+    let service_url = Url::parse(&endpoint)?;
     let queue_client = QueueServiceClient::new(
-        &endpoint,
+        service_url,
         Some(recording.credential()),
         Some(queue_client_options),
     )?;

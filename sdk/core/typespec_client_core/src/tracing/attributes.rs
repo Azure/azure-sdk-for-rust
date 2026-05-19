@@ -6,6 +6,7 @@ use std::borrow::Cow;
 
 /// An array of homogeneous attribute values.
 #[derive(Debug, PartialEq, Clone)]
+#[non_exhaustive]
 pub enum AttributeArray {
     /// An array of boolean values.
     Bool(Vec<bool>),
@@ -19,6 +20,7 @@ pub enum AttributeArray {
 
 /// Represents a single attribute value, which can be of various types
 #[derive(Debug, PartialEq, Clone)]
+#[non_exhaustive]
 pub enum AttributeValue {
     /// A boolean attribute value.
     Bool(bool),

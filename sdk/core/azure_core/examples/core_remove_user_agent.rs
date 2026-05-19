@@ -6,7 +6,7 @@ use azure_core::http::{
     policies::{Policy, PolicyResult},
     Context, Request, Transport,
 };
-use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
+use azure_core_examples::secrets::{SecretClient, SecretClientOptions};
 use example::setup;
 use std::sync::Arc;
 
@@ -78,7 +78,8 @@ mod example {
         credentials::TokenCredential,
         http::{headers::Headers, AsyncRawResponse, HttpClient, Method, StatusCode},
     };
-    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use azure_core_examples::identity::MockCredential;
+    use azure_core_test::http::MockHttpClient;
     use futures::FutureExt;
     use std::sync::Arc;
 

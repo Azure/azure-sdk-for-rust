@@ -15,35 +15,42 @@ use azure_core::{
 use std::sync::Arc;
 
 impl BlobServiceClient {
-    /// Creates a new BlobServiceClient, using Entra ID authentication.
+    /// Creates a new BlobServiceClient from a service URL.
     ///
     /// # Arguments
     ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
+    /// * `service_url` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`.
+    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.Service")]
     pub fn new(
-        endpoint: &str,
+        service_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlobServiceClientOptions>,
     ) -> Result<Self> {
-        let endpoint = Url::parse(endpoint)?;
+        // Storage endpoints must be base URLs.
+        if service_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{service_url} is not a valid base URL"),
+            ));
+        }
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
 
+        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
         if let Some(token_credential) = credential {
-            if !endpoint.scheme().starts_with("https") {
+            if !service_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::Other,
-                    format!("{endpoint} must use https"),
+                    format!("{service_url} must use https"),
                 ));
             }
-            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
-            ));
-            options.client_options.per_try_policies.push(auth_policy);
+            )));
         }
 
         let pipeline = Pipeline::new(
@@ -51,12 +58,12 @@ impl BlobServiceClient {
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            Vec::default(),
+            per_retry_policies,
             None,
         );
 
         Ok(Self {
-            endpoint,
+            endpoint: service_url,
             version: options.version,
             pipeline,
         })

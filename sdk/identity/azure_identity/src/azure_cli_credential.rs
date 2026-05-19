@@ -14,7 +14,7 @@ use azure_core::{
     time::OffsetDateTime,
 };
 use serde::Deserialize;
-use std::{ffi::OsString, sync::Arc};
+use std::{any::type_name, ffi::OsString, fmt, sync::Arc};
 use tracing::trace;
 
 /// The response from `az account get-access-token --output json`.
@@ -64,7 +64,6 @@ impl OutputProcessor for CliTokenResponse {
 }
 
 /// Authenticates the identity logged in to the [Azure CLI](https://learn.microsoft.com/cli/azure/what-is-azure-cli).
-#[derive(Debug)]
 pub struct AzureCliCredential {
     env: Env,
     executor: Arc<dyn Executor>,
@@ -72,8 +71,16 @@ pub struct AzureCliCredential {
     tenant_id: Option<String>,
 }
 
+impl fmt::Debug for AzureCliCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>())
+            .field("tenant_id", &self.tenant_id)
+            .finish_non_exhaustive()
+    }
+}
+
 /// Options for constructing an [`AzureCliCredential`].
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct AzureCliCredentialOptions {
     /// The name or ID of a subscription.
     ///
@@ -93,6 +100,14 @@ pub struct AzureCliCredentialOptions {
 
     #[cfg(test)]
     pub(crate) env: Option<Env>,
+}
+
+impl fmt::Debug for AzureCliCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>())
+            .field("tenant_id", &self.tenant_id)
+            .finish_non_exhaustive()
+    }
 }
 
 impl AzureCliCredential {

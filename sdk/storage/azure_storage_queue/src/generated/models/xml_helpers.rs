@@ -37,24 +37,24 @@ impl CorsCorsRule {
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename = "Queues")]
-pub(crate) struct Queue_itemsQueue {
+pub(crate) struct Queue_itemsQueueItem {
     #[serde(default)]
     Queue: Vec<QueueItem>,
 }
 
-impl Queue_itemsQueue {
+impl Queue_itemsQueueItem {
     pub fn unwrap<'de, D>(deserializer: D) -> Result<Vec<QueueItem>, D::Error>
     where
         D: Deserializer<'de>,
     {
-        Ok(Queue_itemsQueue::deserialize(deserializer)?.Queue)
+        Ok(Queue_itemsQueueItem::deserialize(deserializer)?.Queue)
     }
 
     pub fn wrap<S>(to_serialize: &Vec<QueueItem>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        Queue_itemsQueue {
+        Queue_itemsQueueItem {
             Queue: to_serialize.to_owned(),
         }
         .serialize(serializer)

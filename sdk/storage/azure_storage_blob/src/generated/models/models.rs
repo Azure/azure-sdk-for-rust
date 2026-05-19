@@ -6,13 +6,14 @@
 use super::{
     models_serde,
     xml_helpers::{
-        Blob_tag_setTag, BlobsBlob, Committed_blocksBlock, Container_itemsContainer, CorsCorsRule,
-        Uncommitted_blocksBlock,
+        Blob_itemsBlobItem, Blob_itemsFilterBlobItem, Blob_tag_setBlobTag, Committed_blocksBlock,
+        Container_itemsContainerItem, CorsCorsRule, Uncommitted_blocksBlock,
     },
     AccessTier, ArchiveStatus, BlobType, CopyStatus, GeoReplicationStatusType,
     ImmutabilityPolicyMode, LeaseDuration, LeaseState, LeaseStatus, PublicAccessType,
     RehydratePriority, StorageErrorCode,
 };
+use crate::models::BlobMetadata;
 use azure_core::{base64, fmt::SafeDebug, http::Etag, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -29,7 +30,7 @@ pub struct AccessPolicy {
     )]
     pub expiry: Option<OffsetDateTime>,
 
-    /// The permissions for acl the policy.
+    /// The permissions for the policy.
     #[serde(rename = "Permission", skip_serializing_if = "Option::is_none")]
     pub permission: Option<String>,
 
@@ -77,7 +78,7 @@ pub struct BlobClientCreateSnapshotResult;
 
 /// Contains results for `BlobClient::download_internal()`
 #[derive(SafeDebug)]
-pub struct BlobClientDownloadInternalResult;
+pub(crate) struct BlobClientDownloadInternalResult;
 
 /// Contains results for `BlobClient::get_account_info()`
 #[derive(SafeDebug)]
@@ -123,16 +124,7 @@ pub struct BlobContainerClientReleaseLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRenewLeaseResult;
 
-/// The blob flat list segment.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct BlobFlatListSegment {
-    /// The blob items.
-    #[serde(default, rename = "Blob")]
-    pub blob_items: Vec<BlobItem>,
-}
-
-/// An Azure Storage Blob
+/// Represents a blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Blob")]
@@ -177,20 +169,9 @@ pub struct BlobItem {
     #[serde(rename = "Snapshot", skip_serializing_if = "Option::is_none")]
     pub snapshot: Option<String>,
 
-    /// The version id of the blob.
+    /// The version ID of the blob.
     #[serde(rename = "VersionId", skip_serializing_if = "Option::is_none")]
     pub version_id: Option<String>,
-}
-
-/// The blob metadata.
-#[derive(Clone, Default, SafeDebug)]
-#[non_exhaustive]
-pub struct BlobMetadata {
-    /// Contains unnamed additional properties.
-    pub additional_properties: Option<HashMap<String, String>>,
-
-    /// Whether the blob metadata is encrypted.
-    pub encrypted: Option<String>,
 }
 
 /// Represents a blob name.
@@ -215,7 +196,7 @@ pub struct BlobProperties {
     #[serde(rename = "AccessTier", skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<AccessTier>,
 
-    /// The access tier change time of the blob.
+    /// The date-time that the access tier of the blob changed.
     #[serde(
         default,
         rename = "AccessTierChangeTime",
@@ -280,7 +261,7 @@ pub struct BlobProperties {
     #[serde(rename = "Content-Type", skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
 
-    /// The copy completion time of the blob.
+    /// The copy completion date-time of the blob.
     #[serde(
         default,
         rename = "CopyCompletionTime",
@@ -312,7 +293,7 @@ pub struct BlobProperties {
     )]
     pub copy_status_description: Option<String>,
 
-    /// The date-time the blob was created in RFC1123 format.
+    /// The date-time the blob was created.
     #[serde(
         default,
         rename = "Creation-Time",
@@ -321,14 +302,7 @@ pub struct BlobProperties {
     )]
     pub creation_time: Option<OffsetDateTime>,
 
-    /// Customer provided key sha256
-    #[serde(
-        rename = "CustomerProvidedKeySha256",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub customer_provided_key_sha256: Option<String>,
-
-    /// The time the blob was deleted.
+    /// The date-time the blob was deleted.
     #[serde(
         default,
         rename = "DeletedTime",
@@ -344,6 +318,13 @@ pub struct BlobProperties {
     )]
     pub destination_snapshot: Option<String>,
 
+    /// The SHA-256 hash of the blob's encryption key, if provided.
+    #[serde(
+        rename = "CustomerProvidedKeySha256",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub encryption_key_sha256: Option<String>,
+
     /// The encryption scope of the blob.
     #[serde(rename = "EncryptionScope", skip_serializing_if = "Option::is_none")]
     pub encryption_scope: Option<String>,
@@ -352,7 +333,7 @@ pub struct BlobProperties {
     #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<Etag>,
 
-    /// The expire time of the blob.
+    /// The expiry time of the blob.
     #[serde(
         default,
         rename = "Expiry-Time",
@@ -361,7 +342,7 @@ pub struct BlobProperties {
     )]
     pub expires_on: Option<OffsetDateTime>,
 
-    /// The immutability policy until time of the blob.
+    /// The date-time the immutability policy of the blob expires.
     #[serde(
         default,
         rename = "ImmutabilityPolicyUntilDate",
@@ -377,7 +358,7 @@ pub struct BlobProperties {
     )]
     pub immutability_policy_mode: Option<ImmutabilityPolicyMode>,
 
-    /// Whether the blob is incremental copy.
+    /// Whether the blob is an incremental copy.
     #[serde(rename = "IncrementalCopy", skip_serializing_if = "Option::is_none")]
     pub incremental_copy: Option<bool>,
 
@@ -385,7 +366,7 @@ pub struct BlobProperties {
     #[serde(rename = "Sealed", skip_serializing_if = "Option::is_none")]
     pub is_sealed: Option<bool>,
 
-    /// The last access time of the blob.
+    /// The date-time the blob was last accessed.
     #[serde(
         default,
         rename = "LastAccessTime",
@@ -394,7 +375,7 @@ pub struct BlobProperties {
     )]
     pub last_accessed_on: Option<OffsetDateTime>,
 
-    /// The date-time the blob was last modified in RFC1123 format.
+    /// The date-time the blob was last modified.
     #[serde(
         default,
         rename = "Last-Modified",
@@ -443,7 +424,7 @@ pub struct BlobProperties {
 #[derive(SafeDebug)]
 pub struct BlobServiceClientGetAccountInfoResult;
 
-/// The service properties.
+/// The blob service properties.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "StorageServiceProperties")]
 pub struct BlobServiceProperties {
@@ -488,7 +469,7 @@ pub struct BlobServiceProperties {
     pub static_website: Option<StaticWebsite>,
 }
 
-/// The blob tags.
+/// A key-value pair associated with a blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "Tag")]
 pub struct BlobTag {
@@ -501,22 +482,22 @@ pub struct BlobTag {
     pub value: Option<String>,
 }
 
-/// Represents blob tags.
+/// A list of blob tags.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "Tags")]
 pub struct BlobTags {
-    /// Represents the blob tags.
+    /// A list of blob tags.
     #[serde(
         default,
-        deserialize_with = "Blob_tag_setTag::unwrap",
+        deserialize_with = "Blob_tag_setBlobTag::unwrap",
         rename = "TagSet",
-        serialize_with = "Blob_tag_setTag::wrap",
+        serialize_with = "Blob_tag_setBlobTag::wrap",
         skip_serializing_if = "Option::is_none"
     )]
     pub blob_tag_set: Option<Vec<BlobTag>>,
 }
 
-/// Represents a single block in a block blob. It describes the block's ID and size.
+/// Represents a single block in a block blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct Block {
@@ -553,7 +534,7 @@ pub struct BlockBlobClientUploadBlobFromUrlResult;
 
 /// Contains results for `BlockBlobClient::upload_internal()`
 #[derive(SafeDebug)]
-pub struct BlockBlobClientUploadInternalResult;
+pub(crate) struct BlockBlobClientUploadInternalResult;
 
 /// Contains the committed and uncommitted blocks in a block blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
@@ -580,11 +561,11 @@ pub struct BlockList {
     pub uncommitted_blocks: Option<Vec<Block>>,
 }
 
-/// The Block lookup list.
+/// The block lookup list.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "BlockList")]
 pub struct BlockLookupList {
-    /// The committed blocks
+    /// The committed blocks.
     #[serde(
         default,
         rename = "Committed",
@@ -593,7 +574,7 @@ pub struct BlockLookupList {
     )]
     pub committed: Option<Vec<Vec<u8>>>,
 
-    /// The latest blocks
+    /// The latest blocks.
     #[serde(
         default,
         rename = "Latest",
@@ -602,7 +583,7 @@ pub struct BlockLookupList {
     )]
     pub latest: Option<Vec<Vec<u8>>>,
 
-    /// The uncommitted blocks
+    /// The uncommitted blocks.
     #[serde(
         default,
         rename = "Uncommitted",
@@ -612,25 +593,12 @@ pub struct BlockLookupList {
     pub uncommitted: Option<Vec<Vec<u8>>>,
 }
 
-/// The clear range.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct ClearRange {
-    /// The end of the byte range.
-    #[serde(rename = "End", skip_serializing_if = "Option::is_none")]
-    pub end: Option<i64>,
-
-    /// The start of the byte range.
-    #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
-    pub start: Option<i64>,
-}
-
-/// An Azure Storage container.
+/// Represents a container.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Container")]
 pub struct ContainerItem {
-    /// Whether the container is deleted.
+    /// Whether the container is soft-deleted.
     #[serde(rename = "Deleted", skip_serializing_if = "Option::is_none")]
     pub deleted: Option<bool>,
 
@@ -662,7 +630,7 @@ pub struct ContainerProperties {
     )]
     pub default_encryption_scope: Option<String>,
 
-    /// The deleted time of the container.
+    /// The date-time the container was deleted.
     #[serde(
         default,
         rename = "DeletedTime",
@@ -675,14 +643,14 @@ pub struct ContainerProperties {
     #[serde(rename = "Etag", skip_serializing_if = "Option::is_none")]
     pub etag: Option<Etag>,
 
-    /// Whether it has an immutability policy.
+    /// Whether the container has an immutability policy.
     #[serde(
         rename = "HasImmutabilityPolicy",
         skip_serializing_if = "Option::is_none"
     )]
     pub has_immutability_policy: Option<bool>,
 
-    /// The has legal hold status of the container.
+    /// Whether the container has a legal hold.
     #[serde(rename = "HasLegalHold", skip_serializing_if = "Option::is_none")]
     pub has_legal_hold: Option<bool>,
 
@@ -693,7 +661,7 @@ pub struct ContainerProperties {
     )]
     pub is_immutable_storage_with_versioning_enabled: Option<bool>,
 
-    /// The date-time the container was last modified in RFC1123 format.
+    /// The date-time that the container was last modified.
     #[serde(
         default,
         rename = "Last-Modified",
@@ -733,9 +701,7 @@ pub struct ContainerProperties {
     pub remaining_retention_days: Option<i32>,
 }
 
-/// CORS is an HTTP feature that enables a web application running under one domain to access resources in another domain.
-/// Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in
-/// a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain
+/// A Cross-Origin Resource Sharing (CORS) rule.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "CorsRule")]
 pub struct CorsRule {
@@ -769,21 +735,21 @@ pub struct Error {
     #[serde(rename = "Code", skip_serializing_if = "Option::is_none")]
     pub code: Option<StorageErrorCode>,
 
-    /// Copy source error code
+    /// The copy source error code.
     #[serde(
         rename = "CopySourceErrorCode",
         skip_serializing_if = "Option::is_none"
     )]
     pub copy_source_error_code: Option<String>,
 
-    /// Copy source error message
+    /// The copy source error message.
     #[serde(
         rename = "CopySourceErrorMessage",
         skip_serializing_if = "Option::is_none"
     )]
     pub copy_source_error_message: Option<String>,
 
-    /// Copy source status code
+    /// The copy source status code.
     #[serde(
         rename = "CopySourceStatusCode",
         skip_serializing_if = "Option::is_none"
@@ -813,16 +779,16 @@ pub struct Error {
     pub x_ms_copy_source_status_code: Option<i32>,
 }
 
-/// The filter blob item.
+/// The filtered blob item.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "Blob")]
 pub struct FilterBlobItem {
-    /// The properties of the blob.
+    /// The name of the container.
     #[serde(rename = "ContainerName", skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
 
-    /// Whether it is the current version of the blob
+    /// Whether it is the current version of the blob.
     #[serde(rename = "IsCurrentVersion", skip_serializing_if = "Option::is_none")]
     pub is_current_version: Option<bool>,
 
@@ -830,7 +796,7 @@ pub struct FilterBlobItem {
     #[serde(rename = "Name", skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
-    /// The metadata of the blob.
+    /// The tags of the blob.
     #[serde(rename = "Tags", skip_serializing_if = "Option::is_none")]
     pub tags: Option<BlobTags>,
 
@@ -839,22 +805,22 @@ pub struct FilterBlobItem {
     pub version_id: Option<String>,
 }
 
-/// The result of a Filter Blobs API call
+/// The result of the Find Blobs by Tags API.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-pub struct FilterBlobSegment {
-    /// The blob segment.
+pub struct FilteredBlobResponse {
+    /// The list of filtered blobs.
     #[serde(
         default,
-        deserialize_with = "BlobsBlob::unwrap",
+        deserialize_with = "Blob_itemsFilterBlobItem::unwrap",
         rename = "Blobs",
-        serialize_with = "BlobsBlob::wrap",
-        skip_serializing_if = "Option::is_none"
+        serialize_with = "Blob_itemsFilterBlobItem::wrap"
     )]
-    pub blobs: Option<Vec<FilterBlobItem>>,
+    pub blob_items: Vec<FilterBlobItem>,
 
-    /// The next marker of the blobs.
+    /// An opaque string value that identifies the portion of the result set to be returned with the next operation. Use this
+    /// value in the next request to continue the listing operation.
     #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 
@@ -862,16 +828,16 @@ pub struct FilterBlobSegment {
     #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
     pub service_endpoint: Option<String>,
 
-    /// The filter for the blobs.
+    /// The filter expression for the blobs.
     #[serde(rename = "Where", skip_serializing_if = "Option::is_none")]
     pub where_prop: Option<String>,
 }
 
-/// Geo-Replication information for the Secondary Storage Service
+/// Geo-replication information for the secondary storage service.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct GeoReplication {
-    /// A GMT date/time value, to the second. All primary writes preceding this value are guaranteed to be available for read
+    /// A date-time value that indicates where all primary writes preceding this value are guaranteed to be available for read
     /// operations at the secondary. Primary writes after this point in time may or may not be available for reads.
     #[serde(
         default,
@@ -881,68 +847,75 @@ pub struct GeoReplication {
     )]
     pub last_sync_time: Option<OffsetDateTime>,
 
-    /// The status of the secondary location
+    /// The status of the secondary location.
     #[serde(rename = "Status", skip_serializing_if = "Option::is_none")]
     pub status: Option<GeoReplicationStatusType>,
 }
 
-/// An enumeration of blobs.
+/// The result of the List Blobs API.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
 pub struct ListBlobsResponse {
+    /// The list of blobs.
+    #[serde(
+        default,
+        deserialize_with = "Blob_itemsBlobItem::unwrap",
+        rename = "Blobs",
+        serialize_with = "Blob_itemsBlobItem::wrap"
+    )]
+    pub blob_items: Vec<BlobItem>,
+
     /// The container name.
     #[serde(rename = "@ContainerName", skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
 
-    /// The marker of the blobs.
+    /// An opaque string value that identifies the portion of the result set returned with this operation.
     #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
     pub marker: Option<String>,
 
-    /// The max results of the blobs.
+    /// The maximum number of blobs to be returned with this operation.
     #[serde(rename = "MaxResults", skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i32>,
 
-    /// The next marker of the blobs.
+    /// An opaque string value that identifies the portion of the result set to be returned with the next operation. Use this
+    /// value in the next request to continue the listing operation.
     #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 
-    /// The prefix of the blobs.
+    /// The prefix of the list operation.
     #[serde(rename = "Prefix", skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
-
-    /// The blob segment.
-    #[serde(default, rename = "Blobs")]
-    pub segment: BlobFlatListSegment,
 
     /// The service endpoint.
     #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
     pub service_endpoint: Option<String>,
 }
 
-/// The list container segment response
+/// The result of the List Containers API.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "EnumerationResults")]
-pub struct ListContainersSegmentResponse {
-    /// The container segment.
+pub struct ListContainersResponse {
+    /// The list of containers.
     #[serde(
         default,
-        deserialize_with = "Container_itemsContainer::unwrap",
+        deserialize_with = "Container_itemsContainerItem::unwrap",
         rename = "Containers",
-        serialize_with = "Container_itemsContainer::wrap"
+        serialize_with = "Container_itemsContainerItem::wrap"
     )]
     pub container_items: Vec<ContainerItem>,
 
-    /// The marker of the containers.
+    /// An opaque string value that identifies the portion of the result set returned with this operation.
     #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
     pub marker: Option<String>,
 
-    /// The max results of the containers.
+    /// The maximum number of containers to be returned with this operation.
     #[serde(rename = "MaxResults", skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i32>,
 
-    /// The next marker of the containers.
+    /// An opaque string value that identifies the portion of the result set to be returned with the next operation. Use this
+    /// value in the next request to continue the listing operation.
     #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 
@@ -955,7 +928,7 @@ pub struct ListContainersSegmentResponse {
     pub service_endpoint: Option<String>,
 }
 
-/// Azure Analytics Logging settings.
+/// Azure Analytics logging settings.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct Logging {
     /// Whether delete operation is logged.
@@ -982,7 +955,7 @@ pub struct Logging {
 /// The metrics properties.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct Metrics {
-    /// Whether it is enabled.
+    /// Whether the metrics are enabled.
     #[serde(rename = "Enabled", skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 
@@ -1031,36 +1004,6 @@ pub struct PageBlobClientUploadPagesFromUrlResult;
 #[derive(SafeDebug)]
 pub struct PageBlobClientUploadPagesResult;
 
-/// Represents a page list.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct PageList {
-    /// The clear ranges.
-    #[serde(rename = "ClearRange", skip_serializing_if = "Option::is_none")]
-    pub clear_range: Option<Vec<ClearRange>>,
-
-    /// The next marker.
-    #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
-    pub next_marker: Option<String>,
-
-    /// The page ranges.
-    #[serde(rename = "PageRange", skip_serializing_if = "Option::is_none")]
-    pub page_range: Option<Vec<PageRange>>,
-}
-
-/// The page range.
-#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
-#[non_exhaustive]
-pub struct PageRange {
-    /// The end of the byte range.
-    #[serde(rename = "End", skip_serializing_if = "Option::is_none")]
-    pub end: Option<i64>,
-
-    /// The start of the byte range.
-    #[serde(rename = "Start", skip_serializing_if = "Option::is_none")]
-    pub start: Option<i64>,
-}
-
 /// The retention policy.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct RetentionPolicy {
@@ -1075,12 +1018,12 @@ pub struct RetentionPolicy {
     #[serde(rename = "Days", skip_serializing_if = "Option::is_none")]
     pub days: Option<i32>,
 
-    /// Whether to enable the retention policy.
+    /// Whether the policy is enabled.
     #[serde(rename = "Enabled", skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
 
-/// The signed identifier.
+/// A signed identifier.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[serde(rename = "SignedIdentifier")]
 pub struct SignedIdentifier {
@@ -1093,25 +1036,25 @@ pub struct SignedIdentifier {
     pub id: Option<String>,
 }
 
-/// Represents an array of signed identifiers
+/// List of signed identifiers.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct SignedIdentifiers {
-    /// The array of signed identifiers.
+    /// The list of signed identifiers.
     #[serde(rename = "SignedIdentifier", skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<SignedIdentifier>>,
 }
 
-/// The properties that enable an account to host a static website
+/// The properties that enable an account to host a static website.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 pub struct StaticWebsite {
-    /// Absolute path of the default index page
+    /// Absolute path of the default index page.
     #[serde(
         rename = "DefaultIndexDocumentPath",
         skip_serializing_if = "Option::is_none"
     )]
     pub default_index_document_path: Option<String>,
 
-    /// Indicates whether this account is hosting a static website
+    /// Indicates whether this account is hosting a static website.
     #[serde(rename = "Enabled", skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 
@@ -1131,7 +1074,7 @@ pub struct StaticWebsite {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 pub struct StorageServiceStats {
-    /// The geo replication stats.
+    /// The geo-replication stats.
     #[serde(rename = "GeoReplication", skip_serializing_if = "Option::is_none")]
     pub geo_replication: Option<GeoReplication>,
 }

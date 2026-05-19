@@ -1,6 +1,6 @@
 # Release History
 
-## 0.15.0 (Unreleased)
+## 1.1.0-beta.1 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,16 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 1.0.0 (2026-05-12)
+
+### Features Added
+
+- Initial stable release.
+
+### Breaking Changes
+
+- Vault URLs must use TLS (https).
 
 ## 0.14.0 (2026-04-22)
 

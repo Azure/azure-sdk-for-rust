@@ -9,8 +9,9 @@
 
 .DESCRIPTION
     Queries npmjs.org for the latest version of @azure-tools/typespec-rust, fetches
-    its package.json from GitHub, and updates any matching devDependencies in our
-    eng/emitter-package.json. Runs 'tsp-client generate-lock-file' afterward.
+    its package.json from GitHub, and updates any matching peerDependencies or
+    devDependencies in our eng/emitter-package.json devDependencies.
+    Runs 'tsp-client generate-lock-file' afterward.
 
 .PARAMETER Regenerate
     If set, recursively finds each tsp-location.yaml under sdk/ and runs
@@ -64,32 +65,39 @@ Write-Host "Latest version: $latestVersion"
 $packageJsonUrl = "https://raw.githubusercontent.com/Azure/typespec-rust/v$latestVersion/packages/typespec-rust/package.json"
 Write-Host "Fetching upstream package.json from v$latestVersion tag"
 $upstreamPackage = Invoke-RestMethod -Uri $packageJsonUrl
-$upstreamDevDeps = $upstreamPackage.devDependencies
+$upstreamDevDeps = if ($upstreamPackage.devDependencies) { $upstreamPackage.devDependencies } else { [PSCustomObject]@{} }
+$upstreamPeerDeps = if ($upstreamPackage.peerDependencies) { $upstreamPackage.peerDependencies } else { [PSCustomObject]@{} }
 
 # Read our emitter-package.json and check if an update is needed.
 $emitterPackage = Get-Content $EmitterPackagePath -Raw | ConvertFrom-Json
 $currentVersion = $emitterPackage.dependencies.'@azure-tools/typespec-rust'
+$updated = $false
 
-if ($currentVersion -eq $latestVersion) {
-  Write-Host "Already up to date ($currentVersion)"
-} else {
+if ($currentVersion -ne $latestVersion) {
   Write-Host "Updating @azure-tools/typespec-rust: $currentVersion -> $latestVersion"
   $emitterPackage.dependencies.'@azure-tools/typespec-rust' = $latestVersion
+  $updated = $true
+}
 
-  # Update intersection of upstream devDependencies with our devDependencies.
-  foreach ($prop in $emitterPackage.devDependencies.PSObject.Properties) {
-    $upstreamProp = $upstreamDevDeps.PSObject.Properties[$prop.Name]
-    if ($upstreamProp -and $prop.Value -ne $upstreamProp.Value) {
-      Write-Host "Updating devDependency $($prop.Name): $($prop.Value) -> $($upstreamProp.Value)"
-      $prop.Value = $upstreamProp.Value
-    }
+# Update intersection of upstream peerDependencies and devDependencies with our devDependencies.
+foreach ($prop in $emitterPackage.devDependencies.PSObject.Properties) {
+  # Check peerDependencies first (explicit compat requirements), then devDependencies.
+  $upstreamProp = $upstreamPeerDeps.PSObject.Properties[$prop.Name] ?? $upstreamDevDeps.PSObject.Properties[$prop.Name]
+  if ($upstreamProp -and $prop.Value -ne $upstreamProp.Value) {
+    Write-Host "Updating devDependency $($prop.Name): $($prop.Value) -> $($upstreamProp.Value)"
+    $prop.Value = $upstreamProp.Value
+    $updated = $true
   }
+}
 
+if ($updated) {
   Write-Host "Writing updated emitter-package.json"
   $emitterPackage | ConvertTo-Json -Depth 10 | Set-Content -Path $EmitterPackagePath
 
   # Regenerate the lock file after updating.
   Invoke-TspClient -Arguments 'generate-lock-file'
+} else {
+  Write-Host "Already up to date ($currentVersion)"
 }
 
 # Regenerate all SDK clients if requested.

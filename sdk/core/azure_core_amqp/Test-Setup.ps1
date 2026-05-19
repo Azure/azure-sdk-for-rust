@@ -12,7 +12,7 @@ if ($IsMacOS) {
 }
 
 # Create the test binary *outside* the repo root to avoid polluting the repo.
-$WorkingDirectory = ([System.IO.Path]::Combine($RepoRoot, "../TestArtifacts"))
+$WorkingDirectory = [System.IO.Path]::Combine($RepoRoot, "../TestArtifacts")
 
 # Create the working directory if it does not exist.
 Write-Host "Using Working Directory $WorkingDirectory"
@@ -28,10 +28,15 @@ Push-Location -Path $WorkingDirectory
 # Clone and build the Test Amqp Broker.
 try {
 
+  $repositoryDir = [System.IO.Path]::Combine($WorkingDirectory, "azure-amqp")
+  if (Test-Path $repositoryDir) {
+    Write-Host "Removing previously cloned repository: $repositoryDir"
+    Remove-Item $repositoryDir -Force -Recurse | Out-Null
+  }
+
   $repositoryUrl = "https://github.com/Azure/azure-amqp.git"
   $repositoryHash = "d82a86455c3459c5628bc95b25511f6e8a065598"
-  $cloneCommand = "git clone $repositoryUrl --revision $repositoryHash"
-
+  $cloneCommand = "git clone $repositoryUrl --revision $repositoryHash --depth=1"
 
   Write-Host "Cloning repository from $repositoryUrl..."
   Invoke-LoggedCommand $cloneCommand

@@ -97,10 +97,11 @@ function Get-OutputPackageNames($packages) {
 
 function Create-ApiViewFile($package) {
   $packageName = $package.name
-  $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $packageName"
+  $manifestPath = $package.manifest_path
+  $command = "cargo run --manifest-path $RepoRoot/eng/tools/generate_api_report/Cargo.toml -- --package $packageName --manifest-path $manifestPath"
   Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
-  $packagePath = Split-Path -Path $package.manifest_path -Parent
+  $packagePath = Split-Path -Path $manifestPath -Parent
 
   "$packagePath/review/$packageName.rust.json"
 }
