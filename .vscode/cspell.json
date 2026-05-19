@@ -91,6 +91,7 @@
     "servicebus",
     "splitmix",
     "spector",
+    "startswith",
     "stylesheet",
     "subclient",
     "symcrypt",
