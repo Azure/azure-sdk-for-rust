@@ -28,3 +28,5 @@ pub use diagnostics_context::{
     TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
 };
 pub use proxy_configuration::ProxyConfiguration;
+
+pub use crate::driver::pipeline::hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig};

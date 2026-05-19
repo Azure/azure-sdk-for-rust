@@ -9,6 +9,7 @@
 
 pub(crate) mod components;
 pub(crate) mod from_local_body;
+pub(crate) mod hedging_diagnostics;
 pub(crate) mod operation_pipeline;
 pub(crate) mod patch_eval;
 pub(crate) mod patch_handler;
