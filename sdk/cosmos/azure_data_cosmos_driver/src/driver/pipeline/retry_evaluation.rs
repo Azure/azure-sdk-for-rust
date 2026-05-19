@@ -616,7 +616,11 @@ fn evaluate_deadline_exceeded_outcome(
 /// Attaches the response body and headers as a `raw_response` so callers
 /// can match on `ErrorKind::HttpResponse { raw_response: Some(_), .. }`
 /// and inspect the service error payload.
-fn build_http_error(status: &CosmosStatus, headers: &Headers, body: &[u8]) -> azure_core::Error {
+pub(crate) fn build_http_error(
+    status: &CosmosStatus,
+    headers: &Headers,
+    body: &[u8],
+) -> azure_core::Error {
     let status_code = status.status_code();
     let name = status.name().unwrap_or("Unknown");
     let sub_status_str = match status.sub_status() {

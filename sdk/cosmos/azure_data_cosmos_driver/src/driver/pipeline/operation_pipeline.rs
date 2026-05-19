@@ -11,6 +11,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
+use futures::future::{select, Either};
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
@@ -26,7 +27,8 @@ use crate::{
         Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{
-        OperationOptionsView, ReadConsistencyStrategy, Region, ThroughputControlGroupSnapshot,
+        HedgeThreshold, OperationOptionsView, ReadConsistencyStrategy, Region,
+        ThroughputControlGroupSnapshot,
     },
 };
 
@@ -35,8 +37,11 @@ use super::{
         OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
         TransportRequest, TransportResult,
     },
+    hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
+    hedging_eligibility::{evaluate_hedge_eligibility, is_final_result},
     retry_evaluation::{
-        evaluate_transport_result, is_region_confirming_status, partition_effects_for_deferral,
+        build_http_error, evaluate_transport_result, is_region_confirming_status,
+        partition_effects_for_deferral,
     },
 };
 
@@ -272,6 +277,25 @@ pub(crate) async fn execute_operation_pipeline(
         let (action, effects) =
             evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
 
+        // ── STAGE 5b: Optional hedging upgrade ─────────────────────────
+        // HEDGING_SPEC.md §6.1: when the just-classified action would have
+        // advanced to a different region anyway (FailoverRetry / SessionRetry)
+        // and the operation is eligible for cross-region hedging (§5.1) with
+        // a strategy resolved (§11.3.1), replace it with `OperationAction::Hedge`
+        // so STAGE 7 races primary and secondary in parallel via
+        // `execute_hedged()`. If no upgrade applies the original action passes
+        // through unchanged — preserving today's sequential-failover semantics
+        // for non-hedgeable operations, single-region accounts, env-disabled
+        // hedging, and explicit `AvailabilityStrategy::Disabled`.
+        let action = maybe_upgrade_to_hedge(
+            action,
+            operation,
+            options,
+            &location.account,
+            &routing,
+            deadline.map(|d| d.saturating_duration_since(Instant::now())),
+        );
+
         // ── STAGE 6: Apply location effects ────────────────────────────
         // Single-master write effects are deferred into
         // `retry_state.pending_write_effects` instead of being applied
@@ -377,21 +401,51 @@ pub(crate) async fn execute_operation_pipeline(
                 }
                 return Err(error);
             }
-            OperationAction::Hedge { .. } => {
-                // Part 4a placeholder. `evaluate_transport_result` does not
-                // emit `OperationAction::Hedge` yet (that wiring lands in
-                // Part 4b), but the variant exists so the match stays
-                // exhaustive against the stable enum shape. If we ever see
-                // it here today it is a programmer error, not a runtime
-                // condition — surface it loudly and abort.
-                tracing::error!(
-                    activity_id = %activity_id,
-                    "OperationAction::Hedge dispatched but execute_hedged() is not implemented yet (Part 4b); aborting",
-                );
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "hedging dispatch not yet wired (Part 4a placeholder)",
-                ));
+            OperationAction::Hedge {
+                secondary_routing,
+                secondary_excluded_regions: _,
+                threshold,
+                strategy_config,
+            } => {
+                // HEDGING_SPEC.md §6.1 / §6.4 — race the primary attempt
+                // against a single cross-region secondary via
+                // `execute_hedged`. Terminal per the Part 4 design: the
+                // result of the race is the final operation result and
+                // we do not re-enter the operation loop, even when both
+                // sides fail transient (their errors are surfaced as the
+                // operation error). Per spec §6.5 #9 the `Hedge` variant
+                // is the only entry point to `execute_hedged`.
+                //
+                // We move `diagnostics` into `execute_hedged` because the
+                // function takes ownership of the parent builder to merge
+                // each hedge attempt's sub-builder back into it and finalize
+                // the response (mirroring the `Complete` arm's
+                // `build_cosmos_response(result, diagnostics)` shape).
+                let attempt_ctx = AttemptContext {
+                    operation,
+                    custom_headers,
+                    transport,
+                    account_endpoint,
+                    credential,
+                    user_agent,
+                    activity_id,
+                    pipeline_type,
+                    transport_security,
+                    session_manager,
+                    session_consistency_active,
+                    options,
+                    throughput_control,
+                    deadline,
+                };
+                return execute_hedged(
+                    &attempt_ctx,
+                    &routing,
+                    &secondary_routing,
+                    threshold,
+                    strategy_config,
+                    diagnostics,
+                )
+                .await;
             }
         }
     }
@@ -1169,6 +1223,515 @@ fn try_cleanup_probe_candidate(
             current.clone()
         }
     });
+}
+
+// ── Hedging dispatch (Part 4b) ────────────────────────────────────────
+//
+// `maybe_upgrade_to_hedge` + `AttemptContext` + `perform_single_attempt`
+// + `execute_hedged` together implement the cross-region hedging race
+// described in [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md)
+// §6.1–§6.5. They sit between the main `execute_operation_pipeline`
+// loop's STAGE 5 (evaluator) and STAGE 7 (dispatch):
+//
+//  1. After `evaluate_transport_result` returns a per-attempt action,
+//     `maybe_upgrade_to_hedge` checks whether the action is a
+//     same-pipeline retry (`FailoverRetry` / `SessionRetry`) and the
+//     operation is hedge-eligible per `hedging_eligibility`. If so the
+//     action is rewritten to `OperationAction::Hedge`.
+//  2. The STAGE 7 `Hedge` arm bundles the per-operation shared state
+//     into `AttemptContext` and calls `execute_hedged`.
+//  3. `execute_hedged` fires the primary attempt immediately, races it
+//     against the threshold timer (zero-overhead happy path when the
+//     primary completes first), then spawns the secondary and races
+//     primary vs secondary. The first **final** result wins (`§7.1`
+//     `is_final_result`); a transient on either side keeps the other
+//     side racing.
+//
+// Diagnostics flow: each hedge attempt records into its own
+// sub-builder cloned from the parent via
+// `DiagnosticsContextBuilder::clone_for_hedge_attempt`. After the race
+// resolves the surviving sub-builders are merged back into the parent
+// via `merge_hedge_attempt`, and the winning side's
+// [`HedgeDiagnostics`] is attached via `set_hedge_diagnostics`. Loser
+// futures dropped by the race never merge — their request_diagnostics
+// are intentionally discarded (matches spec §6.5 #6 "single writer to
+// diagnostics" for the per-operation summary).
+
+/// Per-operation context shared across hedge attempts.
+///
+/// Bundles the read-only references that every per-attempt transport
+/// invocation needs so [`execute_hedged`] and [`perform_single_attempt`]
+/// can be called without 14-argument call sites. The `'a` lifetime is
+/// the outer `execute_operation_pipeline` invocation's lifetime — every
+/// field is borrowed from there.
+struct AttemptContext<'a> {
+    operation: &'a CosmosOperation,
+    custom_headers: Option<&'a std::collections::HashMap<HeaderName, HeaderValue>>,
+    transport: &'a CosmosTransport,
+    account_endpoint: &'a AccountEndpoint,
+    credential: &'a Credential,
+    user_agent: &'a azure_core::http::headers::HeaderValue,
+    activity_id: &'a ActivityId,
+    pipeline_type: PipelineType,
+    transport_security: TransportSecurity,
+    session_manager: &'a SessionManager,
+    /// Whether session consistency is in effect for this operation
+    /// (drives session-token resolve/capture inside the attempt).
+    session_consistency_active: bool,
+    options: &'a OperationOptionsView<'a>,
+    throughput_control: Option<&'a ThroughputControlGroupSnapshot>,
+    /// End-to-end deadline (operation timeout) — passed through to each
+    /// per-attempt transport invocation.
+    deadline: Option<Instant>,
+}
+
+/// Result classification used by [`execute_hedged`] to decide whether a
+/// completed hedge attempt terminates the race or keeps the other side
+/// running.
+///
+/// `Final` carries the [`TransportResult`] that becomes the operation's
+/// outcome (success or final-classified HTTP error per spec §7.1).
+/// `Transient` indicates the attempt should be ignored in favor of the
+/// other side (5xx / 429 / 408 / 410 / 404-1002 / 403-with-sub / transport
+/// error / deadline) — when both sides land transient, the most recent
+/// transient is surfaced as the operation error.
+enum HedgeClass {
+    Final(Box<TransportResult>),
+    Transient,
+}
+
+/// Pure classifier for a per-attempt result.
+///
+/// `Err` (e.g. failure constructing the request) and any non-final
+/// TransportOutcome map to `Transient`. Per spec §7.1 a `Success` is
+/// always final; an `HttpError` is final iff `is_final_result` returns
+/// `true` for its status.
+fn classify_hedge_result(result: azure_core::Result<TransportResult>) -> HedgeClass {
+    match result {
+        Ok(tr) => match &tr.outcome {
+            TransportOutcome::Success { .. } => HedgeClass::Final(Box::new(tr)),
+            TransportOutcome::HttpError { status, .. } => {
+                if is_final_result(status) {
+                    HedgeClass::Final(Box::new(tr))
+                } else {
+                    HedgeClass::Transient
+                }
+            }
+            TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
+                HedgeClass::Transient
+            }
+        },
+        Err(_) => HedgeClass::Transient,
+    }
+}
+
+/// Converts a final-classified [`TransportResult`] (success or final HTTP
+/// error) into the response shape that `execute_operation_pipeline` would
+/// otherwise return from STAGE 7's `Complete` or `Abort` arms.
+///
+/// `Success` flows through [`build_cosmos_response`] exactly like the
+/// non-hedged happy path. A final `HttpError` (e.g. 409 Conflict) is
+/// converted to an `azure_core::Error` via the same `build_http_error`
+/// the evaluator uses for the non-hedged `Abort` path, so callers cannot
+/// observe a behavioral difference between hedged and non-hedged final
+/// HTTP errors. Transient outcomes are converted to a generic error —
+/// reaching this function with a transient outcome would be a programmer
+/// error in `execute_hedged` (the race loop only calls this on `Final`
+/// classifications and on the "both transient" fallback where the diff
+/// between calling and not is one branch).
+fn finalize_hedge_attempt(
+    result: Box<TransportResult>,
+    diagnostics: DiagnosticsContextBuilder,
+) -> azure_core::Result<CosmosResponse> {
+    match result.outcome {
+        outcome @ TransportOutcome::Success { .. } => {
+            build_cosmos_response(Box::new(TransportResult { outcome }), diagnostics)
+        }
+        TransportOutcome::HttpError {
+            status,
+            headers,
+            body,
+            ..
+        } => {
+            // Operation-level errors don't carry diagnostics today (the
+            // builder is dropped here); that's a pre-existing limitation
+            // of the driver shared with the non-hedged Abort path.
+            let _ = diagnostics;
+            Err(build_http_error(&status, &headers, &body))
+        }
+        TransportOutcome::TransportError { error, .. } => {
+            let _ = diagnostics;
+            Err(error)
+        }
+        TransportOutcome::DeadlineExceeded { .. } => {
+            let _ = diagnostics;
+            Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "deadline exceeded during hedged attempt",
+            ))
+        }
+    }
+}
+
+/// If `action` is a same-pipeline retry and the operation is eligible
+/// for cross-region hedging, rewrites it to `OperationAction::Hedge`.
+/// Otherwise returns `action` unchanged.
+///
+/// Only `FailoverRetry` and `SessionRetry` are eligible for upgrade —
+/// `Complete` is the operation's terminal success path, and `Abort`
+/// already signals a non-retryable error. `request_timeout` is passed to
+/// [`evaluate_hedge_eligibility`] so it can compute the §5.2 driver
+/// default threshold (`min(1000ms, request_timeout / 2)`).
+fn maybe_upgrade_to_hedge(
+    action: OperationAction,
+    operation: &CosmosOperation,
+    options: &OperationOptionsView<'_>,
+    account_state: &AccountEndpointState,
+    primary: &RoutingDecision,
+    request_timeout: Option<Duration>,
+) -> OperationAction {
+    if !matches!(
+        &action,
+        OperationAction::FailoverRetry { .. } | OperationAction::SessionRetry { .. }
+    ) {
+        return action;
+    }
+
+    match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
+        Some(upgrade) => OperationAction::Hedge {
+            secondary_routing: upgrade.secondary_routing,
+            secondary_excluded_regions: upgrade.secondary_excluded_regions,
+            threshold: upgrade.threshold,
+            strategy_config: upgrade.strategy_config,
+        },
+        None => action,
+    }
+}
+
+/// Runs a single transport attempt against `routing` and returns the raw
+/// [`TransportResult`]. Mirrors STAGE 3 + STAGE 4 + STAGE 4b of the main
+/// operation loop, but operates on a pre-built routing so the call site
+/// (`execute_hedged`) can use the same code path for both primary and
+/// secondary hedge attempts.
+///
+/// Not invoked by the main pipeline loop today — the loop body inlines
+/// the same STAGE 3/4/4b code for compatibility and to keep the diff
+/// for Part 4b focused on hedging. A follow-up refactor may collapse
+/// the duplication.
+///
+/// Differences from the inline loop body:
+///
+/// - **No `apply_hub_region_header`.** Hedge attempts deliberately do
+///   not emit `x-ms-cosmos-hub-region-processing-only` in Part 4b; the
+///   spec §9.6 shared hub-region latch is a separate work item.
+/// - **No `partition_key_range_id` capture.** The PK range ID is already
+///   known to the surrounding `execute_operation_pipeline` (the
+///   triggering attempt populated it) and is read-only inside a hedge.
+async fn perform_single_attempt(
+    ctx: &AttemptContext<'_>,
+    routing: &RoutingDecision,
+    execution_context: ExecutionContext,
+    diagnostics: &mut DiagnosticsContextBuilder,
+) -> azure_core::Result<TransportResult> {
+    // Resolve session token using the same precedence the main loop uses.
+    let resolved_session_token = ctx
+        .session_consistency_active
+        .then(|| {
+            ctx.session_manager.resolve_session_token(
+                ctx.operation,
+                ctx.operation.request_headers().session_token.as_ref(),
+            )
+        })
+        .flatten();
+
+    let request_ctx = TransportRequestContext {
+        routing,
+        activity_id: ctx.activity_id,
+        execution_context,
+        deadline: ctx.deadline,
+        resolved_session_token,
+        throughput_control: ctx.throughput_control,
+    };
+
+    let mut transport_request =
+        build_transport_request(ctx.operation, ctx.custom_headers, &request_ctx)?;
+    apply_optional_request_headers(&mut transport_request, ctx.operation, ctx.options);
+
+    let selected_transport = match ctx.pipeline_type {
+        PipelineType::DataPlane => ctx
+            .transport
+            .get_dataplane_transport(ctx.account_endpoint, routing.transport_mode)?,
+        PipelineType::Metadata => ctx.transport.get_metadata_transport(ctx.account_endpoint)?,
+    };
+
+    let result = execute_transport_pipeline(
+        transport_request,
+        &TransportPipelineContext {
+            transport: &selected_transport,
+            allow_sent_transport_retry: ctx.operation.is_read_only()
+                || ctx.operation.is_idempotent(),
+            credential: ctx.credential,
+            user_agent: ctx.user_agent,
+            pipeline_type: ctx.pipeline_type,
+            transport_security: ctx.transport_security,
+            endpoint_key: routing.endpoint.endpoint_key(),
+        },
+        diagnostics,
+    )
+    .await;
+
+    // STAGE 4b: capture session token from a session-eligible response.
+    if ctx.session_consistency_active {
+        if let Some(cosmos_headers) = result.cosmos_headers() {
+            if should_capture_session_token_from_status(
+                cosmos_headers.substatus.as_ref(),
+                &result.outcome,
+            ) {
+                ctx.session_manager
+                    .capture_session_token(ctx.operation, cosmos_headers);
+            }
+        }
+    }
+
+    Ok(result)
+}
+
+/// Races a primary attempt against a single cross-region secondary
+/// attempt per [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md)
+/// §6.4. Returns the first **final** result; surfaces the most recent
+/// transient as the operation error when both sides exhaust transient
+/// outcomes.
+///
+/// The implementation is structured as two `futures::future::select`
+/// calls so the borrow checker can reclaim each sub-builder cleanly
+/// as its owning future completes:
+///
+/// 1. **Threshold race.** The primary future is launched immediately
+///    against an `azure_core::sleep(threshold)` timer. If the primary
+///    completes first this is the zero-overhead happy path
+///    (spec §6.5 #3) — no secondary future is constructed, no extra
+///    diagnostics sub-builder is cloned, no `Arc` allocations occur
+///    beyond what the single primary attempt already needs.
+/// 2. **Primary vs secondary race.** Once the timer fires we clone a
+///    sub-builder for the secondary, launch it with
+///    `ExecutionContext::Hedging`, and `select` against the still-pending
+///    primary. The first side to land a `HedgeClass::Final` wins; a
+///    transient on the first-to-complete side simply `.await`s the
+///    other side. Both transient → most recent error.
+///
+/// Spec items NOT yet implemented in Part 4b (tracked for follow-up
+/// commits per [`docs/HEDGING_IMPLEMENTATION_PLAN.md`]):
+///
+/// - §6.5 #7 application-cancel harvest within `HARVEST_WINDOW` (50ms).
+/// - §6.5 #8 / §9.5 `record_hedge_win` PPCB feedback on secondary win.
+/// - §8.2 / §9.6 shared hub-region-processing latch.
+/// - Operation-level retry inside each hedge (§8.4); we rely on
+///   per-attempt transport-pipeline retry only.
+async fn execute_hedged(
+    ctx: &AttemptContext<'_>,
+    primary_routing: &RoutingDecision,
+    secondary_routing: &RoutingDecision,
+    threshold: HedgeThreshold,
+    strategy_config: HedgingStrategyConfig,
+    mut parent_diagnostics: DiagnosticsContextBuilder,
+) -> azure_core::Result<CosmosResponse> {
+    let primary_region = primary_routing.endpoint.region().cloned();
+    let secondary_region = secondary_routing.endpoint.region().cloned();
+
+    tracing::debug!(
+        activity_id = %ctx.activity_id,
+        threshold_ms = ?threshold.get().as_millis(),
+        primary_region = ?primary_region.as_ref().map(|r| r.as_str()),
+        secondary_region = ?secondary_region.as_ref().map(|r| r.as_str()),
+        "execute_hedged: launching primary attempt",
+    );
+
+    // ── Stage 1: Build the primary future ─────────────────────────────
+    // The diag clone is owned by the future and returned alongside the
+    // result, so the borrow checker can reclaim it after `select` resolves.
+    let primary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    let primary_attempt = Box::pin(async move {
+        let mut diag = primary_diag;
+        let result =
+            perform_single_attempt(ctx, primary_routing, ExecutionContext::Initial, &mut diag)
+                .await;
+        (result, diag)
+    });
+
+    // ── Stage 2: Threshold race (zero-overhead happy path) ────────────
+    let threshold_duration =
+        azure_core::time::Duration::try_from(threshold.get()).map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "hedge threshold exceeds azure_core::time::Duration range",
+            )
+        })?;
+    let threshold_timer = Box::pin(azure_core::sleep(threshold_duration));
+
+    let primary_attempt = match select(primary_attempt, threshold_timer).await {
+        Either::Left(((result, diag), _timer)) => {
+            // Primary completed before the threshold elapsed — no
+            // secondary attempt was constructed (spec §6.5 #3).
+            parent_diagnostics.merge_hedge_attempt(diag);
+            if let Some(region) = primary_region.clone() {
+                parent_diagnostics
+                    .set_hedge_diagnostics(HedgeDiagnostics::primary_only(strategy_config, region));
+            }
+            tracing::debug!(
+                activity_id = %ctx.activity_id,
+                "execute_hedged: primary won pre-threshold (zero-overhead happy path)",
+            );
+            return finalize_hedge_attempt(Box::new(result?), parent_diagnostics);
+        }
+        Either::Right(((), remaining_primary)) => remaining_primary,
+    };
+
+    // ── Stage 3: Launch secondary ─────────────────────────────────────
+    let secondary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    let secondary_attempt = Box::pin(async move {
+        let mut diag = secondary_diag;
+        let result =
+            perform_single_attempt(ctx, secondary_routing, ExecutionContext::Hedging, &mut diag)
+                .await;
+        (result, diag)
+    });
+
+    tracing::debug!(
+        activity_id = %ctx.activity_id,
+        "execute_hedged: threshold elapsed; secondary launched",
+    );
+
+    // ── Stage 4: Primary vs secondary race ────────────────────────────
+    match select(primary_attempt, secondary_attempt).await {
+        Either::Left(((primary_result, primary_diag), secondary_remaining)) => {
+            parent_diagnostics.merge_hedge_attempt(primary_diag);
+            match classify_hedge_result(primary_result) {
+                HedgeClass::Final(tr) => {
+                    // Primary won post-threshold; drop secondary.
+                    if let (Some(p), Some(s)) = (primary_region.clone(), secondary_region.clone()) {
+                        parent_diagnostics.set_hedge_diagnostics(
+                            HedgeDiagnostics::primary_won_after_hedge(strategy_config, p, s),
+                        );
+                    }
+                    tracing::debug!(
+                        activity_id = %ctx.activity_id,
+                        "execute_hedged: primary won after threshold",
+                    );
+                    finalize_hedge_attempt(tr, parent_diagnostics)
+                }
+                HedgeClass::Transient => {
+                    // Primary transient — wait for secondary.
+                    let (secondary_result, secondary_diag) = secondary_remaining.await;
+                    parent_diagnostics.merge_hedge_attempt(secondary_diag);
+                    match classify_hedge_result(secondary_result) {
+                        HedgeClass::Final(tr) => {
+                            if let (Some(p), Some(s)) = (primary_region, secondary_region) {
+                                parent_diagnostics.set_hedge_diagnostics(
+                                    HedgeDiagnostics::hedge_won(strategy_config, p, s),
+                                );
+                            }
+                            tracing::debug!(
+                                activity_id = %ctx.activity_id,
+                                "execute_hedged: secondary won after primary transient",
+                            );
+                            finalize_hedge_attempt(tr, parent_diagnostics)
+                        }
+                        HedgeClass::Transient => {
+                            // Both transient — surface the most recent
+                            // attempt's outcome as the operation error.
+                            // Diagnostics are attached for observability;
+                            // the operation error doesn't carry them.
+                            if let (Some(p), Some(s)) = (primary_region, secondary_region) {
+                                parent_diagnostics.set_hedge_diagnostics(
+                                    HedgeDiagnostics::primary_won_after_hedge(
+                                        strategy_config,
+                                        p,
+                                        s,
+                                    ),
+                                );
+                            }
+                            tracing::warn!(
+                                activity_id = %ctx.activity_id,
+                                "execute_hedged: both primary and secondary transient; surfacing secondary error",
+                            );
+                            Err(transient_outcome_error())
+                        }
+                    }
+                }
+            }
+        }
+        Either::Right(((secondary_result, secondary_diag), primary_remaining)) => {
+            parent_diagnostics.merge_hedge_attempt(secondary_diag);
+            match classify_hedge_result(secondary_result) {
+                HedgeClass::Final(tr) => {
+                    if let (Some(p), Some(s)) = (primary_region.clone(), secondary_region.clone()) {
+                        parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
+                            strategy_config,
+                            p,
+                            s,
+                        ));
+                    }
+                    tracing::debug!(
+                        activity_id = %ctx.activity_id,
+                        "execute_hedged: secondary won race",
+                    );
+                    finalize_hedge_attempt(tr, parent_diagnostics)
+                }
+                HedgeClass::Transient => {
+                    // Secondary transient — wait for primary.
+                    let (primary_result, primary_diag) = primary_remaining.await;
+                    parent_diagnostics.merge_hedge_attempt(primary_diag);
+                    match classify_hedge_result(primary_result) {
+                        HedgeClass::Final(tr) => {
+                            if let (Some(p), Some(s)) = (primary_region, secondary_region) {
+                                parent_diagnostics.set_hedge_diagnostics(
+                                    HedgeDiagnostics::primary_won_after_hedge(
+                                        strategy_config,
+                                        p,
+                                        s,
+                                    ),
+                                );
+                            }
+                            tracing::debug!(
+                                activity_id = %ctx.activity_id,
+                                "execute_hedged: primary won after secondary transient",
+                            );
+                            finalize_hedge_attempt(tr, parent_diagnostics)
+                        }
+                        HedgeClass::Transient => {
+                            if let (Some(p), Some(s)) = (primary_region, secondary_region) {
+                                parent_diagnostics.set_hedge_diagnostics(
+                                    HedgeDiagnostics::primary_won_after_hedge(
+                                        strategy_config,
+                                        p,
+                                        s,
+                                    ),
+                                );
+                            }
+                            tracing::warn!(
+                                activity_id = %ctx.activity_id,
+                                "execute_hedged: both secondary and primary transient; surfacing primary error",
+                            );
+                            Err(transient_outcome_error())
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Generic "both sides transient" error returned by [`execute_hedged`]
+/// when neither the primary nor the secondary produced a final result.
+/// Mirrors the .NET v3 hedging behavior of producing a synthetic
+/// operation-level error in this case rather than re-entering the
+/// per-pipeline retry loop (Terminal semantics per
+/// [`docs/HEDGING_IMPLEMENTATION_PLAN.md`] Part 4).
+fn transient_outcome_error() -> azure_core::Error {
+    azure_core::Error::with_message(
+        azure_core::error::ErrorKind::Other,
+        "hedging completed without producing a final response",
+    )
 }
 
 #[cfg(test)]
@@ -3007,5 +3570,149 @@ mod tests {
             msg.contains("end-to-end operation timeout exceeded"),
             "unexpected error message: {msg}"
         );
+    }
+
+    // ── classify_hedge_result (Part 4b) ────────────────────────────────
+
+    fn http_result(status_code: u16, sub_status: Option<u32>) -> super::TransportResult {
+        use azure_core::http::{headers::Headers, StatusCode};
+        let mut status = crate::models::CosmosStatus::new(StatusCode::from(status_code));
+        if let Some(v) = sub_status {
+            status = status.with_sub_status(v);
+        }
+        super::TransportResult::from_http_response(
+            status,
+            Headers::new(),
+            crate::models::CosmosResponseHeaders::default(),
+            Vec::new(),
+        )
+    }
+
+    #[test]
+    fn classify_hedge_result_success_is_final() {
+        let tr = http_result(200, None);
+        assert!(matches!(
+            super::classify_hedge_result(Ok(tr)),
+            super::HedgeClass::Final(_)
+        ));
+    }
+
+    #[test]
+    fn classify_hedge_result_409_conflict_is_final() {
+        // 409 is a final HTTP error per spec §7.1 — terminates hedging.
+        let tr = http_result(409, None);
+        assert!(matches!(
+            super::classify_hedge_result(Ok(tr)),
+            super::HedgeClass::Final(_)
+        ));
+    }
+
+    #[test]
+    fn classify_hedge_result_503_is_transient() {
+        // 503 ServiceUnavailable is transient — keeps the other side racing.
+        let tr = http_result(503, None);
+        assert!(matches!(
+            super::classify_hedge_result(Ok(tr)),
+            super::HedgeClass::Transient
+        ));
+    }
+
+    #[test]
+    fn classify_hedge_result_404_1002_is_transient() {
+        // 404/1002 ReadSessionNotAvailable is transient (§7.2).
+        let tr = http_result(404, Some(1002));
+        assert!(matches!(
+            super::classify_hedge_result(Ok(tr)),
+            super::HedgeClass::Transient
+        ));
+    }
+
+    #[test]
+    fn classify_hedge_result_deadline_exceeded_is_transient() {
+        let tr =
+            super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent);
+        assert!(matches!(
+            super::classify_hedge_result(Ok(tr)),
+            super::HedgeClass::Transient
+        ));
+    }
+
+    #[test]
+    fn classify_hedge_result_request_build_error_is_transient() {
+        let err = azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            "synthetic build error",
+        );
+        assert!(matches!(
+            super::classify_hedge_result(Err(err)),
+            super::HedgeClass::Transient
+        ));
+    }
+
+    // ── finalize_hedge_attempt (Part 4b) ──────────────────────────────
+
+    #[test]
+    fn finalize_hedge_attempt_http_error_returns_error_with_status() {
+        let tr = Box::new(http_result(409, None));
+        let diagnostics = test_diagnostics();
+        let err = super::finalize_hedge_attempt(tr, diagnostics)
+            .expect_err("409 should be surfaced as an error");
+        match err.kind() {
+            azure_core::error::ErrorKind::HttpResponse { status, .. } => {
+                assert_eq!(u16::from(*status), 409);
+            }
+            other => panic!("expected HttpResponse error kind, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn finalize_hedge_attempt_deadline_returns_other_error() {
+        let tr = Box::new(super::TransportResult::deadline_exceeded(
+            crate::diagnostics::RequestSentStatus::Sent,
+        ));
+        let diagnostics = test_diagnostics();
+        let err = super::finalize_hedge_attempt(tr, diagnostics)
+            .expect_err("deadline should produce an error");
+        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
+        assert!(err.to_string().contains("deadline exceeded"));
+    }
+
+    // ── DiagnosticsContextBuilder hedge helpers (Part 4b) ─────────────
+
+    #[test]
+    fn diagnostics_clone_for_hedge_attempt_starts_empty() {
+        let parent = test_diagnostics();
+        let child = parent.clone_for_hedge_attempt();
+        // A fresh sub-builder must not carry the parent's request list,
+        // status, or accumulated hedge diagnostics.
+        assert_eq!(child.request_count(), 0);
+    }
+
+    #[test]
+    fn diagnostics_merge_hedge_attempt_absorbs_requests() {
+        use crate::diagnostics::{TransportHttpVersion, TransportKind};
+
+        let mut parent = test_diagnostics();
+        let mut child = parent.clone_for_hedge_attempt();
+
+        let endpoint = crate::driver::routing::CosmosEndpoint::global(
+            url::Url::parse("https://acct.example/").unwrap(),
+        );
+        let _ = child.start_request(
+            super::ExecutionContext::Hedging,
+            super::PipelineType::DataPlane,
+            super::TransportSecurity::Secure,
+            TransportKind::Gateway,
+            TransportHttpVersion::Http11,
+            &endpoint,
+        );
+
+        assert_eq!(child.request_count(), 1);
+        assert_eq!(parent.request_count(), 0);
+
+        parent.merge_hedge_attempt(child);
+        // After merge the parent reflects the absorbed request and the
+        // child is consumed.
+        assert_eq!(parent.request_count(), 1);
     }
 }

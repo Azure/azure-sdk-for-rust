@@ -1257,9 +1257,62 @@ impl DiagnosticsContextBuilder {
     /// resolved and active for the operation. Per the spec §10.1
     /// attachment contract, this is `Some(_)` only when hedging actually
     /// ran; the `None` case (default) means hedging was not selected.
-    #[allow(dead_code)] // Wired up in Part 4 (execute_hedged).
     pub(crate) fn set_hedge_diagnostics(&mut self, diagnostics: HedgeDiagnostics) {
         self.hedge_diagnostics = Some(diagnostics);
+    }
+
+    /// Creates a fresh builder for a single hedge-attempt within
+    /// [`execute_hedged()`](crate::driver::pipeline::operation_pipeline).
+    ///
+    /// The returned builder shares the parent's `activity_id`, `options`,
+    /// `cpu_monitor`, `machine_id`, and (when compiled with the feature)
+    /// `fault_injection_enabled` flag — i.e. every piece of
+    /// operation-level context that the per-attempt transport pipeline
+    /// needs in order to record diagnostics correctly. It does **not**
+    /// share the request list, status, or accumulated hedge diagnostics:
+    /// each hedge attempt records into its own `requests` buffer, and the
+    /// winner's entries are merged back into the parent via
+    /// [`merge_hedge_attempt`](Self::merge_hedge_attempt).
+    pub(crate) fn clone_for_hedge_attempt(&self) -> Self {
+        Self {
+            activity_id: self.activity_id.clone(),
+            // Use a fresh `started_at` per attempt so each one's
+            // sub-duration is measured from launch, not from operation
+            // start. The operation-level duration on the parent is
+            // unaffected because we only merge the request list back.
+            started_at: Instant::now(),
+            requests: Vec::with_capacity(2),
+            status: None,
+            options: Arc::clone(&self.options),
+            cpu_monitor: self.cpu_monitor.clone(),
+            machine_id: self.machine_id.clone(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled: self.fault_injection_enabled,
+            hedge_diagnostics: None,
+            #[cfg(test)]
+            test_system_usage: self.test_system_usage.clone(),
+        }
+    }
+
+    /// Absorbs the per-request diagnostics recorded by a hedge attempt's
+    /// sub-builder back into the parent operation builder.
+    ///
+    /// Called by `execute_hedged()` after the race resolves. Only the
+    /// request list is moved — the sub-builder's `status` and
+    /// `hedge_diagnostics` are intentionally discarded because the
+    /// operation-level fields belong to the parent (the winning response
+    /// drives `set_operation_status` via the normal
+    /// [`build_cosmos_response`](crate::driver::pipeline::operation_pipeline)
+    /// path, and `set_hedge_diagnostics` is invoked directly by
+    /// `execute_hedged()` on the parent with a synthesized
+    /// [`HedgeDiagnostics`]).
+    pub(crate) fn merge_hedge_attempt(&mut self, attempt: Self) {
+        // Move attempt.requests into self.requests in launch order.
+        if self.requests.is_empty() {
+            self.requests = attempt.requests;
+        } else {
+            self.requests.extend(attempt.requests);
+        }
     }
 
     /// Sets whether fault injection is enabled for this operation's runtime.

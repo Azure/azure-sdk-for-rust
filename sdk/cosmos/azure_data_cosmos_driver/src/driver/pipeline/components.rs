@@ -573,13 +573,19 @@ pub(crate) enum OperationAction {
     /// `strategy_config` (snapshot for the winning response's
     /// `HedgeDiagnostics`, §10.1) ride along.
     ///
-    /// **Wired in Part 4b** — the evaluator does not produce this variant
-    /// in Part 4a, and STAGE 7 currently aborts with a placeholder error
-    /// if it ever sees one. The variant exists now so the rest of the
-    /// hedging plumbing can compile against a stable enum shape.
-    #[allow(dead_code)]
+    /// **Wired in Part 4b** — the evaluator and `execute_hedged()` now
+    /// produce and consume this variant. The fields are read by the
+    /// STAGE 7 hedge arm in `operation_pipeline.rs::execute_operation_pipeline`
+    /// to construct the race; `secondary_excluded_regions` is reserved for
+    /// future in-hedge retry layers (spec §8.4) and is not consumed yet.
     Hedge {
         secondary_routing: RoutingDecision,
+        /// Reserved for the in-hedge retry layer (spec §8.4) that will
+        /// pin the alternate-region attempt against any region drift.
+        /// Not consumed yet — Part 4b uses `secondary_routing` directly
+        /// because each hedge fires a single transport attempt with no
+        /// operation-level retry on top.
+        #[allow(dead_code)]
         secondary_excluded_regions: Vec<Region>,
         threshold: HedgeThreshold,
         strategy_config: HedgingStrategyConfig,

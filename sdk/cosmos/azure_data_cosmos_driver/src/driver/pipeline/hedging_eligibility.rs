@@ -16,11 +16,9 @@
 //! (Transport Pipeline Spec §3.4) when it produces
 //! `OperationAction::Hedge { secondary_routing }` and by the
 //! `execute_hedged()` race loop. Both call sites land in Part 4 of
-//! `docs/HEDGING_IMPLEMENTATION_PLAN.md`; until then, every item in
-//! this module is reachable only from its own `#[cfg(test)]` suite,
-//! so the module-level `dead_code` allow stays until Part 4 wires
-//! the dispatch path.
-#![allow(dead_code)]
+//! `docs/HEDGING_IMPLEMENTATION_PLAN.md`; once Part 4b wired the
+//! evaluator + STAGE 7 dispatch the module-level `dead_code` allow
+//! was removed.
 
 use std::time::Duration;
 
@@ -259,7 +257,6 @@ pub(crate) fn build_secondary_excluded_regions(
 /// [`OperationAction::Hedge`]:
 /// crate::driver::pipeline::components::OperationAction::Hedge
 #[derive(Debug)]
-#[allow(dead_code)] // wired in Part 4b
 pub(crate) struct HedgeUpgrade {
     /// Routing decision for the alternate-region hedge.
     pub(crate) secondary_routing: RoutingDecision,
@@ -284,7 +281,6 @@ pub(crate) struct HedgeUpgrade {
 /// Returns `None` when hedging is disabled, the operation is ineligible,
 /// or no alternate region can be selected — in all cases the caller
 /// falls back to its non-hedged decision (typically `FailoverRetry`).
-#[allow(dead_code)] // wired in Part 4b
 pub(crate) fn evaluate_hedge_eligibility(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
