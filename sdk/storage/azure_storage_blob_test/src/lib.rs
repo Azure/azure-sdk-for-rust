@@ -16,7 +16,7 @@ use azure_core::{
     http::{
         policies::{Policy, PolicyResult},
         AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
-        StatusCode,
+        StatusCode, Url,
     },
     Bytes, Result,
 };
@@ -163,8 +163,9 @@ pub fn get_blob_service_client(
         account_type,
         &mut service_client_options.client_options,
     );
+    let service_url = Url::parse(&endpoint)?;
     BlobServiceClient::new(
-        &endpoint,
+        service_url,
         Some(recording.credential()),
         Some(service_client_options),
     )
@@ -190,9 +191,18 @@ pub async fn get_container_client(
         account_type,
         &mut container_client_options.client_options,
     );
+    let mut container_url = Url::parse(&endpoint)?;
+    container_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Invalid endpoint URL: cannot append container name.",
+            )
+        })?
+        .push(&container_name);
     let container_client = BlobContainerClient::new(
-        &endpoint,
-        &container_name,
+        container_url,
         Some(recording.credential()),
         Some(container_client_options),
     )?;

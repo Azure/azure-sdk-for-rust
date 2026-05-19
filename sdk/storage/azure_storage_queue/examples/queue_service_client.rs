@@ -26,7 +26,7 @@
 
 use std::{collections::HashMap, env, sync::Arc};
 
-use azure_core::credentials::TokenCredential;
+use azure_core::{credentials::TokenCredential, http::Url};
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_queue::{
     models::{
@@ -46,7 +46,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let queue_name = random_queue_name();
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let service_client = QueueServiceClient::new(&endpoint, Some(credential.clone()), None)?;
+    let service_client =
+        QueueServiceClient::new(Url::parse(&endpoint)?, Some(credential.clone()), None)?;
     let queue_client = service_client.queue_client(&queue_name)?;
 
     println!("Creating queue '{queue_name}'...");
@@ -128,7 +129,8 @@ async fn get_service_statistics(
     credential: Arc<dyn TokenCredential>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let secondary_endpoint = format!("https://{account}-secondary.queue.core.windows.net/");
-    let secondary_client = QueueServiceClient::new(&secondary_endpoint, Some(credential), None)?;
+    let secondary_client =
+        QueueServiceClient::new(Url::parse(&secondary_endpoint)?, Some(credential), None)?;
     match secondary_client.get_statistics(None).await {
         Ok(response) => {
             let stats = response.into_model()?;

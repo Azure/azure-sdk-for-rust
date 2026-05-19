@@ -1,6 +1,6 @@
 # Release History
 
-## 0.36.0 (Unreleased)
+## 1.1.0-beta.1 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,17 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 1.0.0 (2026-05-11)
+
+### Features Added
+
+- Initial stable release.
+
+### Breaking Changes
+
+- Added `#[non_exhaustive]` to `AttributeArray`, `AttributeValue`, `SpanStatus`, and `SpanKind`.
+- Bearer token authorization now requires TLS (https).
 
 ## 0.35.0 (2026-04-22)
 

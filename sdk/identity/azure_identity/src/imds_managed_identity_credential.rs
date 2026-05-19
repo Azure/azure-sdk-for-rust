@@ -16,7 +16,7 @@ use serde::{
     de::{self, Deserializer},
     Deserialize,
 };
-use std::str;
+use std::{any::type_name, fmt, str};
 
 /// An identifier for the Azure Instance Metadata Service (IMDS).
 ///
@@ -49,7 +49,6 @@ impl From<UserAssignedId> for ImdsId {
 /// This authentication type works in Azure VMs, App Service and Azure Functions applications, as well as the Azure Cloud Shell
 ///
 /// Built up from docs at [https://learn.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://learn.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
-#[derive(Debug)]
 pub(crate) struct ImdsManagedIdentityCredential {
     pipeline: Pipeline,
     endpoint: Url,
@@ -59,6 +58,14 @@ pub(crate) struct ImdsManagedIdentityCredential {
     id: ImdsId,
     cache: TokenCache,
     env: Env,
+}
+
+impl fmt::Debug for ImdsManagedIdentityCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>())
+            .field("endpoint", &self.endpoint)
+            .finish_non_exhaustive()
+    }
 }
 
 impl ImdsManagedIdentityCredential {

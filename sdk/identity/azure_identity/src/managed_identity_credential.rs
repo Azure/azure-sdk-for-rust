@@ -7,11 +7,12 @@ use crate::{
 };
 use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
 use azure_core::http::ClientOptions;
-use std::sync::Arc;
+use std::{any::type_name, fmt, sync::Arc};
 use tracing::info;
 
 /// Identifies a specific user-assigned identity for [`ManagedIdentityCredential`] to authenticate.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum UserAssignedId {
     /// The client ID of a user-assigned identity
     ClientId(String),
@@ -22,13 +23,18 @@ pub enum UserAssignedId {
 }
 
 /// Authenticates a managed identity from Azure App Service or an Azure Virtual Machine.
-#[derive(Debug)]
 pub struct ManagedIdentityCredential {
     credential: Arc<dyn TokenCredential>,
 }
 
+impl fmt::Debug for ManagedIdentityCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+    }
+}
+
 /// Options for constructing a new [`ManagedIdentityCredential`].
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct ManagedIdentityCredentialOptions {
     /// Specifies a user-assigned identity the credential should authenticate.
     /// When `None`, the credential will authenticate a system-assigned identity, if any.
@@ -39,6 +45,12 @@ pub struct ManagedIdentityCredentialOptions {
 
     #[cfg(test)]
     pub(crate) env: Env,
+}
+
+impl fmt::Debug for ManagedIdentityCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+    }
 }
 
 impl ManagedIdentityCredential {

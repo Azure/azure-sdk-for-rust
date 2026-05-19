@@ -3,7 +3,7 @@
 
 //! Unit tests for the blob checkpoint store models and utilities.
 
-use azure_core::Result;
+use azure_core::{http::Url, Result};
 use azure_core_test::{recorded, CustomDefaultMatcher, Matcher, Recording, TestContext};
 use azure_messaging_eventhubs::{models::Checkpoint, CheckpointStore};
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
@@ -15,12 +15,15 @@ pub fn create_test_checkpoint_store(recording: &Recording) -> Result<Arc<BlobChe
     let credential = recording.credential();
     let mut options = BlobContainerClientOptions::default();
     recording.instrument(&mut options.client_options);
-    let blob_container_client = BlobContainerClient::new(
-        &recording.var("AZURE_STORAGE_BLOB_ENDPOINT", None),
-        &recording.var("AZURE_STORAGE_BLOB_CONTAINER", None),
-        Some(credential),
-        Some(options),
-    )?;
+    let endpoint = recording.var("AZURE_STORAGE_BLOB_ENDPOINT", None);
+    let container_name = recording.var("AZURE_STORAGE_BLOB_CONTAINER", None);
+    let mut container_url = Url::parse(&endpoint)?;
+    container_url
+        .path_segments_mut()
+        .expect("endpoint must be a valid base URL")
+        .push(&container_name);
+    let blob_container_client =
+        BlobContainerClient::new(container_url, Some(credential), Some(options))?;
 
     Ok(BlobCheckpointStore::new(blob_container_client))
 }

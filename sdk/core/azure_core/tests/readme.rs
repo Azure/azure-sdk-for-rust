@@ -1,6 +1,13 @@
 // Licensed under the MIT License.
 
 #![allow(dead_code)]
+#![allow(
+    clippy::needless_update,
+    reason = "non_exhaustive prevents struct initialization otherwise"
+)]
+use azure_core_examples::certificates as azure_security_keyvault_certificates;
+use azure_core_examples::identity as azure_identity;
+use azure_core_examples::secrets as azure_security_keyvault_secrets;
 use include_file::include_markdown;
 
 #[ignore = "only compile doc examples"]

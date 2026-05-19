@@ -26,6 +26,7 @@ impl From<OpenTelemetrySpanKind> for opentelemetry::trace::SpanKind {
             azure_core::tracing::SpanKind::Client => opentelemetry::trace::SpanKind::Client,
             azure_core::tracing::SpanKind::Producer => opentelemetry::trace::SpanKind::Producer,
             azure_core::tracing::SpanKind::Consumer => opentelemetry::trace::SpanKind::Consumer,
+            _ => unimplemented!("unsupported value"),
         }
     }
 }
@@ -86,6 +87,7 @@ impl Span for OpenTelemetrySpan {
         let otel_status = match status {
             SpanStatus::Unset => opentelemetry::trace::Status::Unset,
             SpanStatus::Error { description } => opentelemetry::trace::Status::error(description),
+            _ => unimplemented!("unsupported value"),
         };
         self.context.span().set_status(otel_status);
     }

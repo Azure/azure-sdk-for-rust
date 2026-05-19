@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `ContainerClient::patch_item()` for applying JSON-Patch-style mutations to a single item. Supports `add`/`set`/`replace`/`remove`/`increment`/`move` ops via the new `PatchSpec`/`PatchOp`/`IncrValue` types (re-exported at the crate root). Added `PatchItemOptions` for per-request configuration (`max_attempts`, `session_token`, etc.). `PatchItemOptions` intentionally does not expose a `Precondition` or SQL filter predicate — the driver-side PATCH handler owns the internal `If-Match` end-to-end, and predicate evaluation is out of scope for this preview. The method's rustdoc documents the non-idempotent-under-transport-failure caveat. ([#4386](https://github.com/Azure/azure-sdk-for-rust/pull/4386))
+
 ### Breaking Changes
 
 - Removed the SDK-side `FaultInjectionClientBuilder`, parallel duplicate types (`FaultInjectionRule`, `FaultInjectionCondition`, `FaultInjectionResult`, `CustomResponse`, the matching builders, `FaultInjectionErrorType`, `FaultOperationType`), and the SDK-side `FaultClient` HTTP wrapper from `azure_data_cosmos::fault_injection`. The module is now a pure re-export of the driver's fault-injection types — fault-injection rules flow directly to the driver runtime and are evaluated by the driver's transport-layer fault-injection client. `CosmosClientBuilder::with_fault_injection` now accepts the driver's `Vec<Arc<FaultInjectionRule>>` directly instead of `FaultInjectionClientBuilder`. Callers should construct rules via the re-exported `FaultInjectionRuleBuilder` and pass the vector.

@@ -4,12 +4,16 @@
 use async_trait::async_trait;
 use azure_core::{
     error::ErrorKind,
-    http::{headers::Headers, AsyncRawResponse, ClientOptions, HttpClient, Request, Transport},
+    http::{
+        headers::Headers, AsyncRawResponse, ClientOptions, HttpClient, Request, StatusCode,
+        Transport,
+    },
 };
-use azure_identity::DeveloperToolsCredential;
-use azure_security_keyvault_secrets::{ResourceExt as _, SecretClient, SecretClientOptions};
-use futures::TryStreamExt;
-use std::{env, sync::Arc};
+use azure_core_examples::{
+    client::{TestServiceClient, TestServiceClientOptions, HTTP_ENDPOINT},
+    identity::MockCredential,
+};
+use std::sync::Arc;
 use typespec::error::ResultExt;
 use ureq::tls::{TlsConfig, TlsProvider};
 
@@ -47,13 +51,8 @@ impl HttpClient for Agent {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let vault_url = env::var("AZURE_KEYVAULT_URL")
-        .map_err(|_| "Environment variable AZURE_KEYVAULT_URL is required")?;
-
-    let credential = DeveloperToolsCredential::new(None)?;
-
     let agent = Arc::new(Agent::default());
-    let options = SecretClientOptions {
+    let options = TestServiceClientOptions {
         client_options: ClientOptions {
             transport: Some(Transport::new(agent)),
             ..Default::default()
@@ -61,12 +60,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..Default::default()
     };
 
-    let client = SecretClient::new(&vault_url, credential.clone(), Some(options))?;
-    let mut pager = client.list_secret_properties(None)?;
-    while let Some(secret) = pager.try_next().await? {
-        let name = secret.resource_id()?.name;
-        println!("Secret: {name}");
-    }
+    let credential = MockCredential::new()?;
+    let client = TestServiceClient::new(HTTP_ENDPOINT, credential, Some(options))?;
+    let response = client.get("get", None).await?;
+    println!("Response status: {}", response.status());
+    assert_eq!(response.status(), StatusCode::Ok);
 
     Ok(())
 }
@@ -103,7 +101,6 @@ fn into_request(request: &Request) -> azure_core::Result<::http::Request<Vec<u8>
 
 fn into_response(response: ::http::Response<ureq::Body>) -> azure_core::Result<AsyncRawResponse> {
     use ::http::response::Parts;
-    use azure_core::http::StatusCode;
 
     let (
         Parts {

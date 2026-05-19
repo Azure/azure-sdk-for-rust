@@ -780,6 +780,14 @@ impl CosmosDriver {
         #[cfg(feature = "tokio")]
         location_state_store.start_failback_loop();
 
+        // Spawn the background account-metadata refresh loop so long-running
+        // workloads see periodic re-fetch of the database account properties
+        // without paying the latency on the request hot path. Per-operation
+        // lookups in `execute_operation` use the cheap `get_or_fetch` fast
+        // path because freshness is owned by this loop.
+        #[cfg(feature = "tokio")]
+        location_state_store.start_account_refresh_loop();
+
         Self {
             runtime,
             options,
@@ -1156,6 +1164,23 @@ impl CosmosDriver {
                 ),
             ));
         }
+
+        // PATCH is a virtual operation type: dispatch it to the dedicated
+        // Read-Modify-Write handler before any of the standard pipeline steps
+        // run, because the handler issues its own Read/Replace operations
+        // through this same entry point. `Box::pin` is required so the
+        // resulting async future has a fixed size even though it can recurse.
+        if operation.operation_type() == crate::models::OperationType::Patch {
+            let max_attempts = operation.patch_max_attempts();
+            return Box::pin(crate::driver::pipeline::patch_handler::execute(
+                self,
+                operation,
+                options,
+                max_attempts,
+            ))
+            .await;
+        }
+
         tracing::debug!("operation started");
 
         // Step 1: Build the single OperationOptionsView for layered resolution.
@@ -1177,6 +1202,12 @@ impl CosmosDriver {
         let auth = account.auth();
 
         // Step 4.1: Resolve account metadata and select write-region endpoint.
+        // Uses `get_or_fetch` (cheap, no staleness check) because the
+        // background account-metadata refresh loop spawned in
+        // `CosmosDriver::new` keeps this cache fresh on a periodic timer.
+        // The lazy `refresh_if_stale` variant is intentionally NOT used here
+        // — the timer owns freshness so the per-operation hot path stays
+        // free of network round-trips.
         let account_endpoint = AccountEndpoint::from(account);
         let account_properties = self
             .runtime

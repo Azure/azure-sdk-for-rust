@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::http::Transport;
-use azure_security_keyvault_certificates::{
+use azure_core_examples::certificates::{
     models::CreateCertificateParameters, CertificateClient, CertificateClientOptions,
 };
 use example::setup;
@@ -27,9 +27,9 @@ async fn example_poller() -> Result<(), Box<dyn std::error::Error>> {
     // Minimal create parameters (empty policy for mock)
     let params = CreateCertificateParameters::default();
 
-    // Start a create_certificate long-running operation.
+    // Start a long-running certificate creation operation.
     let certificate = client
-        .create_certificate("my-cert", params.try_into()?, None)?
+        .begin_create_certificate("my-cert", params.try_into()?, None)?
         .await?
         .into_model()?;
     assert_eq!(
@@ -63,8 +63,8 @@ async fn example_poller_stream() -> Result<(), Box<dyn std::error::Error>> {
     // Minimal create parameters (empty policy for mock)
     let params = CreateCertificateParameters::default();
 
-    // Start a create_certificate long-running operation and manually poll status.
-    let mut poller = client.create_certificate("my-cert", params.try_into()?, None)?;
+    // Starts a long-running certificate creation operation and manually polls status.
+    let mut poller = client.begin_create_certificate("my-cert", params.try_into()?, None)?;
 
     // Manually poll status updates until completion
     let mut final_status = None;
@@ -112,7 +112,8 @@ mod example {
             AsyncRawResponse, HttpClient, Method, StatusCode,
         },
     };
-    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use azure_core_examples::identity::MockCredential;
+    use azure_core_test::http::MockHttpClient;
     use futures::FutureExt as _;
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
