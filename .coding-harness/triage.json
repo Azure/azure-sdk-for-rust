@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "classification": "sdk_bug",
+  "confidence": "high",
+  "reasoning": "Pre-seeded by orchestrator user. The Rust SDK currently only supports Gateway V1, which has no latency SLA. Java and .NET both ship a 'thin client' / Gateway 2.0 path (RNTBD message encoding over HTTP/2 to a regional proxy) that gives latency parity with direct mode without taking on direct mode's COGS / debug burden. The Rust SDK lacks this surface entirely; this work adds it. Treated as 'sdk_bug' so the harness proceeds through Phase 3 (implementation). Phase 1 (triage) is bypassed because the spec already exists and was validated in PR #4223.",
+  "customer_response_draft": null,
+  "security_implications": false,
+  "security_disclosure_path": null,
+  "repro_confirmed": false,
+  "repro_command": null,
+  "repro_output": null,
+  "repro_path": null,
+  "affected_code_path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/transport/mod.rs",
+  "_seed_notes": {
+    "phase_1_skipped": true,
+    "reason": "Spec already authored and reviewed in PR #4223 (sdk/cosmos/azure_data_cosmos_driver/docs/GATEWAY_20_SPEC.md). Triage step is unnecessary; this stub exists only to satisfy the harness schema so Phase 3 can run.",
+    "spec_pr_url": "https://github.com/Azure/azure-sdk-for-rust/pull/4223",
+    "spec_branch": "tvaron3/gateway-2.0-design",
+    "base_commit": "9c7484ef3"
+  }
+}
