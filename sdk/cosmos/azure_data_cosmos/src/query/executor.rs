@@ -26,9 +26,9 @@ pub(crate) struct QueryExecutorConfig {
     /// Optional initial session-token hint.
     pub session_token: Option<SessionToken>,
     /// Request `x-ms-cosmos-populateindexmetrics` on each page.
-    pub populate_index_metrics: bool,
+    pub populate_index_metrics: Option<bool>,
     /// Request `x-ms-documentdb-populatequerymetrics` on each page.
-    pub populate_query_metrics: bool,
+    pub populate_query_metrics: Option<bool>,
     /// Page size for `x-ms-max-item-count`.
     pub max_item_count: Option<MaxItemCountHint>,
 }
@@ -124,20 +124,16 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         // precedence: anything the caller has already set on the operation
         // (`is_some()` for `Option` fields) wins, and the executor only fills
         // in fields that are not already set.
-        if self.config.populate_index_metrics
-            || self.config.populate_query_metrics
+        if self.config.populate_index_metrics.is_some()
+            || self.config.populate_query_metrics.is_some()
             || self.config.max_item_count.is_some()
         {
             let mut request_headers = operation.request_headers().clone();
-            if request_headers.populate_index_metrics.is_none()
-                && self.config.populate_index_metrics
-            {
-                request_headers.populate_index_metrics = Some(true);
+            if request_headers.populate_index_metrics.is_none() {
+                request_headers.populate_index_metrics = self.config.populate_index_metrics;
             }
-            if request_headers.populate_query_metrics.is_none()
-                && self.config.populate_query_metrics
-            {
-                request_headers.populate_query_metrics = Some(true);
+            if request_headers.populate_query_metrics.is_none() {
+                request_headers.populate_query_metrics = self.config.populate_query_metrics;
             }
             if request_headers.max_item_count.is_none() {
                 request_headers.max_item_count =

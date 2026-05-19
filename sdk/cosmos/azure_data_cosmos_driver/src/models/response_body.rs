@@ -102,12 +102,6 @@ impl ResponseBody {
         serde_json::from_slice(&bytes).map_err(azure_core::Error::from)
     }
 
-    /// Explicit alias for [`single_item`](Self::single_item). Errors on feed
-    /// [`Items`](Self::Items) responses; use [`into_items`](Self::into_items) for those.
-    pub fn json_single<T: DeserializeOwned>(self) -> azure_core::Result<T> {
-        self.single_item()
-    }
-
     /// Deserializes every item in a feed response, or the single payload, as
     /// JSON of type `T`.
     pub fn into_items<T: DeserializeOwned>(self) -> azure_core::Result<Vec<T>> {

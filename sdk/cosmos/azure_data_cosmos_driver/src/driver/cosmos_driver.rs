@@ -622,7 +622,7 @@ impl CosmosDriver {
             .await?;
         let db_props: DatabaseProperties = db_result
             .into_body()
-            .json_single()
+            .single_item()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let db_rid = db_props.system_properties.rid.ok_or_else(|| {
             azure_core::Error::with_message(
@@ -639,7 +639,7 @@ impl CosmosDriver {
             .await?;
         let container_props: ContainerProperties = container_result
             .into_body()
-            .json_single()
+            .single_item()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let container_rid = container_props
             .system_properties
@@ -678,7 +678,7 @@ impl CosmosDriver {
             .await?;
         let db_props: DatabaseProperties = db_result
             .into_body()
-            .json_single()
+            .single_item()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let resolved_db_rid = db_props
             .system_properties
@@ -694,7 +694,7 @@ impl CosmosDriver {
             .await?;
         let container_props: ContainerProperties = container_result
             .into_body()
-            .json_single()
+            .single_item()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let resolved_container_rid = container_props
             .system_properties

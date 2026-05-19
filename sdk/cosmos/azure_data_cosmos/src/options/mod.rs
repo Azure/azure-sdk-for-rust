@@ -4,7 +4,7 @@
 use crate::models::ThroughputProperties;
 use std::fmt;
 use std::fmt::Display;
-use std::num::NonZeroU32;
+use std::num::NonZeroI32;
 
 // Re-exported types that form part of the azure_data_cosmos public API.
 #[doc(inline)]
@@ -256,12 +256,12 @@ pub struct QueryOptions {
     /// When `true`, request that the service include index utilization metrics
     /// in the response (`x-ms-cosmos-populateindexmetrics`). The decoded JSON is
     /// surfaced via `QueryFeedPage::index_metrics()`.
-    pub populate_index_metrics: bool,
+    pub populate_index_metrics: Option<bool>,
 
     /// When `true`, request that the service include per-query metrics in the
     /// response (`x-ms-documentdb-populatequerymetrics`). Surfaced via
     /// `QueryFeedPage::query_metrics()`.
-    pub populate_query_metrics: bool,
+    pub populate_query_metrics: Option<bool>,
 
     /// Maximum number of items the service should return per page
     /// (`x-ms-max-item-count`).
@@ -284,7 +284,7 @@ pub enum MaxItemCountHint {
     ServerDecides,
 
     /// Cap the page at `N` items.
-    Limit(NonZeroU32),
+    Limit(NonZeroI32),
 }
 
 impl MaxItemCountHint {
@@ -292,11 +292,7 @@ impl MaxItemCountHint {
     pub(crate) fn to_header_value(self) -> i32 {
         match self {
             Self::ServerDecides => -1,
-            // `NonZeroU32 -> i32` may overflow only for values above
-            // `i32::MAX`. Cosmos does not accept anything that large, and the
-            // type constraint already excludes 0, so saturating is the safe
-            // and faithful conversion.
-            Self::Limit(n) => i32::try_from(n.get()).unwrap_or(i32::MAX),
+            Self::Limit(n) => n.get(),
         }
     }
 }
@@ -316,13 +312,13 @@ impl QueryOptions {
 
     /// Enables or disables index-utilization metric collection for this query.
     pub fn with_populate_index_metrics(mut self, enable: bool) -> Self {
-        self.populate_index_metrics = enable;
+        self.populate_index_metrics = Some(enable);
         self
     }
 
     /// Enables or disables per-query metric collection for this query.
     pub fn with_populate_query_metrics(mut self, enable: bool) -> Self {
-        self.populate_query_metrics = enable;
+        self.populate_query_metrics = Some(enable);
         self
     }
 

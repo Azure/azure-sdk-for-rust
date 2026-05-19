@@ -33,11 +33,6 @@ impl ResponseBody {
         self.0.single_item()
     }
 
-    /// Explicit alias for [`single_item`](Self::single_item). Errors on feed responses; use [`into_items`](Self::into_items) for those.
-    pub fn json_single<T: DeserializeOwned>(self) -> azure_core::Result<T> {
-        self.0.json_single()
-    }
-
     /// Deserializes every item in a feed response, or the single payload, as
     /// JSON of type `T`.
     pub fn into_items<T: DeserializeOwned>(self) -> azure_core::Result<Vec<T>> {
@@ -55,12 +50,4 @@ impl From<DriverResponseBody> for ResponseBody {
     fn from(inner: DriverResponseBody) -> Self {
         Self(inner)
     }
-}
-
-// Intentionally `pub(crate)`: SDK consumers must go through the typed
-// accessors on `ResponseBody`; the driver type stays an implementation detail.
-// No `From<ResponseBody> for DriverResponseBody` is exposed.
-#[allow(dead_code)]
-pub(crate) fn into_driver_response_body(body: ResponseBody) -> DriverResponseBody {
-    body.0
 }

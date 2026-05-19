@@ -37,7 +37,7 @@ pub(crate) async fn find_offer(
         request_charge = ?driver_response.headers().request_charge,
         "offer query completed"
     );
-    let feed: FeedBody<ThroughputProperties> = driver_response.into_body().json_single()?;
+    let feed: FeedBody<ThroughputProperties> = driver_response.into_body().single_item()?;
     Ok(feed.items.into_iter().next())
 }
 

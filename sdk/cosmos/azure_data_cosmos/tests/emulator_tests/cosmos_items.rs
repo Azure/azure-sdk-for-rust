@@ -203,7 +203,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = response.into_body().json_single()?;
+            let updated_item: TestItem = response.into_body().single_item()?;
             assert_eq!(item, updated_item);
 
             // Delete the item
@@ -407,7 +407,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = upsert_response.into_body().json_single()?;
+            let updated_item: TestItem = upsert_response.into_body().single_item()?;
             assert_eq!(item, updated_item);
 
             Ok(())
@@ -1057,7 +1057,7 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
             );
 
             // Deserialize the body and verify it matches the original item.
-            let created: TestItem = response.into_body().json_single()?;
+            let created: TestItem = response.into_body().single_item()?;
             assert_eq!(item, created);
 
             Ok(())
