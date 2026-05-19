@@ -458,6 +458,11 @@ impl TransportResult {
             _ => None,
         }
     }
+
+    /// Returns true if this attempt resulted in a successful HTTP response (2xx).
+    pub fn is_successful(&self) -> bool {
+        matches!(self.outcome, TransportOutcome::Success { .. })
+    }
 }
 
 /// The outcome of a single transport attempt.
@@ -506,9 +511,14 @@ impl std::fmt::Display for TransportOutcome {
 impl std::fmt::Debug for TransportOutcome {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TransportOutcome::Success { status, .. } => f
+            TransportOutcome::Success {
+                status,
+                cosmos_headers,
+                ..
+            } => f
                 .debug_struct("Success")
                 .field("status", status)
+                .field("cosmos_headers", &cosmos_headers)
                 .field("body", &"...")
                 .finish(),
             TransportOutcome::HttpError {

@@ -188,18 +188,6 @@ impl OperationOptions {
     pub fn custom_headers(&self) -> Option<&HashMap<HeaderName, HeaderValue>> {
         self.custom_headers.as_ref()
     }
-
-    /// Takes (moves out) the custom headers, leaving `None` in their place.
-    ///
-    /// Crate-internal helper for `CosmosOperation::query_plan` which mutates the
-    /// header map and re-attaches it via [`with_custom_headers`](Self::with_custom_headers),
-    /// avoiding a redundant clone of an arbitrarily large map. Gated on the same
-    /// `__internal_testing` cfg as the only caller so docs.rs / non-test builds
-    /// do not flag it as dead code.
-    #[cfg(any(test, feature = "__internal_testing"))]
-    pub(crate) fn take_custom_headers(&mut self) -> Option<HashMap<HeaderName, HeaderValue>> {
-        self.custom_headers.take()
-    }
 }
 
 #[cfg(test)]
