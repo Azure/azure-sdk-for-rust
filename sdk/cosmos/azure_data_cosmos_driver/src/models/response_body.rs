@@ -12,8 +12,11 @@ use serde::de::DeserializeOwned;
 
 /// The body of a [`CosmosResponse`](super::CosmosResponse).
 ///
-/// Explicitly distinguishes between the two response shapes the driver returns:
+/// Explicitly distinguishes between the three response shapes the driver
+/// returns:
 ///
+/// * [`ResponseBody::NoPayload`] — the service returned no body (e.g. HTTP
+///   204 on a successful delete, or any other empty-body response).
 /// * [`ResponseBody::Bytes`] — a single payload buffer. Used for point reads,
 ///   writes, batches, and any other operation that returns one document or
 ///   envelope.
@@ -22,10 +25,14 @@ use serde::de::DeserializeOwned;
 ///   the `Documents` array once via zero-copy [`Bytes::slice`](bytes::Bytes::slice)
 ///   so the SDK never needs to re-parse the envelope.
 ///
-/// Each variant carries shared ownership via reference-counted
+/// The payload variants carry shared ownership via reference-counted
 /// [`bytes::Bytes`].
-#[derive(Clone, SafeDebug)]
+#[derive(Clone, Default, SafeDebug)]
 pub enum ResponseBody {
+    /// The service returned no response body.
+    #[default]
+    NoPayload,
+
     /// A single response payload (point read/write, batch, metadata, etc.).
     Bytes(Bytes),
 
@@ -33,24 +40,24 @@ pub enum ResponseBody {
     Items(Vec<Bytes>),
 }
 
-impl Default for ResponseBody {
-    fn default() -> Self {
-        Self::Bytes(Bytes::new())
-    }
-}
-
 impl ResponseBody {
-    /// Creates an empty body (a single empty `Bytes` payload).
+    /// Creates an empty body (a [`NoPayload`](Self::NoPayload) response).
     pub fn empty() -> Self {
-        Self::Bytes(Bytes::new())
+        Self::NoPayload
     }
 
-    /// Builds a single-payload [`Bytes`](Self::Bytes) body.
+    /// Builds a single-payload [`Bytes`](Self::Bytes) body, or
+    /// [`NoPayload`](Self::NoPayload) if the input is empty.
     ///
     /// Use this for point reads/writes, batches, and any other operation that
     /// returns a single document or envelope.
     pub fn from_bytes(bytes: impl Into<Bytes>) -> Self {
-        Self::Bytes(bytes.into())
+        let bytes = bytes.into();
+        if bytes.is_empty() {
+            Self::NoPayload
+        } else {
+            Self::Bytes(bytes)
+        }
     }
 
     /// Builds a feed-style [`Items`](Self::Items) body from pre-sliced
@@ -63,26 +70,28 @@ impl ResponseBody {
         Self::Items(items)
     }
 
-    /// Returns `true` if the body carries no response payload from the
-    /// service.
+    /// Returns `true` if the body carries no inspectable content.
     ///
-    /// * [`Bytes`](Self::Bytes) is empty when the single buffer is empty.
-    /// * [`Items`](Self::Items) is empty when the feed contains zero
-    ///   documents. Note: individual document slices are not inspected; a
-    ///   feed of one or more (possibly empty) items is *not* empty.
+    /// * [`NoPayload`](Self::NoPayload) is always empty.
+    /// * [`Bytes`](Self::Bytes) is empty when the single buffer has zero bytes.
+    /// * [`Items`](Self::Items) is empty when the feed envelope contains zero
+    ///   documents.
     pub fn is_empty(&self) -> bool {
         match self {
+            Self::NoPayload => true,
             Self::Bytes(b) => b.is_empty(),
             Self::Items(items) => items.is_empty(),
         }
     }
 
     /// Returns the single payload, or an error if the body is a feed
-    /// [`Items`](Self::Items) response.
+    /// [`Items`](Self::Items) response. A [`NoPayload`](Self::NoPayload) body
+    /// yields an empty [`Bytes`].
     ///
     /// Used by single-document response paths (point reads/writes, batch, etc.).
     pub fn single(self) -> azure_core::Result<Bytes> {
         match self {
+            Self::NoPayload => Ok(Bytes::new()),
             Self::Bytes(b) => Ok(b),
             Self::Items(items) => Err(azure_core::Error::with_message(
                 ErrorKind::DataConversion,
@@ -96,16 +105,19 @@ impl ResponseBody {
 
     /// Deserializes a single-payload body as JSON of type `T`.
     ///
-    /// Returns an error if the body is a feed [`Items`](Self::Items) response.
+    /// Returns an error if the body is a feed [`Items`](Self::Items) response
+    /// or if the body is [`NoPayload`](Self::NoPayload) (nothing to parse).
     pub fn single_item<T: DeserializeOwned>(self) -> azure_core::Result<T> {
         let bytes = self.single()?;
         serde_json::from_slice(&bytes).map_err(azure_core::Error::from)
     }
 
     /// Deserializes every item in a feed response, or the single payload, as
-    /// JSON of type `T`.
+    /// JSON of type `T`. A [`NoPayload`](Self::NoPayload) body yields an empty
+    /// `Vec`.
     pub fn into_items<T: DeserializeOwned>(self) -> azure_core::Result<Vec<T>> {
         match self {
+            Self::NoPayload => Ok(Vec::new()),
             Self::Bytes(b) => {
                 let item = serde_json::from_slice(&b).map_err(azure_core::Error::from)?;
                 Ok(vec![item])
@@ -117,29 +129,39 @@ impl ResponseBody {
         }
     }
 
-    /// Decodes a single-payload body as a UTF-8 string.
+    /// Decodes a single-payload body as a UTF-8 string. A
+    /// [`NoPayload`](Self::NoPayload) body yields an empty `String`.
     ///
     /// Returns an error if the body is a feed [`Items`](Self::Items) response.
     pub fn into_string(self) -> azure_core::Result<String> {
-        let bytes = self.single()?;
-        String::from_utf8(bytes.to_vec()).map_err(|e| {
-            azure_core::Error::with_message(
+        match self {
+            Self::NoPayload => Ok(String::new()),
+            Self::Bytes(b) => String::from_utf8(b.to_vec()).map_err(|e| {
+                azure_core::Error::with_message(
+                    ErrorKind::DataConversion,
+                    format!("response body was not valid UTF-8: {e}"),
+                )
+            }),
+            Self::Items(items) => Err(azure_core::Error::with_message(
                 ErrorKind::DataConversion,
-                format!("response body was not valid UTF-8: {e}"),
-            )
-        })
+                format!(
+                    "expected single response body, found feed response with {} item(s)",
+                    items.len()
+                ),
+            )),
+        }
     }
 }
 
 impl From<Bytes> for ResponseBody {
     fn from(bytes: Bytes) -> Self {
-        Self::Bytes(bytes)
+        Self::from_bytes(bytes)
     }
 }
 
 impl From<Vec<u8>> for ResponseBody {
     fn from(bytes: Vec<u8>) -> Self {
-        Self::Bytes(Bytes::from(bytes))
+        Self::from_bytes(Bytes::from(bytes))
     }
 }
 
@@ -148,16 +170,55 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_is_empty_bytes() {
+    fn default_is_no_payload() {
         let body = ResponseBody::default();
+        assert!(matches!(body, ResponseBody::NoPayload));
         assert!(body.is_empty());
-        assert_eq!(body.single().unwrap(), Bytes::new());
     }
 
     #[test]
-    fn empty_constructor() {
+    fn empty_constructor_is_no_payload() {
         let body = ResponseBody::empty();
+        assert!(matches!(body, ResponseBody::NoPayload));
         assert!(body.is_empty());
+    }
+
+    #[test]
+    fn no_payload_single_yields_empty_bytes() {
+        let body = ResponseBody::NoPayload;
+        let bytes = body.single().expect("NoPayload should yield empty Bytes");
+        assert!(bytes.is_empty());
+    }
+
+    #[test]
+    fn no_payload_into_string_yields_empty_string() {
+        assert_eq!(ResponseBody::NoPayload.into_string().unwrap(), "");
+    }
+
+    #[test]
+    fn no_payload_into_items_yields_empty_vec() {
+        let items: Vec<serde_json::Value> = ResponseBody::NoPayload.into_items().unwrap();
+        assert!(items.is_empty());
+    }
+
+    #[test]
+    fn no_payload_single_item_errors() {
+        // No bytes to deserialize.
+        let body = ResponseBody::NoPayload;
+        let result: azure_core::Result<serde_json::Value> = body.single_item();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn from_empty_bytes_becomes_no_payload() {
+        let body: ResponseBody = Bytes::new().into();
+        assert!(matches!(body, ResponseBody::NoPayload));
+    }
+
+    #[test]
+    fn from_empty_vec_u8_becomes_no_payload() {
+        let body: ResponseBody = Vec::<u8>::new().into();
+        assert!(matches!(body, ResponseBody::NoPayload));
     }
 
     #[test]
@@ -173,7 +234,7 @@ mod tests {
 
     #[test]
     fn items_roundtrip() {
-        let body = ResponseBody::Items(vec![
+        let body = ResponseBody::from_items(vec![
             Bytes::from_static(b"a"),
             Bytes::from_static(b"bc"),
             Bytes::from_static(b"def"),
@@ -188,7 +249,8 @@ mod tests {
 
     #[test]
     fn single_errors_on_items() {
-        let body = ResponseBody::Items(vec![Bytes::from_static(b"a"), Bytes::from_static(b"b")]);
+        let body =
+            ResponseBody::from_items(vec![Bytes::from_static(b"a"), Bytes::from_static(b"b")]);
         assert!(body.single().is_err());
     }
 
@@ -209,7 +271,7 @@ mod tests {
         struct Foo {
             id: u32,
         }
-        let body = ResponseBody::Items(vec![
+        let body = ResponseBody::from_items(vec![
             Bytes::from_static(br#"{"id":1}"#),
             Bytes::from_static(br#"{"id":2}"#),
         ]);
@@ -256,14 +318,29 @@ mod tests {
     }
 
     #[test]
-    fn is_empty_for_empty_items_vec() {
+    fn is_empty_true_for_empty_items_vec() {
         assert!(ResponseBody::from_items(Vec::new()).is_empty());
     }
 
     #[test]
-    fn is_empty_false_for_items_with_any_entry() {
-        // Even an empty payload counts as "the feed contained a document".
+    fn is_empty_false_for_items_with_entry() {
         let body = ResponseBody::from_items(vec![Bytes::new()]);
         assert!(!body.is_empty());
+    }
+
+    #[test]
+    fn is_empty_true_for_no_payload() {
+        assert!(ResponseBody::NoPayload.is_empty());
+    }
+
+    #[test]
+    fn is_empty_false_for_non_empty_bytes() {
+        assert!(!ResponseBody::Bytes(Bytes::from_static(b"x")).is_empty());
+    }
+
+    #[test]
+    fn into_string_on_items_errors() {
+        let body = ResponseBody::from_items(vec![Bytes::from_static(b"a")]);
+        assert!(body.into_string().is_err());
     }
 }

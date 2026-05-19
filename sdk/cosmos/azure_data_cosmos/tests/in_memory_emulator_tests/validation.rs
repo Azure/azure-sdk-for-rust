@@ -228,6 +228,7 @@ impl ResponseSnapshot {
     /// Captures a snapshot from a `CosmosResponse`.
     pub fn capture(response: &CosmosResponse, label: impl Into<String>) -> Self {
         let body = match response.body() {
+            ResponseBody::NoPayload => None,
             ResponseBody::Bytes(b) if b.is_empty() => None,
             ResponseBody::Bytes(b) => serde_json::from_slice(b).ok(),
             // No production path emits `Items` for the operations exercised by

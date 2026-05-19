@@ -32,6 +32,7 @@ use uuid::Uuid;
 fn body_json(response: &CosmosResponse) -> serde_json::Value {
     match response.body() {
         ResponseBody::Bytes(b) => serde_json::from_slice(b).unwrap(),
+        ResponseBody::NoPayload => panic!("expected single Bytes body, got no payload"),
         ResponseBody::Items(_) => panic!("expected single Bytes body, got feed response"),
     }
 }
