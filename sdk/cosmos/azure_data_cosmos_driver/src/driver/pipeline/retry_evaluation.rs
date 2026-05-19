@@ -254,13 +254,9 @@ fn evaluate_http_outcome(
         return result;
     }
 
-    if let Some(result) = try_handle_retry_trigger_group(
-        operation,
-        endpoint,
-        retry_state,
-        &status,
-        request_sent,
-    ) {
+    if let Some(result) =
+        try_handle_retry_trigger_group(operation, endpoint, retry_state, &status, request_sent)
+    {
         return result;
     }
 
