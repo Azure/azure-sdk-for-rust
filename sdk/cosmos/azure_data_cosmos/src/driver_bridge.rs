@@ -77,5 +77,4 @@ mod tests {
             Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
         );
     }
-
 }
