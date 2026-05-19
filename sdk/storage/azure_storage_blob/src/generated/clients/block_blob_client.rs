@@ -40,21 +40,11 @@ pub struct BlockBlobClientOptions {
 }
 
 impl BlockBlobClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// The Commit Block List operation writes a blob by specifying the list of block IDs that make up the blob. In order to be
-    /// written as part of a blob, a block must have been successfully written to the server in a prior Put Block operation. You
-    /// can call Put Block List to update a blob by uploading only those blocks that have changed, then committing the new and
-    /// existing blocks together. You can do this by specifying whether to commit a block from the committed block list or from
-    /// the uncommitted block list, or to commit the most recently uploaded version of the block, whichever list it may belong
-    /// to.
+    /// Writes to the block blob by specifying the list of block IDs that make up the blob.
     ///
     /// # Arguments
     ///
-    /// * `blocks` - Blob Blocks.
+    /// * `blocks` - Blob blocks.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -213,7 +203,7 @@ impl BlockBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Get Block List operation retrieves the list of blocks that have been uploaded as part of a block blob.
+    /// Retrieves the list of blocks that have been uploaded as part of the block blob.
     ///
     /// # Arguments
     ///
@@ -295,13 +285,13 @@ impl BlockBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Stage Block operation creates a new block to be committed as part of a blob
+    /// Creates a new block of data to be committed as part of a blob.
     ///
     /// # Arguments
     ///
-    /// * `block_id` - A valid Base64 string value that identifies the block. Prior to encoding, the string must be less than
-    ///   or equal to 64 bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the
-    ///   same size for each block.
+    /// * `block_id` - A Base64 value that identifies the block. Prior to encoding, the string must be less than or equal to 64
+    ///   bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the same size for
+    ///   each block.
     /// * `content_length` - The length of the request.
     /// * `body` - The body of the request.
     /// * `options` - Optional parameters for the request.
@@ -386,15 +376,6 @@ impl BlockBlobClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
-            request.insert_header("x-ms-structured-body", structured_body_type);
-        }
-        if let Some(structured_content_length) = options.structured_content_length {
-            request.insert_header(
-                "x-ms-structured-content-length",
-                structured_content_length.to_string(),
-            );
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         let rsp = self
@@ -413,16 +394,15 @@ impl BlockBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Stage Block From URL operation creates a new block to be committed as part of a blob where the contents are read from
-    /// a URL.
+    /// Creates a new block of data from the specified URL to be committed as part of a blob.
     ///
     /// # Arguments
     ///
-    /// * `block_id` - A valid Base64 string value that identifies the block. Prior to encoding, the string must be less than
-    ///   or equal to 64 bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the
-    ///   same size for each block.
+    /// * `block_id` - A Base64 value that identifies the block. Prior to encoding, the string must be less than or equal to 64
+    ///   bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the same size for
+    ///   each block.
     /// * `content_length` - The length of the request.
-    /// * `source_url` - Specify a URL to the copy source.
+    /// * `source_url` - Specifies the URL of the source.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -570,16 +550,13 @@ impl BlockBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Put Blob from URL operation creates a new Block Blob where the contents of the blob are read from a given URL. This
-    /// API is supported beginning with the 2020-04-08 version. Partial updates are not supported with Put Blob from URL; the
-    /// content of an existing blob is overwritten with the content of the new blob. To perform partial updates to a block blob’s
-    /// contents using a source URL, use the Put Block from URL API in conjunction with Put Block List.
+    /// Uploads the content from the specified URL to the block blob. If the blob already exists, the data and any existing metadata
+    /// will be overwritten.
     ///
     /// # Arguments
     ///
-    /// * `copy_source` - Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that
-    ///   specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must
-    ///   either be public or must be authenticated via a shared access signature.
+    /// * `copy_source` - Specifies the name of the source URL for the copy operation. The value should be URL-encoded as it would
+    ///   appear in a request URI.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -776,10 +753,8 @@ impl BlockBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Upload Block Blob operation updates the content of an existing block blob. Updating an existing block blob overwrites
-    /// any existing metadata on the blob. Partial updates are not supported with Put Blob; the content of the existing blob is
-    /// overwritten with the content of the new blob. To perform a partial update of the content of a block blob, use the Put
-    /// Block List operation.
+    /// Uploads the content to the specified block blob. If the blob already exists, the data and any existing metadata will be
+    /// overwritten.
     ///
     /// # Arguments
     ///
@@ -792,7 +767,7 @@ impl BlockBlobClient {
     /// The returned [`Response`](azure_core::http::Response) implements the [`BlockBlobClientUploadInternalResultHeaders`] trait, which provides
     /// access to response headers. For example:
     ///
-    /// ```no_run
+    /// ```ignore
     /// use azure_core::{Result, http::{Response, NoFormat}};
     /// use azure_storage_blob::models::{BlockBlobClientUploadInternalResult, BlockBlobClientUploadInternalResultHeaders};
     /// async fn example() -> Result<()> {
@@ -823,7 +798,7 @@ impl BlockBlobClient {
     ///
     /// [`BlockBlobClientUploadInternalResultHeaders`]: crate::generated::models::BlockBlobClientUploadInternalResultHeaders
     #[tracing::function("Storage.Blob.BlockBlobClient.upload")]
-    pub async fn upload_internal(
+    pub(crate) async fn upload_internal(
         &self,
         body: RequestContent<Bytes, NoFormat>,
         content_length: u64,

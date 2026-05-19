@@ -18,14 +18,136 @@ fn main() -> Result<(), Box<dyn Error>> {
         );
     }
 
-    // Get the package name from command-line arguments
+    // Parse command-line arguments: --package <name> [--manifest-path <path>]
     let args: Vec<String> = env::args().collect();
-    if args.len() != 3 || args[1] != "--package" {
-        eprintln!("Usage: {} --package <package_name>", args[0]);
-        std::process::exit(1);
+    let mut package_name: Option<String> = None;
+    let mut manifest_path: Option<String> = None;
+
+    let mut i = 1;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--package" => {
+                i += 1;
+                if i >= args.len() {
+                    eprintln!("--package requires a value");
+                    std::process::exit(1);
+                }
+                if package_name.is_some() {
+                    eprintln!("--package specified more than once");
+                    std::process::exit(1);
+                }
+                package_name = Some(args[i].clone());
+            }
+            "--manifest-path" => {
+                i += 1;
+                if i >= args.len() {
+                    eprintln!("--manifest-path requires a value");
+                    std::process::exit(1);
+                }
+                if manifest_path.is_some() {
+                    eprintln!("--manifest-path specified more than once");
+                    std::process::exit(1);
+                }
+                manifest_path = Some(args[i].clone());
+            }
+            arg => {
+                eprintln!("Unknown argument: {}", arg);
+                eprintln!(
+                    "Usage: {} --package <package_name> [--manifest-path <path>]",
+                    args[0]
+                );
+                std::process::exit(1);
+            }
+        }
+        i += 1;
     }
-    let package_name = &args[2];
-    let path_str = format!("./target/doc/{}.json", package_name);
+
+    let package_name = match package_name {
+        Some(name) => name,
+        None => {
+            eprintln!(
+                "Usage: {} --package <package_name> [--manifest-path <path>]",
+                args[0]
+            );
+            std::process::exit(1);
+        }
+    };
+
+    // Resolve the manifest path, querying cargo metadata if not provided.
+    let (manifest_path, crate_name) = if let Some(path) = manifest_path {
+        let crate_name = package_name.replace('-', "_");
+        (path, crate_name)
+    } else {
+        let mut command = Command::new("cargo");
+        command
+            .arg("metadata")
+            .arg("--format-version")
+            .arg("1")
+            .arg("--no-deps")
+            .arg("--manifest-path")
+            .arg("Cargo.toml");
+
+        println!(
+            "Getting manifest path for '{package_name}': {} {}",
+            command.get_program().to_string_lossy(),
+            command
+                .get_args()
+                .collect::<Vec<&OsStr>>()
+                .join(OsStr::new(" "))
+                .to_string_lossy(),
+        );
+
+        let output = command.output()?;
+        if !output.status.success() {
+            eprintln!(
+                "Failed to run cargo metadata: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            std::process::exit(1);
+        }
+
+        let metadata: serde_json::Value = serde_json::from_slice(&output.stdout)?;
+        let pkg = metadata["packages"]
+            .as_array()
+            .and_then(|packages| {
+                packages
+                    .iter()
+                    .find(|pkg| pkg["name"].as_str() == Some(package_name.as_str()))
+            })
+            .ok_or_else(|| {
+                format!(
+                    "Package '{}' not found in cargo metadata output",
+                    package_name
+                )
+            })?;
+
+        let path = pkg["manifest_path"]
+            .as_str()
+            .ok_or("manifest_path not found in cargo metadata output")?
+            .to_string();
+
+        // Derive the lib crate name from the lib target, falling back to the package name.
+        let crate_name = pkg["targets"]
+            .as_array()
+            .and_then(|targets| {
+                targets.iter().find_map(|t| {
+                    let is_lib = t["kind"]
+                        .as_array()
+                        .map(|k| k.iter().any(|v| v.as_str() == Some("lib")))
+                        .unwrap_or(false);
+                    if is_lib {
+                        t["name"].as_str().map(|s| s.replace('-', "_"))
+                    } else {
+                        None
+                    }
+                })
+            })
+            .unwrap_or_else(|| package_name.replace('-', "_"));
+
+        (path, crate_name)
+    };
+
+    let path_str = format!("./target/doc/{}.json", crate_name);
     let path = Path::new(&path_str);
 
     // Call cargo +nightly rustdoc to generate the JSON file
@@ -38,8 +160,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .arg("unstable-options")
         .arg("--output-format")
         .arg("json")
-        .arg("--package")
-        .arg(package_name)
+        .arg("--manifest-path")
+        .arg(&manifest_path)
         .arg("--all-features");
     println!(
         "Running: {} {}",
@@ -94,28 +216,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         item.span = Default::default();
     }
 
-    // Navigate to Cargo.toml and get the path for the package
-    let cargo_toml_path = Path::new("Cargo.toml");
-    let cargo_toml_content = std::fs::read_to_string(cargo_toml_path)?;
-    let cargo_toml: toml::Value = toml::from_str(&cargo_toml_content)?;
-
-    let package_path = cargo_toml
-        .get("workspace")
-        .and_then(|ws| ws.get("members"))
-        .and_then(|members| members.as_array())
-        .and_then(|members| {
-            members.iter().find_map(|member| {
-                if member.as_str()?.ends_with(package_name) {
-                    Some(member.as_str()?.to_string())
-                } else {
-                    None
-                }
-            })
-        })
-        .ok_or("Package path not found in Cargo.toml")?;
+    // Derive the package directory from the manifest path.
+    let package_dir = Path::new(&manifest_path)
+        .parent()
+        .ok_or("Cannot determine package directory from manifest path")?;
 
     // Create the review/ folder under the obtained path if it doesn't exist
-    let review_folder_path = Path::new(&package_path).join("review");
+    let review_folder_path = package_dir.join("review");
     if !review_folder_path.exists() {
         std::fs::create_dir_all(&review_folder_path)?;
     }

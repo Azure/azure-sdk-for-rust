@@ -119,6 +119,8 @@ fn test_perf_runner_new_with_empty_tests() {
     assert_eq!(runner.options.warmup, Duration::seconds(5));
     assert_eq!(runner.options.test_results_filename, "./results.json");
     assert!(!runner.options.no_cleanup);
+    assert!(!runner.options.latency);
+    assert!(runner.options.results_file.is_empty());
 }
 
 #[test]
@@ -260,6 +262,21 @@ fn test_perf_runner_with_command_line_test_results_file() {
 }
 
 #[test]
+fn test_perf_runner_with_command_line_results_file() {
+    let tests = vec![create_basic_test_metadata()];
+    let args = vec!["perf-tests", "--results-file", "/tmp/latency-results.json"];
+
+    let result = PerfRunner::with_command_line(env!("CARGO_MANIFEST_DIR"), file!(), tests, args);
+    assert!(
+        result.is_ok(),
+        "PerfRunner::with_command_line should succeed with --results-file"
+    );
+
+    let runner = result.unwrap();
+    assert_eq!(runner.options.results_file, "/tmp/latency-results.json");
+}
+
+#[test]
 fn test_perf_runner_with_command_line_no_cleanup() {
     let tests = vec![create_basic_test_metadata()];
     let args = vec!["perf-tests", "--no-cleanup"];
@@ -305,6 +322,7 @@ fn test_perf_runner_with_command_line_all_options() {
     assert_eq!(runner.options.warmup, Duration::seconds(15));
     assert_eq!(runner.options.test_results_filename, "/custom/results.json");
     assert!(runner.options.no_cleanup);
+    assert!(runner.options.results_file.is_empty());
 }
 
 #[test]
@@ -685,4 +703,39 @@ async fn test_perf_runner_with_test_functions() {
         .cleanup(test_context.clone())
         .await
         .expect("Cleanup failed");
+}
+
+#[test]
+fn test_perf_runner_latency_flag() {
+    let tests = vec![create_basic_test_metadata()];
+
+    // Defaults to false.
+    let runner = PerfRunner::with_command_line(
+        env!("CARGO_MANIFEST_DIR"),
+        file!(),
+        tests.clone(),
+        vec!["perf-tests"],
+    )
+    .unwrap();
+    assert!(!runner.options.latency);
+
+    // Long form.
+    let runner = PerfRunner::with_command_line(
+        env!("CARGO_MANIFEST_DIR"),
+        file!(),
+        tests.clone(),
+        vec!["perf-tests", "--latency"],
+    )
+    .unwrap();
+    assert!(runner.options.latency);
+
+    // Short form.
+    let runner = PerfRunner::with_command_line(
+        env!("CARGO_MANIFEST_DIR"),
+        file!(),
+        tests,
+        vec!["perf-tests", "-l"],
+    )
+    .unwrap();
+    assert!(runner.options.latency);
 }

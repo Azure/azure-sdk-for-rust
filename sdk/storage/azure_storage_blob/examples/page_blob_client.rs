@@ -8,9 +8,8 @@
 //! demonstrates:
 //! 1. Create a page blob (512 bytes) with the "if not exists" guard.
 //! 2. Upload a page of data using `HttpRange`.
-//! 3. List the valid page ranges to confirm the write.
-//! 4. Clear a page range to zero out the data.
-//! 5. Resize the blob to a larger size.
+//! 3. Clear a page range to zero out the data.
+//! 4. Resize the blob to a larger size.
 //!
 //! # Prerequisites
 //!
@@ -27,11 +26,11 @@
 
 use std::env;
 
-use azure_core::http::RequestContent;
+use azure_core::http::{RequestContent, Url};
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
     models::{BlobClientGetPropertiesResultHeaders, HttpRange, PageBlobClientCreateOptions},
-    BlobContainerClient,
+    BlobServiceClient,
 };
 
 #[tokio::main]
@@ -39,12 +38,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.blob.core.windows.net/", account);
+    let service_url = Url::parse(&format!("https://{account}.blob.core.windows.net/"))?;
     let container_name = "test-container-page-blob";
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let container_client =
-        BlobContainerClient::new(&endpoint, container_name, Some(credential), None)?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+    let container_client = service_client.blob_container_client(container_name);
 
     println!("Creating container '{container_name}'...");
     container_client.create(None).await?;
@@ -53,10 +52,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let blob_client = container_client.blob_client(blob_name);
     let page_blob_client = blob_client.page_blob_client();
 
-    // Create with `with_if_not_exists` so a repeated run does not conflict.
+    // Create with `if_not_exists` so a repeated run does not conflict.
     // Page blob sizes must be a multiple of 512.
     let initial_size: u64 = 512;
-    let create_options = PageBlobClientCreateOptions::default().with_if_not_exists();
+    let create_options = PageBlobClientCreateOptions::default().if_not_exists();
     page_blob_client
         .create(initial_size, Some(create_options))
         .await?;
@@ -70,24 +69,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     println!("Uploaded page at bytes 0-511");
 
-    // List the valid (non-zero) page ranges.
-    let page_ranges = page_blob_client.get_page_ranges(None).await?.into_model()?;
-    let ranges = page_ranges.page_range.as_deref().unwrap_or(&[]);
-    println!("Valid page ranges ({}):", ranges.len());
-    for r in ranges {
-        println!("  start={:?}, end={:?}", r.start, r.end);
-    }
-
     // Clear the page range (zeroes out those bytes).
     page_blob_client
         .clear_pages(HttpRange::new(0, 512), None)
         .await?;
     println!("Cleared page range 0-511");
-
-    // Verify the page range is gone after clearing.
-    let page_ranges = page_blob_client.get_page_ranges(None).await?.into_model()?;
-    let ranges = page_ranges.page_range.as_deref().unwrap_or(&[]);
-    println!("Valid page ranges after clear: {}", ranges.len());
 
     // Resize the blob to 1024 bytes (must be a multiple of 512).
     page_blob_client.resize(1024, None).await?;

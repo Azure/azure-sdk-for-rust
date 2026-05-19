@@ -10,7 +10,7 @@ use azure_core::{
         ClientMethodOptions, ClientOptions, Method, Pipeline, PipelineSendOptions, Request, Url,
     },
 };
-use std::{fmt::Debug, str, sync::Arc};
+use std::{any::type_name, fmt, str, sync::Arc};
 use url::form_urlencoded;
 
 const ASSERTION_TYPE: &str = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
@@ -23,7 +23,6 @@ const ASSERTION_TYPE: &str = "urn:ietf:params:oauth:client-assertion-type:jwt-be
 /// See
 /// [Entra ID documentation](https://learn.microsoft.com/entra/identity-platform/certificate-credentials#assertion-format)
 /// for details of the assertion format.
-#[derive(Debug)]
 pub struct ClientAssertionCredential<C> {
     name: &'static str,
     client_id: String,
@@ -33,16 +32,31 @@ pub struct ClientAssertionCredential<C> {
     pipeline: Pipeline,
 }
 
+impl<C> fmt::Debug for ClientAssertionCredential<C> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>())
+            .field("client_id", &self.client_id)
+            .field("endpoint", &self.endpoint)
+            .finish_non_exhaustive()
+    }
+}
+
 /// Options for constructing a new [`ClientAssertionCredential`].
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct ClientAssertionCredentialOptions {
     /// Options for the credential's HTTP pipeline.
     pub client_options: ClientOptions,
 }
 
+impl fmt::Debug for ClientAssertionCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+    }
+}
+
 #[async_trait::async_trait]
 /// Represents an entity capable of supplying a client assertion.
-pub trait ClientAssertion: Send + Sync + Debug {
+pub trait ClientAssertion: Send + Sync + fmt::Debug {
     /// Supply the client assertion secret.
     async fn secret(&self, options: Option<ClientMethodOptions<'_>>) -> azure_core::Result<String>;
 }

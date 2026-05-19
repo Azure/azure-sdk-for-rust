@@ -110,7 +110,8 @@ pub(crate) fn sdk_fi_rules_to_driver_fi_rules(
         FaultInjectionErrorType as SdkErrorType, FaultOperationType as SdkOpType,
     };
     use azure_data_cosmos_driver::fault_injection::{
-        self as driver_fi, FaultInjectionConditionBuilder as DriverConditionBuilder,
+        self as driver_fi, CustomResponseBuilder as DriverCustomResponseBuilder,
+        FaultInjectionConditionBuilder as DriverConditionBuilder,
         FaultInjectionResultBuilder as DriverResultBuilder,
         FaultInjectionRuleBuilder as DriverRuleBuilder,
     };
@@ -196,8 +197,22 @@ pub(crate) fn sdk_fi_rules_to_driver_fi_rules(
             if prob < 1.0 {
                 result_builder = result_builder.with_probability(prob);
             }
-            // Note: custom_response translation is skipped for now.
-            // None of the current failing tests use custom responses.
+            // Translate the optional `custom_response`. When set on the SDK
+            // rule, the fault client returns this synthetic response verbatim
+            // instead of forwarding to the real transport. Without this
+            // translation, rules built with `with_custom_response` would
+            // silently degrade to a `NoEffect` match (rule fires and bumps
+            // `hit_count`, but the request still goes to the real service),
+            // which is exactly the failure mode that broke the SDK-level
+            // patch-412 fault-injection tests.
+            if let Some(sdk_custom) = &sdk_rule.result.custom_response {
+                let mut driver_custom = DriverCustomResponseBuilder::new(sdk_custom.status_code);
+                for (name, value) in sdk_custom.headers.iter() {
+                    driver_custom = driver_custom.with_header(name.clone(), value.clone());
+                }
+                driver_custom = driver_custom.with_body(sdk_custom.body.clone());
+                result_builder = result_builder.with_custom_response(driver_custom.build());
+            }
 
             // Build driver rule with shared state
             let mut rule_builder =
@@ -351,6 +366,63 @@ mod tests {
         assert_eq!(
             page.query_metrics(),
             Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01")
+        );
+    }
+
+    /// Regression test: a SDK fault-injection rule built with `with_custom_response`
+    /// must surface that custom response on the translated driver-side rule.
+    ///
+    /// Without this, the driver's `FaultClient::apply_fault` falls through into
+    /// `ApplyResult::NoEffect` (rule matches and bumps `hit_count`, but the
+    /// request still goes to the real transport), which is exactly the failure
+    /// mode that broke the SDK-level patch-412 fault-injection emulator tests:
+    /// the diagnostic showed `Applied { rule_id: "sdk-patch-412-always" }` on a
+    /// real 200 from the emulator, because the synthetic 412 never reached the
+    /// `FaultInjectionResult` actually evaluated by the driver.
+    #[cfg(feature = "fault_injection")]
+    #[test]
+    fn sdk_fi_rule_custom_response_survives_translation() {
+        use crate::fault_injection::{
+            CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
+            FaultInjectionRuleBuilder, FaultOperationType,
+        };
+        use azure_core::http::headers::HeaderName;
+        use std::sync::Arc;
+
+        let custom_412 = CustomResponseBuilder::new(StatusCode::PreconditionFailed)
+            .with_header(HeaderName::from_static("x-ms-injected-marker"), "patch-412")
+            .with_body(br#"{"code":"PreconditionFailed","message":"injected 412"}"#.to_vec())
+            .build();
+        let result = FaultInjectionResultBuilder::new()
+            .with_custom_response(custom_412)
+            .build();
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_operation_type(FaultOperationType::ReplaceItem)
+            .build();
+        let sdk_rule = Arc::new(
+            FaultInjectionRuleBuilder::new("custom-response-bridge", result)
+                .with_condition(condition)
+                .build(),
+        );
+
+        let driver_rules = sdk_fi_rules_to_driver_fi_rules(std::slice::from_ref(&sdk_rule));
+        assert_eq!(driver_rules.len(), 1);
+        let driver_rule = &driver_rules[0];
+        let driver_custom = driver_rule
+            .result()
+            .custom_response()
+            .expect("custom_response must be translated onto the driver-side rule");
+        assert_eq!(driver_custom.status_code(), StatusCode::PreconditionFailed);
+        assert_eq!(
+            driver_custom.body(),
+            br#"{"code":"PreconditionFailed","message":"injected 412"}"#
+        );
+        assert_eq!(
+            driver_custom
+                .headers()
+                .get_optional_str(&HeaderName::from_static("x-ms-injected-marker")),
+            Some("patch-412"),
+            "custom-response headers must also survive translation"
         );
     }
 }

@@ -8,8 +8,11 @@ use axum::{
     routing::get,
     Router,
 };
-use azure_core::credentials::TokenCredential;
-use azure_identity::{ManagedIdentityCredential, ManagedIdentityCredentialOptions, UserAssignedId, WorkloadIdentityCredential};
+use azure_core::{credentials::TokenCredential, http::Url};
+use azure_identity::{
+    ManagedIdentityCredential, ManagedIdentityCredentialOptions, UserAssignedId,
+    WorkloadIdentityCredential,
+};
 use azure_storage_blob::BlobServiceClient;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -78,18 +81,16 @@ async fn handle_request(Query(params): Query<Params>) -> Response {
                 }
             }
         }
-        "workload-identity" => {
-            match WorkloadIdentityCredential::new(None) {
-                Ok(cred) => cred,
-                Err(e) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("WorkloadIdentityCredential::new returned '{e}'"),
-                    )
-                        .into_response()
-                }
+        "workload-identity" => match WorkloadIdentityCredential::new(None) {
+            Ok(cred) => cred,
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("WorkloadIdentityCredential::new returned '{e}'"),
+                )
+                    .into_response()
             }
-        }
+        },
         test => return (StatusCode::BAD_REQUEST, format!("Unknown test '{test}'")).into_response(),
     };
 
@@ -104,7 +105,7 @@ async fn try_storage(
     storage_name: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let endpoint = format!("https://{}.blob.core.windows.net", storage_name);
-    BlobServiceClient::new(endpoint.as_str(), Some(credential), None)?
+    BlobServiceClient::new(Url::parse(&endpoint)?, Some(credential), None)?
         .get_properties(None)
         .await
         .map_err(|e| format!("BlobServiceClient::get_properties failed: {:?}", e).into())

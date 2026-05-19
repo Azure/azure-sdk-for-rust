@@ -9,8 +9,8 @@ use crate::{
         BlockBlobClientUploadInternalResultHeaders,
     },
     models::{
-        method_options::BlockBlobClientUploadOptions, BlockBlobClientCommitBlockListOptions,
-        BlockBlobClientStageBlockOptions, BlockBlobClientUploadResult, BlockLookupList,
+        BlockBlobClientCommitBlockListOptions, BlockBlobClientStageBlockOptions,
+        BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
 };
@@ -24,56 +24,35 @@ use azure_core::{
     tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
-use std::{num::NonZero, sync::Arc};
+use std::sync::Arc;
 
 impl BlockBlobClient {
-    /// Creates a new BlockBlobClient, using Entra ID authentication.
-    ///
-    /// # Arguments
-    ///
-    /// * `endpoint` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`
-    /// * `container_name` - The name of the container containing this Block blob.
-    /// * `blob_name` - The name of the Block blob to interact with.
-    /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `options` - Optional configuration for the client.
-    pub fn new(
-        endpoint: &str,
-        container_name: &str,
-        blob_name: &str,
-        credential: Option<Arc<dyn TokenCredential>>,
-        options: Option<BlockBlobClientOptions>,
-    ) -> Result<Self> {
-        let mut url = Url::parse(endpoint)?;
-
-        {
-            let mut path_segments = url.path_segments_mut().map_err(|_| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "Invalid endpoint URL: Failed to parse out path segments from provided endpoint URL.",
-                )
-            })?;
-            path_segments.extend([container_name, blob_name]);
-        }
-
-        Self::from_url(url, credential, options)
-    }
-
     /// Creates a new BlockBlobClient from a block blob URL.
     ///
     /// # Arguments
     ///
     /// * `blob_url` - The full URL of the block blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
     /// * `credential` - An optional implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
     /// * `options` - Optional configuration for the client.
     #[tracing::new("Storage.Blob.BlockBlob")]
-    pub fn from_url(
+    pub fn new(
         blob_url: Url,
         credential: Option<Arc<dyn TokenCredential>>,
         options: Option<BlockBlobClientOptions>,
     ) -> Result<Self> {
+        // Storage endpoints must be base URLs.
+        if blob_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{blob_url} is not a valid base URL"),
+            ));
+        }
+
         let mut options = options.unwrap_or_default();
         super::apply_client_defaults(&mut options.client_options);
 
+        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
         if let Some(token_credential) = credential {
             if !blob_url.scheme().starts_with("https") {
                 return Err(azure_core::Error::with_message(
@@ -81,11 +60,10 @@ impl BlockBlobClient {
                     format!("{blob_url} must use https"),
                 ));
             }
-            let auth_policy: Arc<dyn Policy> = Arc::new(BearerTokenAuthorizationPolicy::new(
+            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
                 token_credential,
                 vec!["https://storage.azure.com/.default"],
-            ));
-            options.client_options.per_try_policies.push(auth_policy);
+            )));
         }
 
         let pipeline = Pipeline::new(
@@ -93,7 +71,7 @@ impl BlockBlobClient {
             option_env!("CARGO_PKG_VERSION"),
             options.client_options.clone(),
             Vec::default(),
-            Vec::default(),
+            per_retry_policies,
             None,
         );
 
@@ -111,7 +89,7 @@ impl BlockBlobClient {
 
     /// Uploads content to a block blob, overwriting any existing blob by default.
     ///
-    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlockBlobClientUploadOptions::with_if_not_exists()`] to fail instead of overwriting.
+    /// Updating an existing block blob overwrites any existing metadata on the blob. Use [`BlockBlobClientUploadOptions::if_not_exists()`] to fail instead of overwriting.
     /// To perform a partial update of the content of a block blob, use [`stage_block`](Self::stage_block) and [`commit_block_list`](Self::commit_block_list) directly.
     ///
     /// # Arguments
@@ -125,8 +103,12 @@ impl BlockBlobClient {
         options: Option<BlockBlobClientUploadOptions<'_>>,
     ) -> Result<BlockBlobClientUploadResult> {
         let options = options.unwrap_or_default();
-        let parallel = options.parallel.unwrap_or(DEFAULT_PARALLEL);
-        let partition_size = options.partition_size.unwrap_or(DEFAULT_PARTITION_SIZE);
+        let parallel = options
+            .parallel
+            .unwrap_or_else(crate::partitioned_transfer::defaults::default_concurrency);
+        let partition_size = options
+            .partition_size
+            .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_UPLOAD_PARTITION_SIZE);
         // Construct exhaustively to catch new options.
         let oneshot_options = BlockBlobClientUploadInternalOptions {
             blob_cache_control: options.blob_cache_control.clone(),
@@ -165,8 +147,6 @@ impl BlockBlobClient {
             encryption_scope: options.encryption_scope.clone(),
             lease_id: options.lease_id.clone(),
             method_options: options.method_options.clone(),
-            structured_body_type: None,
-            structured_content_length: None,
             timeout: options.per_request_timeout,
             transactional_content_crc64: None,
             transactional_content_md5: None,
@@ -214,10 +194,6 @@ impl BlockBlobClient {
         })
     }
 }
-
-// unwrap evaluated at compile time
-const DEFAULT_PARALLEL: NonZero<usize> = NonZero::new(4).unwrap();
-const DEFAULT_PARTITION_SIZE: NonZero<u64> = NonZero::new(4 * 1024 * 1024).unwrap();
 
 struct BlockInfo {
     offset: u64,

@@ -140,7 +140,7 @@ async fn test_upload_blob(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let response = blob_client
         .upload(
             RequestContent::from(new_data.to_vec()),
-            Some(BlockBlobClientUploadOptions::default().with_if_not_exists()),
+            Some(BlockBlobClientUploadOptions::default().if_not_exists()),
         )
         .await;
 
@@ -546,9 +546,13 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
 
     let container_name = get_container_name(recording);
     // Create Container & Container Client
+    let mut container_url = Url::parse(&endpoint)?;
+    container_url
+        .path_segments_mut()
+        .expect("Storage Endpoint must be a valid base URL with http/https scheme")
+        .push(&container_name);
     let container_client = BlobContainerClient::new(
-        &endpoint,
-        &container_name,
+        container_url,
         Some(recording.credential()),
         Some(container_client_options.clone()),
     )?;
@@ -572,25 +576,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         "data%20set%ferris%3D1%the%23crab%2D2",
     ];
     for blob_name in test_cases {
-        // Test Case 1: Initialize BlobClient using new() constructor
-        let blob_client_new = BlobClient::new(
-            &endpoint,
-            &container_name,
-            blob_name,
-            Some(recording.credential()),
-            Some(blob_client_options.clone()),
-        )?;
-
-        // Upload Blob
-        blob_client_new
-            .upload(RequestContent::from(b"hello rusty world".to_vec()), None)
-            .await?;
-
-        // Get Properties
-        let properties = blob_client_new.get_properties(None).await?;
-        assert_eq!(17, properties.content_length()?.unwrap());
-
-        // Test Case 2: Initialize BlobClient using from_blob_url(), separate path segments
+        // Test Case 1: Initialize BlobClient using new() with an explicit blob URL.
         let mut blob_url = Url::parse(&endpoint)?;
         blob_url
             .path_segments_mut()
@@ -598,7 +584,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
             .push(&container_name)
             .push(blob_name);
 
-        let blob_client_from_url = BlobClient::from_url(
+        let blob_client_from_url = BlobClient::new(
             blob_url,
             Some(recording.credential()),
             Some(blob_client_options.clone()),
@@ -613,7 +599,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
         let properties = blob_client_from_url.get_properties(None).await?;
         assert_eq!(17, properties.content_length()?.unwrap());
 
-        // Test Case 3: Initialize BlobClient using ContainerClient accessor
+        // Test Case 2: Initialize BlobClient using ContainerClient accessor
         let blob_client_from_cc = container_client.blob_client(blob_name);
 
         // Upload Blob
@@ -630,7 +616,7 @@ async fn test_encoding_edge_cases(ctx: TestContext) -> Result<(), Box<dyn Error>
     let mut list_blobs_response = container_client.list_blobs(None)?.into_pages();
     let page = list_blobs_response.try_next().await?;
     let list_blob_segment_response = page.unwrap().into_model()?;
-    let blob_items = list_blob_segment_response.segment.blob_items;
+    let blob_items = list_blob_segment_response.blob_items;
 
     // Ensure we have the expected number of blobs
     assert_eq!(test_cases.len(), blob_items.len());
@@ -1316,7 +1302,7 @@ async fn test_blob_error_codes(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     let err = blob_client
         .upload(
             RequestContent::from(b"duplicate".to_vec()),
-            Some(BlockBlobClientUploadOptions::default().with_if_not_exists()),
+            Some(BlockBlobClientUploadOptions::default().if_not_exists()),
         )
         .await
         .unwrap_err();

@@ -5,8 +5,8 @@
 
 use super::{
     models_serde,
-    xml_helpers::{CorsCorsRule, Queue_itemsQueue},
-    GeoReplicationStatus,
+    xml_helpers::{CorsCorsRule, Queue_itemsQueueItem},
+    GeoReplicationStatus, StorageErrorCode,
 };
 use azure_core::{fmt::SafeDebug, time::OffsetDateTime};
 use serde::{Deserialize, Serialize};
@@ -68,28 +68,7 @@ pub struct CorsRule {
 pub struct Error {
     /// The error code.
     #[serde(rename = "Code", skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-
-    /// Copy source error code.
-    #[serde(
-        rename = "CopySourceErrorCode",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub copy_source_error_code: Option<String>,
-
-    /// Copy source error message.
-    #[serde(
-        rename = "CopySourceErrorMessage",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub copy_source_error_message: Option<String>,
-
-    /// Copy source status code.
-    #[serde(
-        rename = "CopySourceStatusCode",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub copy_source_status_code: Option<i32>,
+    pub code: Option<StorageErrorCode>,
 
     /// The error code.
     #[serde(rename = "errorCode", skip_serializing_if = "Option::is_none")]
@@ -98,20 +77,6 @@ pub struct Error {
     /// The error message.
     #[serde(rename = "Message", skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-
-    /// The error code for the copy source.
-    #[serde(
-        rename = "xMsCopySourceErrorCode",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub x_ms_copy_source_error_code: Option<String>,
-
-    /// The status code for the copy source.
-    #[serde(
-        rename = "xMsCopySourceStatusCode",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub x_ms_copy_source_status_code: Option<i32>,
 }
 
 /// Geo replication information for the secondary storage location.
@@ -132,6 +97,16 @@ pub struct GeoReplication {
     /// The status of the secondary location.
     #[serde(rename = "Status", skip_serializing_if = "Option::is_none")]
     pub status: Option<GeoReplicationStatus>,
+}
+
+/// The response of send message.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "QueueMessagesList")]
+pub struct ListOfSentMessage {
+    /// The list of sent messages.
+    #[serde(rename = "QueueMessage", skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<SentMessage>>,
 }
 
 /// The list queues response.
@@ -158,9 +133,9 @@ pub struct ListQueuesResponse {
     /// The list of queues.
     #[serde(
         default,
-        deserialize_with = "Queue_itemsQueue::unwrap",
+        deserialize_with = "Queue_itemsQueueItem::unwrap",
         rename = "Queues",
-        serialize_with = "Queue_itemsQueue::wrap"
+        serialize_with = "Queue_itemsQueueItem::wrap"
     )]
     pub queue_items: Vec<QueueItem>,
 
@@ -397,7 +372,7 @@ pub struct RetentionPolicy {
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
 #[serde(rename = "QueueMessage")]
-pub struct SentMessageInternal {
+pub struct SentMessage {
     /// The time that the message will expire and be automatically deleted.
     #[serde(
         default,

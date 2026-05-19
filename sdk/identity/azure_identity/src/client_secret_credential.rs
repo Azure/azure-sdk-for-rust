@@ -14,24 +14,38 @@ use azure_core::{
     },
     Error,
 };
-use std::{str, sync::Arc};
+use std::{any::type_name, fmt, str, sync::Arc};
 use url::form_urlencoded;
 
 /// Options for constructing a new [`ClientSecretCredential`].
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct ClientSecretCredentialOptions {
     /// Options for the credential's HTTP pipeline.
     pub client_options: ClientOptions,
 }
 
+impl fmt::Debug for ClientSecretCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+    }
+}
+
 /// Authenticates an application with a client secret.
-#[derive(Debug)]
 pub struct ClientSecretCredential {
     cache: TokenCache,
     client_id: String,
     endpoint: Url,
     pipeline: Pipeline,
     secret: Secret,
+}
+
+impl fmt::Debug for ClientSecretCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>())
+            .field("client_id", &self.client_id)
+            .field("endpoint", &self.endpoint)
+            .finish_non_exhaustive()
+    }
 }
 
 impl ClientSecretCredential {

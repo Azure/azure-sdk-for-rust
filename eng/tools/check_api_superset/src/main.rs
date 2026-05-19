@@ -26,7 +26,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Generate rustdoc JSON for all crates first so we can cross-reference.
     let mut crate_data: Vec<(&str, Crate)> = Vec::new();
+    let service_dir = std::env::current_dir()?.join("sdk/core");
     for crate_name in CRATES {
+        let manifest_path = service_dir.join(crate_name).join("Cargo.toml");
         let mut command = Command::new("cargo");
         command
             .arg(format!("+{channel}"))
@@ -35,8 +37,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             .arg("unstable-options")
             .arg("--output-format")
             .arg("json")
-            .arg("--package")
-            .arg(crate_name)
+            .arg("--manifest-path")
+            .arg(manifest_path)
             .arg("--all-features");
         eprintln!(
             "Running: {} {}",

@@ -1,6 +1,6 @@
 # Release History
 
-## 0.14.0 (Unreleased)
+## 1.1.0-beta.1 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,18 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 1.0.0 (2026-05-12)
+
+### Features Added
+
+- Initial stable release.
+
+### Breaking Changes
+
+- Bearer token authentication now requires TLS (https).
+- Renamed `CertificateClient::create_certificate()` to `begin_create_certificate()` per [guidelines](https://azure.github.io/azure-sdk/rust_introduction.html#rust-lro-prefix).
+- Vault URLs must use TLS (https).
 
 ## 0.13.0 (2026-04-22)
 
