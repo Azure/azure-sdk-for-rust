@@ -8,8 +8,8 @@ use crate::{
         BatchResponse, ContainerProperties, ItemResponse, ResourceResponse, ThroughputProperties,
     },
     options::{
-        BatchOptions, Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
-        SessionToken,
+        BatchOptions, PatchItemOptions, Precondition, QueryOptions, ReadContainerOptions,
+        ReadFeedRangesOptions, SessionToken,
     },
     transactional_batch::TransactionalBatch,
     DeleteContainerOptions, FeedItemIterator, ItemReadOptions, ItemWriteOptions, PartitionKey,
@@ -17,6 +17,7 @@ use crate::{
 };
 
 use super::ThroughputPoller;
+use crate::PatchSpec;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
@@ -430,6 +431,130 @@ impl ContainerClient {
             .await?;
 
         // Bridge the driver response to the SDK response type.
+        Ok(ItemResponse::new(
+            crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
+        ))
+    }
+
+    /// Applies a JSON-PATCH-style update to an item by reading it, applying
+    /// the [`PatchSpec`] locally, and issuing an ETag-guarded Replace.
+    ///
+    /// This is implemented as a driver-side Read-Modify-Write (RMW) loop:
+    ///
+    /// 1. The driver reads the current item and captures its `ETag`.
+    /// 2. It applies the [`PatchSpec`] to a local `serde_json::Value` copy.
+    /// 3. It issues a `Replace` with `If-Match` set to the captured `ETag`.
+    /// 4. On `412 PreconditionFailed`, the loop restarts (another writer
+    ///    won the race). It retries up to
+    ///    [`PatchItemOptions::max_attempts`](crate::PatchItemOptions::max_attempts)
+    ///    times (default 5).
+    ///
+    /// The handler refuses to PATCH paths that overlap the container's
+    /// partition-key paths: rewriting the partition key would move the
+    /// document to a different physical partition, so such requests are
+    /// rejected synchronously.
+    ///
+    /// # Arguments
+    /// * `partition_key` - The partition key of the item to patch.
+    /// * `item_id` - The id of the item to patch.
+    /// * `patch` - The [`PatchSpec`] describing the ops to apply.
+    /// * `options` - Optional parameters for the request.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use azure_data_cosmos::{PatchOp, PatchSpec};
+    /// use serde::{Deserialize, Serialize};
+    /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("non-running example");
+    /// #[derive(Debug, Deserialize, Serialize)]
+    /// pub struct Product {
+    ///     #[serde(rename = "id")]
+    ///     product_id: String,
+    ///     display_name: String,
+    ///     visits: i64,
+    /// }
+    ///
+    /// let patch = PatchSpec::new(vec![
+    ///     PatchOp::set("/displayName", serde_json::json!("New name")),
+    ///     PatchOp::increment("/visits", 1i64),
+    /// ]);
+    /// // The post-image of the patched item is always available, regardless of
+    /// // `content_response_on_write`: the driver synthesizes it from the locally
+    /// // merged document.
+    /// let updated: Product = container_client
+    ///     .patch_item("category1", "product1", patch, None)
+    ///     .await?
+    ///     .into_model()?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// # Response Body
+    ///
+    /// Unlike a wire-level Cosmos PATCH (which honors
+    /// `content_response_on_write`), this method always returns the post-image
+    /// of the patched item. The driver constructs it locally from the merged
+    /// document it just wrote, so no extra round trip is required to read it
+    /// back. Callers that don't need the body can use
+    /// [`ItemResponse::<serde_json::Value>`] or simply discard the response.
+    ///
+    /// The synthesized body's `_etag` is reconciled with the Replace
+    /// response — it always reflects the post-image's authoritative ETag
+    /// (the same value surfaced on `ItemResponse::headers().etag`), not
+    /// the stale Read-time tag. When `content_response_on_write` is
+    /// enabled on the inner Replace, the service's response body is
+    /// surfaced verbatim instead — providing exact `_ts` and any
+    /// server-applied transforms.
+    ///
+    /// # Failure Semantics
+    ///
+    /// PATCH is **not exactly-once** under transport failures. The driver
+    /// issues the inner Replace as `OperationType::Replace`, which the
+    /// pipeline classifies as idempotent. If a transport-layer error fires
+    /// *after* the inner Replace has been sent but before its response is
+    /// received and the server has already committed the write, the pipeline
+    /// may cross-region retry it. A retry against a replica that has already
+    /// replicated the original commit returns 412, which the RMW loop
+    /// recovers by re-Reading and re-applying. Non-idempotent operations
+    /// (`PatchOp::increment`, `PatchOp::add` on an array, `PatchOp::move`)
+    /// may therefore be applied **more than once** under this scenario.
+    /// Callers that require exactly-once semantics for counters or array
+    /// appends should either build idempotent ops (`PatchOp::set` on a
+    /// caller-computed value) or detect duplicate-application via a
+    /// monotonic application-level sequence number.
+    pub async fn patch_item<T>(
+        &self,
+        partition_key: impl Into<PartitionKey>,
+        item_id: &str,
+        patch: PatchSpec,
+        options: Option<PatchItemOptions>,
+    ) -> azure_core::Result<ItemResponse<T>> {
+        let options = options.unwrap_or_default();
+        let body = serde_json::to_vec(&patch)?;
+
+        let item_ref = ItemReference::from_name(
+            &self.container_ref,
+            partition_key.into().into_driver_partition_key(),
+            item_id.to_owned(),
+        );
+
+        // Build the PATCH operation. The handler reads the PatchSpec back
+        // out of the body, so we pass it through verbatim.
+        let mut operation = CosmosOperation::patch_item(item_ref).with_body(body);
+        if let Some(max_attempts) = options.max_attempts {
+            operation = operation.with_patch_max_attempts(max_attempts);
+        }
+        // PATCH manages its own If-Match internally — we only forward the
+        // session token.
+        let operation = apply_item_options(operation, options.session_token, None);
+
+        let driver_response = self
+            .context
+            .driver
+            .execute_operation(operation, options.operation)
+            .await?;
+
         Ok(ItemResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
         ))
@@ -1017,4 +1142,22 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
         operation = operation.with_session_token(session_token.clone());
     }
     operation
+}
+
+/// Compile-time guarantee that the futures returned by [`ContainerClient`]
+/// helpers are `Send`.
+///
+/// This function is never called — it exists purely so `cargo build` rejects
+/// any regression that accidentally makes a future non-`Send` (e.g. by
+/// capturing a non-`Send` cell across an `.await` point). Each method we
+/// want covered is referenced below.
+#[allow(dead_code, unreachable_code, unused_variables)]
+fn _assert_futures_are_send() {
+    fn assert_send<T: Send>(_: T) {}
+    let client: &ContainerClient = todo!();
+    let partition_key: PartitionKey = todo!();
+    let item_id: &str = todo!();
+    let patch: PatchSpec = todo!();
+    let options: Option<PatchItemOptions> = todo!();
+    assert_send(client.patch_item::<serde_json::Value>(partition_key, item_id, patch, options));
 }
