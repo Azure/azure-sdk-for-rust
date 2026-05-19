@@ -16,6 +16,8 @@
 //! - 500 (reads only) → FailoverRetry + mark partition/endpoint unavailable
 //! - Other HTTP errors → Abort
 
+use std::sync::atomic::Ordering;
+
 use azure_core::http::headers::Headers;
 
 use crate::{
@@ -386,6 +388,15 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
         && !retry_state.hub_region_processing_only
     {
         new_state.hub_region_processing_only = true;
+        // Cross-hedge propagation (HEDGING_SPEC.md §9.6). When this
+        // operation is running inside `execute_hedged` the shared
+        // `Arc<AtomicBool>` lets sibling hedges discover the 1002 latch
+        // without re-running the 404/1002 cycle themselves. `Release`
+        // ordering pairs with the `Acquire` load in `apply_hub_region_header`
+        // — publishes the bool, which is the only datum being shared.
+        if let Some(shared) = new_state.shared_hub_region_latch.as_ref() {
+            shared.store(true, Ordering::Release);
+        }
     }
     new_state
 }
@@ -856,6 +867,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -1594,5 +1606,97 @@ mod tests {
             }
             other => panic!("unexpected action for 503 after latch: {other:?}"),
         }
+    }
+
+    // ── Shared hub-region latch (Part 5 / HEDGING_SPEC.md §9.6) ───────
+
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    };
+
+    /// T-S1 — When the per-state latch fires and a shared latch is
+    /// attached, the shared `Arc<AtomicBool>` is `Release`-stored as
+    /// `true`. Counterpart of .NET PR #5815's `CrossRegionAvailabilityContext`
+    /// propagation test.
+    #[test]
+    fn shared_hub_region_latch_propagates_first_1002_across_hedges() {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        let shared = Arc::new(AtomicBool::new(false));
+        state = state.with_shared_hub_region_latch(shared.clone());
+
+        let after = session_retry_state_for_1002(&state);
+
+        assert!(
+            after.hub_region_processing_only,
+            "per-state latch must still fire on the first 1002",
+        );
+        assert!(
+            shared.load(Ordering::Acquire),
+            "shared latch must be Release-stored when per-state latch fires",
+        );
+        // The new state must continue to carry the same shared latch
+        // (propagation through `..self` in `advance_session_retry`).
+        assert!(
+            after.shared_hub_region_latch.as_ref().map(Arc::as_ptr) == Some(Arc::as_ptr(&shared)),
+            "advance_session_retry must propagate the shared latch via ..self",
+        );
+    }
+
+    /// T-S2 — A non-triggering 1002 (multi-master) must NOT flip the
+    /// shared latch even if one is attached. Mirrors T-2 / AC-4 for the
+    /// shared path.
+    #[test]
+    fn shared_hub_region_latch_does_not_set_on_multi_master_1002() {
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 3); // multi-master
+        state.is_dataplane = true;
+        let shared = Arc::new(AtomicBool::new(false));
+        state = state.with_shared_hub_region_latch(shared.clone());
+
+        let after = session_retry_state_for_1002(&state);
+
+        assert!(
+            !after.hub_region_processing_only,
+            "multi-master never latches per-state",
+        );
+        assert!(
+            !shared.load(Ordering::Acquire),
+            "multi-master never flips the shared latch either",
+        );
+    }
+
+    /// T-S3 — A non-triggering 1002 on metadata pipeline must NOT flip
+    /// the shared latch. Mirrors T-AC-8 / AC-8 for the shared path.
+    #[test]
+    fn shared_hub_region_latch_does_not_set_on_metadata_pipeline_1002() {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = false; // metadata
+        let shared = Arc::new(AtomicBool::new(false));
+        state = state.with_shared_hub_region_latch(shared.clone());
+
+        let after = session_retry_state_for_1002(&state);
+
+        assert!(!after.hub_region_processing_only);
+        assert!(!shared.load(Ordering::Acquire));
+    }
+
+    /// T-S4 — A pre-set shared latch on a multi-master state must NOT
+    /// be cleared by the retry path. The latch is monotonic — once set,
+    /// stays set. Guards against an accidental store-of-false on a
+    /// non-triggering retry.
+    #[test]
+    fn shared_hub_region_latch_is_monotonic_once_set() {
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 3); // multi-master
+        state.is_dataplane = true;
+        let shared = Arc::new(AtomicBool::new(true)); // pre-set
+        state = state.with_shared_hub_region_latch(shared.clone());
+
+        let _ = session_retry_state_for_1002(&state);
+
+        assert!(
+            shared.load(Ordering::Acquire),
+            "shared latch must stay set across non-triggering retries",
+        );
     }
 }

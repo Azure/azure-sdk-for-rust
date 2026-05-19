@@ -7,6 +7,7 @@
 //! represent the state that flows through pipeline stages. Each pipeline stage
 //! operates on only the components it needs.
 
+use std::sync::{atomic::AtomicBool, Arc};
 use std::time::{Duration, Instant};
 
 use azure_core::http::{headers::Headers, Method};
@@ -137,6 +138,24 @@ pub(crate) struct OperationRetryState {
     /// the latch trigger or emission rule here MUST update both call
     /// sites and §9.5 of the hedging spec.
     pub hub_region_processing_only: bool,
+    /// Cross-hedge shared hub-region-processing-only latch.
+    ///
+    /// `Some(_)` only when this `OperationRetryState` is running inside
+    /// the [`execute_hedged`] cross-region race past the threshold
+    /// (spec [`docs/HEDGING_SPEC.md`] §9.6). `None` on the non-hedged
+    /// pipeline and on the zero-overhead happy path where the primary
+    /// returns before the threshold elapses, so the §6.5 #3
+    /// no-Arc-allocation invariant and PR #4389's allocator footprint
+    /// are both preserved.
+    ///
+    /// Set with `Release` ordering by `build_session_retry_state` at
+    /// the same point where it flips the per-state `hub_region_processing_only`
+    /// latch; read with `Acquire` ordering by `apply_hub_region_header`
+    /// (OR'd against the per-state latch). Mirrors .NET v3's
+    /// `CrossRegionAvailabilityContext` injected into
+    /// `RequestMessage.Properties` before the hedge fan-out
+    /// ([azure-cosmos-dotnet-v3#5815](https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5815)).
+    pub shared_hub_region_latch: Option<Arc<AtomicBool>>,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
     /// Session-retry routing override for read operations.
@@ -221,6 +240,7 @@ impl OperationRetryState {
             can_use_multiple_write_locations,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -233,6 +253,24 @@ impl OperationRetryState {
     /// Whether failover retry budget allows another attempt.
     pub fn can_retry_failover(&self) -> bool {
         self.failover_retry_count < self.max_failover_retries
+    }
+
+    /// Attaches the cross-hedge shared hub-region-processing-only
+    /// latch (spec [`docs/HEDGING_SPEC.md`] §9.6). Called by
+    /// `execute_hedged` after the threshold elapses and the
+    /// eligibility predicate (data-plane ∧ single-master) holds, so the
+    /// zero-overhead happy path never constructs an `Arc<AtomicBool>`.
+    ///
+    /// Currently exercised by Part 5 unit tests only — the production
+    /// hedge path constructs the `Arc` directly inside `execute_hedged`
+    /// without an intermediate `OperationRetryState` because each hedge
+    /// today runs a single transport attempt (no per-hedge retry loop).
+    /// When §8.4 lands per-hedge operation-level retry, the secondary's
+    /// `OperationRetryState` constructor will switch to this builder.
+    #[allow(dead_code)] // reserved for §8.4 per-hedge retry state
+    pub fn with_shared_hub_region_latch(mut self, latch: Arc<AtomicBool>) -> Self {
+        self.shared_hub_region_latch = Some(latch);
+        self
     }
 
     /// Whether session retry budget allows another attempt.

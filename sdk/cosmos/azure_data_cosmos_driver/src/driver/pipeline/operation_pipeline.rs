@@ -8,6 +8,7 @@
 //! (PPAF/PPCB), and deadline enforcement.
 
 use std::pin::Pin;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -437,6 +438,8 @@ pub(crate) async fn execute_operation_pipeline(
                     options,
                     throughput_control,
                     deadline,
+                    can_use_multiple_write_locations: retry_state.can_use_multiple_write_locations,
+                    hub_region_processing_only_initial: retry_state.hub_region_processing_only,
                 };
                 return execute_hedged(
                     &attempt_ctx,
@@ -1056,12 +1059,60 @@ fn apply_hub_region_header(
     transport_request: &mut TransportRequest,
     retry_state: &OperationRetryState,
 ) {
-    if retry_state.hub_region_processing_only {
+    if should_emit_hub_region_header(
+        retry_state.hub_region_processing_only,
+        retry_state.shared_hub_region_latch.as_ref(),
+    ) {
         transport_request.headers.insert(
             HeaderName::from_static(request_header_names::HUB_REGION_PROCESSING_ONLY),
             HeaderValue::from_static("True"),
         );
     }
+}
+
+/// Returns `true` when the `x-ms-cosmos-hub-region-processing-only`
+/// header should be emitted on a transport request, per spec
+/// HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / HEDGING_SPEC.md §9.6.
+///
+/// Emission is the OR of the per-state latch (set by
+/// `build_session_retry_state` on the first 1002 of a single-master
+/// data-plane operation) and the shared latch (set by any sibling
+/// hedge inside the same `execute_hedged` fan-out). The shared latch
+/// is read with `Acquire` ordering, pairing with the `Release` store
+/// in `build_session_retry_state`. When the shared latch is absent
+/// (`None` — the non-hedged pipeline and the zero-overhead happy
+/// path), the rule collapses to the pre-PR-#5815 per-state behavior.
+fn should_emit_hub_region_header(
+    per_state_latched: bool,
+    shared_latch: Option<&Arc<AtomicBool>>,
+) -> bool {
+    per_state_latched || shared_latch.is_some_and(|s| s.load(Ordering::Acquire))
+}
+
+/// Returns `true` when [`execute_hedged`] should construct an
+/// `Arc<AtomicBool>` shared hub-region-processing-only latch for the
+/// hedge fan-out, per spec
+/// [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md) §9.6.3.
+///
+/// The latch only matters when both:
+///
+/// 1. **Data-plane scope** — metadata operations are scoped out per
+///    `HUB_REGION_PROCESSING_HEADER_SPEC.md` §1.5 / AC-8, mirroring the
+///    per-state latch's `is_dataplane` trigger gate.
+/// 2. **Single-master account** — multi-master accounts never emit the
+///    `x-ms-cosmos-hub-region-processing-only` header
+///    (`HUB_REGION_PROCESSING_HEADER_SPEC.md` AC-4); a latch on a
+///    multi-master hedge would be inert and would waste an `Arc`
+///    allocation.
+///
+/// Construction at the call site is further gated on the threshold
+/// having elapsed, so the §6.5 #3 zero-overhead happy path (primary
+/// wins pre-threshold) is preserved.
+fn should_build_shared_hub_region_latch(
+    pipeline_type: PipelineType,
+    can_use_multiple_write_locations: bool,
+) -> bool {
+    pipeline_type.is_data_plane() && !can_use_multiple_write_locations
 }
 
 /// Applies operation-options-driven request headers that are only known
@@ -1284,6 +1335,19 @@ struct AttemptContext<'a> {
     /// End-to-end deadline (operation timeout) — passed through to each
     /// per-attempt transport invocation.
     deadline: Option<Instant>,
+    /// Whether this operation runs against a multi-master account.
+    /// Used by [`execute_hedged`] to gate construction of the shared
+    /// hub-region-processing-only latch (spec [`docs/HEDGING_SPEC.md`]
+    /// §9.6.3 — the latch is only meaningful on single-master
+    /// data-plane operations).
+    can_use_multiple_write_locations: bool,
+    /// Current value of the per-state `hub_region_processing_only`
+    /// latch at the moment hedging upgraded from `FailoverRetry` /
+    /// `SessionRetry`. Used by [`execute_hedged`] to seed the shared
+    /// `Arc<AtomicBool>` so a 1002 already discovered by the main
+    /// pipeline before hedging fired carries forward into both hedge
+    /// attempts (spec [`docs/HEDGING_SPEC.md`] §9.6.2).
+    hub_region_processing_only_initial: bool,
 }
 
 /// Result classification used by [`execute_hedged`] to decide whether a
@@ -1422,9 +1486,13 @@ fn maybe_upgrade_to_hedge(
 ///
 /// Differences from the inline loop body:
 ///
-/// - **No `apply_hub_region_header`.** Hedge attempts deliberately do
-///   not emit `x-ms-cosmos-hub-region-processing-only` in Part 4b; the
-///   spec §9.6 shared hub-region latch is a separate work item.
+/// - **No per-state `hub_region_processing_only` latch.** Each hedge
+///   today runs a single transport attempt with no retry loop, so the
+///   per-state latch has nothing to drive. The shared latch (spec
+///   §9.6) is plumbed through `shared_hub_region_latch` instead — the
+///   secondary reads it on its first request so a 1002 latched by the
+///   main pipeline (before hedging upgraded) immediately gets the
+///   `x-ms-cosmos-hub-region-processing-only` header.
 /// - **No `partition_key_range_id` capture.** The PK range ID is already
 ///   known to the surrounding `execute_operation_pipeline` (the
 ///   triggering attempt populated it) and is read-only inside a hedge.
@@ -1432,6 +1500,7 @@ async fn perform_single_attempt(
     ctx: &AttemptContext<'_>,
     routing: &RoutingDecision,
     execution_context: ExecutionContext,
+    shared_hub_region_latch: Option<&Arc<AtomicBool>>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> azure_core::Result<TransportResult> {
     // Resolve session token using the same precedence the main loop uses.
@@ -1456,6 +1525,14 @@ async fn perform_single_attempt(
 
     let mut transport_request =
         build_transport_request(ctx.operation, ctx.custom_headers, &request_ctx)?;
+    // Hedging attempts have no per-state latch to consult — the only
+    // signal is the cross-hedge shared latch (§9.6).
+    if should_emit_hub_region_header(false, shared_hub_region_latch) {
+        transport_request.headers.insert(
+            HeaderName::from_static(request_header_names::HUB_REGION_PROCESSING_ONLY),
+            HeaderValue::from_static("True"),
+        );
+    }
     apply_optional_request_headers(&mut transport_request, ctx.operation, ctx.options);
 
     let selected_transport = match ctx.pipeline_type {
@@ -1691,9 +1768,18 @@ async fn execute_hedged(
     let primary_diag = parent_diagnostics.clone_for_hedge_attempt();
     let primary_attempt = Box::pin(async move {
         let mut diag = primary_diag;
-        let result =
-            perform_single_attempt(ctx, primary_routing, ExecutionContext::Initial, &mut diag)
-                .await;
+        // Primary is launched before Stage 2 elapses, so no shared
+        // hub-region latch can possibly exist yet — a `None` here
+        // preserves the spec §6.5 #3 zero-overhead happy path (no
+        // `Arc` allocation when the primary wins pre-threshold).
+        let result = perform_single_attempt(
+            ctx,
+            primary_routing,
+            ExecutionContext::Initial,
+            None,
+            &mut diag,
+        )
+        .await;
         (result, diag)
     });
 
@@ -1755,17 +1841,37 @@ async fn execute_hedged(
     };
 
     // ── Stage 3: Launch secondary ─────────────────────────────────────
+    // The cross-hedge shared hub-region-processing-only latch (spec §9.6)
+    // is constructed here — *after* the threshold elapses, so the
+    // zero-overhead happy path (§6.5 #3) never allocates the `Arc`.
+    // Gated on the same predicates as the per-state latch trigger:
+    // data-plane scope + single-master account. Seeded from whatever
+    // value the main pipeline's per-state latch held at the moment
+    // hedging upgraded, so a 1002 already discovered before hedging
+    // fired carries forward into the secondary's first request.
+    let shared_hub_region_latch = should_build_shared_hub_region_latch(
+        ctx.pipeline_type,
+        ctx.can_use_multiple_write_locations,
+    )
+    .then(|| Arc::new(AtomicBool::new(ctx.hub_region_processing_only_initial)));
+    let secondary_shared_latch = shared_hub_region_latch.clone();
     let secondary_diag = parent_diagnostics.clone_for_hedge_attempt();
     let secondary_attempt = Box::pin(async move {
         let mut diag = secondary_diag;
-        let result =
-            perform_single_attempt(ctx, secondary_routing, ExecutionContext::Hedging, &mut diag)
-                .await;
+        let result = perform_single_attempt(
+            ctx,
+            secondary_routing,
+            ExecutionContext::Hedging,
+            secondary_shared_latch.as_ref(),
+            &mut diag,
+        )
+        .await;
         (result, diag)
     });
 
     tracing::debug!(
         activity_id = %ctx.activity_id,
+        shared_hub_region_latch = shared_hub_region_latch.is_some(),
         "execute_hedged: threshold elapsed; secondary launched",
     );
 
@@ -2210,6 +2316,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
@@ -2266,6 +2373,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -2322,6 +2430,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -2385,6 +2494,7 @@ mod tests {
             can_use_multiple_write_locations: true,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -2646,6 +2756,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions: vec!["westus2".into()],
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -4087,5 +4198,116 @@ mod tests {
         let parent_before = parent.request_count();
         super::harvest_remaining_attempt(attempt, &mut parent).await;
         assert_eq!(parent.request_count(), parent_before);
+    }
+
+    // ── Shared hub-region latch (Part 5 / HEDGING_SPEC.md §9.6) ───────
+
+    /// T-S5 — Eligibility predicate: data-plane + single-master → build.
+    #[test]
+    fn shared_hub_region_latch_eligibility_dataplane_single_master() {
+        assert!(super::should_build_shared_hub_region_latch(
+            super::PipelineType::DataPlane,
+            false, // single-master
+        ));
+    }
+
+    /// T-S6 — Eligibility predicate: multi-master → skip. Mirrors AC-4.
+    #[test]
+    fn shared_hub_region_latch_eligibility_skip_multi_master() {
+        assert!(!super::should_build_shared_hub_region_latch(
+            super::PipelineType::DataPlane,
+            true, // multi-master
+        ));
+    }
+
+    /// T-S7 — Eligibility predicate: metadata pipeline → skip. Mirrors
+    /// AC-8 and the §1.5 data-plane scope gate of
+    /// `HUB_REGION_PROCESSING_HEADER_SPEC.md`.
+    #[test]
+    fn shared_hub_region_latch_eligibility_skip_metadata() {
+        assert!(!super::should_build_shared_hub_region_latch(
+            super::PipelineType::Metadata,
+            false,
+        ));
+        assert!(!super::should_build_shared_hub_region_latch(
+            super::PipelineType::Metadata,
+            true,
+        ));
+    }
+
+    /// T-S8 — Emission helper: per-state latch alone emits.
+    #[test]
+    fn should_emit_hub_region_header_per_state_only() {
+        assert!(super::should_emit_hub_region_header(true, None));
+    }
+
+    /// T-S9 — Emission helper: shared latch alone (Acquire-load `true`)
+    /// emits, even when per-state latch is `false`. This is the new
+    /// cross-hedge propagation rule from PR #5815.
+    #[test]
+    fn should_emit_hub_region_header_shared_only() {
+        use std::sync::{
+            atomic::{AtomicBool, Ordering},
+            Arc,
+        };
+        let shared = Arc::new(AtomicBool::new(true));
+        assert!(super::should_emit_hub_region_header(false, Some(&shared)));
+        // Sanity-check the atomic ordering pairing.
+        assert!(shared.load(Ordering::Acquire));
+    }
+
+    /// T-S10 — Emission helper: neither latch set → no header. Mirrors
+    /// AC-5 / `shared_hub_region_latch_no_1002_emits_no_header` from
+    /// spec §15.1.
+    #[test]
+    fn should_emit_hub_region_header_neither_latched() {
+        use std::sync::{atomic::AtomicBool, Arc};
+        let shared = Arc::new(AtomicBool::new(false));
+        assert!(!super::should_emit_hub_region_header(false, None));
+        assert!(!super::should_emit_hub_region_header(false, Some(&shared)));
+    }
+
+    /// T-S11 — `apply_hub_region_header` emits the header when only the
+    /// shared latch is `true` on the retry state. Mirrors the PR #5815
+    /// `CrossRegionAvailabilityContext_PropagatesHubHeaderFlagToHedgedRequests`
+    /// test at the emission layer.
+    #[test]
+    fn apply_hub_region_header_emits_when_only_shared_latch_set() {
+        use std::sync::{atomic::AtomicBool, Arc};
+
+        let mut request = build_minimal_transport_request();
+        let shared = Arc::new(AtomicBool::new(true));
+        let mut state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.is_dataplane = true;
+        state = state.with_shared_hub_region_latch(shared);
+        assert!(!state.hub_region_processing_only);
+
+        super::apply_hub_region_header(&mut request, &state);
+
+        let value = request.headers.get_optional_str(&HeaderName::from_static(
+            request_header_names::HUB_REGION_PROCESSING_ONLY,
+        ));
+        assert_eq!(value, Some("True"));
+    }
+
+    /// T-S12 — `apply_hub_region_header` omits the header when the
+    /// shared latch is attached but its bool is `false`. Defends
+    /// against an over-eager "present means set" emission rule.
+    #[test]
+    fn apply_hub_region_header_omits_when_shared_latch_present_but_false() {
+        use std::sync::{atomic::AtomicBool, Arc};
+
+        let mut request = build_minimal_transport_request();
+        let shared = Arc::new(AtomicBool::new(false));
+        let mut state = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.is_dataplane = true;
+        state = state.with_shared_hub_region_latch(shared);
+
+        super::apply_hub_region_header(&mut request, &state);
+
+        let value = request.headers.get_optional_str(&HeaderName::from_static(
+            request_header_names::HUB_REGION_PROCESSING_ONLY,
+        ));
+        assert!(value.is_none());
     }
 }
