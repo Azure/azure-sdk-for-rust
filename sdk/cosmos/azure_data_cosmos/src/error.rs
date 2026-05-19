@@ -109,7 +109,7 @@ pub type CosmosResult<T> = Result<T, CosmosError>;
 /// Error type returned by every public Cosmos SDK API.
 ///
 /// Transparent record with all interesting fields `pub`. See the
-/// [module-level documentation](self) for the design rationale.
+/// `error` module documentation in source for the design rationale.
 ///
 /// The struct is `#[non_exhaustive]` so future preview revisions can
 /// add fields without breaking pattern matches; callers should use
@@ -205,10 +205,10 @@ impl CosmosError {
     /// boundary. The returned `azure_core::Error` uses
     /// `azure_core`'s derived `Debug`, which walks `ErrorKind` and
     /// emits `HttpResponse::raw_response` verbatim — including any
-    /// captured response headers and body bytes. The
-    /// [`CosmosError::Debug`] implementation is the surface that
-    /// scrubs `raw_response`; if you need that guarantee, log
-    /// `{cosmos_err:?}` directly rather than converting first.
+    /// captured response headers and body bytes. `CosmosError`'s
+    /// hand-rolled `Debug` is the surface that scrubs `raw_response`;
+    /// if you need that guarantee, log `{cosmos_err:?}` directly
+    /// rather than converting first.
     ///
     /// Prefer [`Self::as_azure_error`] when you only need a borrow.
     pub fn into_azure_error_lossy(self) -> azure_core::Error {
@@ -228,7 +228,7 @@ impl CosmosError {
         }
     }
 
-    /// Borrow the wrapped error's [`ErrorKind`].
+    /// Borrow the wrapped error's [`ErrorKind`](azure_core::error::ErrorKind).
     ///
     /// Forwarded from `self.source.kind()` — provided so the most
     /// common error-classification pattern doesn't need to spell out
@@ -239,7 +239,8 @@ impl CosmosError {
     }
 
     /// Returns the HTTP status code carried by the wrapped error's
-    /// [`ErrorKind::HttpResponse`], if any.
+    /// [`ErrorKind::HttpResponse`](azure_core::error::ErrorKind::HttpResponse),
+    /// if any.
     ///
     /// This reflects the status code present on the wrapped
     /// [`azure_core::Error`] (i.e. the response that produced this

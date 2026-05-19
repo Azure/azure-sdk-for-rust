@@ -598,7 +598,7 @@ impl TestRunContext {
     }
 
     /// Creates a new, empty, database for this test run with default throughput options.
-    pub async fn create_db(&self) -> azure_core::Result<DatabaseClient> {
+    pub async fn create_db(&self) -> azure_data_cosmos::CosmosResult<DatabaseClient> {
         // The TestAccount has a unique context_id that includes the test name.
         let db_name = self.db_name();
         let response = match self.client().create_database(&db_name, None).await {
@@ -633,7 +633,7 @@ impl TestRunContext {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemReadOptions>,
-    ) -> azure_core::Result<ItemResponse<T>>
+    ) -> azure_data_cosmos::CosmosResult<ItemResponse<T>>
     where
         T: serde::de::DeserializeOwned,
     {
@@ -675,7 +675,7 @@ impl TestRunContext {
         container: &ContainerClient,
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
-    ) -> azure_core::Result<Vec<T>>
+    ) -> azure_data_cosmos::CosmosResult<Vec<T>>
     where
         T: serde::de::DeserializeOwned + std::marker::Send + 'static,
     {
@@ -722,7 +722,7 @@ impl TestRunContext {
         db_client: &DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         options: Option<azure_data_cosmos::CreateContainerOptions>,
-    ) -> azure_core::Result<ContainerClient> {
+    ) -> azure_data_cosmos::CosmosResult<ContainerClient> {
         let mut backoff = Duration::from_millis(100);
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
@@ -775,7 +775,8 @@ impl TestRunContext {
         db_client: &'a DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         throughput: ThroughputProperties,
-    ) -> Pin<Box<dyn Future<Output = azure_core::Result<ContainerClient>> + Send + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = azure_data_cosmos::CosmosResult<ContainerClient>> + Send + 'a>>
+    {
         Box::pin(async move {
             let created_properties = db_client
                 .create_container(
@@ -849,7 +850,7 @@ impl TestRunContext {
     /// Creates a CosmosClient with a specific preferred region.
     async fn create_client_with_preferred_region(
         region: Region,
-    ) -> Result<CosmosClient, azure_core::Error> {
+    ) -> azure_data_cosmos::CosmosResult<CosmosClient> {
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
             .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
 

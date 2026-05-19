@@ -106,7 +106,9 @@ fn assert_response<T>(
     );
 }
 
-async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
+async fn create_container(
+    run_context: &TestRunContext,
+) -> azure_data_cosmos::CosmosResult<ContainerClient> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-{}", Uuid::new_v4());
     run_context
