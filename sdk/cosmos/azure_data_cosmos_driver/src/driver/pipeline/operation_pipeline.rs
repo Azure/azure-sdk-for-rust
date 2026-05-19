@@ -184,6 +184,79 @@ pub(crate) async fn execute_operation_pipeline(
         // for them.
         tracing::debug!(routing_decision = %routing, "routing decision made");
 
+        // ── STAGE 2b: Pre-attempt hedging dispatch ─────────────────────
+        // HEDGING_SPEC.md §6.1 — on the **first** attempt of a
+        // hedge-eligible operation, race the primary against the threshold
+        // timer from t=0 rather than running it to completion and
+        // post-classifying. This is the spec's timer-driven
+        // speculative-read model: a slow-but-eventually-successful primary
+        // still loses to a fast alternate, and a successful primary that
+        // finishes pre-threshold still gets `HedgeDiagnostics::primary_only`
+        // attached (§10.1 attachment contract).
+        //
+        // Falls through to STAGE 3 (sequential execute-then-classify) on:
+        //
+        // * **Subsequent retries** (`failover_retry_count > 0` or
+        //   `session_token_retry_count > 0`). A retry has already consumed
+        //   region budget and the next attempt is to a different region;
+        //   re-racing it makes no sense. The post-attempt
+        //   `maybe_upgrade_to_hedge` at STAGE 5b is the safety net for the
+        //   rare "first attempt non-eligible, later retry became eligible"
+        //   case.
+        // * **Non-hedge-eligible operations** — writes, single-region
+        //   accounts, operations whose user `ExcludeRegions` leaves < 2
+        //   applicable read endpoints, env-disabled hedging, or per-op
+        //   `AvailabilityStrategy::Disabled`. All gated by
+        //   [`evaluate_hedge_eligibility`].
+        if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
+            if let Some(upgrade) = evaluate_hedge_eligibility(
+                operation,
+                options,
+                &location.account,
+                &routing,
+                deadline.map(|d| d.saturating_duration_since(Instant::now())),
+            ) {
+                let attempt_ctx = AttemptContext {
+                    operation,
+                    custom_headers,
+                    transport,
+                    account_endpoint,
+                    credential,
+                    user_agent,
+                    activity_id,
+                    pipeline_type,
+                    transport_security,
+                    session_manager,
+                    session_consistency_active,
+                    options,
+                    throughput_control,
+                    deadline,
+                    can_use_multiple_write_locations: retry_state.can_use_multiple_write_locations,
+                    // First attempt: no 1002 has been observed yet, so the
+                    // per-state latch is `false`. The shared
+                    // `Arc<AtomicBool>` is constructed inside
+                    // `execute_hedged` only if the threshold elapses and a
+                    // secondary spawns, preserving the §6.5 #3
+                    // zero-overhead happy path.
+                    hub_region_processing_only_initial: retry_state.hub_region_processing_only,
+                    // First attempt: no response has been captured yet, so
+                    // PK range ID is unknown. PPCB feedback is correctly
+                    // gated to no-op on `None` (`record_hedge_outcome`).
+                    partition_key_range_id: retry_state.partition_key_range_id.clone(),
+                    hedge_outcome_recorder: location_state_store,
+                };
+                return execute_hedged(
+                    &attempt_ctx,
+                    &routing,
+                    &upgrade.secondary_routing,
+                    upgrade.threshold,
+                    upgrade.strategy_config,
+                    diagnostics,
+                )
+                .await;
+            }
+        }
+
         // ── STAGE 3: Build transport request ───────────────────────────
         let execution_context = compute_execution_context(&retry_state);
 

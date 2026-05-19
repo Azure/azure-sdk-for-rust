@@ -23,43 +23,44 @@
 //!    synchronously across regions) and issues a `ReadItem` against the
 //!    driver, inspecting the returned [`HedgeDiagnostics`].
 //!
-//! ## Tests included in this initial cut
+//! ## Tests included
 //!
-//! * [`hedging_no_failure_no_hedge_diagnostics`] — no fault injection,
-//!   primary read returns 200 immediately. The current implementation only
-//!   upgrades a *transient-failed* primary action to `OperationAction::Hedge`
-//!   (see `maybe_upgrade_to_hedge` in `operation_pipeline.rs`); a successful
-//!   primary therefore completes without ever entering `execute_hedged`,
-//!   leaving `DiagnosticsContext::hedge_diagnostics() == None`. This test
-//!   pins that behavior so the divergence from spec §15.2's
-//!   `hedging_read_primary_fast` row (which expects `Some(_)` with
-//!   `was_hedge=false`) is detected the moment a future change adds
-//!   pre-failure timer-driven hedge dispatch.
+//! All three rows below come from spec §15.2 ("Integration Tests — Fault
+//! Injection"). They cover the three primary outcomes the timer-driven
+//! race can produce:
+//!
+//! * [`hedging_read_primary_fast`] — no fault injection, primary returns
+//!   200 immediately, threshold 500 ms. The primary wins the
+//!   primary-vs-threshold race in `execute_hedged` (§6.5 #3 zero-overhead
+//!   happy path), and `HedgeDiagnostics::primary_only` is attached per the
+//!   §10.1 attachment contract — `was_hedge=false`,
+//!   `total_requests_launched=1`, `response_region=EAST_US`. This test
+//!   distinguishes *"hedging was active and the primary won"* from
+//!   *"hedging was not selected for this operation"*; both cases would
+//!   produce a successful read without it.
+//! * [`hedging_read_primary_slow`] — 800 ms delay (no error) on East US
+//!   `ReadItem`, threshold 100 ms. The primary attempt is still in flight
+//!   when the threshold elapses; `execute_hedged` spawns the alternate
+//!   against West US and the alternate wins by virtue of having no delay
+//!   injected. Diagnostics show `was_hedge=true`,
+//!   `total_requests_launched=2`, `response_region=WEST_US` — the spec's
+//!   canonical "tail-latency cut" outcome.
 //! * [`hedging_read_primary_503`] — 500 ms delay + 503 injected on East US
-//!   `ReadItem` requests, threshold 100 ms. Path:
-//!   1. The primary attempt eventually returns 503 → `FailoverRetry`
-//!      classification.
-//!   2. `maybe_upgrade_to_hedge` rewrites the action to `Hedge` and
-//!      `execute_hedged` re-enters with both routings.
-//!   3. The fresh primary attempt is delayed by the same fault rule and
-//!      the alternate (West US) fires after the threshold and wins.
-//!
-//!   Diagnostics must show `was_hedge=true`, `total_requests_launched=2`,
-//!   `response_region=Region::WEST_US`. The delay is required because the
-//!   `execute_hedged` race honors §6.5 #3 — an instant primary error
-//!   "wins" pre-threshold and is returned as the operation result without
-//!   the alternate ever firing.
+//!   `ReadItem`, threshold 100 ms. Same primary-vs-alternate race shape as
+//!   the slow case, but the primary's eventual result is a transient
+//!   failure; the alternate still wins. Diagnostics identical to the slow
+//!   case. The 500 ms delay is load-bearing: without it the primary's
+//!   instant 503 would win pre-threshold per §6.5 #3 (a final-classified
+//!   error counts as a primary win for race purposes).
 //!
 //! ## Deferred follow-ups
 //!
-//! * `hedging_read_primary_slow` — needs pre-failure timer-driven hedge
-//!   dispatch (spec §6.1 / §15.2 row 1). Not yet wired in the operation
-//!   pipeline; see `hedging_no_failure_no_hedge_diagnostics` for the
-//!   tracking assertion.
-//! * `hedging_write_not_hedged`, `hedging_hub_region_header_propagates`,
+//! * `hedging_read_both_regions_slow`, `hedging_write_not_hedged`,
+//!   `hedging_hub_region_header_propagates`,
 //!   `hedging_disabled_per_operation`, `hedging_respects_deadline`, the
-//!   §15.1 backfills (`app_cancel_preserves_hedge_diagnostics`, etc.) and
-//!   the §15.3 live multi-region tests land in subsequent commits.
+//!   remaining §15.1 backfills (`app_cancel_preserves_hedge_diagnostics`,
+//!   etc.) and the §15.3 live multi-region tests land in subsequent
+//!   commits.
 
 #![cfg(feature = "fault_injection")]
 
@@ -192,33 +193,128 @@ async fn read_item_hedge_diagnostics(
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Pins the current "primary succeeds → no hedging entered" behavior.
+/// Spec §15.2 row 2 — *primary wins pre-threshold, primary-only
+/// diagnostics attached*.
 ///
-/// See module doc above for why this diverges from spec §15.2's
-/// `hedging_read_primary_fast` row.
+/// No faults. Primary returns immediately; the primary-vs-threshold race
+/// inside `execute_hedged` resolves on the primary side before the
+/// secondary is ever constructed (§6.5 #3 zero-overhead happy path).
+/// Per the §10.1 attachment contract, `HedgeDiagnostics::primary_only` is
+/// still attached so callers can distinguish *"hedging was active and
+/// the primary won"* from *"hedging was not selected"*.
 #[tokio::test]
-async fn hedging_no_failure_no_hedge_diagnostics() {
+async fn hedging_read_primary_fast() {
     let ctx = setup_multi_region(WriteMode::Single).await;
     seed_item(&ctx, "fast-item", "pk1").await;
 
+    // Threshold deliberately well above the in-memory emulator's response
+    // latency so the primary always wins pre-threshold.
     let (driver, op_options) =
         make_hedging_driver(&ctx, Duration::from_millis(500), Vec::new()).await;
 
-    let hedge_diag = read_item_hedge_diagnostics(&driver, op_options, "fast-item", "pk1").await;
+    let hedge_diag = read_item_hedge_diagnostics(&driver, op_options, "fast-item", "pk1")
+        .await
+        .expect(
+            "hedging strategy was resolved and `execute_hedged` was entered; \
+             `HedgeDiagnostics::primary_only` must be attached per the §10.1 \
+             attachment contract",
+        );
 
     assert!(
-        hedge_diag.is_none(),
-        "current pipeline only attaches HedgeDiagnostics when `execute_hedged` \
-         is entered (which requires a transient primary failure); got {hedge_diag:?}",
+        !hedge_diag.was_hedge,
+        "primary should win pre-threshold; diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.total_requests_launched, 1,
+        "only the primary should have been launched (§6.5 #3 zero-overhead \
+         happy path); diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.response_region,
+        Region::EAST_US,
+        "primary (East US) should be the winning region; diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.regions_contacted,
+        vec![Region::EAST_US],
+        "only the primary region should appear in the contacted-regions \
+         trail; diag={hedge_diag:?}",
     );
 }
 
-/// Spec §15.2 — *alternate region wins after a primary 503*.
+/// Spec §15.2 row 1 — *primary slow (no error), alternate wins*.
 ///
-/// The 503 trips the primary's FailoverRetry classification;
-/// `maybe_upgrade_to_hedge` rewrites the action to `Hedge`, and
-/// `execute_hedged` races a fresh primary attempt (still failing) against
-/// the West US alternate, which wins.
+/// 800 ms delay (no error) injected on East US `ReadItem`, threshold
+/// 100 ms. The primary is still in flight when the threshold elapses;
+/// `execute_hedged` spawns the West US alternate, which has no delay
+/// and wins. This is the canonical tail-latency-cut scenario the spec
+/// was designed for.
+#[tokio::test]
+async fn hedging_read_primary_slow() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+    seed_item(&ctx, "slow-item", "pk1").await;
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(Region::EAST_US)
+        .build();
+    // Delay only — no error. The primary will eventually succeed with a
+    // 200, but only after the alternate has long since won the race.
+    let result = FaultInjectionResultBuilder::new()
+        .with_delay(Duration::from_millis(800))
+        .with_probability(1.0)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("hedging-east-us-delay", result)
+            .with_condition(condition)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    let (driver, op_options) = make_hedging_driver(&ctx, Duration::from_millis(100), rules).await;
+
+    let hedge_diag = read_item_hedge_diagnostics(&driver, op_options, "slow-item", "pk1")
+        .await
+        .expect(
+            "slow primary should cause the threshold to elapse and \
+             `execute_hedged` to spawn the alternate — `HedgeDiagnostics` \
+             must be attached (spec §10.1)",
+        );
+
+    assert!(
+        hedge_diag.was_hedge,
+        "alternate region should win the hedge race; diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.total_requests_launched, 2,
+        "primary + alternate should both have been launched; diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.response_region,
+        Region::WEST_US,
+        "alternate (West US) should be the winning region; diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.regions_contacted,
+        vec![Region::EAST_US, Region::WEST_US],
+        "both regions should appear in the contacted-regions trail; \
+         diag={hedge_diag:?}",
+    );
+    assert!(
+        rule.hit_count() >= 1,
+        "the East US delay rule should have been applied at least once",
+    );
+}
+
+/// Spec §15.2 row 3 — *primary returns 503 (delayed), alternate wins*.
+///
+/// 500 ms delay + 503 injected on East US `ReadItem`, threshold 100 ms.
+/// The delay is load-bearing: an instant 503 would win the primary side
+/// of the race pre-threshold per §6.5 #3 (a final-classified error
+/// counts as a primary completion for race purposes), so the alternate
+/// would never spawn. With the delay, the threshold elapses while the
+/// primary is still in flight, the alternate spawns against West US, and
+/// the alternate's success wins over the primary's transient 503.
 #[tokio::test]
 async fn hedging_read_primary_503() {
     let ctx = setup_multi_region(WriteMode::Single).await;
