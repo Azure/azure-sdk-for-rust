@@ -523,13 +523,13 @@ impl ContainerClient {
     /// appends should either build idempotent ops (`PatchOp::set` on a
     /// caller-computed value) or detect duplicate-application via a
     /// monotonic application-level sequence number.
-    pub async fn patch_item<T>(
+    pub async fn patch_item(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         patch: PatchSpec,
         options: Option<PatchItemOptions>,
-    ) -> azure_core::Result<ItemResponse<T>> {
+    ) -> azure_core::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&patch)?;
 
@@ -1159,5 +1159,5 @@ fn _assert_futures_are_send() {
     let item_id: &str = todo!();
     let patch: PatchSpec = todo!();
     let options: Option<PatchItemOptions> = todo!();
-    assert_send(client.patch_item::<serde_json::Value>(partition_key, item_id, patch, options));
+    assert_send(client.patch_item(partition_key, item_id, patch, options));
 }

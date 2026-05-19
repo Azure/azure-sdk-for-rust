@@ -226,8 +226,14 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         }
 
         // Locally apply the patch ops.
+        let read_body_bytes = read_resp.into_body().single().map_err(|err| {
+            azure_core::Error::with_message(
+                ErrorKind::DataConversion,
+                format!("PATCH could not extract Read response body: {err}"),
+            )
+        })?;
         let mut value: serde_json::Value =
-            serde_json::from_slice(read_resp.body()).map_err(|err| {
+            serde_json::from_slice(&read_body_bytes).map_err(|err| {
                 azure_core::Error::with_message(
                     ErrorKind::DataConversion,
                     format!("PATCH could not deserialize current item body: {err}"),
@@ -265,6 +271,15 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                 let replace_etag = replace_headers.etag.clone();
                 sub_op_diagnostics.push(replace_resp.diagnostics());
                 let replace_body = replace_resp.into_body();
+                // Replace responses are always single-payload (or empty when
+                // `content_response_on_write` is disabled). Collapse the
+                // typed body to `Vec<u8>` so the synthesis helper can treat
+                // "empty" uniformly across `NoPayload` and `Bytes(empty)`.
+                let replace_body_bytes: Vec<u8> = match replace_body {
+                    crate::models::ResponseBody::Bytes(b) => b.to_vec(),
+                    crate::models::ResponseBody::NoPayload
+                    | crate::models::ResponseBody::Items(_) => Vec::new(),
+                };
                 // Aggregate the per-request diagnostics of every successful
                 // sub-op into a single DiagnosticsContext, so the synthesized
                 // response surfaces "one operation = one DiagnosticsContext"
@@ -296,8 +311,11 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                 //      `content_response_on_write` is true).
                 //   2. Otherwise, the locally-merged body with `_etag`
                 //      overwritten from `replace_headers.etag`.
-                let synthesized_body =
-                    synthesize_post_image_body(merged_bytes, replace_body, replace_etag.as_ref());
+                let synthesized_body = synthesize_post_image_body(
+                    merged_bytes,
+                    replace_body_bytes,
+                    replace_etag.as_ref(),
+                );
                 return Ok(from_local_body_and_driver_headers(
                     synthesized_body,
                     replace_headers,
@@ -1187,7 +1205,7 @@ mod tests {
 
         // The handler synthesizes the final response from the post-image
         // it computed locally on attempt #2 (visits=1 + 1 = 2).
-        let body: serde_json::Value = serde_json::from_slice(resp.body()).unwrap();
+        let body: serde_json::Value = resp.into_body().single_item().unwrap();
         assert_eq!(body["visits"], serde_json::json!(2));
 
         let calls = dispatcher.calls();
@@ -1651,8 +1669,10 @@ mod tests {
 
         // Body's `_etag` MUST match the header — the Read's `_etag` (`\"v1\"`)
         // must have been overwritten with the Replace's (`\"v2\"`).
-        let body: serde_json::Value =
-            serde_json::from_slice(resp.body()).expect("body must be valid JSON");
+        let body: serde_json::Value = resp
+            .into_body()
+            .single_item()
+            .expect("body must be valid JSON");
         assert_eq!(
             body.get("_etag").and_then(|v| v.as_str()),
             Some("\"v2\""),

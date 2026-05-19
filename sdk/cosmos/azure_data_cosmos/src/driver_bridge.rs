@@ -228,11 +228,13 @@ mod tests {
     #[cfg(feature = "fault_injection")]
     #[test]
     fn sdk_fi_rule_custom_response_survives_translation() {
+        use super::sdk_fi_rules_to_driver_fi_rules;
         use crate::fault_injection::{
             CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
             FaultInjectionRuleBuilder, FaultOperationType,
         };
         use azure_core::http::headers::HeaderName;
+        use azure_core::http::StatusCode;
         use std::sync::Arc;
 
         let custom_412 = CustomResponseBuilder::new(StatusCode::PreconditionFailed)

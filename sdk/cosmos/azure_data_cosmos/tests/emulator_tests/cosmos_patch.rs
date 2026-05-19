@@ -91,7 +91,7 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
                 PatchOp::replace("/display_name", serde_json::json!("after")),
             ]);
 
-            let patch_response: ItemResponse<PatchTestItem> = container_client
+            let patch_response: ItemResponse = container_client
                 .patch_item(&pk, &item_id, patch, None)
                 .await?;
             assert_eq!(patch_response.status(), StatusCode::Ok);
@@ -121,7 +121,7 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
             // Round-trip: a fresh read sees the same merged state, which
             // means the RMW Replace actually persisted.
             let read_response = container_client
-                .read_item::<PatchTestItem>(&pk, &item_id, None)
+                .read_item(&pk, &item_id, None)
                 .await?;
             assert_eq!(read_response.status(), StatusCode::Ok);
             let read_item: PatchTestItem = read_response.into_model()?;
@@ -155,7 +155,7 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
 
             let patch = PatchSpec::new(vec![PatchOp::set("/deleted", serde_json::json!(true))]);
             let err = container_client
-                .patch_item::<serde_json::Value>(&pk, &missing_id, patch, None)
+                .patch_item(&pk, &missing_id, patch, None)
                 .await
                 .expect_err("expected NotFound, got Ok");
             assert_eq!(
@@ -212,7 +212,7 @@ pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error
             let options =
                 PatchItemOptions::default().with_max_attempts(std::num::NonZeroU8::new(1).unwrap());
             let patch = PatchSpec::new(vec![PatchOp::increment("/visits", 1i64)]);
-            let response: ItemResponse<PatchTestItem> = container_client
+            let response: ItemResponse = container_client
                 .patch_item(&pk, &item_id, patch, Some(options))
                 .await?;
             assert_eq!(response.status(), StatusCode::Ok);
@@ -329,7 +329,7 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
                 setup_fault_injected_container(run_context, db_client, &initial).await?;
 
             let patch = PatchSpec::new(vec![PatchOp::increment("/visits", 1i64)]);
-            let response: ItemResponse<PatchTestItem> = fault_container
+            let response: ItemResponse = fault_container
                 .patch_item(&pk, &item_id, patch, None)
                 .await?;
             assert_eq!(
@@ -356,7 +356,7 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
             // A fresh read sees the same merged state — the retry's
             // Replace actually persisted on the service.
             let read_response = regular
-                .read_item::<PatchTestItem>(&pk, &item_id, None)
+                .read_item(&pk, &item_id, None)
                 .await?;
             let read_item: PatchTestItem = read_response.into_model()?;
             assert_eq!(read_item, merged);
@@ -403,7 +403,7 @@ pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<
             let patch = PatchSpec::new(vec![PatchOp::increment("/visits", 1i64)]);
 
             let err = fault_container
-                .patch_item::<PatchTestItem>(&pk, &item_id, patch, Some(patch_options))
+                .patch_item(&pk, &item_id, patch, Some(patch_options))
                 .await
                 .expect_err("PATCH should fail after exhausting max_attempts");
             assert_eq!(
