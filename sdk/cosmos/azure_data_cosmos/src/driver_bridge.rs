@@ -216,12 +216,7 @@ mod tests {
             Some("totalExecutionTimeInMs=1.23;queryCompileTimeInMs=0.01"),
         );
 
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        let page = rt
-            .block_on(QueryFeedPage::<serde_json::Value>::from_response(
-                cosmos_response,
-            ))
-            .unwrap();
+        let page = QueryFeedPage::<serde_json::Value>::from_response(cosmos_response).unwrap();
         assert_eq!(
             page.index_metrics(),
             Some(r#"{"UtilizedSingleIndexes":[]}"#)

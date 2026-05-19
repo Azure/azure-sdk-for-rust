@@ -83,7 +83,7 @@ impl DatabaseClient {
         let driver_response = self
             .context
             .driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(
@@ -107,33 +107,37 @@ impl DatabaseClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # use azure_data_cosmos::clients::DatabaseClient;
     /// # let db_client: DatabaseClient = panic!("this is a non-running example");
-    /// let containers = db_client.query_containers(
-    ///     "SELECT * FROM dbs",
-    ///     None)?;
+    /// let containers = db_client
+    ///     .query_containers("SELECT * FROM dbs", None)
+    ///     .await?;
     /// # }
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
     #[allow(unused_variables, reason = "This parameter may be used in the future")]
-    pub fn query_containers(
+    pub async fn query_containers(
         &self,
         query: impl Into<Query>,
+        #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
-        let db_ref = DatabaseReference::from_name(
-            self.context.driver.account().clone(),
-            self.database_id.clone(),
-        );
-        let factory = move || CosmosOperation::query_containers(db_ref.clone());
+        let query = query.into();
+        let initial_operation = CosmosOperation::query_containers(self.database_ref.clone())
+            .with_body(serde_json::to_vec(&query)?);
+        let operation_options = OperationOptions::default();
 
-        crate::query::executor::QueryExecutor::new(
+        let plan = self
+            .context
+            .driver
+            .plan_operation(initial_operation, &operation_options, None)
+            .await?;
+
+        Ok(FeedItemIterator::new(
             self.context.driver.clone(),
-            factory,
-            query.into(),
-            Default::default(),
             None,
-        )
-        .into_stream()
+            plan,
+            operation_options,
+        ))
     }
 
     /// Creates a new container.
@@ -168,7 +172,7 @@ impl DatabaseClient {
         let driver_response = self
             .context
             .driver
-            .execute_operation(operation, operation_options)
+            .execute_trivial_operation(operation, operation_options)
             .await?;
 
         Ok(ResourceResponse::new(
@@ -192,7 +196,7 @@ impl DatabaseClient {
         let driver_response = self
             .context
             .driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(ResourceResponse::new(
@@ -273,5 +277,27 @@ impl DatabaseClient {
             throughput,
         )
         .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `DatabaseClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &DatabaseClient = todo!();
+        assert_send(client.container_client(todo!()));
+        assert_send(client.read(todo!()));
+        assert_send(client.query_containers(Query::from("SELECT * FROM c"), todo!()));
+        assert_send(client.create_container(todo!(), todo!()));
+        assert_send(client.delete(todo!()));
+        assert_send(client.read_throughput(todo!()));
+        assert_send(client.begin_replace_throughput(todo!(), todo!()));
     }
 }
