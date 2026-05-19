@@ -8,16 +8,21 @@ use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::http::headers::HeaderName;
 use azure_core::http::ClientOptions;
 use azure_core::http::Url;
-use std::sync::Arc;
+use std::{any::type_name, fmt, sync::Arc};
 
 const ENDPOINT_ENV: &str = "IDENTITY_ENDPOINT";
 const API_VERSION: &str = "2019-08-01";
 const SECRET_HEADER: HeaderName = HeaderName::from_static("x-identity-header");
 const SECRET_ENV: &str = "IDENTITY_HEADER";
 
-#[derive(Debug)]
 pub(crate) struct AppServiceManagedIdentityCredential {
     credential: ImdsManagedIdentityCredential,
+}
+
+impl fmt::Debug for AppServiceManagedIdentityCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+    }
 }
 
 impl AppServiceManagedIdentityCredential {

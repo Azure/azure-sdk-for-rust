@@ -385,23 +385,25 @@ The output of the tests will be presented in the command line as well as saved u
 
 ### Versions
 
-To provide a helpful versioning experience, the Azure SDK for Rust libraries follow conventions similar to other Azure SDKs.
+To provide a convenient versioning experience, the Azure SDK for Rust libraries follow conventions similar to other Azure SDKs.
 
 Release builds will fail if a library depends on another Azure SDK for Rust library which has not been released and is not included in the current release build.
 
 #### Workspace dependencies
 
-The root `Cargo.toml` file represents released versions of crates which can be used by other Azure SDK for Rust libraries. To use a released version of a library, use `workspace = true` in your library's `Cargo.toml`.
+The root `Cargo.toml` file represents released versions of crates commonly used by other Azure SDK for Rust libraries. To use a released version of a library, use `workspace = true` in your library's `Cargo.toml`.
 
 ```toml
 azure_core = { workspace = true }
 ```
 
-If an SDK library depends on an unreleased SDK library, specify that dependency using a path-based dependency (`version` is required for the library to release):
+If an SDK library depends on an unreleased SDK library, specify that dependency using a `path`-based dependency with a `version` matching the crate version, which is required for the library to release:
 
 ```toml
 azure_core = { path = "../../core/azure_core", version = "0.31.0" }
 ```
+
+See <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inheriting-a-dependency-from-a-workspace> for more information about specifying dependencies in `Cargo.toml`.
 
 #### Version increment on release
 

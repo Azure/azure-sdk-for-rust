@@ -403,7 +403,7 @@ mod tests {
             .expect("Parse success.");
         err.error.as_ref().expect("error should be set");
 
-        println!("{:?}", &err);
+        println!("{:?}", err);
         assert_eq!(
             err.error.as_ref().unwrap().code,
             Some("InvalidRequest".to_string())
@@ -496,7 +496,7 @@ mod tests {
             });
             let error_response = ErrorResponse::try_from(err).expect("expected an ErrorResponse");
             error_response.error.as_ref().expect("error should be set");
-            println!("{:?}", &error_response);
+            println!("{:?}", error_response);
             assert_eq!(
                 error_response.error.as_ref().unwrap().code,
                 Some("InvalidRequest".to_string())
@@ -520,7 +520,7 @@ mod tests {
                 .json()
                 .expect("expected an ErrorResponse");
             error_response.error.as_ref().expect("error should be set");
-            println!("{:?}", &error_response);
+            println!("{:?}", error_response);
             assert_eq!(
                 error_response.error.as_ref().unwrap().code,
                 Some("InvalidRequest".to_string())
@@ -553,7 +553,7 @@ mod tests {
     async fn deserialize_to_error_response_internal() {
         let err :ErrorResponseInternal = serde_json::from_slice (br#"{"error":{"code":"InvalidRequest","message":"The request object is not recognized.","innererror":{"code":"InvalidKey","key":"foo"}}}"#)
             .expect("Parse success.");
-        println!("{:?}", &err);
+        println!("{:?}", err);
 
         assert_eq!(err.error.code, Some("InvalidRequest"));
         assert_eq!(

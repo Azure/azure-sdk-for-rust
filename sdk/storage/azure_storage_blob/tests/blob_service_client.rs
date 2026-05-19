@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::{ClientOptions, RequestContent, XmlFormat};
+use azure_core::http::{ClientOptions, RequestContent, Url, XmlFormat};
 use azure_core_test::{recorded, TestContext, TestMode};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
@@ -224,11 +224,10 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     }
 
     // Find "hello world" blob by its tag {"foo": "bar"}
-    let response = service_client
-        .find_blobs_by_tags("\"foo\"='bar'", None)
+    let blobs: Vec<_> = service_client
+        .find_blobs_by_tags("\"foo\"='bar'", None)?
+        .try_collect()
         .await?;
-    let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -237,11 +236,10 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     );
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
-    let response = service_client
-        .find_blobs_by_tags("\"fizz\"='buzz'", None)
+    let blobs: Vec<_> = service_client
+        .find_blobs_by_tags("\"fizz\"='buzz'", None)?
+        .try_collect()
         .await?;
-    let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -250,11 +248,10 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     );
 
     // Find "six seven" blob by its tag {"tagged": "true"}
-    let response = service_client
-        .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)
+    let blobs: Vec<_> = service_client
+        .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)?
+        .try_collect()
         .await?;
-    let filter_blob_segment = response.into_model()?;
-    let blobs = filter_blob_segment.blobs.unwrap_or_default();
     assert!(
         blobs
             .iter()
@@ -283,7 +280,7 @@ async fn test_get_service_stats(ctx: TestContext) -> Result<(), Box<dyn Error>> 
         ..Default::default()
     };
     let service_client = BlobServiceClient::new(
-        &endpoint,
+        Url::parse(&endpoint)?,
         Some(recording.credential()),
         Some(service_client_options),
     )?;
@@ -322,12 +319,13 @@ async fn test_list_containers_with_metadata_include(
         prefix: Some(container_name.clone()),
         ..Default::default()
     };
-    let mut pager = service_client.list_containers(Some(options))?.into_pages();
-    let page = pager.try_next().await?.unwrap().into_model()?;
+    let items: Vec<_> = service_client
+        .list_containers(Some(options))?
+        .try_collect()
+        .await?;
 
     // Assert
-    let found = page
-        .container_items
+    let found = items
         .into_iter()
         .find(|c| c.name.as_deref() == Some(container_name.as_str()))
         .expect("container not found in listing");
@@ -357,13 +355,10 @@ async fn test_list_containers_with_prefix(ctx: TestContext) -> Result<(), Box<dy
         prefix: Some(prefix.to_string()),
         ..Default::default()
     };
-    let mut pager = service_client.list_containers(Some(options))?.into_pages();
-    let names: Vec<String> = pager
-        .try_next()
+    let names: Vec<String> = service_client
+        .list_containers(Some(options))?
+        .try_collect::<Vec<_>>()
         .await?
-        .unwrap()
-        .into_model()?
-        .container_items
         .into_iter()
         .filter_map(|c| c.name)
         .collect();

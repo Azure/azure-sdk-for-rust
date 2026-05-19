@@ -355,10 +355,9 @@ async fn test_create_append_blob_with_tags(ctx: TestContext) -> Result<(), Box<d
 
     let expected = HashMap::from([("env".to_string(), "test".to_string())]);
     append_blob_client
-        .create(Some(AppendBlobClientCreateOptions {
-            blob_tags_string: Some("env=test".to_string()),
-            ..Default::default()
-        }))
+        .create(Some(AppendBlobClientCreateOptions::default().with_tags(
+            HashMap::from([("env".to_string(), "test".to_string())]),
+        )))
         .await?;
 
     // Assert
@@ -384,7 +383,7 @@ async fn test_create_append_blob_if_not_exists(ctx: TestContext) -> Result<(), B
     // If Not Exists Scenario (blob already exists)
     let result = append_blob_client
         .create(Some(
-            AppendBlobClientCreateOptions::default().with_if_not_exists(),
+            AppendBlobClientCreateOptions::default().if_not_exists(),
         ))
         .await;
 

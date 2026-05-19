@@ -38,12 +38,7 @@ pub struct AppendBlobClientOptions {
 }
 
 impl AppendBlobClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// The Append Block operation commits a new block of data to the end of an append blob.
+    /// Uploads a new block of data to the end of an append blob.
     ///
     /// # Arguments
     ///
@@ -154,15 +149,6 @@ impl AppendBlobClient {
         if let Some(lease_id) = options.lease_id.as_ref() {
             request.insert_header("x-ms-lease-id", lease_id);
         }
-        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
-            request.insert_header("x-ms-structured-body", structured_body_type);
-        }
-        if let Some(structured_content_length) = options.structured_content_length {
-            request.insert_header(
-                "x-ms-structured-content-length",
-                structured_content_length.to_string(),
-            );
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         let rsp = self
@@ -181,12 +167,11 @@ impl AppendBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Append Block From URL operation creates a new block to be committed as part of an append blob where the contents are
-    /// read from a URL.
+    /// Uploads a new block of data from the specified URL to the end of an append blob.
     ///
     /// # Arguments
     ///
-    /// * `source_url` - Specify a URL to the copy source.
+    /// * `source_url` - Specifies the URL of the source.
     /// * `content_length` - The length of the request.
     /// * `options` - Optional parameters for the request.
     ///
@@ -361,7 +346,7 @@ impl AppendBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Create operation creates a new append blob.
+    /// Creates a new append blob.
     ///
     /// # Arguments
     ///
@@ -508,8 +493,7 @@ impl AppendBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Seal operation seals the Append Blob to make it read-only. Seal is supported only on version 2019-12-12 version or
-    /// later.
+    /// Seals the append blob to make it read-only.
     ///
     /// # Arguments
     ///

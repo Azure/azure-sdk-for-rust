@@ -6,12 +6,11 @@
 use crate::{
     generated::models::{
         PageBlobClientClearPagesOptions, PageBlobClientClearPagesResult,
-        PageBlobClientCreateOptions, PageBlobClientCreateResult,
-        PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
+        PageBlobClientCreateOptions, PageBlobClientCreateResult, PageBlobClientResizeOptions,
         PageBlobClientResizeResult, PageBlobClientSetSequenceNumberOptions,
         PageBlobClientSetSequenceNumberResult, PageBlobClientUploadPagesFromUrlOptions,
         PageBlobClientUploadPagesFromUrlResult, PageBlobClientUploadPagesOptions,
-        PageBlobClientUploadPagesResult, PageList, SequenceNumberActionType,
+        PageBlobClientUploadPagesResult, SequenceNumberActionType,
     },
     models::HttpRange,
 };
@@ -21,7 +20,7 @@ use azure_core::{
     fmt::SafeDebug,
     http::{
         ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
-        Response, Url, UrlExt, XmlFormat,
+        Response, Url, UrlExt,
     },
     time::to_rfc7231,
     tracing, Bytes, Result,
@@ -44,16 +43,11 @@ pub struct PageBlobClientOptions {
 }
 
 impl PageBlobClient {
-    /// Returns the Url associated with this client.
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    /// The Clear Pages operation clears a range of pages from a page blob
+    /// Clears a range of pages from the specified page blob.
     ///
     /// # Arguments
     ///
-    /// * `range` - Bytes of data in the specified range.
+    /// * `range` - Specifies the range of the blob to operate on.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -177,12 +171,11 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Create operation creates a new page blob.
+    /// Creates a new page blob.
     ///
     /// # Arguments
     ///
-    /// * `size` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to
-    ///   a 512-byte boundary.
+    /// * `size` - The maximum size for the page blob. Must be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -337,111 +330,11 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Get Page Ranges operation returns the list of valid page ranges for a page blob or snapshot of a page blob.
+    /// Changes the size of the specified page blob.
     ///
     /// # Arguments
     ///
-    /// * `options` - Optional parameters for the request.
-    ///
-    /// ## Response Headers
-    ///
-    /// The returned [`Response`](azure_core::http::Response) implements the [`PageListHeaders`] trait, which provides
-    /// access to response headers. For example:
-    ///
-    /// ```no_run
-    /// use azure_core::{Result, http::{Response, XmlFormat}};
-    /// use azure_storage_blob::models::{PageList, PageListHeaders};
-    /// async fn example() -> Result<()> {
-    ///     let response: Response<PageList, XmlFormat> = unimplemented!();
-    ///     // Access response headers
-    ///     if let Some(etag) = response.etag()? {
-    ///         println!("etag: {:?}", etag);
-    ///     }
-    ///     if let Some(last_modified) = response.last_modified()? {
-    ///         println!("last-modified: {:?}", last_modified);
-    ///     }
-    ///     if let Some(blob_content_length) = response.blob_content_length()? {
-    ///         println!("x-ms-blob-content-length: {:?}", blob_content_length);
-    ///     }
-    ///     Ok(())
-    /// }
-    /// ```
-    ///
-    /// ### Available headers
-    /// * [`etag`()](crate::generated::models::PageListHeaders::etag) - etag
-    /// * [`last_modified`()](crate::generated::models::PageListHeaders::last_modified) - last-modified
-    /// * [`blob_content_length`()](crate::generated::models::PageListHeaders::blob_content_length) - x-ms-blob-content-length
-    ///
-    /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
-    #[tracing::function("Storage.Blob.PageBlobClient.getPageRanges")]
-    pub async fn get_page_ranges(
-        &self,
-        options: Option<PageBlobClientGetPageRangesOptions<'_>>,
-    ) -> Result<Response<PageList, XmlFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
-        query_builder.append_pair("comp", "pagelist");
-        if let Some(marker) = options.marker.as_ref() {
-            query_builder.set_pair("marker", marker);
-        }
-        if let Some(maxresults) = options.maxresults {
-            query_builder.set_pair("maxresults", maxresults.to_string());
-        }
-        if let Some(snapshot) = options.snapshot.as_ref() {
-            query_builder.set_pair("snapshot", snapshot);
-        }
-        if let Some(timeout) = options.timeout {
-            query_builder.set_pair("timeout", timeout.to_string());
-        }
-        query_builder.build();
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
-        if let Some(if_match) = options.if_match {
-            request.insert_header("if-match", if_match.to_string());
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match {
-            request.insert_header("if-none-match", if_none_match.to_string());
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(range) = options.range.as_ref() {
-            request.insert_header("range", range.to_string());
-        }
-        if let Some(if_tags) = options.if_tags.as_ref() {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id.as_ref() {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[200],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
-    }
-
-    /// The Resize operation increases the size of the page blob to the specified size.
-    ///
-    /// # Arguments
-    ///
-    /// * `size` - This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to
-    ///   a 512-byte boundary.
+    /// * `size` - The maximum size for the page blob. Must be aligned to a 512-byte boundary.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -541,13 +434,13 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Update Sequence Number operation sets the blob's sequence number. The operation will fail if the specified sequence
-    /// number is less than the current sequence number of the blob.
+    /// Updates the sequence number of the specified page blob. The operation will fail if the specified sequence number is less
+    /// than the current sequence number of the blob.
     ///
     /// # Arguments
     ///
-    /// * `sequence_number_action` - Required if the x-ms-blob-sequence-number header is set for the request. This property applies
-    ///   to page blobs only. This property indicates how the service should modify the blob's sequence number
+    /// * `sequence_number_action` - Required if the blob sequence number is provided. This property indicates how the service
+    ///   should modify the blob's sequence number.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -641,13 +534,13 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Upload Pages operation writes a range of pages to a page blob
+    /// Writes a range of pages to the specified page blob.
     ///
     /// # Arguments
     ///
     /// * `body` - The body of the request.
     /// * `content_length` - The length of the request.
-    /// * `range` - Bytes of data in the specified range.
+    /// * `range` - Specifies the range of the blob to operate on.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers
@@ -769,15 +662,6 @@ impl PageBlobClient {
             request.insert_header("x-ms-lease-id", lease_id);
         }
         request.insert_header("x-ms-page-write", "update");
-        if let Some(structured_body_type) = options.structured_body_type.as_ref() {
-            request.insert_header("x-ms-structured-body", structured_body_type);
-        }
-        if let Some(structured_content_length) = options.structured_content_length {
-            request.insert_header(
-                "x-ms-structured-content-length",
-                structured_content_length.to_string(),
-            );
-        }
         request.insert_header("x-ms-version", &self.version);
         request.set_body(body);
         let rsp = self
@@ -796,14 +680,14 @@ impl PageBlobClient {
         Ok(rsp.into())
     }
 
-    /// The Upload Pages operation writes a range of pages to a page blob where the contents are read from a URL.
+    /// Writes a range of pages to the specified page blob where the contents are read from a URL.
     ///
     /// # Arguments
     ///
-    /// * `source_url` - Specify a URL to the copy source.
-    /// * `source_range` - Bytes of source data in the specified range.
+    /// * `source_url` - Specifies the URL of the source.
+    /// * `source_range` - Specifies the bytes of the source.
     /// * `content_length` - The length of the request.
-    /// * `range` - Bytes of data in the specified range.
+    /// * `range` - Specifies the range of the blob to operate on.
     /// * `options` - Optional parameters for the request.
     ///
     /// ## Response Headers

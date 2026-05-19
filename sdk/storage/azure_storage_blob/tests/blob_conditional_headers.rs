@@ -19,7 +19,7 @@ use azure_storage_blob::models::{
     BlobContainerClientSetMetadataOptions, BlobTags, BlockBlobClientCommitBlockListOptions,
     BlockBlobClientGetBlockListOptions, BlockBlobClientUploadOptions, BlockListType,
     BlockLookupList, DeleteSnapshotsOptionType, HttpRange, PageBlobClientClearPagesOptions,
-    PageBlobClientCreateOptions, PageBlobClientGetPageRangesOptions, PageBlobClientResizeOptions,
+    PageBlobClientCreateOptions, PageBlobClientResizeOptions,
     PageBlobClientSetSequenceNumberOptions, PageBlobClientUploadPagesOptions,
     SequenceNumberActionType, SignedIdentifiers,
 };
@@ -745,10 +745,10 @@ mod blob_client {
         create_test_blob(
             &blob_client,
             None,
-            Some(BlockBlobClientUploadOptions {
-                blob_tags_string: Some("env=test".to_string()),
-                ..Default::default()
-            }),
+            Some(
+                BlockBlobClientUploadOptions::default()
+                    .with_tags(HashMap::from([("env".to_string(), "test".to_string())])),
+            ),
         )
         .await?;
 
@@ -1290,10 +1290,10 @@ mod block_blob_client {
         blob_client
             .upload(
                 RequestContent::from(b"tagged".to_vec()),
-                Some(BlockBlobClientUploadOptions {
-                    blob_tags_string: Some("kind=block".to_string()),
-                    ..Default::default()
-                }),
+                Some(
+                    BlockBlobClientUploadOptions::default()
+                        .with_tags(HashMap::from([("kind".to_string(), "block".to_string())])),
+                ),
             )
             .await?;
 
@@ -1406,11 +1406,13 @@ mod append_blob_client {
         );
         // Create Success With if_match
         append_blob_client
-            .create(Some(AppendBlobClientCreateOptions {
-                if_match: Some(etag),
-                blob_tags_string: Some("env=test".to_string()),
-                ..Default::default()
-            }))
+            .create(Some(
+                AppendBlobClientCreateOptions {
+                    if_match: Some(etag),
+                    ..Default::default()
+                }
+                .with_tags(HashMap::from([("env".to_string(), "test".to_string())])),
+            ))
             .await?;
 
         let props = blob_client.get_properties(None).await?;
@@ -1677,11 +1679,13 @@ mod page_blob_client {
         page_blob_client
             .create(
                 BLOB_SIZE,
-                Some(PageBlobClientCreateOptions {
-                    if_match: Some(etag),
-                    blob_tags_string: Some("env=test".to_string()),
-                    ..Default::default()
-                }),
+                Some(
+                    PageBlobClientCreateOptions {
+                        if_match: Some(etag),
+                        ..Default::default()
+                    }
+                    .with_tags(HashMap::from([("env".to_string(), "test".to_string())])),
+                ),
             )
             .await?;
 
@@ -1854,49 +1858,6 @@ mod page_blob_client {
         let last_modified = props.last_modified()?.unwrap();
         let before = last_modified - Duration::from_secs(60);
         let after = last_modified + Duration::from_secs(60);
-
-        // Get Page Ranges - PageBlobClientGetPageRangesOptions
-
-        // if_match Failure
-        let err = page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_match: Some(BAD_ETAG.to_string().into()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_tags Failure
-        let err = page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_tags: Some("\"env\"='wrong'".to_string()),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::PreconditionFailed,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // if_modified_since - Not Modified (304)
-        let err = page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_modified_since: Some(after),
-                ..Default::default()
-            }))
-            .await;
-        assert_eq!(
-            StatusCode::NotModified,
-            err.unwrap_err().http_status().unwrap()
-        );
-        // Get Page Ranges Success
-        page_blob_client
-            .get_page_ranges(Some(PageBlobClientGetPageRangesOptions {
-                if_match: Some(etag.clone()),
-                ..Default::default()
-            }))
-            .await?;
 
         // Resize - PageBlobClientResizeOptions
 
