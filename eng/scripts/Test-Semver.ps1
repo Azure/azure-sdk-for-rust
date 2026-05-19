@@ -18,7 +18,7 @@ function Get-OutputPackages($workspacePackages) {
   $packages = @()
   switch ($PsCmdlet.ParameterSetName) {
     'Named' {
-      Write-Verbose 'Getting named packages form workspace'
+      Write-Verbose 'Getting named packages from workspace'
       $packages = $workspacePackages.Where({ $_.name -in $PackageNames })
     }
 
@@ -88,3 +88,6 @@ if ($finalExitCode) {
   LogError "SemVer checks failed"
   exit $finalExitCode
 }
+
+# Explicitly return 0, to clear LASTEXITCODE in case there were any failures that were ignored due to the above conditions
+exit 0
