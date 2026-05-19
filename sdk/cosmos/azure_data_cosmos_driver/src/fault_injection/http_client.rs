@@ -37,7 +37,6 @@ enum ApplyResult {
 
 /// Custom implementation of a transport client that injects faults for testing purposes.
 #[derive(Debug)]
-#[non_exhaustive]
 pub struct FaultClient {
     /// The inner transport client to which requests are delegated.
     inner: Arc<dyn TransportClient>,

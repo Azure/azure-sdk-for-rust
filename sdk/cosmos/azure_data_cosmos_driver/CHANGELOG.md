@@ -21,7 +21,6 @@
 
 ### Other Changes
 
-- Added `#[non_exhaustive]` to the public fault-injection types `FaultClient` (the transport client itself) and the public builder structs (`CustomResponseBuilder`, `FaultInjectionResultBuilder`, `FaultInjectionRuleBuilder`, `FaultInjectionConditionBuilder`) so future fields can be added without a major version bump.
 - The PPCB failback sweep now applies a per-entry random jitter (uniform in `[0, partition_unavailability_duration / 2)`) before transitioning an `Unhealthy` entry to `ProbeCandidate`. This spreads the failback of partitions that failed in the same burst across the failback window, mitigating a thundering-herd effect on the recovering region. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 - The `reqwest` feature now also enables the crate's `tokio` feature, ensuring the partition failback background loop is compiled in when using the reqwest transport. ([#4156](https://github.com/Azure/azure-sdk-for-rust/pull/4156))
 

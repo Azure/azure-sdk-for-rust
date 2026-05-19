@@ -34,7 +34,6 @@ impl FaultInjectionCondition {
 
 /// Builder for creating a FaultInjectionCondition.
 #[derive(Default)]
-#[non_exhaustive]
 pub struct FaultInjectionConditionBuilder {
     operation_type: Option<FaultOperationType>,
     region: Option<Region>,

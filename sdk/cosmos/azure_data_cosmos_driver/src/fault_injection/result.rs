@@ -43,7 +43,6 @@ impl CustomResponse {
 }
 
 /// Builder for creating a [`CustomResponse`].
-#[non_exhaustive]
 pub struct CustomResponseBuilder {
     status_code: StatusCode,
     headers: Headers,
@@ -124,7 +123,6 @@ impl FaultInjectionResult {
 }
 
 /// Builder for creating a FaultInjectionResult.
-#[non_exhaustive]
 pub struct FaultInjectionResultBuilder {
     error_type: Option<FaultInjectionErrorType>,
     custom_response: Option<CustomResponse>,
