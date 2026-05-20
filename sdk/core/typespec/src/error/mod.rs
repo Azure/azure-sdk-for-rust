@@ -7,7 +7,7 @@
 use crate::http::{RawResponse, StatusCode};
 use std::backtrace::{Backtrace, BacktraceStatus};
 use std::borrow::Cow;
-use std::fmt::{self, Debug, Display};
+use std::fmt::{self, Display};
 
 /// A convenience alias for `Result` where the error type is hard coded to [`Error`].
 pub type Result<T> = std::result::Result<T, Error>;
