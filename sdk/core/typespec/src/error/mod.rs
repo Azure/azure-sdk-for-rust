@@ -5,9 +5,11 @@
 
 #[cfg(feature = "http")]
 use crate::http::{RawResponse, StatusCode};
-use std::backtrace::{Backtrace, BacktraceStatus};
-use std::borrow::Cow;
-use std::fmt::{self, Display};
+use std::{
+    backtrace::{Backtrace, BacktraceStatus},
+    borrow::Cow,
+    fmt,
+};
 
 /// A convenience alias for `Result` where the error type is hard coded to [`Error`].
 pub type Result<T> = std::result::Result<T, Error>;
@@ -51,8 +53,8 @@ impl ErrorKind {
     }
 }
 
-impl Display for ErrorKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             #[cfg(feature = "http")]
             ErrorKind::HttpResponse {
@@ -322,12 +324,12 @@ impl From<core::convert::Infallible> for Error {
     }
 }
 
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.context {
-            Repr::Simple(kind) => std::fmt::Display::fmt(&kind, f),
+            Repr::Simple(kind) => fmt::Display::fmt(&kind, f),
             Repr::SimpleMessage(_, message) => f.write_str(message),
-            Repr::Custom(Custom { error, .. }) => std::fmt::Display::fmt(&error, f),
+            Repr::Custom(Custom { error, .. }) => fmt::Display::fmt(&error, f),
             Repr::CustomMessage(_, message) => f.write_str(message),
         }
     }
