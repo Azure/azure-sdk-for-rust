@@ -84,9 +84,9 @@ impl fmt::Debug for Error {
         let mut dbg = f.debug_struct("Error");
         dbg.field("context", &self.context);
         if let Some(backtrace) = &self.backtrace {
-            dbg.field("backtrace", backtrace);
+            return dbg.field("backtrace", backtrace).finish();
         }
-        dbg.finish()
+        dbg.finish_non_exhaustive()
     }
 }
 
@@ -400,6 +400,7 @@ where
     }
 }
 
+#[inline(always)]
 fn capture_backtrace() -> Option<Box<Backtrace>> {
     let backtrace = Backtrace::capture();
     if backtrace.status() == BacktraceStatus::Captured {
