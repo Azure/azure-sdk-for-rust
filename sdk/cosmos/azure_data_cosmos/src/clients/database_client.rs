@@ -224,6 +224,7 @@ impl DatabaseClient {
             &resource_id,
         )
         .await
+        .map(|(offer, _diagnostics)| offer)
     }
 
     /// Begins replacing the database throughput properties.

@@ -167,6 +167,7 @@ impl ContainerClient {
             self.container_ref.rid(),
         )
         .await
+        .map(|(offer, _diagnostics)| offer)
     }
 
     /// Begins replacing the container throughput properties.
@@ -937,14 +938,11 @@ impl ContainerClient {
         let mut ranges = self
             .context
             .driver
-            .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
-            .await
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "failed to resolve routing map for container",
-                )
-            })?;
+            .resolve_all_partition_key_ranges_with_error(
+                &self.container_ref,
+                options.force_refresh(),
+            )
+            .await?;
 
         if ranges.is_empty() && !options.force_refresh() {
             // A valid container always has at least one partition key range.
@@ -952,14 +950,8 @@ impl ContainerClient {
             ranges = self
                 .context
                 .driver
-                .resolve_all_partition_key_ranges(&self.container_ref, true)
-                .await
-                .ok_or_else(|| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        "failed to resolve routing map for container",
-                    )
-                })?;
+                .resolve_all_partition_key_ranges_with_error(&self.container_ref, true)
+                .await?;
         }
 
         if ranges.is_empty() {
@@ -1024,32 +1016,24 @@ impl ContainerClient {
         let ranges = self
             .context
             .driver
-            .resolve_partition_key_ranges_for_key(
+            .resolve_partition_key_ranges_for_key_with_error(
                 &self.container_ref,
                 &driver_pk,
                 options.force_refresh(),
             )
-            .await
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "failed to resolve routing map for container",
-                )
-            })?;
+            .await?;
 
         if ranges.is_empty() && !options.force_refresh() {
             // Empty result may indicate a stale cache — retry with refresh.
             let ranges = self
                 .context
                 .driver
-                .resolve_partition_key_ranges_for_key(&self.container_ref, &driver_pk, true)
-                .await
-                .ok_or_else(|| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        "failed to resolve routing map for container",
-                    )
-                })?;
+                .resolve_partition_key_ranges_for_key_with_error(
+                    &self.container_ref,
+                    &driver_pk,
+                    true,
+                )
+                .await?;
 
             if ranges.is_empty() {
                 return Err(azure_core::Error::with_message(

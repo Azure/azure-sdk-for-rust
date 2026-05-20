@@ -978,6 +978,30 @@ impl CosmosDriver {
         container: ContainerReference,
         continuation: Option<String>,
     ) -> Option<PkRangeFetchResult> {
+        // Error already logged inside the `_with_error` variant. Callers
+        // that want diagnostics on the error path use that variant
+        // directly; this `Option`-returning shim exists for the
+        // pre-resolve fast-path which treats every failure as
+        // "skip the optimization, fall through to default routing."
+        self.fetch_pk_ranges_from_service_with_error(container, continuation)
+            .await
+            .ok()
+    }
+
+    /// Single-page partition key range fetch that propagates errors.
+    ///
+    /// Identical wire behavior to [`Self::fetch_pk_ranges_from_service`], but
+    /// returns `Err(azure_core::Error)` (with the operation's
+    /// `DiagnosticsContext` carrier attached by the pipeline) instead of
+    /// silently logging and downgrading to `None`. Used by the
+    /// SDK-facing `_with_error` routing variants so callers can recover
+    /// per-attempt history, ActivityId, region, and final status when a
+    /// routing-map fetch fails.
+    pub(crate) async fn fetch_pk_ranges_from_service_with_error(
+        &self,
+        container: ContainerReference,
+        continuation: Option<String>,
+    ) -> azure_core::Result<PkRangeFetchResult> {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
@@ -999,29 +1023,30 @@ impl CosmosDriver {
         match self.execute_operation(operation, options).await {
             Ok(response) => {
                 let etag = response.headers().etag.as_ref().map(|e| e.to_string());
+                let diagnostics = response.diagnostics();
 
                 // 304 Not Modified is a success outcome for conditional
                 // changefeed reads: the cached routing map is still current.
                 if response.status().status_code() == azure_core::http::StatusCode::NotModified {
-                    return Some(PkRangeFetchResult {
+                    return Ok(PkRangeFetchResult {
                         ranges: vec![],
                         continuation,
                         not_modified: true,
                     });
                 }
 
-                let body_bytes = match response.into_body().single() {
-                    Ok(b) => b,
-                    Err(_) => {
-                        tracing::error!(
-                            container = %container.name(),
-                            "Partition key ranges response was a feed body, expected single payload"
-                        );
-                        return None;
-                    }
-                };
+                let body_bytes = response.into_body().single().map_err(|e| {
+                    tracing::error!(
+                        container = %container.name(),
+                        "Partition key ranges response was a feed body, expected single payload"
+                    );
+                    // Attach the originating operation's diagnostics to the
+                    // parse failure so callers can correlate the malformed
+                    // response with its ActivityId/region.
+                    crate::diagnostics::attach_diagnostics(e, Arc::clone(&diagnostics))
+                })?;
                 match parse_pk_ranges_response(&body_bytes) {
-                    Some(ranges) => Some(PkRangeFetchResult {
+                    Some(ranges) => Ok(PkRangeFetchResult {
                         ranges,
                         continuation: etag,
                         not_modified: false,
@@ -1031,7 +1056,13 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        None
+                        Err(crate::diagnostics::attach_diagnostics(
+                            azure_core::Error::with_message(
+                                azure_core::error::ErrorKind::DataConversion,
+                                "failed to parse partition key ranges response body",
+                            ),
+                            diagnostics,
+                        ))
                     }
                 }
             }
@@ -1054,16 +1085,23 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                        return None;
+                    } else {
+                        tracing::warn!(
+                            container = %container.name(),
+                            error = %e,
+                            "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
+                        );
                     }
+                } else {
+                    tracing::warn!(
+                        container = %container.name(),
+                        error = %e,
+                        "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
+                    );
                 }
-
-                tracing::warn!(
-                    container = %container.name(),
-                    error = %e,
-                    "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
-                );
-                None
+                // The pipeline already attached the per-operation
+                // `DiagnosticsContext` carrier — propagate unchanged.
+                Err(e)
             }
         }
     }
@@ -1486,6 +1524,104 @@ impl CosmosDriver {
                     |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
                 )
                 .await
+        }
+    }
+
+    /// Error-propagating variant of [`Self::resolve_all_partition_key_ranges`].
+    ///
+    /// Returns `Err(azure_core::Error)` with the per-operation
+    /// `DiagnosticsContext` carrier attached (recoverable via
+    /// `CosmosError::diagnostics`) when the routing map fetch fails or the
+    /// resulting map is empty. SDK code that surfaces errors to callers
+    /// uses this variant; the silent `Option`-returning variant is reserved
+    /// for the pipeline pre-resolve fast-path where a failed routing-map
+    /// lookup just skips an optimization.
+    pub async fn resolve_all_partition_key_ranges_with_error(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+    ) -> azure_core::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+        let routing_map = self
+            .pk_range_cache
+            .try_lookup_with_error(container, force_refresh, |c, cont| {
+                Box::pin(self.fetch_pk_ranges_from_service_with_error(c, cont))
+            })
+            .await?;
+
+        let ranges = routing_map.ranges();
+        if ranges.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                "resolved routing map contains no partition key ranges; \
+                 the container may not exist or the service may be unreachable",
+            ));
+        }
+        Ok(ranges.to_vec())
+    }
+
+    /// Error-propagating variant of [`Self::resolve_partition_key_ranges_for_key`].
+    ///
+    /// Returns `Err(azure_core::Error)` (with `DiagnosticsContext` carrier
+    /// attached on the wire-error path) when the routing map cannot be
+    /// resolved. Client-side validation errors (empty partition key,
+    /// invalid EPK computation) are returned without diagnostics — no
+    /// service call occurred.
+    pub async fn resolve_partition_key_ranges_for_key_with_error(
+        &self,
+        container: &ContainerReference,
+        partition_key: &PartitionKey,
+        force_refresh: bool,
+    ) -> azure_core::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+        if partition_key.is_empty() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "partition key must have at least one component",
+            ));
+        }
+
+        let pk_def = container.partition_key_definition();
+        let epk_range = EffectivePartitionKey::compute_range(partition_key.values(), pk_def)
+            .map_err(|e| {
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    format!("effective partition key computation failed: {e}"),
+                )
+            })?;
+
+        if epk_range.start == epk_range.end {
+            // Full key — point lookup
+            let routing_map = self
+                .pk_range_cache
+                .try_lookup_with_error(container, force_refresh, |c, cont| {
+                    Box::pin(self.fetch_pk_ranges_from_service_with_error(c, cont))
+                })
+                .await?;
+            if routing_map.ranges().is_empty() {
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "resolved routing map contains no partition key ranges",
+                ));
+            }
+            Ok(routing_map
+                .get_range_by_effective_partition_key(&epk_range.start)
+                .cloned()
+                .map_or_else(Vec::new, |r| vec![r]))
+        } else {
+            // Prefix key — overlapping range lookup. Resolve the routing
+            // map directly so the fetch error path propagates;
+            // `resolve_overlapping_ranges` itself is the silent
+            // `Option`-returning variant used by the pre-resolve path.
+            let routing_map = self
+                .pk_range_cache
+                .try_lookup_with_error(container, force_refresh, |c, cont| {
+                    Box::pin(self.fetch_pk_ranges_from_service_with_error(c, cont))
+                })
+                .await?;
+            Ok(routing_map
+                .get_overlapping_ranges(&epk_range.start..&epk_range.end)
+                .into_iter()
+                .cloned()
+                .collect())
         }
     }
 }

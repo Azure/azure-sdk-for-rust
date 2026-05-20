@@ -8,7 +8,7 @@
 
 use crate::{
     feed::FeedBody,
-    models::{CosmosResponse, ThroughputProperties},
+    models::{CosmosResponse, DiagnosticsContext, ThroughputProperties},
     Query,
 };
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation};
@@ -18,12 +18,16 @@ use std::sync::Arc;
 
 /// Queries the offer for a given resource ID (RID) via the driver.
 ///
-/// Returns `None` if no offer is configured for the resource.
+/// Returns the matching [`ThroughputProperties`] if any plus the diagnostics
+/// for the underlying offer query. The diagnostics are returned even when
+/// no offer is found so callers (e.g. [`begin_replace`]) can attach the
+/// originating operation's per-attempt history, ActivityId, and region to
+/// downstream errors raised against the empty result.
 pub(crate) async fn find_offer(
     driver: &CosmosDriver,
     account: &AccountReference,
     resource_id: &str,
-) -> crate::CosmosResult<Option<ThroughputProperties>> {
+) -> crate::CosmosResult<(Option<ThroughputProperties>, Arc<DiagnosticsContext>)> {
     let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
         .with_parameter("@rid", resource_id)?;
     let body = serde_json::to_vec(&query)?;
@@ -45,10 +49,10 @@ pub(crate) async fn find_offer(
             // underlying HTTP exchange (ActivityId, region, status, etc.).
             crate::CosmosError::from(azure_data_cosmos_driver::diagnostics::attach_diagnostics(
                 e,
-                diagnostics,
+                Arc::clone(&diagnostics),
             ))
         })?;
-    Ok(feed.items.into_iter().next())
+    Ok((feed.items.into_iter().next(), diagnostics))
 }
 
 /// Reads a specific offer by its RID via the driver, returning the full response.
@@ -76,21 +80,29 @@ pub(crate) async fn begin_replace(
     resource_id: &str,
     throughput: ThroughputProperties,
 ) -> crate::CosmosResult<crate::clients::ThroughputPoller> {
-    let mut current_throughput = find_offer(&driver, &account, resource_id)
-        .await?
-        .ok_or_else(|| {
+    let (maybe_throughput, query_diagnostics) = find_offer(&driver, &account, resource_id).await?;
+    let mut current_throughput = maybe_throughput.ok_or_else(|| {
+        // Attach the offer-query diagnostics so post-mortem analysis can
+        // see which region/ActivityId produced the empty result.
+        crate::CosmosError::from(azure_data_cosmos_driver::diagnostics::attach_diagnostics(
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "no throughput offer found for this resource",
-            )
-        })?;
+            ),
+            Arc::clone(&query_diagnostics),
+        ))
+    })?;
 
     if current_throughput.offer_id.is_empty() {
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "throughput offer has an empty id",
-        )
-        .into());
+        return Err(crate::CosmosError::from(
+            azure_data_cosmos_driver::diagnostics::attach_diagnostics(
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    "throughput offer has an empty id",
+                ),
+                query_diagnostics,
+            ),
+        ));
     }
 
     let offer_id = current_throughput.offer_id.clone();
