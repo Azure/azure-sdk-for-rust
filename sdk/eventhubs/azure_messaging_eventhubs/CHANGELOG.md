@@ -9,7 +9,7 @@
 
 ### Breaking Changes
 
-- The `amqp:link:stolen` AMQP condition is no longer auto-retried on the receive path. Operations on a stolen receiver link now return `EventHubsError::ConsumerDisconnected`. Previously the recoverable-connection retry list silently re-attached link-stolen receivers, which on `EventProcessor` masked partition steals on the displaced instance and could cause duplicate processing.
+- On the receive path, the `amqp:link:stolen` AMQP condition is no longer auto-retried. A receiver displaced by a higher-or-equal-epoch attacher now surfaces the error (translated to `EventHubsError::ConsumerDisconnected` by `EventReceiver::stream_events`) instead of silently re-attaching. Sender, CBS, and management operations retain the historical retry-on-stolen behavior.
 
 ### Bugs Fixed
 

@@ -28,18 +28,10 @@ use std::{
 };
 use tracing::{debug, error, info};
 
-// The owner-level (AMQP epoch) used for every partition receiver opened by
-// `EventProcessor`. Matches the `EventProcessorClient` in the .NET
-// (`Azure.Messaging.EventHubs.Primitives.EventProcessor<TPartition>`) and
-// Java (`com.azure.messaging.eventhubs.implementation.PartitionPumpManager`)
-// SDKs, both of which hardcode `ownerLevel = 0` for processor receivers.
-// `0` is itself a valid exclusive epoch: a new receiver-at-0 displaces a
-// prior receiver-at-0 on the same partition+consumer-group, which is the
-// mechanism the processor relies on for clean steal detection.
-//
-// This is not user-configurable on `EventProcessor`. Callers who want to
-// pick a different epoch should open receivers directly via
-// `ConsumerClient::open_receiver_on_partition` with `OpenReceiverOptions`.
+// AMQP epoch (owner level) used for every partition receiver opened by
+// `EventProcessor`. Matches `EventProcessorClient` in the .NET and Java
+// SDKs. `0` is itself an exclusive epoch (a new receiver-at-0 displaces a
+// prior receiver-at-0), which is how the processor detects steals.
 const PROCESSOR_OWNER_LEVEL: i64 = 0;
 
 /// Represents the event processor responsible for processing events
@@ -52,6 +44,13 @@ const PROCESSOR_OWNER_LEVEL: i64 = 0;
 ///
 /// The event processor uses a load balancer to distribute the load
 /// across partitions and a checkpoint store to manage checkpoints.
+///
+/// Each per-partition receiver opens with AMQP epoch `0`, matching the .NET
+/// and Java `EventProcessorClient`. When another `EventProcessor` attaches
+/// to the same partition, the broker disconnects this receiver and
+/// `stream_events()` resolves with `EventHubsError::ConsumerDisconnected`.
+/// To use a different epoch, open receivers directly via
+/// `ConsumerClient::open_receiver_on_partition`.
 ///
 /// For more information on Event Processors and scenarios in which you would
 /// use an Event Processor, see the [Event Processor documentation](https://learn.microsoft.com/azure/event-hubs/event-processor-balance-partition-load).
@@ -147,21 +146,12 @@ impl ProcessorConsumersMap {
         Ok(consumers.keys().cloned().collect())
     }
 
-    /// Revokes partition clients for partitions that are no longer owned by
-    /// this processor instance.
-    ///
-    /// Called during dispatch when the load balancer indicates that a
-    /// partition has been reassigned to another consumer. The client is
-    /// removed from the consumers map (so a fresh client can be created if
-    /// the partition is later reassigned back), and the underlying event
-    /// receiver is closed so that any in-flight `stream_events()` call on
-    /// the consumer side resolves and the loop terminates. This is a
-    /// backstop: the broker's epoch-based disconnect path is the primary
-    /// signal when another instance takes over the partition.
+    /// Removes partitions reassigned away from this processor and closes
+    /// their receivers so consumer streams terminate. Backstop for the
+    /// broker's epoch-based disconnect.
     async fn revoke_partition_clients(&self, partition_ids: &[String]) -> Result<()> {
-        // Collect the strong references under the sync lock, then release
-        // the lock before awaiting any close calls. A SyncMutex guard must
-        // not be held across `.await`.
+        // Collect under the sync lock, then release before awaiting:
+        // SyncMutex guards cannot be held across `.await`.
         let to_close: Vec<Arc<PartitionClient>> = {
             let mut consumers = self
                 .consumers
@@ -347,10 +337,7 @@ impl EventProcessor {
             e
         })?;
 
-        // Detect partitions that were stolen by another consumer.
-        // Compare the set of partitions we currently own (from load_balance)
-        // against active partition clients. Revoke any clients for partitions
-        // we no longer own so they stop processing.
+        // Revoke clients for any partitions no longer in the ownership set.
         let owned_ids: std::collections::HashSet<&str> =
             ownerships.iter().map(|o| o.partition_id.as_str()).collect();
         let active_ids = consumers.get_active_partition_ids()?;
@@ -444,13 +431,30 @@ impl EventProcessor {
                 }),
             )
             .await;
-        if let Err(e) = receiver {
-            error!("Error opening receiver for partition client: {:?}", e);
+        // Roll back the consumers-map entry on failure; otherwise the
+        // partition is stuck (the map's `contains_key` check would
+        // short-circuit every retry) until steal-revocation or restart.
+        let receiver = match receiver {
+            Ok(r) => r,
+            Err(e) => {
+                error!("Error opening receiver for partition client: {:?}", e);
+                if let Some(strong_consumers) = consumers.upgrade() {
+                    let _ = strong_consumers.remove_partition_client(&partition_id);
+                }
+                return Err(e);
+            }
+        };
+        info!("Receiver opened for partition client: {:?}", &partition_id);
+        if let Err(e) = partition_client.set_event_receiver(receiver) {
+            error!(
+                "Error setting event receiver for partition {}: {:?}",
+                partition_id, e
+            );
+            if let Some(strong_consumers) = consumers.upgrade() {
+                let _ = strong_consumers.remove_partition_client(&partition_id);
+            }
             return Err(e);
         }
-        info!("Receiver opened for partition client: {:?}", &partition_id);
-        let receiver = receiver.unwrap();
-        partition_client.set_event_receiver(receiver)?;
 
         info!("Adding partition client to queue.");
 
@@ -728,10 +732,7 @@ pub mod builders {
                 .partition_expiration_duration
                 .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION);
 
-            validate_expiration_vs_update_interval(
-                partition_expiration_duration,
-                update_interval,
-            )?;
+            validate_expiration_vs_update_interval(partition_expiration_duration, update_interval)?;
 
             // Retrieve the set of partitions from the consumer client
             // and limit the number of partitions to the specified max_partition_count.
@@ -770,11 +771,12 @@ mod tests {
     /// re-claims every partition every cycle.
     #[test]
     fn historical_default_combination_is_rejected() {
-        let result = validate_expiration_vs_update_interval(
-            Duration::seconds(10),
-            Duration::seconds(30),
+        let result =
+            validate_expiration_vs_update_interval(Duration::seconds(10), Duration::seconds(30));
+        assert!(
+            result.is_err(),
+            "10s expiration with 30s interval must be rejected"
         );
-        assert!(result.is_err(), "10s expiration with 30s interval must be rejected");
     }
 
     /// The new default (expiration=60s, update_interval=30s) must be accepted.
@@ -788,11 +790,12 @@ mod tests {
     /// instant the next cycle reads it, the read is racing the expiry.
     #[test]
     fn equal_values_are_rejected() {
-        let result = validate_expiration_vs_update_interval(
-            Duration::seconds(30),
-            Duration::seconds(30),
+        let result =
+            validate_expiration_vs_update_interval(Duration::seconds(30), Duration::seconds(30));
+        assert!(
+            result.is_err(),
+            "equal expiration and interval must be rejected"
         );
-        assert!(result.is_err(), "equal expiration and interval must be rejected");
     }
 
     /// Custom configurations with adequate headroom are accepted.

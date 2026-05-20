@@ -318,12 +318,21 @@ impl RecoverableConnection {
     pub(crate) async fn close_receiver(self: &Arc<Self>, source_url: &Url) -> Result<()> {
         let mut receiver_instances = self.receiver_instances.lock().await;
         if let Some(receiver) = receiver_instances.remove(source_url) {
+            let strong_count = Arc::strong_count(&receiver);
             let r = Arc::try_unwrap(receiver);
             if let Ok(receiver) = r {
                 trace!("Detaching receiver: {:?}", source_url);
                 receiver.detach().await?;
             } else {
-                warn!("Failed to detach receiver: {:?}", source_url);
+                // In-flight `receive_delivery` holds a clone of the Arc.
+                // Map entry is already removed; `EventReceiver::closed`
+                // (set before this call by `request_close`) stops the
+                // stream from reattaching on its next poll.
+                warn!(
+                    source = %source_url,
+                    strong_count,
+                    "close_receiver could not detach by-value"
+                );
             }
         }
         Ok(())
@@ -594,19 +603,11 @@ impl RecoverableConnection {
             AmqpErrorKind::SendRejected => ErrorRecoveryAction::ReturnError,
             AmqpErrorKind::AmqpDescribedError(described_error) => {
                 debug!("AMQP described error: {:?}", described_error);
-                // `LinkStolen` (amqp:link:stolen) is deliberately NOT in the
-                // retry set. When the Event Hubs broker disconnects a receiver
-                // because another receiver attached with a higher-or-equal
-                // epoch (owner level), retrying would silently re-attach the
-                // displaced receiver and either be displaced again
-                // immediately, or race the new owner and cause duplicate
-                // processing. The displaced caller needs to see the error and
-                // stop. The .NET SDK takes the same stance via
-                // `InvalidateConsumerWhenPartitionIsStolen = true`.
                 if matches!(
                     described_error.condition,
                     AmqpErrorCondition::ResourceLimitExceeded
                         | AmqpErrorCondition::ConnectionFramingError
+                        | AmqpErrorCondition::LinkStolen
                         | AmqpErrorCondition::ServerBusyError
                         | AmqpErrorCondition::EntityUpdated
                         | AmqpErrorCondition::EntityDisabledError
@@ -626,6 +627,22 @@ impl RecoverableConnection {
                 ErrorRecoveryAction::ReturnError
             }
         }
+    }
+
+    /// Like `should_retry_amqp_error` but returns `ReturnError` on
+    /// `LinkStolen` so a displaced receiver surfaces the steal instead of
+    /// silently re-attaching. .NET parallel: `InvalidateConsumerWhenPartitionIsStolen`.
+    pub(super) fn should_retry_receive_error(amqp_error: &AmqpError) -> ErrorRecoveryAction {
+        if let AmqpErrorKind::AmqpDescribedError(described_error) = amqp_error.kind() {
+            if matches!(described_error.condition, AmqpErrorCondition::LinkStolen) {
+                debug!(
+                    "Receive operation will not retry link-stolen: {:?}",
+                    described_error
+                );
+                return ErrorRecoveryAction::ReturnError;
+            }
+        }
+        Self::should_retry_amqp_error(amqp_error)
     }
 }
 

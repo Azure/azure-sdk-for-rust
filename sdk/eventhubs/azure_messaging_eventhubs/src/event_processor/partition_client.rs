@@ -21,14 +21,10 @@ use tracing::{debug, trace, warn};
 /// The `PartitionClient` provides methods for receiving events, updating checkpoints,
 /// and managing the lifecycle of the client for a specific partition.
 ///
-/// When the load balancer transfers this partition to another consumer
-/// instance (or the broker itself disconnects the receiver because another
-/// consumer opened a higher-or-equal-epoch receiver on the same partition),
-/// `stream_events()` resolves with an error and the loop terminates. There
-/// is no separate poll flag; the stream's termination is the only signal.
-/// Consumers should re-acquire a partition client via
-/// [`EventProcessor::next_partition_client`](crate::EventProcessor::next_partition_client)
-/// after stream termination.
+/// Stream termination is the only revocation signal: when the partition is
+/// reassigned (or the broker disconnects the receiver via epoch), `stream_events()`
+/// resolves with `EventHubsError::ConsumerDisconnected`. Re-acquire via
+/// [`EventProcessor::next_partition_client`](crate::EventProcessor::next_partition_client).
 pub struct PartitionClient {
     partition_id: String,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
@@ -65,14 +61,9 @@ impl PartitionClient {
         &self.partition_id
     }
 
-    /// Closes the underlying AMQP receiver without consuming this
-    /// `PartitionClient`, so that any in-flight `stream_events()` call on
-    /// this client resolves and the consumer's loop can exit.
-    ///
-    /// Called by the `EventProcessor`'s load-balancer reconciliation when
-    /// this partition has been transferred to another instance, as a
-    /// backstop for the broker-initiated disconnect path. Idempotent if the
-    /// receiver was not yet set or has already been closed.
+    /// Closes the AMQP receiver so any in-flight `stream_events()` resolves.
+    /// Called by load-balancer reconciliation as a backstop for the
+    /// broker-initiated disconnect path. Idempotent.
     pub(crate) async fn request_close_receiver(&self) {
         if let Some(receiver) = self.event_receiver.get() {
             if let Err(e) = receiver.request_close().await {

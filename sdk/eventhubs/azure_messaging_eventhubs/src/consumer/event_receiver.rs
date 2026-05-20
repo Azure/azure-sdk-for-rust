@@ -13,16 +13,15 @@ use azure_core_amqp::{
     AmqpDeliveryApis as _, AmqpError, AmqpReceiverApis as _, AmqpReceiverOptions, AmqpSource,
 };
 use futures::Stream;
-use std::sync::Arc;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 use tracing::trace;
 
-/// Translates AMQP errors raised on the receive path into `EventHubsError`,
-/// recognizing the `amqp:link:stolen` condition (broker-initiated displacement
-/// when another receiver attaches with a higher-or-equal epoch) and surfacing
-/// it as the typed `ConsumerDisconnected` variant. The retry layer (see
-/// `should_retry_amqp_error` in `common/recoverable/connection.rs`) deliberately
-/// returns this error rather than silently re-attaching, so this mapping is the
-/// signal a stolen-partition consumer observes.
+/// Maps `amqp:link:stolen` (broker-initiated epoch displacement) on the
+/// receive path to the typed `ConsumerDisconnected` variant. Other errors
+/// pass through unchanged.
 fn translate_receive_error(error: AmqpError) -> EventHubsError {
     if let AmqpErrorKind::AmqpDescribedError(described) = error.kind() {
         if matches!(described.condition, AmqpErrorCondition::LinkStolen) {
@@ -78,6 +77,10 @@ pub struct EventReceiver {
     source_url: Url,
     partition_id: String,
     timeout: Option<Duration>,
+    // Set by `request_close()` to terminate `stream_events()` even if
+    // `close_receiver` could not detach by-value because an in-flight
+    // receive holds a strong Arc on the AMQP receiver.
+    closed: AtomicBool,
 }
 
 impl EventReceiver {
@@ -96,6 +99,7 @@ impl EventReceiver {
             message_source,
             partition_id,
             timeout,
+            closed: AtomicBool::new(false),
         }
     }
 
@@ -139,15 +143,14 @@ impl EventReceiver {
     /// ```
     ///
     pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
-        // Use async_stream to create a stream that yields messages from the receiver.
-        // AMQP errors are translated through `translate_receive_error` so the
-        // broker-initiated link-stolen condition surfaces as the typed
-        // `EventHubsError::ConsumerDisconnected` rather than an opaque
-        // `AmqpError`. Consumers pattern-matching on
-        // `ErrorKind::ConsumerDisconnected` can break out of their receive
-        // loop and re-acquire a partition client.
         Box::pin(try_stream! {
             loop {
+                // Stop here if `request_close` has been called; otherwise
+                // `get_receiver` below would reattach a new link.
+                if self.closed.load(Ordering::Acquire) {
+                    Err(EventHubsError::from(ErrorKind::ConsumerDisconnected(None)))?;
+                }
+
                 let receiver = self.connection.get_receiver(&self.source_url,
                     self.message_source.clone(),
                     self.receiver_options.clone(),
@@ -156,12 +159,11 @@ impl EventReceiver {
 
                 let delivery = receiver.receive_delivery().await.map_err(translate_receive_error)?;
 
-
-                 // Now that we have a delivery, we can process it.
-                 let message = delivery.into_message();
-                 let message = ReceivedEventData::from(message);
-                 trace!("Received message: {:?}", message);
-                 yield message;
+                // Now that we have a delivery, we can process it.
+                let message = delivery.into_message();
+                let message = ReceivedEventData::from(message);
+                trace!("Received message: {:?}", message);
+                yield message;
             }
         })
     }
@@ -171,16 +173,13 @@ impl EventReceiver {
         self.connection.close_receiver(&self.source_url).await
     }
 
-    /// Closes the underlying AMQP receiver link without consuming the
-    /// `EventReceiver` value.
-    ///
-    /// This is the cooperative-shutdown counterpart to `close(self)` for
-    /// callers that hold the receiver by shared reference (for example, the
-    /// `EventProcessor`'s partition-revocation path, which must close a
-    /// receiver while user code still holds an `Arc<PartitionClient>` over
-    /// it). The next `stream_events()` poll on this receiver will resolve
-    /// with an error so the consumer's loop can terminate.
+    /// Closes the AMQP receiver without consuming the `EventReceiver`.
+    /// Used by `EventProcessor` to revoke a partition while the consumer
+    /// still holds an `Arc<PartitionClient>`. Sets the close flag before
+    /// the detach so the next `stream_events()` poll resolves with
+    /// `ConsumerDisconnected` regardless of detach outcome.
     pub(crate) async fn request_close(&self) -> Result<()> {
+        self.closed.store(true, Ordering::Release);
         self.connection.close_receiver(&self.source_url).await
     }
 }
