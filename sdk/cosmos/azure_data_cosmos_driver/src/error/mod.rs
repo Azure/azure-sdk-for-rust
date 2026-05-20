@@ -34,6 +34,13 @@ use crate::{
     models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode},
 };
 
+pub mod backtrace;
+pub use backtrace::{
+    capture_limiter, BacktraceCaptureLimiter, CosmosBacktrace, ResolvedFrame,
+    BACKTRACE_CAPTURES_PER_MINUTE_ENV, DEFAULT_BACKTRACE_CAPTURES_PER_MINUTE,
+    DEFAULT_BACKTRACE_KIND_MASK,
+};
+
 /// Categorical kind for a [`CosmosError`].
 ///
 /// This is intentionally coarse-grained — fine-grained discrimination is done
@@ -111,6 +118,9 @@ struct CosmosErrorInner {
     diagnostics: Option<Arc<DiagnosticsContext>>,
     message: Cow<'static, str>,
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
+    /// Captured stack backtrace, present when the global rate-limited
+    /// backtrace capture budget allowed it. See [`backtrace`] module.
+    backtrace: Option<CosmosBacktrace>,
 }
 
 impl Clone for CosmosErrorInner {
@@ -123,12 +133,16 @@ impl Clone for CosmosErrorInner {
             diagnostics: self.diagnostics.clone(),
             message: self.message.clone(),
             source: self.source.clone(),
+            backtrace: self.backtrace.clone(),
         }
     }
 }
 
 impl CosmosError {
-    fn from_inner(inner: CosmosErrorInner) -> Self {
+    fn from_inner(mut inner: CosmosErrorInner) -> Self {
+        if inner.backtrace.is_none() {
+            inner.backtrace = CosmosBacktrace::try_capture_for_kind(inner.kind);
+        }
         Self {
             inner: Arc::new(inner),
         }
@@ -159,6 +173,7 @@ impl CosmosError {
             diagnostics,
             message: message.into(),
             source: None,
+            backtrace: None,
         })
     }
 
@@ -179,6 +194,7 @@ impl CosmosError {
             diagnostics,
             message: message.into(),
             source,
+            backtrace: None,
         })
     }
 
@@ -209,6 +225,7 @@ impl CosmosError {
             diagnostics: None,
             message: message.into(),
             source: None,
+            backtrace: None,
         })
     }
 
@@ -225,6 +242,7 @@ impl CosmosError {
             diagnostics: None,
             message: message.into(),
             source: Some(Arc::new(source)),
+            backtrace: None,
         })
     }
 
@@ -241,6 +259,7 @@ impl CosmosError {
             diagnostics: None,
             message: message.into(),
             source,
+            backtrace: None,
         })
     }
 
@@ -268,6 +287,7 @@ impl CosmosError {
             diagnostics,
             message: message.into(),
             source: Some(Arc::new(source)),
+            backtrace: None,
         })
     }
 
@@ -282,6 +302,7 @@ impl CosmosError {
             diagnostics: None,
             message: message.into(),
             source: None,
+            backtrace: None,
         })
     }
 
@@ -298,6 +319,7 @@ impl CosmosError {
             diagnostics: None,
             message: message.into(),
             source: Some(Arc::new(source)),
+            backtrace: None,
         })
     }
 
@@ -311,6 +333,7 @@ impl CosmosError {
             diagnostics: None,
             message: message.into(),
             source: None,
+            backtrace: None,
         })
     }
 
@@ -398,6 +421,18 @@ impl CosmosError {
     /// exists for inspecting the wire-level service error payload.
     pub fn response_body(&self) -> Option<&[u8]> {
         self.inner.response_body.as_deref()
+    }
+
+    /// Returns the stack backtrace captured at error construction time, when
+    /// the global rate-limited capture budget allowed it.
+    ///
+    /// Backtraces are captured by default for every `CosmosError` but are
+    /// rate-limited via the global [`capture_limiter`] (default
+    /// `1000` captures / minute). Returns `None` when the budget for the
+    /// current 60-second window has been exhausted, or when backtrace
+    /// capture has been disabled (budget = `0`).
+    pub fn backtrace(&self) -> Option<&CosmosBacktrace> {
+        self.inner.backtrace.as_ref()
     }
 
     // -----------------------------------------------------------------
@@ -507,6 +542,7 @@ impl fmt::Debug for CosmosError {
             .field("has_response_body", &self.inner.response_body.is_some())
             .field("has_diagnostics", &self.inner.diagnostics.is_some())
             .field("has_source", &self.inner.source.is_some())
+            .field("has_backtrace", &self.inner.backtrace.is_some())
             .finish()
     }
 }
@@ -595,6 +631,7 @@ fn classify_azure_core_error(error: azure_core::Error) -> CosmosError {
         diagnostics: None,
         message: Cow::Owned(message),
         source: Some(Arc::new(error)),
+        backtrace: None,
     })
 }
 

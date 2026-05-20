@@ -15,7 +15,9 @@ use std::sync::Arc;
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
-pub use azure_data_cosmos_driver::error::CosmosErrorKind;
+#[allow(unused_imports)]
+pub use azure_data_cosmos_driver::error::ResolvedFrame;
+pub use azure_data_cosmos_driver::error::{CosmosBacktrace, CosmosErrorKind};
 use azure_data_cosmos_driver::models::{CosmosStatus, SubStatusCode};
 
 use crate::models::{DiagnosticsContext, ResponseHeaders};
@@ -82,6 +84,19 @@ impl CosmosError {
     /// exists for inspecting the wire-level service error payload.
     pub fn response_body(&self) -> Option<&[u8]> {
         self.0.response_body()
+    }
+
+    /// Returns the stack backtrace captured at error construction time, when
+    /// the global rate-limited capture budget allowed it.
+    ///
+    /// Backtraces are captured by default for every `CosmosError` but are
+    /// rate-limited (default `1000` captures / minute, configurable via the
+    /// driver's `CosmosDriverRuntimeBuilder::with_max_error_backtraces_per_minute`
+    /// or the `AZURE_COSMOS_BACKTRACE_CAPTURE_PER_MINUTE` environment variable).
+    /// Returns `None` when the current 60-second budget has been exhausted or
+    /// when capture has been disabled.
+    pub fn backtrace(&self) -> Option<&CosmosBacktrace> {
+        self.0.backtrace()
     }
 
     // -- predicates --
