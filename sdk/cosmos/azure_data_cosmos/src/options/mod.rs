@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use crate::models::ThroughputProperties;
+use crate::ContinuationToken;
 use std::fmt;
 use std::fmt::Display;
 
@@ -353,7 +354,16 @@ pub struct QueryOptions {
     ///
     /// `None` omits the header so the SDK / service defaults apply. See
     /// [`MaxItemCountHint`] for the two explicit values.
+    ///
+    /// This is a _hint_ to the server, not a client-side guarantee of the maximum returned page size.
+    /// In a cross-partition query, each partition may return up to this many items,
+    /// so the total page size could be up to this value times the number of partitions involved.
     pub max_item_count: Option<MaxItemCountHint>,
+
+    /// Continuation token from a prior page iterator, used to resume the query.
+    ///
+    /// See [`FeedPageIterator::to_continuation_token`](crate::FeedPageIterator::to_continuation_token).
+    pub continuation_token: Option<ContinuationToken>,
 }
 
 impl QueryOptions {
@@ -387,6 +397,12 @@ impl QueryOptions {
     /// [`MaxItemCountHint::ServerDecides`] to let the service choose.
     pub fn with_max_item_count(mut self, max_item_count: MaxItemCountHint) -> Self {
         self.max_item_count = Some(max_item_count);
+        self
+    }
+
+    /// Sets a continuation token to resume the query at a previous position.
+    pub fn with_continuation_token(mut self, continuation_token: ContinuationToken) -> Self {
+        self.continuation_token = Some(continuation_token);
         self
     }
 }
