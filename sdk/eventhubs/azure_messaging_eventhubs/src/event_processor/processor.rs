@@ -615,14 +615,36 @@ pub mod builders {
     /// ```
     #[derive(Default)]
     pub struct EventProcessorBuilder {
-        pub(crate) update_interval: Option<Duration>,
-        pub(crate) start_positions: Option<StartPositions>,
-        pub(crate) max_partition_count: Option<usize>,
-        pub(crate) prefetch: Option<u32>,
-        pub(crate) owner_level: Option<i64>,
-        pub(crate) load_balancing_strategy: Option<super::ProcessorStrategy>,
-        pub(crate) partition_expiration_duration: Option<Duration>,
+        update_interval: Option<Duration>,
+        start_positions: Option<StartPositions>,
+        max_partition_count: Option<usize>,
+        prefetch: Option<u32>,
+        owner_level: Option<i64>,
+        load_balancing_strategy: Option<super::ProcessorStrategy>,
+        partition_expiration_duration: Option<Duration>,
     }
+    /// Returns an error if `partition_expiration_duration` is not strictly
+    /// greater than `update_interval`. When expiration is shorter than the
+    /// load-balancing cycle, every consumer's ownership record expires before
+    /// the next cycle observes it, so the load balancer perpetually re-claims
+    /// every partition. This is extracted from `build()` to make the rule
+    /// directly unit-testable without needing a live `ConsumerClient`.
+    pub(crate) fn validate_expiration_vs_update_interval(
+        partition_expiration_duration: Duration,
+        update_interval: Duration,
+    ) -> Result<()> {
+        if partition_expiration_duration <= update_interval {
+            return Err(crate::EventHubsError::with_message(format!(
+                "partition_expiration_duration ({partition_expiration_duration:?}) must be \
+                 greater than update_interval ({update_interval:?}); otherwise ownership \
+                 records expire between load-balancing cycles and the processor will \
+                 perpetually re-claim partitions, causing duplicate processing. A ratio of \
+                 at least 2x is recommended."
+            )));
+        }
+        Ok(())
+    }
+
     impl EventProcessorBuilder {
         pub(super) fn new() -> Self {
             EventProcessorBuilder {
@@ -673,6 +695,17 @@ pub mod builders {
         /// receiver with the same or higher owner level will disconnect any
         /// existing receiver on the same partition. This prevents duplicate
         /// processing when partitions are rebalanced across consumers.
+        ///
+        /// Note: `0` is a valid owner level. Per the AMQP epoch semantics
+        /// implemented by Event Hubs, a new receiver opened with epoch `0`
+        /// displaces a prior receiver that was using epoch `0`. Calling this
+        /// with any non-negative value enables exclusive (epoch) receivers;
+        /// if it is left unset (the default), receivers are non-epoch and
+        /// will coexist on the same partition.
+        ///
+        /// The .NET and Java `EventProcessorClient` always use owner level
+        /// `0` internally; passing `0` here makes the Rust processor behave
+        /// the same way.
         pub fn with_owner_level(mut self, owner_level: i64) -> Self {
             self.owner_level = Some(owner_level);
             self
@@ -699,13 +732,10 @@ pub mod builders {
                 .partition_expiration_duration
                 .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION);
 
-            if partition_expiration_duration <= update_interval {
-                return Err(crate::EventHubsError::with_message(format!(
-                    "partition_expiration_duration ({partition_expiration_duration:?}) \
-                     must be greater than update_interval ({update_interval:?})"
-                ))
-                .into());
-            }
+            validate_expiration_vs_update_interval(
+                partition_expiration_duration,
+                update_interval,
+            )?;
 
             // Retrieve the set of partitions from the consumer client
             // and limit the number of partitions to the specified max_partition_count.
@@ -735,35 +765,45 @@ pub mod builders {
 
 #[cfg(test)]
 mod tests {
-    use super::builders::EventProcessorBuilder;
+    use super::builders::validate_expiration_vs_update_interval;
     use azure_core::time::Duration;
 
+    /// The validation must reject the historical default (expiration=10s,
+    /// update_interval=30s). This combination is the root cause of issue
+    /// #3851: the ownership record expires 20s before the next load-balancing
+    /// cycle observes it, so every consumer reports `current=0` and
+    /// re-claims every partition every cycle.
     #[test]
-    fn builder_stores_owner_level() {
-        let builder = EventProcessorBuilder::default().with_owner_level(5);
-        assert_eq!(builder.owner_level, Some(5));
-    }
-
-    #[test]
-    fn builder_owner_level_defaults_to_none() {
-        let builder = EventProcessorBuilder::default();
-        assert_eq!(builder.owner_level, None);
-    }
-
-    #[test]
-    fn builder_stores_update_interval() {
-        let builder =
-            EventProcessorBuilder::default().with_update_interval(Duration::seconds(10));
-        assert_eq!(builder.update_interval, Some(Duration::seconds(10)));
-    }
-
-    #[test]
-    fn builder_stores_partition_expiration_duration() {
-        let builder = EventProcessorBuilder::default()
-            .with_partition_expiration_duration(Duration::seconds(120));
-        assert_eq!(
-            builder.partition_expiration_duration,
-            Some(Duration::seconds(120))
+    fn historical_default_combination_is_rejected() {
+        let result = validate_expiration_vs_update_interval(
+            Duration::seconds(10),
+            Duration::seconds(30),
         );
+        assert!(result.is_err(), "10s expiration with 30s interval must be rejected");
+    }
+
+    /// The new default (expiration=60s, update_interval=30s) must be accepted.
+    #[test]
+    fn new_default_combination_is_accepted() {
+        validate_expiration_vs_update_interval(Duration::seconds(60), Duration::seconds(30))
+            .expect("60s expiration with 30s interval must be valid");
+    }
+
+    /// Equal values are rejected: if the record expires exactly at the
+    /// instant the next cycle reads it, the read is racing the expiry.
+    #[test]
+    fn equal_values_are_rejected() {
+        let result = validate_expiration_vs_update_interval(
+            Duration::seconds(30),
+            Duration::seconds(30),
+        );
+        assert!(result.is_err(), "equal expiration and interval must be rejected");
+    }
+
+    /// Custom configurations with adequate headroom are accepted.
+    #[test]
+    fn larger_expiration_is_accepted() {
+        validate_expiration_vs_update_interval(Duration::seconds(120), Duration::seconds(60))
+            .expect("2x ratio should be accepted");
     }
 }

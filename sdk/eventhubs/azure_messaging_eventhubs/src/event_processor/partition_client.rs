@@ -29,7 +29,7 @@ pub struct PartitionClient {
     client_details: ConsumerClientDetails,
     event_receiver: OnceLock<EventReceiver>,
     consumers: Weak<ProcessorConsumersMap>,
-    revoked: Arc<AtomicBool>,
+    revoked: AtomicBool,
 }
 
 // It's safe to use the PartitionClient from multiple threads simultaneously.
@@ -49,7 +49,7 @@ impl PartitionClient {
             client_details,
             event_receiver: OnceLock::new(),
             consumers,
-            revoked: Arc::new(AtomicBool::new(false)),
+            revoked: AtomicBool::new(false),
         }
     }
 
@@ -63,21 +63,29 @@ impl PartitionClient {
 
     /// Marks this partition client as revoked.
     ///
-    /// When a partition is reassigned to another consumer by the load balancer,
-    /// the event processor calls this method to signal that this client should
-    /// stop processing events. Callers should check [`is_revoked`](Self::is_revoked)
-    /// between event receives and stop when it returns `true`.
-    pub fn revoke(&self) {
+    /// Only the SDK calls this; user code observing revocation should poll
+    /// [`is_revoked`](Self::is_revoked). Allowing arbitrary callers to revoke
+    /// would desynchronize the processor's internal consumers map.
+    pub(crate) fn revoke(&self) {
         info!("Revoking partition client for partition {}", self.partition_id);
-        self.revoked.store(true, Ordering::Relaxed);
+        // Release pairs with Acquire in `is_revoked` so any state mutated
+        // before `revoke()` is visible to a reader that observes `true`.
+        self.revoked.store(true, Ordering::Release);
     }
 
     /// Returns `true` if this partition client has been revoked.
     ///
-    /// A revoked partition client indicates that the partition has been
-    /// reassigned to another consumer and this client should stop processing.
+    /// A revoked partition client indicates that the load balancer has
+    /// transferred this partition to another consumer instance. The consumer
+    /// loop should check this between calls to `stream_events().next().await`
+    /// and stop processing when it returns `true`.
+    ///
+    /// Note: revocation is poll-based today. A consumer awaiting events on a
+    /// low-traffic partition will not observe revocation until the next event
+    /// arrives or the AMQP receiver fails. A future change is expected to make
+    /// `stream_events()` itself terminate on revocation; see PR description.
     pub fn is_revoked(&self) -> bool {
-        self.revoked.load(Ordering::Relaxed)
+        self.revoked.load(Ordering::Acquire)
     }
 
     /// Receives events from the partition.

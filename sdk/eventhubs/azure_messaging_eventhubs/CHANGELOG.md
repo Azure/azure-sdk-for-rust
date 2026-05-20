@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- `EventProcessorBuilder::with_owner_level` enables epoch-based exclusive partition receivers. When set, the broker disconnects any existing receiver on the same partition when a new receiver opens with the same or higher epoch, preventing duplicate processing across consumer instances. Note that `0` is a valid (exclusive) epoch.
+- `PartitionClient::is_revoked` lets a consumer detect that the load balancer has transferred a partition to another instance and stop processing. Revocation is currently poll-based; a consumer should check `is_revoked()` between calls to `stream_events().next().await`.
+
 ### Breaking Changes
 
 ### Bugs Fixed
@@ -17,6 +20,9 @@
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Increased `DEFAULT_PARTITION_EXPIRATION_DURATION` from 10 seconds to 60 seconds. The previous default was shorter than `DEFAULT_UPDATE_INTERVAL` (30 seconds), so ownership records expired between load-balancing cycles. The load balancer perpetually saw `current=0` for every consumer and continuously re-claimed partitions, causing widespread duplicate event processing. `EventProcessorBuilder::build` now rejects configurations where `partition_expiration_duration <= update_interval`. ([#3851](https://github.com/Azure/azure-sdk-for-rust/issues/3851))
+- The event processor now revokes a `PartitionClient` for any partition that has been reassigned to another consumer during a load-balancing cycle. Previously, a stolen partition's client would continue to read events indefinitely.
 
 ### Other Changes
 
