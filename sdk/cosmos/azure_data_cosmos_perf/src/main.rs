@@ -154,9 +154,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let db_client = client.database_client(&config.database);
-    let container_client = db_client.container_client(&config.container).await?;
 
-    // Ensure the database exists (with retry logic for multi-region setups)
+    // Ensure the database exists (with retry logic for multi-region setups).
     setup::ensure_database(&client, &config.database).await?;
 
     // Convert TTL: 0 means disabled (None), >0 means that duration
@@ -166,8 +165,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(TimeToLive::Seconds(config.default_ttl as u32))
     };
 
-    // Ensure the container exists (with retry logic for multi-region setups)
-    setup::ensure_container(
+    // Ensure the container exists and grab the ContainerClient. We can't
+    // build the ContainerClient ahead of this — `container_client(name)`
+    // resolves metadata eagerly and would 404 on a brand-new database.
+    let container_client = setup::ensure_container(
         &db_client,
         &config.container,
         config.throughput,
@@ -224,7 +225,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
         setup::ensure_database(&results_client, &config.results_database).await?;
         let results_db = results_client.database_client(&config.results_database);
-        setup::ensure_container(
+        let results_container = setup::ensure_container(
             &results_db,
             &config.results_container,
             10000,
@@ -235,11 +236,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "Perf results will be stored on separate account '{}' in '{}/{}'. Workload ID: {}",
             results_endpoint, config.results_database, config.results_container, config.workload_id,
         );
-        results_db
-            .container_client(&config.results_container)
-            .await?
+        results_container
     } else {
-        setup::ensure_container(
+        let results_container = setup::ensure_container(
             &db_client,
             &config.results_container,
             10000,
@@ -250,9 +249,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "Perf results will be stored in container '{}'. Workload ID: {}",
             config.results_container, config.workload_id,
         );
-        db_client
-            .container_client(&config.results_container)
-            .await?
+        results_container
     };
 
     // Resolve commit SHA: use CLI arg or auto-detect from git

@@ -1,63 +1,38 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Attaches a [`DiagnosticsContext`] to an [`azure_core::Error`] so callers can
-//! inspect rich per-operation diagnostics on failure.
+//! Attaches a [`DiagnosticsContext`] to an [`azure_core::Error`] so callers
+//! can recover rich per-operation diagnostics on failure.
 //!
-//! # Why
-//!
-//! The driver pipeline accumulates a [`DiagnosticsContext`] (per-attempt
-//! events, region, transport shard, server-side duration, etc.) for every
-//! operation. On the success path this context is exposed via
+//! The driver pipeline already exposes the context on the success path via
 //! [`CosmosResponse::diagnostics`](crate::models::CosmosResponse::diagnostics).
-//! On the error path the same context is built but, prior to this module,
-//! was discarded — the only surviving signal was the error's `Display`
-//! string and (for HTTP errors) the `RawResponse` bytes.
+//! On the error path, [`attach_diagnostics`] wraps the original error inside
+//! an internal `ErrorWithDiagnostics` carrier; the wrapper crate
+//! (`azure_data_cosmos`) recovers it at the SDK boundary via
+//! [`split_diagnostics_carrier`], which atomically:
 //!
-//! This module makes the diagnostics retrievable on error by wrapping the
-//! original error inside an `ErrorWithDiagnostics` carrier and storing
-//! that as the inner error of an `azure_core::Error::with_error(...)`.
-//! The wrapper crate (`azure_data_cosmos`) recovers it at the SDK
-//! boundary via [`split_diagnostics_carrier`], which atomically:
-//!
-//! 1. extracts the diagnostics out of the carrier (and returns them
-//!    separately), AND
+//! 1. extracts the diagnostics out of the carrier, and
 //! 2. rebuilds the `azure_core::Error` with the carrier removed so the
 //!    final `CosmosError`'s source chain contains only original errors.
 //!
-//! Observable behavior of the rebuilt error matches the pre-attachment
-//! error exactly:
-//! - [`azure_core::Error::kind`] is unchanged (including
-//!   `ErrorKind::HttpResponse { raw_response, .. }`).
-//! - The top-level `Display` / `to_string()` is the original message.
-//! - The original inner error (if any) is preserved as the inner of the
-//!   rebuilt error. When the original had no inner, the rebuilt error
-//!   has no inner either — no synthetic source nodes.
-//!
-//! `ErrorWithDiagnostics` is `pub(crate)`; the carrier never leaves the
-//! driver crate. The public SDK surface (`azure_data_cosmos::CosmosError`)
-//! is a plain record with the diagnostics already extracted into a
-//! field, so consumers never need to know the carrier exists.
+//! The rebuilt error preserves the original `kind()` (including any
+//! `HttpResponse { raw_response, .. }`), `Display`, and inner source.
+//! `ErrorWithDiagnostics` is `pub(crate)` and never appears on the public
+//! SDK surface — wrapper-crate consumers see the diagnostics already
+//! extracted into a `CosmosError` field.
 
 use std::sync::Arc;
 
 use crate::diagnostics::DiagnosticsContext;
 
 /// Inner-error wrapper that carries the operation's [`DiagnosticsContext`]
-/// alongside the original error.
-///
-/// Stored as the inner error of an [`azure_core::Error`] (constructed via
-/// [`azure_core::Error::with_error`]) by [`attach_diagnostics`], and
-/// later extracted by [`split_diagnostics_carrier`] at the wrapper-crate
-/// boundary. The carrier is `pub(crate)` and never appears on the
-/// public SDK surface.
+/// alongside the original error. `pub(crate)`; recover via
+/// [`split_diagnostics_carrier`] at the SDK boundary.
 #[derive(Debug)]
 pub(crate) struct ErrorWithDiagnostics {
-    /// The original error's inner, if it had one. `None` when the original
-    /// error was a `Repr::Simple` / `Repr::SimpleMessage` variant — in
-    /// which case the original message is preserved in `display` and
-    /// `source()` returns `None` so that error-chain walkers don't
-    /// observe a duplicated message.
+    /// The original error's inner, if it had one. `None` for `Repr::Simple`
+    /// / `Repr::SimpleMessage` originals — `source()` then returns `None`
+    /// so error-chain walkers don't observe a duplicated message.
     inner: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
     /// The original error's `Display` text. Always populated so the
     /// wrapper's own `Display` matches the original even when there was
@@ -74,10 +49,8 @@ impl std::fmt::Display for ErrorWithDiagnostics {
 
 impl std::error::Error for ErrorWithDiagnostics {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        // Only return the original inner when there was one. Don't
-        // synthesize a source from the preserved display text — doing
-        // so would make error-chain walkers see the original message
-        // duplicated as a child source.
+        // Only return the original inner when there was one — don't
+        // synthesize a source from the preserved display text.
         self.inner.as_deref().map(|e| e as _)
     }
 }
@@ -85,12 +58,9 @@ impl std::error::Error for ErrorWithDiagnostics {
 /// Wraps `err` so that `diagnostics` can be retrieved later via
 /// [`split_diagnostics_carrier`].
 ///
-/// The returned `azure_core::Error` preserves the original `kind()`
-/// (including any `ErrorKind::HttpResponse { raw_response, .. }`) and the
-/// original top-level `Display` text. The wrapper becomes the new inner
-/// error; the original inner (if any) is preserved as the wrapper's source.
-/// When the original error had no inner, the wrapper's `source()` returns
-/// `None` rather than synthesizing one from the preserved display text.
+/// Preserves the original `kind()` (including any
+/// `ErrorKind::HttpResponse { raw_response, .. }`) and top-level `Display`.
+/// The original inner (if any) is preserved as the wrapper's source.
 pub fn attach_diagnostics(
     err: azure_core::Error,
     diagnostics: Arc<DiagnosticsContext>,
@@ -107,41 +77,29 @@ pub fn attach_diagnostics(
 }
 
 /// Splits an `azure_core::Error` produced by the driver pipeline into:
-/// 1. a "clean" `azure_core::Error` whose source chain no longer
-///    contains the [`ErrorWithDiagnostics`] carrier (callers walking
-///    `Error::source()` see only the original wrapped errors), and
+/// 1. a "clean" `azure_core::Error` whose source chain no longer contains
+///    the [`ErrorWithDiagnostics`] carrier, and
 /// 2. the outermost [`DiagnosticsContext`] that was attached (if any).
 ///
-/// This is the only public way to recover diagnostics from a driver
-/// error and is the single point used by the
-/// [`azure_data_cosmos::CosmosError`](https://docs.rs/azure_data_cosmos)
+/// Used by the [`azure_data_cosmos::CosmosError`](https://docs.rs/azure_data_cosmos)
 /// wrapper's `From<azure_core::Error>` impl. Wrapper-crate plumbing —
-/// `#[doc(hidden)]` for that reason.
+/// `#[doc(hidden)]`.
 ///
 /// Peels every directly-nested carrier from the head of the chain so
-/// double-wrapping (e.g. a retry loop re-attaching after an inner
-/// attach) does not leave a carrier visible. Returns the original
+/// double-wrapping does not leave a carrier visible. Returns the original
 /// error unmodified plus `None` when no carrier is present.
 ///
-/// **Precondition / contract.** Only the *head* of the chain is
-/// peeled. If a carrier ever appears below another `azure_core::Error`
-/// layer (e.g. some upstream code wrapping a driver error inside its
-/// own `with_error` before the carrier is attached), this function
-/// will not reach it and the inner carrier will survive into the
-/// public `CosmosError.source` chain. Today this cannot happen —
-/// [`attach_diagnostics`] is the only carrier producer and is called
-/// only at well-defined pipeline-escape sites — but any future code
-/// that adds a non-head wrap MUST either (a) call back into this
-/// helper at the boundary or (b) keep its `with_error` wrap *outside*
-/// of any subsequent `attach_diagnostics`, so the carrier always
-/// remains at the head when this function runs.
+/// **Precondition.** Only the *head* of the chain is peeled. If a future
+/// code path adds an `azure_core::Error::with_error` wrap on top of an
+/// already-attached error, the inner carrier will survive into the public
+/// chain. Today this cannot happen — [`attach_diagnostics`] is the only
+/// carrier producer and is called at well-defined pipeline-escape sites.
 #[doc(hidden)]
 pub fn split_diagnostics_carrier(
     mut err: azure_core::Error,
 ) -> (azure_core::Error, Option<Arc<DiagnosticsContext>>) {
     let mut found: Option<Arc<DiagnosticsContext>> = None;
     loop {
-        // Peek whether the immediate inner is the carrier; if not, we're done.
         let is_carrier = err
             .get_ref()
             .map(|inner| inner.is::<ErrorWithDiagnostics>())
@@ -150,21 +108,17 @@ pub fn split_diagnostics_carrier(
             return (err, found);
         }
 
-        // Take ownership of the carrier and rebuild err without it.
         let kind = err.kind().clone();
         let display = err.to_string();
         let boxed = match err.into_inner() {
             Ok(b) => b,
-            // Defensive: the is_carrier check guarantees Some, but if a
-            // future azure_core change broke that invariant we'd loop
-            // forever. Bail cleanly.
+            // Defensive: is_carrier guaranteed Some. Bail cleanly rather
+            // than loop on a future invariant break.
             Err(original) => return (original, found),
         };
         let carrier: Box<ErrorWithDiagnostics> = match boxed.downcast::<ErrorWithDiagnostics>() {
             Ok(c) => c,
             Err(other) => {
-                // Same defensive bail: rebuild err with the inner intact
-                // so we don't lose information.
                 return (azure_core::Error::with_error(kind, other, display), found);
             }
         };
@@ -173,7 +127,7 @@ pub fn split_diagnostics_carrier(
             display: _,
             diagnostics,
         } = *carrier;
-        // Keep the OUTERMOST diagnostics (first seen = most recently attached).
+        // Outermost diagnostics wins (first seen = most recently attached).
         if found.is_none() {
             found = Some(diagnostics);
         }

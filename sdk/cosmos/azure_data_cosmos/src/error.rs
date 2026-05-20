@@ -4,79 +4,39 @@
 //! [`CosmosError`] — the error type returned by every public Cosmos SDK
 //! API.
 //!
-//! `CosmosError` is a transparent record (à la
-//! [`azure_storage_blob::StorageError`](https://docs.rs/azure_storage_blob))
-//! with public fields. The wrapped [`azure_core::Error`] is exposed via
-//! `source`; the per-operation diagnostics (`status_code`, `sub_status`,
-//! `diagnostics`) are extracted *once* at the SDK boundary and stored as
-//! plain fields so callers can inspect, project, and serialize the error
-//! without going through accessor methods or downcasts.
+//! `CosmosError` is a transparent record with public fields: the wrapped
+//! [`azure_core::Error`] (as an `Arc`), the operation's final HTTP
+//! `status_code` and `sub_status` (when known), and the per-operation
+//! [`CosmosDiagnosticsContext`] (when the driver attached one). Callers
+//! can pattern-match, project, or serialize the error directly.
 //!
-//! ## Design (data-oriented)
+//! # Interop with [`azure_core::Error`]
 //!
-//! - **Transparent fields, not encapsulated state.** Every interesting
-//!   datum is a `pub` field. Serialization, pattern matching, and
-//!   field-by-field projection (e.g. into ADX columns) are first-class
-//!   without bespoke API surface area.
-//! - **Single computation site.** `From<azure_core::Error>` is the
-//!   only place that extracts diagnostics from the driver's internal
-//!   carrier and computes the final status fields. No duplicated
-//!   precedence rules between accessors and `Debug`.
-//! - **Carrier never escapes the driver.** The driver attaches a
-//!   `pub(crate) ErrorWithDiagnostics` to its `azure_core::Error`s
-//!   for transport between pipeline and SDK boundary; this module
-//!   peels it back off via
-//!   [`azure_data_cosmos_driver::diagnostics::split_diagnostics_carrier`],
-//!   so `CosmosError::source.source()` chains contain only original
-//!   wrapped errors. No `source_skipping_carrier` walk on every call.
+//! `?` inside a `CosmosResult<T>` function auto-converts via
+//! `From<azure_core::Error>`. To go the other way:
 //!
-//! ## `Debug` redaction
+//! - [`CosmosError::as_azure_error`] — borrow the wrapped error.
+//! - [`CosmosError::into_source`] — owned `Arc<azure_core::Error>` handle
+//!   (`azure_core::Error` is `!Clone`).
+//! - [`CosmosError::into_azure_error_lossy`] — owned `azure_core::Error`;
+//!   unwraps the `Arc` if possible, otherwise clones `kind` + `message`
+//!   (drops the inner source chain on the shared-handle path).
 //!
-//! `CosmosError` hand-rolls `Debug` because `azure_core::Error`'s
-//! derived `Debug` would expose `ErrorKind::HttpResponse::raw_response`
-//! verbatim, including captured response headers (session tokens,
-//! `WWW-Authenticate` challenges, masked-key reason text). The
-//! hand-rolled impl prints the `ErrorKind` via its `Display`
-//! implementation (which intentionally strips `raw_response`) plus
-//! the top-level message and the four data fields.
+//! `From<serde_json::Error>` is also provided for the common
+//! body-serialize/parse case. Other conversion errors should use
+//! `.map_err(azure_core::Error::from)?`.
 //!
-//! ## Interop with `azure_core::Error`
+//! # `Debug` redaction
 //!
-//! - `From<azure_core::Error> for CosmosError` — automatic at the SDK
-//!   boundary, including via `?` inside `CosmosResult<T>` returning
-//!   code. This is the bridge from the driver's `azure_core::Result`
-//!   surface to the wrapper crate's `CosmosResult`.
-//! - `as_azure_error(&self) -> &azure_core::Error` — borrow the
-//!   wrapped error for inspection (`http_status()`, `into_inner()`, …).
-//!   The wrapped error has the driver's internal diagnostics carrier
-//!   already stripped, so source-chain walks observe only original
-//!   wrapped errors.
-//! - `into_source(self) -> Arc<azure_core::Error>` — owned handle for
-//!   bridging upward (e.g. surfacing through code that holds
-//!   `Result<T, azure_core::Error>`). Note that `azure_core::Error`
-//!   is `!Clone`, so the field is `Arc<…>` and ownership is a shared
-//!   handle, not an owned value.
+//! `CosmosError`'s hand-rolled `Debug` projects [`ErrorKind`] through its
+//! `Display` impl, which strips `raw_response`. This prevents
+//! `format!("{err:?}")` from leaking captured response headers (session
+//! tokens, `WWW-Authenticate` challenges) or response body bytes into
+//! application logs.
 //!
-//! ## `From` impls and the `?` operator
+//! [`ErrorKind`]: azure_core::error::ErrorKind
 //!
-//! `?` only performs a single `From` hop. `CosmosError` provides
-//! direct `From` impls for the conversions that recur most often
-//! inside the SDK:
-//!
-//! - `From<azure_core::Error>` (the SDK boundary type)
-//! - `From<serde_json::Error>` (request/response body serialize and
-//!   deserialize is the dominant `?` site)
-//!
-//! Other conversion-error types (`base64::DecodeError`,
-//! `url::ParseError`, `std::num::ParseIntError`, …) intentionally do
-//! **not** have a direct impl. Reach for
-//! `.map_err(azure_core::Error::from)?` at those call sites — the
-//! existing `From<azure_core::Error> for CosmosError` then completes
-//! the conversion. This keeps the `From` surface narrow enough that
-//! reviewers can reason about it locally without scanning every `?`
-//! in the crate.
-//!
-//! ## Example
+//! # Example
 //!
 //! ```ignore
 //! use azure_data_cosmos::{CosmosError, CosmosResult};
@@ -109,82 +69,57 @@ pub type CosmosResult<T> = Result<T, CosmosError>;
 /// Error type returned by every public Cosmos SDK API.
 ///
 /// Transparent record with all interesting fields `pub`. See the
-/// `error` module documentation in source for the design rationale.
+/// module-level docs for the design rationale and interop guidance.
 ///
-/// The struct is `#[non_exhaustive]` so future preview revisions can
-/// add fields without breaking pattern matches; callers should use
-/// field access (`err.status_code`) and the canonical helper
-/// constructors (`CosmosError::from(azure_err)`) rather than struct
-/// literals.
+/// `#[non_exhaustive]` — callers should use field access or the
+/// `From<azure_core::Error>` constructor rather than struct literals.
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct CosmosError {
     /// The wrapped [`azure_core::Error`]. The driver's internal
-    /// diagnostics carrier (if any) has already been stripped at
-    /// construction time, so callers walking `source.source()` see
-    /// only the original wrapped error chain.
+    /// diagnostics carrier has already been stripped at construction
+    /// time, so callers walking `source.source()` see only the
+    /// original wrapped error chain.
     ///
-    /// Stored as `Arc<…>` because [`azure_core::Error`] is `!Clone`
-    /// and many call sites want to fan-out (retry, telemetry, ADX
-    /// upload, return to caller). Cloning a `CosmosError` is a single
-    /// atomic refcount bump.
+    /// Stored as `Arc` so cloning a `CosmosError` is a refcount bump
+    /// ([`azure_core::Error`] is itself `!Clone`).
     pub source: Arc<azure_core::Error>,
     /// The operation's final HTTP status code, if known.
     ///
-    /// Populated from the driver-attached diagnostics context's
-    /// recorded final status (which reflects the outcome after all
-    /// retries and failovers); falls back to the
-    /// [`azure_core::Error::http_status`] on the wrapped error when
-    /// no diagnostics were attached (e.g. on credential or
-    /// argument-validation failures).
+    /// Populated from the diagnostics context's recorded final status
+    /// (after retries and failovers). Falls back to the wrapped
+    /// error's [`azure_core::Error::http_status`] when no diagnostics
+    /// were attached (e.g. credential or argument-validation
+    /// failures).
     pub status_code: Option<u16>,
     /// The operation's Cosmos sub-status code
     /// (`x-ms-substatus` response header), if known.
     ///
-    /// `None` when no diagnostics were attached or when the response
-    /// did not include a sub-status header. The complete catalog of
-    /// codes is documented at
-    /// <https://learn.microsoft.com/en-us/rest/api/cosmos-db/http-status-codes-for-cosmosdb>.
+    /// See <https://learn.microsoft.com/en-us/rest/api/cosmos-db/http-status-codes-for-cosmosdb>
+    /// for the catalog of codes.
     pub sub_status: Option<u32>,
     /// The per-operation diagnostics context attached by the driver
     /// pipeline, if any.
     ///
-    /// `None` for errors that did not flow through the driver
-    /// pipeline, or that escaped before diagnostics had been
-    /// initialized. Stored as `Option<Arc<…>>` because the same
-    /// context is also reachable from the success path
-    /// (e.g. on `ItemResponse::diagnostics`) and the two should
-    /// share storage when produced by the same operation.
+    /// `None` for errors that did not flow through the driver pipeline
+    /// or that escaped before diagnostics had been initialized.
     pub diagnostics: Option<Arc<CosmosDiagnosticsContext>>,
 }
 
 impl CosmosError {
     /// Borrow the wrapped [`azure_core::Error`].
-    ///
-    /// Equivalent to `&*self.source`; provided for ergonomics on
-    /// `&CosmosError` so call sites don't have to deref the `Arc`
-    /// explicitly. The wrapped error has the driver's internal
-    /// diagnostics carrier already stripped, so source-chain walks
-    /// observe only original wrapped errors.
     #[inline]
     pub fn as_azure_error(&self) -> &azure_core::Error {
         &self.source
     }
 
-    /// Consume the `CosmosError` and return an owned `Arc` handle to
-    /// the wrapped [`azure_core::Error`].
+    /// Consume the `CosmosError` and return the wrapped
+    /// [`azure_core::Error`] as an `Arc` handle.
     ///
-    /// The returned value is an `Arc` because [`azure_core::Error`] is
-    /// `!Clone` and this `CosmosError` itself supports cheap fan-out
-    /// via `Clone` — there is no way to unconditionally hand out an
-    /// owned `azure_core::Error` from a possibly-shared handle.
-    /// Callers that have a `Result<T, azure_core::Error>` to satisfy
-    /// can either:
-    ///
-    /// 1. Use [`Self::into_azure_error_lossy`] (always succeeds; may
-    ///    drop `raw_response` / inner if the handle is shared).
-    /// 2. Call `Arc::try_unwrap(err.into_source())` themselves and
-    ///    fall back to whatever projection their use case prefers.
+    /// `Arc` rather than an owned value because [`azure_core::Error`]
+    /// is `!Clone` and this `CosmosError` itself supports cheap
+    /// fan-out via `Clone`. Use [`Self::into_azure_error_lossy`] if
+    /// you need an owned `azure_core::Error`.
     #[inline]
     pub fn into_source(self) -> Arc<azure_core::Error> {
         self.source
@@ -192,35 +127,25 @@ impl CosmosError {
 
     /// Consume the `CosmosError` and return an owned [`azure_core::Error`].
     ///
-    /// If this `CosmosError` is the sole owner of the wrapped
-    /// [`Arc`], the original error is returned unchanged. Otherwise a
-    /// fresh `azure_core::Error` is constructed from the wrapped
-    /// error's `kind()` (cloned, including any `raw_response`
-    /// payload) and `to_string()` — this preserves the `ErrorKind`
-    /// variant data and the user-visible message but drops the
-    /// original inner source (callers walking `Error::source()` will
-    /// see an empty chain on the shared-handle path).
+    /// If this `CosmosError` is the sole owner of the wrapped `Arc`,
+    /// the original error is returned unchanged. Otherwise a fresh
+    /// `azure_core::Error` is constructed from the wrapped error's
+    /// `kind()` (cloned, including any `raw_response` payload) and
+    /// `to_string()`. The shared-handle path drops the original inner
+    /// source chain (callers walking `Error::source()` will see an
+    /// empty chain).
     ///
-    /// **Redaction note.** This converter is *not* a redaction
-    /// boundary. The returned `azure_core::Error` uses
-    /// `azure_core`'s derived `Debug`, which walks `ErrorKind` and
-    /// emits `HttpResponse::raw_response` verbatim — including any
-    /// captured response headers and body bytes. `CosmosError`'s
+    /// **Not a redaction boundary.** The returned `azure_core::Error`
+    /// uses `azure_core`'s derived `Debug`, which prints
+    /// `HttpResponse::raw_response` verbatim. `CosmosError`'s
     /// hand-rolled `Debug` is the surface that scrubs `raw_response`;
-    /// if you need that guarantee, log `{cosmos_err:?}` directly
-    /// rather than converting first.
+    /// log `{cosmos_err:?}` directly if you need that guarantee.
     ///
     /// Prefer [`Self::as_azure_error`] when you only need a borrow.
     pub fn into_azure_error_lossy(self) -> azure_core::Error {
         match Arc::try_unwrap(self.source) {
             Ok(err) => err,
             Err(shared) => {
-                // Shared-handle path: rebuild from the cloned kind +
-                // top-level message. The original inner source chain
-                // is dropped; raw_response (if any) is cloned through
-                // because `ErrorKind` derives `Clone` and so does
-                // `RawResponse`. See the redaction note in the
-                // rustdoc above.
                 let kind = shared.kind().clone();
                 let display = shared.to_string();
                 azure_core::Error::with_message(kind, display)
@@ -229,46 +154,30 @@ impl CosmosError {
     }
 
     /// Borrow the wrapped error's [`ErrorKind`](azure_core::error::ErrorKind).
-    ///
-    /// Forwarded from `self.source.kind()` — provided so the most
-    /// common error-classification pattern doesn't need to spell out
-    /// the borrow accessor.
     #[inline]
     pub fn kind(&self) -> &azure_core::error::ErrorKind {
         self.source.kind()
     }
 
-    /// Returns the HTTP status code carried by the wrapped error's
+    /// Returns the HTTP status code on the wrapped error's
     /// [`ErrorKind::HttpResponse`](azure_core::error::ErrorKind::HttpResponse),
     /// if any.
     ///
-    /// This reflects the status code present on the wrapped
-    /// [`azure_core::Error`] (i.e. the response that produced this
-    /// error). For the operation's **final** status code (which can
-    /// differ from this when a retry recovered and then ultimately
-    /// failed for a different reason), use [`Self::status_code`].
+    /// This reflects the status on the response that produced this
+    /// error. For the operation's **final** status code after retries
+    /// and failovers, use [`Self::status_code`].
     #[inline]
     pub fn http_status(&self) -> Option<azure_core::http::StatusCode> {
         self.source.http_status()
     }
 
-    /// Convenience accessor — equivalent to `self.status_code`.
-    ///
-    /// Provided so callers can write `err.status_code()` without
-    /// touching the field directly. New code may use either; the
-    /// field access is preferred in places that already destructure
-    /// the error or want to forward the value via `serde`.
+    /// Equivalent to `self.status_code`. See the field for semantics.
     #[inline]
     pub fn status_code(&self) -> Option<u16> {
         self.status_code
     }
 
-    /// Convenience accessor — equivalent to `self.sub_status`.
-    ///
-    /// Provided so callers can write `err.sub_status()` without
-    /// touching the field directly. New code may use either; the
-    /// field access is preferred in places that already destructure
-    /// the error or want to forward the value via `serde`.
+    /// Equivalent to `self.sub_status`. See the field for semantics.
     #[inline]
     pub fn sub_status(&self) -> Option<u32> {
         self.sub_status
@@ -276,12 +185,8 @@ impl CosmosError {
 
     /// Borrow the per-operation diagnostics context, if attached.
     ///
-    /// Returns `Option<&CosmosDiagnosticsContext>` rather than
-    /// `Option<Arc<…>>` to avoid an unnecessary atomic refcount bump
-    /// on every read (and to match the
-    /// [`std::error::Error::source`]-style borrow convention). For an
-    /// owned handle, clone the field directly:
-    /// `err.diagnostics.clone()`.
+    /// Returns a borrow to avoid a refcount bump on every read. For
+    /// owned access, clone the field directly: `err.diagnostics.clone()`.
     #[inline]
     pub fn diagnostics(&self) -> Option<&CosmosDiagnosticsContext> {
         self.diagnostics.as_deref()
@@ -290,34 +195,19 @@ impl CosmosError {
 
 impl std::fmt::Display for CosmosError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // Delegate to the wrapped error's Display. azure_core::Error's
-        // Display prints the top-level message only and does not walk
-        // the source chain or expose `raw_response`.
         std::fmt::Display::fmt(&*self.source, f)
     }
 }
 
 impl std::fmt::Debug for CosmosError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // CRITICAL: do NOT delegate to `azure_core::Error`'s derived
-        // Debug. The derived Debug walks `Repr` and emits
-        // `ErrorKind::HttpResponse { raw_response: Some(RawResponse {
-        // headers: Headers { … session tokens, WWW-Authenticate, … },
-        // body: <bytes> }) }` verbatim — anything that ends up in
-        // `format!("{err:?}")` (panic messages, tracing fields, etc.)
-        // would leak that data into logs.
-        //
-        // Instead we project a redacted, stable shape:
-        //   - `kind`: the `ErrorKind` formatted via its *Display* impl
-        //     (which is the canonical user-facing rendering and is
-        //     hand-rolled to strip `raw_response`).
-        //   - `message`: the wrapped error's top-level Display string.
-        //   - the four data fields.
-        //
-        // If `azure_core::error::ErrorKind` ever gains a new variant
-        // that carries bytes, the Display impl is the same gate that
-        // protects this Debug impl — keeping a single redaction
-        // contract in one place.
+        // Do NOT delegate to `azure_core::Error`'s derived Debug — it
+        // walks `Repr` and would emit `HttpResponse::raw_response`
+        // verbatim (response headers including session tokens and
+        // `WWW-Authenticate` challenges, plus the response body
+        // bytes). The `ErrorKind` Display impl is hand-rolled to
+        // strip `raw_response`, so projecting through it is the
+        // single redaction gate.
         f.debug_struct("CosmosError")
             .field("kind", &format_args!("{}", self.source.kind()))
             .field("message", &self.source.to_string())
@@ -330,39 +220,18 @@ impl std::fmt::Debug for CosmosError {
 
 impl std::error::Error for CosmosError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        // The wrapped error has had the diagnostics carrier already
-        // stripped by `From::from` (via `split_diagnostics_carrier`),
-        // so a plain delegation is correct — callers walking
-        // `.source()` see the original error chain without the
-        // internal carrier.
+        // The carrier is stripped by `From::from` (via
+        // `split_diagnostics_carrier`), so plain delegation is correct.
         Some(&*self.source)
     }
 }
 
 impl From<azure_core::Error> for CosmosError {
     fn from(err: azure_core::Error) -> Self {
-        // **Construction-invariant gate** — this `From` impl is the
-        // canonical (and only intended) way to construct a
-        // `CosmosError`. The `pub` fields make struct-literal
-        // construction technically possible from anywhere inside this
-        // crate, but doing so would bypass the carrier-strip step
-        // below and break the docstring contract on `source` that
-        // "the driver's internal diagnostics carrier (if any) has
-        // already been stripped at construction time." Any new
-        // in-crate construction site SHOULD go through `From` or one
-        // of its conversion variants (e.g. `From<serde_json::Error>`,
-        // which itself defers to this impl). External callers are
-        // blocked from struct-literal construction by
-        // `#[non_exhaustive]`.
-        //
-        // Single-shot extraction at the SDK boundary:
-        //   1. peel the driver's diagnostics carrier off the chain
-        //      (if present); the rebuilt `azure_core::Error` is the
-        //      pre-carrier error with the original inner intact.
-        //   2. compute `status_code` / `sub_status` from the
-        //      diagnostics context's recorded final status; fall back
-        //      to the rebuilt error's `http_status()` for errors that
-        //      never reached the pipeline (e.g. credential failures).
+        // Canonical (and only intended) construction path. `#[non_exhaustive]`
+        // blocks external struct-literal construction; in-crate sites should
+        // also go through this `From` so the carrier-strip step below is not
+        // bypassed.
         let (rebuilt, diagnostics) =
             azure_data_cosmos_driver::diagnostics::split_diagnostics_carrier(err);
 
@@ -383,12 +252,10 @@ impl From<azure_core::Error> for CosmosError {
     }
 }
 
-// `serde_json::Error` is the dominant `?` site in request-body
-// serialization and response-body parsing — provide a direct
-// conversion so call sites don't have to spell `.map_err` on every
-// `?`. See the module-level docs ("`From` impls and the `?` operator")
-// for the policy that governs which conversions are direct vs
-// explicit.
+// `serde_json::Error` covers request-body serialization and response-body
+// parsing, the dominant `?` site in this crate. Other conversion errors
+// (`base64::DecodeError`, `url::ParseError`, …) use
+// `.map_err(azure_core::Error::from)?` per the module docs.
 impl From<serde_json::Error> for CosmosError {
     fn from(err: serde_json::Error) -> Self {
         CosmosError::from(azure_core::Error::from(err))

@@ -75,10 +75,6 @@ impl CustomResponseBuilder {
 
     /// Sets the `x-ms-substatus` header to the given numeric sub-status code.
     ///
-    /// Takes the raw integer value (`u32`) rather than a typed enum so the
-    /// fault-injection API stays free of driver-internal types. The
-    /// complete list of codes is documented at
-    /// <https://learn.microsoft.com/en-us/rest/api/cosmos-db/http-status-codes-for-cosmosdb>.
     /// Frequently-used values:
     ///
     /// | Code  | Meaning                                       |
@@ -92,9 +88,8 @@ impl CustomResponseBuilder {
     /// | 3     | WriteForbidden                                |
     /// | 4001  | ConfigurationNameNotEmpty                     |
     ///
-    /// New SDK code that needs the typed enum can construct it via the
-    /// `azure_data_cosmos_driver` crate; the fault-injection surface
-    /// itself remains driver-type free.
+    /// See <https://learn.microsoft.com/en-us/rest/api/cosmos-db/http-status-codes-for-cosmosdb>
+    /// for the complete catalog.
     pub fn with_sub_status(self, code: u32) -> Self {
         self.with_header(constants::SUB_STATUS, code.to_string())
     }

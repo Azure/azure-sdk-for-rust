@@ -76,20 +76,14 @@ pub(crate) async fn execute_operation_pipeline(
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
 
-    // Helper: when an early-exit error is about to escape the pipeline,
-    // wrap it with the in-progress diagnostics context so callers can
-    // recover the per-attempt history via the `CosmosError::diagnostics`
-    // accessor on the wrapper crate. The builder is consumed (it is no
-    // longer needed after we return); the borrow checker is satisfied
-    // because every use of this macro occurs on a diverging branch.
+    // Helper: wrap an early-exit error with the in-progress diagnostics so
+    // callers can recover the per-attempt history via
+    // `CosmosError::diagnostics`. The builder is consumed; the borrow
+    // checker is satisfied because every use occurs on a diverging branch.
     //
-    // **Hygiene note:** `macro_rules!` does NOT alpha-rename identifiers
-    // captured from the enclosing function scope. This macro captures the
-    // outer `diagnostics: DiagnosticsContextBuilder` binding by name and
-    // consumes it via `.complete()`. Renaming that binding silently
-    // breaks both macros; the diverging-branch invariant (use only in
-    // contexts that immediately `return`/`break`) is enforced socially,
-    // not by the compiler.
+    // **Macro hygiene:** `macro_rules!` does not alpha-rename identifiers
+    // captured from the enclosing function. Renaming the outer
+    // `diagnostics` binding silently breaks both macros.
     macro_rules! return_with_diagnostics {
         ($err:expr) => {{
             let ctx = std::sync::Arc::new(diagnostics.complete());
@@ -892,12 +886,9 @@ fn build_transport_request(
 /// Builds a `CosmosResponse` from a successful `TransportResult`.
 ///
 /// **Invariant:** must only be called after a `TransportOutcome::Success`
-/// gating check. Debug builds `debug_assert` that invariant and panic
-/// loudly if violated; release builds construct a synthetic error
-/// **with the in-progress diagnostics attached** so that production
-/// telemetry preserves the per-attempt context that motivated this
-/// PR — silently dropping diagnostics on the rarest failure would
-/// make the resulting bug effectively un-debuggable post-mortem.
+/// gating check. Debug builds `debug_assert` this; release builds construct
+/// a synthetic error **with the in-progress diagnostics attached** so the
+/// rarest failure stays observable in production telemetry.
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
