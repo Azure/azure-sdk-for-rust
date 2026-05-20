@@ -89,17 +89,15 @@
 //!   Verifies hedging fires normally despite PPCB being active for the
 //!   same partition — they compose without interference (§9.4 vs §6).
 //! * [`hedging_alternate_wins_trip_ppcb`] — PPCB enabled, 10 consecutive
-//!   reads with 500 ms delay + 503 on East US drive 10 alternate-region
-//!   wins on the same partition; after the 5th recorded win
-//!   [`record_hedge_alternate_win`] installs an `Unhealthy` entry in
-//!   `circuit_breaker_overrides`. The 11th read (no fault) keeps
-//!   hedging and the primary now wins pre-threshold. **Known gap-3
-//!   limitation:** the installed entry has `read_failure_count = 0`
-//!   so [`can_circuit_breaker_trigger_failover`] never returns true and
-//!   the primary still routes to East US — the trip is recorded but
-//!   not yet end-user-observable. The test asserts what is observable
-//!   today and documents the rerouting assertion as a tracked
-//!   follow-up.
+//!   reads with 500 ms delay + 503 on East US drive ≥ 5 alternate-region
+//!   wins on the same partition; [`record_hedge_alternate_win`] installs
+//!   an `Unhealthy` entry in `circuit_breaker_overrides` with
+//!   `read_failure_count` seeded to `config.read_failure_threshold` so
+//!   [`can_circuit_breaker_trigger_failover`] accepts it immediately.
+//!   The 11th read (no fault) resolves the primary to West US via the
+//!   override and wins pre-threshold (`was_hedge=false`,
+//!   `response_region=West US`) — the visible end-user signal that the
+//!   hedge-driven trip actually redirects routing per §9.5.
 //! * [`hedging_exclude_regions_under_503_retry`] — 3-region setup
 //!   (East US write, West US + Central US read), user excludes Central
 //!   US via `ExcludeRegions`, 500 ms delay on East US (forces hedge),
@@ -974,12 +972,18 @@ async fn hedging_with_ppcb_existing_failures() {
 /// of 5 (per §9.5), force five reads in a row where the alternate wins
 /// the hedge race. After the fifth win, [`record_hedge_alternate_win`]
 /// installs an `Unhealthy` entry in `circuit_breaker_overrides` for the
-/// partition. On the sixth read (with the fault rule exhausted via
-/// `with_hit_limit(5)`), `resolve_endpoint` routes the primary attempt
-/// to West US via the PPCB override; the primary completes fast and
-/// wins pre-threshold without any cross-region race. The observable
-/// signal is `was_hedge=false` AND `response_region=West US` on read 6,
-/// which can only happen if the PPCB override redirected the primary.
+/// partition with `read_failure_count` seeded to
+/// `config.read_failure_threshold`, so
+/// [`can_circuit_breaker_trigger_failover`] accepts the entry on the
+/// very next routing decision. On read #6 the primary attempt is
+/// transparently re-routed to West US by `resolve_endpoint`, the
+/// alternate region. The primary completes fast and wins
+/// pre-threshold — no hedge race occurs.
+///
+/// The spec §9.5 end-to-end signal is the read-after-trip observation
+/// on read #6: `was_hedge=false`, `total_requests_launched=1`, and
+/// `response_region=West US`. This combination can only happen if the
+/// hedge-driven PPCB trip actually redirects routing.
 #[tokio::test]
 async fn hedging_alternate_wins_trip_ppcb() {
     let ctx = setup_multi_region(WriteMode::Single).await;
@@ -993,15 +997,16 @@ async fn hedging_alternate_wins_trip_ppcb() {
         .with_delay(Duration::from_millis(500))
         .with_probability(1.0)
         .build();
-    // hit_limit = 10 so the first 10 reads hedge — large enough that even if
-    // the very first attempt has `partition_key_range_id=None` (the PK range
-    // cache populates from the response of the first read; recording is
-    // gated to no-op on `None`), we still accumulate ≥ 5 recorded wins by
-    // the time the loop exits. Read 11 is then unobstructed.
+    // The fault rule must remain active for the full `THRESHOLD` reads so
+    // every pre-trip read races East US (slow) vs West US (fast) and the
+    // alternate wins. After the trip fires, the primary is re-routed away
+    // from East US so the rule no longer matters — the hit limit just
+    // bounds it.
+    const THRESHOLD: u32 = 5;
     let east_rule = Arc::new(
         FaultInjectionRuleBuilder::new("hedging-east-us-ppcb-trip", result)
             .with_condition(condition)
-            .with_hit_limit(10)
+            .with_hit_limit(THRESHOLD)
             .build(),
     );
     let rules = vec![Arc::clone(&east_rule)];
@@ -1035,64 +1040,66 @@ async fn hedging_alternate_wins_trip_ppcb() {
         )))
         .build();
 
-    // Reads 1–10: each accumulates one alternate-region win on the
-    // partition (modulo the first attempt potentially missing the PK range
-    // ID — see comment on `with_hit_limit(10)` above). Loop count chosen
-    // generously so we cross the default threshold of 5 with margin even
-    // if the first 1–2 attempts record nothing.
-    for i in 1..=10 {
+    // Pre-trip reads (1..=THRESHOLD): each races East US (delayed) against
+    // West US (fast). The alternate wins every time and
+    // `record_hedge_alternate_win` increments the consecutive-win counter.
+    // On the THRESHOLD-th win the partition trips: an `Unhealthy` entry is
+    // installed in `circuit_breaker_overrides` with failure counts seeded
+    // to the configured thresholds.
+    for i in 1..=THRESHOLD {
         let hedge_diag =
             read_item_hedge_diagnostics(&driver, op_options.clone(), "ppcb-trip-item", "pk1")
                 .await
                 .unwrap_or_else(|| panic!("read #{i} must enter execute_hedged"));
         assert!(
             hedge_diag.was_hedge,
-            "read #{i} must hedge; diag={hedge_diag:?}",
+            "read #{i} (pre-trip) must hedge; diag={hedge_diag:?}",
         );
         assert_eq!(
             hedge_diag.response_region,
             Region::WEST_US,
-            "read #{i}: alternate (West US) must win; diag={hedge_diag:?}",
+            "read #{i} (pre-trip): alternate (West US) must win; \
+             diag={hedge_diag:?}",
         );
     }
     assert_eq!(
         east_rule.hit_count(),
-        10,
-        "fault rule must have been exhausted",
+        THRESHOLD,
+        "fault rule must have been exhausted after the threshold reads",
     );
 
-    // Read 11: fault is gone. After ≥ 5 recorded alternate-region wins
-    // the partition has an `Unhealthy` entry installed in
-    // `circuit_breaker_overrides` by [`record_hedge_alternate_win`].
+    // Post-trip read (THRESHOLD + 1): the PPCB override now points the
+    // primary at West US. `resolve_endpoint` consults
+    // `circuit_breaker_overrides` for the partition and returns the
+    // alternate endpoint directly — no hedge race occurs because the
+    // primary attempt completes against the healthy region before the
+    // hedge threshold elapses.
     //
-    // **Known gap-3 limitation (tracked follow-up):** the installed entry
-    // currently has `read_failure_count = 0`, so
-    // [`can_circuit_breaker_trigger_failover`] returns false and routing
-    // is NOT actually redirected. The trip is recorded in state but
-    // invisible to the endpoint resolver. The end-user-observable signal
-    // (primary rerouted to West US) therefore cannot be asserted yet
-    // from the integration harness — once gap-3 is amended to seed
-    // `read_failure_count` to `config.read_failure_threshold` at trip
-    // time, the assertion below should be tightened to
-    // `response_region == WEST_US`.
-    //
-    // What we CAN observe today: hedging remains active and the primary
-    // wins pre-threshold once the fault clears (zero-overhead happy
-    // path), proving no regression in the hedge race even after many
-    // consecutive recorded wins on the same partition.
+    // This is the spec §9.5 end-to-end signal: a sustained streak of
+    // alternate-region wins eventually fails the partition away from the
+    // degraded primary, transparently to the caller, with the
+    // zero-overhead read path (§6.5 #3) restored.
     let hedge_diag =
         read_item_hedge_diagnostics(&driver, op_options.clone(), "ppcb-trip-item", "pk1")
             .await
-            .expect("read #11 must still attach `HedgeDiagnostics::primary_only`");
+            .expect("post-trip read must still attach `HedgeDiagnostics::primary_only`");
     assert!(
         !hedge_diag.was_hedge,
-        "read #11: primary should win pre-threshold once the fault clears; \
-         diag={hedge_diag:?}",
+        "post-trip read: primary should win pre-threshold against the new \
+         (West US) primary endpoint; diag={hedge_diag:?}",
     );
     assert_eq!(
         hedge_diag.total_requests_launched, 1,
-        "read #11: only the primary should run (§6.5 #3 zero-overhead \
+        "post-trip read: only the primary should run (§6.5 #3 zero-overhead \
          path); diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.response_region,
+        Region::WEST_US,
+        "post-trip read: PPCB override must route the primary to West US — \
+         the visible end-user signal that the hedge-driven trip in \
+         `record_hedge_alternate_win` actually redirects routing per \
+         §9.5; diag={hedge_diag:?}",
     );
 }
 

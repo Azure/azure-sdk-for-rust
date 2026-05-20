@@ -148,6 +148,7 @@ pub(crate) async fn handle_operation(
             region_name,
             parsed.db_id.as_deref().unwrap_or(""),
             parsed.coll_id.as_deref().unwrap_or(""),
+            parsed.if_none_match.as_deref(),
             start,
         ),
         OperationType::Create => {
@@ -587,6 +588,7 @@ fn handle_read_pkranges(
     region_name: &str,
     db_id: &str,
     coll_id: &str,
+    if_none_match: Option<&str>,
     start: Instant,
 ) -> AsyncRawResponse {
     let region_ref = match store.region(region_name) {
@@ -609,8 +611,25 @@ fn handle_read_pkranges(
 
     region_ref
         .with_container(db_id, coll_id, |state| {
+            // Honor If-None-Match for change-feed-style routing-map refreshes.
+            // The driver's `fetch_and_build_routing_map` loops calling
+            // `fetch_pk_ranges` with the previous etag as `If-None-Match` until
+            // the service returns 304 (or hits `MAX_FETCH_ITERATIONS`).
+            // Without 304 support the loop runs the maximum number of iterations,
+            // accumulates duplicate ranges, and `ContainerRoutingMap::try_create`
+            // produces an empty map — defeating PK-range pre-resolution and
+            // any feature that depends on it (PPCB, PPAF).
+            if let Some(client_etag) = if_none_match {
+                if client_etag == state.metadata.etag {
+                    return ResponseBuilder::new(StatusCode::NotModified, start)
+                        .with_request_charge(1.0)
+                        .with_etag(&state.metadata.etag)
+                        .build();
+                }
+            }
             let body = pkranges_to_json(state);
             success_response(StatusCode::Ok, &body, 1.0, "", start)
+                .with_etag(&state.metadata.etag)
                 .with_item_count(state.physical_partitions.len() as u32)
                 .build()
         })

@@ -603,13 +603,26 @@ pub(crate) fn record_hedge_alternate_win(
         return new_state;
     };
 
+    // Seed the failure counts to the configured thresholds so that
+    // [`can_circuit_breaker_trigger_failover`] accepts this entry on the
+    // very next routing decision. Without this seeding, an entry with
+    // `health_status = Unhealthy` and counts at 0 would be installed in
+    // `circuit_breaker_overrides` but never consulted by `resolve_endpoint`
+    // (the gate requires `count >= threshold`), so the hedge-driven trip
+    // would be observable in state but invisible to routing — defeating
+    // the whole point of §9.5 (HEDGING_SPEC.md).
+    //
+    // Both read and write counts are seeded because the same entry serves
+    // both code paths in [`can_circuit_breaker_trigger_failover`], and a
+    // hedge-driven trip signals partition-level degradation that applies
+    // to whichever operation type happens to arrive next.
     let now = Instant::now();
     let mut entry = PartitionFailoverEntry {
         current_endpoint: primary_endpoint.clone(),
         first_failed_endpoint: primary_endpoint.clone(),
         failed_endpoints: Default::default(),
-        read_failure_count: 0,
-        write_failure_count: 0,
+        read_failure_count: state.config.read_failure_threshold,
+        write_failure_count: state.config.write_failure_threshold,
         first_failure_time: now,
         last_failure_time: now,
         health_status: HealthStatus::Unhealthy,
@@ -1735,6 +1748,58 @@ mod tests {
                 .consecutive_hedge_wins
                 .contains_key(&(pk_range, Some(primary))),
             "counter must be cleared after the trip is installed",
+        );
+    }
+
+    #[test]
+    fn hedge_alternate_win_seeds_failure_counts_to_trigger_failover() {
+        // Spec §9.5: the hedge-driven trip must redirect routing on the
+        // very next request — not just record the entry in state.
+        // `can_circuit_breaker_trigger_failover` gates on
+        // `count >= threshold`, so the entry's failure counts must be
+        // seeded to the configured thresholds at install time. Without
+        // this seeding the trip would be observable in state but
+        // invisible to the endpoint resolver.
+        let mut state = partition_state_with_hedge_threshold(3);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let primary = Region::new("eastus".to_string());
+
+        for _ in 0..3 {
+            state = record_hedge_alternate_win(&state, &account, &pk_range, Some(&primary));
+        }
+
+        let entry = state
+            .circuit_breaker_overrides
+            .get(pk_range.as_str())
+            .expect("threshold-th win must install a circuit breaker entry");
+        assert_eq!(
+            entry.read_failure_count, state.config.read_failure_threshold,
+            "read_failure_count must equal the configured threshold so a \
+             read attempt's `can_circuit_breaker_trigger_failover` returns true",
+        );
+        assert_eq!(
+            entry.write_failure_count, state.config.write_failure_threshold,
+            "write_failure_count must equal the configured threshold so a \
+             write attempt's `can_circuit_breaker_trigger_failover` returns true",
+        );
+        assert!(
+            can_circuit_breaker_trigger_failover(
+                entry,
+                /* is_read_only = */ true,
+                &state.config
+            ),
+            "the freshly-installed hedge-trip entry must immediately pass \
+             the failover gate for read operations",
+        );
+        assert!(
+            can_circuit_breaker_trigger_failover(
+                entry,
+                /* is_read_only = */ false,
+                &state.config
+            ),
+            "the freshly-installed hedge-trip entry must immediately pass \
+             the failover gate for write operations",
         );
     }
 
