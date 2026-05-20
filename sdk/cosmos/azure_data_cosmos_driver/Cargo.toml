@@ -21,7 +21,7 @@ async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
-azure_data_cosmos_macros.path = "../azure_data_cosmos_macros"
+azure_data_cosmos_macros.version = "0.1.0"
 base64.workspace = true
 bytes.workspace = true
 crossbeam-epoch = { workspace = true, features = ["std"] }
