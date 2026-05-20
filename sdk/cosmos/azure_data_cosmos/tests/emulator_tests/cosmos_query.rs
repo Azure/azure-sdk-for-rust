@@ -9,7 +9,6 @@ use std::error::Error;
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
-    constants,
     options::{MaxItemCountHint, QueryOptions},
     Query,
 };
@@ -177,19 +176,12 @@ pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
             let Err(err) = result else {
                 panic!("expected an error but got a successful result");
             };
-            assert_eq!(Some(StatusCode::BadRequest), err.http_status());
+            assert_eq!(Some(StatusCode::BadRequest), err.status_code());
 
-            let response =
-                if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = err.kind()
-                {
-                    raw_response.as_ref().unwrap().clone()
-                } else {
-                    panic!("expected an HTTP response error");
-                };
-            let sub_status = response.headers().get_optional_str(&constants::SUB_STATUS);
-
-            // 1004 = CrossPartitionQueryNotServable
-            assert_eq!(Some("1004"), sub_status);
+            // 1004 = CrossPartitionQueryNotServable. Read directly from typed
+            // CosmosStatus rather than re-parsing the raw response header.
+            let sub_status = err.status().and_then(|s| s.sub_status()).map(|s| s.value());
+            assert_eq!(Some(1004u32), sub_status);
 
             Ok(())
         },

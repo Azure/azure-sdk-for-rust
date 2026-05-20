@@ -199,7 +199,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 
         // Any non-2xx Read response is mapped by the driver pipeline into
         // `Err(ErrorKind::HttpResponse { .. })` (see retry_evaluation.rs's
-        // `build_http_error`). Propagating with `?` is sufficient — the
+        // `build_service_error` + `From<CosmosError> for azure_core::Error`). Propagating with `?` is sufficient — the
         // caller wants the original error verbatim, complete with
         // `raw_response` and diagnostics — and there is nothing useful the
         // PATCH handler can do on a Read failure.
@@ -368,7 +368,7 @@ fn missing_body_error(msg: &'static str) -> azure_core::Error {
 ///
 /// The driver pipeline maps every non-2xx response — 412 included — into
 /// `Err(azure_core::Error { kind: ErrorKind::HttpResponse { status, .. }, .. })`
-/// via `retry_evaluation::build_http_error`, and 412 specifically resolves
+/// via `retry_evaluation::build_service_error` + `From<CosmosError> for azure_core::Error`, and 412 specifically resolves
 /// to `OperationAction::Abort` (it is never retried at the pipeline layer).
 /// The patch handler's RMW loop is the *one* place where 412 needs to be
 /// recovered into a retry, so we narrow on the kind here instead of relying
@@ -383,7 +383,7 @@ fn is_precondition_failed(err: &azure_core::Error) -> bool {
 /// Extracts the `x-ms-session-token` response header from an
 /// `azure_core::Error`'s wrapped `raw_response`, if both are present.
 ///
-/// The driver pipeline's `build_http_error` attaches the raw HTTP response —
+/// The driver pipeline (via `From<CosmosError> for azure_core::Error`) attaches the raw HTTP response —
 /// including its headers — to every non-2xx error. The PATCH handler uses
 /// this to recover the session token off a 412, which is strictly fresher
 /// than the Read response we just observed (the 412 was produced after the
@@ -755,7 +755,7 @@ mod tests {
     #[test]
     fn is_precondition_failed_matches_real_412() {
         // the RMW loop's 412 detection runs on the `Err(_)` produced
-        // by the driver pipeline. The pipeline's `build_http_error` builds
+        // by the driver pipeline. `From<CosmosError> for azure_core::Error` builds
         // `ErrorKind::HttpResponse { status, error_code, raw_response: Some(_) }`
         // for any non-2xx; on a 412 the status field is the discriminator
         // we need to retry on.

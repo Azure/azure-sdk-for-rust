@@ -3,7 +3,6 @@
 
 use std::error::Error;
 
-use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     ContentResponseOnWrite, CosmosClient, ItemWriteOptions, OperationOptions, PartitionKey,
 };
@@ -91,7 +90,7 @@ impl ReplaceCommand {
                     .replace_item(pk, &item_id, item, options)
                     .await;
                 match response {
-                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    Err(e) if e.is_not_found() => {
                         println!("Item not found!")
                     }
                     Ok(r) => {

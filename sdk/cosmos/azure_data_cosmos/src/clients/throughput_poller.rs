@@ -42,7 +42,7 @@ const DEFAULT_POLLING_INTERVAL: Duration = Duration::seconds(5);
 ///
 /// ```rust,no_run
 /// # use azure_data_cosmos::models::ThroughputProperties;
-/// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_core::Result<()> {
+/// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::Result<()> {
 /// // Simple: just await the final result
 /// let throughput = container_client
 ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
@@ -64,7 +64,7 @@ const DEFAULT_POLLING_INTERVAL: Duration = Duration::seconds(5);
 /// # }
 /// ```
 pub struct ThroughputPoller {
-    stream: BoxStream<'static, azure_core::Result<CosmosResponse>>,
+    stream: BoxStream<'static, crate::Result<CosmosResponse>>,
 }
 
 impl ThroughputPoller {
@@ -151,7 +151,7 @@ enum PollState {
 }
 
 impl Stream for ThroughputPoller {
-    type Item = azure_core::Result<ResourceResponse<ThroughputProperties>>;
+    type Item = crate::Result<ResourceResponse<ThroughputProperties>>;
 
     fn poll_next(
         mut self: Pin<&mut Self>,
@@ -164,10 +164,9 @@ impl Stream for ThroughputPoller {
 }
 
 impl IntoFuture for ThroughputPoller {
-    type Output = azure_core::Result<ResourceResponse<ThroughputProperties>>;
-    type IntoFuture = Pin<
-        Box<dyn Future<Output = azure_core::Result<ResourceResponse<ThroughputProperties>>> + Send>,
-    >;
+    type Output = crate::Result<ResourceResponse<ThroughputProperties>>;
+    type IntoFuture =
+        Pin<Box<dyn Future<Output = crate::Result<ResourceResponse<ThroughputProperties>>> + Send>>;
 
     fn into_future(self) -> Self::IntoFuture {
         Box::pin(async move {
@@ -177,8 +176,7 @@ impl IntoFuture for ThroughputPoller {
                 last_response = Some(result?);
             }
             last_response.map(ResourceResponse::new).ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
+                crate::CosmosError::client(
                     "throughput poller stream ended without yielding a response",
                 )
             })

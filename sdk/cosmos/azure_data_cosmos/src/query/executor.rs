@@ -86,7 +86,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     }
 
     /// Consumes the executor and converts it into a stream of pages.
-    pub fn into_stream(self) -> azure_core::Result<crate::FeedItemIterator<T>> {
+    pub fn into_stream(self) -> crate::Result<crate::FeedItemIterator<T>> {
         Ok(crate::FeedItemIterator::new(futures::stream::try_unfold(
             self,
             |mut state| async move {
@@ -99,7 +99,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
     /// Fetches the next page of query results.
     ///
     /// Returns `None` if there are no more pages to fetch.
-    pub async fn next_page(&mut self) -> azure_core::Result<Option<QueryFeedPage<T>>> {
+    pub async fn next_page(&mut self) -> crate::Result<Option<QueryFeedPage<T>>> {
         if self.complete {
             return Ok(None);
         }

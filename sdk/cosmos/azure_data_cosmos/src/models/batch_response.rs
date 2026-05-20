@@ -65,7 +65,7 @@ impl BatchResponse {
     }
 
     /// Deserializes the response body into the batch response model.
-    pub fn into_model(self) -> azure_core::Result<TransactionalBatchResponse> {
+    pub fn into_model(self) -> crate::Result<TransactionalBatchResponse> {
         self.response.into_model()
     }
 }

@@ -1265,9 +1265,30 @@ impl CosmosStatus {
         u16::from(self.status_code) == 410
     }
 
-    /// Returns `true` if this is an HTTP 404 Not Found response.
+    /// Returns `true` if this is a "clean" HTTP 404 Not Found response — that
+    /// is, status code 404 with either no sub-status or sub-status `0`
+    /// (`UNKNOWN`).
+    ///
+    /// Non-zero sub-statuses on 404 carry meaningfully different semantics
+    /// (e.g. `1002` `READ_SESSION_NOT_AVAILABLE` is a transient session-
+    /// consistency signal, `1003` `OWNER_RESOURCE_NOT_FOUND` indicates the
+    /// parent database/container is missing, etc.) and would be misleading
+    /// to surface as a generic "not found". Callers wanting to detect those
+    /// should match the corresponding [`CosmosStatus`] predicate or constant
+    /// explicitly.
     pub fn is_not_found(&self) -> bool {
         u16::from(self.status_code) == 404
+            && self.sub_status.is_none_or(|s| s == SubStatusCode::UNKNOWN)
+    }
+
+    /// Returns `true` if this is an HTTP 409 Conflict response.
+    pub fn is_conflict(&self) -> bool {
+        u16::from(self.status_code) == 409
+    }
+
+    /// Returns `true` if this is an HTTP 412 Precondition Failed response.
+    pub fn is_precondition_failed(&self) -> bool {
+        u16::from(self.status_code) == 412
     }
 
     /// Returns `true` if this is a write-forbidden error (HTTP 403, sub-status 3).

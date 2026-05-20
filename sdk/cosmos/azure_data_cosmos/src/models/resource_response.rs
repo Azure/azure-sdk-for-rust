@@ -72,7 +72,7 @@ impl<T> ResourceResponse<T> {
 impl<T: DeserializeOwned> ResourceResponse<T> {
     /// Deserializes the response body into the model type `T` named by this
     /// response.
-    pub fn into_model(self) -> azure_core::Result<T> {
+    pub fn into_model(self) -> crate::Result<T> {
         self.response.into_model::<T>()
     }
 }

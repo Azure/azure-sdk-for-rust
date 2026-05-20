@@ -16,12 +16,10 @@
 //! - 500 (reads only) → FailoverRetry + mark partition/endpoint unavailable
 //! - Other HTTP errors → Abort
 
-use azure_core::http::headers::Headers;
-
 use crate::{
     diagnostics::RequestSentStatus,
     driver::routing::{CosmosEndpoint, LocationEffect, UnavailablePartition, UnavailableReason},
-    models::{CosmosOperation, CosmosStatus, SubStatusCode},
+    models::{CosmosOperation, CosmosResponseHeaders, CosmosStatus, SubStatusCode},
 };
 
 use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
@@ -194,16 +192,16 @@ pub(crate) fn evaluate_transport_result(
 
         TransportOutcome::HttpError {
             status,
-            headers,
+            headers: _,
+            cosmos_headers,
             body,
             request_sent,
-            ..
         } => evaluate_http_outcome(
             operation,
             endpoint,
             retry_state,
             status,
-            headers,
+            cosmos_headers,
             body,
             request_sent,
         ),
@@ -235,12 +233,13 @@ pub(crate) fn evaluate_transport_result(
 /// (5xx). The first handler that recognizes the response returns
 /// `Some(action, effects)`; if none match, the response is aborted with a
 /// rich HTTP error.
+#[allow(clippy::too_many_arguments)]
 fn evaluate_http_outcome(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: CosmosStatus,
-    headers: Headers,
+    cosmos_headers: CosmosResponseHeaders,
     body: Vec<u8>,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
@@ -249,7 +248,7 @@ fn evaluate_http_outcome(
     }
 
     if let Some(result) =
-        try_handle_read_session_not_available(retry_state, &status, &headers, &body)
+        try_handle_read_session_not_available(retry_state, &status, &cosmos_headers, &body)
     {
         return result;
     }
@@ -259,7 +258,7 @@ fn evaluate_http_outcome(
         endpoint,
         retry_state,
         &status,
-        &headers,
+        &cosmos_headers,
         &body,
         request_sent,
     ) {
@@ -272,7 +271,7 @@ fn evaluate_http_outcome(
 
     (
         OperationAction::Abort {
-            error: build_http_error(&status, &headers, &body),
+            error: build_service_error(&status, &cosmos_headers, &body).into(),
             status: Some(status),
         },
         Vec::new(),
@@ -327,7 +326,7 @@ fn try_handle_write_forbidden(
 fn try_handle_read_session_not_available(
     retry_state: &OperationRetryState,
     status: &CosmosStatus,
-    headers: &Headers,
+    cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     if !(status.is_read_session_not_available() && retry_state.can_retry_session()) {
@@ -337,7 +336,7 @@ fn try_handle_read_session_not_available(
     if !retry_state.can_use_multiple_write_locations && retry_state.session_token_retry_count >= 2 {
         return Some((
             OperationAction::Abort {
-                error: build_http_error(status, headers, body),
+                error: build_service_error(status, cosmos_headers, body).into(),
                 status: Some(*status),
             },
             Vec::new(),
@@ -403,12 +402,13 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
 ///    updated routing state.
 /// 3. **Sent + (read || idempotent || PPAF write)** — failover retry with
 ///    the same routing-state effects.
+#[allow(clippy::too_many_arguments)]
 fn try_handle_retry_trigger_group(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: &CosmosStatus,
-    headers: &Headers,
+    cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
     request_sent: RequestSentStatus,
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
@@ -461,7 +461,7 @@ fn try_handle_retry_trigger_group(
         }
         return Some((
             OperationAction::Abort {
-                error: build_http_error(status, headers, body),
+                error: build_service_error(status, cosmos_headers, body).into(),
                 status: Some(*status),
             },
             effects,
@@ -593,57 +593,65 @@ fn evaluate_transport_layer_outcome(
 fn evaluate_deadline_exceeded_outcome(
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
-    let message = if request_sent.definitely_not_sent() {
+    let message: &'static str = if request_sent.definitely_not_sent() {
         "end-to-end operation timeout exceeded before request was sent"
     } else {
         "end-to-end operation timeout exceeded"
     };
 
+    let synthetic_status = CosmosStatus::from_parts(
+        azure_core::http::StatusCode::RequestTimeout,
+        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+    );
+
+    // Embed a typed `CosmosError` as the source of the `azure_core::Error`
+    // so the driver/SDK boundary recovers the synthetic Cosmos status
+    // (408 / 20008) via `CosmosError::from(azure_core_error)`.
+    let cosmos_err = crate::error::CosmosError::end_to_end_timeout(message, None);
+
     (
         OperationAction::Abort {
-            error: azure_core::Error::new(azure_core::error::ErrorKind::Other, message),
-            status: Some(CosmosStatus::from_parts(
-                azure_core::http::StatusCode::RequestTimeout,
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-            )),
+            error: azure_core::Error::new(azure_core::error::ErrorKind::Other, cosmos_err),
+            status: Some(synthetic_status),
         },
         Vec::new(),
     )
 }
 
-/// Builds an `azure_core::Error` from a Cosmos HTTP error status.
-///
-/// Attaches the response body and headers as a `raw_response` so callers
-/// can match on `ErrorKind::HttpResponse { raw_response: Some(_), .. }`
-/// and inspect the service error payload.
-fn build_http_error(status: &CosmosStatus, headers: &Headers, body: &[u8]) -> azure_core::Error {
-    let status_code = status.status_code();
-    let name = status.name().unwrap_or("Unknown");
+/// Formats the human-readable message for a Cosmos HTTP error status.
+fn service_error_message(status: &CosmosStatus) -> String {
     let sub_status_str = match status.sub_status() {
         Some(s) => format!("/{}", s.value()),
         None => String::new(),
     };
-    let message = format!(
+    format!(
         "Cosmos DB returned HTTP {}{}: {}",
-        u16::from(status_code),
+        u16::from(status.status_code()),
         sub_status_str,
-        name,
-    );
+        status.name().unwrap_or("Unknown"),
+    )
+}
 
-    let error_code: Option<String> = status
-        .sub_status()
-        .map(|s: SubStatusCode| s.value().to_string());
-
-    let raw_response =
-        azure_core::http::RawResponse::from_bytes(status_code, headers.clone(), body.to_vec());
-
-    azure_core::Error::new(
-        azure_core::error::ErrorKind::HttpResponse {
-            status: status_code,
-            error_code,
-            raw_response: Some(Box::new(raw_response)),
-        },
-        message,
+/// Builds a typed [`CosmosError`] for a Cosmos HTTP error response.
+///
+/// Captures the parsed response headers and the raw response body bytes
+/// (e.g. the JSON error payload returned by the service for a 400 /
+/// BadRequest) on the resulting `CosmosError`. Convert to an
+/// `azure_core::Error` via `.into()` when propagating through the pipeline;
+/// the `From<CosmosError> for azure_core::Error` impl produces the
+/// standard `ErrorKind::HttpResponse { raw_response: Some(_), .. }` shape
+/// so external matchers continue to work.
+fn build_service_error(
+    status: &CosmosStatus,
+    cosmos_headers: &CosmosResponseHeaders,
+    body: &[u8],
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::service(
+        *status,
+        Some(cosmos_headers.clone()),
+        Some(bytes::Bytes::copy_from_slice(body)),
+        None,
+        service_error_message(status),
     )
 }
 
@@ -665,7 +673,19 @@ fn build_transport_error(status: &CosmosStatus, error: azure_core::Error) -> azu
         detail_summary,
     );
 
-    azure_core::Error::with_error(error.kind().clone(), error, message)
+    let original_kind = error.kind().clone();
+
+    // Embed a typed `CosmosError` (synthetic transport status, original
+    // error as source) so the boundary recovers the typed Cosmos status
+    // without re-classifying.
+    let cosmos_err = crate::error::CosmosError::transport(
+        *status,
+        message.clone(),
+        None,
+        Some(std::sync::Arc::new(error)),
+    );
+
+    azure_core::Error::with_error(original_kind, cosmos_err, message)
 }
 
 #[cfg(test)]

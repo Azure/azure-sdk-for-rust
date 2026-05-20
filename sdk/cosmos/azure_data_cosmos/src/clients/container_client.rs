@@ -38,7 +38,7 @@ impl ContainerClient {
         context: ClientContext,
         container_id: &str,
         database_id: &str,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::Result<Self> {
         // Eagerly resolve immutable container metadata from the driver.
         let container_ref = context
             .driver
@@ -79,7 +79,7 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<ReadContainerOptions>,
-    ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
+    ) -> crate::Result<ResourceResponse<ContainerProperties>> {
         let operation = CosmosOperation::read_container(self.container_ref.clone());
 
         let driver_response = self
@@ -125,7 +125,7 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<ReplaceContainerOptions>,
-    ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
+    ) -> crate::Result<ResourceResponse<ContainerProperties>> {
         let body = serde_json::to_vec(&properties)?;
         let operation =
             CosmosOperation::replace_container(self.container_ref.clone()).with_body(body);
@@ -160,7 +160,7 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<Option<ThroughputProperties>> {
+    ) -> crate::Result<Option<ThroughputProperties>> {
         offers_client::find_offer(
             &self.context.driver,
             self.container_ref.account(),
@@ -183,7 +183,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # use azure_data_cosmos::models::ThroughputProperties;
-    /// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_core::Result<()> {
+    /// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::Result<()> {
     /// let throughput = container_client
     ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
     ///     .await? // start the replace operation
@@ -196,7 +196,7 @@ impl ContainerClient {
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> azure_core::Result<ThroughputPoller> {
+    ) -> crate::Result<ThroughputPoller> {
         #[allow(
             unused_variables,
             reason = "The 'options' variable may be used in the future"
@@ -225,7 +225,7 @@ impl ContainerClient {
             reason = "The 'options' parameter may be used in the future"
         )]
         options: Option<DeleteContainerOptions>,
-    ) -> azure_core::Result<ResourceResponse<()>> {
+    ) -> crate::Result<ResourceResponse<()>> {
         let operation = CosmosOperation::delete_container(self.container_ref.clone());
 
         let driver_response = self
@@ -310,7 +310,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
-    ) -> azure_core::Result<ItemResponse> {
+    ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
 
@@ -408,7 +408,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
-    ) -> azure_core::Result<ItemResponse> {
+    ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
 
@@ -529,7 +529,7 @@ impl ContainerClient {
         item_id: &str,
         patch: PatchSpec,
         options: Option<PatchItemOptions>,
-    ) -> azure_core::Result<ItemResponse> {
+    ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&patch)?;
 
@@ -634,7 +634,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
-    ) -> azure_core::Result<ItemResponse> {
+    ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
 
@@ -695,7 +695,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemReadOptions>,
-    ) -> azure_core::Result<ItemResponse> {
+    ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
 
         // Build the driver's item reference from our stored container metadata.
@@ -747,7 +747,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemWriteOptions>,
-    ) -> azure_core::Result<ItemResponse> {
+    ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
 
         // Build the driver's item reference from our stored container metadata.
@@ -838,7 +838,7 @@ impl ContainerClient {
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
         options: Option<QueryOptions>,
-    ) -> azure_core::Result<FeedItemIterator<T>> {
+    ) -> crate::Result<FeedItemIterator<T>> {
         let options = options.unwrap_or_default();
         let partition_key: PartitionKey = partition_key.into();
         let query = query.into();
@@ -908,7 +908,7 @@ impl ContainerClient {
         &self,
         batch: TransactionalBatch,
         options: Option<BatchOptions>,
-    ) -> azure_core::Result<BatchResponse> {
+    ) -> crate::Result<BatchResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(batch.operations())?;
         let driver_pk = batch.partition_key().clone().into_driver_partition_key();
@@ -932,7 +932,7 @@ impl ContainerClient {
     pub async fn read_feed_ranges(
         &self,
         options: Option<ReadFeedRangesOptions>,
-    ) -> azure_core::Result<Vec<FeedRange>> {
+    ) -> crate::Result<Vec<FeedRange>> {
         let options = options.unwrap_or_default();
         let mut ranges = self
             .context
@@ -940,10 +940,7 @@ impl ContainerClient {
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
             .await
             .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "failed to resolve routing map for container",
-                )
+                crate::CosmosError::client("failed to resolve routing map for container")
             })?;
 
         if ranges.is_empty() && !options.force_refresh() {
@@ -955,16 +952,12 @@ impl ContainerClient {
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
                 .await
                 .ok_or_else(|| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        "failed to resolve routing map for container",
-                    )
+                    crate::CosmosError::client("failed to resolve routing map for container")
                 })?;
         }
 
         if ranges.is_empty() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::CosmosError::client(
                 "resolved routing map contains no partition key ranges; \
                  the container may not exist or the service may be unreachable",
             ));
@@ -984,7 +977,7 @@ impl ContainerClient {
         &self,
         partition_key: impl Into<PartitionKey>,
         options: Option<ReadFeedRangesOptions>,
-    ) -> azure_core::Result<Vec<FeedRange>> {
+    ) -> crate::Result<Vec<FeedRange>> {
         let partition_key = partition_key.into();
         let driver_pk = partition_key.into_driver_partition_key();
         let options = options.unwrap_or_default();
@@ -992,27 +985,22 @@ impl ContainerClient {
         let values = driver_pk.values();
 
         if values.is_empty() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::CosmosError::client(
                 "partition key must have at least one component",
             ));
         }
         if values.len() > pk_def.paths().len() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
-                    "partition key has {} components but container definition has {} paths",
-                    values.len(),
-                    pk_def.paths().len()
-                ),
-            ));
+            return Err(crate::CosmosError::client(format!(
+                "partition key has {} components but container definition has {} paths",
+                values.len(),
+                pk_def.paths().len()
+            )));
         }
 
         let is_prefix =
             pk_def.kind() == PartitionKeyKind::MultiHash && values.len() < pk_def.paths().len();
         if !is_prefix && values.len() != pk_def.paths().len() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::CosmosError::client(
                 "prefix partition keys are only supported for MultiHash (hierarchical) containers",
             ));
         }
@@ -1027,10 +1015,7 @@ impl ContainerClient {
             )
             .await
             .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "failed to resolve routing map for container",
-                )
+                crate::CosmosError::client("failed to resolve routing map for container")
             })?;
 
         if ranges.is_empty() && !options.force_refresh() {
@@ -1041,15 +1026,11 @@ impl ContainerClient {
                 .resolve_partition_key_ranges_for_key(&self.container_ref, &driver_pk, true)
                 .await
                 .ok_or_else(|| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        "failed to resolve routing map for container",
-                    )
+                    crate::CosmosError::client("failed to resolve routing map for container")
                 })?;
 
             if ranges.is_empty() {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
+                return Err(crate::CosmosError::client(
                     "no partition key ranges found for the given partition key; \
                      the container may not exist or the service may be unreachable",
                 ));
@@ -1091,7 +1072,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # use azure_data_cosmos::{clients::ContainerClient, FeedRange, SessionToken};
-    /// # async fn example(container: ContainerClient) -> azure_core::Result<()> {
+    /// # async fn example(container: ContainerClient) -> azure_data_cosmos::Result<()> {
     /// let feed_range = FeedRange::full();
     /// let token_a: SessionToken = "0:1#100#3=50".into();
     /// let token_b: SessionToken = "0:1#200#3=60".into();
@@ -1107,7 +1088,7 @@ impl ContainerClient {
         &self,
         feed_ranges_to_session_tokens: &[(FeedRange, SessionToken)],
         target_feed_range: &FeedRange,
-    ) -> azure_core::Result<SessionToken> {
+    ) -> crate::Result<SessionToken> {
         crate::session_helpers::get_latest_session_token(
             feed_ranges_to_session_tokens,
             target_feed_range,

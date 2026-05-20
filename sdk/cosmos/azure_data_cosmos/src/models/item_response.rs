@@ -83,7 +83,7 @@ impl ItemResponse {
     /// The target type `T` is supplied at the call site (turbofish) because
     /// `ItemResponse` no longer carries a type parameter; this lets callers
     /// inspect status / headers / diagnostics without committing to a `T`.
-    pub fn into_model<T: DeserializeOwned>(self) -> azure_core::Result<T> {
+    pub fn into_model<T: DeserializeOwned>(self) -> crate::Result<T> {
         self.response.into_model::<T>()
     }
 }

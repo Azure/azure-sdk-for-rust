@@ -207,7 +207,7 @@ pub(crate) struct FeedBody<T> {
 }
 
 impl<T: DeserializeOwned> QueryFeedPage<T> {
-    pub(crate) async fn from_response(response: CosmosResponse) -> azure_core::Result<Self> {
+    pub(crate) async fn from_response(response: CosmosResponse) -> crate::Result<Self> {
         // Convert once to the driver header struct: this module owns the
         // FeedPage wire-up and needs every parsed field, so reaching for the
         // SDK wrapper accessors here would be pure ceremony.
@@ -238,14 +238,14 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
 #[pin_project::pin_project]
 pub struct FeedItemIterator<T: Send> {
     #[pin]
-    pages: BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>,
+    pages: BoxStream<'static, crate::Result<QueryFeedPage<T>>>,
     current: Option<std::vec::IntoIter<T>>,
 }
 
 impl<T: Send> FeedItemIterator<T> {
     /// Creates a new `FeedItemIterator` from a stream of pages.
     pub(crate) fn new(
-        stream: impl Stream<Item = azure_core::Result<QueryFeedPage<T>>> + Send + 'static,
+        stream: impl Stream<Item = crate::Result<QueryFeedPage<T>>> + Send + 'static,
     ) -> Self {
         Self {
             pages: Box::pin(stream),
@@ -259,7 +259,7 @@ impl<T: Send> FeedItemIterator<T> {
 }
 
 impl<T: Send> Stream for FeedItemIterator<T> {
-    type Item = azure_core::Result<T>;
+    type Item = crate::Result<T>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -291,10 +291,10 @@ impl<T: Send> Stream for FeedItemIterator<T> {
     }
 }
 
-pub struct FeedPageIterator<T: Send>(BoxStream<'static, azure_core::Result<QueryFeedPage<T>>>);
+pub struct FeedPageIterator<T: Send>(BoxStream<'static, crate::Result<QueryFeedPage<T>>>);
 
 impl<T: Send> Stream for FeedPageIterator<T> {
-    type Item = azure_core::Result<QueryFeedPage<T>>;
+    type Item = crate::Result<QueryFeedPage<T>>;
 
     fn poll_next(
         mut self: Pin<&mut Self>,
@@ -366,10 +366,7 @@ mod tests {
     async fn item_iterator_propagates_errors() {
         let pages = vec![
             Ok(create_test_page(vec![1, 2], Some("token".to_string()))),
-            Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                "test error",
-            )),
+            Err(crate::CosmosError::client("test error")),
         ];
 
         let stream = futures::stream::iter(pages);

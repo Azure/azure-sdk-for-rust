@@ -14,7 +14,7 @@
 //!
 //! ```rust,no_run
 //! # use azure_data_cosmos::clients::ContainerClient;
-//! # async fn example(container: ContainerClient) -> azure_core::Result<()> {
+//! # async fn example(container: ContainerClient) -> crate::Result<()> {
 //! // Get physical partition feed ranges
 //! let ranges = container.read_feed_ranges(None).await?;
 //! println!("Container has {} physical partitions", ranges.len());
@@ -133,11 +133,14 @@ impl FeedRange {
     ///
     /// Partition key ranges from the service always use `[min, max)` semantics
     /// (min inclusive, max exclusive). Returns an error if the range is inverted.
-    pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> azure_core::Result<Self> {
+    pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> crate::Result<Self> {
         if pkr.min_inclusive > pkr.max_exclusive {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
+            return Err(crate::CosmosError::serialization(
                 "partition key range min_inclusive must be <= max_exclusive",
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "invalid partition key range",
+                ),
             ));
         }
         Ok(Self {
@@ -161,11 +164,14 @@ impl FeedRange {
     /// Validates and constructs a `FeedRange` from deserialized JSON fields.
     ///
     /// Checks inclusivity flags and min ≤ max ordering.
-    fn from_json(json: FeedRangeJson) -> azure_core::Result<Self> {
+    fn from_json(json: FeedRangeJson) -> crate::Result<Self> {
         if !json.range.is_min_inclusive || json.range.is_max_inclusive {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
+            return Err(crate::CosmosError::serialization(
                 "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "invalid feed range inclusivity",
+                ),
             ));
         }
 
@@ -173,9 +179,12 @@ impl FeedRange {
         let max = EffectivePartitionKey::from(json.range.max);
 
         if min > max {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
+            return Err(crate::CosmosError::serialization(
                 "feed range min must be less than or equal to max",
+                azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::DataConversion,
+                    "invalid feed range bounds",
+                ),
             ));
         }
 
@@ -199,7 +208,7 @@ impl fmt::Display for FeedRange {
 }
 
 impl FromStr for FeedRange {
-    type Err = azure_core::Error;
+    type Err = crate::CosmosError;
 
     /// Parses a feed range from a base64-encoded JSON string.
     ///
@@ -207,10 +216,10 @@ impl FromStr for FeedRange {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let decoded_bytes = base64::engine::general_purpose::STANDARD
             .decode(s)
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+            .map_err(|e| crate::CosmosError::serialization("invalid base64 in feed range", e))?;
 
         let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes)
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+            .map_err(|e| crate::CosmosError::serialization("invalid JSON in feed range", e))?;
 
         Self::from_json(json)
     }

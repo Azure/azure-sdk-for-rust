@@ -29,9 +29,20 @@ use azure_data_cosmos_driver::models::{
 /// `into_driver_headers` helper) so the driver representation is not part of
 /// the SDK's public surface.
 #[derive(Clone, Debug, Default)]
+#[repr(transparent)]
 pub struct ResponseHeaders(DriverCosmosResponseHeaders);
 
 impl ResponseHeaders {
+    /// Borrows a reference to a driver-owned `CosmosResponseHeaders` as a
+    /// `&ResponseHeaders`. Zero-cost — the two types are layout-compatible
+    /// via `#[repr(transparent)]`.
+    pub(crate) fn from_driver_ref(driver: &DriverCosmosResponseHeaders) -> &Self {
+        // SAFETY: `ResponseHeaders` is `#[repr(transparent)]` over
+        // `DriverCosmosResponseHeaders`, so a `&DriverCosmosResponseHeaders`
+        // and a `&ResponseHeaders` have the same layout and validity.
+        unsafe { &*(driver as *const DriverCosmosResponseHeaders as *const Self) }
+    }
+
     /// ETag for optimistic concurrency (`etag`).
     pub fn etag(&self) -> Option<&ETag> {
         self.0.etag.as_ref()

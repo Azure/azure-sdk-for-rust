@@ -10,6 +10,7 @@ pub mod clients;
 mod connection_string;
 pub mod constants;
 mod credential;
+mod error;
 mod feed;
 mod feed_range;
 pub mod options;
@@ -30,6 +31,7 @@ pub use account_reference::CosmosAccountReference;
 pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
+pub use error::{CosmosError, CosmosErrorKind, Result};
 pub use models::{
     BatchResponse, CosmosStatus, DiagnosticsContext, IncrValue, ItemResponse, PatchOp, PatchSpec,
     ResourceResponse, ResponseBody, ResponseHeaders,

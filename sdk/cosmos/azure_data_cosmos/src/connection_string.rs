@@ -3,7 +3,7 @@
 
 use std::str::FromStr;
 
-use azure_core::{credentials::Secret, fmt::SafeDebug, Error};
+use azure_core::{credentials::Secret, fmt::SafeDebug};
 
 /// Represents a Cosmos DB connection string.
 #[derive(Clone, PartialEq, Eq, SafeDebug)]
@@ -13,18 +13,17 @@ pub struct ConnectionString {
 }
 
 impl TryFrom<&Secret> for ConnectionString {
-    type Error = azure_core::Error;
+    type Error = crate::CosmosError;
     fn try_from(secret: &Secret) -> Result<Self, Self::Error> {
         secret.secret().parse()
     }
 }
 
 impl FromStr for ConnectionString {
-    type Err = azure_core::Error;
+    type Err = crate::CosmosError;
     fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
-            return Err(Error::new(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::CosmosError::configuration(
                 "connection string cannot be empty",
             ));
         }
@@ -38,10 +37,9 @@ impl FromStr for ConnectionString {
                 continue;
             }
 
-            let (key, value) = part.split_once('=').ok_or(Error::new(
-                azure_core::error::ErrorKind::Other,
-                "invalid connection string",
-            ))?;
+            let (key, value) = part
+                .split_once('=')
+                .ok_or_else(|| crate::CosmosError::configuration("invalid connection string"))?;
 
             if key.eq_ignore_ascii_case("AccountEndpoint") {
                 account_endpoint = Some(value.to_string())
@@ -53,15 +51,13 @@ impl FromStr for ConnectionString {
         }
 
         let Some(endpoint) = account_endpoint else {
-            return Err(Error::new(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::CosmosError::configuration(
                 "invalid connection string, missing 'AccountEndpoint'",
             ));
         };
 
         let Some(key) = account_key else {
-            return Err(Error::new(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::CosmosError::configuration(
                 "invalid connection string, missing 'AccountKey'",
             ));
         };
@@ -150,7 +146,7 @@ mod tests {
         let secret = Secret::new(connection_string.to_owned());
         let connection_str = ConnectionString::try_from(&secret);
         let err = connection_str.unwrap_err();
-        let actual_error_message = format!("{}", err);
-        assert_eq!(expected_error_message, actual_error_message.as_str())
+        let actual_error_message = err.message();
+        assert_eq!(expected_error_message, actual_error_message)
     }
 }

@@ -283,7 +283,7 @@ impl CosmosClientBuilder {
         mut self,
         account: impl Into<CosmosAccountReference>,
         routing_strategy: RoutingStrategy,
-    ) -> azure_core::Result<CosmosClient> {
+    ) -> crate::Result<CosmosClient> {
         // Apply the region selection strategy to internal options.
         match routing_strategy {
             RoutingStrategy::ProximityTo(region) => {
@@ -384,10 +384,9 @@ impl CosmosClientBuilder {
             driver_runtime_builder = driver_runtime_builder
                 .register_throughput_control_group(group)
                 .map_err(|e| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        format!("failed to register throughput control group: {e}"),
-                    )
+                    crate::CosmosError::client(format!(
+                        "failed to register throughput control group: {e}"
+                    ))
                 })?;
         }
         let driver_runtime = driver_runtime_builder.build().await?;
