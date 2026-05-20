@@ -7,6 +7,22 @@ use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken,
 use azure_core::http::headers::{HeaderValue, Headers};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::Serialize;
+use std::num::NonZeroU32;
+
+/// Per-page item-count hint for Cosmos feed-style operations
+/// (`x-ms-max-item-count`).
+///
+/// Used by query and changefeed reads. Modeled as an explicit enum so callers
+/// don't have to traffic in the `-1` wire sentinel directly.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum MaxItemCount {
+    /// Let the service decide the page size (emits `x-ms-max-item-count: -1`).
+    ServerDecides,
+
+    /// Cap the page at `N` items.
+    Limit(NonZeroU32),
+}
 
 /// Standard Cosmos DB request header names.
 ///
@@ -21,6 +37,15 @@ pub(crate) mod request_header_names {
     pub const IF_NONE_MATCH: &str = "if-none-match";
     pub const PREFER: &str = "prefer";
     pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
+    pub const IS_QUERY: &str = "x-ms-documentdb-isquery";
+    pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
+    pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
+    /// Change-feed indicator ("Incremental feed"). HTTP standard name `a-im`.
+    pub const A_IM: &str = "a-im";
+    pub const INCREMENTAL_FEED: &str = "Incremental feed";
+    pub const POPULATE_INDEX_METRICS: &str = "x-ms-cosmos-populateindexmetrics";
+    pub const POPULATE_QUERY_METRICS: &str = "x-ms-documentdb-populatequerymetrics";
+    pub const ENABLE_CROSS_PARTITION_QUERY: &str = "x-ms-documentdb-query-enablecrosspartition";
     pub const IS_BATCH_REQUEST: &str = "x-ms-cosmos-is-batch-request";
     pub const BATCH_ATOMIC: &str = "x-ms-cosmos-batch-atomic";
     pub const BATCH_CONTINUE_ON_ERROR: &str = "x-ms-cosmos-batch-continue-on-error";
@@ -109,6 +134,41 @@ pub struct CosmosRequestHeaders {
     ///
     /// The driver serializes this to JSON for the header value.
     pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
+
+    /// Maximum number of items to return per page (`x-ms-max-item-count`).
+    ///
+    /// Used by feed/query/changefeed reads. See [`MaxItemCount`] for the two
+    /// explicit values; the `-1` wire sentinel for "server decides" is
+    /// represented by [`MaxItemCount::ServerDecides`].
+    pub max_item_count: Option<MaxItemCount>,
+
+    /// Requests an incremental change feed read (`a-im: Incremental feed`).
+    ///
+    /// When `true`, the driver emits the standard change-feed indicator
+    /// header. Combine with [`Precondition::if_none_match`] to pass a
+    /// continuation token.
+    pub incremental_feed: bool,
+
+    /// Request index-utilization metrics on the response
+    /// (`x-ms-cosmos-populateindexmetrics`). Only meaningful for query
+    /// operations.
+    ///
+    /// `None` omits the header (service default); `Some(true)` / `Some(false)`
+    /// explicitly opt in or out. Using `Option<bool>` mirrors
+    /// [`max_item_count`](Self::max_item_count) and lets the query executor
+    /// distinguish "caller already chose" from "caller did not say".
+    pub populate_index_metrics: Option<bool>,
+
+    /// Request per-query metrics on the response
+    /// (`x-ms-documentdb-populatequerymetrics`). Only meaningful for query
+    /// operations. See [`populate_index_metrics`](Self::populate_index_metrics)
+    /// for the `Option<bool>` semantics.
+    pub populate_query_metrics: Option<bool>,
+
+    /// When `true`, the Gateway is allowed to route the query across multiple
+    /// partitions (`x-ms-documentdb-query-enablecrosspartition`). Required for
+    /// query-plan requests and for queries without a partition-key scope.
+    pub enable_cross_partition_query: bool,
 }
 
 impl CosmosRequestHeaders {
@@ -156,6 +216,40 @@ impl CosmosRequestHeaders {
                     HeaderValue::from(json),
                 );
             }
+        }
+        if let Some(count) = self.max_item_count {
+            let wire = match count {
+                MaxItemCount::ServerDecides => "-1".to_string(),
+                MaxItemCount::Limit(n) => n.get().to_string(),
+            };
+            headers.insert(
+                request_header_names::MAX_ITEM_COUNT,
+                HeaderValue::from(wire),
+            );
+        }
+        if self.incremental_feed {
+            headers.insert(
+                request_header_names::A_IM,
+                HeaderValue::from_static(request_header_names::INCREMENTAL_FEED),
+            );
+        }
+        if let Some(v) = self.populate_index_metrics {
+            headers.insert(
+                request_header_names::POPULATE_INDEX_METRICS,
+                HeaderValue::from_static(if v { "true" } else { "false" }),
+            );
+        }
+        if let Some(v) = self.populate_query_metrics {
+            headers.insert(
+                request_header_names::POPULATE_QUERY_METRICS,
+                HeaderValue::from_static(if v { "true" } else { "false" }),
+            );
+        }
+        if self.enable_cross_partition_query {
+            headers.insert(
+                request_header_names::ENABLE_CROSS_PARTITION_QUERY,
+                HeaderValue::from_static("True"),
+            );
         }
     }
 }
@@ -442,7 +536,7 @@ impl CosmosResponseHeaders {
                     result.owner_id = Some(value.as_str().to_owned());
                 }
                 response_header_names::OFFER_REPLACE_PENDING => {
-                    result.offer_replace_pending = value.as_str().parse::<bool>().ok();
+                    result.offer_replace_pending = parse_bool_ci(value.as_str());
                 }
                 response_header_names::RETRY_AFTER_MS => {
                     result.retry_after_ms = value.as_str().parse().ok();
@@ -508,6 +602,22 @@ impl CosmosResponseHeaders {
             }
         }
         result
+    }
+}
+
+/// Parses a boolean header value, accepting `"true"` / `"false"` case-insensitively.
+///
+/// Cosmos response headers (e.g. `x-ms-offer-replace-pending`) historically use
+/// Pascal-case (`"True"`/`"False"`) on the wire, while `bool::FromStr` only
+/// accepts strict lowercase. Returns `None` for any value other than the two
+/// recognized tokens so the field stays absent on malformed input.
+fn parse_bool_ci(s: &str) -> Option<bool> {
+    if s.eq_ignore_ascii_case("true") {
+        Some(true)
+    } else if s.eq_ignore_ascii_case("false") {
+        Some(false)
+    } else {
+        None
     }
 }
 
@@ -741,9 +851,7 @@ mod tests {
         let headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
-            precondition: None,
-            offer_throughput: None,
-            offer_autopilot_settings: None,
+            ..Default::default()
         };
 
         assert_eq!(
@@ -761,9 +869,7 @@ mod tests {
         let cosmos_headers = CosmosRequestHeaders {
             activity_id: Some(ActivityId::from_string("test-request".to_string())),
             session_token: Some(SessionToken::new("session-token".to_string())),
-            precondition: None,
-            offer_throughput: None,
-            offer_autopilot_settings: None,
+            ..Default::default()
         };
         let mut headers = Headers::new();
 
@@ -782,11 +888,8 @@ mod tests {
     #[test]
     fn write_to_headers_precondition_if_match() {
         let cosmos_headers = CosmosRequestHeaders {
-            activity_id: None,
-            session_token: None,
             precondition: Some(Precondition::if_match(ETag::new("etag-value-1"))),
-            offer_throughput: None,
-            offer_autopilot_settings: None,
+            ..Default::default()
         };
         let mut headers = Headers::new();
 
@@ -805,11 +908,8 @@ mod tests {
     #[test]
     fn write_to_headers_precondition_if_none_match() {
         let cosmos_headers = CosmosRequestHeaders {
-            activity_id: None,
-            session_token: None,
             precondition: Some(Precondition::if_none_match(ETag::new("*"))),
-            offer_throughput: None,
-            offer_autopilot_settings: None,
+            ..Default::default()
         };
         let mut headers = Headers::new();
 
@@ -827,13 +927,7 @@ mod tests {
 
     #[test]
     fn write_to_headers_no_precondition_omits_both_headers() {
-        let cosmos_headers = CosmosRequestHeaders {
-            activity_id: None,
-            session_token: None,
-            precondition: None,
-            offer_throughput: None,
-            offer_autopilot_settings: None,
-        };
+        let cosmos_headers = CosmosRequestHeaders::default();
         let mut headers = Headers::new();
 
         cosmos_headers.write_to_headers(&mut headers);
@@ -854,8 +948,7 @@ mod tests {
             activity_id: Some(ActivityId::from_string("corr-id-1".to_string())),
             session_token: Some(SessionToken::new("session:100".to_string())),
             precondition: Some(Precondition::if_match(ETag::new("etag-abc"))),
-            offer_throughput: None,
-            offer_autopilot_settings: None,
+            ..Default::default()
         };
         let mut headers = Headers::new();
 
@@ -877,5 +970,35 @@ mod tests {
             headers.get_optional_str(&HeaderName::from_static("if-none-match")),
             None
         );
+    }
+    #[test]
+    fn offer_replace_pending_parses_case_insensitively() {
+        for v in ["true", "True", "TRUE", "tRuE"] {
+            let mut h = Headers::new();
+            h.insert(response_header_names::OFFER_REPLACE_PENDING, v.to_owned());
+            assert_eq!(
+                CosmosResponseHeaders::from_headers(&h).offer_replace_pending,
+                Some(true),
+                "{v:?} should parse as Some(true)"
+            );
+        }
+        for v in ["false", "False", "FALSE"] {
+            let mut h = Headers::new();
+            h.insert(response_header_names::OFFER_REPLACE_PENDING, v.to_owned());
+            assert_eq!(
+                CosmosResponseHeaders::from_headers(&h).offer_replace_pending,
+                Some(false),
+                "{v:?} should parse as Some(false)"
+            );
+        }
+        for v in ["yes", "1", "garbage", ""] {
+            let mut h = Headers::new();
+            h.insert(response_header_names::OFFER_REPLACE_PENDING, v.to_owned());
+            assert_eq!(
+                CosmosResponseHeaders::from_headers(&h).offer_replace_pending,
+                None,
+                "{v:?} should not parse"
+            );
+        }
     }
 }

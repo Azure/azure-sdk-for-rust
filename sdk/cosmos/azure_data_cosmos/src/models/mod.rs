@@ -12,6 +12,8 @@ mod cosmos_response;
 mod indexing_policy;
 mod item_response;
 mod resource_response;
+mod response_body;
+pub(crate) mod response_headers;
 mod throughput_properties;
 
 pub use batch_response::BatchResponse;
@@ -20,14 +22,16 @@ pub(crate) use cosmos_response::CosmosResponse;
 pub use indexing_policy::*;
 pub use item_response::ItemResponse;
 pub use resource_response::ResourceResponse;
+pub use response_body::ResponseBody;
+pub use response_headers::ResponseHeaders;
 pub use throughput_properties::*;
 
 // Re-export partition key and container reference types from the driver crate.
 // These are the canonical definitions; the SDK does not duplicate them.
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
-    ContainerReference, IncrValue, PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion,
-    PatchOp, PatchSpec,
+    ContainerReference, CosmosStatus, IncrValue, PartitionKeyDefinition, PartitionKeyKind,
+    PartitionKeyVersion, PatchOp, PatchSpec,
 };
 
 // Re-export the driver's full diagnostics context as the canonical type for
@@ -35,7 +39,7 @@ pub use azure_data_cosmos_driver::models::{
 // diagnostics wrapper; instead it surfaces the rich context produced by the
 // driver pipeline (request tracking, retries, regions contacted, etc.).
 #[doc(inline)]
-pub use azure_data_cosmos_driver::diagnostics::DiagnosticsContext as CosmosDiagnosticsContext;
+pub use azure_data_cosmos_driver::diagnostics::DiagnosticsContext;
 
 fn deserialize_cosmos_timestamp<'de, D>(deserializer: D) -> Result<Option<OffsetDateTime>, D::Error>
 where

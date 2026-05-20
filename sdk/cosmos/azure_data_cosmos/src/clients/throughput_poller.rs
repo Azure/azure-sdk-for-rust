@@ -12,7 +12,6 @@
 
 use crate::{
     clients::offers_client,
-    constants,
     models::{CosmosResponse, ResourceResponse, ThroughputProperties},
 };
 use azure_core::http::StatusCode;
@@ -65,7 +64,7 @@ const DEFAULT_POLLING_INTERVAL: Duration = Duration::seconds(5);
 /// # }
 /// ```
 pub struct ThroughputPoller {
-    stream: BoxStream<'static, azure_core::Result<CosmosResponse<ThroughputProperties>>>,
+    stream: BoxStream<'static, azure_core::Result<CosmosResponse>>,
 }
 
 impl ThroughputPoller {
@@ -74,7 +73,7 @@ impl ThroughputPoller {
     /// The `offer_id` is provided by the caller (extracted before the replace request)
     /// to enable efficient single-GET polling without re-querying.
     pub(crate) fn new(
-        initial_response: CosmosResponse<ThroughputProperties>,
+        initial_response: CosmosResponse,
         driver: Arc<CosmosDriver>,
         account: AccountReference,
         offer_id: String,
@@ -89,7 +88,7 @@ impl ThroughputPoller {
     }
 
     /// Creates a poller for an operation that completed synchronously.
-    fn completed(response: CosmosResponse<ThroughputProperties>) -> Self {
+    fn completed(response: CosmosResponse) -> Self {
         let stream = futures::stream::once(async { Ok(response) });
         Self {
             stream: Box::pin(stream),
@@ -98,7 +97,7 @@ impl ThroughputPoller {
 
     /// Creates a poller for an operation that is still pending.
     fn pending(
-        initial_response: CosmosResponse<ThroughputProperties>,
+        initial_response: CosmosResponse,
         driver: Arc<CosmosDriver>,
         account: AccountReference,
         offer_id: String,
@@ -146,7 +145,7 @@ impl ThroughputPoller {
 /// Internal state for the polling stream.
 enum PollState {
     /// The initial replace response has been received but not yet yielded.
-    Initial(Box<CosmosResponse<ThroughputProperties>>),
+    Initial(Box<CosmosResponse>),
     /// Polling for completion.
     Polling,
 }
@@ -188,15 +187,12 @@ impl IntoFuture for ThroughputPoller {
 }
 
 /// Checks whether the `x-ms-offer-replace-pending` header indicates a pending operation.
-fn is_offer_replace_pending<T>(response: &CosmosResponse<T>) -> bool {
-    if let Some(pending) = response
-        .headers()
-        .get_optional_str(&constants::OFFER_REPLACE_PENDING)
-    {
-        return pending.eq_ignore_ascii_case("true");
+fn is_offer_replace_pending(response: &CosmosResponse) -> bool {
+    if response.cosmos_headers().offer_replace_pending() == Some(true) {
+        return true;
     }
     // Also treat HTTP 202 as pending (even without the header).
-    response.status() == StatusCode::Accepted
+    response.status().status_code() == StatusCode::Accepted
 }
 
 #[cfg(test)]
@@ -228,6 +224,51 @@ mod tests {
         assert!(!is_offer_replace_pending(&response));
     }
 
+    /// End-to-end regression for the case-insensitive `x-ms-offer-replace-pending`
+    /// parsing fix: a Pascal-case `True` from the wire must drive the poller's
+    /// pending check, not silently drop to `None` (which previously caused the
+    /// poller to declare the replace done while it was still in progress).
+    #[test]
+    fn is_offer_replace_pending_handles_pascal_case_true_from_headers() {
+        use azure_core::http::headers::Headers;
+        use azure_data_cosmos_driver::models::CosmosResponseHeaders;
+
+        for raw in ["True", "TRUE", "tRuE"] {
+            let mut wire_headers = Headers::new();
+            wire_headers.insert(crate::constants::OFFER_REPLACE_PENDING, raw.to_owned());
+            let parsed = CosmosResponseHeaders::from_headers(&wire_headers);
+            assert_eq!(
+                parsed.offer_replace_pending,
+                Some(true),
+                "{raw:?} should parse as Some(true) from the wire"
+            );
+            let response = build_mock_response_from_parsed_headers(StatusCode::Ok, parsed);
+            assert!(
+                is_offer_replace_pending(&response),
+                "{raw:?} must keep the poller marked as pending"
+            );
+        }
+    }
+
+    fn build_mock_response_from_parsed_headers(
+        status: StatusCode,
+        cosmos_headers: azure_data_cosmos_driver::models::CosmosResponseHeaders,
+    ) -> CosmosResponse {
+        use crate::DiagnosticsContext;
+        use azure_data_cosmos_driver::models::{ActivityId, CosmosStatus, ResponseBody};
+        use std::sync::Arc;
+
+        let body = ResponseBody::from_bytes(azure_core::Bytes::from_static(b"{}"));
+        let cosmos_status = CosmosStatus::new(status);
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid()));
+        CosmosResponse::from_driver_parts(
+            body.into(),
+            cosmos_headers.into(),
+            cosmos_status,
+            diagnostics,
+        )
+    }
+
     #[tokio::test]
     async fn completed_poller_yields_one_item() {
         let response = create_mock_response(StatusCode::Ok, None);
@@ -247,34 +288,31 @@ mod tests {
 
         let result = poller.await;
         assert!(result.is_ok(), "into_future should return Ok");
-        assert_eq!(result.unwrap().status(), StatusCode::Ok);
+        assert_eq!(result.unwrap().status().status_code(), StatusCode::Ok);
     }
 
     fn create_mock_response(
         status: StatusCode,
         offer_replace_pending: Option<&str>,
-    ) -> CosmosResponse<ThroughputProperties> {
-        use crate::CosmosDiagnosticsContext;
-        use azure_core::{
-            http::{headers::Headers, response::Response, RawResponse},
-            Bytes,
+    ) -> CosmosResponse {
+        use crate::DiagnosticsContext;
+        use azure_data_cosmos_driver::models::{
+            ActivityId, CosmosResponseHeaders, CosmosStatus, ResponseBody,
         };
-        use azure_data_cosmos_driver::models::{ActivityId, CosmosResponseHeaders};
         use std::sync::Arc;
 
-        let mut headers = Headers::new();
-        if let Some(value) = offer_replace_pending {
-            headers.insert(constants::OFFER_REPLACE_PENDING, value.to_owned());
-        }
-
-        let body = Bytes::from_static(b"{}");
-        let raw = RawResponse::from_bytes(status, headers.clone(), body);
-        let typed: Response<ThroughputProperties> = raw.into();
+        let body = ResponseBody::Bytes(azure_core::Bytes::from_static(b"{}"));
         let mut cosmos_headers = CosmosResponseHeaders::default();
         if let Some(value) = offer_replace_pending {
             cosmos_headers.offer_replace_pending = value.parse::<bool>().ok();
         }
-        let diagnostics = Arc::new(CosmosDiagnosticsContext::for_testing(ActivityId::new_uuid()));
-        CosmosResponse::from_driver_response(typed, cosmos_headers, diagnostics)
+        let cosmos_status = CosmosStatus::new(status);
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid()));
+        CosmosResponse::from_driver_parts(
+            body.into(),
+            cosmos_headers.into(),
+            cosmos_status,
+            diagnostics,
+        )
     }
 }

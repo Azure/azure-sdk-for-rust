@@ -275,7 +275,7 @@ impl ContainerClient {
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
     /// If you want the new item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::into_single`](crate::ResponseBody::into_single), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
@@ -300,7 +300,7 @@ impl ContainerClient {
     /// let created_item = container_client
     ///     .create_item("category1", "product1", p, Some(options))
     ///     .await?
-    ///     .into_body().json::<Product>();
+    ///     .into_body().into_single::<Product>()?;
     /// # Ok(())
     /// # }
     /// ```
@@ -310,7 +310,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
-    ) -> azure_core::Result<ItemResponse<()>> {
+    ) -> azure_core::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
 
@@ -374,7 +374,7 @@ impl ContainerClient {
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
     /// If you want the replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::into_single`](crate::ResponseBody::into_single), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
@@ -396,10 +396,10 @@ impl ContainerClient {
     /// let mut operation = OperationOptions::default();
     /// operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
     /// let options = ItemWriteOptions::default().with_operation_options(operation);
-    /// let updated_product: Product = container_client
+    /// let updated_product = container_client
     ///     .replace_item("category1", "product1", p, Some(options))
     ///     .await?
-    ///     .into_body().json::<Product>()?;
+    ///     .into_body().into_single::<Product>()?;
     /// # }
     /// ```
     pub async fn replace_item<T: Serialize>(
@@ -408,7 +408,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
-    ) -> azure_core::Result<ItemResponse<()>> {
+    ) -> azure_core::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
 
@@ -523,13 +523,13 @@ impl ContainerClient {
     /// appends should either build idempotent ops (`PatchOp::set` on a
     /// caller-computed value) or detect duplicate-application via a
     /// monotonic application-level sequence number.
-    pub async fn patch_item<T>(
+    pub async fn patch_item(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         patch: PatchSpec,
         options: Option<PatchItemOptions>,
-    ) -> azure_core::Result<ItemResponse<T>> {
+    ) -> azure_core::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&patch)?;
 
@@ -600,7 +600,7 @@ impl ContainerClient {
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
     /// If you want the created/replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](azure_core::http::response::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::json`](azure_core::http::response::ResponseBody::json), like this:
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::into_single`](crate::ResponseBody::into_single), like this:
     ///
     /// ```rust,no_run
     /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
@@ -625,7 +625,7 @@ impl ContainerClient {
     /// let updated_product = container_client
     ///     .upsert_item("category1", "product1", p, Some(options))
     ///     .await?
-    ///     .into_body().json::<Product>()?;
+    ///     .into_body().into_single::<Product>()?;
     /// Ok(())
     /// # }
     pub async fn upsert_item<T: Serialize>(
@@ -634,7 +634,7 @@ impl ContainerClient {
         item_id: &str,
         item: T,
         options: Option<ItemWriteOptions>,
-    ) -> azure_core::Result<ItemResponse<()>> {
+    ) -> azure_core::Result<ItemResponse> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&item)?;
 
@@ -690,12 +690,12 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn read_item<T>(
+    pub async fn read_item(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemReadOptions>,
-    ) -> azure_core::Result<ItemResponse<T>> {
+    ) -> azure_core::Result<ItemResponse> {
         let options = options.unwrap_or_default();
 
         // Build the driver's item reference from our stored container metadata.
@@ -747,7 +747,7 @@ impl ContainerClient {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemWriteOptions>,
-    ) -> azure_core::Result<ItemResponse<()>> {
+    ) -> azure_core::Result<ItemResponse> {
         let options = options.unwrap_or_default();
 
         // Build the driver's item reference from our stored container metadata.
@@ -853,7 +853,12 @@ impl ContainerClient {
             factory,
             query,
             options.operation,
-            options.session_token,
+            crate::query::QueryExecutorConfig {
+                session_token: options.session_token,
+                populate_index_metrics: options.populate_index_metrics,
+                populate_query_metrics: options.populate_query_metrics,
+                max_item_count: options.max_item_count,
+            },
         )
         .into_stream()
     }
@@ -1154,5 +1159,5 @@ fn _assert_futures_are_send() {
     let item_id: &str = todo!();
     let patch: PatchSpec = todo!();
     let options: Option<PatchItemOptions> = todo!();
-    assert_send(client.patch_item::<serde_json::Value>(partition_key, item_id, patch, options));
+    assert_send(client.patch_item(partition_key, item_id, patch, options));
 }

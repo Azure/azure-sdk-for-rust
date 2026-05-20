@@ -8,7 +8,7 @@ use std::fmt::Display;
 // Re-exported types that form part of the azure_data_cosmos public API.
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
-    ETag, Precondition, SessionToken, ThroughputControlGroupName,
+    ETag, MaxItemCount as MaxItemCountHint, Precondition, SessionToken, ThroughputControlGroupName,
 };
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{
@@ -337,6 +337,23 @@ pub struct QueryOptions {
 
     /// Session token for session-consistent queries.
     pub session_token: Option<SessionToken>,
+
+    /// When `true`, request that the service include index utilization metrics
+    /// in the response (`x-ms-cosmos-populateindexmetrics`). The decoded JSON is
+    /// surfaced via `QueryFeedPage::index_metrics()`.
+    pub populate_index_metrics: Option<bool>,
+
+    /// When `true`, request that the service include per-query metrics in the
+    /// response (`x-ms-documentdb-populatequerymetrics`). Surfaced via
+    /// `QueryFeedPage::query_metrics()`.
+    pub populate_query_metrics: Option<bool>,
+
+    /// Maximum number of items the service should return per page
+    /// (`x-ms-max-item-count`).
+    ///
+    /// `None` omits the header so the SDK / service defaults apply. See
+    /// [`MaxItemCountHint`] for the two explicit values.
+    pub max_item_count: Option<MaxItemCountHint>,
 }
 
 impl QueryOptions {
@@ -349,6 +366,27 @@ impl QueryOptions {
     /// Sets the [`OperationOptions`] for this request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
+        self
+    }
+
+    /// Enables or disables index-utilization metric collection for this query.
+    pub fn with_populate_index_metrics(mut self, enable: bool) -> Self {
+        self.populate_index_metrics = Some(enable);
+        self
+    }
+
+    /// Enables or disables per-query metric collection for this query.
+    pub fn with_populate_query_metrics(mut self, enable: bool) -> Self {
+        self.populate_query_metrics = Some(enable);
+        self
+    }
+
+    /// Sets the maximum number of items the service should return per page.
+    ///
+    /// Pass [`MaxItemCountHint::Limit`] with a concrete page size, or
+    /// [`MaxItemCountHint::ServerDecides`] to let the service choose.
+    pub fn with_max_item_count(mut self, max_item_count: MaxItemCountHint) -> Self {
+        self.max_item_count = Some(max_item_count);
         self
     }
 }

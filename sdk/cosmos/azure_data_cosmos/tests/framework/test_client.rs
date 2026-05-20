@@ -49,7 +49,7 @@ pub const EMULATOR_HOST: &str = "127.0.0.1";
 /// successfully retry on the original. Used for failover scenarios where
 /// either landing is valid.
 pub fn assert_region_contacted_with_retry(
-    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    diagnostics: &azure_data_cosmos::DiagnosticsContext,
     expected_region: &Region,
 ) {
     assert!(
@@ -73,7 +73,7 @@ pub fn assert_region_contacted_with_retry(
 /// stay on `expected_region` (the driver may still fail over to an alternate
 /// region after exhausting its local retry budget).
 pub fn assert_local_retry_attempted_on_region(
-    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    diagnostics: &azure_data_cosmos::DiagnosticsContext,
     expected_region: &Region,
 ) {
     let requests = diagnostics.requests();
@@ -641,16 +641,13 @@ impl TestRunContext {
 
     /// Reads an item from the specified container with exponential backoff retries on 404 errors.
     /// This is useful for tests where eventual consistency may cause transient read failures.
-    pub async fn read_item<T>(
+    pub async fn read_item(
         &self,
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemReadOptions>,
-    ) -> azure_core::Result<ItemResponse<T>>
-    where
-        T: serde::de::DeserializeOwned,
-    {
+    ) -> azure_core::Result<ItemResponse> {
         // Own the inputs so no borrowed data must live across `.await`.
         let partition_key = partition_key.into().to_owned();
         let item_id = item_id.to_owned();

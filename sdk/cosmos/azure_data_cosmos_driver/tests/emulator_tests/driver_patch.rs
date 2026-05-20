@@ -70,7 +70,7 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
                 .patch_item(&container, item_id, pk, &spec, None)
                 .await?;
 
-            let patched: Value = serde_json::from_slice(patch_response.body())?;
+            let patched: Value = patch_response.into_body().into_single()?;
             assert_eq!(
                 patched.get("deleted"),
                 Some(&Value::Bool(true)),
@@ -80,7 +80,7 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
             assert_eq!(patched.get("pk"), Some(&json!(pk)));
 
             let read_response = context.read_item(&container, item_id, pk).await?;
-            let read_body: Value = serde_json::from_slice(read_response.body())?;
+            let read_body: Value = read_response.into_body().into_single()?;
             assert_eq!(
                 read_body.get("deleted"),
                 Some(&Value::Bool(true)),
@@ -833,7 +833,9 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
 
                 match (&case.expected, result) {
                     (Expected::PostImageProps(expected_props), Ok(response)) => {
-                        let body: Value = serde_json::from_slice(response.body())
+                        let body: Value = response
+                            .into_body()
+                            .into_single()
                             .unwrap_or_else(|e| panic!("[{}] body parse: {e}", case.id));
                         assert_post_image_props(&body, expected_props, case.id);
                     }
@@ -849,8 +851,7 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
                         );
                     }
                     (Expected::ErrorContains(_), Ok(response)) => {
-                        let body: Value =
-                            serde_json::from_slice(response.body()).unwrap_or_default();
+                        let body: Value = response.into_body().into_single().unwrap_or_default();
                         panic!(
                             "[{}] expected error but patch succeeded; body={body}",
                             case.id,
@@ -976,7 +977,7 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             // Post-image reflects the merged increment.
-            let body: Value = serde_json::from_slice(response.body())?;
+            let body: Value = response.into_body().into_single()?;
             assert_eq!(
                 body.get("value"),
                 Some(&json!(1)),

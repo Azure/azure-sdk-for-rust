@@ -5,14 +5,12 @@
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
-use std::collections::HashMap;
 use std::error::Error;
 
-use azure_core::http::headers::HeaderValue;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     constants,
-    options::{OperationOptions, QueryOptions},
+    options::{MaxItemCountHint, QueryOptions},
     Query,
 };
 use framework::{test_data, MockItem, TestClient};
@@ -212,18 +210,10 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
             let container_client =
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
-            // Enable both index metrics and query metrics via custom headers
-            let mut custom_headers = HashMap::new();
-            custom_headers.insert(
-                constants::COSMOS_POPULATEINDEXMETRICS,
-                HeaderValue::from("true"),
-            );
-            custom_headers.insert(
-                constants::DOCUMENTDB_POPULATEQUERYMETRICS,
-                HeaderValue::from("true"),
-            );
-            let operation = OperationOptions::default().with_custom_headers(custom_headers);
-            let options = QueryOptions::default().with_operation_options(operation);
+            // Enable both index metrics and query metrics via typed options.
+            let options = QueryOptions::default()
+                .with_populate_index_metrics(true)
+                .with_populate_query_metrics(true);
 
             let mut pages = container_client
                 .query_items::<MockItem>("select * from c", "partition0", Some(options))?
@@ -314,10 +304,9 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
             );
 
             // Force 1 item per page to exercise continuation token pagination
-            let mut custom_headers = HashMap::new();
-            custom_headers.insert(constants::MAX_ITEM_COUNT, HeaderValue::from_static("1"));
-            let operation = OperationOptions::default().with_custom_headers(custom_headers);
-            let options = QueryOptions::default().with_operation_options(operation);
+            let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(1).unwrap(),
+            ));
 
             let mut pages = container_client
                 .query_items::<MockItem>("select * from c", "partition0", Some(options))?
@@ -365,10 +354,9 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
                 test_data::create_container_with_items(db_client, items.clone(), None).await?;
 
             // Force 1 item per page for cross-partition query
-            let mut custom_headers = HashMap::new();
-            custom_headers.insert(constants::MAX_ITEM_COUNT, HeaderValue::from_static("1"));
-            let operation = OperationOptions::default().with_custom_headers(custom_headers);
-            let options = QueryOptions::default().with_operation_options(operation);
+            let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(1).unwrap(),
+            ));
 
             let mut pages = container_client
                 .query_items::<MockItem>("select * from c", (), Some(options))?

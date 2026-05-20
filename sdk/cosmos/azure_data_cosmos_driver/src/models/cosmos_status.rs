@@ -1428,6 +1428,34 @@ impl fmt::Display for CosmosStatus {
     }
 }
 
+/// Allows ergonomic comparisons like `assert_eq!(status, StatusCode::Ok)`.
+///
+/// Compares only the HTTP status code, ignoring sub-status. Use
+/// [`CosmosStatus::sub_status`] explicitly when sub-status comparison is required.
+impl PartialEq<StatusCode> for CosmosStatus {
+    fn eq(&self, other: &StatusCode) -> bool {
+        self.status_code == *other
+    }
+}
+
+impl PartialEq<CosmosStatus> for StatusCode {
+    fn eq(&self, other: &CosmosStatus) -> bool {
+        *self == other.status_code
+    }
+}
+
+impl From<CosmosStatus> for StatusCode {
+    fn from(s: CosmosStatus) -> Self {
+        s.status_code
+    }
+}
+
+impl From<CosmosStatus> for u16 {
+    fn from(s: CosmosStatus) -> Self {
+        s.status_code.into()
+    }
+}
+
 impl Serialize for CosmosStatus {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

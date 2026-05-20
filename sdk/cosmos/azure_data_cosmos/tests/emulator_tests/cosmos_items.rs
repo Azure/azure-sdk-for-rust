@@ -37,8 +37,8 @@ struct TestItem {
 /// Helper function to assert common response properties.
 /// Verifies status code, that request charge is present and positive, endpoint is correct,
 /// and that session token, activity ID, and server duration are present.
-fn assert_response<T>(
-    response: &ItemResponse<T>,
+fn assert_response(
+    response: &ItemResponse,
     expected_status: StatusCode,
     _expected_endpoint: &str,
     read_operation: bool,
@@ -55,7 +55,7 @@ fn assert_response<T>(
     );
     if read_operation {
         // ETag is only returned on read operations
-        let etag = response.etag();
+        let etag = response.headers().etag();
         assert!(etag.is_some(), "expected etag to be present");
         assert!(
             !etag.unwrap().to_string().is_empty(),
@@ -155,12 +155,11 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Try to read the item
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -184,8 +183,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Update again, but this time ask for the response
             item.value = 12;
@@ -203,7 +201,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = response.into_body().json()?;
+            let updated_item: TestItem = response.into_body().into_single()?;
             assert_eq!(item, updated_item);
 
             // Delete the item
@@ -214,16 +212,12 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Try to read the item again, expecting a 404
             // loop with backoff to avoid test flakes due to eventual consistency
             loop {
-                match container_client
-                    .read_item::<TestItem>(&pk, &item_id, None)
-                    .await
-                {
+                match container_client.read_item(&pk, &item_id, None).await {
                     Ok(_) => {
                         println!("expected a 404 error when reading the deleted item, retrying...");
                         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
@@ -281,7 +275,7 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<serde_json::Value>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -342,7 +336,7 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -410,7 +404,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = upsert_response.into_body().json()?;
+            let updated_item: TestItem = upsert_response.into_body().into_single()?;
             assert_eq!(item, updated_item);
 
             Ok(())
@@ -467,7 +461,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, PartitionKey::NULL, &item_id, None)
+                .read_item(&container_client, PartitionKey::NULL, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -491,7 +485,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             // loop with backoff to avoid test flakes due to eventual consistency
             loop {
                 match container_client
-                    .read_item::<()>(PartitionKey::NULL, &item_id, None)
+                    .read_item(PartitionKey::NULL, &item_id, None)
                     .await
                 {
                     Ok(_) => {
@@ -553,8 +547,9 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Replace item with correct Etag
@@ -647,8 +642,9 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Upsert item with correct Etag
@@ -741,8 +737,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Delete item with correct Etag
@@ -886,7 +883,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Read the undefined-PK item using UNDEFINED - should succeed.
             let read_response = run_context
-                .read_item::<UndefinedPkItem>(
+                .read_item(
                     &container_client,
                     PartitionKey::UNDEFINED,
                     &item_no_pk_id,
@@ -904,7 +901,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Reading the undefined-PK item with NULL should fail (wrong partition).
             let result = container_client
-                .read_item::<serde_json::Value>(PartitionKey::NULL, &item_no_pk_id, None)
+                .read_item(PartitionKey::NULL, &item_no_pk_id, None)
                 .await;
             assert_eq!(
                 Some(azure_core::http::StatusCode::NotFound),
@@ -915,7 +912,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Read the null-PK item using NULL - should succeed.
             let read_response = run_context
-                .read_item::<TestItem>(
+                .read_item(
                     &container_client,
                     PartitionKey::NULL,
                     &item_null_pk_id,
@@ -933,7 +930,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Reading the null-PK item with UNDEFINED should fail (wrong partition).
             let result = container_client
-                .read_item::<serde_json::Value>(PartitionKey::UNDEFINED, &item_null_pk_id, None)
+                .read_item(PartitionKey::UNDEFINED, &item_null_pk_id, None)
                 .await;
             assert_eq!(
                 Some(azure_core::http::StatusCode::NotFound),
@@ -1057,7 +1054,7 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
             );
 
             // Deserialize the body and verify it matches the original item.
-            let created: TestItem = response.into_body().json()?;
+            let created: TestItem = response.into_body().into_single()?;
             assert_eq!(item, created);
 
             Ok(())
@@ -1145,8 +1142,7 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
             );
 
             // Response body should be empty when ContentResponseOnWrite is not enabled.
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             Ok(())
         },

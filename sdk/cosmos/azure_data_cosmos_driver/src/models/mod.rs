@@ -20,16 +20,17 @@ mod cosmos_response;
 mod cosmos_status;
 mod etag;
 mod finite_f64;
-pub(crate) use finite_f64::FiniteF64;
 pub(crate) mod partition_key;
 mod patch;
 mod request_charge;
 pub(crate) mod resource_id;
 mod resource_reference;
+mod response_body;
 mod session_token_segment;
 mod user_agent;
 pub(crate) mod vector_session_token;
 pub(crate) use cosmos_headers::request_header_names;
+pub(crate) use finite_f64::FiniteF64;
 #[allow(dead_code)]
 pub mod effective_partition_key;
 #[allow(dead_code)]
@@ -45,7 +46,7 @@ pub use connection_string::ConnectionString;
 pub(crate) use consistency_level::DefaultConsistencyLevel;
 pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
-    CosmosResponseHeaders, OfferAutoscaleSettings,
+    CosmosResponseHeaders, MaxItemCount, OfferAutoscaleSettings,
 };
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
@@ -62,6 +63,7 @@ pub use resource_reference::{DatabaseReference, ItemReference};
 pub use resource_reference::{
     PartitionKeyRangeReference, StoredProcedureReference, TriggerReference, UdfReference,
 };
+pub use response_body::ResponseBody;
 pub use session_token_segment::SessionTokenSegment;
 pub use user_agent::UserAgent;
 
