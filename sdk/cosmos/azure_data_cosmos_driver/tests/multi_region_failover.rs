@@ -54,7 +54,7 @@ async fn write_forbidden_triggers_refresh_and_failover() {
     );
 
     let _ = driver
-        .execute_operation(
+        .execute_trivial_operation(
             CosmosOperation::read_database(db_ref),
             OperationOptions::default(),
         )
@@ -88,7 +88,7 @@ async fn session_not_available_retries_across_locations() {
     );
 
     let _ = driver
-        .execute_operation(
+        .execute_trivial_operation(
             CosmosOperation::read_database(db_ref),
             OperationOptions::default(),
         )

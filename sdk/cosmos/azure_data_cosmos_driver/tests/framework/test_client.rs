@@ -15,6 +15,7 @@ use azure_data_cosmos_driver::{
     options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
 };
 use std::{error::Error, future::Future, sync::Arc};
+use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 
 use super::env::{
@@ -39,7 +40,13 @@ pub struct TestEnv {
 /// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
 pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let _ = tracing_subscriber::fmt::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_env_filter(
+            EnvFilter::builder()
+                // Tests with intentional failures cause noise, so we set the default level to "off"
+                // to silence them unless the user explicitly configures it.
+                .with_default_directive("off".parse().unwrap())
+                .from_env_lossy(),
+        )
         .try_init();
 
     let test_mode = get_test_mode();
@@ -296,7 +303,7 @@ impl DriverTestRunContext {
             .with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
@@ -326,7 +333,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::delete_database(database.clone());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (204 No Content)
@@ -393,7 +400,7 @@ impl DriverTestRunContext {
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
@@ -436,7 +443,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)
@@ -476,7 +483,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_trivial_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)
@@ -518,7 +525,8 @@ impl DriverTestRunContext {
 
         let result = driver
             .execute_operation(operation, OperationOptions::default())
-            .await?;
+            .await?
+            .expect("PATCH operation must return a response");
 
         Ok(result)
     }

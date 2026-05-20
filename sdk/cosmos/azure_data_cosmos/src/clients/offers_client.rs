@@ -31,7 +31,7 @@ pub(crate) async fn find_offer(
     let operation = CosmosOperation::query_offers(account.clone()).with_body(body);
     let options = OperationOptions::default();
 
-    let driver_response = driver.execute_operation(operation, options).await?;
+    let driver_response = driver.execute_trivial_operation(operation, options).await?;
     tracing::debug!(
         activity_id = ?driver_response.headers().activity_id,
         request_charge = ?driver_response.headers().request_charge,
@@ -49,7 +49,7 @@ pub(crate) async fn read_offer_by_id(
 ) -> azure_core::Result<CosmosResponse> {
     let operation = CosmosOperation::read_offer(account.clone(), offer_id.to_owned());
     let driver_response = driver
-        .execute_operation(operation, OperationOptions::default())
+        .execute_trivial_operation(operation, OperationOptions::default())
         .await?;
     Ok(crate::driver_bridge::driver_response_to_cosmos_response(
         driver_response,
@@ -98,7 +98,9 @@ pub(crate) async fn begin_replace(
         opts
     };
 
-    let driver_response = driver.execute_operation(operation, replace_options).await?;
+    let driver_response = driver
+        .execute_trivial_operation(operation, replace_options)
+        .await?;
 
     let response = crate::driver_bridge::driver_response_to_cosmos_response(driver_response);
 
