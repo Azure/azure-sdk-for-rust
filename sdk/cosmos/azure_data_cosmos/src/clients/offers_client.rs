@@ -31,7 +31,9 @@ pub(crate) async fn find_offer(
     let operation = CosmosOperation::query_offers(account.clone()).with_body(body);
     let options = OperationOptions::default();
 
-    let driver_response = driver.execute_singleton_operation(operation, options).await?;
+    let driver_response = driver
+        .execute_singleton_operation(operation, options)
+        .await?;
     tracing::debug!(
         activity_id = ?driver_response.headers().activity_id,
         request_charge = ?driver_response.headers().request_charge,
