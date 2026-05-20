@@ -62,11 +62,12 @@ pub async fn create_container_with_items(
         }
     }
 
-    let container_client = db.container_client("TestContainer").await;
+    let container_client = db.container_client("TestContainer").await?;
 
     for item in items {
+        let item_id = item.id.clone();
         container_client
-            .create_item(item.partition_key.clone(), item, None)
+            .create_item(item.partition_key.clone(), &item_id, item, None)
             .await?;
     }
 

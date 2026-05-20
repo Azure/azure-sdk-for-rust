@@ -65,7 +65,7 @@ use crate::models::PartitionKeyKind;
 /// # use azure_data_cosmos::{clients::ContainerClient, PartitionKey};
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// # async {
-/// container_client.read_item::<serde_json::Value>(
+/// container_client.read_item(
 ///     PartitionKey::UNDEFINED,
 ///     "item_without_partition_key_property",
 ///     None).await.unwrap();
@@ -108,9 +108,33 @@ impl PartitionKey {
     /// An empty list of partition key values, which is used to signal a cross-partition query, when querying a container.
     pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
 
-    #[allow(dead_code)]
-    pub(crate) fn is_empty(&self) -> bool {
-        self.0.is_empty()
+    /// Converts this SDK partition key into the driver's equivalent type.
+    pub(crate) fn into_driver_partition_key(
+        self,
+    ) -> azure_data_cosmos_driver::models::PartitionKey {
+        use azure_data_cosmos_driver::models::{
+            PartitionKey as DriverPK, PartitionKeyValue as DriverPKV,
+        };
+
+        let driver_values: Vec<DriverPKV> = self
+            .0
+            .into_iter()
+            .map(|v| match v.0 {
+                InnerPartitionKeyValue::String(s) => DriverPKV::from(s),
+                InnerPartitionKeyValue::Number(n) => DriverPKV::from(n),
+                InnerPartitionKeyValue::Bool(b) => DriverPKV::from(b),
+                InnerPartitionKeyValue::Null => DriverPKV::from(Option::<String>::None),
+                InnerPartitionKeyValue::Undefined => DriverPKV::undefined(),
+                InnerPartitionKeyValue::Infinity => {
+                    // Infinity is an internal sentinel for EPK boundary calculations
+                    // and cannot be constructed via the public SDK API.
+                    // Mapping to Null as a defensive fallback; this path should be unreachable.
+                    DriverPKV::from(Option::<String>::None)
+                }
+            })
+            .collect();
+
+        DriverPK::from(driver_values)
     }
 
     /// Returns a hex string representation of the partition key hash.

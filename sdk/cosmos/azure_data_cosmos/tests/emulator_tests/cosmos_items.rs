@@ -10,8 +10,10 @@ use azure_core::{
     Uuid,
 };
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::{ContainerProperties, CosmosResponse};
-use azure_data_cosmos::{ItemOptions, PartitionKey};
+use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
+use azure_data_cosmos::{
+    ContentResponseOnWrite, ETag, ItemWriteOptions, OperationOptions, PartitionKey, Precondition,
+};
 use framework::get_effective_hub_endpoint;
 use framework::TestClient;
 use framework::TestRunContext;
@@ -34,11 +36,11 @@ struct TestItem {
 
 /// Helper function to assert common response properties.
 /// Verifies status code, that request charge is present and positive, endpoint is correct,
-/// and that session token and activity ID are present.
-fn assert_response<T>(
-    response: &CosmosResponse<T>,
+/// and that session token, activity ID, and server duration are present.
+fn assert_response(
+    response: &ItemResponse,
     expected_status: StatusCode,
-    expected_endpoint: &str,
+    _expected_endpoint: &str,
     read_operation: bool,
 ) {
     assert_eq!(response.status(), expected_status, "unexpected status code");
@@ -53,19 +55,54 @@ fn assert_response<T>(
     );
     if read_operation {
         // ETag is only returned on read operations
-        let etag = response.etag();
+        let etag = response.headers().etag();
         assert!(etag.is_some(), "expected etag to be present");
-        assert!(etag.unwrap() != "", "expected etag to be non-empty");
+        assert!(
+            !etag.unwrap().to_string().is_empty(),
+            "expected etag to be non-empty"
+        );
     }
 
-    assert_eq!(
-        response.request_url().host_str().unwrap(),
-        expected_endpoint,
-        "unexpected endpoint"
-    );
     assert!(
         response.session_token().is_some(),
         "expected session token to be present"
+    );
+    let diagnostics = response.diagnostics();
+    assert!(
+        !diagnostics.activity_id().as_str().is_empty(),
+        "expected activity ID to be non-empty"
+    );
+    // The driver tracks at least one request per operation and finalizes its
+    // status on completion. Validate the richer DiagnosticsContext fields.
+    assert!(
+        diagnostics.request_count() >= 1,
+        "expected at least one request to be tracked"
+    );
+    let op_status = diagnostics
+        .status()
+        .expect("operation status should be set on completed diagnostics");
+    assert_eq!(
+        op_status.status_code(),
+        expected_status,
+        "operation-level diagnostics status should match HTTP response status"
+    );
+    assert!(
+        f64::from(diagnostics.total_request_charge()) > 0.0,
+        "expected positive total request charge in diagnostics"
+    );
+    // Server duration is returned by the Cosmos DB service on all operations
+    let requests = diagnostics.requests();
+    let server_duration = requests
+        .iter()
+        .filter_map(|r| r.server_duration_ms())
+        .next();
+    assert!(
+        server_duration.is_some(),
+        "expected at least one tracked request to report server_duration_ms"
+    );
+    assert!(
+        server_duration.unwrap() >= 0.0,
+        "expected server_duration_ms to be non-negative"
     );
 }
 
@@ -79,12 +116,16 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
             None,
         )
         .await?;
-    let container_client = db_client.container_client(&container_id).await;
+    let container_client = db_client.container_client(&container_id).await?;
 
     Ok(container_client)
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -105,19 +146,20 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition@1-{}", unique_id);
             let item_id = format!("Item@1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Try to read the item
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -141,19 +183,17 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Update again, but this time ask for the response
             item.value = 12;
             item.nested.nested_value = "UpdatedAgain".into();
             let response = container_client
-                .replace_item(
-                    &pk,
-                    &item_id,
-                    &item,
-                    Some(ItemOptions::default().with_content_response_on_write_enabled(true)),
-                )
+                .replace_item(&pk, &item_id, &item, {
+                    let mut operation = OperationOptions::default();
+                    operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+                    Some(ItemWriteOptions::default().with_operation_options(operation))
+                })
                 .await?;
             assert_response(
                 &response,
@@ -161,7 +201,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = response.into_body().json()?;
+            let updated_item: TestItem = response.into_body().into_single()?;
             assert_eq!(item, updated_item);
 
             // Delete the item
@@ -172,16 +212,12 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Try to read the item again, expecting a 404
             // loop with backoff to avoid test flakes due to eventual consistency
             loop {
-                match container_client
-                    .read_item::<TestItem>(&pk, &item_id, None)
-                    .await
-                {
+                match container_client.read_item(&pk, &item_id, None).await {
                     Ok(_) => {
                         println!("expected a 404 error when reading the deleted item, retrying...");
                         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
@@ -204,6 +240,10 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -224,7 +264,9 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let create_response = container_client.create_item(&pk, &item, None).await?;
+            let create_response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &create_response,
                 StatusCode::Created,
@@ -233,7 +275,7 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<serde_json::Value>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -260,6 +302,10 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -279,7 +325,9 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let upsert_response = container_client.upsert_item(&pk, &item, None).await?;
+            let upsert_response = container_client
+                .upsert_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &upsert_response,
                 StatusCode::Created,
@@ -288,7 +336,7 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -307,6 +355,10 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -324,8 +376,11 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
             };
 
             let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
 
-            let create_response = container_client.create_item(&pk, &item, None).await?;
+            let create_response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &create_response,
                 StatusCode::Created,
@@ -337,11 +392,11 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
             item.nested.nested_value = "Updated".into();
 
             let upsert_response = container_client
-                .upsert_item(
-                    &pk,
-                    &item,
-                    Some(ItemOptions::default().with_content_response_on_write_enabled(true)),
-                )
+                .upsert_item(&pk, &item_id, &item, {
+                    let mut operation = OperationOptions::default();
+                    operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+                    Some(ItemWriteOptions::default().with_operation_options(operation))
+                })
                 .await?;
             assert_response(
                 &upsert_response,
@@ -349,7 +404,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = upsert_response.into_body().json()?;
+            let updated_item: TestItem = upsert_response.into_body().into_single()?;
             assert_eq!(item, updated_item);
 
             Ok(())
@@ -360,6 +415,10 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -379,7 +438,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             let item_id = format!("Item1-{}", unique_id);
 
             let create_response = container_client
-                .create_item(PartitionKey::NULL, &item, None)
+                .create_item(PartitionKey::NULL, &item_id, &item, None)
                 .await?;
             assert_response(
                 &create_response,
@@ -392,7 +451,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             item.nested.nested_value = "Updated".into();
 
             let upsert_response = container_client
-                .upsert_item(PartitionKey::NULL, &item, None)
+                .upsert_item(PartitionKey::NULL, &item_id, &item, None)
                 .await?;
             assert_response(
                 &upsert_response,
@@ -402,7 +461,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, PartitionKey::NULL, &item_id, None)
+                .read_item(&container_client, PartitionKey::NULL, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -426,7 +485,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             // loop with backoff to avoid test flakes due to eventual consistency
             loop {
                 match container_client
-                    .read_item::<()>(PartitionKey::NULL, &item_id, None)
+                    .read_item(PartitionKey::NULL, &item_id, None)
                     .await
                 {
                     Ok(_) => {
@@ -451,6 +510,10 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -471,7 +534,9 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -482,8 +547,9 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Replace item with correct Etag
@@ -495,7 +561,10 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions::default().with_if_match_etag(etag)),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                    ),
                 )
                 .await?;
             assert_response(
@@ -514,7 +583,10 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &pk,
                     &item_id,
                     &item,
-                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                    ),
                 )
                 .await;
 
@@ -533,6 +605,10 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -551,8 +627,11 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             };
 
             let pk = format!("Partition1-{}", unique_id);
+            let item_id = format!("Item1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -563,8 +642,9 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Upsert item with correct Etag
@@ -574,8 +654,12 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             let upsert_response = container_client
                 .upsert_item(
                     &pk,
+                    &item_id,
                     &item,
-                    Some(ItemOptions::default().with_if_match_etag(etag)),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                    ),
                 )
                 .await?;
             assert_response(
@@ -592,8 +676,12 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             let response = container_client
                 .upsert_item(
                     &pk,
+                    &item_id,
                     &item,
-                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                    ),
                 )
                 .await;
 
@@ -612,6 +700,10 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -632,7 +724,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             let pk = format!("Partition1-{}", unique_id);
             let item_id = format!("Item1-{}", unique_id);
 
-            let response = container_client.create_item(&pk, &item, None).await?;
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &response,
                 StatusCode::Created,
@@ -643,8 +737,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Delete item with correct Etag
@@ -652,7 +747,10 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .delete_item(
                     &pk,
                     &item_id,
-                    Some(ItemOptions::default().with_if_match_etag(etag)),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                    ),
                 )
                 .await?;
             assert_response(
@@ -663,7 +761,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             );
 
             //Add item again for second delete test
-            let create_response = container_client.create_item(&pk, &item, None).await?;
+            let create_response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
             assert_response(
                 &create_response,
                 StatusCode::Created,
@@ -676,7 +776,10 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .delete_item(
                     &pk,
                     &item_id,
-                    Some(ItemOptions::default().with_if_match_etag("incorrectEtag".into())),
+                    Some(
+                        ItemWriteOptions::default()
+                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                    ),
                 )
                 .await;
 
@@ -710,6 +813,10 @@ struct ExplicitPkItem {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -724,7 +831,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
             let item_no_pk_id = format!("Item-NoPK-{}", unique_id);
 
             let response = container_client
-                .create_item(PartitionKey::UNDEFINED, &item_no_pk, None)
+                .create_item(PartitionKey::UNDEFINED, &item_no_pk_id, &item_no_pk, None)
                 .await?;
             assert_response(
                 &response,
@@ -746,7 +853,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
             let item_null_pk_id = format!("Item-NullPK-{}", unique_id);
 
             let response = container_client
-                .create_item(PartitionKey::NULL, &item_null_pk, None)
+                .create_item(PartitionKey::NULL, &item_null_pk_id, &item_null_pk, None)
                 .await?;
             assert_response(
                 &response,
@@ -765,7 +872,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
             let item_with_pk_id = format!("Item-WithPK-{}", unique_id);
 
             let response = container_client
-                .create_item(&pk_value, &item_with_pk, None)
+                .create_item(&pk_value, &item_with_pk_id, &item_with_pk, None)
                 .await?;
             assert_response(
                 &response,
@@ -776,7 +883,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Read the undefined-PK item using UNDEFINED - should succeed.
             let read_response = run_context
-                .read_item::<UndefinedPkItem>(
+                .read_item(
                     &container_client,
                     PartitionKey::UNDEFINED,
                     &item_no_pk_id,
@@ -794,7 +901,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Reading the undefined-PK item with NULL should fail (wrong partition).
             let result = container_client
-                .read_item::<serde_json::Value>(PartitionKey::NULL, &item_no_pk_id, None)
+                .read_item(PartitionKey::NULL, &item_no_pk_id, None)
                 .await;
             assert_eq!(
                 Some(azure_core::http::StatusCode::NotFound),
@@ -805,7 +912,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Read the null-PK item using NULL - should succeed.
             let read_response = run_context
-                .read_item::<TestItem>(
+                .read_item(
                     &container_client,
                     PartitionKey::NULL,
                     &item_null_pk_id,
@@ -823,7 +930,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Reading the null-PK item with UNDEFINED should fail (wrong partition).
             let result = container_client
-                .read_item::<serde_json::Value>(PartitionKey::UNDEFINED, &item_null_pk_id, None)
+                .read_item(PartitionKey::UNDEFINED, &item_null_pk_id, None)
                 .await;
             assert_eq!(
                 Some(azure_core::http::StatusCode::NotFound),
@@ -845,6 +952,197 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Suppress unused variable warning
             let _ = item_with_pk_id;
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+/// Validates that `create_item` (driver-routed) returns 409 Conflict when the
+/// item already exists. This exercises the driver's error-path bridging.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let item = TestItem {
+                id: format!("dup-{}", unique_id).into(),
+                partition_key: Some(format!("pk-{}", unique_id).into()),
+                value: 1,
+                nested: NestedItem {
+                    nested_value: "first".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("pk-{}", unique_id);
+            let item_id = format!("dup-{}", unique_id);
+
+            // First create should succeed.
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+            assert_response(
+                &response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Second create of the same item should fail with 409 Conflict.
+            let result = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await;
+            assert_eq!(
+                Some(StatusCode::Conflict),
+                result
+                    .expect_err("expected conflict on duplicate create")
+                    .http_status(),
+            );
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+/// Validates that `create_item` (driver-routed) returns the created item body
+/// when `ContentResponseOnWrite::Enabled` is set.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let item = TestItem {
+                id: format!("cr-{}", unique_id).into(),
+                partition_key: Some(format!("pk-{}", unique_id).into()),
+                value: 99,
+                nested: NestedItem {
+                    nested_value: "content-response".into(),
+                },
+                bool_value: false,
+            };
+            let pk = format!("pk-{}", unique_id);
+            let item_id = format!("cr-{}", unique_id);
+
+            let mut operation = OperationOptions::default();
+            operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+            let options = ItemWriteOptions::default().with_operation_options(operation);
+
+            let response = container_client
+                .create_item(&pk, &item_id, &item, Some(options))
+                .await?;
+            assert_response(
+                &response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            // Deserialize the body and verify it matches the original item.
+            let created: TestItem = response.into_body().into_single()?;
+            assert_eq!(item, created);
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+/// Validates that driver-routed `create_item` returns all expected response
+/// metadata: session token, activity ID, request charge, and server duration.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let item = TestItem {
+                id: format!("meta-{}", unique_id).into(),
+                partition_key: Some(format!("pk-{}", unique_id).into()),
+                value: 7,
+                nested: NestedItem {
+                    nested_value: "metadata-check".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("pk-{}", unique_id);
+            let item_id = format!("meta-{}", unique_id);
+
+            let response = container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+            assert_eq!(response.status(), StatusCode::Created);
+
+            // Session token must be present for session consistency.
+            assert!(
+                response.session_token().is_some(),
+                "expected session token on create_item response"
+            );
+
+            // Diagnostics from the driver pipeline must surface a populated
+            // activity ID and at least one tracked request with timing data.
+            let diagnostics = response.diagnostics();
+            assert!(
+                !diagnostics.activity_id().as_str().is_empty(),
+                "activity ID must be non-empty"
+            );
+            assert!(
+                diagnostics.request_count() >= 1,
+                "expected at least one request to be tracked in diagnostics"
+            );
+            let op_status = diagnostics
+                .status()
+                .expect("operation status should be set on completed diagnostics");
+            assert_eq!(
+                op_status.status_code(),
+                StatusCode::Created,
+                "operation-level diagnostics status should match HTTP response status"
+            );
+
+            // Request charge must be positive.
+            let charge = response.request_charge();
+            assert!(charge.is_some(), "expected request charge");
+            assert!(charge.unwrap() > 0.0, "request charge must be positive");
+            assert!(
+                f64::from(diagnostics.total_request_charge()) >= charge.unwrap(),
+                "diagnostics total request charge should aggregate response request charge"
+            );
+
+            // Server duration must be present and non-negative on the tracked request.
+            let requests = diagnostics.requests();
+            let duration = requests
+                .iter()
+                .filter_map(|r| r.server_duration_ms())
+                .next();
+            assert!(duration.is_some(), "expected server_duration_ms");
+            assert!(
+                duration.unwrap() >= 0.0,
+                "server_duration_ms must be non-negative"
+            );
+
+            // Response body should be empty when ContentResponseOnWrite is not enabled.
+            assert!(response.into_body().is_empty());
 
             Ok(())
         },

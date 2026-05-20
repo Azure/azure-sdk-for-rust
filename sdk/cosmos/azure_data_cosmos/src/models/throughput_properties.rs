@@ -138,3 +138,71 @@ pub(crate) struct AutoscaleAutoUpgradePolicy {
 pub(crate) struct AutoscaleThroughputPolicy {
     pub increment_percent: usize,
 }
+
+impl ThroughputProperties {
+    /// Applies throughput settings to the given request headers.
+    ///
+    /// Sets either the manual throughput or autoscale settings header,
+    /// depending on how this `ThroughputProperties` was constructed.
+    pub(crate) fn apply_headers(
+        &self,
+        headers: &mut azure_data_cosmos_driver::models::CosmosRequestHeaders,
+    ) {
+        match (
+            self.offer.offer_throughput,
+            self.offer.offer_autopilot_settings.as_ref(),
+        ) {
+            (Some(t), _) => {
+                headers.offer_throughput = Some(t);
+            }
+            (_, Some(ap)) => {
+                let mut settings = azure_data_cosmos_driver::models::OfferAutoscaleSettings::new(
+                    ap.max_throughput,
+                );
+                if let Some(policy) = ap.auto_upgrade_policy.as_ref() {
+                    if let Some(tp) = policy.throughput_policy.as_ref() {
+                        settings = settings.with_increment_percent(tp.increment_percent);
+                    }
+                }
+                headers.offer_autopilot_settings = Some(settings);
+            }
+            _ => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_data_cosmos_driver::models::CosmosRequestHeaders;
+
+    #[test]
+    fn default_throughput_produces_empty_headers() {
+        let tp = ThroughputProperties::default();
+        let mut headers = CosmosRequestHeaders::new();
+        tp.apply_headers(&mut headers);
+        assert!(headers.offer_throughput.is_none());
+        assert!(headers.offer_autopilot_settings.is_none());
+    }
+
+    #[test]
+    fn manual_throughput_sets_offer_throughput() {
+        let tp = ThroughputProperties::manual(400);
+        let mut headers = CosmosRequestHeaders::new();
+        tp.apply_headers(&mut headers);
+        assert_eq!(headers.offer_throughput, Some(400));
+        assert!(headers.offer_autopilot_settings.is_none());
+    }
+
+    #[test]
+    fn autoscale_throughput_sets_autopilot_settings() {
+        let tp = ThroughputProperties::autoscale(4000, None);
+        let mut headers = CosmosRequestHeaders::new();
+        tp.apply_headers(&mut headers);
+        assert!(headers.offer_throughput.is_none());
+        let settings = headers
+            .offer_autopilot_settings
+            .expect("should have autopilot settings");
+        assert_eq!(settings.max_throughput, 4000);
+    }
+}
