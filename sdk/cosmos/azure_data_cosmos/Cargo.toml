@@ -17,7 +17,7 @@ categories = ["api-bindings"]
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-azure_data_cosmos_driver = { workspace = true, default-features = false }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
 pin-project.workspace = true
@@ -48,7 +48,7 @@ azure_core_test = { workspace = true, features = ["tracing"] }
 # enable extra functionality only during tests. Cargo unions features across
 # dependency tables, so the production crate still gets its full feature set —
 # this entry only adds the internal test feature.
-azure_data_cosmos_driver = { workspace = true, default-features = false, features = [
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = [
   "__internal_test_diagnostics_construction",
 ] }
 azure_identity.workspace = true
