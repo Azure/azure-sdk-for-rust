@@ -23,19 +23,21 @@
 //! cargo run --package azure_storage_queue --example queue_hello_world
 //! ```
 
+use azure_core::http::Url;
 use azure_identity::DeveloperToolsCredential;
-use azure_storage_queue::{models::QueueMessage, QueueClient};
+use azure_storage_queue::{models::QueueMessage, QueueServiceClient};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = std::env::var("AZURE_QUEUE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_QUEUE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.queue.core.windows.net/", account);
+    let service_url = Url::parse(&format!("https://{account}.queue.core.windows.net/"))?;
     let queue_name = "hello-world-queue";
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_client = QueueClient::new(&endpoint, queue_name, Some(credential), None)?;
+    let service_client = QueueServiceClient::new(service_url, Some(credential), None)?;
+    let queue_client = service_client.queue_client(queue_name)?;
 
     // Create the queue.
     queue_client.create(None).await?;

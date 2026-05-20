@@ -7,16 +7,13 @@
 //! replace throughput offers. All operations go through the Cosmos driver.
 
 use crate::{
-    constants,
     feed::FeedBody,
     models::{CosmosResponse, ThroughputProperties},
     Query,
 };
-use azure_core::http::headers::{HeaderValue, CONTENT_TYPE};
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation};
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
-use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Queries the offer for a given resource ID (RID) via the driver.
@@ -32,11 +29,7 @@ pub(crate) async fn find_offer(
     let body = serde_json::to_vec(&query)?;
 
     let operation = CosmosOperation::query_offers(account.clone()).with_body(body);
-
-    let mut headers = HashMap::new();
-    headers.insert(constants::QUERY, HeaderValue::from("True"));
-    headers.insert(CONTENT_TYPE, HeaderValue::from("application/query+json"));
-    let options = OperationOptions::default().with_custom_headers(headers);
+    let options = OperationOptions::default();
 
     let driver_response = driver.execute_operation(operation, options).await?;
     tracing::debug!(
@@ -45,13 +38,13 @@ pub(crate) async fn find_offer(
         "offer query completed"
     );
     let diagnostics = driver_response.diagnostics();
-    let feed: FeedBody<ThroughputProperties> = serde_json::from_slice(driver_response.body())
-        .map_err(|e| {
+    let feed: FeedBody<ThroughputProperties> =
+        driver_response.into_body().into_single().map_err(|e| {
             // Attach the operation's diagnostics to the parse failure so
             // callers can correlate the deserialization error with the
             // underlying HTTP exchange (ActivityId, region, status, etc.).
             crate::CosmosError::from(azure_data_cosmos_driver::diagnostics::attach_diagnostics(
-                e.into(),
+                e,
                 diagnostics,
             ))
         })?;
@@ -63,7 +56,7 @@ pub(crate) async fn read_offer_by_id(
     driver: &CosmosDriver,
     account: &AccountReference,
     offer_id: &str,
-) -> crate::CosmosResult<CosmosResponse<ThroughputProperties>> {
+) -> crate::CosmosResult<CosmosResponse> {
     let operation = CosmosOperation::read_offer(account.clone(), offer_id.to_owned());
     let driver_response = driver
         .execute_operation(operation, OperationOptions::default())

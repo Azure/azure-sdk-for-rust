@@ -10,6 +10,7 @@ use azure_core::{
     error::{Error, ErrorKind},
 };
 use std::{
+    any::type_name,
     fmt,
     sync::{
         atomic::{AtomicUsize, Ordering},
@@ -18,13 +19,19 @@ use std::{
 };
 
 /// Options for constructing a new [`DeveloperToolsCredential`]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct DeveloperToolsCredentialOptions {
     /// An implementation of [`Executor`] to run commands asynchronously.
     ///
     /// If `None`, one is created using [`crate::process::new_executor`]; alternatively,
     /// you can supply your own implementation using a different asynchronous runtime.
     pub executor: Option<Arc<dyn Executor>>,
+}
+
+impl fmt::Debug for DeveloperToolsCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+    }
 }
 
 /// Authenticates through developer tools such as the Azure CLI.
@@ -79,7 +86,7 @@ impl DeveloperToolsCredential {
 
 impl fmt::Debug for DeveloperToolsCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("DeveloperToolsCredential")
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
     }
 }
 

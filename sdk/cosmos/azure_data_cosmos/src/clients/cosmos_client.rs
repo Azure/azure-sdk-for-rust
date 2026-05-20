@@ -137,7 +137,7 @@ impl CosmosClient {
             factory,
             query.into(),
             Default::default(),
-            None,
+            crate::query::QueryExecutorConfig::default(),
         )
         .into_stream()
     }

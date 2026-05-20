@@ -6,8 +6,6 @@ Azure Queue Storage is a service for storing large numbers of messages.
 
 ## Getting started
 
-**⚠️ Note: The `azure_storage_queue` crate is currently under active development and not all features may be implemented or work as intended. This crate is in beta and not suitable for Production environments. For any general feedback or usage issues, please open a GitHub issue at <https://github.com/Azure/azure-sdk-for-rust/issues>.**
-
 ### Install the package
 
 Install the Azure Storage Queue client library for Rust with [cargo]:
@@ -36,22 +34,24 @@ az storage account create -n my-storage-account-name -g my-resource-group
 
 #### Authenticate the client
 
-In order to interact with the Azure Queue service, you'll need to create an instance of a client, `QueueClient` or `QueueServiceClient`. The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
+In order to interact with the Azure Queue service, you'll need to create an instance of a client, `QueueClient` or `QueueServiceClient`. `QueueServiceClient` is the recommended entry point. Construct it once using `QueueServiceClient::new()`, then call `QueueServiceClient::queue_client()` to get a `QueueClient`. If you already have a fully-formed (for example, SAS-scoped) URL for a single queue, call `QueueClient::new()` with that URL directly instead.
+
+The [Azure Identity] library makes it easy to add Microsoft Entra ID support for authenticating Azure SDK clients with their corresponding Azure services:
 
 ```rust no_run
-use azure_storage_queue::{QueueClient, QueueClientOptions};
+use azure_core::http::Url;
+use azure_storage_queue::QueueServiceClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Create a QueueClient that will authenticate through Microsoft Entra ID
+    // Create a QueueServiceClient that will authenticate through Microsoft Entra ID
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_client = QueueClient::new(
-        "https://<storage_account_name>.queue.core.windows.net/", // Endpoint
-        "<queue_name>",                                           // Queue Name
-        Some(credential),                                         // Credential
-        Some(QueueClientOptions::default()),                      // QueueClient Options
-    )?;
+    let service_url = Url::parse("https://<storage_account_name>.queue.core.windows.net/")?;
+    let service_client = QueueServiceClient::new(service_url, Some(credential), None)?;
+
+    // Derive a queue client by name.
+    let queue_client = service_client.queue_client("<queue_name>")?;
     Ok(())
 }
 ```
@@ -73,18 +73,16 @@ You can find executable examples for all major SDK functions in:
 ### Send a message
 
 ```rust no_run
-use azure_storage_queue::{models::QueueMessage, QueueClient, QueueClientOptions};
+use azure_core::http::Url;
+use azure_storage_queue::{models::QueueMessage, QueueServiceClient};
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_client = QueueClient::new(
-        "https://<storage_account_name>.queue.core.windows.net/",
-        "<queue_name>",
-        Some(credential),
-        Some(QueueClientOptions::default()),
-    )?;
+    let service_url = Url::parse("https://<storage_account_name>.queue.core.windows.net/")?;
+    let service_client = QueueServiceClient::new(service_url, Some(credential), None)?;
+    let queue_client = service_client.queue_client("<queue_name>")?;
 
     let message = QueueMessage {
         message_text: Some("hello world".to_string()),
@@ -97,18 +95,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### Receive messages
 
 ```rust no_run
-use azure_storage_queue::{QueueClient, QueueClientOptions};
+use azure_core::http::Url;
+use azure_storage_queue::QueueServiceClient;
 use azure_identity::DeveloperToolsCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
-    let queue_client = QueueClient::new(
-        "https://<storage_account_name>.queue.core.windows.net/",
-        "<queue_name>",
-        Some(credential),
-        Some(QueueClientOptions::default()),
-    )?;
+    let service_url = Url::parse("https://<storage_account_name>.queue.core.windows.net/")?;
+    let service_client = QueueServiceClient::new(service_url, Some(credential), None)?;
+    let queue_client = service_client.queue_client("<queue_name>")?;
 
     let response = queue_client.receive_messages(None).await?;
     let messages = response.into_model()?;

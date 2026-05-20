@@ -13,7 +13,25 @@ use azure_data_cosmos_driver::{
 };
 use serde::de::DeserializeOwned;
 
-use crate::{constants, driver_bridge, feed::FeedBody, Query, QueryFeedPage};
+use crate::{constants, driver_bridge, options::MaxItemCountHint, Query, QueryFeedPage};
+
+/// Per-execution configuration for [`QueryExecutor`].
+///
+/// Grouping the knobs here keeps the constructor's argument list short and
+/// makes adding future per-query options non-breaking. `Default::default()`
+/// is appropriate for metadata queries (databases / containers) that don't
+/// expose any of these knobs to the caller.
+#[derive(Clone, Default)]
+pub(crate) struct QueryExecutorConfig {
+    /// Optional initial session-token hint.
+    pub session_token: Option<SessionToken>,
+    /// Request `x-ms-cosmos-populateindexmetrics` on each page.
+    pub populate_index_metrics: Option<bool>,
+    /// Request `x-ms-documentdb-populatequerymetrics` on each page.
+    pub populate_query_metrics: Option<bool>,
+    /// Page size for `x-ms-max-item-count`.
+    pub max_item_count: Option<MaxItemCountHint>,
+}
 
 /// A query executor that sends queries through the Cosmos driver.
 ///
@@ -28,7 +46,7 @@ pub struct QueryExecutor<T: DeserializeOwned + Send> {
     query_body: Option<Vec<u8>>,
     base_options: DriverOperationOptions,
     base_headers: HashMap<HeaderName, HeaderValue>,
-    session_token: Option<SessionToken>,
+    config: QueryExecutorConfig,
     continuation: Option<String>,
     complete: bool,
     // Why is our phantom type a function? Because that represents how we _use_ the type T.
@@ -45,16 +63,13 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         operation_factory: impl Fn() -> CosmosOperation + Send + 'static,
         query: Query,
         base_options: DriverOperationOptions,
-        session_token: Option<SessionToken>,
+        config: QueryExecutorConfig,
     ) -> Self {
-        // Pre-build the static headers that are the same for every page:
-        // user-provided custom headers + query-specific constants.
-        let mut base_headers = base_options.custom_headers().cloned().unwrap_or_default();
-        base_headers.insert(constants::QUERY.clone(), HeaderValue::from_static("True"));
-        base_headers.insert(
-            azure_core::http::headers::CONTENT_TYPE,
-            HeaderValue::from_static("application/query+json"),
-        );
+        // Pre-build the static custom headers (user-provided only). The
+        // driver pipeline auto-emits `x-ms-documentdb-isquery: True` and
+        // `Content-Type: application/query+json` for every OperationType::Query,
+        // so we no longer push them into `custom_headers` here.
+        let base_headers = base_options.custom_headers().cloned().unwrap_or_default();
 
         Self {
             driver,
@@ -63,7 +78,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
             query_body: None,
             base_options,
             base_headers,
-            session_token,
+            config,
             continuation: None,
             complete: false,
             phantom: std::marker::PhantomData,
@@ -101,8 +116,29 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         // The explicit session token serves as an initial hint; the driver's
         // internal session manager captures response tokens and applies them
         // to subsequent requests automatically.
-        if let Some(session_token) = &self.session_token {
+        if let Some(session_token) = &self.config.session_token {
             operation = operation.with_session_token(session_token.clone());
+        }
+
+        // Typed per-query request headers, applied additively with consistent
+        // precedence: anything the caller has already set on the operation
+        // (`is_some()` for `Option` fields) wins, and the executor only fills
+        // in fields that are not already set.
+        if self.config.populate_index_metrics.is_some()
+            || self.config.populate_query_metrics.is_some()
+            || self.config.max_item_count.is_some()
+        {
+            let mut request_headers = operation.request_headers().clone();
+            if request_headers.populate_index_metrics.is_none() {
+                request_headers.populate_index_metrics = self.config.populate_index_metrics;
+            }
+            if request_headers.populate_query_metrics.is_none() {
+                request_headers.populate_query_metrics = self.config.populate_query_metrics;
+            }
+            if request_headers.max_item_count.is_none() {
+                request_headers.max_item_count = self.config.max_item_count;
+            }
+            operation = operation.with_request_headers(request_headers);
         }
 
         // Clone the pre-built static headers and add the continuation token
@@ -121,8 +157,7 @@ impl<T: DeserializeOwned + Send + 'static> QueryExecutor<T> {
         let driver_response = self.driver.execute_operation(operation, op_options).await?;
 
         // Bridge driver response to SDK types
-        let cosmos_response =
-            driver_bridge::driver_response_to_cosmos_response::<FeedBody<T>>(driver_response);
+        let cosmos_response = driver_bridge::driver_response_to_cosmos_response(driver_response);
 
         let page = QueryFeedPage::<T>::from_response(cosmos_response).await?;
 

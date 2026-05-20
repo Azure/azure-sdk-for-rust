@@ -65,7 +65,7 @@ use crate::models::PartitionKeyKind;
 /// # use azure_data_cosmos::{clients::ContainerClient, PartitionKey};
 /// # let container_client: ContainerClient = panic!("this is a non-running example");
 /// # async {
-/// container_client.read_item::<serde_json::Value>(
+/// container_client.read_item(
 ///     PartitionKey::UNDEFINED,
 ///     "item_without_partition_key_property",
 ///     None).await.unwrap();

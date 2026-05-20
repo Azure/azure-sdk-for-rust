@@ -32,7 +32,10 @@ pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
 pub use error::{CosmosError, CosmosResult};
-pub use models::{BatchResponse, CosmosDiagnosticsContext, ItemResponse, ResourceResponse};
+pub use models::{
+    BatchResponse, CosmosStatus, DiagnosticsContext, IncrValue, ItemResponse, PatchOp, PatchSpec,
+    ResourceResponse, ResponseBody, ResponseHeaders,
+};
 pub use options::*;
 pub use partition_key::*;
 pub use query::Query;

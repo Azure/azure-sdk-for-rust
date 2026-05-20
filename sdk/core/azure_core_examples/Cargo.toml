@@ -1,0 +1,31 @@
+[package]
+name = "azure_core_examples"
+version = "0.1.0"
+description = "Example client implementations for azure_core documentation and tests."
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+
+# cspell:ignore autobenches autoexamples autotests
+autobenches = false
+autoexamples = false
+autotests = false
+
+[dependencies]
+async-trait.workspace = true
+azure_core = { path = "../azure_core", features = [
+  "reqwest",
+  "reqwest_rustls",
+  "tokio",
+] }
+base64.workspace = true
+futures.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+
+[lints]
+workspace = true

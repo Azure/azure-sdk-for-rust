@@ -39,7 +39,7 @@ impl Operation for ReadItemOperation {
         let item = self.items.random();
 
         let response = container
-            .read_item::<serde_json::Value>(&item.partition_key, &item.id, self.options.clone())
+            .read_item(&item.partition_key, &item.id, self.options.clone())
             .await?;
         Ok(extract_backend_duration(response.headers()))
     }

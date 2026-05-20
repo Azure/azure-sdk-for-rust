@@ -7,7 +7,7 @@
 //! `CosmosError` is a transparent record with public fields: the wrapped
 //! [`azure_core::Error`] (as an `Arc`), the operation's final HTTP
 //! `status_code` and `sub_status` (when known), and the per-operation
-//! [`CosmosDiagnosticsContext`] (when the driver attached one). Callers
+//! [`DiagnosticsContext`] (when the driver attached one). Callers
 //! can pattern-match, project, or serialize the error directly.
 //!
 //! # Interop with [`azure_core::Error`]
@@ -60,7 +60,7 @@
 
 use std::sync::Arc;
 
-use crate::models::CosmosDiagnosticsContext;
+use crate::models::DiagnosticsContext;
 
 /// Convenience type alias for `Result<T, CosmosError>` returned by every
 /// public Cosmos SDK API.
@@ -103,7 +103,7 @@ pub struct CosmosError {
     ///
     /// `None` for errors that did not flow through the driver pipeline
     /// or that escaped before diagnostics had been initialized.
-    pub diagnostics: Option<Arc<CosmosDiagnosticsContext>>,
+    pub diagnostics: Option<Arc<DiagnosticsContext>>,
 }
 
 impl CosmosError {
@@ -188,7 +188,7 @@ impl CosmosError {
     /// Returns a borrow to avoid a refcount bump on every read. For
     /// owned access, clone the field directly: `err.diagnostics.clone()`.
     #[inline]
-    pub fn diagnostics(&self) -> Option<&CosmosDiagnosticsContext> {
+    pub fn diagnostics(&self) -> Option<&DiagnosticsContext> {
         self.diagnostics.as_deref()
     }
 }
@@ -268,8 +268,8 @@ mod tests {
     use azure_core::error::ErrorKind;
     use std::sync::Arc;
 
-    fn make_test_diagnostics() -> Arc<CosmosDiagnosticsContext> {
-        Arc::new(CosmosDiagnosticsContext::for_testing(
+    fn make_test_diagnostics() -> Arc<DiagnosticsContext> {
+        Arc::new(DiagnosticsContext::for_testing(
             azure_data_cosmos_driver::models::ActivityId::from_string(
                 "test-cosmos-error".to_owned(),
             ),
@@ -467,7 +467,7 @@ mod tests {
 
         // Diagnostics report 410/1002 (Gone / PartitionKeyRangeGone),
         // intentionally distinct from the wrapped HttpResponse's 404.
-        let diagnostics = Arc::new(CosmosDiagnosticsContext::for_testing_with_status(
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing_with_status(
             azure_data_cosmos_driver::models::ActivityId::from_string("test-precedence".to_owned()),
             CosmosStatus::new(StatusCode::Gone).with_sub_status(1002),
         ));

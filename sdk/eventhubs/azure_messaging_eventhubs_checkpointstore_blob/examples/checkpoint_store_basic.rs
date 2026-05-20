@@ -10,7 +10,7 @@
 //!
 //! It also uses the OpenTelemetry SDK to set up tracing and logging with a stdout exporter.
 
-use azure_core::http::{ClientOptions, InstrumentationOptions};
+use azure_core::http::{ClientOptions, InstrumentationOptions, Url};
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::{
@@ -18,7 +18,7 @@ use azure_messaging_eventhubs::{
     CheckpointStore,
 };
 use azure_messaging_eventhubs_checkpointstore_blob::BlobCheckpointStore;
-use azure_storage_blob::{BlobContainerClient, BlobContainerClientOptions};
+use azure_storage_blob::{BlobServiceClient, BlobServiceClientOptions};
 use tracing::info;
 
 use opentelemetry_appender_tracing::layer;
@@ -43,12 +43,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create Azure credential and blob service client
     let credential = DeveloperToolsCredential::new(None)?;
 
-    // Instantiate a blob client with OpenTelemetry instrumentation enabled
-    let blob_container_client = BlobContainerClient::new(
-        &storage_account_url,
-        &container,
+    // Instantiate a blob service client with OpenTelemetry instrumentation enabled,
+    // then derive a container client by name.
+    let service_url = Url::parse(&storage_account_url)?;
+    let service_client = BlobServiceClient::new(
+        service_url,
         Some(credential),
-        Some(BlobContainerClientOptions {
+        Some(BlobServiceClientOptions {
             client_options: ClientOptions {
                 instrumentation: InstrumentationOptions {
                     tracer_provider: Some(OpenTelemetryTracerProvider::from_global_provider()),
@@ -58,6 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ..Default::default()
         }),
     )?;
+    let blob_container_client = service_client.blob_container_client(&container);
 
     // Create the checkpoint store
     let checkpoint_store = BlobCheckpointStore::new(blob_container_client);

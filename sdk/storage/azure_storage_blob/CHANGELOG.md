@@ -1,6 +1,6 @@
 # Release History
 
-## 0.13.0 (Unreleased)
+## 1.1.0-beta.1 (Unreleased)
 
 ### Features Added
 
@@ -9,6 +9,47 @@
 ### Bugs Fixed
 
 ### Other Changes
+
+## 1.0.0 (2026-05-13)
+
+### Breaking Changes
+
+- Consolidated client constructors: the existing `from_url()` constructors have been renamed to `new()`, replacing the previous endpoint-plus-name string overloads. Each client now has a single `new()` that takes a fully-formed `Url`:
+  - `BlobClient::new(blob_url: Url, ...)`
+  - `BlockBlobClient::new(blob_url: Url, ...)`
+  - `AppendBlobClient::new(blob_url: Url, ...)`
+  - `PageBlobClient::new(blob_url: Url, ...)`
+  - `BlobContainerClient::new(container_url: Url, ...)`
+  - `BlobServiceClient::new(service_url: Url, ...)`
+- `BlobServiceClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilterBlobSegment, XmlFormat>>`.
+- `BlobContainerClient::find_blobs_by_tags()` is now pageable and returns `Result<Pager<FilteredBlobResponse, XmlFormat>>` instead of `Result<Response<FilteredBlobResponse, XmlFormat>>`.
+- Renamed `FilterBlobSegment` to `FilteredBlobResponse`.
+- Renamed `FilteredBlobResponse.blobs` to `FilteredBlobResponse.blob_items`.
+- Changed `FilteredBlobResponse.blob_items` from `Option<Vec<FilterBlobItem>>` to `Vec<FilterBlobItem>`.
+- Renamed `ListContainersSegmentResponse` to `ListContainersResponse`.
+- Removed `BlobFlatListSegment` wrapper; `ListBlobsResponse.blob_items` is now `Vec<BlobItem>` directly (previously accessed via `.segment.blob_items`).
+- Renamed `BlobProperties.customer_provided_key_sha256` to `encryption_key_sha256`.
+- Renamed `BlobMetadata.additional_properties` to `values`.
+- Renamed `PageBlobClientCreateOptions::with_if_not_exists()` to `if_not_exists()`.
+- Renamed `AppendBlobClientCreateOptions::with_if_not_exists()` to `if_not_exists()`.
+- Renamed `BlockBlobClientUploadBlobFromUrlOptions::with_if_not_exists()` to `if_not_exists()`.
+- Renamed `BlockBlobClientUploadOptions::with_if_not_exists()` to `if_not_exists()`.
+- Removed the `endpoint()` method from all clients. Use `url()` instead.
+- Removed `PageBlobClient::get_page_ranges()` along with the `PageList`, `PageRange`, `ClearRange`, `PageBlobClientGetPageRangesOptions`, and `PageListHeaders` types.
+- Removed the `azure_storage_blob::error` and `azure_storage_blob::models::error` module paths. Use the re-exported `azure_storage_blob::{Result, StorageError}` instead.
+
+### Features Added
+
+- Added `with_tags()` helpers to set blob tags on create/upload options by accepting `BlobTags` or `HashMap<String, String>` and encoding them into the `x-ms-tags` header format:
+  - `PageBlobClientCreateOptions::with_tags()`
+  - `AppendBlobClientCreateOptions::with_tags()`
+  - `BlockBlobClientUploadOptions::with_tags()`
+  - `BlockBlobClientUploadBlobFromUrlOptions::with_tags()`
+  - `BlockBlobClientCommitBlockListOptions::with_tags()`
+
+### Bugs Fixed
+
+- All client constructors (`BlobClient::new()`, `BlobContainerClient::new()`, `BlobServiceClient::new()`, `AppendBlobClient::new()`, `BlockBlobClient::new()`, `PageBlobClient::new()`) now reject non-base URLs (e.g. `data:`, `mailto:`).
 
 ## 0.12.0 (2026-04-22)
 

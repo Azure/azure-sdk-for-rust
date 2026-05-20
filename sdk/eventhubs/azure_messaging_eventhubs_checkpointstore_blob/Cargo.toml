@@ -21,7 +21,7 @@ rust-version.workspace = true
 [dependencies]
 async-trait.workspace = true
 azure_core.workspace = true
-azure_messaging_eventhubs.workspace = true
+azure_messaging_eventhubs = { path = "../azure_messaging_eventhubs", version = "0.15.0" }
 azure_storage_blob.workspace = true
 futures.workspace = true
 serde = { workspace = true, features = ["derive"] }

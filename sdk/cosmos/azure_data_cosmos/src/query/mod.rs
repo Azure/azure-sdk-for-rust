@@ -8,6 +8,7 @@ use serde::Serialize;
 pub(crate) mod executor;
 
 pub use executor::QueryExecutor;
+pub(crate) use executor::QueryExecutorConfig;
 
 /// Represents a Cosmos DB Query, with optional parameters.
 ///

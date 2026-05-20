@@ -170,7 +170,7 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
     let mut list_response = container_client.list_blobs(None)?.into_pages();
     let page = list_response.try_next().await?;
     let segment = page.unwrap().into_model()?;
-    let blob_items = segment.segment.blob_items;
+    let blob_items = segment.blob_items;
     // Only base blobs, no snapshots
     assert_eq!(2, blob_items.len());
     for blob_item in &blob_items {
@@ -187,7 +187,7 @@ async fn test_list_blobs_with_snapshots(ctx: TestContext) -> Result<(), Box<dyn 
         .into_pages();
     let page = list_response.try_next().await?;
     let segment = page.unwrap().into_model()?;
-    let blob_items = segment.segment.blob_items;
+    let blob_items = segment.blob_items;
 
     // Verify all blobs and snapshots (2 base + 2 snapshots for blob_1 + 3 snapshots for blob_2 = 7)
     assert_eq!(7, blob_items.len());

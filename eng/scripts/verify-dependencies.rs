@@ -23,11 +23,6 @@ static EXEMPTIONS: &[(&str, &str)] = &[
     ("azure_core", "ureq"),
     ("azure_core_test", "dotenvy"),
     ("azure_canary", "serde"),
-    // Temporary: Allow azure_data_cosmos and friends to release depending on the latest release of azure_core and azure_identity
-    ("azure_data_cosmos_driver", "azure_core"),
-    ("azure_data_cosmos_driver", "azure_identity"),
-    ("azure_data_cosmos", "azure_core"),
-    ("azure_data_cosmos", "azure_identity"),
 ];
 
 fn main() {
@@ -75,15 +70,15 @@ fn main() {
         if let Some(targets) = package_manifest.target.as_ref() {
             for (target, platform) in targets {
                 all_dependencies.push((
-                    format!("target.'{}'.dependencies", target),
+                    format!("target.'{target}'.dependencies"),
                     platform.dependencies.as_ref(),
                 ));
                 all_dependencies.push((
-                    format!("target.'{}'.dev-dependencies", target),
+                    format!("target.'{target}'.dev-dependencies"),
                     platform.dev_dependencies(),
                 ));
                 all_dependencies.push((
-                    format!("target.'{}'.build-dependencies", target),
+                    format!("target.'{target}'.build-dependencies"),
                     platform.build_dependencies(),
                 ));
             }
@@ -114,8 +109,7 @@ fn main() {
             })
             .filter(|v| {
                 package_manifest.package.as_ref().is_some_and(|package| {
-                    !EXEMPTIONS
-                        .contains(&(package.name.as_ref().expect("REASON").as_str(), &v.name))
+                    !EXEMPTIONS.contains(&(package.name.as_ref().unwrap().as_str(), &v.name))
                 })
             })
             .collect();
@@ -123,7 +117,7 @@ fn main() {
         if !dependencies.is_empty() {
             dependencies.sort();
             println!(
-                "The following `{}` dependencies do not inherit from workspace `{}`:\n",
+                "The following `{}` dependencies do not inherit from workspace `{}` or reference via `path`:\n",
                 package_manifest_path.display(),
                 workspace_manifest_path.display(),
             );
@@ -136,7 +130,7 @@ fn main() {
                     .join("\n* ")
             );
             println!("Add dependencies to workspace and change the package dependency to `{{ workspace = true }}`.");
-            println!("See <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inheriting-a-dependency-from-a-workspace> for more information.");
+            println!("See <https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md#versions> for more information.");
             println!();
 
             found = true;

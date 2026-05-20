@@ -4,19 +4,21 @@
 //! Cosmos DB operation result types.
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponseHeaders, CosmosStatus};
+use crate::models::{CosmosResponseHeaders, CosmosStatus, ResponseBody};
 use std::sync::Arc;
 
 /// Result of a Cosmos DB operation.
 ///
-/// Contains the response body (as raw bytes), relevant headers, and comprehensive
-/// status information for the operation.
+/// Contains the response body (as a [`ResponseBody`] of one or more
+/// reference-counted byte slices), relevant headers, and comprehensive status
+/// information for the operation.
 ///
 /// # Schema-Agnostic Design
 ///
-/// The driver returns response bodies as raw bytes (`Vec<u8>`). The higher-level
-/// SDK (e.g., `azure_data_cosmos`) handles deserialization into typed structures.
-/// This allows the driver to be reused across different serialization strategies.
+/// The driver returns response bodies as raw bytes via [`ResponseBody`].
+/// The higher-level SDK (e.g., `azure_data_cosmos`) handles deserialization into
+/// typed structures. This allows the driver to be reused across different
+/// serialization strategies.
 ///
 /// # Example
 ///
@@ -34,8 +36,8 @@ use std::sync::Arc;
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct CosmosResponse {
-    /// Raw response body (UTF-8 JSON or Cosmos binary encoding).
-    body: Vec<u8>,
+    /// Response body, possibly composed of multiple byte slices.
+    body: ResponseBody,
 
     /// Extracted Cosmos-specific headers.
     headers: CosmosResponseHeaders,
@@ -51,30 +53,29 @@ impl CosmosResponse {
     /// Creates a new `CosmosResponse`.
     ///
     /// This is typically called by the driver after completing an operation.
+    /// The `body` may be supplied as raw bytes (e.g., `Vec<u8>`, `Bytes`) and
+    /// will be wrapped as a single-part [`ResponseBody`].
     pub(crate) fn new(
-        body: Vec<u8>,
+        body: impl Into<ResponseBody>,
         headers: CosmosResponseHeaders,
         status: CosmosStatus,
         diagnostics: Arc<DiagnosticsContext>,
     ) -> Self {
         Self {
-            body,
+            body: body.into(),
             headers,
             status,
             diagnostics,
         }
     }
 
-    /// Returns a reference to the response body.
-    ///
-    /// The body is raw bytes - typically UTF-8 JSON but may be Cosmos binary
-    /// encoding for certain operations. The higher-level SDK handles parsing.
-    pub fn body(&self) -> &[u8] {
+    /// Returns a reference to the typed response body.
+    pub fn body(&self) -> &ResponseBody {
         &self.body
     }
 
-    /// Consumes the result and returns the body.
-    pub fn into_body(self) -> Vec<u8> {
+    /// Consumes the response and returns the body.
+    pub fn into_body(self) -> ResponseBody {
         self.body
     }
 
@@ -149,7 +150,10 @@ mod tests {
         assert_eq!(status.status_code(), StatusCode::Ok);
         assert!(status.is_success());
         assert!(status.sub_status().is_none());
-        assert_eq!(result.body(), b"{\"id\": \"test\"}");
+        match result.body() {
+            ResponseBody::Bytes(b) => assert_eq!(b.as_ref(), b"{\"id\": \"test\"}"),
+            _ => panic!("expected Bytes variant"),
+        }
         assert_eq!(
             result.headers().request_charge,
             Some(RequestCharge::new(5.5))
@@ -190,7 +194,10 @@ mod tests {
             make_diagnostics(Some(StatusCode::Created), None),
         );
 
-        assert_eq!(result.body(), b"body");
+        match result.body() {
+            ResponseBody::Bytes(b) => assert_eq!(b.as_ref(), b"body"),
+            _ => panic!("expected Bytes variant"),
+        }
         assert_eq!(result.status().status_code(), StatusCode::Created);
         assert!(result.status().sub_status().is_none());
         assert_eq!(
@@ -199,7 +206,8 @@ mod tests {
         );
 
         let body = result.into_body();
-        assert_eq!(body, b"body");
+        let bytes = body.single().unwrap();
+        assert_eq!(&bytes[..], b"body");
     }
 
     #[test]
