@@ -1641,12 +1641,25 @@ fn maybe_upgrade_to_hedge(
     }
 
     match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
-        Some(upgrade) => OperationAction::Hedge {
-            secondary_routing: upgrade.secondary_routing,
-            secondary_excluded_regions: upgrade.secondary_excluded_regions,
-            threshold: upgrade.threshold,
-            strategy_config: upgrade.strategy_config,
-        },
+        Some(upgrade) => {
+            // Spec §10.4 reserved tracing surface: emit a structured event
+            // when an operation is upgraded into the hedge race. Fields
+            // mirror the inputs that drove the eligibility decision so
+            // operators can correlate threshold tuning with observed
+            // upgrades.
+            tracing::debug!(
+                threshold_ms = upgrade.threshold.get().as_millis() as u64,
+                primary_region = ?primary.endpoint.region().map(crate::options::Region::as_str),
+                secondary_region = ?upgrade.secondary_routing.endpoint.region().map(crate::options::Region::as_str),
+                "cosmos.hedge.enabled_for_operation",
+            );
+            OperationAction::Hedge {
+                secondary_routing: upgrade.secondary_routing,
+                secondary_excluded_regions: upgrade.secondary_excluded_regions,
+                threshold: upgrade.threshold,
+                strategy_config: upgrade.strategy_config,
+            }
+        }
         None => action,
     }
 }
@@ -2003,6 +2016,15 @@ async fn execute_hedged(
                 activity_id = %ctx.activity_id,
                 "execute_hedged: primary won pre-threshold (zero-overhead happy path)",
             );
+            // Spec §10.4 reserved: structured win event. `was_hedge=false`
+            // distinguishes the zero-overhead happy path from a post-threshold
+            // primary win.
+            tracing::info!(
+                activity_id = %ctx.activity_id,
+                winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
+                was_hedge = false,
+                "cosmos.hedge.won",
+            );
             // Spec §9.5: primary-region win resets the consecutive-hedge-win
             // counter on this (partition, primary_region) pair. Recorded
             // even in the zero-overhead path because a streak of fast
@@ -2069,6 +2091,16 @@ async fn execute_hedged(
         shared_hub_region_latch = shared_hub_region_latch.is_some(),
         "execute_hedged: threshold elapsed; secondary launched",
     );
+    // Spec §10.4 reserved tracing surface: structured "alternate spawned"
+    // event distinct from the freeform message above. Fields carry the
+    // race timing (threshold) and the target region so operators can
+    // correlate spawn rate with observed tail-latency improvements.
+    tracing::debug!(
+        activity_id = %ctx.activity_id,
+        threshold_ms = threshold.get().as_millis() as u64,
+        secondary_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
+        "cosmos.hedge.alternate_spawned",
+    );
 
     // ── Stage 4: Primary vs secondary race ────────────────────────────
     // Per-attempt deadline observation lives inside the transport
@@ -2095,6 +2127,21 @@ async fn execute_hedged(
                     tracing::debug!(
                         activity_id = %ctx.activity_id,
                         "execute_hedged: primary won after threshold",
+                    );
+                    // Spec §10.4 reserved: secondary attempt was dropped
+                    // structurally when this branch was taken.
+                    tracing::debug!(
+                        activity_id = %ctx.activity_id,
+                        which = "secondary",
+                        target_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
+                        reason = "primary_won_post_threshold",
+                        "cosmos.hedge.canceled",
+                    );
+                    tracing::info!(
+                        activity_id = %ctx.activity_id,
+                        winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
+                        was_hedge = true,
+                        "cosmos.hedge.won",
                     );
                     record_hedge_outcome(
                         ctx.hedge_outcome_recorder,
@@ -2141,6 +2188,12 @@ async fn execute_hedged(
                                 activity_id = %ctx.activity_id,
                                 "execute_hedged: secondary won after primary transient",
                             );
+                            tracing::info!(
+                                activity_id = %ctx.activity_id,
+                                winner_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
+                                was_hedge = true,
+                                "cosmos.hedge.won",
+                            );
                             record_hedge_outcome(
                                 ctx.hedge_outcome_recorder,
                                 HedgeOutcome::AlternateWin,
@@ -2165,11 +2218,21 @@ async fn execute_hedged(
                                     activity_id = %ctx.activity_id,
                                     "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
                                 );
+                                tracing::warn!(
+                                    activity_id = %ctx.activity_id,
+                                    deadline_elapsed = true,
+                                    "cosmos.hedge.both_transient",
+                                );
                                 Err(application_cancelled_error())
                             } else {
                                 tracing::warn!(
                                     activity_id = %ctx.activity_id,
                                     "execute_hedged: both primary and secondary transient; surfacing secondary error",
+                                );
+                                tracing::warn!(
+                                    activity_id = %ctx.activity_id,
+                                    deadline_elapsed = false,
+                                    "cosmos.hedge.both_transient",
                                 );
                                 Err(transient_outcome_error())
                             }
@@ -2192,6 +2255,21 @@ async fn execute_hedged(
                     tracing::debug!(
                         activity_id = %ctx.activity_id,
                         "execute_hedged: secondary won race",
+                    );
+                    // Spec §10.4 reserved: primary attempt was dropped
+                    // structurally when secondary won the race.
+                    tracing::debug!(
+                        activity_id = %ctx.activity_id,
+                        which = "primary",
+                        target_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
+                        reason = "secondary_won_race",
+                        "cosmos.hedge.canceled",
+                    );
+                    tracing::info!(
+                        activity_id = %ctx.activity_id,
+                        winner_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
+                        was_hedge = true,
+                        "cosmos.hedge.won",
                     );
                     record_hedge_outcome(
                         ctx.hedge_outcome_recorder,
@@ -2241,6 +2319,12 @@ async fn execute_hedged(
                                 activity_id = %ctx.activity_id,
                                 "execute_hedged: primary won after secondary transient",
                             );
+                            tracing::info!(
+                                activity_id = %ctx.activity_id,
+                                winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
+                                was_hedge = true,
+                                "cosmos.hedge.won",
+                            );
                             record_hedge_outcome(
                                 ctx.hedge_outcome_recorder,
                                 HedgeOutcome::PrimaryWin,
@@ -2260,11 +2344,21 @@ async fn execute_hedged(
                                     activity_id = %ctx.activity_id,
                                     "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
                                 );
+                                tracing::warn!(
+                                    activity_id = %ctx.activity_id,
+                                    deadline_elapsed = true,
+                                    "cosmos.hedge.both_transient",
+                                );
                                 Err(application_cancelled_error())
                             } else {
                                 tracing::warn!(
                                     activity_id = %ctx.activity_id,
                                     "execute_hedged: both secondary and primary transient; surfacing primary error",
+                                );
+                                tracing::warn!(
+                                    activity_id = %ctx.activity_id,
+                                    deadline_elapsed = false,
+                                    "cosmos.hedge.both_transient",
                                 );
                                 Err(transient_outcome_error())
                             }
