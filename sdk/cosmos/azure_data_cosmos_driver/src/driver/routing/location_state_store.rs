@@ -27,7 +27,8 @@ use super::{
     mark_endpoint_unavailable, mark_partition_unavailable,
     partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
     partition_key_range_id::PartitionKeyRangeId,
-    AccountEndpointState, CosmosEndpoint, LocationEffect,
+    record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
+    LocationEffect,
 };
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
@@ -575,19 +576,18 @@ impl LocationStateStore {
     /// the primary in
     /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
     ///
-    /// Per [`docs/HEDGING_SPEC.md`] §9.5: repeated alternate-region wins on
-    /// the same `(partition, primary_region)` pair are signal that the
-    /// primary partition is degraded. Once the PPCB-side threshold and
-    /// state-transition rules are co-designed with the PPCB owner
-    /// (tracking issue TBD), this will atomically increment a per-pair
-    /// counter and transition the partition to `Unhealthy` once N
-    /// consecutive wins accumulate. Until that lands, the method is a
-    /// tracing-only stub so the load-bearing callsite in `execute_hedged`
-    /// can compile and ship (`HEDGING_IMPLEMENTATION_PLAN.md` sub-plan 6a).
+    /// Per [`docs/HEDGING_SPEC.md`] §9.5: increments a per-`(partition,
+    /// primary_region)` counter atomically via [`Self::apply_partition`]. When
+    /// the counter reaches
+    /// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`] the
+    /// partition is tripped by installing an `Unhealthy` entry in
+    /// `circuit_breaker_overrides` (same shape PPCB uses for hard failures),
+    /// so subsequent requests route away from the degraded primary region.
+    /// The trip is recovered by the existing PPCB failback sweep.
     ///
-    /// `primary_region` is `None` for default-endpoint accounts whose
-    /// snapshot does not carry a named region (matches the spec invariant
-    /// that the counter key is `(partition, primary_region)`).
+    /// `primary_region` is `None` for default-endpoint accounts whose snapshot
+    /// does not carry a named region (matches the spec invariant that the
+    /// counter key is `(partition, primary_region)`).
     pub fn record_consecutive_hedge_win(
         &self,
         partition: &PartitionKeyRangeId,
@@ -598,19 +598,21 @@ impl LocationStateStore {
             primary_region = ?primary_region.map(Region::as_str),
             "cosmos.hedge.recorded_alternate_win",
         );
-        // TODO(ppcb-co-design): increment per-(partition, primary_region)
-        // counter and transition to `Unhealthy` when threshold N is reached.
+        let account = self.account_snapshot();
+        self.apply_partition(|current| {
+            record_hedge_alternate_win(current, &account, partition, primary_region)
+        });
     }
 
     /// Records that the primary attempt won in
     /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
     ///
-    /// Per [`docs/HEDGING_SPEC.md`] §9.5 invariant #2: a direct
-    /// primary-region win on the same `(partition, primary_region)` pair
-    /// resets the consecutive-hedge-win counter so transient cross-region
-    /// latency spikes do not accumulate over time. Tracing-only stub
-    /// until the PPCB-side counter lands
-    /// (`HEDGING_IMPLEMENTATION_PLAN.md` sub-plan 6a).
+    /// Per [`docs/HEDGING_SPEC.md`] §9.5 invariant #2: clears the
+    /// per-`(partition, primary_region)` consecutive-hedge-win counter
+    /// atomically via [`Self::apply_partition`] so transient cross-region
+    /// latency spikes do not accumulate into a trip over arbitrarily long
+    /// timescales. Does not touch `circuit_breaker_overrides` — an existing
+    /// trip recovers via the failback sweep, not via primary wins.
     pub fn record_primary_win(
         &self,
         partition: &PartitionKeyRangeId,
@@ -621,7 +623,9 @@ impl LocationStateStore {
             primary_region = ?primary_region.map(Region::as_str),
             "cosmos.hedge.recorded_primary_win",
         );
-        // TODO(ppcb-co-design): reset per-(partition, primary_region) counter.
+        self.apply_partition(|current| {
+            record_hedge_primary_win(current, partition, primary_region)
+        });
     }
 }
 
