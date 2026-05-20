@@ -5,9 +5,9 @@
 
 #[cfg(feature = "http")]
 use crate::http::{RawResponse, StatusCode};
-use std::backtrace::Backtrace;
+use std::backtrace::{Backtrace, BacktraceStatus};
 use std::borrow::Cow;
-use std::fmt::{Debug, Display};
+use std::fmt::{self, Debug, Display};
 
 /// A convenience alias for `Result` where the error type is hard coded to [`Error`].
 pub type Result<T> = std::result::Result<T, Error>;
@@ -46,7 +46,7 @@ impl ErrorKind {
     pub fn into_error(self) -> Error {
         Error {
             context: Repr::Simple(self),
-            backtrace: Box::new(Backtrace::capture()),
+            backtrace: capture_backtrace(),
         }
     }
 }
@@ -72,13 +72,22 @@ impl Display for ErrorKind {
 }
 
 /// An error encountered when communicating with the service.
-#[derive(Debug)]
 pub struct Error {
     context: Repr,
-    // Boxed to keep `Error` small enough to satisfy `clippy::result_large_err`.
-    // Visible via `{:?}` formatting when RUST_BACKTRACE is set.
-    #[allow(dead_code)]
-    backtrace: Box<Backtrace>,
+    // Only `Some` when `RUST_BACKTRACE` is set; boxed so the `Some` variant
+    // doesn't inflate `Error` beyond `clippy::result_large_err` limits.
+    backtrace: Option<Box<Backtrace>>,
+}
+
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut dbg = f.debug_struct("Error");
+        dbg.field("context", &self.context);
+        if let Some(backtrace) = &self.backtrace {
+            dbg.field("backtrace", backtrace);
+        }
+        dbg.finish()
+    }
 }
 
 impl Error {
@@ -92,7 +101,7 @@ impl Error {
                 kind,
                 error: error.into(),
             }),
-            backtrace: Box::new(Backtrace::capture()),
+            backtrace: capture_backtrace(),
         }
     }
 
@@ -111,7 +120,7 @@ impl Error {
                 },
                 message.into(),
             ),
-            backtrace: Box::new(Backtrace::capture()),
+            backtrace: capture_backtrace(),
         }
     }
 
@@ -134,7 +143,7 @@ impl Error {
     {
         Self {
             context: Repr::SimpleMessage(kind, message.into()),
-            backtrace: Box::new(Backtrace::capture()),
+            backtrace: capture_backtrace(),
         }
     }
 
@@ -253,7 +262,7 @@ impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
             context: Repr::Simple(kind),
-            backtrace: Box::new(Backtrace::capture()),
+            backtrace: capture_backtrace(),
         }
     }
 }
@@ -377,7 +386,7 @@ where
                 },
                 message.into(),
             ),
-            backtrace: Box::new(Backtrace::capture()),
+            backtrace: capture_backtrace(),
         })
     }
 
@@ -388,6 +397,15 @@ where
         C: Into<Cow<'static, str>>,
     {
         self.with_context(kind, f())
+    }
+}
+
+fn capture_backtrace() -> Option<Box<Backtrace>> {
+    let backtrace = Backtrace::capture();
+    if backtrace.status() == BacktraceStatus::Captured {
+        Some(Box::new(backtrace))
+    } else {
+        None
     }
 }
 
@@ -496,14 +514,11 @@ mod tests {
 
     #[test]
     fn backtrace_captured_when_enabled() {
-        use std::backtrace::BacktraceStatus;
-
         let error = Error::new(ErrorKind::Other, "test error");
-        let status = error.backtrace.status();
         if std::env::var("RUST_BACKTRACE").is_ok() {
-            assert_eq!(status, BacktraceStatus::Captured);
+            assert!(error.backtrace.is_some());
         } else {
-            assert_ne!(status, BacktraceStatus::Captured);
+            assert!(error.backtrace.is_none());
         }
     }
 }

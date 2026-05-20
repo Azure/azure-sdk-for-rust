@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `backtrace` field to `Error` capturing a `std::backtrace::Backtrace` at construction time. The backtrace is available when calling `Debug::fmt` e.g., `{:?}`, when `RUST_BACKTRACE=1` is set.
+- Added `backtrace` field to `Error` that captures a `std::backtrace::Backtrace` at construction time when `RUST_BACKTRACE=1` is set. The backtrace is available when calling `Debug::fmt` e.g., `{:?}`.
 
 ### Breaking Changes
 
