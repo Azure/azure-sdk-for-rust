@@ -26,6 +26,7 @@ use crate::{
 
 use super::cache::{AccountMetadataCache, ContainerCache};
 use super::{
+    account_refresh,
     transport::{
         http_client_factory::{DefaultHttpClientFactory, HttpClientFactory},
         CosmosTransport,
@@ -153,6 +154,34 @@ pub struct CosmosDriverRuntime {
     /// which independently hold a reference.
     account_metadata_cache: Arc<AccountMetadataCache>,
 
+    /// Per-endpoint registry consulted by the runtime-owned account-metadata
+    /// refresh loop. Populated via
+    /// [`Self::register_for_account_refresh`]; entries are removed when the
+    /// corresponding [`AccountRefreshRegistration`] guard is dropped (the
+    /// driver holds the guard for its lifetime).
+    account_refresh_registry: RwLock<
+        std::collections::HashMap<
+            crate::models::AccountEndpoint,
+            account_refresh::AccountRefreshEntry,
+        >,
+    >,
+
+    /// Counter that hands out per-registration tokens. Used to make
+    /// re-registration races safe — see `AccountRefreshEntry::id`.
+    account_refresh_next_id: std::sync::atomic::AtomicU64,
+
+    /// Lazily starts the runtime-owned refresh loop on the first
+    /// `register_for_account_refresh` call. Runtimes that never create a
+    /// driver pay zero cost.
+    #[cfg(feature = "tokio")]
+    account_refresh_loop_started: std::sync::Once,
+
+    /// Manages the runtime-owned refresh loop task. Aborted on runtime drop
+    /// via `BackgroundTaskManager`'s `Drop` impl.
+    #[cfg(feature = "tokio")]
+    account_refresh_task_manager:
+        crate::driver::transport::background_task_manager::BackgroundTaskManager,
+
     /// CPU and memory monitor for diagnostics.
     cpu_monitor: CpuMemoryMonitor,
 
@@ -208,6 +237,25 @@ impl CosmosDriverRuntime {
     /// Returns the shared account metadata cache.
     pub(crate) fn account_metadata_cache(&self) -> &Arc<AccountMetadataCache> {
         &self.account_metadata_cache
+    }
+
+    /// Test-only: returns the number of accounts currently registered for
+    /// background metadata refresh. Used by integration tests to verify
+    /// driver register/deregister semantics.
+    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    pub fn account_refresh_registry_len(&self) -> usize {
+        self.account_refresh_registry.read().unwrap().len()
+    }
+
+    /// Test-only: returns whether the runtime-owned account-refresh loop
+    /// has been started. Used by integration tests to verify that creating
+    /// multiple drivers does not spawn multiple refresh tasks.
+    #[cfg(all(
+        any(test, feature = "__internal_in_memory_emulator"),
+        feature = "tokio"
+    ))]
+    pub fn account_refresh_loop_started(&self) -> bool {
+        self.account_refresh_loop_started.is_completed()
     }
 
     /// Returns the CPU/memory monitor for diagnostics.
@@ -392,6 +440,121 @@ impl CosmosDriverRuntime {
         let mut registry = self.driver_registry.write().unwrap();
         let entry = registry.entry(key).or_insert_with(|| driver.clone());
         Ok(entry.clone())
+    }
+
+    /// Registers an account endpoint for periodic background refresh by the
+    /// runtime-owned refresh loop.
+    ///
+    /// Drivers self-register at construction (`CosmosDriver::new`) and hold
+    /// the returned [`account_refresh::AccountRefreshRegistration`] guard for
+    /// their lifetime. Dropping the guard removes the registry entry so the
+    /// next tick skips this endpoint.
+    ///
+    /// The loop itself is started lazily on the first registration via a
+    /// [`std::sync::Once`], so runtimes that never create a driver pay zero
+    /// background-task cost.
+    ///
+    /// `on_success` is invoked on the runtime task after each successful
+    /// fetch so the registering driver can sync its own
+    /// `LocationStateStore` snapshot and bump its event-driven rate-limit
+    /// clock. Implementations should hold a `Weak` reference to whatever
+    /// state they sync so the registry never extends the driver's lifetime.
+    ///
+    /// Re-registration for the same endpoint replaces the previous entry
+    /// (last-writer-wins) — safe because each registration carries a unique
+    /// id token and the guard's `Drop` only deregisters when its captured id
+    /// matches the entry's current id.
+    pub(crate) fn register_for_account_refresh(
+        self: &Arc<Self>,
+        endpoint: crate::models::AccountEndpoint,
+        fetch_fn: account_refresh::AccountRefreshFn,
+        on_success: account_refresh::OnSuccessFn,
+    ) -> account_refresh::AccountRefreshRegistration {
+        let id = account_refresh::next_registration_id(&self.account_refresh_next_id);
+        let entry = account_refresh::AccountRefreshEntry {
+            id,
+            fetch_fn,
+            on_success,
+        };
+
+        {
+            let mut reg = self.account_refresh_registry.write().unwrap();
+            reg.insert(endpoint.clone(), entry);
+        }
+
+        #[cfg(feature = "tokio")]
+        self.ensure_account_refresh_loop_started();
+
+        let weak: std::sync::Weak<dyn account_refresh::AccountRefreshRegistry> =
+            Arc::downgrade(&(Arc::clone(self) as Arc<dyn account_refresh::AccountRefreshRegistry>));
+        account_refresh::AccountRefreshRegistration::new(weak, endpoint, id)
+    }
+
+    /// Spawns the runtime-owned refresh loop on first call. Subsequent calls
+    /// are no-ops thanks to [`std::sync::Once`].
+    #[cfg(feature = "tokio")]
+    fn ensure_account_refresh_loop_started(self: &Arc<Self>) {
+        self.account_refresh_loop_started.call_once(|| {
+            let weak_runtime = Arc::downgrade(self);
+            let cache = Arc::clone(&self.account_metadata_cache);
+            self.account_refresh_task_manager.spawn(async move {
+                run_account_refresh_loop(weak_runtime, cache).await;
+            });
+        });
+    }
+}
+
+impl account_refresh::AccountRefreshRegistry for CosmosDriverRuntime {
+    fn deregister(&self, endpoint: &crate::models::AccountEndpoint, id: u64) {
+        let mut reg = self.account_refresh_registry.write().unwrap();
+        if let Some(entry) = reg.get(endpoint) {
+            if entry.id == id {
+                reg.remove(endpoint);
+            }
+            // id mismatch: a newer registration replaced this one before our
+            // guard dropped. The newer entry holds a different guard whose
+            // drop will deregister it; leave it alone.
+        }
+    }
+}
+
+/// Snapshots the runtime's account-refresh registry under a read lock and
+/// invokes `refresh_one_account` on each entry sequentially. Exits when the
+/// runtime is dropped (`Weak::upgrade()` returns `None`).
+///
+/// Sequential per-endpoint refresh keeps the gateway from receiving a
+/// simultaneous fan-out of N requests at the same instant for runtimes
+/// hosting several drivers.
+#[cfg(feature = "tokio")]
+async fn run_account_refresh_loop(
+    weak_runtime: std::sync::Weak<CosmosDriverRuntime>,
+    cache: Arc<AccountMetadataCache>,
+) {
+    loop {
+        tokio::time::sleep(account_refresh::BACKGROUND_REFRESH_INTERVAL).await;
+
+        let Some(runtime) = weak_runtime.upgrade() else {
+            // Runtime dropped — exit the loop.
+            break;
+        };
+
+        // Snapshot under read lock, drop the strong ref before iterating so
+        // a slow network call never blocks register/deregister or extends
+        // the runtime's lifetime past its natural drop point.
+        let entries: Vec<_> = runtime
+            .account_refresh_registry
+            .read()
+            .unwrap_or_else(|p| p.into_inner())
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        drop(runtime);
+
+        for (endpoint, entry) in entries {
+            account_refresh::refresh_one_account(&cache, &endpoint, &entry).await;
+        }
+
+        tracing::debug!("CosmosDriverRuntime: account-metadata refresh tick complete",);
     }
 }
 
@@ -762,6 +925,13 @@ impl CosmosDriverRuntimeBuilder {
             driver_registry: RwLock::new(HashMap::new()),
             container_cache: ContainerCache::new(),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
+            account_refresh_registry: RwLock::new(std::collections::HashMap::new()),
+            account_refresh_next_id: std::sync::atomic::AtomicU64::new(0),
+            #[cfg(feature = "tokio")]
+            account_refresh_loop_started: std::sync::Once::new(),
+            #[cfg(feature = "tokio")]
+            account_refresh_task_manager:
+                crate::driver::transport::background_task_manager::BackgroundTaskManager::new(),
             cpu_monitor,
             machine_id: Arc::new(vm_metadata.machine_id().to_owned()),
             fault_injection_enabled,

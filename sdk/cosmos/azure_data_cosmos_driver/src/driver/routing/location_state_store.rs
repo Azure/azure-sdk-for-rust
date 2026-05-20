@@ -12,7 +12,6 @@ use std::{
 };
 
 use crossbeam_epoch::{self as epoch, Atomic, Owned};
-use futures::future::BoxFuture;
 
 #[cfg(feature = "tokio")]
 use crate::driver::transport::background_task_manager::BackgroundTaskManager;
@@ -29,7 +28,11 @@ use super::{
     AccountEndpointState, CosmosEndpoint, LocationEffect,
 };
 
-/// Immutable location snapshot consumed by one operation-loop iteration.
+/// Re-exported here so existing call sites (`LocationStateStore::new`)
+/// continue to compile against the same type the driver uses for the
+/// runtime-owned refresh registration. Single source of truth lives in
+/// `crate::driver::account_refresh`.
+pub(crate) type AccountRefreshFn = crate::driver::account_refresh::AccountRefreshFn;
 #[derive(Clone, Debug)]
 pub(crate) struct LocationSnapshot {
     pub account: Arc<AccountEndpointState>,
@@ -55,21 +58,6 @@ impl LocationSnapshot {
         }
     }
 }
-
-type AccountRefreshFn = Arc<
-    dyn Fn(
-            Option<Arc<AccountProperties>>,
-        ) -> BoxFuture<'static, azure_core::Result<AccountProperties>>
-        + Send
-        + Sync,
->;
-
-/// Interval between iterations of the background account-metadata refresh
-/// loop. Independent of `LocationStateStore::refresh_interval` (which
-/// rate-limits the event-driven refresh emitted by
-/// `LocationEffect::RefreshAccountProperties`).
-#[cfg(feature = "tokio")]
-pub(crate) const BACKGROUND_REFRESH_INTERVAL: Duration = Duration::from_secs(300);
 
 /// Unified location state store with lock-free reads and CAS-loop writes.
 pub(crate) struct LocationStateStore {
@@ -366,17 +354,11 @@ impl LocationStateStore {
         self.refresh_account_properties_inner().await;
     }
 
-    /// Force-refresh account properties without consulting the
-    /// `refresh_interval` rate limit. Intended for the periodic background
-    /// timer loop (the timer interval IS the rate limit). The event-driven
-    /// path from retry policies must continue to use
-    /// [`refresh_account_properties_if_due`] to throttle bursts.
-    ///
-    /// The `last_refresh_epoch_ms` clock is updated by
-    /// [`refresh_account_properties_inner`] only on a successful fetch — if
-    /// this timer-driven refresh fails (network error, service 5xx, …), the
-    /// event-driven path is NOT throttled and is free to retry recovery
-    /// immediately.
+    /// Force-refresh entrypoint used by tests that want to drive the refresh
+    /// path without going through the rate-limit clock. Not on the production
+    /// hot path — the runtime-owned background loop is the production
+    /// timer-driven entrypoint.
+    #[cfg(test)]
     async fn force_refresh_account_properties(&self) {
         self.refresh_account_properties_inner().await;
     }
@@ -553,48 +535,6 @@ impl LocationStateStore {
             failback_loop(weak_store, config).await;
         });
     }
-
-    /// Starts the background account-metadata refresh loop.
-    ///
-    /// Mirrors `start_failback_loop` (`Weak<Self>` for self-termination,
-    /// `BackgroundTaskManager` for abort-on-drop). The loop sleeps for
-    /// [`BACKGROUND_REFRESH_INTERVAL`], then unconditionally refreshes the
-    /// database account metadata via `force_refresh_account_properties`
-    /// (the timer interval IS the rate limit, so the event-driven
-    /// `refresh_interval` check is bypassed).
-    #[cfg(feature = "tokio")]
-    pub fn start_account_refresh_loop(self: &Arc<Self>) {
-        let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
-        self.background_task_manager.spawn(async move {
-            account_refresh_loop(weak_store, BACKGROUND_REFRESH_INTERVAL).await;
-        });
-    }
-}
-
-/// Background account-metadata refresh loop. Periodically calls
-/// `force_refresh_account_properties` on the store. Exits when the
-/// `LocationStateStore` is dropped (`Weak::upgrade()` returns `None`).
-///
-/// Each successful iteration emits `tracing::debug!` so operators can confirm
-/// the timer is alive without flooding logs (debug, not info, since this
-/// fires every 5 minutes per driver in steady state).
-#[cfg(feature = "tokio")]
-async fn account_refresh_loop(weak_store: Weak<LocationStateStore>, interval: Duration) {
-    loop {
-        tokio::time::sleep(interval).await;
-
-        let Some(store) = weak_store.upgrade() else {
-            // LocationStateStore was dropped — exit the loop.
-            break;
-        };
-
-        store.force_refresh_account_properties().await;
-        tracing::debug!(
-            endpoint = %store.account_endpoint,
-            interval_secs = interval.as_secs(),
-            "LocationStateStore: background account metadata refresh tick complete",
-        );
-    }
 }
 
 /// Background failback loop that periodically sweeps expired partition overrides.
@@ -635,6 +575,7 @@ mod tests {
         driver::routing::{CosmosEndpoint, LocationEffect, UnavailableReason},
         models::AccountEndpoint,
     };
+    use futures::future::BoxFuture;
 
     use super::*;
 

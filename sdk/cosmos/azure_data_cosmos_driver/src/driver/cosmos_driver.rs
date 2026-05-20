@@ -31,6 +31,7 @@ use std::time::Duration;
 use url::Url;
 
 use super::{
+    account_refresh,
     cache::{parse_pk_ranges_response, AccountRegion, PartitionKeyRangeCache, PkRangeFetchResult},
     transport::{
         cosmos_headers, cosmos_transport_client::HttpRequest, is_emulator_host, request_signing,
@@ -38,6 +39,32 @@ use super::{
     },
     CosmosDriverRuntime,
 };
+
+/// Builds the `on_success` closure registered with the runtime-owned
+/// account-metadata refresh loop.
+///
+/// On each successful refresh the runtime invokes this closure with the
+/// freshly cached `AccountProperties`. The closure holds a `Weak<LocationStateStore>`
+/// so it never extends the driver's lifetime through the runtime registry —
+/// when the driver is dropped, the `Weak::upgrade` returns `None` and the
+/// closure no-ops (the next tick will skip this endpoint entirely once the
+/// registration guard's `Drop` removes the registry entry).
+///
+/// On a successful upgrade the closure calls
+/// [`LocationStateStore::sync_account_properties`] to update the per-driver
+/// routing snapshot.
+#[cfg(feature = "tokio")]
+fn on_success_for_lss(
+    weak_lss: std::sync::Weak<LocationStateStore>,
+) -> account_refresh::OnSuccessFn {
+    Arc::new(move |properties: Arc<super::cache::AccountProperties>| {
+        let Some(lss) = weak_lss.upgrade() else {
+            return;
+        };
+        let default_endpoint = lss.default_endpoint().clone();
+        lss.sync_account_properties(properties, &default_endpoint);
+    })
+}
 
 /// Cosmos DB driver instance.
 ///
@@ -72,6 +99,17 @@ pub struct CosmosDriver {
     /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
+    /// Registration guard for the runtime-owned periodic account-metadata
+    /// refresh loop. Held for the driver's lifetime; on drop the entry is
+    /// removed from the runtime's account-refresh registry so subsequent
+    /// ticks skip this account.
+    ///
+    /// `Option` so test scaffolding can construct a driver without the
+    /// guard (when no runtime registration is desired). Production paths
+    /// (`CosmosDriver::new`) always set it to `Some`.
+    #[cfg(feature = "tokio")]
+    #[allow(dead_code, reason = "held for Drop side effect")]
+    account_refresh_guard: Option<super::account_refresh::AccountRefreshRegistration>,
 }
 
 impl CosmosDriver {
@@ -729,7 +767,7 @@ impl CosmosDriver {
         let runtime_for_callback = Arc::clone(&runtime);
         let account_for_callback = account.clone();
         let transport_for_callback = Arc::clone(&transport);
-        let refresh_callback = Arc::new(
+        let refresh_callback: account_refresh::AccountRefreshFn = Arc::new(
             move |previous_props: Option<Arc<super::cache::AccountProperties>>| {
                 let runtime = Arc::clone(&runtime_for_callback);
                 let account = account_for_callback.clone();
@@ -777,7 +815,7 @@ impl CosmosDriver {
             runtime.account_metadata_cache().clone(),
             account_endpoint,
             default_endpoint,
-            refresh_callback,
+            Arc::clone(&refresh_callback),
             runtime.connection_pool().is_gateway20_allowed(),
             endpoint_unavailability_ttl,
             partition_failover_config,
@@ -788,13 +826,24 @@ impl CosmosDriver {
         #[cfg(feature = "tokio")]
         location_state_store.start_failback_loop();
 
-        // Spawn the background account-metadata refresh loop so long-running
-        // workloads see periodic re-fetch of the database account properties
-        // without paying the latency on the request hot path. Per-operation
-        // lookups in `execute_operation` use the cheap `get_or_fetch` fast
-        // path because freshness is owned by this loop.
+        // Register this account endpoint with the runtime-owned account-
+        // metadata refresh loop. The loop is shared across all drivers in
+        // the runtime (one tokio task per runtime, not per driver). The
+        // returned guard is stashed on the driver so the registration is
+        // removed when the driver is dropped. Per-operation lookups in
+        // `execute_operation` continue to use the cheap `get_or_fetch`
+        // fast path because freshness is owned by this loop.
         #[cfg(feature = "tokio")]
-        location_state_store.start_account_refresh_loop();
+        let account_refresh_guard = {
+            let endpoint_for_registration = AccountEndpoint::from(&account);
+            let refresh_fn_for_registration = Arc::clone(&refresh_callback);
+            let on_success = on_success_for_lss(Arc::downgrade(&location_state_store));
+            Some(runtime.register_for_account_refresh(
+                endpoint_for_registration,
+                refresh_fn_for_registration,
+                on_success,
+            ))
+        };
 
         Self {
             runtime,
@@ -804,6 +853,8 @@ impl CosmosDriver {
             pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
+            #[cfg(feature = "tokio")]
+            account_refresh_guard,
         }
     }
 
