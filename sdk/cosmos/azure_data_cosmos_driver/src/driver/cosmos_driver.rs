@@ -620,7 +620,9 @@ impl CosmosDriver {
                 options.clone(),
             )
             .await?;
-        let db_props: DatabaseProperties = serde_json::from_slice(db_result.body())
+        let db_props: DatabaseProperties = db_result
+            .into_body()
+            .into_single()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let db_rid = db_props.system_properties.rid.ok_or_else(|| {
             azure_core::Error::with_message(
@@ -635,7 +637,9 @@ impl CosmosDriver {
                 options,
             )
             .await?;
-        let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
+        let container_props: ContainerProperties = container_result
+            .into_body()
+            .into_single()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let container_rid = container_props
             .system_properties
@@ -672,7 +676,9 @@ impl CosmosDriver {
                 options.clone(),
             )
             .await?;
-        let db_props: DatabaseProperties = serde_json::from_slice(db_result.body())
+        let db_props: DatabaseProperties = db_result
+            .into_body()
+            .into_single()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let resolved_db_rid = db_props
             .system_properties
@@ -686,7 +692,9 @@ impl CosmosDriver {
                 options,
             )
             .await?;
-        let container_props: ContainerProperties = serde_json::from_slice(container_result.body())
+        let container_props: ContainerProperties = container_result
+            .into_body()
+            .into_single()
             .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
         let resolved_container_rid = container_props
             .system_properties
@@ -779,6 +787,14 @@ impl CosmosDriver {
         // Spawn the background failback loop for partition-level overrides.
         #[cfg(feature = "tokio")]
         location_state_store.start_failback_loop();
+
+        // Spawn the background account-metadata refresh loop so long-running
+        // workloads see periodic re-fetch of the database account properties
+        // without paying the latency on the request hot path. Per-operation
+        // lookups in `execute_operation` use the cheap `get_or_fetch` fast
+        // path because freshness is owned by this loop.
+        #[cfg(feature = "tokio")]
+        location_state_store.start_account_refresh_loop();
 
         Self {
             runtime,
@@ -972,17 +988,13 @@ impl CosmosDriver {
                 .with_precondition(crate::models::Precondition::if_none_match(token.to_owned()));
         }
 
-        // Custom headers for changefeed (a-im, max item count).
-        let mut custom_headers = std::collections::HashMap::new();
-        custom_headers.insert(
-            azure_core::http::headers::HeaderName::from_static("a-im"),
-            azure_core::http::headers::HeaderValue::from_static("Incremental feed"),
-        );
-        custom_headers.insert(
-            azure_core::http::headers::HeaderName::from_static("x-ms-max-item-count"),
-            azure_core::http::headers::HeaderValue::from_static("-1"),
-        );
-        let options = OperationOptions::default().with_custom_headers(custom_headers);
+        // Typed changefeed headers (`a-im: Incremental feed`, server-decides page size).
+        let mut request_headers = operation.request_headers().clone();
+        request_headers.incremental_feed = true;
+        request_headers.max_item_count = Some(crate::models::MaxItemCount::ServerDecides);
+        operation = operation.with_request_headers(request_headers);
+
+        let options = OperationOptions::default();
 
         match self.execute_operation(operation, options).await {
             Ok(response) => {
@@ -998,7 +1010,17 @@ impl CosmosDriver {
                     });
                 }
 
-                match parse_pk_ranges_response(response.body()) {
+                let body_bytes = match response.into_body().single() {
+                    Ok(b) => b,
+                    Err(_) => {
+                        tracing::error!(
+                            container = %container.name(),
+                            "Partition key ranges response was a feed body, expected single payload"
+                        );
+                        return None;
+                    }
+                };
+                match parse_pk_ranges_response(&body_bytes) {
                     Some(ranges) => Some(PkRangeFetchResult {
                         ranges,
                         continuation: etag,
@@ -1156,6 +1178,23 @@ impl CosmosDriver {
                 ),
             ));
         }
+
+        // PATCH is a virtual operation type: dispatch it to the dedicated
+        // Read-Modify-Write handler before any of the standard pipeline steps
+        // run, because the handler issues its own Read/Replace operations
+        // through this same entry point. `Box::pin` is required so the
+        // resulting async future has a fixed size even though it can recurse.
+        if operation.operation_type() == crate::models::OperationType::Patch {
+            let max_attempts = operation.patch_max_attempts();
+            return Box::pin(crate::driver::pipeline::patch_handler::execute(
+                self,
+                operation,
+                options,
+                max_attempts,
+            ))
+            .await;
+        }
+
         tracing::debug!("operation started");
 
         // Step 1: Build the single OperationOptionsView for layered resolution.
@@ -1177,6 +1216,12 @@ impl CosmosDriver {
         let auth = account.auth();
 
         // Step 4.1: Resolve account metadata and select write-region endpoint.
+        // Uses `get_or_fetch` (cheap, no staleness check) because the
+        // background account-metadata refresh loop spawned in
+        // `CosmosDriver::new` keeps this cache fresh on a periodic timer.
+        // The lazy `refresh_if_stale` variant is intentionally NOT used here
+        // — the timer owns freshness so the per-operation hot path stays
+        // free of network round-trips.
         let account_endpoint = AccountEndpoint::from(account);
         let account_properties = self
             .runtime

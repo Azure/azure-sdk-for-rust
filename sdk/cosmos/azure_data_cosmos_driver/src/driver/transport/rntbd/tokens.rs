@@ -575,6 +575,13 @@ impl From<OperationType> for RntbdOperationType {
             OperationType::HeadFeed => 0x0012,
             OperationType::Upsert => 0x0013,
             OperationType::Batch => 0x0025,
+            // Patch operations are handled by the driver-side patch_handler
+            // pipeline stage (Read-Modify-Write) and never reach the RNTBD
+            // transport encoder. Reaching this arm is a bug in the driver
+            // dispatch path.
+            OperationType::Patch => {
+                unreachable!("OperationType::Patch must be handled by patch_handler before RNTBD encoding")
+            }
         };
         Self(id)
     }

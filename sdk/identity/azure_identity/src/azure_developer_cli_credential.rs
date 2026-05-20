@@ -15,7 +15,7 @@ use azure_core::{
 };
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
-use std::{ffi::OsString, sync::Arc};
+use std::{any::type_name, ffi::OsString, fmt, sync::Arc};
 use time::format_description::well_known::Rfc3339;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -69,15 +69,22 @@ impl OutputProcessor for AzdTokenResponse {
 }
 
 /// Authenticates the identity logged in to the [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/overview).
-#[derive(Debug)]
 pub struct AzureDeveloperCliCredential {
     env: Env,
     executor: Arc<dyn Executor>,
     tenant_id: Option<String>,
 }
 
+impl fmt::Debug for AzureDeveloperCliCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>())
+            .field("tenant_id", &self.tenant_id)
+            .finish_non_exhaustive()
+    }
+}
+
 /// Options for constructing an [`AzureDeveloperCliCredential`].
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct AzureDeveloperCliCredentialOptions {
     /// An implementation of [`Executor`] to run commands asynchronously.
     ///
@@ -92,6 +99,14 @@ pub struct AzureDeveloperCliCredentialOptions {
 
     #[cfg(test)]
     pub(crate) env: Option<Env>,
+}
+
+impl fmt::Debug for AzureDeveloperCliCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>())
+            .field("tenant_id", &self.tenant_id)
+            .finish_non_exhaustive()
+    }
 }
 
 impl AzureDeveloperCliCredential {

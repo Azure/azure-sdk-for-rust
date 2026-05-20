@@ -820,6 +820,22 @@ fn build_transport_request(
         );
     }
 
+    // Cosmos DB queries are POST requests with a JSON body of shape
+    // `{"query": "...", "parameters": [...]}`. The service requires both the
+    // IsQuery flag and the query+json content type. Emitting these here
+    // (driven by OperationType::Query) means SDK callers and tests never need
+    // to put these well-known headers into `custom_headers`.
+    if operation.operation_type() == OperationType::Query {
+        headers.insert(
+            HeaderName::from_static(request_header_names::IS_QUERY),
+            HeaderValue::from_static("True"),
+        );
+        headers.insert(
+            azure_core::http::headers::CONTENT_TYPE,
+            HeaderValue::from_static(request_header_names::QUERY_CONTENT_TYPE),
+        );
+    }
+
     // Cosmos DB uses POST for batch (same endpoint as create/upsert);
     // the service requires these headers to process the request as a batch.
     if operation.operation_type() == OperationType::Batch {
@@ -2962,6 +2978,53 @@ mod tests {
         );
     }
 
+    #[test]
+    fn build_transport_request_auto_emits_query_headers_for_query_operations() {
+        // Single-partition item query
+        let op = CosmosOperation::query_items(test_container(), PartitionKey::from("pk1"))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        assert_query_headers_present(&op, "query_items");
+
+        // Cross-partition item query
+        let op = CosmosOperation::query_items_cross_partition(test_container())
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        assert_query_headers_present(&op, "query_items_cross_partition");
+
+        // Offer query (used by find_offer / throughput poller path)
+        let op = CosmosOperation::query_offers(test_account())
+            .with_body(br#"{"query":"SELECT * FROM root"}"#.to_vec());
+        assert_query_headers_present(&op, "query_offers");
+    }
+
+    /// Helper: builds a transport request from `op` and asserts the two
+    /// well-known query headers (`x-ms-documentdb-isquery` and the
+    /// `application/query+json` content type) are auto-emitted by the pipeline.
+    fn assert_query_headers_present(op: &CosmosOperation, label: &str) {
+        let routing = test_routing();
+        let activity_id = ActivityId::new_uuid();
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let req = build_transport_request(op, None, &ctx).expect("request should build");
+        assert_eq!(
+            req.headers
+                .get_optional_str(&HeaderName::from_static(request_header_names::IS_QUERY)),
+            Some("True"),
+            "{label}: x-ms-documentdb-isquery should be 'True'"
+        );
+        assert_eq!(
+            req.headers
+                .get_optional_str(&azure_core::http::headers::CONTENT_TYPE),
+            Some(request_header_names::QUERY_CONTENT_TYPE),
+            "{label}: Content-Type should be application/query+json"
+        );
+    }
     // ── compute_execution_context ─────────────────────────────────────
 
     fn retry_state_with_counts(

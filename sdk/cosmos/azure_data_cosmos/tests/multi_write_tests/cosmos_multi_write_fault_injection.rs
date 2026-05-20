@@ -92,7 +92,7 @@ async fn verify_read_fails_with_injected_error(
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let result = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await;
 
             let err = result.expect_err(&format!(
@@ -246,7 +246,7 @@ pub async fn item_read_succeeds_when_fault_targets_create_item() -> Result<(), B
 
             // Read the item using the fault client - this should succeed because the fault only targets CreateItem
             let result = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await;
 
             // Verify the read succeeded
@@ -327,7 +327,7 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
 
             // Read should succeed on satellite region after primary returns 503
             let result = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await;
 
             let response = result.unwrap();
@@ -490,20 +490,18 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
 
             // Make sure the write has been replicated on both regions
             let _ = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await;
             let mut operation = OperationOptions::default();
             operation.excluded_regions = Some(ExcludedRegions::from_iter([SATELLITE_REGION]));
             let options = ItemReadOptions::default().with_operation_options(operation);
             let _ = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
+                .read_item(&container_client, &pk, &item_id, Some(options))
                 .await;
 
             // after verifying replication, read using the fault client
             // - should succeed via retry on hub region after satellite returns 404:1002
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
 
             let response = result.unwrap();
             // After 404:1002 on satellite, the driver fails over; recovery
@@ -663,11 +661,11 @@ pub async fn fault_injection_read_connection_error_failover() -> Result<(), Box<
             operation.excluded_regions = Some(ExcludedRegions::from_iter([HUB_REGION]));
             let options = ItemReadOptions::default().with_operation_options(operation);
             let _ = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
+                .read_item(&container_client, &pk, &item_id, Some(options))
                 .await;
 
             let _response = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await
                 .expect("read should succeed via failover to satellite");
             // After connection error on hub, the driver fails over; recovery
@@ -828,11 +826,11 @@ pub async fn fault_injection_read_response_timeout_retries_to_satellite(
             operation.excluded_regions = Some(ExcludedRegions::from_iter([HUB_REGION]));
             let options = ItemReadOptions::default().with_operation_options(operation);
             let _ = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, Some(options))
+                .read_item(&container_client, &pk, &item_id, Some(options))
                 .await;
 
             let _response = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await
                 .expect("read should succeed via retry after response timeout on hub");
             // The driver may either retry locally on hub or fail over to the
@@ -994,7 +992,7 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             let _response = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await
                 .expect("read should succeed after transient fault clears");
             // The driver may exhaust local retries on hub and then fail over to

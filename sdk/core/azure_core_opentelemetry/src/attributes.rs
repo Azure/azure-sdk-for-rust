@@ -83,6 +83,7 @@ impl From<AttributeValue> for opentelemetry::Value {
             AzureAttributeValue::Array(arr) => {
                 opentelemetry::Value::Array(opentelemetry::Array::from(AttributeArray(arr)))
             }
+            _ => unimplemented!("unsupported value"),
         }
     }
 }
@@ -99,6 +100,7 @@ impl From<AttributeArray> for opentelemetry::Array {
                     values.into_iter().map(|s| s.into()).collect();
                 string_values.into()
             }
+            _ => unimplemented!("unsupported value"),
         }
     }
 }

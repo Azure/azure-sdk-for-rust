@@ -342,9 +342,9 @@ impl CosmosClientBuilder {
         // Clone credential for the driver before the SDK consumes it for auth policy.
         let driver_credential = credential.clone();
 
-        // Translate any SDK-side fault-injection rules into driver rules
-        // before the builder is consumed. (The SDK pipeline is gone; rules
-        // now flow only through the driver.)
+        // Fault-injection rules flow directly to the driver runtime; no
+        // SDK-side translation needed now that the SDK fault-injection types
+        // are pure re-exports of the driver types.
         #[cfg(feature = "fault_injection")]
         let driver_fi_rules: Vec<
             std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,

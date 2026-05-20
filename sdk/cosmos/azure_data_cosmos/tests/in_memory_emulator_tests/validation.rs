@@ -18,7 +18,7 @@
 
 use std::collections::HashMap;
 
-use azure_data_cosmos_driver::models::CosmosResponseHeaders;
+use azure_data_cosmos_driver::models::{CosmosResponseHeaders, ResponseBody};
 use azure_data_cosmos_driver::CosmosResponse;
 
 /// How a single header field should be validated between real and emulator responses.
@@ -227,13 +227,24 @@ pub struct ResponseSnapshot {
 impl ResponseSnapshot {
     /// Captures a snapshot from a `CosmosResponse`.
     pub fn capture(response: &CosmosResponse, label: impl Into<String>) -> Self {
-        let body = if response.body().is_empty() {
-            None
-        } else {
-            serde_json::from_slice(response.body()).ok()
+        let body = match response.body() {
+            ResponseBody::NoPayload => None,
+            ResponseBody::Bytes(b) if b.is_empty() => None,
+            ResponseBody::Bytes(b) => serde_json::from_slice(b).ok(),
+            // No production path emits `Items` for the operations exercised by
+            // this validation framework today (point ops / batch / metadata).
+            // Until the in-memory emulator harness grows query/changefeed
+            // coverage and we decide how to stitch the per-document slices
+            // into a comparable snapshot, fail loudly rather than silently
+            // dropping the body and letting tests pass on a regression.
+            ResponseBody::Items(_) => panic!(
+                "ResponseSnapshot::capture: received Items response body but the validation \
+                 framework currently only supports single-payload responses. Add feed-aware \
+                 body comparison before exercising this path."
+            ),
         };
         Self {
-            status_code: u16::from(response.status().status_code()),
+            status_code: u16::from(response.status()),
             sub_status_code: response.status().sub_status().map(|s| s.value()),
             headers: response.headers().clone(),
             body,

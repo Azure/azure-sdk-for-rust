@@ -99,6 +99,7 @@ pub trait Tracer: Send + Sync + Debug {
 /// Note that OpenTelemetry defines an `Ok` status but that status is reserved for application and service developers,
 /// so libraries should never set it.
 #[derive(Debug, PartialEq)]
+#[non_exhaustive]
 pub enum SpanStatus {
     /// The span has not been set to any specific status.
     Unset,
@@ -113,6 +114,7 @@ pub enum SpanStatus {
 ///
 /// This enum represents the different types of spans that can be created in distributed tracing, including internal operations, client requests, server requests, message production, and message consumption.
 #[derive(Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SpanKind {
     /// The default span kind, representing an internal operation within the library.
     #[default]
@@ -162,7 +164,7 @@ pub trait Span: AsAny + Send + Sync {
     /// - `key`: The key of the attribute to set.
     /// - `value`: The value of the attribute to set.
     ///
-    fn set_attribute(&self, key: &'static str, value: attributes::AttributeValue);
+    fn set_attribute(&self, key: &'static str, value: AttributeValue);
 
     /// Records a Rust standard error on the current span.
     ///

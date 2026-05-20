@@ -6,8 +6,11 @@ use azure_core::{
     http::{headers::Headers, AsyncRawResponse, ClientOptions, HttpClient, StatusCode, Transport},
     Bytes,
 };
-use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
-use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
+use azure_core_examples::{
+    identity::MockCredential,
+    secrets::{SecretClient, SecretClientOptions},
+};
+use azure_core_test::http::MockHttpClient;
 use futures::FutureExt as _;
 use std::{
     str,

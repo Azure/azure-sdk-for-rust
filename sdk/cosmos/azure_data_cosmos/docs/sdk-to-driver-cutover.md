@@ -299,11 +299,9 @@ The gateway pipeline tracked this via `CosmosRequest` (which held the final URL)
 
 ## Fault Injection Wiring
 
-The SDK no longer ships a parallel fault-injection type system. All fault-injection types — [`FaultInjectionRule`], [`FaultInjectionCondition`], [`FaultInjectionResult`], [`CustomResponse`], [`FaultInjectionErrorType`], [`FaultOperationType`], and the matching builders — are re-exported directly from the driver crate (`azure_data_cosmos_driver::fault_injection`) by `azure_data_cosmos::fault_injection`. The SDK only owns:
+The SDK no longer ships a parallel fault-injection type system. All fault-injection types — [`FaultInjectionRule`], [`FaultInjectionCondition`], [`FaultInjectionResult`], [`CustomResponse`], [`FaultInjectionErrorType`], [`FaultOperationType`], and the matching builders — are re-exported directly from the driver crate (`azure_data_cosmos_driver::fault_injection`) by `azure_data_cosmos::fault_injection`.
 
-- A small private `fault_operation_for_sdk(SdkOperationType, SdkResourceType) → Option<FaultOperationType>` adapter so `CosmosRequest::add_fault_injection_headers` can stamp the right operation tag on the outbound headers.
-
-There is no SDK-side wrapper builder: `CosmosClientBuilder::with_fault_injection` accepts the driver's `Vec<Arc<FaultInjectionRule>>` directly, and the driver runtime is the single fault-injection evaluation path. Toggling `enable()`/`disable()`, hit-count increments, and `hit_limit` enforcement all happen against the same canonical rule object.
+The SDK owns no fault-injection logic of its own — `azure_data_cosmos::fault_injection` is a pure `pub use` of the driver's types, and `CosmosClientBuilder::with_fault_injection` just stores the `Vec<Arc<FaultInjectionRule>>` and forwards it to `CosmosDriverRuntimeBuilder::with_fault_injection_rules()` in `build()`. The driver runtime is the single fault-injection evaluation path; toggling `enable()`/`disable()`, hit-count increments, and `hit_limit` enforcement all happen against the same canonical rule object.
 
 ### Wiring in `CosmosClientBuilder`
 

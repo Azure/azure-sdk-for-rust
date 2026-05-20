@@ -8,8 +8,10 @@ mod cosmos_fault_injection;
 mod cosmos_feed_ranges;
 mod cosmos_items;
 mod cosmos_offers;
+mod cosmos_patch;
 mod cosmos_proxy;
 mod cosmos_query;
+mod cosmos_response_metadata;
 mod gateway20_e2e;
 
 #[path = "../framework/mod.rs"]

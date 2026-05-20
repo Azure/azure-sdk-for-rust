@@ -107,7 +107,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
 
             // Read should succeed via cross-region retry after hub returns 408
             let result = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await;
 
             assert!(
@@ -437,7 +437,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
 
             // Read should succeed via cross-region retry after hub returns 500
             let result = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await;
 
             assert!(

@@ -108,10 +108,10 @@ The following section provides several code snippets using a `CertificateClient`
 
 ### Create a certificate
 
-`create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
+`begin_create_certificate` creates a Key Vault certificate to be stored in the Azure Key Vault. If a certificate with the same name already exists, then a new version of the certificate is created.
 Before we can create a new certificate, though, we need to define a certificate policy. This is used for the first certificate version and all subsequent versions of that certificate until changed.
 
-`create_certificate` returns a `Poller<CertificateOperation>`, which implements both `std::future::IntoFuture` and `futures::Stream`.
+`begin_create_certificate` returns a `Poller<CertificateOperation>`, which implements both `std::future::IntoFuture` and `futures::Stream`.
 You can `await` the `Poller` to get the final result - a `Certificate` - or asynchronously iterate over each status update.
 
 ```rust ignore create_certificate
@@ -139,7 +139,7 @@ let body = CreateCertificateParameters {
 // Wait for the certificate operation to complete.
 // The Poller implements futures::Stream and automatically waits between polls.
 let certificate = client
-    .create_certificate("certificate-name", body.try_into()?, None)?
+    .begin_create_certificate("certificate-name", body.try_into()?, None)?
     .await?
     .into_model()?;
 ```
@@ -171,7 +171,7 @@ println!(
 ### Update an existing certificate
 
 `update_certificate_properties` updates a certificate previously stored in the Azure Key Vault.
-Only the attributes of the certificate are updated. To regenerate the certificate, call `CertificateClient::create_certificate` on a certificate with the same name.
+Only the attributes of the certificate are updated. To regenerate the certificate, call `CertificateClient::begin_create_certificate` on a certificate with the same name.
 
 ```rust ignore update_certificate
 use azure_security_keyvault_certificates::models::UpdateCertificatePropertiesParameters;
@@ -211,7 +211,7 @@ This example lists all the certificates in the specified Azure Key Vault.
 use azure_security_keyvault_certificates::ResourceExt;
 use futures::TryStreamExt;
 
-let mut pager = client.list_certificate_properties(None)?.into_stream();
+let mut pager = client.list_certificate_properties(None)?;
 while let Some(certificate) = pager.try_next().await? {
     // Get the certificate name from the ID.
     let name = certificate.resource_id()?.name;
@@ -267,7 +267,7 @@ let body = CreateCertificateParameters {
 
 // Wait for the certificate operation to complete.
 let certificate = client
-    .create_certificate("ec-signing-certificate", body.try_into()?, None)?
+    .begin_create_certificate("ec-signing-certificate", body.try_into()?, None)?
     .await?
     .into_model()?;
 let certificate_version = certificate

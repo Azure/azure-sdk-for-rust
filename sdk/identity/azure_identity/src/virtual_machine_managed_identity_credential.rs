@@ -11,16 +11,21 @@ use azure_core::{
     },
     time::Duration,
 };
-use std::sync::Arc;
+use std::{any::type_name, fmt, sync::Arc};
 
 const ENDPOINT: &str = "http://169.254.169.254/metadata/identity/oauth2/token";
 const API_VERSION: &str = "2019-08-01";
 const SECRET_HEADER: HeaderName = HeaderName::from_static("x-identity-header");
 const SECRET_ENV: &str = "IDENTITY_HEADER";
 
-#[derive(Debug)]
 pub struct VirtualMachineManagedIdentityCredential {
     credential: ImdsManagedIdentityCredential,
+}
+
+impl fmt::Debug for VirtualMachineManagedIdentityCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+    }
 }
 
 impl VirtualMachineManagedIdentityCredential {

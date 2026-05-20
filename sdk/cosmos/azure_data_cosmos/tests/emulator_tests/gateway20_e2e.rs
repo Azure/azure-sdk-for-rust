@@ -158,7 +158,7 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     assert!(create_resp.diagnostics().duration() > std::time::Duration::ZERO);
 
     let read_resp = container
-        .read_item::<Gw20TestItem>(&pk_value, &item_id, None)
+        .read_item(&pk_value, &item_id, None)
         .await?;
     assert!(!read_resp.diagnostics().activity_id().as_str().is_empty());
     let read_item: Gw20TestItem = read_resp.into_model()?;
@@ -423,7 +423,7 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
         .await?;
 
     let read_resp = container
-        .read_item::<Gw20TestItem>(&pk_value, "diag-item", None)
+        .read_item(&pk_value, "diag-item", None)
         .await?;
     let diagnostics = read_resp.diagnostics();
     assert!(
@@ -474,7 +474,7 @@ pub async fn gateway20_operator_override_at_sdk_boundary() -> Result<(), Box<dyn
         .await?;
 
     let read_resp = container
-        .read_item::<Gw20TestItem>(&pk_value, "override-item", None)
+        .read_item(&pk_value, "override-item", None)
         .await?;
     let diagnostics = read_resp.diagnostics();
     assert!(!diagnostics.activity_id().as_str().is_empty());
@@ -591,7 +591,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
     ));
     let full_id = format!("{target_tenant}-user-0-session-0");
     let read_resp = container
-        .read_item::<Gw20HpkItem>(full_pk, &full_id, None)
+        .read_item(full_pk, &full_id, None)
         .await?;
     let item: Gw20HpkItem = read_resp.into_model()?;
     assert_eq!(item.id, full_id);

@@ -27,7 +27,7 @@ use openssl::{
     sign::Signer,
     x509::X509,
 };
-use std::sync::Arc;
+use std::{any::type_name, fmt, sync::Arc};
 use url::form_urlencoded;
 
 const DEFAULT_ASSERTION_LIFETIME: i64 = 300;
@@ -35,7 +35,7 @@ const DEFAULT_ASSERTION_LIFETIME: i64 = 300;
 const AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY: &str = "AZURE_CLIENT_SEND_CERTIFICATE_CHAIN";
 
 /// Options for constructing a new [`ClientCertificateCredential`].
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct ClientCertificateCredentialOptions {
     /// Options for the credential's HTTP pipeline.
     pub client_options: ClientOptions,
@@ -47,8 +47,13 @@ pub struct ClientCertificateCredentialOptions {
     pub(crate) env: Option<Env>,
 }
 
+impl fmt::Debug for ClientCertificateCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+    }
+}
+
 /// Authenticates an application with a certificate.
-#[derive(Debug)]
 pub struct ClientCertificateCredential {
     client_id: String,
     key: PKey<Private>,
@@ -56,6 +61,15 @@ pub struct ClientCertificateCredential {
     pipeline: Pipeline,
     header: String,
     cache: TokenCache,
+}
+
+impl fmt::Debug for ClientCertificateCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>())
+            .field("client_id", &self.client_id)
+            .field("endpoint", &self.endpoint)
+            .finish_non_exhaustive()
+    }
 }
 
 impl ClientCertificateCredential {

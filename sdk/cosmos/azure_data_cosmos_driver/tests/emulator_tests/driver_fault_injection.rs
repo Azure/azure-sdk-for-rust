@@ -602,9 +602,15 @@ pub async fn gateway20_unknown_rntbd_response_token_is_silently_skipped(
 
         // The body the SDK sees is the inner RNTBD body (post-unwrap), which
         // is exactly the JSON we packed.
+        let body_bytes = match response.body() {
+            azure_data_cosmos_driver::ResponseBody::Bytes(b) => b.as_ref(),
+            other => panic!(
+                "expected single-payload Bytes body, got {:?}: inner RNTBD body must survive the unknown-token skip intact",
+                other
+            ),
+        };
         assert_eq!(
-            response.body(),
-            ITEM_JSON,
+            body_bytes, ITEM_JSON,
             "inner RNTBD body must survive the unknown-token skip intact"
         );
 

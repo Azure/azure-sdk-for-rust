@@ -96,3 +96,89 @@ async fn test_perf_runner_with_single_test() {
     println!("Result: {:?}", result);
     assert!(result.is_ok());
 }
+
+#[tokio::test]
+async fn test_latency_collection_returns_values() {
+    let args = vec![
+        "perf_test",
+        "--parallel",
+        "2",
+        "--duration",
+        "1",
+        "--warmup",
+        "0",
+        "--test-results",
+        "",
+        "--latency",
+        "fibonacci1",
+        "-c",
+        "5",
+    ];
+    let runner = PerfRunner::with_command_line(
+        env!("CARGO_MANIFEST_DIR"),
+        file!(),
+        vec![PerfTestMetadata {
+            name: "fibonacci1",
+            description: "A basic test for testing purposes",
+            options: vec![PerfTestOption {
+                name: "count",
+                mandatory: true,
+                short_activator: Some('c'),
+                expected_args_len: 1,
+                display_message: "The Fibonacci number to compute",
+                option_type: PerfTestOptionKind::Uint32,
+                ..Default::default()
+            }],
+            create_test: create_fibonacci1_test,
+        }],
+        args,
+    )
+    .unwrap();
+
+    // Run directly via run_test_for to inspect the returned latencies.
+    let test_mode = crate::TestMode::current_opt()
+        .unwrap()
+        .unwrap_or(crate::TestMode::Live);
+    let mut test_instances: Vec<Arc<dyn PerfTest>> = Vec::new();
+    let mut test_contexts: Vec<Arc<TestContext>> = Vec::new();
+    for _ in 0..runner.options.parallel {
+        let instance = (runner.tests[0].create_test)(runner.clone()).await.unwrap();
+        let instance: Arc<dyn PerfTest> = Arc::from(instance);
+        let context = Arc::new(
+            crate::recorded::start(
+                test_mode,
+                runner.package_dir,
+                runner.module_name,
+                runner.tests[0].name,
+                None,
+            )
+            .await
+            .unwrap(),
+        );
+        instance.setup(context.clone()).await.unwrap();
+        test_instances.push(instance);
+        test_contexts.push(context);
+    }
+
+    let (ops_per_second, latencies) = runner
+        .run_test_for(&test_instances, &test_contexts, Duration::seconds(1), true)
+        .await
+        .unwrap();
+
+    assert!(
+        ops_per_second > 0.0,
+        "Should have completed some operations"
+    );
+    assert!(
+        !latencies.is_empty(),
+        "Latencies should be collected when track_latency is true"
+    );
+
+    // Every latency should be non-zero.
+    for lat in &latencies {
+        assert!(
+            !lat.is_zero(),
+            "Each latency measurement should be non-zero"
+        );
+    }
+}

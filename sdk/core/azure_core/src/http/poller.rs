@@ -298,7 +298,7 @@ use types::{BoxedCallback, BoxedFuture, BoxedStream};
 ///
 /// ```no_run
 /// # use azure_core::credentials::TokenCredential;
-/// # use azure_security_keyvault_certificates::{CertificateClient, models::CreateCertificateParameters};
+/// # use azure_core_examples::certificates::{CertificateClient, models::CreateCertificateParameters};
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
 /// let client = CertificateClient::new(
@@ -311,7 +311,7 @@ use types::{BoxedCallback, BoxedFuture, BoxedStream};
 ///
 /// // Await the poller to get the final certificate.
 /// let certificate = client
-///     .create_certificate("my-cert", params.try_into()?, None)?
+///     .begin_create_certificate("my-cert", params.try_into()?, None)?
 ///     .await?
 ///     .into_model()?;
 /// # Ok(()) }
@@ -321,7 +321,7 @@ use types::{BoxedCallback, BoxedFuture, BoxedStream};
 ///
 /// ```no_run
 /// # use azure_core::credentials::TokenCredential;
-/// # use azure_security_keyvault_certificates::{CertificateClient, models::CreateCertificateParameters};
+/// # use azure_core_examples::certificates::{CertificateClient, models::CreateCertificateParameters};
 /// # use futures::TryStreamExt;
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
@@ -335,7 +335,7 @@ use types::{BoxedCallback, BoxedFuture, BoxedStream};
 ///
 /// // Manually poll status updates.
 /// let mut poller = client
-///     .create_certificate("my-cert", params.try_into()?, None)?;
+///     .begin_create_certificate("my-cert", params.try_into()?, None)?;
 ///
 /// while let Some(status) = poller.try_next().await? {
 ///     let status = status.into_model()?;

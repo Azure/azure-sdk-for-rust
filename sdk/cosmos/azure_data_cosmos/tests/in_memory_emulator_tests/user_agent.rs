@@ -169,7 +169,7 @@ async fn perform_create_and_read(
         .expect("create_item");
 
     container
-        .read_item::<TestItem>("pk1", "ua-1", None)
+        .read_item("pk1", "ua-1", None)
         .await
         .expect("read_item");
 }

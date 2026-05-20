@@ -14,9 +14,12 @@ use crate::models::{OperationType, ResourceType};
 /// path. This matches .NET's `ThinClientStoreClient` which routes both
 /// document operations and stored-procedure execution through Gateway 2.0.
 ///
-/// `OperationType::Patch` is not currently a variant on the Rust enum and is
-/// therefore not handled here. When the variant is added in a future slice,
-/// this match must be updated.
+/// `OperationType::Patch` always returns `false`: the driver short-circuits
+/// `Patch` operations to the driver-side `patch_handler` pipeline stage in
+/// `CosmosDriver::execute_operation` before transport selection ever runs,
+/// so the outer `Patch` operation never reaches Gateway 2.0 transport. The
+/// sub-operations the patch handler issues (`Read` / `Replace`) are each
+/// evaluated on their own merits.
 pub(crate) fn is_operation_supported_by_gateway20(
     resource_type: ResourceType,
     operation_type: OperationType,
@@ -36,7 +39,10 @@ pub(crate) fn is_operation_supported_by_gateway20(
             | OperationType::QueryPlan
             | OperationType::ReadFeed
             | OperationType::Batch => true,
-            OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
+            OperationType::Head
+            | OperationType::HeadFeed
+            | OperationType::Execute
+            | OperationType::Patch => false,
         },
         ResourceType::StoredProcedure => match operation_type {
             OperationType::Execute => true,
@@ -51,7 +57,8 @@ pub(crate) fn is_operation_supported_by_gateway20(
             | OperationType::ReadFeed
             | OperationType::Batch
             | OperationType::Head
-            | OperationType::HeadFeed => false,
+            | OperationType::HeadFeed
+            | OperationType::Patch => false,
         },
         ResourceType::DatabaseAccount
         | ResourceType::Database
@@ -81,7 +88,7 @@ mod tests {
         ]
     }
 
-    fn all_operation_types() -> [OperationType; 13] {
+    fn all_operation_types() -> [OperationType; 14] {
         [
             OperationType::Create,
             OperationType::Read,
@@ -96,6 +103,7 @@ mod tests {
             OperationType::Head,
             OperationType::HeadFeed,
             OperationType::Execute,
+            OperationType::Patch,
         ]
     }
 
@@ -115,7 +123,10 @@ mod tests {
                 | OperationType::QueryPlan
                 | OperationType::ReadFeed
                 | OperationType::Batch => true,
-                OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
+                OperationType::Head
+                | OperationType::HeadFeed
+                | OperationType::Execute
+                | OperationType::Patch => false,
             },
             ResourceType::StoredProcedure => matches!(operation_type, OperationType::Execute),
             ResourceType::DatabaseAccount

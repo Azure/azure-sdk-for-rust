@@ -3,18 +3,14 @@
 
 use std::{pin::Pin, sync::Arc, task};
 
-use azure_core::http::{
-    headers::Headers,
-    pager::{PagerContinuation, PagerResult},
-};
+use azure_core::http::pager::{PagerContinuation, PagerResult};
 use azure_data_cosmos_driver::models::CosmosResponseHeaders;
 use futures::stream::BoxStream;
 use futures::Stream;
 use serde::{de::DeserializeOwned, Deserialize};
 
 use crate::{
-    constants,
-    models::{CosmosDiagnosticsContext, CosmosResponse},
+    models::{CosmosResponse, DiagnosticsContext, ResponseHeaders},
     SessionToken,
 };
 
@@ -34,14 +30,11 @@ pub struct FeedPage<T> {
     /// The continuation token for the next page of results.
     continuation: Option<String>,
 
-    /// Raw HTTP response headers.
-    raw_headers: Headers,
-
     /// Parsed Cosmos-specific response headers.
-    headers: CosmosResponseHeaders,
+    headers: ResponseHeaders,
 
     /// Diagnostics for this page.
-    diagnostics: Arc<CosmosDiagnosticsContext>,
+    diagnostics: Arc<DiagnosticsContext>,
 }
 
 impl<T> FeedPage<T> {
@@ -49,14 +42,12 @@ impl<T> FeedPage<T> {
     pub(crate) fn new(
         items: Vec<T>,
         continuation: Option<String>,
-        raw_headers: Headers,
-        headers: CosmosResponseHeaders,
-        diagnostics: Arc<CosmosDiagnosticsContext>,
+        headers: ResponseHeaders,
+        diagnostics: Arc<DiagnosticsContext>,
     ) -> Self {
         Self {
             items,
             continuation,
-            raw_headers,
             headers,
             diagnostics,
         }
@@ -77,30 +68,29 @@ impl<T> FeedPage<T> {
         self.continuation.as_deref()
     }
 
-    /// Gets any headers returned by the server for this page of results.
-    pub fn headers(&self) -> &Headers {
-        &self.raw_headers
+    /// Returns the parsed Cosmos-specific response headers for this page.
+    pub fn headers(&self) -> &ResponseHeaders {
+        &self.headers
     }
 
     /// Returns the request charge (RU consumption) for this page, if available.
     pub fn request_charge(&self) -> Option<f64> {
-        self.headers.request_charge.as_ref().map(|rc| rc.value())
+        self.headers.request_charge().map(|rc| rc.value())
     }
 
     /// Returns the session token from this page, if available.
     pub fn session_token(&self) -> Option<SessionToken> {
         self.headers
-            .session_token
-            .as_ref()
+            .session_token()
             .map(|st| SessionToken::from(st.as_str().to_string()))
     }
 
     /// Returns the diagnostics for this page.
     ///
-    /// The returned [`CosmosDiagnosticsContext`] surfaces the full per-operation
+    /// The returned [`DiagnosticsContext`] surfaces the full per-operation
     /// diagnostics produced by the driver pipeline (request tracking, retries,
     /// regions contacted, RU charges, status, etc.).
-    pub fn diagnostics(&self) -> Arc<CosmosDiagnosticsContext> {
+    pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         Arc::clone(&self.diagnostics)
     }
 }
@@ -152,8 +142,8 @@ impl<T> QueryFeedPage<T> {
         self.page.continuation()
     }
 
-    /// Gets any headers returned by the server for this page of results.
-    pub fn headers(&self) -> &Headers {
+    /// Returns the parsed Cosmos-specific response headers for this page.
+    pub fn headers(&self) -> &ResponseHeaders {
         self.page.headers()
     }
 
@@ -169,10 +159,10 @@ impl<T> QueryFeedPage<T> {
 
     /// Returns the diagnostics for this page.
     ///
-    /// The returned [`CosmosDiagnosticsContext`] surfaces the full per-operation
+    /// The returned [`DiagnosticsContext`] surfaces the full per-operation
     /// diagnostics produced by the driver pipeline (request tracking, retries,
     /// regions contacted, RU charges, status, etc.).
-    pub fn diagnostics(&self) -> Arc<CosmosDiagnosticsContext> {
+    pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         self.page.diagnostics()
     }
 
@@ -217,12 +207,13 @@ pub(crate) struct FeedBody<T> {
 }
 
 impl<T: DeserializeOwned> QueryFeedPage<T> {
-    pub(crate) async fn from_response(
-        response: CosmosResponse<FeedBody<T>>,
-    ) -> azure_core::Result<Self> {
-        let raw_headers = response.headers().clone();
-        let continuation = raw_headers.get_optional_string(&constants::CONTINUATION);
-        let cosmos_headers = response.cosmos_headers().clone();
+    pub(crate) async fn from_response(response: CosmosResponse) -> azure_core::Result<Self> {
+        // Convert once to the driver header struct: this module owns the
+        // FeedPage wire-up and needs every parsed field, so reaching for the
+        // SDK wrapper accessors here would be pure ceremony.
+        let cosmos_headers: CosmosResponseHeaders =
+            crate::models::response_headers::into_driver_headers(response.cosmos_headers().clone());
+        let continuation = cosmos_headers.continuation.clone();
         let index_metrics = cosmos_headers.index_metrics.clone();
         let query_metrics = cosmos_headers.query_metrics.clone();
         let diagnostics = response.diagnostics();
@@ -232,8 +223,7 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
             page: FeedPage::new(
                 body.items,
                 continuation,
-                raw_headers,
-                cosmos_headers,
+                ResponseHeaders::from(cosmos_headers),
                 diagnostics,
             ),
             index_metrics,
@@ -325,9 +315,8 @@ mod tests {
             page: FeedPage::new(
                 items,
                 continuation,
-                Headers::new(),
-                CosmosResponseHeaders::default(),
-                Arc::new(CosmosDiagnosticsContext::for_testing(ActivityId::new_uuid())),
+                ResponseHeaders::default(),
+                Arc::new(DiagnosticsContext::for_testing(ActivityId::new_uuid())),
             ),
             index_metrics: None,
             query_metrics: None,
