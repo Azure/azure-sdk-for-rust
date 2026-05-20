@@ -5,8 +5,8 @@ use azure_core::time::Duration;
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::models::StartPositions;
 use azure_messaging_eventhubs::{
-    ConsumerClient, EventProcessor, InMemoryCheckpointStore, ProcessorStrategy, ProducerClient,
-    Result, SendEventOptions, StartLocation, StartPosition,
+    error::ErrorKind, ConsumerClient, EventProcessor, InMemoryCheckpointStore, ProcessorStrategy,
+    ProducerClient, Result, SendEventOptions, StartLocation, StartPosition,
 };
 use futures::StreamExt;
 use std::collections::HashMap;
@@ -386,6 +386,98 @@ async fn receive_events_from_processor(ctx: TestContext) -> Result<()> {
     } else {
         info!("Processor still has references, not closing.");
     }
+
+    Ok(())
+}
+
+/// When a second `EventProcessor` instance starts against the same Event Hub
+/// and consumer group, the broker disconnects the displaced partition
+/// receiver because both instances open with `owner_level = Some(0)`. The
+/// displaced instance must observe this as `ErrorKind::ConsumerDisconnected`
+/// on its `stream_events()` rather than silently re-attaching.
+///
+/// This is the end-to-end guard against the auto-recovery regression: the
+/// crate's `should_retry_amqp_error` deliberately excludes
+/// `AmqpErrorCondition::LinkStolen` so the steal bubbles up; if either that
+/// retry exclusion or the `event_receiver` error translation is broken, this
+/// test fails.
+#[recorded::test(live)]
+async fn second_processor_displaces_first_with_consumer_disconnected(
+    ctx: TestContext,
+) -> Result<()> {
+    // Use a short update interval so load balancing converges quickly; the
+    // validation rule on the builder requires expiration > interval.
+    const UPDATE_INTERVAL: Duration = Duration::seconds(5);
+    const EXPIRATION: Duration = Duration::seconds(30);
+    // Give the broker + load balancer up to this long to displace the
+    // first processor's receiver and propagate the AMQP detach.
+    const STEAL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90);
+
+    // First processor starts, receives a partition, begins streaming.
+    let consumer_a = create_consumer_client(&ctx).await?;
+    let processor_a = EventProcessor::builder()
+        .with_load_balancing_strategy(ProcessorStrategy::Greedy)
+        .with_update_interval(UPDATE_INTERVAL)
+        .with_partition_expiration_duration(EXPIRATION)
+        .with_prefetch(300)
+        .build(consumer_a, Arc::new(InMemoryCheckpointStore::new()))
+        .await?;
+    let running_a = start_processor_running(&processor_a).await;
+
+    info!("Waiting for the first processor's partition client.");
+    let partition_client_a = processor_a
+        .next_partition_client()
+        .await
+        .expect("first processor should hand out a partition client");
+    let partition_id = partition_client_a.get_partition_id().to_string();
+    info!("First processor claimed partition {}", partition_id);
+
+    // Start the second processor against the same hub + consumer group; it
+    // will open epoch-0 receivers on the same partitions and the broker
+    // will disconnect processor A's receiver on at least one of them.
+    let consumer_b = create_consumer_client(&ctx).await?;
+    let processor_b = EventProcessor::builder()
+        .with_load_balancing_strategy(ProcessorStrategy::Greedy)
+        .with_update_interval(UPDATE_INTERVAL)
+        .with_partition_expiration_duration(EXPIRATION)
+        .with_prefetch(300)
+        .build(consumer_b, Arc::new(InMemoryCheckpointStore::new()))
+        .await?;
+    let running_b = start_processor_running(&processor_b).await;
+    info!("Second processor started; waiting for steal.");
+
+    // Drive processor A's stream until it terminates. The expected
+    // resolution is an error whose kind is `ConsumerDisconnected`. We
+    // tolerate other errors only as a fallback for transport blips; the
+    // test fails if the stream silently ends with no error (which would
+    // be the bug this PR fixes).
+    let mut stream = partition_client_a.stream_events();
+    let observed = tokio::time::timeout(STEAL_TIMEOUT, async {
+        loop {
+            match stream.next().await {
+                Some(Ok(_event)) => continue,
+                Some(Err(err)) => break Some(err),
+                None => break None,
+            }
+        }
+    })
+    .await;
+
+    // Stop both processors before asserting so we don't leak background tasks
+    // on a panic.
+    running_a.abort();
+    running_b.abort();
+    let _ = running_a.await;
+    let _ = running_b.await;
+
+    let stream_result = observed.expect("stream did not terminate within steal timeout");
+    let err = stream_result.expect("stream ended without an error; expected ConsumerDisconnected");
+    assert!(
+        matches!(err.kind, ErrorKind::ConsumerDisconnected(_)),
+        "expected ConsumerDisconnected on displaced partition {}, got {:?}",
+        partition_id,
+        err.kind,
+    );
 
     Ok(())
 }

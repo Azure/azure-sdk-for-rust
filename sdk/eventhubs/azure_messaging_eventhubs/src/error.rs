@@ -27,6 +27,16 @@ pub enum ErrorKind {
     /// This is used to wrap an AMQP error in an Even Hubs error.
     ///
     AmqpError(AmqpError),
+
+    /// The receiver was disconnected by the broker because another receiver
+    /// connected with the same or higher epoch (owner level). This is the
+    /// signal that the partition was taken over by another consumer
+    /// instance. Mirrors `EventHubsException.FailureReason.ConsumerDisconnected`
+    /// in the .NET SDK.
+    ///
+    /// Carries the underlying AMQP described error (with condition
+    /// `amqp:link:stolen`) when one is available.
+    ConsumerDisconnected(Option<AmqpDescribedError>),
 }
 
 /// Represents an error that can occur in the Event Hubs module.
@@ -62,6 +72,9 @@ impl std::fmt::Display for EventHubsError {
             ErrorKind::SendRejected(e) => write!(f, "Send rejected: {:?}", e),
             ErrorKind::InvalidManagementResponse => f.write_str("Invalid management response"),
             ErrorKind::AmqpError(source) => write!(f, "AMQP Error: {:?}", source),
+            ErrorKind::ConsumerDisconnected(e) => {
+                write!(f, "Consumer disconnected by broker (partition stolen): {:?}", e)
+            }
         }
     }
 }

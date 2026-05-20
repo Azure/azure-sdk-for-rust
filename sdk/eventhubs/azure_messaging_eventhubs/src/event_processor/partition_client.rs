@@ -12,24 +12,29 @@ use azure_core_amqp::{message::AmqpAnnotationKey, AmqpValue};
 use futures::Stream;
 use std::{
     pin::Pin,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc, OnceLock, Weak,
-    },
+    sync::{Arc, OnceLock, Weak},
 };
-use tracing::{debug, info, trace, warn};
+use tracing::{debug, trace, warn};
 
 /// Represents a client for interacting with a specific partition in Event Hubs.
 ///
 /// The `PartitionClient` provides methods for receiving events, updating checkpoints,
 /// and managing the lifecycle of the client for a specific partition.
+///
+/// When the load balancer transfers this partition to another consumer
+/// instance (or the broker itself disconnects the receiver because another
+/// consumer opened a higher-or-equal-epoch receiver on the same partition),
+/// `stream_events()` resolves with an error and the loop terminates. There
+/// is no separate poll flag; the stream's termination is the only signal.
+/// Consumers should re-acquire a partition client via
+/// [`EventProcessor::next_partition_client`](crate::EventProcessor::next_partition_client)
+/// after stream termination.
 pub struct PartitionClient {
     partition_id: String,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     client_details: ConsumerClientDetails,
     event_receiver: OnceLock<EventReceiver>,
     consumers: Weak<ProcessorConsumersMap>,
-    revoked: AtomicBool,
 }
 
 // It's safe to use the PartitionClient from multiple threads simultaneously.
@@ -49,7 +54,6 @@ impl PartitionClient {
             client_details,
             event_receiver: OnceLock::new(),
             consumers,
-            revoked: AtomicBool::new(false),
         }
     }
 
@@ -61,31 +65,23 @@ impl PartitionClient {
         &self.partition_id
     }
 
-    /// Marks this partition client as revoked.
+    /// Closes the underlying AMQP receiver without consuming this
+    /// `PartitionClient`, so that any in-flight `stream_events()` call on
+    /// this client resolves and the consumer's loop can exit.
     ///
-    /// Only the SDK calls this; user code observing revocation should poll
-    /// [`is_revoked`](Self::is_revoked). Allowing arbitrary callers to revoke
-    /// would desynchronize the processor's internal consumers map.
-    pub(crate) fn revoke(&self) {
-        info!("Revoking partition client for partition {}", self.partition_id);
-        // Release pairs with Acquire in `is_revoked` so any state mutated
-        // before `revoke()` is visible to a reader that observes `true`.
-        self.revoked.store(true, Ordering::Release);
-    }
-
-    /// Returns `true` if this partition client has been revoked.
-    ///
-    /// A revoked partition client indicates that the load balancer has
-    /// transferred this partition to another consumer instance. The consumer
-    /// loop should check this between calls to `stream_events().next().await`
-    /// and stop processing when it returns `true`.
-    ///
-    /// Note: revocation is poll-based today. A consumer awaiting events on a
-    /// low-traffic partition will not observe revocation until the next event
-    /// arrives or the AMQP receiver fails. A future change is expected to make
-    /// `stream_events()` itself terminate on revocation; see PR description.
-    pub fn is_revoked(&self) -> bool {
-        self.revoked.load(Ordering::Acquire)
+    /// Called by the `EventProcessor`'s load-balancer reconciliation when
+    /// this partition has been transferred to another instance, as a
+    /// backstop for the broker-initiated disconnect path. Idempotent if the
+    /// receiver was not yet set or has already been closed.
+    pub(crate) async fn request_close_receiver(&self) {
+        if let Some(receiver) = self.event_receiver.get() {
+            if let Err(e) = receiver.request_close().await {
+                warn!(
+                    "Failed to close event receiver during revocation for partition {}: {:?}",
+                    self.partition_id, e
+                );
+            }
+        }
     }
 
     /// Receives events from the partition.

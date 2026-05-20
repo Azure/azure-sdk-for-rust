@@ -28,6 +28,20 @@ use std::{
 };
 use tracing::{debug, error, info};
 
+// The owner-level (AMQP epoch) used for every partition receiver opened by
+// `EventProcessor`. Matches the `EventProcessorClient` in the .NET
+// (`Azure.Messaging.EventHubs.Primitives.EventProcessor<TPartition>`) and
+// Java (`com.azure.messaging.eventhubs.implementation.PartitionPumpManager`)
+// SDKs, both of which hardcode `ownerLevel = 0` for processor receivers.
+// `0` is itself a valid exclusive epoch: a new receiver-at-0 displaces a
+// prior receiver-at-0 on the same partition+consumer-group, which is the
+// mechanism the processor relies on for clean steal detection.
+//
+// This is not user-configurable on `EventProcessor`. Callers who want to
+// pick a different epoch should open receivers directly via
+// `ConsumerClient::open_receiver_on_partition` with `OpenReceiverOptions`.
+const PROCESSOR_OWNER_LEVEL: i64 = 0;
+
 /// Represents the event processor responsible for processing events
 /// from Event Hub partitions.
 ///
@@ -50,7 +64,6 @@ pub struct EventProcessor {
     next_partition_client_sender: Sender<Arc<PartitionClient>>,
     client_details: ConsumerClientDetails,
     prefetch: u32,
-    owner_level: Option<i64>,
     update_interval: Duration,
     start_positions: StartPositions,
     is_running: std::sync::Mutex<bool>,
@@ -63,7 +76,6 @@ struct EventProcessorOptions {
     update_interval: Duration,
     start_positions: StartPositions,
     prefetch: u32,
-    owner_level: Option<i64>,
     partition_ids: Vec<String>,
 }
 
@@ -135,25 +147,33 @@ impl ProcessorConsumersMap {
         Ok(consumers.keys().cloned().collect())
     }
 
-    /// Revokes and removes partition clients for partitions that are no longer
-    /// owned by this processor instance.
+    /// Revokes partition clients for partitions that are no longer owned by
+    /// this processor instance.
     ///
-    /// This is called during dispatch when the load balancer indicates that
-    /// a partition has been reassigned to another consumer. The partition client
-    /// is marked as revoked (so the consumer can detect it via `is_revoked()`)
-    /// and removed from the consumers map (so a new client can be created if the
-    /// partition is later reassigned back).
-    fn revoke_partition_clients(&self, partition_ids: &[String]) -> Result<()> {
-        let mut consumers = self
-            .consumers
-            .lock()
-            .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
-        for partition_id in partition_ids {
-            if let Some(weak) = consumers.remove(partition_id) {
-                if let Some(client) = weak.upgrade() {
-                    client.revoke();
-                }
-            }
+    /// Called during dispatch when the load balancer indicates that a
+    /// partition has been reassigned to another consumer. The client is
+    /// removed from the consumers map (so a fresh client can be created if
+    /// the partition is later reassigned back), and the underlying event
+    /// receiver is closed so that any in-flight `stream_events()` call on
+    /// the consumer side resolves and the loop terminates. This is a
+    /// backstop: the broker's epoch-based disconnect path is the primary
+    /// signal when another instance takes over the partition.
+    async fn revoke_partition_clients(&self, partition_ids: &[String]) -> Result<()> {
+        // Collect the strong references under the sync lock, then release
+        // the lock before awaiting any close calls. A SyncMutex guard must
+        // not be held across `.await`.
+        let to_close: Vec<Arc<PartitionClient>> = {
+            let mut consumers = self
+                .consumers
+                .lock()
+                .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
+            partition_ids
+                .iter()
+                .filter_map(|id| consumers.remove(id).and_then(|w| w.upgrade()))
+                .collect()
+        };
+        for client in to_close {
+            client.request_close_receiver().await;
         }
         Ok(())
     }
@@ -197,7 +217,6 @@ impl EventProcessor {
             ))),
             client_details,
             prefetch: options.prefetch,
-            owner_level: options.owner_level,
             update_interval: options.update_interval,
             start_positions: options.start_positions,
             next_partition_client_sender: sender,
@@ -344,7 +363,7 @@ impl EventProcessor {
                 "Partitions no longer owned, revoking: {}",
                 stolen.join(", ")
             );
-            consumers.revoke_partition_clients(&stolen)?;
+            consumers.revoke_partition_clients(&stolen).await?;
         }
 
         let checkpoints = self.get_checkpoint_map().await;
@@ -420,7 +439,7 @@ impl EventProcessor {
                 Some(OpenReceiverOptions {
                     start_position: Some(start_position),
                     prefetch: Some(self.prefetch),
-                    owner_level: self.owner_level,
+                    owner_level: Some(PROCESSOR_OWNER_LEVEL),
                     ..Default::default()
                 }),
             )
@@ -619,7 +638,6 @@ pub mod builders {
         start_positions: Option<StartPositions>,
         max_partition_count: Option<usize>,
         prefetch: Option<u32>,
-        owner_level: Option<i64>,
         load_balancing_strategy: Option<super::ProcessorStrategy>,
         partition_expiration_duration: Option<Duration>,
     }
@@ -689,28 +707,6 @@ pub mod builders {
             self
         }
 
-        /// Sets the owner level (epoch) for partition receivers.
-        ///
-        /// When set, the Event Hub broker enforces exclusive access: a new
-        /// receiver with the same or higher owner level will disconnect any
-        /// existing receiver on the same partition. This prevents duplicate
-        /// processing when partitions are rebalanced across consumers.
-        ///
-        /// Note: `0` is a valid owner level. Per the AMQP epoch semantics
-        /// implemented by Event Hubs, a new receiver opened with epoch `0`
-        /// displaces a prior receiver that was using epoch `0`. Calling this
-        /// with any non-negative value enables exclusive (epoch) receivers;
-        /// if it is left unset (the default), receivers are non-epoch and
-        /// will coexist on the same partition.
-        ///
-        /// The .NET and Java `EventProcessorClient` always use owner level
-        /// `0` internally; passing `0` here makes the Rust processor behave
-        /// the same way.
-        pub fn with_owner_level(mut self, owner_level: i64) -> Self {
-            self.owner_level = Some(owner_level);
-            self
-        }
-
         /// Sets the partition expiration duration for the event processor.
         pub fn with_partition_expiration_duration(
             mut self,
@@ -755,7 +751,6 @@ pub mod builders {
                     update_interval,
                     start_positions: self.start_positions.unwrap_or_default(),
                     prefetch: self.prefetch.unwrap_or(DEFAULT_PREFETCH),
-                    owner_level: self.owner_level,
                     partition_ids: eh_properties.partition_ids,
                 },
             )

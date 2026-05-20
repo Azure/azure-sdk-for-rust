@@ -1,15 +1,36 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-use crate::{common::recoverable::RecoverableConnection, error::Result, models::ReceivedEventData};
+use crate::{
+    common::recoverable::RecoverableConnection,
+    error::{ErrorKind, EventHubsError, Result},
+    models::ReceivedEventData,
+};
 use async_stream::try_stream;
 use azure_core::{http::Url, time::Duration};
 use azure_core_amqp::{
-    AmqpDeliveryApis as _, AmqpReceiverApis as _, AmqpReceiverOptions, AmqpSource,
+    error::{AmqpErrorCondition, AmqpErrorKind},
+    AmqpDeliveryApis as _, AmqpError, AmqpReceiverApis as _, AmqpReceiverOptions, AmqpSource,
 };
 use futures::Stream;
 use std::sync::Arc;
 use tracing::trace;
+
+/// Translates AMQP errors raised on the receive path into `EventHubsError`,
+/// recognizing the `amqp:link:stolen` condition (broker-initiated displacement
+/// when another receiver attaches with a higher-or-equal epoch) and surfacing
+/// it as the typed `ConsumerDisconnected` variant. The retry layer (see
+/// `should_retry_amqp_error` in `common/recoverable/connection.rs`) deliberately
+/// returns this error rather than silently re-attaching, so this mapping is the
+/// signal a stolen-partition consumer observes.
+fn translate_receive_error(error: AmqpError) -> EventHubsError {
+    if let AmqpErrorKind::AmqpDescribedError(described) = error.kind() {
+        if matches!(described.condition, AmqpErrorCondition::LinkStolen) {
+            return EventHubsError::from(ErrorKind::ConsumerDisconnected(Some(described.clone())));
+        }
+    }
+    EventHubsError::from(error)
+}
 
 /// A message receiver that can be used to receive messages from an Event Hub.
 ///
@@ -119,6 +140,12 @@ impl EventReceiver {
     ///
     pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_ {
         // Use async_stream to create a stream that yields messages from the receiver.
+        // AMQP errors are translated through `translate_receive_error` so the
+        // broker-initiated link-stolen condition surfaces as the typed
+        // `EventHubsError::ConsumerDisconnected` rather than an opaque
+        // `AmqpError`. Consumers pattern-matching on
+        // `ErrorKind::ConsumerDisconnected` can break out of their receive
+        // loop and re-acquire a partition client.
         Box::pin(try_stream! {
             loop {
                 let receiver = self.connection.get_receiver(&self.source_url,
@@ -127,7 +154,7 @@ impl EventReceiver {
                     self.timeout
                 ).await?;
 
-                let delivery = receiver.receive_delivery().await?;
+                let delivery = receiver.receive_delivery().await.map_err(translate_receive_error)?;
 
 
                  // Now that we have a delivery, we can process it.
@@ -141,6 +168,19 @@ impl EventReceiver {
 
     /// Closes the event receiver, detaching from the remote.
     pub async fn close(self) -> Result<()> {
+        self.connection.close_receiver(&self.source_url).await
+    }
+
+    /// Closes the underlying AMQP receiver link without consuming the
+    /// `EventReceiver` value.
+    ///
+    /// This is the cooperative-shutdown counterpart to `close(self)` for
+    /// callers that hold the receiver by shared reference (for example, the
+    /// `EventProcessor`'s partition-revocation path, which must close a
+    /// receiver while user code still holds an `Arc<PartitionClient>` over
+    /// it). The next `stream_events()` poll on this receiver will resolve
+    /// with an error so the consumer's loop can terminate.
+    pub(crate) async fn request_close(&self) -> Result<()> {
         self.connection.close_receiver(&self.source_url).await
     }
 }

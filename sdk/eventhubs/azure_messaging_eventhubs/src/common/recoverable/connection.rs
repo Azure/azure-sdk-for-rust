@@ -594,25 +594,24 @@ impl RecoverableConnection {
             AmqpErrorKind::SendRejected => ErrorRecoveryAction::ReturnError,
             AmqpErrorKind::AmqpDescribedError(described_error) => {
                 debug!("AMQP described error: {:?}", described_error);
+                // `LinkStolen` (amqp:link:stolen) is deliberately NOT in the
+                // retry set. When the Event Hubs broker disconnects a receiver
+                // because another receiver attached with a higher-or-equal
+                // epoch (owner level), retrying would silently re-attach the
+                // displaced receiver and either be displaced again
+                // immediately, or race the new owner and cause duplicate
+                // processing. The displaced caller needs to see the error and
+                // stop. The .NET SDK takes the same stance via
+                // `InvalidateConsumerWhenPartitionIsStolen = true`.
                 if matches!(
                     described_error.condition,
                     AmqpErrorCondition::ResourceLimitExceeded
                         | AmqpErrorCondition::ConnectionFramingError
-                        | AmqpErrorCondition::LinkStolen
                         | AmqpErrorCondition::ServerBusyError
                         | AmqpErrorCondition::EntityUpdated
                         | AmqpErrorCondition::EntityDisabledError
                 ) {
                     debug!("AMQP described error can be retried: {:?}", described_error);
-                    ErrorRecoveryAction::RetryAction
-                } else if matches!(
-                    described_error.condition,
-                    AmqpErrorCondition::EntityDisabledError
-                ) {
-                    debug!(
-                        "AMQP described error triggers a disconnect: {:?}",
-                        described_error
-                    );
                     ErrorRecoveryAction::RetryAction
                 } else {
                     debug!(

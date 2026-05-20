@@ -8,7 +8,9 @@
 //! processed.
 
 use azure_identity::DeveloperToolsCredential;
-use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, InMemoryCheckpointStore};
+use azure_messaging_eventhubs::{
+    error::ErrorKind, ConsumerClient, EventProcessor, InMemoryCheckpointStore,
+};
 use futures::StreamExt;
 use std::sync::Arc;
 use tokio::sync::Mutex as AsyncMutex;
@@ -70,13 +72,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Opened consumer client");
 
     let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
+    // The processor opens each partition receiver with epoch (owner level)
+    // 0 internally, matching the .NET and Java `EventProcessorClient`. The
+    // broker disconnects any existing receiver on the same partition when
+    // another consumer instance attaches, which terminates the displaced
+    // consumer's `stream_events()` with `ErrorKind::ConsumerDisconnected`.
     let processor = EventProcessor::builder()
-        // Setting owner_level enables epoch-based partition ownership.
-        // The Event Hub broker will disconnect any existing receiver on
-        // the same partition when a new receiver with the same or higher
-        // owner level connects, preventing duplicate event processing
-        // across multiple consumer instances.
-        .with_owner_level(0)
         .build(consumer, checkpoint_store)
         .await?;
     let background_processor = BackgroundProcessor::new(processor.clone());
@@ -96,30 +97,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut event_stream = partition_client.stream_events();
     let mut event_count = 0;
     while let Some(event) = event_stream.next().await {
-        // Check if the partition was reassigned to another consumer
-        // during rebalancing. When revoked, stop processing so the
-        // partition client can be re-acquired.
-        if partition_client.is_revoked() {
-            println!("Partition was reassigned, stopping.");
-            break;
-        }
-        println!("Received message {event_count}");
-        event_count += 1;
-        if event_count > 10 {
-            println!("Received 10 events, stopping the processor.");
-            break;
-        }
         match event {
             Ok(event) => {
-                println!("Received event: {:?}", event);
+                println!("Received message {event_count}");
+                event_count += 1;
+                if event_count > 10 {
+                    println!("Received 10 events, stopping the processor.");
+                    break;
+                }
                 // Process the received event
+                println!("Received event: {:?}", event);
                 println!("Partition key: {:?}", event.partition_key());
                 println!("Event offset: {:?}", event.offset());
                 println!("Event sequence number: {:?}", event.sequence_number());
             }
+            Err(err) if matches!(err.kind, ErrorKind::ConsumerDisconnected(_)) => {
+                // The broker disconnected this receiver because another
+                // consumer instance opened a receiver on the same partition.
+                // The load balancer will hand us a fresh partition client
+                // via `next_partition_client` on the next dispatch cycle.
+                println!("Partition was reassigned to another consumer, stopping.");
+                break;
+            }
             Err(err) => {
-                // Handle the error
                 eprintln!("Error receiving event: {:?}", err);
+                break;
             }
         }
     }

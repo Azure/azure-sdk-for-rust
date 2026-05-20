@@ -4,12 +4,17 @@
 
 ### Features Added
 
-- `EventProcessorBuilder::with_owner_level` enables epoch-based exclusive partition receivers. When set, the broker disconnects any existing receiver on the same partition when a new receiver opens with the same or higher epoch, preventing duplicate processing across consumer instances. Note that `0` is a valid (exclusive) epoch.
-- `PartitionClient::is_revoked` lets a consumer detect that the load balancer has transferred a partition to another instance and stop processing. Revocation is currently poll-based; a consumer should check `is_revoked()` between calls to `stream_events().next().await`.
+- The `EventProcessor` now opens every partition receiver with AMQP epoch (owner level) `0` and surfaces broker-initiated displacement as the new `EventHubsError::ConsumerDisconnected` error kind. When a second `EventProcessor` instance claims a partition this instance is currently holding, the broker disconnects this instance's receiver and the consumer's `stream_events()` resolves with `ConsumerDisconnected`. This matches the behavior of `EventProcessorClient` in the .NET and Java Azure SDKs. Consumers should pattern-match on `ErrorKind::ConsumerDisconnected` to detect a stolen partition and re-acquire a client via `next_partition_client()`.
+- Added `EventHubsError::ConsumerDisconnected(Option<AmqpDescribedError>)` error variant.
 
 ### Breaking Changes
 
+- The `amqp:link:stolen` AMQP condition is no longer auto-retried on the receive path. Operations on a stolen receiver link now return `EventHubsError::ConsumerDisconnected`. Previously the recoverable-connection retry list silently re-attached link-stolen receivers, which on `EventProcessor` masked partition steals on the displaced instance and could cause duplicate processing.
+
 ### Bugs Fixed
+
+- Increased `DEFAULT_PARTITION_EXPIRATION_DURATION` from 10 seconds to 60 seconds. The previous default was shorter than `DEFAULT_UPDATE_INTERVAL` (30 seconds), so ownership records expired between load-balancing cycles. The load balancer perpetually saw `current=0` for every consumer and continuously re-claimed partitions, causing widespread duplicate event processing. `EventProcessorBuilder::build` now rejects configurations where `partition_expiration_duration <= update_interval`. ([#3851](https://github.com/Azure/azure-sdk-for-rust/issues/3851))
+- The `EventProcessor`'s load-balancer reconciliation now closes the underlying AMQP receiver for any partition that has been reassigned to another consumer, so the consumer's `stream_events()` resolves and the loop can terminate. Previously a stolen partition's client could continue to attempt receives until the broker tore down the link.
 
 ### Other Changes
 
@@ -20,9 +25,6 @@
 ### Breaking Changes
 
 ### Bugs Fixed
-
-- Increased `DEFAULT_PARTITION_EXPIRATION_DURATION` from 10 seconds to 60 seconds. The previous default was shorter than `DEFAULT_UPDATE_INTERVAL` (30 seconds), so ownership records expired between load-balancing cycles. The load balancer perpetually saw `current=0` for every consumer and continuously re-claimed partitions, causing widespread duplicate event processing. `EventProcessorBuilder::build` now rejects configurations where `partition_expiration_duration <= update_interval`. ([#3851](https://github.com/Azure/azure-sdk-for-rust/issues/3851))
-- The event processor now revokes a `PartitionClient` for any partition that has been reassigned to another consumer during a load-balancing cycle. Previously, a stolen partition's client would continue to read events indefinitely.
 
 ### Other Changes
 
