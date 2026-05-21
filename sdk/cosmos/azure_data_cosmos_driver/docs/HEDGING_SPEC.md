@@ -1379,9 +1379,19 @@ fn record_hedge_win(
 
 1. **Counter is per (partition, primary_region) pair.** A hedge-win
    on partition P with primary region A does not affect partition Q.
-2. **Primary-region wins reset the counter.** Any direct primary win
-   on the same partition clears the consecutive-hedge-win counter so
-   transient cross-region latency spikes do not accumulate.
+2. **Primary-region wins reset the counter — *for any `Final`
+   outcome*.** Any direct primary win on the same partition clears
+   the consecutive-hedge-win counter so transient cross-region
+   latency spikes do not accumulate. **A primary `Final` outcome
+   includes application-classified HTTP failures** (404, 409, 412,
+   `Pre/PostconditionFailed`, etc.) in addition to 2xx successes —
+   what matters is that the primary leg produced a definitive
+   response in time, not whether that response was a 2xx. Recording
+   a reset on a primary 4xx is essential: such responses are
+   structurally faster than transient retries (no backoff, no
+   alternate region launch), and gating the reset on `result.is_ok()`
+   would allow a sticky 4xx workload to retain stale alternate-win
+   credit and oscillate partition routing.
 3. **PPCB owns the threshold and the state transition.** The hedging
    `execute_hedged()` only emits the signal; whether N hedge-wins trip the
    breaker, and what state the partition transitions to, lives in the

@@ -2025,18 +2025,22 @@ async fn execute_hedged(
                 was_hedge = false,
                 "cosmos.hedge.won",
             );
-            // Spec §9.5: primary-region win resets the consecutive-hedge-win
-            // counter on this (partition, primary_region) pair. Recorded
-            // even in the zero-overhead path because a streak of fast
-            // primaries should clear any prior alternate-win backlog.
-            if result.is_ok() {
-                record_hedge_outcome(
-                    ctx.hedge_outcome_recorder,
-                    HedgeOutcome::PrimaryWin,
-                    ctx.partition_key_range_id.as_ref(),
-                    primary_region.as_ref(),
-                );
-            }
+            // Spec §9.5: a `Final` primary outcome — success *or*
+            // application-classified HTTP failure (404, 409, 412, etc.) —
+            // resets the consecutive-hedge-win counter on this
+            // `(partition, primary_region)` pair. Symmetric with the
+            // post-threshold primary-win branches below, which also
+            // record unconditionally. Recording even on the
+            // zero-overhead path ensures a streak of fast `Final`
+            // primaries clears any prior alternate-win backlog and
+            // prevents partition-routing oscillation under sticky 4xx
+            // traffic (review #2).
+            record_hedge_outcome(
+                ctx.hedge_outcome_recorder,
+                HedgeOutcome::PrimaryWin,
+                ctx.partition_key_range_id.as_ref(),
+                primary_region.as_ref(),
+            );
             return finalize_hedge_attempt(Box::new(result?), parent_diagnostics);
         }
         Either::Right((TimerEvent::ThresholdElapsed, remaining_primary)) => remaining_primary,
