@@ -5,8 +5,11 @@
 
 #[cfg(feature = "http")]
 use crate::http::{RawResponse, StatusCode};
-use std::borrow::Cow;
-use std::fmt::{Debug, Display};
+use std::{
+    backtrace::{Backtrace, BacktraceStatus},
+    borrow::Cow,
+    fmt,
+};
 
 /// A convenience alias for `Result` where the error type is hard coded to [`Error`].
 pub type Result<T> = std::result::Result<T, Error>;
@@ -45,12 +48,13 @@ impl ErrorKind {
     pub fn into_error(self) -> Error {
         Error {
             context: Repr::Simple(self),
+            backtrace: capture_backtrace(),
         }
     }
 }
 
-impl Display for ErrorKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             #[cfg(feature = "http")]
             ErrorKind::HttpResponse {
@@ -70,9 +74,22 @@ impl Display for ErrorKind {
 }
 
 /// An error encountered when communicating with the service.
-#[derive(Debug)]
 pub struct Error {
     context: Repr,
+    // Only `Some` when `RUST_BACKTRACE` is set; boxed so the `Some` variant
+    // doesn't inflate `Error` beyond `clippy::result_large_err` limits.
+    backtrace: Option<Box<Backtrace>>,
+}
+
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut dbg = f.debug_struct("Error");
+        dbg.field("context", &self.context);
+        if let Some(backtrace) = &self.backtrace {
+            return dbg.field("backtrace", backtrace).finish();
+        }
+        dbg.finish_non_exhaustive()
+    }
 }
 
 impl Error {
@@ -86,6 +103,7 @@ impl Error {
                 kind,
                 error: error.into(),
             }),
+            backtrace: capture_backtrace(),
         }
     }
 
@@ -104,6 +122,7 @@ impl Error {
                 },
                 message.into(),
             ),
+            backtrace: capture_backtrace(),
         }
     }
 
@@ -126,6 +145,7 @@ impl Error {
     {
         Self {
             context: Repr::SimpleMessage(kind, message.into()),
+            backtrace: capture_backtrace(),
         }
     }
 
@@ -244,6 +264,7 @@ impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
             context: Repr::Simple(kind),
+            backtrace: capture_backtrace(),
         }
     }
 }
@@ -303,12 +324,12 @@ impl From<core::convert::Infallible> for Error {
     }
 }
 
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.context {
-            Repr::Simple(kind) => std::fmt::Display::fmt(&kind, f),
+            Repr::Simple(kind) => fmt::Display::fmt(&kind, f),
             Repr::SimpleMessage(_, message) => f.write_str(message),
-            Repr::Custom(Custom { error, .. }) => std::fmt::Display::fmt(&error, f),
+            Repr::Custom(Custom { error, .. }) => fmt::Display::fmt(&error, f),
             Repr::CustomMessage(_, message) => f.write_str(message),
         }
     }
@@ -367,6 +388,7 @@ where
                 },
                 message.into(),
             ),
+            backtrace: capture_backtrace(),
         })
     }
 
@@ -377,6 +399,16 @@ where
         C: Into<Cow<'static, str>>,
     {
         self.with_context(kind, f())
+    }
+}
+
+#[inline(always)]
+fn capture_backtrace() -> Option<Box<Backtrace>> {
+    let backtrace = Backtrace::capture();
+    if backtrace.status() == BacktraceStatus::Captured {
+        Some(Box::new(backtrace))
+    } else {
+        None
     }
 }
 
@@ -481,5 +513,15 @@ mod tests {
         let result = std::result::Result::<(), _>::Err(create_error());
         let result = result.with_kind(ErrorKind::Io);
         assert_eq!(&ErrorKind::Io, result.unwrap_err().kind());
+    }
+
+    #[test]
+    fn backtrace_captured_when_enabled() {
+        let error = Error::new(ErrorKind::Other, "test error");
+        if std::env::var("RUST_BACKTRACE").is_ok() {
+            assert!(error.backtrace.is_some());
+        } else {
+            assert!(error.backtrace.is_none());
+        }
     }
 }
