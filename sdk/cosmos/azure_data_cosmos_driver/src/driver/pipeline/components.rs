@@ -142,7 +142,7 @@ pub(crate) struct OperationRetryState {
     ///
     /// `Some(_)` only when this `OperationRetryState` is running inside
     /// the [`execute_hedged`] cross-region race past the threshold
-    /// (spec [`docs/HEDGING_SPEC.md`] §9.6). `None` on the non-hedged
+    /// (spec `docs/HEDGING_SPEC.md` §9.6). `None` on the non-hedged
     /// pipeline and on the zero-overhead happy path where the primary
     /// returns before the threshold elapses, so the §6.5 #3
     /// no-Arc-allocation invariant and PR #4389's allocator footprint
@@ -256,7 +256,7 @@ impl OperationRetryState {
     }
 
     /// Attaches the cross-hedge shared hub-region-processing-only
-    /// latch (spec [`docs/HEDGING_SPEC.md`] §9.6). Called by
+    /// latch (spec `docs/HEDGING_SPEC.md` §9.6). Called by
     /// `execute_hedged` after the threshold elapses and the
     /// eligibility predicate (data-plane ∧ single-master) holds, so the
     /// zero-overhead happy path never constructs an `Arc<AtomicBool>`.
@@ -594,7 +594,7 @@ pub(crate) enum OperationAction {
     SessionRetry { new_state: OperationRetryState },
     /// Race the primary attempt against a single secondary cross-region hedge.
     ///
-    /// Emitted by `evaluate_transport_result` per [`docs/HEDGING_SPEC.md`]
+    /// Emitted by `evaluate_transport_result` per `docs/HEDGING_SPEC.md`
     /// §6.1 when:
     ///
     /// 1. The per-attempt result was *transient* (would otherwise produce

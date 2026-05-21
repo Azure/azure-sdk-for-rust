@@ -576,7 +576,7 @@ impl LocationStateStore {
     /// the primary in
     /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
     ///
-    /// Per [`docs/HEDGING_SPEC.md`] §9.5: increments a per-`(partition,
+    /// Per `docs/HEDGING_SPEC.md` §9.5: increments a per-`(partition,
     /// primary_region)` counter atomically via [`Self::apply_partition`]. When
     /// the counter reaches
     /// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`] the
@@ -607,7 +607,7 @@ impl LocationStateStore {
     /// Records that the primary attempt won in
     /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
     ///
-    /// Per [`docs/HEDGING_SPEC.md`] §9.5 invariant #2: clears the
+    /// Per `docs/HEDGING_SPEC.md` §9.5 invariant #2: clears the
     /// per-`(partition, primary_region)` consecutive-hedge-win counter
     /// atomically via [`Self::apply_partition`] so transient cross-region
     /// latency spikes do not accumulate into a trip over arbitrarily long

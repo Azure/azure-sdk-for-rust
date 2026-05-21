@@ -1399,7 +1399,7 @@ fn try_cleanup_probe_candidate(
 /// field is borrowed from there.
 /// Sink for hedge-outcome feedback used by [`execute_hedged`].
 ///
-/// Per spec [`docs/HEDGING_SPEC.md`] §9.5 the outcome of every hedge
+/// Per spec `docs/HEDGING_SPEC.md` §9.5 the outcome of every hedge
 /// race feeds back into PPCB so that repeated alternate-region wins on
 /// the same `(partition, primary_region)` pair eventually trip the
 /// primary partition to `Unhealthy`. The trait exists so that:
@@ -1507,7 +1507,7 @@ struct AttemptContext<'a> {
     deadline: Option<Instant>,
     /// Whether this operation runs against a multi-master account.
     /// Used by [`execute_hedged`] to gate construction of the shared
-    /// hub-region-processing-only latch (spec [`docs/HEDGING_SPEC.md`]
+    /// hub-region-processing-only latch (spec `docs/HEDGING_SPEC.md`
     /// §9.6.3 — the latch is only meaningful on single-master
     /// data-plane operations).
     can_use_multiple_write_locations: bool,
@@ -1516,12 +1516,12 @@ struct AttemptContext<'a> {
     /// `SessionRetry`. Used by [`execute_hedged`] to seed the shared
     /// `Arc<AtomicBool>` so a 1002 already discovered by the main
     /// pipeline before hedging fired carries forward into both hedge
-    /// attempts (spec [`docs/HEDGING_SPEC.md`] §9.6.2).
+    /// attempts (spec `docs/HEDGING_SPEC.md` §9.6.2).
     hub_region_processing_only_initial: bool,
     /// Identifies the physical partition serving this operation. Used by
     /// [`execute_hedged`] to attribute hedge-win signals back to the
     /// `(partition, primary_region)` pair consumed by PPCB feedback
-    /// (spec [`docs/HEDGING_SPEC.md`] §9.5). `None` for operations
+    /// (spec `docs/HEDGING_SPEC.md` §9.5). `None` for operations
     /// dispatched before any response captured the partition key range
     /// ID (first attempt of an unresolved item) — in that case no
     /// feedback can be attributed and the recorder calls become no-ops.
@@ -1530,7 +1530,7 @@ struct AttemptContext<'a> {
     /// `LocationStateStore` in production; the indirection is via the
     /// [`HedgeOutcomeRecorder`] trait so unit tests can substitute a
     /// fake without standing up a full store (spec
-    /// [`docs/HEDGING_SPEC.md`] §9.5).
+    /// `docs/HEDGING_SPEC.md` §9.5).
     hedge_outcome_recorder: &'a dyn HedgeOutcomeRecorder,
 }
 

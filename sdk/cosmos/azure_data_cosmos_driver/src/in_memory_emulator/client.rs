@@ -111,7 +111,7 @@ impl InMemoryEmulatorHttpClient {
     /// evaluate on every outbound request before reaching the emulator.
     ///
     /// Used by hedging integration tests (spec
-    /// [`docs/HEDGING_SPEC.md`] §15.2) to inject region-targeted delays
+    /// `docs/HEDGING_SPEC.md` §15.2) to inject region-targeted delays
     /// and error statuses without standing up a real network harness.
     /// Rules are evaluated lowest-index first; see
     /// [`crate::fault_injection`] for the rule-construction surface.
