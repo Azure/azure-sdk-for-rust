@@ -476,7 +476,10 @@ mod tests {
         assert_eq!(diag.response_region, unknown);
         assert_eq!(diag.regions_contacted, vec![unknown.clone()]);
         assert!(!diag.was_hedge);
-        assert_eq!(diag.terminal_state, HedgeTerminalState::PrimaryWonPreThreshold);
+        assert_eq!(
+            diag.terminal_state,
+            HedgeTerminalState::PrimaryWonPreThreshold
+        );
         // Sentinel must not collide with any real region constant.
         assert_ne!(unknown, Region::EAST_US);
         assert_ne!(unknown, Region::WEST_US_2);

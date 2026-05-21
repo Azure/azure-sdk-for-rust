@@ -917,13 +917,11 @@ mod tests {
         // Configured timeout = 800ms → expected threshold = 400ms (cap = 1s).
         let configured_timeout = Some(Duration::from_millis(800));
 
-        let first =
-            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
-                .expect("first call eligible");
+        let first = evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
+            .expect("first call eligible");
         std::thread::sleep(Duration::from_millis(10));
-        let second =
-            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
-                .expect("second call eligible");
+        let second = evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
+            .expect("second call eligible");
 
         assert_eq!(
             first.threshold.get(),
