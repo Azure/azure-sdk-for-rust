@@ -87,7 +87,7 @@ impl SubOperationDispatcher for CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> azure_core::Result<CosmosResponse> {
-        CosmosDriver::execute_operation(self, operation, options).await
+        CosmosDriver::execute_singleton_operation(self, operation, options).await
     }
 }
 
