@@ -893,8 +893,17 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .unwrap();
 
+    // Disable cross-region hedging on this read so the §5.2 driver-default
+    // (≥2 preferred regions) does not race the West US 404/1002 against an
+    // East US hedge. This test exercises the session-retry path on a paused
+    // satellite; with hedging enabled the secondary leg in East US would
+    // succeed (West US is intentionally stale) and mask the per-region
+    // failure the test is asserting.
     let no_session_retry = OperationOptionsBuilder::new()
         .with_max_session_retry_count(0)
+        .with_availability_strategy(
+            azure_data_cosmos_driver::options::AvailabilityStrategy::Disabled,
+        )
         .build();
 
     let west_read_before_resume = driver

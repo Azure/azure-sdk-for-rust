@@ -2042,53 +2042,86 @@ async fn execute_hedged(
         }
     });
 
-    let primary_attempt = match select(primary_attempt, timer_event).await {
+    // The post-match value is the primary future the Stage 4 race will
+    // consume. We unify the three possible future types (still-pending
+    // primary, pre-resolved transient primary, deadline branch returns
+    // early) by erasing to a boxed `dyn Future` trait object.
+    type PrimaryAttemptFuture<'fut> = Pin<
+        Box<
+            dyn Future<
+                    Output = (
+                        azure_core::Result<TransportResult>,
+                        DiagnosticsContextBuilder,
+                    ),
+                > + Send
+                + 'fut,
+        >,
+    >;
+    let primary_attempt: PrimaryAttemptFuture<'_> = match select(primary_attempt, timer_event).await
+    {
         Either::Left(((result, diag), _timer)) => {
-            // Primary completed before either timer — no secondary attempt
-            // was constructed (spec §6.5 #3).
-            parent_diagnostics.merge_hedge_attempt(diag);
-            parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::primary_only(
-                strategy_config,
-                primary_region_for_diag.clone(),
-            ));
-            tracing::debug!(
-                activity_id = %ctx.activity_id,
-                "execute_hedged: primary won pre-threshold (zero-overhead happy path)",
+            // Primary resolved before either timer. Spec §6.5 #3 only
+            // short-circuits the secondary launch when the primary's
+            // outcome is **final** (HTTP success or application-classified
+            // error per `is_final_result`). A *transient* outcome
+            // (5xx / 429 / 408 / 410 / 404-1002 / 403-with-sub / transport
+            // error / deadline) must still race against the secondary so
+            // a healthy alternate region can win — otherwise hedging
+            // would actively suppress the cross-region failover the
+            // operation pipeline would have performed without hedging
+            // upgrade (drift D7 / review #3).
+            let primary_was_final = matches!(
+                &result,
+                Ok(tr) if result_is_final(tr),
             );
-            // Spec §10.4 reserved: structured win event. `was_hedge=false`
-            // distinguishes the zero-overhead happy path from a post-threshold
-            // primary win.
-            tracing::info!(
-                activity_id = %ctx.activity_id,
-                winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
-                was_hedge = false,
-                "cosmos.hedge.won",
-            );
-            // Spec §9.5: a `Final` primary outcome — success *or*
-            // application-classified HTTP failure (404, 409, 412, etc.) —
-            // resets the consecutive-hedge-win counter on this
-            // `(partition, primary_region)` pair. The post-threshold
-            // primary-win branches below also gate on
-            // `HedgeClass::Final`; recording for a `Transient` primary
-            // outcome (e.g., a fast 503/449/transport-reset that
-            // completes before the threshold) would silently neutralize
-            // the §9.5 PPCB signal for exactly the failure mode it is
-            // designed to detect — a partition serving sticky-fast
-            // transients would perpetually reset the alternate-win
-            // counter and never trip routing. Classify first, mirror the
-            // post-threshold semantics, and surface the response either
-            // way (review #2).
-            let tr = result?;
-            let primary_was_final = result_is_final(&tr);
             if primary_was_final {
+                // Spec §6.5 #3 zero-overhead happy path — no secondary
+                // attempt is ever constructed.
+                parent_diagnostics.merge_hedge_attempt(diag);
+                parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::primary_only(
+                    strategy_config,
+                    primary_region_for_diag.clone(),
+                ));
+                tracing::debug!(
+                    activity_id = %ctx.activity_id,
+                    "execute_hedged: primary won pre-threshold (zero-overhead happy path)",
+                );
+                // Spec §10.4 reserved: structured win event. `was_hedge=false`
+                // distinguishes the zero-overhead happy path from a post-threshold
+                // primary win.
+                tracing::info!(
+                    activity_id = %ctx.activity_id,
+                    winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
+                    was_hedge = false,
+                    "cosmos.hedge.won",
+                );
+                // Spec §9.5: only a `Final` primary outcome resets the
+                // consecutive-hedge-win counter on this
+                // `(partition, primary_region)` pair. Recording for a
+                // `Transient` outcome (a fast 503/449/transport-reset
+                // that completes before the threshold) would silently
+                // neutralize the §9.5 PPCB signal for exactly the
+                // failure mode it is designed to detect.
                 record_hedge_outcome(
                     ctx.hedge_outcome_recorder,
                     HedgeOutcome::PrimaryWin,
                     ctx.partition_key_range_id.as_ref(),
                     primary_region.as_ref(),
                 );
+                // result is Ok by the `primary_was_final` guard above.
+                let tr = result.expect("Ok by primary_was_final guard");
+                return finalize_hedge_attempt(Box::new(tr), parent_diagnostics);
             }
-            return finalize_hedge_attempt(Box::new(tr), parent_diagnostics);
+            // Primary resolved pre-threshold but transient (or `Err`). Do
+            // not merge diagnostics yet — fall through to Stage 3, wrap
+            // the resolved primary into a `ready` future, and let the
+            // Stage 4 race merge it on the winning-side path the same
+            // way it merges a post-threshold primary completion.
+            tracing::debug!(
+                activity_id = %ctx.activity_id,
+                "execute_hedged: primary completed pre-threshold transient; launching secondary",
+            );
+            Box::pin(futures::future::ready((result, diag)))
         }
         Either::Right((TimerEvent::ThresholdElapsed, remaining_primary)) => remaining_primary,
         Either::Right((TimerEvent::DeadlineFired, remaining_primary)) => {
