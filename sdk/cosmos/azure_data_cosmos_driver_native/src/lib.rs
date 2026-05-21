@@ -69,7 +69,9 @@ pub extern "C" fn cosmos_enable_tracing() {
     use tracing_subscriber::EnvFilter;
 
     let _ = tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::try_from_env("COSMOS_LOG").unwrap_or_else(|_| EnvFilter::new("info")))
+        .with_env_filter(
+            EnvFilter::try_from_env("COSMOS_LOG").unwrap_or_else(|_| EnvFilter::new("info")),
+        )
         .with_thread_ids(true)
         .with_thread_names(true)
         .try_init();
@@ -82,7 +84,10 @@ pub(crate) fn unwrap_required_ptr<'a, T>(
     msg: &'static CStr,
 ) -> Result<&'a T, error::Error> {
     if ptr.is_null() {
-        Err(error::Error::new(error::CosmosErrorCode::InvalidArgument, msg))
+        Err(error::Error::new(
+            error::CosmosErrorCode::InvalidArgument,
+            msg,
+        ))
     } else {
         Ok(unsafe { &*ptr })
     }

@@ -162,10 +162,7 @@ pub unsafe extern "C" fn cosmos_response_into_body(
             // `body.single()` concatenates parts (or errors out if the body
             // was an empty multipart). For now we surface concatenation
             // failures as an empty buffer.
-            let bytes = body
-                .single()
-                .map(|b| b.to_vec())
-                .unwrap_or_default();
+            let bytes = body.single().map(|b| b.to_vec()).unwrap_or_default();
             *out_body = CosmosBytes::from_vec(bytes);
             CosmosErrorCode::Success
         }

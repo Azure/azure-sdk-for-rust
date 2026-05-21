@@ -20,14 +20,19 @@ use azurecosmosdriver::handles::partition_key::{
 use azurecosmosdriver::runtime::{cosmos_runtime_create, cosmos_runtime_free};
 use azurecosmosdriver::string::cosmos_string_free;
 
-fn cstr(s: &str) -> CString { CString::new(s).unwrap() }
+fn cstr(s: &str) -> CString {
+    CString::new(s).unwrap()
+}
 
 #[test]
 fn version_matches_cargo_pkg_version() {
     unsafe {
         let p = cosmos_version();
         assert!(!p.is_null());
-        assert_eq!(CStr::from_ptr(p).to_str().unwrap(), env!("CARGO_PKG_VERSION"));
+        assert_eq!(
+            CStr::from_ptr(p).to_str().unwrap(),
+            env!("CARGO_PKG_VERSION")
+        );
     }
 }
 
@@ -45,10 +50,13 @@ fn account_ref_rejects_invalid_endpoint() {
     let endpoint = cstr("not a url");
     let key = cstr("c2VjcmV0");
     unsafe {
-        let acct: *mut cosmos_account_ref = cosmos_account_ref_with_master_key(endpoint.as_ptr(), key.as_ptr(), &mut err);
+        let acct: *mut cosmos_account_ref =
+            cosmos_account_ref_with_master_key(endpoint.as_ptr(), key.as_ptr(), &mut err);
         assert!(acct.is_null());
         assert_eq!(err.code, CosmosErrorCode::InvalidAccountReference);
-        if !err.detail.is_null() { cosmos_string_free(err.detail); }
+        if !err.detail.is_null() {
+            cosmos_string_free(err.detail);
+        }
     }
 }
 
@@ -58,7 +66,8 @@ fn account_ref_with_valid_endpoint_succeeds() {
     let endpoint = cstr("https://example.documents.azure.com:443/");
     let key = cstr("c2VjcmV0");
     unsafe {
-        let acct: *mut cosmos_account_ref = cosmos_account_ref_with_master_key(endpoint.as_ptr(), key.as_ptr(), &mut err);
+        let acct: *mut cosmos_account_ref =
+            cosmos_account_ref_with_master_key(endpoint.as_ptr(), key.as_ptr(), &mut err);
         assert!(!acct.is_null(), "code={:?}", err.code);
         cosmos_account_ref_free(acct);
     }

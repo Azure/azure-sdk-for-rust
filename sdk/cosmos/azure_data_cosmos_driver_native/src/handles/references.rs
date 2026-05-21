@@ -142,10 +142,11 @@ pub unsafe extern "C" fn cosmos_item_ref_create(
     if out_item.is_null() {
         return CosmosErrorCode::InvalidArgument;
     }
-    let container = match unwrap_required_ptr::<cosmos_container_ref>(container, messages::INVALID_HANDLE) {
-        Ok(c) => c,
-        Err(_) => return CosmosErrorCode::InvalidHandle,
-    };
+    let container =
+        match unwrap_required_ptr::<cosmos_container_ref>(container, messages::INVALID_HANDLE) {
+            Ok(c) => c,
+            Err(_) => return CosmosErrorCode::InvalidHandle,
+        };
     let pk: PartitionKey = if pk.is_null() {
         PartitionKey::EMPTY
     } else {
