@@ -124,7 +124,7 @@ pub async fn seed_container(
             Some(Ok((idx, Some(e)))) => {
                 eprintln!("Seed error for item {idx}: {e}");
                 workers.abort_all();
-                return Err(e);
+                return Err(e.into());
             }
             Some(Ok((_, None))) => {} // Task succeeded, continue
             Some(Err(e)) => {

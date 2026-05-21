@@ -13,18 +13,19 @@ pub struct ConnectionString {
 }
 
 impl TryFrom<&Secret> for ConnectionString {
-    type Error = crate::CosmosError;
+    type Error = crate::Error;
     fn try_from(secret: &Secret) -> Result<Self, Self::Error> {
         secret.secret().parse()
     }
 }
 
 impl FromStr for ConnectionString {
-    type Err = crate::CosmosError;
+    type Err = crate::Error;
     fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
-            return Err(crate::CosmosError::configuration(
+            return Err(crate::Error::configuration(
                 "connection string cannot be empty",
+                None,
             ));
         }
 
@@ -39,7 +40,7 @@ impl FromStr for ConnectionString {
 
             let (key, value) = part
                 .split_once('=')
-                .ok_or_else(|| crate::CosmosError::configuration("invalid connection string"))?;
+                .ok_or_else(|| crate::Error::configuration("invalid connection string", None))?;
 
             if key.eq_ignore_ascii_case("AccountEndpoint") {
                 account_endpoint = Some(value.to_string())
@@ -51,14 +52,16 @@ impl FromStr for ConnectionString {
         }
 
         let Some(endpoint) = account_endpoint else {
-            return Err(crate::CosmosError::configuration(
+            return Err(crate::Error::configuration(
                 "invalid connection string, missing 'AccountEndpoint'",
+                None,
             ));
         };
 
         let Some(key) = account_key else {
-            return Err(crate::CosmosError::configuration(
+            return Err(crate::Error::configuration(
                 "invalid connection string, missing 'AccountKey'",
+                None,
             ));
         };
 

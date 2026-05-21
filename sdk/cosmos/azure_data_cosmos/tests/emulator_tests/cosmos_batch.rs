@@ -283,7 +283,7 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
             let err = response.unwrap_err();
             assert_eq!(
                 err.status_code(),
-                Some(StatusCode::BadRequest),
+                StatusCode::BadRequest,
                 "Expected BadRequest (400) status code"
             );
 
@@ -332,7 +332,7 @@ pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn
             let err = response.unwrap_err();
             assert_eq!(
                 err.status_code(),
-                Some(StatusCode::PayloadTooLarge),
+                StatusCode::PayloadTooLarge,
                 "Expected RequestEntityTooLarge (413) status code"
             );
 

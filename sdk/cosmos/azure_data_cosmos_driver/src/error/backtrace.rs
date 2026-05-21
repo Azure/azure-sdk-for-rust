@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Backtrace capture for [`CosmosError`](super::CosmosError).
+//! Backtrace capture for [`Error`](super::Error).
 //!
 //! Backtraces are mission-critical for debugging — especially when the Rust
 //! driver is consumed as a black box by the Java / .NET SDKs. Rust's stdlib
@@ -36,7 +36,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use super::CosmosErrorKind;
+use super::Kind;
 
 /// Default maximum number of backtraces captured per rolling 60-second window.
 ///
@@ -63,30 +63,27 @@ const BIT_CLIENT: u8 = 1 << 2;
 const BIT_AUTHENTICATION: u8 = 1 << 3;
 const BIT_SERIALIZATION: u8 = 1 << 4;
 const BIT_CONFIGURATION: u8 = 1 << 5;
-const BIT_OTHER: u8 = 1 << 6;
 
-/// Default set of [`CosmosErrorKind`]s for which backtraces are captured.
+/// Default set of [`Kind`]s for which backtraces are captured.
 ///
 /// Excludes `Service`, `Transport`, and `Authentication` — those failures are
 /// either already self-describing via the wire response (status + sub-status +
 /// activity-id + server diagnostics) or bottom out in third-party async-IO
 /// stacks where a Rust backtrace adds little value.
-pub const DEFAULT_BACKTRACE_KIND_MASK: u8 =
-    BIT_CLIENT | BIT_SERIALIZATION | BIT_CONFIGURATION | BIT_OTHER;
+pub const DEFAULT_BACKTRACE_KIND_MASK: u8 = BIT_CLIENT | BIT_SERIALIZATION | BIT_CONFIGURATION;
 
-fn kind_bit(kind: CosmosErrorKind) -> u8 {
+fn kind_bit(kind: Kind) -> u8 {
     match kind {
-        CosmosErrorKind::Service => BIT_SERVICE,
-        CosmosErrorKind::Transport => BIT_TRANSPORT,
-        CosmosErrorKind::Client => BIT_CLIENT,
-        CosmosErrorKind::Authentication => BIT_AUTHENTICATION,
-        CosmosErrorKind::Serialization => BIT_SERIALIZATION,
-        CosmosErrorKind::Configuration => BIT_CONFIGURATION,
-        CosmosErrorKind::Other => BIT_OTHER,
+        Kind::Service => BIT_SERVICE,
+        Kind::Transport => BIT_TRANSPORT,
+        Kind::Client => BIT_CLIENT,
+        Kind::Authentication => BIT_AUTHENTICATION,
+        Kind::Serialization => BIT_SERIALIZATION,
+        Kind::Configuration => BIT_CONFIGURATION,
     }
 }
 
-/// Captured (but unresolved) backtrace attached to a [`CosmosError`](super::CosmosError).
+/// Captured (but unresolved) backtrace attached to a [`Error`](super::Error).
 ///
 /// Capture itself is cheap — only frame instruction pointers are recorded.
 /// Symbol resolution is deferred to the first call to [`Self::frames`] or
@@ -109,7 +106,7 @@ struct CosmosBacktraceInner {
 pub struct ResolvedFrame {
     /// Raw instruction pointer.
     pub ip: usize,
-    /// Resolved symbol name (e.g. `azure_data_cosmos_driver::error::CosmosError::service`).
+    /// Resolved symbol name (e.g. `azure_data_cosmos_driver::error::Error::service`).
     pub symbol: Option<String>,
     /// Source file path, if available.
     pub filename: Option<String>,
@@ -126,7 +123,7 @@ impl CosmosBacktrace {
     /// 60-second window, or if capture is globally disabled (budget = `0`).
     /// Disabled kinds do **not** charge the limiter — the budget is reserved
     /// for the kinds where a stack actually pinpoints the fault.
-    pub fn try_capture_for_kind(kind: CosmosErrorKind) -> Option<Self> {
+    pub fn try_capture_for_kind(kind: Kind) -> Option<Self> {
         if !global_limiter().kind_enabled(kind) {
             return None;
         }
@@ -298,7 +295,7 @@ pub struct BacktraceCaptureLimiter {
     /// High 32 bits: window start (seconds since UNIX epoch, truncated).
     /// Low 32 bits: count of captures granted in this window.
     state: AtomicU64,
-    /// Bitmask of [`CosmosErrorKind`]s for which capture is enabled.
+    /// Bitmask of [`Kind`]s for which capture is enabled.
     kind_mask: AtomicU8,
 }
 
@@ -322,12 +319,12 @@ impl BacktraceCaptureLimiter {
     }
 
     /// Returns `true` if backtrace capture is currently enabled for `kind`.
-    pub fn kind_enabled(&self, kind: CosmosErrorKind) -> bool {
+    pub fn kind_enabled(&self, kind: Kind) -> bool {
         self.kind_mask.load(Ordering::Relaxed) & kind_bit(kind) != 0
     }
 
-    /// Enables or disables backtrace capture for a specific [`CosmosErrorKind`].
-    pub fn set_kind_enabled(&self, kind: CosmosErrorKind, enabled: bool) {
+    /// Enables or disables backtrace capture for a specific [`Kind`].
+    pub fn set_kind_enabled(&self, kind: Kind, enabled: bool) {
         let bit = kind_bit(kind);
         if enabled {
             self.kind_mask.fetch_or(bit, Ordering::Relaxed);
@@ -473,32 +470,25 @@ mod tests {
     fn try_capture_for_kind_honors_default_mask() {
         with_limiter_capacity(10, || {
             // SDK-origin kinds capture by default.
-            assert!(CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Client).is_some());
-            assert!(
-                CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Serialization).is_some()
-            );
-            assert!(
-                CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Configuration).is_some()
-            );
-            assert!(CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Other).is_some());
+            assert!(CosmosBacktrace::try_capture_for_kind(Kind::Client).is_some());
+            assert!(CosmosBacktrace::try_capture_for_kind(Kind::Serialization).is_some());
+            assert!(CosmosBacktrace::try_capture_for_kind(Kind::Configuration).is_some());
             // Service / Transport / Authentication are skipped by default and
             // do not consume budget.
-            assert!(CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Service).is_none());
-            assert!(CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Transport).is_none());
-            assert!(
-                CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Authentication).is_none()
-            );
+            assert!(CosmosBacktrace::try_capture_for_kind(Kind::Service).is_none());
+            assert!(CosmosBacktrace::try_capture_for_kind(Kind::Transport).is_none());
+            assert!(CosmosBacktrace::try_capture_for_kind(Kind::Authentication).is_none());
         });
     }
 
     #[test]
     fn set_kind_enabled_toggles_capture() {
         with_limiter_capacity(2, || {
-            assert!(CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Service).is_none());
-            capture_limiter().set_kind_enabled(CosmosErrorKind::Service, true);
-            assert!(CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Service).is_some());
-            capture_limiter().set_kind_enabled(CosmosErrorKind::Service, false);
-            assert!(CosmosBacktrace::try_capture_for_kind(CosmosErrorKind::Service).is_none());
+            assert!(CosmosBacktrace::try_capture_for_kind(Kind::Service).is_none());
+            capture_limiter().set_kind_enabled(Kind::Service, true);
+            assert!(CosmosBacktrace::try_capture_for_kind(Kind::Service).is_some());
+            capture_limiter().set_kind_enabled(Kind::Service, false);
+            assert!(CosmosBacktrace::try_capture_for_kind(Kind::Service).is_none());
         });
     }
 }

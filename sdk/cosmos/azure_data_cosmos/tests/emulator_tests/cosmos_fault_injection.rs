@@ -169,7 +169,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
                 let err =
                     result.expect_err(&format!("read {} should fail with probability 1.0", i));
                 assert_eq!(
-                    Some(StatusCode::ServiceUnavailable),
+                    StatusCode::ServiceUnavailable,
                     err.status_code(),
                     "read {} should return 503",
                     i
@@ -325,7 +325,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
                 .await;
             let err = delete_result.expect_err("delete should fail due to fault injection");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
+                StatusCode::ServiceUnavailable,
                 err.status_code(),
                 "delete should return 503 ServiceUnavailable"
             );
@@ -417,7 +417,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             let err = faulty_result
                 .expect_err("read should fail for container matching 'FaultyContainer'");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
+                StatusCode::ServiceUnavailable,
                 err.status_code(),
                 "expected 503 ServiceUnavailable for FaultyContainer"
             );
@@ -491,7 +491,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
             // Should get 429 (first rule), not 503 (second rule)
             let err = result.expect_err("expected first rule (429) to apply");
             assert_eq!(
-                Some(StatusCode::TooManyRequests),
+                StatusCode::TooManyRequests,
                 err.status_code(),
                 "first matching rule should win (429, not 503)"
             );
@@ -567,7 +567,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
             // Should get 503 (second rule) because first rule hasn't started yet
             let err = result.expect_err("expected second rule (503) to apply");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
+                StatusCode::ServiceUnavailable,
                 err.status_code(),
                 "second rule should apply (503) since first rule has not started"
             );
@@ -646,7 +646,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
             // Should get 503 (second rule) because first rule's duration has expired
             let err = result.expect_err("expected second rule (503) to apply");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
+                StatusCode::ServiceUnavailable,
                 err.status_code(),
                 "second rule should apply (503) since first rule's end_time has passed"
             );
@@ -718,7 +718,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
                     i
                 );
                 assert_eq!(
-                    Some(StatusCode::InternalServerError),
+                    StatusCode::InternalServerError,
                     result.unwrap_err().status_code()
                 );
             }

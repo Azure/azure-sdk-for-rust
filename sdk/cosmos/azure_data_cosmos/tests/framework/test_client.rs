@@ -538,7 +538,7 @@ impl TestClient {
                 // Emulator is always strong consistency, so we can skip the read check in that case
                 match run_context.client().create_database(db_id, None).await {
                     Ok(_) => {}
-                    Err(e) if e.status_code() == Some(StatusCode::Conflict) => {}
+                    Err(e) if e.status_code() == StatusCode::Conflict => {}
                     Err(e) => return Err(e.into()),
                 }
                 let db_client = run_context.shared_db_client();
@@ -618,7 +618,7 @@ impl TestRunContext {
         let response = match self.client().create_database(&db_name, None).await {
             // The database creation was successful.
             Ok(props) => props,
-            Err(e) if e.status_code() == Some(StatusCode::Conflict) => {
+            Err(e) if e.status_code() == StatusCode::Conflict => {
                 // The database already exists, from a previous test run.
                 // Delete it and re-create it.
                 let db_client = self.client().database_client(&db_name);
@@ -664,7 +664,7 @@ impl TestRunContext {
                 .await
             {
                 Ok(response) => return Ok(response),
-                Err(e) if e.status_code() == Some(StatusCode::NotFound) => {
+                Err(e) if e.status_code() == StatusCode::NotFound => {
                     println!(
                         "Read item failed with {:?}: {}. Retrying after {:?}...",
                         e.status_code(),
@@ -699,7 +699,7 @@ impl TestRunContext {
             match container.query_items::<T>(query.clone(), partition_key.clone(), None) {
                 Ok(pager) => match pager.try_collect::<Vec<T>>().await {
                     Ok(items) => return Ok(items),
-                    Err(e) if e.status_code() == Some(StatusCode::NotFound) => {
+                    Err(e) if e.status_code() == StatusCode::NotFound => {
                         println!(
                             "Query items failed with {:?}: {}. Retrying after {:?}...",
                             e.status_code(),
@@ -711,7 +711,7 @@ impl TestRunContext {
                     }
                     Err(e) => return Err(e),
                 },
-                Err(e) if e.status_code() == Some(StatusCode::NotFound) => {
+                Err(e) if e.status_code() == StatusCode::NotFound => {
                     println!(
                         "Query items failed with {:?}: {}. Retrying after {:?}...",
                         e.status_code(),
@@ -746,7 +746,7 @@ impl TestRunContext {
                     let created = response.into_model()?;
                     return db_client.container_client(&created.id).await;
                 }
-                Err(e) if e.status_code() == Some(StatusCode::TooManyRequests) => {
+                Err(e) if e.status_code() == StatusCode::TooManyRequests => {
                     println!(
                         "Create container got 429 (Too Many Requests). Retrying after {:?}...",
                         backoff
@@ -754,7 +754,7 @@ impl TestRunContext {
                     tokio::time::sleep(backoff).await;
                     backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
-                Err(e) if e.status_code() == Some(StatusCode::Conflict) => {
+                Err(e) if e.status_code() == StatusCode::Conflict => {
                     // Container already exists, delete and recreate it, then return a client
                     let container_client = db_client.container_client(&properties.id).await?;
                     container_client.delete(None).await?;
@@ -860,7 +860,7 @@ impl TestRunContext {
     /// Creates a CosmosClient with a specific preferred region.
     async fn create_client_with_preferred_region(
         region: Region,
-    ) -> Result<CosmosClient, azure_data_cosmos::CosmosError> {
+    ) -> Result<CosmosClient, azure_data_cosmos::Error> {
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
             .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
 
@@ -871,18 +871,18 @@ impl TestRunContext {
         };
 
         let parsed: ConnectionString = connection_string.parse().map_err(|e| {
-            azure_data_cosmos::CosmosError::configuration(format!(
-                "Failed to parse connection string: {}",
-                e
-            ))
+            azure_data_cosmos::Error::configuration(
+                format!("Failed to parse connection string: {}", e),
+                None,
+            )
         })?;
 
         let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
             parsed.account_endpoint.parse().map_err(|e| {
-                azure_data_cosmos::CosmosError::configuration(format!(
-                    "Failed to parse account endpoint: {}",
-                    e
-                ))
+                azure_data_cosmos::Error::configuration(
+                    format!("Failed to parse account endpoint: {}", e),
+                    None,
+                )
             })?;
         let mut builder = CosmosClient::builder();
 

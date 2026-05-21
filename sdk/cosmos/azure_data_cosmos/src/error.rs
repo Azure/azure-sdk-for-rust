@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! SDK-owned newtype wrapper around the driver's [`CosmosError`].
+//! SDK-owned newtype wrapper around the driver's [`Error`].
 //!
 //! The wrapper is `#[repr(transparent)]` so converting between the SDK and
 //! driver representations is a zero-cost move. All construction, classification,
@@ -14,17 +14,17 @@ use std::fmt;
 use std::sync::Arc;
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
+use azure_data_cosmos_driver::error::Error as DriverError;
 #[allow(unused_imports)]
 pub use azure_data_cosmos_driver::error::ResolvedFrame;
-pub use azure_data_cosmos_driver::error::{CosmosBacktrace, CosmosErrorKind};
+pub use azure_data_cosmos_driver::error::{CosmosBacktrace, Kind};
 use azure_data_cosmos_driver::models::{CosmosStatus, SubStatusCode};
 
 use crate::models::{DiagnosticsContext, ResponseHeaders};
 
 /// The error type returned by every fallible public API in `azure_data_cosmos`.
 ///
-/// `CosmosError` carries the typed Cosmos status (HTTP status + sub-status,
+/// `Error` carries the typed Cosmos status (HTTP status + sub-status,
 /// including synthetic client-side codes such as `408 / 20008` for end-to-end
 /// operation timeout), the parsed Cosmos response headers when a service
 /// response was received, and the operation diagnostics — for both
@@ -34,25 +34,28 @@ use crate::models::{DiagnosticsContext, ResponseHeaders};
 /// [`std::error::Error::source`].
 #[repr(transparent)]
 #[derive(Clone)]
-pub struct CosmosError(DriverCosmosError);
+pub struct Error(DriverError);
 
-impl CosmosError {
-    /// Returns the categorical [`CosmosErrorKind`].
-    pub fn kind(&self) -> CosmosErrorKind {
+impl Error {
+    /// Returns the categorical [`Kind`].
+    pub fn kind(&self) -> Kind {
         self.0.kind()
     }
 
-    /// Returns the typed Cosmos status, if known.
-    pub fn status(&self) -> Option<CosmosStatus> {
+    /// Returns the typed Cosmos status. Always present — non-service errors
+    /// carry a synthetic status with a placeholder HTTP code and the correct
+    /// [`Kind`].
+    pub fn status(&self) -> CosmosStatus {
         self.0.status()
     }
 
-    /// Returns the HTTP status code, if known.
-    pub fn status_code(&self) -> Option<StatusCode> {
+    /// Returns the HTTP status code. For non-service errors this is a
+    /// placeholder code corresponding to the error's [`Kind`].
+    pub fn status_code(&self) -> StatusCode {
         self.0.status_code()
     }
 
-    /// Returns the sub-status code, if known.
+    /// Returns the sub-status code, if present.
     pub fn sub_status(&self) -> Option<SubStatusCode> {
         self.0.sub_status()
     }
@@ -89,7 +92,7 @@ impl CosmosError {
     /// Returns the stack backtrace captured at error construction time, when
     /// the global rate-limited capture budget allowed it.
     ///
-    /// Backtraces are captured by default for every `CosmosError` but are
+    /// Backtraces are captured by default for every `Error` but are
     /// rate-limited (default `1000` captures / minute, configurable via the
     /// driver's `CosmosDriverRuntimeBuilder::with_max_error_backtraces_per_minute`
     /// or the `AZURE_COSMOS_BACKTRACE_CAPTURE_PER_MINUTE` environment variable).
@@ -145,33 +148,22 @@ impl CosmosError {
 
     // -- construction & interop helpers --
 
-    /// Builds a `Client` error (caller misuse / precondition).
-    pub fn client(message: impl Into<std::borrow::Cow<'static, str>>) -> Self {
-        Self(DriverCosmosError::client(message))
-    }
-
-    /// Builds a `Client` error wrapping a source error.
-    pub fn client_with_source(
+    /// Builds a `Client` error (caller misuse / precondition), optionally
+    /// wrapping an underlying source error.
+    pub fn client(
         message: impl Into<std::borrow::Cow<'static, str>>,
-        source: impl StdError + Send + Sync + 'static,
+        source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
-        Self(DriverCosmosError::client_with_source(message, source))
+        Self(DriverError::client(message, source))
     }
 
     /// Builds a `Configuration` error (bad endpoint URL, malformed connection
-    /// string, etc.).
-    pub fn configuration(message: impl Into<std::borrow::Cow<'static, str>>) -> Self {
-        Self(DriverCosmosError::configuration(message))
-    }
-
-    /// Builds a `Configuration` error wrapping a source error.
-    pub fn configuration_with_source(
+    /// string, etc.), optionally wrapping an underlying source error.
+    pub fn configuration(
         message: impl Into<std::borrow::Cow<'static, str>>,
-        source: impl StdError + Send + Sync + 'static,
+        source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
-        Self(DriverCosmosError::configuration_with_source(
-            message, source,
-        ))
+        Self(DriverError::configuration(message, source))
     }
 
     /// Builds a `Serialization` error wrapping the underlying serde failure.
@@ -179,63 +171,67 @@ impl CosmosError {
         message: impl Into<std::borrow::Cow<'static, str>>,
         source: impl StdError + Send + Sync + 'static,
     ) -> Self {
-        Self(DriverCosmosError::serialization(
-            message, None, None, source,
-        ))
+        Self(DriverError::serialization(message, None, None, source))
     }
 
-    /// Returns a reference to the underlying driver-level [`CosmosError`].
+    /// Returns a reference to the underlying driver-level [`Error`].
     #[allow(dead_code)]
-    pub(crate) fn as_driver(&self) -> &DriverCosmosError {
+    pub(crate) fn as_driver(&self) -> &DriverError {
         &self.0
     }
 
     /// Consumes the wrapper and returns the underlying driver error.
     #[allow(dead_code)]
-    pub(crate) fn into_driver(self) -> DriverCosmosError {
+    pub(crate) fn into_driver(self) -> DriverError {
         self.0
     }
 }
 
-impl fmt::Display for CosmosError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
     }
 }
 
-impl fmt::Debug for CosmosError {
+impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.0, f)
     }
 }
 
-impl StdError for CosmosError {
+impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         self.0.source()
     }
 }
 
-impl From<DriverCosmosError> for CosmosError {
-    fn from(inner: DriverCosmosError) -> Self {
+impl From<DriverError> for Error {
+    fn from(inner: DriverError) -> Self {
         Self(inner)
     }
 }
 
-impl From<CosmosError> for DriverCosmosError {
-    fn from(value: CosmosError) -> Self {
+impl From<Error> for DriverError {
+    fn from(value: Error) -> Self {
         value.0
     }
 }
 
-impl From<azure_core::Error> for CosmosError {
-    fn from(error: azure_core::Error) -> Self {
-        Self(DriverCosmosError::from(error))
+impl From<Error> for azure_core::Error {
+    fn from(value: Error) -> Self {
+        azure_core::Error::from(value.0)
     }
 }
 
-impl From<serde_json::Error> for CosmosError {
+impl From<azure_core::Error> for Error {
+    fn from(error: azure_core::Error) -> Self {
+        Self(DriverError::from(error))
+    }
+}
+
+impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
-        Self(DriverCosmosError::serialization(
+        Self(DriverError::serialization(
             "JSON serialization or deserialization failed",
             None,
             None,
@@ -244,14 +240,14 @@ impl From<serde_json::Error> for CosmosError {
     }
 }
 
-impl From<url::ParseError> for CosmosError {
+impl From<url::ParseError> for Error {
     fn from(error: url::ParseError) -> Self {
-        Self(DriverCosmosError::configuration_with_source(
+        Self(DriverError::configuration(
             "invalid URL",
-            error,
+            Some(Arc::new(error)),
         ))
     }
 }
 
 /// `azure_data_cosmos` crate-wide `Result` alias.
-pub type Result<T> = std::result::Result<T, CosmosError>;
+pub type Result<T> = std::result::Result<T, Error>;

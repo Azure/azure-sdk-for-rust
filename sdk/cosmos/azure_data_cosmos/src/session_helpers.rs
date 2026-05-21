@@ -327,8 +327,9 @@ pub(crate) fn get_latest_session_token(
         .collect();
 
     if overlapping.is_empty() {
-        return Err(crate::CosmosError::client(
+        return Err(crate::Error::client(
             "no overlapping feed ranges with the target feed range",
+            None,
         ));
     }
 

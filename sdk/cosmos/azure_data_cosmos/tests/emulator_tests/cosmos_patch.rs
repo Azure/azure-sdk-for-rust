@@ -160,7 +160,7 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
                 .expect_err("expected NotFound, got Ok");
             assert_eq!(
                 err.status_code(),
-                Some(StatusCode::NotFound),
+                StatusCode::NotFound,
                 "expected 404 NotFound from the read leg; got: {err}",
             );
 
@@ -404,7 +404,7 @@ pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<
                 .expect_err("PATCH should fail after exhausting max_attempts");
             assert_eq!(
                 err.status_code(),
-                Some(StatusCode::PreconditionFailed),
+                StatusCode::PreconditionFailed,
                 "exhausted PATCH should surface 412 PreconditionFailed; got: {err}"
             );
 

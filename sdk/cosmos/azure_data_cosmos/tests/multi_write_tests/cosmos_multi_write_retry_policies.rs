@@ -194,7 +194,7 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
 
             let err = result.expect_err("write should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
+                StatusCode::RequestTimeout,
                 err.status_code(),
                 "expected RequestTimeout (408), got {:?}",
                 err.status_code()
@@ -272,7 +272,7 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 
             let err = result.expect_err("upsert should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
+                StatusCode::RequestTimeout,
                 err.status_code(),
                 "expected RequestTimeout (408), got {:?}",
                 err.status_code()
@@ -540,7 +540,7 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
             let err =
                 result.expect_err("replace should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
+                StatusCode::RequestTimeout,
                 err.status_code(),
                 "expected RequestTimeout (408), got {:?}",
                 err.status_code()
@@ -623,7 +623,7 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 
             let err = result.expect_err("delete should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
+                StatusCode::RequestTimeout,
                 err.status_code(),
                 "expected RequestTimeout (408), got {:?}",
                 err.status_code()

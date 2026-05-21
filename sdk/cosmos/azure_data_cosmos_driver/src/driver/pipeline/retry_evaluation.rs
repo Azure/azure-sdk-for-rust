@@ -604,10 +604,10 @@ fn evaluate_deadline_exceeded_outcome(
         Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
     );
 
-    // Embed a typed `CosmosError` as the source of the `azure_core::Error`
+    // Embed a typed `Error` as the source of the `azure_core::Error`
     // so the driver/SDK boundary recovers the synthetic Cosmos status
-    // (408 / 20008) via `CosmosError::from(azure_core_error)`.
-    let cosmos_err = crate::error::CosmosError::end_to_end_timeout(message, None);
+    // (408 / 20008) via `Error::from(azure_core_error)`.
+    let cosmos_err = crate::error::Error::end_to_end_timeout(message, None);
 
     (
         OperationAction::Abort {
@@ -632,27 +632,30 @@ fn service_error_message(status: &CosmosStatus) -> String {
     )
 }
 
-/// Builds a typed [`CosmosError`] for a Cosmos HTTP error response.
+/// Builds a typed [`Error`] for a Cosmos HTTP error response.
 ///
 /// Captures the parsed response headers and the raw response body bytes
 /// (e.g. the JSON error payload returned by the service for a 400 /
-/// BadRequest) on the resulting `CosmosError`. Convert to an
+/// BadRequest) on the resulting `Error`. Convert to an
 /// `azure_core::Error` via `.into()` when propagating through the pipeline;
-/// the `From<CosmosError> for azure_core::Error` impl produces the
+/// the `From<Error> for azure_core::Error` impl produces the
 /// standard `ErrorKind::HttpResponse { raw_response: Some(_), .. }` shape
 /// so external matchers continue to work.
 fn build_service_error(
     status: &CosmosStatus,
     cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
-) -> crate::error::CosmosError {
-    crate::error::CosmosError::service(
+) -> crate::error::Error {
+    // No real diagnostics context is available at this point in the retry
+    // pipeline; use the process-wide placeholder so the wire-level response
+    // payload (status + headers + body) still rides along on the error.
+    let response = crate::models::CosmosResponse::new(
+        crate::models::ResponseBody::from_bytes(bytes::Bytes::copy_from_slice(body)),
+        cosmos_headers.clone(),
         *status,
-        Some(cosmos_headers.clone()),
-        Some(bytes::Bytes::copy_from_slice(body)),
-        None,
-        service_error_message(status),
-    )
+        crate::diagnostics::DiagnosticsContext::error_placeholder(),
+    );
+    crate::error::Error::service(response, service_error_message(status))
 }
 
 fn build_transport_error(status: &CosmosStatus, error: azure_core::Error) -> azure_core::Error {
@@ -675,10 +678,10 @@ fn build_transport_error(status: &CosmosStatus, error: azure_core::Error) -> azu
 
     let original_kind = error.kind().clone();
 
-    // Embed a typed `CosmosError` (synthetic transport status, original
+    // Embed a typed `Error` (synthetic transport status, original
     // error as source) so the boundary recovers the typed Cosmos status
     // without re-classifying.
-    let cosmos_err = crate::error::CosmosError::transport(
+    let cosmos_err = crate::error::Error::transport(
         *status,
         message.clone(),
         None,

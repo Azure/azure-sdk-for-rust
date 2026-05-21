@@ -51,9 +51,9 @@ pub use cosmos_headers::{
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
 pub(crate) use cosmos_resource_reference::ResourcePaths;
-pub use cosmos_response::CosmosResponse;
-pub use cosmos_status::CosmosStatus;
+pub use cosmos_response::{CosmosResponse, CosmosResponsePayload};
 pub use cosmos_status::SubStatusCode;
+pub use cosmos_status::{CosmosStatus, Kind};
 pub use etag::{ETag, Precondition};
 pub use partition_key::{PartitionKey, PartitionKeyValue};
 pub use patch::{IncrValue, PatchOp, PatchSpec};

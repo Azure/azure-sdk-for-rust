@@ -45,11 +45,14 @@ impl CosmosAccountEndpoint {
 }
 
 impl std::str::FromStr for CosmosAccountEndpoint {
-    type Err = crate::CosmosError;
+    type Err = crate::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let url: Url = s.parse().map_err(|e: url::ParseError| {
-            crate::CosmosError::configuration_with_source("invalid account endpoint URL", e)
+            crate::Error::configuration(
+                "invalid account endpoint URL",
+                Some(std::sync::Arc::new(e)),
+            )
         })?;
         Ok(Self(url))
     }

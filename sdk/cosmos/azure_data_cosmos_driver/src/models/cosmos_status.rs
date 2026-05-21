@@ -1215,14 +1215,62 @@ impl From<SubStatusCode> for u32 {
 pub struct CosmosStatus {
     status_code: StatusCode,
     sub_status: Option<SubStatusCode>,
+    kind: Kind,
+}
+
+/// Categorical kind for an error status — a coarse-grained classification
+/// that explains *where* the failure originated. Fine-grained discrimination
+/// is done via the wire [`StatusCode`] and [`SubStatusCode`].
+///
+/// Stored inline on every [`CosmosStatus`] so an error's category is always
+/// recoverable from its status without a separate field on the error type.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[repr(u8)]
+#[non_exhaustive]
+pub enum Kind {
+    /// The Cosmos service returned a non-success HTTP response. The default
+    /// kind for any [`CosmosStatus`] built from a wire response.
+    Service = 0,
+    /// A network / transport failure occurred before a response was received,
+    /// or an end-to-end operation timeout fired. The status carries a
+    /// synthetic code such as `408 / 20008`.
+    Transport = 1,
+    /// A precondition required for the operation was not met on the client
+    /// (bad argument, invalid configuration evaluated at request time, etc.).
+    Client = 2,
+    /// Authentication or credential acquisition failed (e.g. AAD token
+    /// retrieval, missing key).
+    Authentication = 3,
+    /// Serialization or deserialization of a request/response body failed.
+    Serialization = 4,
+    /// Static client configuration (connection string, endpoint URL, etc.) is
+    /// invalid.
+    Configuration = 5,
+}
+
+impl std::fmt::Display for Kind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            Self::Service => "Service",
+            Self::Transport => "Transport",
+            Self::Client => "Client",
+            Self::Authentication => "Authentication",
+            Self::Serialization => "Serialization",
+            Self::Configuration => "Configuration",
+        };
+        f.write_str(name)
+    }
 }
 
 impl CosmosStatus {
     /// Creates a `CosmosStatus` with only an HTTP status code (no sub-status).
+    /// The [`Kind`] defaults to [`Kind::Service`] — use [`with_kind`](Self::with_kind)
+    /// to override for transport / client / configuration / other errors.
     pub fn new(status_code: StatusCode) -> Self {
         Self {
             status_code,
             sub_status: None,
+            kind: Kind::Service,
         }
     }
 
@@ -1232,12 +1280,26 @@ impl CosmosStatus {
         self
     }
 
-    /// Creates a `CosmosStatus` from raw parts.
+    /// Sets the categorical [`Kind`] on this `CosmosStatus`, returning the
+    /// modified value.
+    pub fn with_kind(mut self, kind: Kind) -> Self {
+        self.kind = kind;
+        self
+    }
+
+    /// Creates a `CosmosStatus` from raw parts. The [`Kind`] defaults to
+    /// [`Kind::Service`].
     pub(crate) fn from_parts(status_code: StatusCode, sub_status: Option<SubStatusCode>) -> Self {
         Self {
             status_code,
             sub_status,
+            kind: Kind::Service,
         }
+    }
+
+    /// Returns the categorical [`Kind`] for this status.
+    pub fn kind(&self) -> Kind {
+        self.kind
     }
 
     /// Returns the HTTP status code.
@@ -1355,6 +1417,7 @@ impl CosmosStatus {
     pub const TRANSPORT_GENERATED_503: CosmosStatus = CosmosStatus {
         status_code: StatusCode::ServiceUnavailable,
         sub_status: Some(SubStatusCode::TRANSPORT_GENERATED_503),
+        kind: Kind::Transport,
     };
 
     /// Client-generated 401 Unauthorized (sub-status 20401).
@@ -1364,6 +1427,7 @@ impl CosmosStatus {
     pub const CLIENT_GENERATED_401: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Unauthorized,
         sub_status: Some(SubStatusCode::CLIENT_GENERATED_401),
+        kind: Kind::Authentication,
     };
 
     // ----- 404: Not Found -----
@@ -1375,6 +1439,7 @@ impl CosmosStatus {
     pub const READ_SESSION_NOT_AVAILABLE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::NotFound,
         sub_status: Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+        kind: Kind::Service,
     };
 
     // ----- 403: Forbidden -----
@@ -1385,6 +1450,7 @@ impl CosmosStatus {
     pub const WRITE_FORBIDDEN: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Forbidden,
         sub_status: Some(SubStatusCode::WRITE_FORBIDDEN),
+        kind: Kind::Service,
     };
 
     // ----- 410: Gone -----
@@ -1396,24 +1462,28 @@ impl CosmosStatus {
     pub const PARTITION_KEY_RANGE_GONE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Gone,
         sub_status: Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+        kind: Kind::Service,
     };
 
     /// Name cache stale (HTTP 410, sub-status 1000).
     pub const NAME_CACHE_STALE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Gone,
         sub_status: Some(SubStatusCode::NAME_CACHE_STALE),
+        kind: Kind::Service,
     };
 
     /// Completing split or merge (HTTP 410, sub-status 1007).
     pub const COMPLETING_SPLIT: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Gone,
         sub_status: Some(SubStatusCode::COMPLETING_SPLIT),
+        kind: Kind::Service,
     };
 
     /// Completing partition migration (HTTP 410, sub-status 1008).
     pub const COMPLETING_PARTITION_MIGRATION: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Gone,
         sub_status: Some(SubStatusCode::COMPLETING_PARTITION_MIGRATION),
+        kind: Kind::Service,
     };
 
     // ----- 429: Too Many Requests -----
@@ -1422,6 +1492,7 @@ impl CosmosStatus {
     pub const RU_BUDGET_EXCEEDED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::TooManyRequests,
         sub_status: Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+        kind: Kind::Service,
     };
 }
 
@@ -1506,6 +1577,7 @@ impl<'de> Deserialize<'de> for CosmosStatus {
             return Ok(CosmosStatus {
                 status_code: StatusCode::from(status_code),
                 sub_status: h.sub_status_code.map(SubStatusCode::new),
+                kind: Kind::Service,
             });
         }
 
@@ -1523,6 +1595,7 @@ impl<'de> Deserialize<'de> for CosmosStatus {
                 return Ok(CosmosStatus {
                     status_code: StatusCode::from(status_code),
                     sub_status: Some(SubStatusCode::new(sub_status_code)),
+                    kind: Kind::Service,
                 });
             }
 
@@ -1532,6 +1605,7 @@ impl<'de> Deserialize<'de> for CosmosStatus {
             return Ok(CosmosStatus {
                 status_code: StatusCode::from(status_code),
                 sub_status: None,
+                kind: Kind::Service,
             });
         }
 

@@ -33,7 +33,7 @@ pub async fn ensure_container(
             println!("Container '{container_name}' already exists.");
             return Ok(());
         }
-        Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+        Err(e) if e.status_code() == StatusCode::NotFound => {
             println!("Container '{container_name}' not found, creating with {throughput} RU/s...");
         }
         Err(e) => return Err(e.into()),
@@ -50,7 +50,7 @@ pub async fn ensure_container(
         Ok(_) => {
             println!("Container '{container_name}' created.");
         }
-        Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+        Err(e) if e.status_code() == StatusCode::Conflict => {
             println!("Container '{container_name}' was created concurrently.");
         }
         Err(e) => return Err(e.into()),
@@ -65,7 +65,7 @@ pub async fn ensure_container(
                 println!("Container '{container_name}' confirmed readable.");
                 return Ok(());
             }
-            Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+            Err(e) if e.status_code() == StatusCode::NotFound => {
                 println!(
                     "Container not yet visible (attempt {attempt}/{MAX_RETRIES}), retrying in {backoff:?}..."
                 );
@@ -96,7 +96,7 @@ pub async fn ensure_database(
             println!("Database '{db_name}' already exists.");
             return Ok(());
         }
-        Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+        Err(e) if e.status_code() == StatusCode::NotFound => {
             println!("Database '{db_name}' not found, creating...");
         }
         Err(e) => return Err(e.into()),
@@ -106,7 +106,7 @@ pub async fn ensure_database(
         Ok(_) => {
             println!("Database '{db_name}' created.");
         }
-        Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+        Err(e) if e.status_code() == StatusCode::Conflict => {
             println!("Database '{db_name}' was created concurrently.");
         }
         Err(e) => return Err(e.into()),
@@ -121,7 +121,7 @@ pub async fn ensure_database(
                 println!("Database '{db_name}' confirmed readable.");
                 return Ok(());
             }
-            Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+            Err(e) if e.status_code() == StatusCode::NotFound => {
                 println!(
                     "Database not yet visible (attempt {attempt}/{MAX_RETRIES}), retrying in {backoff:?}..."
                 );

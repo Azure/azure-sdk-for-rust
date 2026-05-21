@@ -812,12 +812,12 @@ impl CosmosDriverRuntimeBuilder {
         }
         if let Some(enabled) = self.capture_backtraces_for_service_errors {
             let limiter = crate::error::capture_limiter();
-            limiter.set_kind_enabled(crate::error::CosmosErrorKind::Service, enabled);
-            limiter.set_kind_enabled(crate::error::CosmosErrorKind::Authentication, enabled);
+            limiter.set_kind_enabled(crate::error::Kind::Service, enabled);
+            limiter.set_kind_enabled(crate::error::Kind::Authentication, enabled);
         }
         if let Some(enabled) = self.capture_backtraces_for_transport_errors {
             crate::error::capture_limiter()
-                .set_kind_enabled(crate::error::CosmosErrorKind::Transport, enabled);
+                .set_kind_enabled(crate::error::Kind::Transport, enabled);
         }
 
         Ok(Arc::new(CosmosDriverRuntime {

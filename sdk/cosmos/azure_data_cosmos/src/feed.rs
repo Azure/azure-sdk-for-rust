@@ -366,7 +366,7 @@ mod tests {
     async fn item_iterator_propagates_errors() {
         let pages = vec![
             Ok(create_test_page(vec![1, 2], Some("token".to_string()))),
-            Err(crate::CosmosError::client("test error")),
+            Err(crate::Error::client("test error", None)),
         ];
 
         let stream = futures::stream::iter(pages);

@@ -940,7 +940,7 @@ impl ContainerClient {
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
             .await
             .ok_or_else(|| {
-                crate::CosmosError::client("failed to resolve routing map for container")
+                crate::Error::client("failed to resolve routing map for container", None)
             })?;
 
         if ranges.is_empty() && !options.force_refresh() {
@@ -952,14 +952,15 @@ impl ContainerClient {
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
                 .await
                 .ok_or_else(|| {
-                    crate::CosmosError::client("failed to resolve routing map for container")
+                    crate::Error::client("failed to resolve routing map for container", None)
                 })?;
         }
 
         if ranges.is_empty() {
-            return Err(crate::CosmosError::client(
+            return Err(crate::Error::client(
                 "resolved routing map contains no partition key ranges; \
                  the container may not exist or the service may be unreachable",
+                None,
             ));
         }
 
@@ -985,23 +986,28 @@ impl ContainerClient {
         let values = driver_pk.values();
 
         if values.is_empty() {
-            return Err(crate::CosmosError::client(
+            return Err(crate::Error::client(
                 "partition key must have at least one component",
+                None,
             ));
         }
         if values.len() > pk_def.paths().len() {
-            return Err(crate::CosmosError::client(format!(
-                "partition key has {} components but container definition has {} paths",
-                values.len(),
-                pk_def.paths().len()
-            )));
+            return Err(crate::Error::client(
+                format!(
+                    "partition key has {} components but container definition has {} paths",
+                    values.len(),
+                    pk_def.paths().len()
+                ),
+                None,
+            ));
         }
 
         let is_prefix =
             pk_def.kind() == PartitionKeyKind::MultiHash && values.len() < pk_def.paths().len();
         if !is_prefix && values.len() != pk_def.paths().len() {
-            return Err(crate::CosmosError::client(
+            return Err(crate::Error::client(
                 "prefix partition keys are only supported for MultiHash (hierarchical) containers",
+                None,
             ));
         }
 
@@ -1015,7 +1021,7 @@ impl ContainerClient {
             )
             .await
             .ok_or_else(|| {
-                crate::CosmosError::client("failed to resolve routing map for container")
+                crate::Error::client("failed to resolve routing map for container", None)
             })?;
 
         if ranges.is_empty() && !options.force_refresh() {
@@ -1026,13 +1032,14 @@ impl ContainerClient {
                 .resolve_partition_key_ranges_for_key(&self.container_ref, &driver_pk, true)
                 .await
                 .ok_or_else(|| {
-                    crate::CosmosError::client("failed to resolve routing map for container")
+                    crate::Error::client("failed to resolve routing map for container", None)
                 })?;
 
             if ranges.is_empty() {
-                return Err(crate::CosmosError::client(
+                return Err(crate::Error::client(
                     "no partition key ranges found for the given partition key; \
                      the container may not exist or the service may be unreachable",
+                    None,
                 ));
             }
 

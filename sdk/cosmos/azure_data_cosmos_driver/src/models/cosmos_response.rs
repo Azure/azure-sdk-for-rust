@@ -7,6 +7,46 @@ use crate::diagnostics::DiagnosticsContext;
 use crate::models::{CosmosResponseHeaders, CosmosStatus, ResponseBody};
 use std::sync::Arc;
 
+/// Wire-level payload of a Cosmos DB response — the response body plus the
+/// parsed Cosmos-specific headers. This is the portion of a response that
+/// is also meaningful on an [`Error`](crate::error::Error) (which keeps its
+/// own copy of [`CosmosStatus`] and the operation
+/// [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)).
+#[derive(Clone, Debug, Default)]
+#[non_exhaustive]
+pub struct CosmosResponsePayload {
+    /// Response body, possibly composed of multiple byte slices.
+    body: ResponseBody,
+
+    /// Extracted Cosmos-specific headers.
+    headers: CosmosResponseHeaders,
+}
+
+impl CosmosResponsePayload {
+    /// Creates a new payload from a body and parsed headers.
+    pub(crate) fn new(body: impl Into<ResponseBody>, headers: CosmosResponseHeaders) -> Self {
+        Self {
+            body: body.into(),
+            headers,
+        }
+    }
+
+    /// Returns a reference to the typed response body.
+    pub fn body(&self) -> &ResponseBody {
+        &self.body
+    }
+
+    /// Consumes the payload and returns the body.
+    pub fn into_body(self) -> ResponseBody {
+        self.body
+    }
+
+    /// Returns a reference to the extracted headers.
+    pub fn headers(&self) -> &CosmosResponseHeaders {
+        &self.headers
+    }
+}
+
 /// Result of a Cosmos DB operation.
 ///
 /// Contains the response body (as a [`ResponseBody`] of one or more
@@ -33,14 +73,11 @@ use std::sync::Arc;
 ///     // Deserialize body...
 /// }
 /// ```
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CosmosResponse {
-    /// Response body, possibly composed of multiple byte slices.
-    body: ResponseBody,
-
-    /// Extracted Cosmos-specific headers.
-    headers: CosmosResponseHeaders,
+    /// Wire-level payload (body + parsed headers).
+    payload: CosmosResponsePayload,
 
     /// Operation status including HTTP status code and optional sub-status.
     status: CosmosStatus,
@@ -62,26 +99,35 @@ impl CosmosResponse {
         diagnostics: Arc<DiagnosticsContext>,
     ) -> Self {
         Self {
-            body: body.into(),
-            headers,
+            payload: CosmosResponsePayload::new(body, headers),
             status,
             diagnostics,
         }
     }
 
+    /// Returns a reference to the wire-level payload (body + headers).
+    pub fn payload(&self) -> &CosmosResponsePayload {
+        &self.payload
+    }
+
+    /// Consumes the response and returns the wire-level payload.
+    pub fn into_payload(self) -> CosmosResponsePayload {
+        self.payload
+    }
+
     /// Returns a reference to the typed response body.
     pub fn body(&self) -> &ResponseBody {
-        &self.body
+        self.payload.body()
     }
 
     /// Consumes the response and returns the body.
     pub fn into_body(self) -> ResponseBody {
-        self.body
+        self.payload.into_body()
     }
 
     /// Returns a reference to the extracted headers.
     pub fn headers(&self) -> &CosmosResponseHeaders {
-        &self.headers
+        self.payload.headers()
     }
 
     /// Returns the operation status.
@@ -98,6 +144,11 @@ impl CosmosResponse {
     /// [`DiagnosticsContext`].
     pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         Arc::clone(&self.diagnostics)
+    }
+
+    /// Returns a borrow of the diagnostics [`Arc`] without cloning it.
+    pub fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext> {
+        &self.diagnostics
     }
 }
 

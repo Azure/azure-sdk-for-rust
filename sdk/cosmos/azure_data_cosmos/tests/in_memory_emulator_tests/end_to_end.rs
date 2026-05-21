@@ -96,7 +96,7 @@ fn compare_item_responses(real: &ItemResponse, emu: &ItemResponse) {
 }
 
 /// Compares two SDK error responses: both must have the same HTTP status.
-fn compare_sdk_errors(real: &azure_data_cosmos::CosmosError, emu: &azure_data_cosmos::CosmosError) {
+fn compare_sdk_errors(real: &azure_data_cosmos::Error, emu: &azure_data_cosmos::Error) {
     assert_eq!(
         real.status_code(),
         emu.status_code(),
@@ -127,10 +127,10 @@ fn make_stale_session_token(token: &str) -> String {
     }
 }
 
-fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label: &str) {
+fn assert_read_session_not_available(err: &azure_data_cosmos::Error, label: &str) {
     assert_eq!(
         err.status_code(),
-        Some(StatusCode::NotFound),
+        StatusCode::NotFound,
         "{label}: stale session read should return 404",
     );
     assert_eq!(
@@ -170,7 +170,7 @@ async fn read_item_with_503_retry(
     label: &str,
 ) -> ItemResponse {
     const MAX_ATTEMPTS: usize = 5;
-    let mut last_err: Option<azure_data_cosmos::CosmosError> = None;
+    let mut last_err: Option<azure_data_cosmos::Error> = None;
     for attempt in 1..=MAX_ATTEMPTS {
         match container.read_item(pk, id, None).await {
             Ok(resp) => {
@@ -178,7 +178,7 @@ async fn read_item_with_503_retry(
                 return resp;
             }
             Err(e) => {
-                let is_503 = e.status_code() == Some(StatusCode::ServiceUnavailable);
+                let is_503 = e.status_code() == StatusCode::ServiceUnavailable;
                 eprintln!(
                     "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed (is_503={is_503}): {e}",
                 );
@@ -711,7 +711,7 @@ async fn sdk_delete_item() {
         .read_item("pk1", &item.id, None)
         .await
         .expect_err("emulator: reading deleted item should fail");
-    assert_eq!(emu_err.status_code(), Some(StatusCode::NotFound));
+    assert_eq!(emu_err.status_code(), StatusCode::NotFound);
 
     if let Some(ref real) = real_container {
         let real_err = real
@@ -792,7 +792,7 @@ async fn sdk_create_duplicate_item_returns_conflict() {
         .expect_err("emulator: duplicate create should fail");
     assert_eq!(
         emu_err.status_code(),
-        Some(StatusCode::Conflict),
+        StatusCode::Conflict,
         "emulator: duplicate create should return 409",
     );
 
@@ -817,7 +817,7 @@ async fn sdk_read_nonexistent_item_returns_not_found() {
         .expect_err("emulator: reading nonexistent item should fail");
     assert_eq!(
         emu_err.status_code(),
-        Some(StatusCode::NotFound),
+        StatusCode::NotFound,
         "emulator: nonexistent item should return 404",
     );
 

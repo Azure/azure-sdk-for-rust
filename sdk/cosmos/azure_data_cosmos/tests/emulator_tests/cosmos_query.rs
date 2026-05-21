@@ -176,11 +176,11 @@ pub async fn cross_partition_query_with_order_by_fails_without_query_engine(
             let Err(err) = result else {
                 panic!("expected an error but got a successful result");
             };
-            assert_eq!(Some(StatusCode::BadRequest), err.status_code());
+            assert_eq!(StatusCode::BadRequest, err.status_code());
 
             // 1004 = CrossPartitionQueryNotServable. Read directly from typed
             // CosmosStatus rather than re-parsing the raw response header.
-            let sub_status = err.status().and_then(|s| s.sub_status()).map(|s| s.value());
+            let sub_status = err.status().sub_status().map(|s| s.value());
             assert_eq!(Some(1004u32), sub_status);
 
             Ok(())

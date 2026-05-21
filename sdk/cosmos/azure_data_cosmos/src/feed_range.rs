@@ -135,7 +135,7 @@ impl FeedRange {
     /// (min inclusive, max exclusive). Returns an error if the range is inverted.
     pub(crate) fn from_partition_key_range(pkr: &PartitionKeyRange) -> crate::Result<Self> {
         if pkr.min_inclusive > pkr.max_exclusive {
-            return Err(crate::CosmosError::serialization(
+            return Err(crate::Error::serialization(
                 "partition key range min_inclusive must be <= max_exclusive",
                 azure_core::Error::with_message(
                     azure_core::error::ErrorKind::DataConversion,
@@ -166,7 +166,7 @@ impl FeedRange {
     /// Checks inclusivity flags and min ≤ max ordering.
     fn from_json(json: FeedRangeJson) -> crate::Result<Self> {
         if !json.range.is_min_inclusive || json.range.is_max_inclusive {
-            return Err(crate::CosmosError::serialization(
+            return Err(crate::Error::serialization(
                 "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
                 azure_core::Error::with_message(
                     azure_core::error::ErrorKind::DataConversion,
@@ -179,7 +179,7 @@ impl FeedRange {
         let max = EffectivePartitionKey::from(json.range.max);
 
         if min > max {
-            return Err(crate::CosmosError::serialization(
+            return Err(crate::Error::serialization(
                 "feed range min must be less than or equal to max",
                 azure_core::Error::with_message(
                     azure_core::error::ErrorKind::DataConversion,
@@ -208,7 +208,7 @@ impl fmt::Display for FeedRange {
 }
 
 impl FromStr for FeedRange {
-    type Err = crate::CosmosError;
+    type Err = crate::Error;
 
     /// Parses a feed range from a base64-encoded JSON string.
     ///
@@ -216,10 +216,10 @@ impl FromStr for FeedRange {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let decoded_bytes = base64::engine::general_purpose::STANDARD
             .decode(s)
-            .map_err(|e| crate::CosmosError::serialization("invalid base64 in feed range", e))?;
+            .map_err(|e| crate::Error::serialization("invalid base64 in feed range", e))?;
 
         let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes)
-            .map_err(|e| crate::CosmosError::serialization("invalid JSON in feed range", e))?;
+            .map_err(|e| crate::Error::serialization("invalid JSON in feed range", e))?;
 
         Self::from_json(json)
     }

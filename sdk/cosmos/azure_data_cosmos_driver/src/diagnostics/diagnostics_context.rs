@@ -1524,6 +1524,27 @@ pub struct DiagnosticsContext {
 }
 
 impl DiagnosticsContext {
+    /// Returns a process-wide shared placeholder [`DiagnosticsContext`] for
+    /// error paths that have no real per-operation diagnostics to surface
+    /// (e.g. service errors constructed inside the retry pipeline before a
+    /// real diagnostics context is threaded through). All fields are empty
+    /// (placeholder [`ActivityId`], zero duration, no requests). The same
+    /// `Arc` is returned on every call.
+    pub(crate) fn error_placeholder() -> Arc<Self> {
+        static PLACEHOLDER: OnceLock<Arc<DiagnosticsContext>> = OnceLock::new();
+        PLACEHOLDER
+            .get_or_init(|| {
+                Arc::new(
+                    DiagnosticsContextBuilder::new(
+                        ActivityId::from_static("00000000-0000-0000-0000-000000000000"),
+                        Arc::new(DiagnosticsOptions::default()),
+                    )
+                    .complete(),
+                )
+            })
+            .clone()
+    }
+
     /// **Internal escape hatch — do not call.**
     ///
     /// Synthesizes a placeholder [`DiagnosticsContext`] for legacy SDK code
