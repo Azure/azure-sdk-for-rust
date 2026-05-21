@@ -458,4 +458,27 @@ mod tests {
             "Debug output missing winner region: {dbg}"
         );
     }
+
+    /// Spec D6 regression — §10.1 attachment contract.
+    ///
+    /// `HedgeDiagnostics` is `Some(_)` iff `execute_hedged()` ran, even
+    /// for global-endpoint accounts whose routed endpoint surfaces no
+    /// named region. The `execute_hedged` body substitutes a
+    /// `Region::new("(unknown)")` sentinel at the diagnostics-construction
+    /// sites in that case (the PPCB recording paths still see `None` so
+    /// counters are not collapsed under one sentinel key). This test
+    /// pins the sentinel string so downstream consumers can rely on it
+    /// to distinguish "no named region" from a real Azure region.
+    #[test]
+    fn unknown_region_sentinel_constructs_diagnostics_for_global_endpoint() {
+        let unknown = Region::new("(unknown)");
+        let diag = HedgeDiagnostics::primary_only(config(), unknown.clone());
+        assert_eq!(diag.response_region, unknown);
+        assert_eq!(diag.regions_contacted, vec![unknown.clone()]);
+        assert!(!diag.was_hedge);
+        assert_eq!(diag.terminal_state, HedgeTerminalState::PrimaryWonPreThreshold);
+        // Sentinel must not collide with any real region constant.
+        assert_ne!(unknown, Region::EAST_US);
+        assert_ne!(unknown, Region::WEST_US_2);
+    }
 }

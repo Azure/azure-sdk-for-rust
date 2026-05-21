@@ -159,9 +159,15 @@ pub(crate) async fn execute_operation_pipeline(
     // current variant that is out of spec scope).
     retry_state.is_dataplane = pipeline_type.is_data_plane();
 
-    let deadline = options
-        .end_to_end_latency_policy()
-        .map(|p| Instant::now() + p.timeout());
+    // §5.2 — the hedge threshold is `min(1000ms, request_timeout / 2)`
+    // where `request_timeout` is the **configured** end-to-end latency
+    // budget, not the time remaining until the deadline. We compute the
+    // configured timeout once here and pass it (not the remaining
+    // duration) into `evaluate_hedge_eligibility` / `maybe_upgrade_to_hedge`
+    // below so the threshold stays stable across STAGE 5b retry-driven
+    // upgrades — spec D1.
+    let configured_request_timeout = options.end_to_end_latency_policy().map(|p| p.timeout());
+    let deadline = configured_request_timeout.map(|t| Instant::now() + t);
 
     loop {
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
@@ -214,7 +220,7 @@ pub(crate) async fn execute_operation_pipeline(
                 options,
                 &location.account,
                 &routing,
-                deadline.map(|d| d.saturating_duration_since(Instant::now())),
+                configured_request_timeout,
             ) {
                 let attempt_ctx = AttemptContext {
                     operation,
@@ -368,7 +374,7 @@ pub(crate) async fn execute_operation_pipeline(
             options,
             &location.account,
             &routing,
-            deadline.map(|d| d.saturating_duration_since(Instant::now())),
+            configured_request_timeout,
         );
 
         // ── STAGE 6: Apply location effects ────────────────────────────
@@ -1968,6 +1974,20 @@ async fn execute_hedged(
 ) -> azure_core::Result<CosmosResponse> {
     let primary_region = primary_routing.endpoint.region().cloned();
     let secondary_region = secondary_routing.endpoint.region().cloned();
+    // §10.1 — `HedgeDiagnostics` is attached iff `execute_hedged` ran,
+    // regardless of whether the routed endpoints carry a named region
+    // (global-endpoint accounts do not). For diagnostics-construction
+    // sites we substitute a `(unknown)` sentinel `Region` so the
+    // attachment contract holds; PPCB recording paths below still use
+    // the original `Option<Region>` so a `None` correctly attributes to
+    // "no region" rather than collapsing all global-endpoint hedges
+    // under a sentinel key — spec D6.
+    let primary_region_for_diag = primary_region
+        .clone()
+        .unwrap_or_else(|| Region::new("(unknown)"));
+    let secondary_region_for_diag = secondary_region
+        .clone()
+        .unwrap_or_else(|| Region::new("(unknown)"));
 
     tracing::debug!(
         activity_id = %ctx.activity_id,
@@ -2027,10 +2047,10 @@ async fn execute_hedged(
             // Primary completed before either timer — no secondary attempt
             // was constructed (spec §6.5 #3).
             parent_diagnostics.merge_hedge_attempt(diag);
-            if let Some(region) = primary_region.clone() {
-                parent_diagnostics
-                    .set_hedge_diagnostics(HedgeDiagnostics::primary_only(strategy_config, region));
-            }
+            parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::primary_only(
+                strategy_config,
+                primary_region_for_diag.clone(),
+            ));
             tracing::debug!(
                 activity_id = %ctx.activity_id,
                 "execute_hedged: primary won pre-threshold (zero-overhead happy path)",
@@ -2085,11 +2105,12 @@ async fn execute_hedged(
                 "execute_hedged: deadline fired pre-threshold; harvesting primary",
             );
             harvest_remaining_attempt(remaining_primary, &mut parent_diagnostics).await;
-            if let Some(region) = primary_region.clone() {
-                parent_diagnostics.set_hedge_diagnostics(
-                    HedgeDiagnostics::primary_only_deadline_exceeded(strategy_config, region),
-                );
-            }
+            parent_diagnostics.set_hedge_diagnostics(
+                HedgeDiagnostics::primary_only_deadline_exceeded(
+                    strategy_config,
+                    primary_region_for_diag.clone(),
+                ),
+            );
             return Err(application_cancelled_error());
         }
     };
@@ -2156,11 +2177,13 @@ async fn execute_hedged(
             match classify_hedge_result(primary_result) {
                 HedgeClass::Final(tr) => {
                     // Primary won post-threshold; drop secondary.
-                    if let (Some(p), Some(s)) = (primary_region.clone(), secondary_region.clone()) {
-                        parent_diagnostics.set_hedge_diagnostics(
-                            HedgeDiagnostics::primary_won_after_hedge(strategy_config, p, s),
-                        );
-                    }
+                    parent_diagnostics.set_hedge_diagnostics(
+                        HedgeDiagnostics::primary_won_after_hedge(
+                            strategy_config,
+                            primary_region_for_diag.clone(),
+                            secondary_region_for_diag.clone(),
+                        ),
+                    );
                     tracing::debug!(
                         activity_id = %ctx.activity_id,
                         "execute_hedged: primary won after threshold",
@@ -2207,23 +2230,23 @@ async fn execute_hedged(
                         // (was_hedge=false) so hedge win-rate metrics do
                         // not count this as an alternate win
                         // (review #1, spec §10.1).
-                        if let (Some(p), Some(s)) = (primary_region, secondary_region) {
-                            parent_diagnostics.set_hedge_diagnostics(
-                                HedgeDiagnostics::cancelled_awaiting_partner(strategy_config, p, s),
-                            );
-                        }
+                        parent_diagnostics.set_hedge_diagnostics(
+                            HedgeDiagnostics::cancelled_awaiting_partner(
+                                strategy_config,
+                                primary_region_for_diag.clone(),
+                                secondary_region_for_diag.clone(),
+                            ),
+                        );
                         return Err(application_cancelled_error());
                     };
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
                     match classify_hedge_result(secondary_result) {
                         HedgeClass::Final(tr) => {
-                            if let (Some(p), Some(s)) =
-                                (primary_region.clone(), secondary_region.clone())
-                            {
-                                parent_diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::hedge_won(strategy_config, p, s),
-                                );
-                            }
+                            parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
+                                strategy_config,
+                                primary_region_for_diag.clone(),
+                                secondary_region_for_diag.clone(),
+                            ));
                             tracing::debug!(
                                 activity_id = %ctx.activity_id,
                                 "execute_hedged: secondary won after primary transient",
@@ -2252,16 +2275,14 @@ async fn execute_hedged(
                             // deadline_elapsed once before the if-let-Some
                             // pattern moves the regions (review #1, spec §10.1).
                             let deadline_was_elapsed = deadline_elapsed(ctx.deadline);
-                            if let (Some(p), Some(s)) = (primary_region, secondary_region) {
-                                parent_diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::both_transient(
-                                        strategy_config,
-                                        p,
-                                        s,
-                                        deadline_was_elapsed,
-                                    ),
-                                );
-                            }
+                            parent_diagnostics.set_hedge_diagnostics(
+                                HedgeDiagnostics::both_transient(
+                                    strategy_config,
+                                    primary_region_for_diag.clone(),
+                                    secondary_region_for_diag.clone(),
+                                    deadline_was_elapsed,
+                                ),
+                            );
                             if deadline_was_elapsed {
                                 tracing::debug!(
                                     activity_id = %ctx.activity_id,
@@ -2294,13 +2315,11 @@ async fn execute_hedged(
             parent_diagnostics.merge_hedge_attempt(secondary_diag);
             match classify_hedge_result(secondary_result) {
                 HedgeClass::Final(tr) => {
-                    if let (Some(p), Some(s)) = (primary_region.clone(), secondary_region.clone()) {
-                        parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
-                            strategy_config,
-                            p,
-                            s,
-                        ));
-                    }
+                    parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
+                        strategy_config,
+                        primary_region_for_diag.clone(),
+                        secondary_region_for_diag.clone(),
+                    ));
                     tracing::debug!(
                         activity_id = %ctx.activity_id,
                         "execute_hedged: secondary won race",
@@ -2346,27 +2365,25 @@ async fn execute_hedged(
                         // (was_hedge=false) so hedge win-rate metrics do
                         // not count this as an alternate win
                         // (review #1, spec §10.1).
-                        if let (Some(p), Some(s)) = (primary_region, secondary_region) {
-                            parent_diagnostics.set_hedge_diagnostics(
-                                HedgeDiagnostics::cancelled_awaiting_partner(strategy_config, p, s),
-                            );
-                        }
+                        parent_diagnostics.set_hedge_diagnostics(
+                            HedgeDiagnostics::cancelled_awaiting_partner(
+                                strategy_config,
+                                primary_region_for_diag.clone(),
+                                secondary_region_for_diag.clone(),
+                            ),
+                        );
                         return Err(application_cancelled_error());
                     };
                     parent_diagnostics.merge_hedge_attempt(primary_diag);
                     match classify_hedge_result(primary_result) {
                         HedgeClass::Final(tr) => {
-                            if let (Some(p), Some(s)) =
-                                (primary_region.clone(), secondary_region.clone())
-                            {
-                                parent_diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::primary_won_after_hedge(
-                                        strategy_config,
-                                        p,
-                                        s,
-                                    ),
-                                );
-                            }
+                            parent_diagnostics.set_hedge_diagnostics(
+                                HedgeDiagnostics::primary_won_after_hedge(
+                                    strategy_config,
+                                    primary_region_for_diag.clone(),
+                                    secondary_region_for_diag.clone(),
+                                ),
+                            );
                             tracing::debug!(
                                 activity_id = %ctx.activity_id,
                                 "execute_hedged: primary won after secondary transient",
@@ -2387,20 +2404,17 @@ async fn execute_hedged(
                         }
                         HedgeClass::Transient => {
                             // Both transient — attach BothTransient terminal
-                            // state (was_hedge=false, no leg won). Capture
-                            // deadline_elapsed once before the if-let-Some
-                            // pattern moves the regions (review #1, spec §10.1).
+                            // state (was_hedge=false, no leg won) for
+                            // observability (review #1, spec §10.1).
                             let deadline_was_elapsed = deadline_elapsed(ctx.deadline);
-                            if let (Some(p), Some(s)) = (primary_region, secondary_region) {
-                                parent_diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::both_transient(
-                                        strategy_config,
-                                        p,
-                                        s,
-                                        deadline_was_elapsed,
-                                    ),
-                                );
-                            }
+                            parent_diagnostics.set_hedge_diagnostics(
+                                HedgeDiagnostics::both_transient(
+                                    strategy_config,
+                                    primary_region_for_diag.clone(),
+                                    secondary_region_for_diag.clone(),
+                                    deadline_was_elapsed,
+                                ),
+                            );
                             if deadline_was_elapsed {
                                 tracing::debug!(
                                     activity_id = %ctx.activity_id,

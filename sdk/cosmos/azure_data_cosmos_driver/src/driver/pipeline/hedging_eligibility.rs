@@ -891,4 +891,52 @@ mod tests {
             vec![Region::EAST_US, Region::CENTRAL_US]
         );
     }
+
+    /// Spec D1 regression — §5.2 threshold derivation.
+    ///
+    /// Calling `evaluate_hedge_eligibility` repeatedly with the same
+    /// **configured** `request_timeout` must return the same threshold
+    /// every time, regardless of how much wall-clock time has elapsed
+    /// between calls. The caller's contract (per `execute_operation_pipeline`
+    /// STAGE 2b / 5b) is to pass the configured value from
+    /// `OperationOptionsView::end_to_end_latency_policy()`, **not** the
+    /// remaining time until the deadline. Before the D1 fix, the call
+    /// sites passed `deadline.map(|d| d.saturating_duration_since(now))`,
+    /// which would shrink with elapsed time on STAGE 5b retry-driven
+    /// upgrades and silently violate the spec's `min(1000ms, configured / 2)`
+    /// formula.
+    #[test]
+    fn evaluate_hedge_eligibility_threshold_stable_across_repeated_calls() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let op = read_item_operation();
+        let primary = primary_routing_for(&state);
+
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        // Configured timeout = 800ms → expected threshold = 400ms (cap = 1s).
+        let configured_timeout = Some(Duration::from_millis(800));
+
+        let first =
+            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
+                .expect("first call eligible");
+        std::thread::sleep(Duration::from_millis(10));
+        let second =
+            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
+                .expect("second call eligible");
+
+        assert_eq!(
+            first.threshold.get(),
+            Duration::from_millis(400),
+            "first call must derive threshold from configured timeout",
+        );
+        assert_eq!(
+            second.threshold.get(),
+            first.threshold.get(),
+            "threshold must be stable across calls — D1 regression: \
+             caller must pass configured request_timeout (not remaining \
+             deadline) so the §5.2 default does not shrink between \
+             STAGE 2b and STAGE 5b",
+        );
+    }
 }

@@ -1019,12 +1019,19 @@ chain.
    `execute_hedged()` records it via `record_hedge_win()` (§9.5) so
    PPCB can mark the partition `Unhealthy` after the configured
    number of consecutive secondary wins.
-9. **Single decision enum.** Hedging is selected by
+9. **Single decision enum, two entry points in the pipeline.** Hedging
+   is selected either by a first-attempt eligibility check (STAGE 2b
+   in `execute_operation_pipeline`, before any transport request has
+   gone out — uses `evaluate_hedge_eligibility` directly) or by
    `evaluate_transport_result` returning
-   `OperationAction::Hedge { secondary_routing }`; there is no
-   parallel orchestrator and no separate cancellation tree above the
-   pipeline. The `OperationAction::Hedge` arm is the **only** entry
-   point to `execute_hedged()`.
+   `OperationAction::Hedge { secondary_routing }` on a post-attempt
+   upgrade (STAGE 5b → STAGE 7). There is no parallel orchestrator and
+   no separate cancellation tree above the pipeline. Both entry points
+   call into the same `execute_hedged()` body; the two pipeline call
+   sites differ only in *when* the eligibility check fires
+   (pre-request vs. post-classification) and are functionally
+   equivalent. Operator-visible behavior — the hedge race itself, PPCB
+   feedback, and diagnostics attachment — is identical.
 
 ---
 
