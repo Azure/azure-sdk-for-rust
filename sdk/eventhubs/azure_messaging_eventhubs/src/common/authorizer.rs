@@ -96,44 +96,50 @@ impl Authorizer {
         path: &Url,
     ) -> azure_core_amqp::Result<AccessToken> {
         debug!("Authorizing path: {path}");
-        let mut scopes = self.authorization_scopes.lock().await;
 
-        if !scopes.contains_key(path) {
-            debug!("Creating new authorization scope for path: {path}");
-
-            debug!("Get Token.");
-            let token = self
-                .credential
-                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                .await
-                .map_err(AmqpError::from)?;
-
-            debug!("Token for path {path} expires at {}", token.expires_on);
-
-            self.perform_authorization(connection, path, &token).await?;
-
-            // insert returns some if it *fails* to insert, None if it succeeded.
-            let present = scopes.insert(path.clone(), token);
-            if present.is_some() {
-                return Err(AmqpError::with_message(
-                    "Unable to add authentication token",
-                ));
-            }
-
-            debug!("Token verified.");
-            self.authorization_refresher.get_or_init(|| {
-                debug!("Starting authorization refresh task.");
-                let self_clone = self.clone();
-                let async_runtime = get_async_runtime();
-                async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
-            });
-        } else {
+        // Fast path: cached token under a brief lock.
+        if let Some(token) = self.authorization_scopes.lock().await.get(path).cloned() {
             debug!("Token already exists for path: {path}");
+            return Ok(token);
         }
-        Ok(scopes
-            .get(path)
-            .ok_or_else(|| AmqpError::with_message("Unable to add authentication token"))?
-            .clone())
+
+        // Slow path: fetch the credential and perform the CBS attach *without*
+        // holding the scope cache lock. Holding it across `perform_authorization`
+        // would block `clear()` (called from `recover_from_error`) for as long as
+        // the CBS attach is in flight; if that CBS attach is itself the operation
+        // that triggers recovery, the result is a self-deadlock. Matches the
+        // pattern used by `ensure_sender` / `ensure_receiver` / `get_session` in
+        // `RecoverableConnection`.
+        debug!("Creating new authorization scope for path: {path}");
+
+        debug!("Get Token.");
+        let token = self
+            .credential
+            .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
+            .await
+            .map_err(AmqpError::from)?;
+
+        debug!("Token for path {path} expires at {}", token.expires_on);
+
+        self.perform_authorization(connection, path, &token).await?;
+        debug!("Token verified.");
+
+        // Insert; if another task won the race, return its cached token and drop
+        // ours. Both CBS auths succeeded against the same link, so either
+        // credential is acceptable to the broker.
+        let stored = {
+            let mut scopes = self.authorization_scopes.lock().await;
+            scopes.entry(path.clone()).or_insert(token).clone()
+        };
+
+        self.authorization_refresher.get_or_init(|| {
+            debug!("Starting authorization refresh task.");
+            let self_clone = self.clone();
+            let async_runtime = get_async_runtime();
+            async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
+        });
+
+        Ok(stored)
     }
 
     /// Actually perform an authorization against the Event Hubs service.
@@ -662,5 +668,98 @@ mod tests {
         info!("Second token expiration get count: {}", final_count);
 
         Ok(())
+    }
+
+    // Regression test for the self-deadlock described in
+    // https://github.com/Azure/azure-sdk-for-rust/issues/4414.
+    //
+    // Before the fix, `authorize_path` held the `authorization_scopes` async
+    // mutex across `credential.get_token().await` and the CBS attach. If the
+    // in-flight CBS call failed and triggered `recover_from_error`, recovery
+    // would call `authorizer.clear().await`, which tries to acquire the same
+    // mutex; that call blocked forever because the task holding the mutex was
+    // suspended inside the call that needed recovery.
+    //
+    // This test reproduces the lock-during-IO shape with a credential whose
+    // `get_token` blocks until released. We spawn `authorize_path` and, once
+    // it has entered the slow path, race a `clear()` against it. With the
+    // bug, `clear()` would never return; with the fix, it returns promptly
+    // because the slow path runs lock-free.
+    #[tokio::test]
+    async fn authorize_path_does_not_block_clear() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use tokio::sync::Notify;
+
+        #[derive(Debug)]
+        struct GatedCredential {
+            entered: AtomicBool,
+            release: Notify,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for GatedCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                self.entered.store(true, Ordering::SeqCst);
+                self.release.notified().await;
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("mock_token"),
+                    OffsetDateTime::now_utc() + Duration::seconds(60),
+                ))
+            }
+        }
+
+        let credential = Arc::new(GatedCredential {
+            entered: AtomicBool::new(false),
+            release: Notify::new(),
+        });
+
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url.clone(),
+            None,
+            None,
+            credential.clone(),
+            Default::default(),
+        );
+
+        let authorizer = Arc::new(Authorizer::new(
+            Arc::downgrade(&connection),
+            credential.clone(),
+        ));
+        authorizer.disable_authorization().unwrap();
+        connection.disable_connection().await.unwrap();
+
+        let path = Url::parse("amqps://example.com/test").unwrap();
+
+        let auth_task = {
+            let authorizer = authorizer.clone();
+            let connection = connection.clone();
+            let path = path.clone();
+            tokio::spawn(async move { authorizer.authorize_path(&connection, &path).await })
+        };
+
+        // Wait for the spawned task to enter the credential's gated `get_token`.
+        // At this point the bug would have it holding the authorization_scopes
+        // mutex; the fix has already released it.
+        while !credential.entered.load(Ordering::SeqCst) {
+            tokio::task::yield_now().await;
+        }
+
+        // `clear()` must not block on the in-flight authorization. A 2s budget
+        // is generous; the operation should complete in microseconds.
+        tokio::time::timeout(std::time::Duration::from_secs(2), authorizer.clear())
+            .await
+            .expect("authorizer.clear() blocked while authorize_path was mid-IO");
+
+        // Let the in-flight authorization complete and verify it returns.
+        credential.release.notify_one();
+        auth_task
+            .await
+            .expect("authorize_path task panicked")
+            .expect("authorize_path returned an error");
     }
 }
