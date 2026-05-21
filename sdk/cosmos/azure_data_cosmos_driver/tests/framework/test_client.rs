@@ -12,7 +12,10 @@ use azure_data_cosmos_driver::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
     },
-    options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
+    options::{
+        ConnectionPoolOptions, DriverOptions, EmulatorServerCertValidation, OperationOptions,
+        Region,
+    },
 };
 use std::{error::Error, future::Future, sync::Arc};
 use uuid::Uuid;
@@ -214,6 +217,68 @@ impl DriverTestClient {
             .with_fault_injection_rules(rules)?
             .with_operation_options(operation_options)
             .build()
+            .await?;
+
+        let client = Self {
+            runtime,
+            account: env.account,
+        };
+        let context = DriverTestRunContext::new(client);
+
+        let db_name = context.unique_database_name();
+        let db_ref = context.create_database(&db_name).await?;
+
+        let result = f(context.clone(), db_ref.clone()).await;
+
+        // Cleanup (best effort)
+        let _ = context.delete_database(&db_ref).await;
+
+        result
+    }
+
+    /// Like [`run_with_unique_db_and_fault_injection_options`](Self::run_with_unique_db_and_fault_injection_options)
+    /// but additionally pre-configures driver-level `preferred_regions`,
+    /// which is required for cross-region hedging eligibility per
+    /// `HEDGING_SPEC.md` §5.2 (the §5.1 `should_hedge()` short-circuits
+    /// when no application-preferred regions are configured).
+    ///
+    /// Pre-warms the runtime's per-account driver cache with explicit
+    /// [`DriverOptions`] so subsequent `get_or_create_driver(.., None)`
+    /// calls from the per-operation test helpers (`read_item`,
+    /// `create_item_with_pk`, …) hit the cached driver and inherit the
+    /// configured `preferred_regions`.
+    #[cfg(feature = "fault_injection")]
+    pub async fn run_with_unique_db_and_hedging<F, Fut>(
+        rules: Vec<Arc<FaultInjectionRule>>,
+        runtime_operation_options: OperationOptions,
+        preferred_regions: Vec<Region>,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(env) = resolve_test_env()? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .with_fault_injection_rules(rules)?
+            .with_operation_options(runtime_operation_options)
+            .build()
+            .await?;
+
+        // Pre-warm the driver cache so per-operation helpers (which call
+        // `get_or_create_driver(.., None)`) hit the cached driver with our
+        // `preferred_regions`. The cache is keyed on the account endpoint
+        // (see `CosmosDriverRuntime::get_or_create_driver`).
+        let driver_options = DriverOptions::builder(env.account.clone())
+            .with_preferred_regions(preferred_regions)
+            .build();
+        let _ = runtime
+            .get_or_create_driver(env.account.clone(), Some(driver_options))
             .await?;
 
         let client = Self {
