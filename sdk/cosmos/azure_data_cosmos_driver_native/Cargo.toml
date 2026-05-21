@@ -1,0 +1,38 @@
+[package]
+name = "azure_data_cosmos_driver_native"
+version = "0.1.0"
+publish = false
+description = "C ABI bindings for the Azure Cosmos DB driver (azure_data_cosmos_driver). Schema-agnostic, language-SDK-friendly."
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "azurecosmosdriver"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+azure_core.workspace = true
+azure_data_cosmos_driver = { workspace = true, features = ["tokio", "rustls"] }
+futures.workspace = true
+tokio = { workspace = true, optional = true, features = [
+  "rt-multi-thread",
+  "macros",
+] }
+tracing.workspace = true
+tracing-subscriber = { workspace = true, optional = true, features = [
+  "fmt",
+  "env-filter",
+] }
+url.workspace = true
+
+[features]
+default = ["tokio", "tracing"]
+tokio = ["dep:tokio"]
+tracing = ["dep:tracing-subscriber"]
+fault_injection = ["azure_data_cosmos_driver/fault_injection"]
+
+[lints]
+workspace = true

@@ -535,6 +535,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_data_cosmos_driver_native"
+version = "0.1.0"
+dependencies = [
+ "azure_core 1.0.0",
+ "azure_data_cosmos_driver",
+ "futures",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
 name = "azure_data_cosmos_macros"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
