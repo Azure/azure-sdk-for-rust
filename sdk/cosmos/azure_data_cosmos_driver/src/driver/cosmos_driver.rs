@@ -82,7 +82,7 @@ impl CosmosDriver {
     /// for `h2::Error` reasons such as `HTTP_1_1_REQUIRED` / `PROTOCOL_ERROR`
     /// / `FRAME_SIZE_ERROR` and mints
     /// [`SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE`] when it sees one, so
-    /// pipeline-produced errors are recognised via
+    /// pipeline-produced errors are recognized via
     /// [`crate::error::Error::try_extract`]. Raw `azure_core::Error` values
     /// from paths that do not go through the boundary mapper still fall
     /// back to a direct `h2::Error` downcast.

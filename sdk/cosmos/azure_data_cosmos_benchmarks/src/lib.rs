@@ -192,7 +192,7 @@ impl HttpClientFactory for MockHttpClientFactory {
         &self,
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
+    ) -> azure_data_cosmos_driver::error::Result<Arc<dyn TransportClient>> {
         Ok(Arc::new(MockTransportClient::new()))
     }
 }

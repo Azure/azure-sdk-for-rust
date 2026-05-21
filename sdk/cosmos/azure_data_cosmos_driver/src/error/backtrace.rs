@@ -125,7 +125,7 @@ impl CosmosBacktrace {
     /// resolved through the cost-bounded [`BacktraceCaptureLimiter`]. **If
     /// the limiter denies a fresh resolution and there is at least one
     /// cache-missed frame, this returns `None`** — we never produce a
-    /// partially-resolved backtrace because half-symbolised stacks are
+    /// partially-resolved backtrace because half-symbolized stacks are
     /// misleading. Cache hits never consume budget, so backtraces whose
     /// frames are already known render at full fidelity regardless of
     /// limiter state.
