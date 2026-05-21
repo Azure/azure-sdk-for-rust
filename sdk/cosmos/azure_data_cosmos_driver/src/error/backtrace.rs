@@ -45,13 +45,14 @@ use super::Kind;
 /// 412 / 429) and opaque transport failures do not consume budget. `100` per
 /// minute is therefore plenty for typical production workloads while still
 /// leaving headroom for diagnostic sampling.
-pub const DEFAULT_BACKTRACE_CAPTURES_PER_MINUTE: u32 = 100;
+pub(crate) const DEFAULT_BACKTRACE_CAPTURES_PER_MINUTE: u32 = 100;
 
 /// Environment variable that overrides the default backtrace-capture budget
 /// when no explicit value is supplied via the runtime builder.
 ///
 /// Value: a non-negative integer (`0` disables backtrace capture entirely).
-pub const BACKTRACE_CAPTURES_PER_MINUTE_ENV: &str = "AZURE_COSMOS_BACKTRACE_CAPTURE_PER_MINUTE";
+pub(crate) const BACKTRACE_CAPTURES_PER_MINUTE_ENV: &str =
+    "AZURE_COSMOS_BACKTRACE_CAPTURE_PER_MINUTE";
 
 const WINDOW_SECS: u64 = 60;
 
@@ -70,7 +71,8 @@ const BIT_CONFIGURATION: u8 = 1 << 5;
 /// either already self-describing via the wire response (status + sub-status +
 /// activity-id + server diagnostics) or bottom out in third-party async-IO
 /// stacks where a Rust backtrace adds little value.
-pub const DEFAULT_BACKTRACE_KIND_MASK: u8 = BIT_CLIENT | BIT_SERIALIZATION | BIT_CONFIGURATION;
+pub(crate) const DEFAULT_BACKTRACE_KIND_MASK: u8 =
+    BIT_CLIENT | BIT_SERIALIZATION | BIT_CONFIGURATION;
 
 fn kind_bit(kind: Kind) -> u8 {
     match kind {
@@ -90,7 +92,7 @@ fn kind_bit(kind: Kind) -> u8 {
 /// [`Display`] and cached in a process-global table keyed by IP, so repeat
 /// captures of the same call site only pay the resolution cost once.
 #[derive(Clone)]
-pub struct CosmosBacktrace {
+pub(crate) struct CosmosBacktrace {
     inner: Arc<CosmosBacktraceInner>,
 }
 
@@ -99,11 +101,15 @@ struct CosmosBacktraceInner {
     ips: Vec<usize>,
     /// Lazily resolved frames, populated on first access.
     resolved: OnceLock<Vec<Arc<ResolvedFrame>>>,
+    /// Lazily rendered display string, populated on first `rendered()` call.
+    /// Stored as `Arc<str>` so callers can cheaply share ownership without
+    /// re-copying the bytes.
+    rendered: OnceLock<Arc<str>>,
 }
 
 /// A single resolved stack frame.
 #[derive(Clone, Debug)]
-pub struct ResolvedFrame {
+pub(crate) struct ResolvedFrame {
     /// Raw instruction pointer.
     pub ip: usize,
     /// Resolved symbol name (e.g. `azure_data_cosmos_driver::error::Error::service`).
@@ -123,7 +129,7 @@ impl CosmosBacktrace {
     /// 60-second window, or if capture is globally disabled (budget = `0`).
     /// Disabled kinds do **not** charge the limiter — the budget is reserved
     /// for the kinds where a stack actually pinpoints the fault.
-    pub fn try_capture_for_kind(kind: Kind) -> Option<Self> {
+    pub(crate) fn try_capture_for_kind(kind: Kind) -> Option<Self> {
         if !global_limiter().kind_enabled(kind) {
             return None;
         }
@@ -137,7 +143,7 @@ impl CosmosBacktrace {
     /// captures in the current 60-second window, or if backtrace capture is
     /// disabled (budget = `0`). Prefer [`Self::try_capture_for_kind`] when the
     /// error kind is known so that disabled kinds skip the budget entirely.
-    pub fn try_capture() -> Option<Self> {
+    pub(crate) fn try_capture() -> Option<Self> {
         if !global_limiter().try_acquire() {
             return None;
         }
@@ -150,20 +156,32 @@ impl CosmosBacktrace {
             inner: Arc::new(CosmosBacktraceInner {
                 ips,
                 resolved: OnceLock::new(),
+                rendered: OnceLock::new(),
             }),
         })
     }
 
     /// Returns the resolved frames, resolving (and caching) on first call.
-    pub fn frames(&self) -> &[Arc<ResolvedFrame>] {
+    pub(crate) fn frames(&self) -> &[Arc<ResolvedFrame>] {
         self.inner
             .resolved
             .get_or_init(|| resolve_frames(&self.inner.ips))
             .as_slice()
     }
 
+    /// Returns the rendered backtrace string, computed (and cached) on first
+    /// call. Subsequent calls return the cached `&str` without re-formatting
+    /// or copying — the string lives inside the `OnceLock` for the lifetime
+    /// of the backtrace.
+    pub(crate) fn rendered(&self) -> &str {
+        self.inner
+            .rendered
+            .get_or_init(|| Arc::from(self.to_string()))
+    }
+
     /// Returns the number of captured frames (cheap; never triggers resolution).
-    pub fn frame_count(&self) -> usize {
+    #[allow(dead_code)]
+    pub(crate) fn frame_count(&self) -> usize {
         self.inner.ips.len()
     }
 }
@@ -290,7 +308,7 @@ pub(crate) fn frame_cache_len_for_tests() -> usize {
 /// count_in_window)`, so `try_acquire` is a single CAS in the happy path.
 /// Capacity is stored separately in an `AtomicU32` so the runtime builder can
 /// reconfigure it at any time.
-pub struct BacktraceCaptureLimiter {
+pub(crate) struct BacktraceCaptureLimiter {
     capacity: AtomicU32,
     /// High 32 bits: window start (seconds since UNIX epoch, truncated).
     /// Low 32 bits: count of captures granted in this window.
@@ -309,6 +327,7 @@ impl BacktraceCaptureLimiter {
     }
 
     /// Returns the current capacity (captures allowed per 60-second window).
+    #[allow(dead_code)]
     pub fn capacity(&self) -> u32 {
         self.capacity.load(Ordering::Relaxed)
     }
@@ -381,14 +400,6 @@ fn now_unix_secs() -> u64 {
 
 fn global_limiter() -> &'static BacktraceCaptureLimiter {
     static LIMITER: BacktraceCaptureLimiter = BacktraceCaptureLimiter::new();
-    static INIT: OnceLock<()> = OnceLock::new();
-    INIT.get_or_init(|| {
-        if let Ok(raw) = std::env::var(BACKTRACE_CAPTURES_PER_MINUTE_ENV) {
-            if let Ok(parsed) = raw.trim().parse::<u32>() {
-                LIMITER.set_capacity(parsed);
-            }
-        }
-    });
     &LIMITER
 }
 
@@ -396,7 +407,7 @@ fn global_limiter() -> &'static BacktraceCaptureLimiter {
 ///
 /// The runtime builder uses this to apply caller-supplied configuration; most
 /// other callers should not need direct access.
-pub fn capture_limiter() -> &'static BacktraceCaptureLimiter {
+pub(crate) fn capture_limiter() -> &'static BacktraceCaptureLimiter {
     global_limiter()
 }
 

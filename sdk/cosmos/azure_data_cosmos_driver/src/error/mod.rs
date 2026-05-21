@@ -37,11 +37,10 @@ use crate::{
     },
 };
 
-pub mod backtrace;
-pub use backtrace::{
-    capture_limiter, BacktraceCaptureLimiter, CosmosBacktrace, ResolvedFrame,
-    BACKTRACE_CAPTURES_PER_MINUTE_ENV, DEFAULT_BACKTRACE_CAPTURES_PER_MINUTE,
-    DEFAULT_BACKTRACE_KIND_MASK,
+mod backtrace;
+pub(crate) use backtrace::{
+    capture_limiter, CosmosBacktrace, BACKTRACE_CAPTURES_PER_MINUTE_ENV,
+    DEFAULT_BACKTRACE_CAPTURES_PER_MINUTE,
 };
 
 /// Categorical kind for an [`Error`] — re-exported from
@@ -361,16 +360,21 @@ impl Error {
         }
     }
 
-    /// Returns the stack backtrace captured at error construction time, when
-    /// the global rate-limited capture budget allowed it.
+    /// Returns the stack backtrace captured at error construction time,
+    /// rendered as a human-readable string, when the global rate-limited
+    /// capture budget allowed it.
     ///
-    /// Backtraces are captured by default for every `Error` but are
-    /// rate-limited via the global [`capture_limiter`] (default
-    /// `1000` captures / minute). Returns `None` when the budget for the
-    /// current 60-second window has been exhausted, or when backtrace
-    /// capture has been disabled (budget = `0`).
-    pub fn backtrace(&self) -> Option<&CosmosBacktrace> {
-        self.inner.backtrace.as_ref()
+    /// Backtraces are captured by default for SDK-origin error kinds but are
+    /// rate-limited via a process-global limiter (default `100` captures /
+    /// minute). Returns `None` when the budget for the current 60-second
+    /// window has been exhausted or when backtrace capture has been disabled
+    /// (budget = `0`).
+    ///
+    /// Frame symbol resolution is deferred to the first call and the
+    /// rendered string is cached internally, so repeated calls return a
+    /// borrow of the cached string — no formatting or allocation.
+    pub fn backtrace(&self) -> Option<&str> {
+        self.inner.backtrace.as_ref().map(CosmosBacktrace::rendered)
     }
 
     // -----------------------------------------------------------------

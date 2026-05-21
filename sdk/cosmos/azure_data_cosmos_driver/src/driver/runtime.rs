@@ -17,9 +17,9 @@ use crate::{
     diagnostics::ProxyConfiguration,
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
-        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
-        UserAgentSuffix, WorkloadId,
+        parse_duration_millis_from_env, parse_u32_from_env, ConnectionPoolOptions, CorrelationId,
+        DriverOptions, OperationOptions, ThroughputControlGroupOptions,
+        ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -530,9 +530,8 @@ impl CosmosDriverRuntimeBuilder {
     ///
     /// If not set, the value is read from the
     /// `AZURE_COSMOS_BACKTRACE_CAPTURE_PER_MINUTE` environment variable. If
-    /// the environment variable is also absent, the default of
-    /// [`DEFAULT_BACKTRACE_CAPTURES_PER_MINUTE`](crate::error::DEFAULT_BACKTRACE_CAPTURES_PER_MINUTE)
-    /// (100) is used.
+    /// the environment variable is also absent, the default of `100`
+    /// captures / minute is used.
     ///
     /// Set to `0` to disable backtrace capture entirely.
     pub fn with_max_error_backtraces_per_minute(mut self, max_per_minute: u32) -> Self {
@@ -805,11 +804,17 @@ impl CosmosDriverRuntimeBuilder {
         let vm_metadata = VmMetadataService::get_or_init().await;
 
         // Apply backtrace-capture configuration. The limiter is process-global;
-        // an explicit builder value wins over any env-var or previously-set
-        // capacity, so the most recently built runtime defines the policy.
-        if let Some(capacity) = self.max_error_backtraces_per_minute {
-            crate::error::capture_limiter().set_capacity(capacity);
-        }
+        // resolution order is: explicit builder value > env-var fallback >
+        // documented default. The most recently built runtime defines the
+        // policy.
+        let backtrace_capacity = parse_u32_from_env(
+            self.max_error_backtraces_per_minute,
+            crate::error::BACKTRACE_CAPTURES_PER_MINUTE_ENV,
+            crate::error::DEFAULT_BACKTRACE_CAPTURES_PER_MINUTE,
+            0,
+            u32::MAX,
+        )?;
+        crate::error::capture_limiter().set_capacity(backtrace_capacity);
         if let Some(enabled) = self.capture_backtraces_for_service_errors {
             let limiter = crate::error::capture_limiter();
             limiter.set_kind_enabled(crate::error::Kind::Service, enabled);

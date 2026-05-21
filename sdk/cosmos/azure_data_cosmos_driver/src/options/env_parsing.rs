@@ -183,6 +183,23 @@ pub(crate) fn parse_duration_millis_from_env(
     Ok(value)
 }
 
+/// Parses a `u32` from an environment variable with validation. Builder value
+/// wins; env var is the fallback; `default` is used when neither is present.
+pub(crate) fn parse_u32_from_env(
+    builder_value: Option<u32>,
+    env_var_name: &str,
+    default: u32,
+    min: u32,
+    max: u32,
+) -> azure_core::Result<u32> {
+    parse_from_env(
+        builder_value,
+        env_var_name,
+        default,
+        ValidationBounds::range(min, max),
+    )
+}
+
 /// Validates a duration value against min/max bounds (in milliseconds).
 ///
 /// Comparisons use `u128` to avoid silent truncation since
