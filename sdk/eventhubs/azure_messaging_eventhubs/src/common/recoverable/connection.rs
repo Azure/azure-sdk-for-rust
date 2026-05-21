@@ -782,6 +782,16 @@ impl RecoverableConnection {
                     ErrorRecoveryAction::ReturnError
                 }
             }
+            AmqpErrorKind::AzureCore(_) => {
+                // The ensure_* callsites in the per-operation wrappers (sender, CBS,
+                // management) re-wrap inner AmqpError values through
+                // `azure_core::Error::with_error`, producing
+                // `AzureCore(azure_core::Error { source: original AmqpError })`.
+                // If we don't walk the source chain we'd classify those as
+                // ReturnError and lose the ability to recover transport-level failures
+                // that round-trip through this wrapping pattern.
+                Self::classify_azure_core_chain(amqp_error)
+            }
             _ => {
                 debug!(err=?amqp_error, "Other AMQP error: {amqp_error}");
                 ErrorRecoveryAction::ReturnError
@@ -803,6 +813,35 @@ impl RecoverableConnection {
             }
         }
         Self::should_retry_amqp_error(amqp_error)
+    }
+
+    /// Walks the [`std::error::Error::source`] chain looking for a wrapped [`AmqpError`]
+    /// whose kind is something other than [`AmqpErrorKind::AzureCore`], and classifies
+    /// that. Falls back to `ReturnError` if no recoverable inner kind is found.
+    ///
+    /// A bounded loop guards against pathological self-referential chains.
+    fn classify_azure_core_chain(amqp_error: &AmqpError) -> ErrorRecoveryAction {
+        use std::error::Error as _;
+        const MAX_DEPTH: usize = 16;
+        let mut cause: Option<&(dyn std::error::Error + 'static)> = amqp_error.source();
+        for _ in 0..MAX_DEPTH {
+            let Some(c) = cause else { break };
+            if let Some(amqp) = c.downcast_ref::<AmqpError>() {
+                if !matches!(amqp.kind(), AmqpErrorKind::AzureCore(_)) {
+                    debug!(
+                        err=?amqp_error,
+                        "Unwrapped AzureCore chain to inner AmqpError: {amqp}"
+                    );
+                    return Self::should_retry_amqp_error(amqp);
+                }
+            }
+            cause = c.source();
+        }
+        debug!(
+            err=?amqp_error,
+            "AzureCore-wrapped error with no recoverable inner kind: {amqp_error}"
+        );
+        ErrorRecoveryAction::ReturnError
     }
 }
 
@@ -1056,6 +1095,79 @@ mod tests {
         assert_eq!(
             RecoverableConnection::should_retry_amqp_error(&err),
             ErrorRecoveryAction::ReconnectLink
+        );
+    }
+
+    #[test]
+    fn azure_core_wrapped_errors_unwrap_to_inner_kind() {
+        // The per-operation wrappers in sender.rs / claims_based_security.rs /
+        // management.rs all wrap an inner AmqpError via
+        // `AmqpError::from(azure_core::Error::with_error(AzureErrorKind::Other, e, "..."))`.
+        // Before this test we'd classify the outer error as ReturnError via the
+        // catch-all, silently turning a recoverable transport failure into a
+        // non-retriable one. should_retry_amqp_error must walk the source chain
+        // and honour the inner kind's classification.
+        use azure_core::error::ErrorKind as AzureErrorKind;
+
+        // AzureCore(... ConnectionDropped ...) -> ReconnectConnection
+        let inner = AmqpError::from(AmqpErrorKind::ConnectionDropped(Box::new(
+            std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "dropped"),
+        )));
+        let wrapped = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            inner,
+            "ensure_sender failed",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&wrapped),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // AzureCore(... LinkClosedByRemote ...) -> ReconnectLink
+        let inner = AmqpError::from(AmqpErrorKind::LinkClosedByRemote(Box::new(
+            std::io::Error::other("link closed"),
+        )));
+        let wrapped = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            inner,
+            "ensure_amqp_cbs failed",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&wrapped),
+            ErrorRecoveryAction::ReconnectLink
+        );
+
+        // Nested wrapping: AzureCore(... AzureCore(... ConnectionDropped ...) ...).
+        // The recovery path can re-wrap (e.g. ensure_connection inside
+        // ensure_management_client). The chain walk must keep descending.
+        let innermost = AmqpError::from(AmqpErrorKind::ConnectionDropped(Box::new(
+            std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "dropped"),
+        )));
+        let mid = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            innermost,
+            "ensure_connection failed",
+        ));
+        let outer = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            mid,
+            "create_management_client failed",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&outer),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // AzureCore wrapping something that isn't an AmqpError -> ReturnError.
+        // (No recoverable inner kind to honour; preserve the catch-all default.)
+        let wrapped = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            std::io::Error::other("non-AMQP failure"),
+            "unrelated error path",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&wrapped),
+            ErrorRecoveryAction::ReturnError
         );
     }
 
