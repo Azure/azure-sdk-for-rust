@@ -14,7 +14,7 @@
 //!
 //! ```rust,no_run
 //! # use azure_data_cosmos::clients::ContainerClient;
-//! # async fn example(container: ContainerClient) -> crate::Result<()> {
+//! # async fn example(container: ContainerClient) -> azure_data_cosmos::Result<()> {
 //! // Get physical partition feed ranges
 //! let ranges = container.read_feed_ranges(None).await?;
 //! println!("Container has {} physical partitions", ranges.len());
