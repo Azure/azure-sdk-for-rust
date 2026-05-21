@@ -9,7 +9,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
-use azure_data_cosmos::regions::RegionName;
+use azure_data_cosmos::regions::Region;
 use azure_data_cosmos::{
     clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},
@@ -53,50 +53,59 @@ impl tracing::field::Visit for StringVisitor {
     }
 }
 
-/// Finds log lines containing the expected operation and returns them
-fn find_upsert_document_logs(logs: &[String]) -> Vec<String> {
+/// Finds log lines from the driver's operation pipeline containing routing decisions.
+///
+/// The driver emits `tracing::debug!(routing_decision = %routing, "routing decision made")`
+/// which includes the resolved region and endpoint URL.
+fn find_upsert_routing_logs(logs: &[String]) -> Vec<String> {
     logs.iter()
         .filter(|line| {
-            line.contains("azure_data_cosmos::retry_handler")
-                && line.contains("Upsert")
-                && line.contains("Document")
+            line.contains("azure_data_cosmos_driver") && line.contains("routing decision made")
         })
         .cloned()
         .collect()
 }
 
 // Helper to avoid duplicating the same application region setup.
-fn options_with_application_region(region: RegionName) -> TestOptions {
+fn options_with_application_region(region: Region) -> TestOptions {
     TestOptions::new().with_client_application_region(region)
 }
 
-async fn create_container_and_write_item(
-    db_client: &DatabaseClient,
-    run_context: &TestRunContext,
-    container_id: &str,
-    _expected_region: &str,
-) -> Result<(), Box<dyn Error>> {
-    let properties = ContainerProperties::new(Cow::Owned(String::from(container_id)), "/id".into());
+fn create_container_and_write_item<'a>(
+    db_client: &'a DatabaseClient,
+    run_context: &'a TestRunContext,
+    container_id: &'a str,
+    _expected_region: &'a str,
+) -> futures::future::BoxFuture<'a, Result<(), Box<dyn Error>>> {
+    Box::pin(async move {
+        let properties =
+            ContainerProperties::new(Cow::Owned(String::from(container_id)), "/id".into());
 
-    let throughput = ThroughputProperties::manual(400);
+        let throughput = ThroughputProperties::manual(400);
 
-    let container_client = run_context
-        .create_container_with_throughput(&db_client, properties, throughput)
-        .await?;
+        let container_client = run_context
+            .create_container_with_throughput(db_client, properties, throughput)
+            .await?;
 
-    // This upsert operation should be logged by the retry_handler
-    container_client
-        .upsert_item(
-            "item1",
-            &serde_json::json!({"id": "item1", "value": "test"}),
-            None,
-        )
-        .await?;
+        // This upsert operation triggers a routing decision log in the driver
+        container_client
+            .upsert_item(
+                "item1",
+                "item1",
+                &serde_json::json!({"id": "item1", "value": "test"}),
+                None,
+            )
+            .await?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // Create a buffer to capture log messages
     let log_buffer: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
@@ -135,7 +144,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // Check that the upsert went to the hub region
     {
         let logs = log_buffer.lock().unwrap();
-        let upsert_logs = find_upsert_document_logs(&logs);
+        let upsert_logs = find_upsert_routing_logs(&logs);
         println!("Hub region upsert logs: {:?}", upsert_logs);
 
         assert!(
@@ -177,7 +186,7 @@ pub async fn multi_write_preferred_locations() -> Result<(), Box<dyn Error>> {
     // Check that the upsert went to the satellite region
     {
         let logs = log_buffer.lock().unwrap();
-        let upsert_logs = find_upsert_document_logs(&logs);
+        let upsert_logs = find_upsert_routing_logs(&logs);
         println!("Satellite region upsert logs: {:?}", upsert_logs);
 
         assert!(

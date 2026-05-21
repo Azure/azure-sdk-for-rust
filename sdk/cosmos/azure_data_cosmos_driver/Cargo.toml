@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos_driver"
-version = "0.1.0"
+version = "0.3.0"
 description = "Core implementation layer for Azure Cosmos DB - provides transport, routing, and protocol handling for cross-language SDK reuse"
 readme = "README.md"
 authors.workspace = true
@@ -12,33 +12,92 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos_driver"
 keywords = ["sdk", "internal"]
 categories = ["api-bindings"]
-publish = false # Internal implementation layer, not yet ready for crates.io
+
 
 [dependencies]
+arc-swap.workspace = true
 async-lock.workspace = true
 async-trait.workspace = true
-azure_core = { workspace = true, features = [
-  "reqwest_rustls",
+azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
+azure_data_cosmos_macros.workspace = true
 base64.workspace = true
+bytes.workspace = true
+crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
-reqwest = { workspace = true, features = ["rustls"] }
+h2 = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
+time = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true
 url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
+percent-encoding = { workspace = true, optional = true }
 
 [dev-dependencies]
 azure_identity.workspace = true
+quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
-tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+tokio = { workspace = true, features = [
+  "rt-multi-thread",
+  "macros",
+  "time",
+  "test-util",
+] }
+tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+  "Win32_Foundation",
+  "Win32_System_Threading",
+  "Win32_System_SystemInformation",
+] }
 
 [lints]
 workspace = true
 
 
 [features]
-default = []
+default = ["tokio", "rustls"]
+tokio = ["dep:tokio"]
+reqwest = [
+  "dep:h2",
+  "dep:reqwest",
+  "reqwest/http2",
+  "azure_core/reqwest",
+  "azure_core/tokio",
+  "tokio",
+]
+rustls = ["reqwest", "reqwest/rustls", "__tls"]
+native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
+fault_injection = ["dep:rand"]
+# `__internal_in_memory_emulator` exposes the in-memory query evaluator
+# (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB
+# emulator. The evaluator intentionally trades full Cosmos parity for emulator
+# usability (see `docs/IN_MEMORY_EMULATOR_SPEC.md` and the doc comments on the
+# `eval` module). Production code MUST NOT enable this feature; it is not
+# covered by SemVer and may change or disappear at any time.
+__internal_in_memory_emulator = ["dep:tokio", "dep:time", "dep:percent-encoding"]
+__internal_mocking = []
+# Enables test-only DiagnosticsContext construction used by SDK unit tests. NOT a stable API.
+__internal_test_diagnostics_construction = []
+# `__internal_testing` exposes a small, intentionally-unstable surface
+# (`CosmosOperation::query_plan` and `query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES`,
+# plus `query::__test_only_generate_query_plan_for_pk_paths`) for cross-crate
+# gateway-comparison tests. Production code MUST NOT enable this feature; it is
+# not covered by SemVer and may change or disappear at any time.
+__internal_testing = []
+__tls = []
+
+[package.metadata.docs.rs]
+features = [
+  "fault_injection",
+  "native_tls",
+  "rustls",
+  "tokio",
+]

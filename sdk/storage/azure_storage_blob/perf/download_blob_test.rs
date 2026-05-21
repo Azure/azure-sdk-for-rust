@@ -88,7 +88,7 @@ impl DownloadBlobTest {
                     name: "collect",
                     display_message: "Collect the blob contents instead of streaming them",
                     mandatory: false,
-                    short_activator: Some('l'),
+                    short_activator: None,
                     long_activator: "collect",
                     expected_args_len: 1,
                     option_type: PerfTestOptionKind::String,

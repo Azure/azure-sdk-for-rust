@@ -3,11 +3,13 @@
 
 //! Driver test client for emulator-based E2E tests.
 
+#[cfg(feature = "fault_injection")]
+use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 use azure_data_cosmos_driver::{
     diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
     driver::CosmosDriverRuntime,
     models::{
-        AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResult,
+        AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
@@ -22,8 +24,59 @@ use super::env::{
 
 /// A test client that provides access to a Cosmos DB driver for testing.
 pub struct DriverTestClient {
-    runtime: CosmosDriverRuntime,
+    runtime: Arc<CosmosDriverRuntime>,
     account: AccountReference,
+}
+
+/// Resolved test environment containing account and connection pool configuration.
+pub struct TestEnv {
+    pub account: AccountReference,
+    pub connection_pool: ConnectionPoolOptions,
+}
+
+/// Resolves the test environment from environment variables.
+///
+/// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
+pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
+    let _ = tracing_subscriber::fmt::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .try_init();
+
+    let test_mode = get_test_mode();
+    if test_mode == CosmosTestMode::Skipped {
+        return Ok(None);
+    }
+
+    let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
+        Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
+        Ok(val) => val,
+        Err(_) => {
+            if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                panic!(
+                    "{} is not set but test mode is required",
+                    CONNECTION_STRING_ENV_VAR
+                );
+            }
+            return Ok(None);
+        }
+    };
+
+    let conn_str: ConnectionString = connection_string.parse()?;
+    let endpoint = conn_str.account_endpoint().parse()?;
+    let key = conn_str.account_key().secret().to_string();
+    let account = AccountReference::with_master_key(endpoint, key);
+
+    let mut connection_pool_builder = ConnectionPoolOptions::builder();
+    if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
+        connection_pool_builder = connection_pool_builder
+            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled);
+    }
+    let connection_pool = connection_pool_builder.build()?;
+
+    Ok(Some(TestEnv {
+        account,
+        connection_pool,
+    }))
 }
 
 impl DriverTestClient {
@@ -37,48 +90,43 @@ impl DriverTestClient {
     /// - The environment variable is not set and test mode is not "required"
     /// - The test mode is "skipped"
     pub async fn from_env() -> Result<Option<Self>, Box<dyn Error>> {
-        let test_mode = get_test_mode();
-
-        if test_mode == CosmosTestMode::Skipped {
+        let Some(env) = resolve_test_env()? else {
             return Ok(None);
-        }
-
-        let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
-            Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
-            Ok(val) => val,
-            Err(_) => {
-                if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
-                    panic!(
-                        "{} is not set but test mode is required",
-                        CONNECTION_STRING_ENV_VAR
-                    );
-                }
-                return Ok(None);
-            }
         };
 
-        let conn_str: ConnectionString = connection_string.parse()?;
-        let endpoint = conn_str.account_endpoint().parse()?;
-        let key = conn_str.account_key().secret().to_string();
-        let account = AccountReference::with_master_key(endpoint, key);
-
-        // Build runtime with emulator certificate handling
-        let connection_pool_builder = ConnectionPoolOptions::builder();
-
-        if (connection_string.to_lowercase() == EMULATOR_CONNECTION_STRING) {
-            connection_pool_builder.with_emulator_server_cert_validation(
-                EmulatorServerCertValidation::DANGEROUS_DISABLED,
-            )
-        }
-
-        let connection_pool = connection_pool_builder.build()?;
-
         let runtime = CosmosDriverRuntime::builder()
-            .with_connection_pool(connection_pool)
+            .with_connection_pool(env.connection_pool)
             .build()
             .await?;
 
-        Ok(Some(Self { runtime, account }))
+        Ok(Some(Self {
+            runtime,
+            account: env.account,
+        }))
+    }
+
+    /// Creates a new test client from environment variables with fault injection rules.
+    ///
+    /// Behaves like [`from_env`](Self::from_env) but configures the runtime with fault injection
+    /// rules that will intercept matching operations.
+    #[cfg(feature = "fault_injection")]
+    pub async fn from_env_with_fault_injection(
+        rules: Vec<Arc<FaultInjectionRule>>,
+    ) -> Result<Option<Self>, Box<dyn Error>> {
+        let Some(env) = resolve_test_env()? else {
+            return Ok(None);
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .with_fault_injection_rules(rules)?
+            .build()
+            .await?;
+
+        Ok(Some(Self {
+            runtime,
+            account: env.account,
+        }))
     }
 
     /// Runs a test with access to a driver and run context.
@@ -96,6 +144,93 @@ impl DriverTestClient {
 
         let run_context = DriverTestRunContext::new(client);
         f(run_context).await
+    }
+
+    /// Runs a test with fault injection rules and access to a driver and run context.
+    ///
+    /// The test will be skipped if the environment is not configured.
+    #[cfg(feature = "fault_injection")]
+    pub async fn run_with_fault_injection<F, Fut>(
+        rules: Vec<Arc<FaultInjectionRule>>,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(client) = Self::from_env_with_fault_injection(rules).await? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let run_context = DriverTestRunContext::new(client);
+        f(run_context).await
+    }
+
+    /// Runs a test with fault injection rules and a unique database that will be cleaned up
+    /// after the test.
+    #[cfg(feature = "fault_injection")]
+    pub async fn run_with_unique_db_and_fault_injection<F, Fut>(
+        rules: Vec<Arc<FaultInjectionRule>>,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        Self::run_with_fault_injection(rules, async |context| {
+            let db_name = context.unique_database_name();
+            let db_ref = context.create_database(&db_name).await?;
+
+            let result = f(context.clone(), db_ref.clone()).await;
+
+            // Cleanup (best effort)
+            let _ = context.delete_database(&db_ref).await;
+
+            result
+        })
+        .await
+    }
+
+    /// Like [`run_with_unique_db_and_fault_injection`](Self::run_with_unique_db_and_fault_injection)
+    /// but also applies the given [`OperationOptions`] to the driver runtime.
+    #[cfg(feature = "fault_injection")]
+    pub async fn run_with_unique_db_and_fault_injection_options<F, Fut>(
+        rules: Vec<Arc<FaultInjectionRule>>,
+        operation_options: OperationOptions,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(env) = resolve_test_env()? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .with_fault_injection_rules(rules)?
+            .with_operation_options(operation_options)
+            .build()
+            .await?;
+
+        let client = Self {
+            runtime,
+            account: env.account,
+        };
+        let context = DriverTestRunContext::new(client);
+
+        let db_name = context.unique_database_name();
+        let db_ref = context.create_database(&db_name).await?;
+
+        let result = f(context.clone(), db_ref.clone()).await;
+
+        // Cleanup (best effort)
+        let _ = context.delete_database(&db_ref).await;
+
+        result
     }
 
     /// Runs a test with a unique database that will be cleaned up after the test.
@@ -134,12 +269,6 @@ impl DriverTestRunContext {
             run_id: Uuid::new_v4().to_string()[..8].to_string(),
         }
     }
-
-    /// Returns the account reference for this context.
-    pub fn account(&self) -> &AccountReference {
-        &self.client.account
-    }
-
     /// Generates a unique database name for this test run.
     pub fn unique_database_name(&self) -> String {
         format!("test-db-{}", self.run_id)
@@ -167,11 +296,12 @@ impl DriverTestRunContext {
             .with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to create database, status: {:?}", status).into());
         }
@@ -196,11 +326,12 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::delete_database(database.clone());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (204 No Content)
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to delete database, status: {:?}", status).into());
         }
@@ -215,43 +346,85 @@ impl DriverTestRunContext {
         container_name: &str,
         partition_key_path: &str,
     ) -> Result<ContainerReference, Box<dyn Error>> {
+        self.create_container_with_pk_paths(database, container_name, &[partition_key_path])
+            .await
+    }
+
+    /// Creates a container with one or more partition-key paths.
+    ///
+    /// Pass a single-element slice for a flat partition key (sets `kind`
+    /// to `Hash`), or multiple paths for a hierarchical partition key
+    /// (sets `kind` to `MultiHash`). Mirrors the `paths` array in the
+    /// [PartitionKey definition][pk-spec], with the `kind` derived from
+    /// the number of paths.
+    ///
+    /// [pk-spec]: https://learn.microsoft.com/en-us/rest/api/cosmos-db/create-a-collection
+    pub async fn create_container_with_pk_paths(
+        &self,
+        database: &DatabaseReference,
+        container_name: &str,
+        partition_key_paths: &[&str],
+    ) -> Result<ContainerReference, Box<dyn Error>> {
+        assert!(
+            !partition_key_paths.is_empty(),
+            "container requires at least one partition-key path"
+        );
         let driver = self
             .client
             .runtime
             .get_or_create_driver(self.client.account.clone(), None)
             .await?;
 
+        let paths_json = partition_key_paths
+            .iter()
+            .map(|p| format!("\"{}\"", p))
+            .collect::<Vec<_>>()
+            .join(",");
+        let kind = if partition_key_paths.len() == 1 {
+            "Hash"
+        } else {
+            "MultiHash"
+        };
         let body = format!(
-            r#"{{"id": "{}", "partitionKey": {{"paths": ["{}"], "kind": "Hash", "version": 2}}}}"#,
-            container_name, partition_key_path
+            r#"{{"id": "{}", "partitionKey": {{"paths": [{}], "kind": "{}", "version": 2}}}}"#,
+            container_name, paths_json, kind
         );
         let operation =
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
-        let status = result.diagnostics().status();
+        let diagnostics = result.diagnostics();
+        let status = diagnostics.status();
         if !status.map(|s| s.is_success()).unwrap_or(false) {
             return Err(format!("Failed to create container, status: {:?}", status).into());
         }
-
-        Ok(ContainerReference::from_database(
-            database,
-            container_name.to_string(),
-        ))
+        let db_name = database
+            .name()
+            .ok_or_else(|| "database reference must be name-based".to_string())?;
+        let container = driver
+            .resolve_container_by_name(db_name, container_name)
+            .await?;
+        Ok(container)
     }
 
     /// Creates an item using the driver.
+    ///
+    /// The `item_id` is used to build the [`ItemReference`]. For `Create`
+    /// operations the item ID is part of the body JSON, not the URL path
+    /// (Cosmos POSTs to the collection feed), so the value of `item_id`
+    /// here is used only for PK-range routing and does not need to match the
+    /// body's `"id"` field exactly.
     pub async fn create_item(
         &self,
         container: &ContainerReference,
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
         body: &[u8],
-    ) -> Result<CosmosResult, Box<dyn Error>> {
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime
@@ -259,14 +432,30 @@ impl DriverTestRunContext {
             .await?;
 
         let pk = partition_key.into();
-        let item = ItemReference::from_name(container, pk, item_id.to_owned());
-        let operation = CosmosOperation::create_item(item).with_body(body.to_vec());
+        let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
+        let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)
+    }
+
+    /// Creates an item by partition key only (item id is embedded in `body`).
+    ///
+    /// Convenience overload for tests that include the item id inside the JSON
+    /// body and do not want to pass it separately. Uses `"_"` as the routing
+    /// item-id placeholder, which is acceptable because `Create` operations
+    /// route to the collection feed URL and do not include the item id in the
+    /// path.
+    pub async fn create_item_with_pk(
+        &self,
+        container: &ContainerReference,
+        partition_key: impl Into<PartitionKey>,
+        body: &[u8],
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        self.create_item(container, "_", partition_key, body).await
     }
 
     /// Reads an item using the driver.
@@ -275,7 +464,7 @@ impl DriverTestRunContext {
         container: &ContainerReference,
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
-    ) -> Result<CosmosResult, Box<dyn Error>> {
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime
@@ -287,7 +476,48 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_operation(operation, OperationOptions::new())
+            .execute_operation(operation, OperationOptions::default())
+            .await?;
+
+        Ok(result)
+    }
+
+    /// Patches an item using the driver's `OperationType::Patch` RMW loop.
+    ///
+    /// Mirrors [`read_item`](Self::read_item)'s shape but builds the
+    /// [`CosmosOperation::patch_item`] body from a
+    /// [`PatchSpec`](azure_data_cosmos_driver::models::PatchSpec). The
+    /// returned [`CosmosResponse`] is the synthetic response produced by the
+    /// patch handler — its body is the locally-merged post-image and its
+    /// status/diagnostics are inherited from the underlying conditional
+    /// `Replace`.
+    ///
+    /// If `max_attempts` is `None`, the handler uses
+    /// `DEFAULT_PATCH_MAX_ATTEMPTS` (5).
+    pub async fn patch_item(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        patch: &azure_data_cosmos_driver::models::PatchSpec,
+        max_attempts: Option<std::num::NonZeroU8>,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        let driver = self
+            .client
+            .runtime
+            .get_or_create_driver(self.client.account.clone(), None)
+            .await?;
+
+        let pk = partition_key.into();
+        let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
+        let body = serde_json::to_vec(patch)?;
+        let mut operation = CosmosOperation::patch_item(item_ref).with_body(body);
+        if let Some(n) = max_attempts {
+            operation = operation.with_patch_max_attempts(n);
+        }
+
+        let result = driver
+            .execute_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)
@@ -300,10 +530,10 @@ impl DriverTestRunContext {
         expected_status: u16,
     ) {
         // Check status code
-        let status = diagnostics.status_code();
+        let status = diagnostics.status();
         assert!(status.is_some(), "Diagnostics should have a status code");
         assert_eq!(
-            u16::from(status.unwrap()),
+            u16::from(status.unwrap().status_code()),
             expected_status,
             "Status code should match expected"
         );
@@ -345,34 +575,6 @@ impl DriverTestRunContext {
         assert!(
             first_request.request_charge().value() >= 0.0,
             "Request charge should be non-negative"
-        );
-    }
-
-    /// Validates diagnostics for a successful control plane operation.
-    pub fn validate_control_plane_diagnostics(
-        &self,
-        diagnostics: &DiagnosticsContext,
-        expected_status: u16,
-    ) {
-        // Check status code
-        let status = diagnostics.status_code();
-        assert!(status.is_some(), "Diagnostics should have a status code");
-        assert_eq!(
-            u16::from(status.unwrap()),
-            expected_status,
-            "Status code should match expected"
-        );
-
-        // Check requests
-        let requests = diagnostics.requests();
-        assert!(!requests.is_empty(), "Should have at least one request");
-
-        // Check first request has correct pipeline type
-        let first_request = &requests[0];
-        assert_eq!(
-            first_request.pipeline_type(),
-            PipelineType::Metadata,
-            "Should use metadata pipeline for control plane operations"
         );
     }
 }

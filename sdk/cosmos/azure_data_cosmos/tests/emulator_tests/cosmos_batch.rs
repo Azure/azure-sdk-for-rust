@@ -11,6 +11,7 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::BatchOptions;
 use azure_data_cosmos::TransactionalBatch;
+use azure_data_cosmos::{ContentResponseOnWrite, OperationOptions};
 use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
@@ -34,12 +35,16 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
             None,
         )
         .await?;
-    let container_client = db_client.container_client(&container_id).await;
+    let container_client = db_client.container_client(&container_id).await?;
 
     Ok(container_client)
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -66,7 +71,9 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
                 .create_item(&item2)?
                 .read_item("item1", None);
 
-            let options = BatchOptions::default().with_content_response_on_write_enabled(true);
+            let mut operation = OperationOptions::default();
+            operation.content_response_on_write = Some(ContentResponseOnWrite::Enabled);
+            let options = BatchOptions::default().with_operation_options(operation);
 
             let response = container_client
                 .execute_transactional_batch(batch, Some(options))
@@ -99,6 +106,10 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -121,10 +132,10 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
             };
 
             container_client
-                .create_item(&partition_key, &item1, None)
+                .create_item(&partition_key, &item1.id, &item1, None)
                 .await?;
             container_client
-                .create_item(&partition_key, &item2, None)
+                .create_item(&partition_key, &item2.id, &item2, None)
                 .await?;
 
             // Now execute a batch with mixed operations
@@ -162,7 +173,7 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
                 .map(|r| r.status_code())
                 .collect();
             assert!(
-                status_codes.iter().all(|&c| c >= 200 && c < 300),
+                status_codes.iter().all(|&c| (200..300).contains(&c)),
                 "Expected all success status codes, got: {:?}",
                 status_codes
             );
@@ -176,6 +187,10 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -191,7 +206,7 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
             };
 
             container_client
-                .create_item(&partition_key, &item1, None)
+                .create_item(&partition_key, &item1.id, &item1, None)
                 .await?;
 
             // Try to create a batch that will fail (trying to delete a non-existent item)
@@ -232,6 +247,10 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -274,6 +293,10 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
 }
 
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
 pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {

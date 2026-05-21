@@ -1,0 +1,37 @@
+name: cosmos-read-item-native-tls
+metadata:
+  template: cosmos-read-item-native-tls@0.1.0
+infra:
+  provider: bicep
+  path: infra
+  module: main
+hooks:
+  # cspell:ignore postprovision
+  postprovision:
+    posix:
+      shell: sh
+      run: |
+        echo "Inserting sample item into container 'SampleContainer'..."
+        az cosmosdb sql container create \
+          --account-name "$AZURE_COSMOS_ACCOUNT_NAME" \
+          --resource-group "$AZURE_RESOURCE_GROUP" \
+          --database-name "SampleDB" \
+          --name "SampleContainer" \
+          --partition-key-path "/partitionKey" \
+          2>/dev/null || true
+        # Use the REST data-plane to insert an item via az rest (requires RBAC).
+        echo '{"id":"1","partitionKey":"sample-partition","message":"Hello from native-tls!"}' | \
+          az cosmosdb sql container invoke-stored-procedure 2>/dev/null || true
+        echo "Done."
+    windows:
+      shell: pwsh
+      run: |
+        Write-Host "Inserting sample item into container 'SampleContainer'..."
+        az cosmosdb sql container create `
+          --account-name "${env:AZURE_COSMOS_ACCOUNT_NAME}" `
+          --resource-group "${env:AZURE_RESOURCE_GROUP}" `
+          --database-name "SampleDB" `
+          --name "SampleContainer" `
+          --partition-key-path "/partitionKey" `
+          2>$null
+        Write-Host "Done."

@@ -26,6 +26,14 @@ impl AccountEndpoint {
         &self.0
     }
 
+    /// Returns the host portion of the endpoint URL.
+    ///
+    /// Returns an empty string if the URL has no host (which shouldn't
+    /// happen for valid Cosmos DB endpoints).
+    pub(crate) fn host(&self) -> &str {
+        self.0.host_str().unwrap_or("")
+    }
+
     /// Joins a resource path to this endpoint to create a full request URL.
     ///
     /// The path should be the resource path (e.g., "/dbs/mydb/colls/mycoll").
@@ -53,6 +61,12 @@ impl PartialEq for AccountEndpoint {
 
 impl Eq for AccountEndpoint {}
 
+impl std::fmt::Display for AccountEndpoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0.as_str())
+    }
+}
+
 impl Hash for AccountEndpoint {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.0.hash(state);
@@ -76,6 +90,15 @@ impl TryFrom<&str> for AccountEndpoint {
 impl From<&AccountReference> for AccountEndpoint {
     fn from(account: &AccountReference) -> Self {
         account.endpoint.clone()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for AccountEndpoint {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        Url::parse(&s)
+            .map(Self::new)
+            .map_err(serde::de::Error::custom)
     }
 }
 
@@ -143,11 +166,16 @@ pub struct AccountReference {
     /// The service endpoint URL (required).
     endpoint: AccountEndpoint,
     /// Authentication credentials (required).
-    auth: Credential,
+    credential: Credential,
+    /// Fallback endpoints tried when the primary endpoint is unavailable.
+    backup_endpoints: Vec<Url>,
 }
 
 // Manual PartialEq implementation because Credential contains Arc<dyn TokenCredential>
-// which doesn't implement PartialEq. We compare by endpoint only.
+// which doesn't implement PartialEq. We compare by endpoint only — credential and
+// backup_endpoints are intentionally excluded. Backup endpoints are a bootstrap
+// configuration concern, not an identity concern: the same account should reuse
+// its driver regardless of how it was bootstrapped.
 impl PartialEq for AccountReference {
     fn eq(&self, other: &Self) -> bool {
         self.endpoint == other.endpoint
@@ -177,7 +205,8 @@ impl AccountReference {
     pub fn with_master_key(endpoint: Url, key: impl Into<Secret>) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: Credential::MasterKey(key.into()),
+            credential: Credential::MasterKey(key.into()),
+            backup_endpoints: Vec::new(),
         }
     }
 
@@ -187,7 +216,8 @@ impl AccountReference {
     pub fn with_credential(endpoint: Url, credential: Arc<dyn TokenCredential>) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: Credential::TokenCredential(credential),
+            credential: Credential::TokenCredential(credential),
+            backup_endpoints: Vec::new(),
         }
     }
 
@@ -200,7 +230,25 @@ impl AccountReference {
     ///
     /// Authentication is always present - it's required during construction.
     pub fn auth(&self) -> &Credential {
-        &self.auth
+        &self.credential
+    }
+
+    /// Returns the backup endpoints.
+    ///
+    /// These are fallback endpoints tried when the primary endpoint is unavailable.
+    pub fn backup_endpoints(&self) -> &[Url] {
+        &self.backup_endpoints
+    }
+
+    /// Returns a new `AccountReference` with the given backup endpoints.
+    ///
+    /// This is a post-construction transformation for use when the account
+    /// was created via a convenience constructor (`with_master_key`,
+    /// `with_credential`) and backup endpoints need to be attached without
+    /// going through the full builder.
+    pub fn with_backup_endpoints(mut self, endpoints: Vec<Url>) -> Self {
+        self.backup_endpoints = endpoints;
+        self
     }
 }
 
@@ -225,7 +273,8 @@ impl AccountReference {
 #[non_exhaustive]
 pub struct AccountReferenceBuilder {
     endpoint: AccountEndpoint,
-    auth: Option<Credential>,
+    credential: Option<Credential>,
+    backup_endpoints: Vec<Url>,
 }
 
 impl AccountReferenceBuilder {
@@ -233,7 +282,8 @@ impl AccountReferenceBuilder {
     pub fn new(endpoint: Url) -> Self {
         Self {
             endpoint: AccountEndpoint::from(endpoint),
-            auth: None,
+            credential: None,
+            backup_endpoints: Vec::new(),
         }
     }
 
@@ -245,19 +295,25 @@ impl AccountReferenceBuilder {
 
     /// Sets master key authentication.
     pub fn master_key(mut self, key: impl Into<Secret>) -> Self {
-        self.auth = Some(Credential::MasterKey(key.into()));
+        self.credential = Some(Credential::MasterKey(key.into()));
         self
     }
 
     /// Sets token credential authentication.
     pub fn credential(mut self, credential: Arc<dyn TokenCredential>) -> Self {
-        self.auth = Some(Credential::TokenCredential(credential));
+        self.credential = Some(Credential::TokenCredential(credential));
         self
     }
 
     /// Sets authentication options directly.
-    pub fn auth(mut self, auth: Credential) -> Self {
-        self.auth = Some(auth);
+    pub fn auth(mut self, credential: Credential) -> Self {
+        self.credential = Some(credential);
+        self
+    }
+
+    /// Sets backup endpoints for fallback when the primary endpoint is unavailable.
+    pub fn with_backup_endpoints(mut self, endpoints: Vec<Url>) -> Self {
+        self.backup_endpoints = endpoints;
         self
     }
 
@@ -267,7 +323,7 @@ impl AccountReferenceBuilder {
     ///
     /// Returns an error if authentication has not been configured.
     pub fn build(self) -> azure_core::Result<AccountReference> {
-        let auth = self.auth.ok_or_else(|| {
+        let credential = self.credential.ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Credential,
                 "Authentication is required. Use master_key() or credential() to set credentials.",
@@ -276,7 +332,8 @@ impl AccountReferenceBuilder {
 
         Ok(AccountReference {
             endpoint: self.endpoint,
-            auth,
+            credential,
+            backup_endpoints: self.backup_endpoints,
         })
     }
 }
@@ -309,6 +366,13 @@ mod tests {
         let url = endpoint.join_path("");
         // Empty path is normalized to "/" by the URL library
         assert_eq!(url.path(), "/");
+    }
+
+    #[test]
+    fn account_endpoint_host() {
+        let endpoint =
+            AccountEndpoint::try_from("https://myaccount.documents.azure.com:443/").unwrap();
+        assert_eq!(endpoint.host(), "myaccount.documents.azure.com");
     }
 
     #[test]
@@ -364,6 +428,20 @@ mod tests {
     }
 
     #[test]
+    fn account_endpoint_deserialize_valid_url() {
+        let endpoint: AccountEndpoint =
+            serde_json::from_str(r#""https://myaccount.documents.azure.com:443/""#).unwrap();
+        assert_eq!(endpoint.host(), "myaccount.documents.azure.com");
+    }
+
+    #[test]
+    fn account_endpoint_deserialize_invalid_url() {
+        let result: serde_json::Result<AccountEndpoint> =
+            serde_json::from_str(r#""not a valid url""#);
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn account_reference_equality_ignores_auth() {
         let account1 = AccountReference::with_master_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
@@ -377,5 +455,41 @@ mod tests {
 
         // Same endpoint, different keys - should be equal
         assert_eq!(account1, account2);
+    }
+
+    #[test]
+    fn shorthand_has_empty_backup_endpoints() {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "key",
+        );
+        assert!(account.backup_endpoints().is_empty());
+    }
+
+    #[test]
+    fn builder_sets_backup_endpoints() {
+        let backup = vec![
+            Url::parse("https://backup1.documents.azure.com:443/").unwrap(),
+            Url::parse("https://backup2.documents.azure.com:443/").unwrap(),
+        ];
+        let account =
+            AccountReference::builder(Url::parse("https://test.documents.azure.com:443/").unwrap())
+                .master_key("key")
+                .with_backup_endpoints(backup.clone())
+                .build()
+                .unwrap();
+
+        assert_eq!(account.backup_endpoints(), &backup);
+    }
+
+    #[test]
+    fn builder_default_backup_endpoints_is_empty() {
+        let account =
+            AccountReference::builder(Url::parse("https://test.documents.azure.com:443/").unwrap())
+                .master_key("key")
+                .build()
+                .unwrap();
+
+        assert!(account.backup_endpoints().is_empty());
     }
 }
