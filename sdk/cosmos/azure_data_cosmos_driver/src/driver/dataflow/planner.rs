@@ -270,11 +270,9 @@ pub(crate) async fn build_sequential_drain(
         ));
     }
 
-    let root: Box<dyn PipelineNode> = if request_nodes.len() == 1 {
-        request_nodes.into_iter().next().unwrap()
-    } else {
-        Box::new(SequentialDrain::new(request_nodes))
-    };
+    // Even when there's only one request node, we still need to wrap it in a SequentialDrain
+    // so that the pipeline can react to splits by replacing the single Request with multiple Requests.
+    let root = Box::new(SequentialDrain::new(request_nodes));
 
     Ok(Pipeline::new(root))
 }
@@ -479,29 +477,6 @@ mod tests {
         }
     }
 
-    /// Asserts that the pipeline is a single `Request` targeting the expected EPK range.
-    fn assert_single_request(
-        pipeline: &Pipeline,
-        expected_min: &str,
-        expected_max: &str,
-        expected_pk_range_id: &str,
-    ) {
-        let request = pipeline
-            .root()
-            .downcast_ref::<Request>()
-            .expect("expected single Request root");
-        assert_eq!(
-            *request.target(),
-            RequestTarget::EffectivePartitionKeyRange {
-                range: FeedRange::new(
-                    EffectivePartitionKey::from(expected_min),
-                    EffectivePartitionKey::from(expected_max),
-                ),
-                partition_key_range_id: expected_pk_range_id.to_string(),
-            }
-        );
-    }
-
     /// Asserts that the pipeline is a `SequentialDrain` containing `Request` nodes
     /// targeting the given EPK ranges (in order).
     fn assert_drain_requests(pipeline: Pipeline, expected: &[(&str, &str, &str)]) {
@@ -586,7 +561,7 @@ mod tests {
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_single_request(&pipeline, "", "FF", "pkrange-0");
+        assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")]);
     }
 
     #[tokio::test]
@@ -695,7 +670,7 @@ mod tests {
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_single_request(&pipeline, "", "FF", "pkrange-wide");
+        assert_drain_requests(pipeline, &[("", "FF", "pkrange-wide")]);
     }
 
     #[tokio::test]
@@ -838,7 +813,7 @@ mod tests {
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_single_request(&pipeline, "", "FF", "pkrange-0");
+        assert_drain_requests(pipeline, &[("", "FF", "pkrange-0")]);
     }
 
     #[tokio::test]
