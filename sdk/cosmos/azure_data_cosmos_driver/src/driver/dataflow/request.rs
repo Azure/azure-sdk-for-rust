@@ -62,7 +62,8 @@ fn intersect_feed_ranges(left: &FeedRange, right: &FeedRange) -> Option<FeedRang
         right.max_exclusive().clone()
     };
 
-    (min < max).then(|| FeedRange::new(min, max))
+    // Panicking is acceptable here since we know that left and right should be valid ranges, and thus the intersection must be too.
+    (min < max).then(|| FeedRange::new(min, max).expect("we just computed valid range bounds"))
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -421,7 +422,8 @@ mod tests {
             range: FeedRange::new(
                 EffectivePartitionKey::from(min),
                 EffectivePartitionKey::from(max),
-            ),
+            )
+            .unwrap(),
         }
     }
 
@@ -528,7 +530,8 @@ mod tests {
             range: FeedRange::new(
                 EffectivePartitionKey::from(min),
                 EffectivePartitionKey::from(max),
-            ),
+            )
+            .unwrap(),
             partition_key_range_id: partition_key_range_id.to_string(),
         }
     }

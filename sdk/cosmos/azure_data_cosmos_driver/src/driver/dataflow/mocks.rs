@@ -219,7 +219,8 @@ pub(crate) fn epk_range_target() -> RequestTarget {
         range: FeedRange::new(
             EffectivePartitionKey::min(),
             EffectivePartitionKey::from("80"),
-        ),
+        )
+        .unwrap(),
         partition_key_range_id: "0".to_string(),
     }
 }

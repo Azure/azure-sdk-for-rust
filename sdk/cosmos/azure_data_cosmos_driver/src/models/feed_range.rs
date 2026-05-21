@@ -68,11 +68,21 @@ struct RangeJson {
 
 impl FeedRange {
     /// Creates a feed range from explicit EPK bounds.
-    pub fn new(min_inclusive: EffectivePartitionKey, max_exclusive: EffectivePartitionKey) -> Self {
-        Self(FeedRangeRepr::Range {
+    pub fn new(
+        min_inclusive: EffectivePartitionKey,
+        max_exclusive: EffectivePartitionKey,
+    ) -> azure_core::Result<Self> {
+        if min_inclusive > max_exclusive {
+            return Err(azure_core::Error::with_message(
+                ErrorKind::DataConversion,
+                "feed range min_inclusive must be less than or equal to max_exclusive",
+            ));
+        }
+
+        Ok(Self(FeedRangeRepr::Range {
             min_inclusive,
             max_exclusive,
-        })
+        }))
     }
 
     /// Creates a feed range covering the entire partition key space (`""..FF`).
@@ -84,7 +94,7 @@ impl FeedRange {
     }
 
     /// Creates a feed range for the logical partition key of the given item.
-    pub fn for_item(item: &ItemReference) -> Self {
+    pub(crate) fn for_item(item: &ItemReference) -> Self {
         Self::for_partition(
             item.partition_key().clone(),
             item.container().partition_key_definition(),
@@ -93,7 +103,7 @@ impl FeedRange {
 
     /// Creates a feed range for the given logical partition key or prefix.
     ///
-    /// Because we need to know the version of the partition hashing scheme to compute the effective partition key,
+    /// Because the version of the partition hashing scheme must be known to compute the effective partition key,
     /// the caller must provide a reference to the partition key definition.
     pub fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self {
         let effective_partition_key = EffectivePartitionKey::compute(
@@ -307,7 +317,8 @@ mod tests {
         let sub = FeedRange::new(
             EffectivePartitionKey::from("00"),
             EffectivePartitionKey::from("80"),
-        );
+        )
+        .unwrap();
         assert!(sub.is_subset_of(&full));
         assert!(!full.is_subset_of(&sub));
     }
@@ -317,7 +328,8 @@ mod tests {
         let range = FeedRange::new(
             EffectivePartitionKey::from("20"),
             EffectivePartitionKey::from("80"),
-        );
+        )
+        .unwrap();
         assert!(range.is_subset_of(&range));
     }
 
@@ -326,11 +338,13 @@ mod tests {
         let a = FeedRange::new(
             EffectivePartitionKey::from("00"),
             EffectivePartitionKey::from("50"),
-        );
+        )
+        .unwrap();
         let b = FeedRange::new(
             EffectivePartitionKey::from("30"),
             EffectivePartitionKey::from("80"),
-        );
+        )
+        .unwrap();
         assert!(a.overlaps(&b));
         assert!(b.overlaps(&a));
     }
@@ -340,11 +354,13 @@ mod tests {
         let a = FeedRange::new(
             EffectivePartitionKey::from("00"),
             EffectivePartitionKey::from("50"),
-        );
+        )
+        .unwrap();
         let b = FeedRange::new(
             EffectivePartitionKey::from("50"),
             EffectivePartitionKey::from("FF"),
-        );
+        )
+        .unwrap();
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
     }
@@ -354,11 +370,13 @@ mod tests {
         let a = FeedRange::new(
             EffectivePartitionKey::from("00"),
             EffectivePartitionKey::from("30"),
-        );
+        )
+        .unwrap();
         let b = FeedRange::new(
             EffectivePartitionKey::from("50"),
             EffectivePartitionKey::from("FF"),
-        );
+        )
+        .unwrap();
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
     }
@@ -368,11 +386,13 @@ mod tests {
         let a = FeedRange::new(
             EffectivePartitionKey::from("00"),
             EffectivePartitionKey::from("50"),
-        );
+        )
+        .unwrap();
         let b = FeedRange::new(
             EffectivePartitionKey::from("50"),
             EffectivePartitionKey::from("FF"),
-        );
+        )
+        .unwrap();
 
         assert!(a.can_merge(&b));
         assert!(b.can_merge(&a));
@@ -383,11 +403,13 @@ mod tests {
         let a = FeedRange::new(
             EffectivePartitionKey::from("00"),
             EffectivePartitionKey::from("70"),
-        );
+        )
+        .unwrap();
         let b = FeedRange::new(
             EffectivePartitionKey::from("40"),
             EffectivePartitionKey::from("FF"),
-        );
+        )
+        .unwrap();
 
         assert!(a.can_merge(&b));
         assert!(b.can_merge(&a));
@@ -398,11 +420,13 @@ mod tests {
         let a = FeedRange::new(
             EffectivePartitionKey::from("00"),
             EffectivePartitionKey::from("30"),
-        );
+        )
+        .unwrap();
         let b = FeedRange::new(
             EffectivePartitionKey::from("50"),
             EffectivePartitionKey::from("FF"),
-        );
+        )
+        .unwrap();
 
         assert!(!a.can_merge(&b));
         assert!(!b.can_merge(&a));
@@ -415,7 +439,8 @@ mod tests {
         let explicit = FeedRange::new(
             EffectivePartitionKey::from(""),
             EffectivePartitionKey::from("FF"),
-        );
+        )
+        .unwrap();
 
         assert!(!logical.can_merge(&explicit));
         assert!(!explicit.can_merge(&logical));
@@ -427,11 +452,13 @@ mod tests {
         let a = FeedRange::new(
             EffectivePartitionKey::from("00"),
             EffectivePartitionKey::from("50"),
-        );
+        )
+        .unwrap();
         let b = FeedRange::new(
             EffectivePartitionKey::from("30"),
             EffectivePartitionKey::from("FF"),
-        );
+        )
+        .unwrap();
 
         let merged = a.merge_with(&b);
         assert_eq!(merged.min_inclusive().as_str(), "00");
@@ -443,7 +470,8 @@ mod tests {
         let range = FeedRange::new(
             EffectivePartitionKey::from("3FFFFFFFFFFF"),
             EffectivePartitionKey::from("7FFFFFFFFFFF"),
-        );
+        )
+        .unwrap();
 
         let serialized = range.to_string();
         let parsed: FeedRange = serialized.parse().unwrap();
@@ -456,7 +484,8 @@ mod tests {
         let range = FeedRange::new(
             EffectivePartitionKey::from(""),
             EffectivePartitionKey::from("FF"),
-        );
+        )
+        .unwrap();
 
         let json = serde_json::to_string(&range).unwrap();
         let parsed: FeedRange = serde_json::from_str(&json).unwrap();

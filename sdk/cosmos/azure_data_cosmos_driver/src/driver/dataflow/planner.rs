@@ -190,7 +190,7 @@ pub(crate) async fn build_sequential_drain(
     for query_range in &query_plan.query_ranges {
         let min = EffectivePartitionKey::from(query_range.min.as_str());
         let max = EffectivePartitionKey::from(query_range.max.as_str());
-        let feed_range = FeedRange::new(min, max);
+        let feed_range = FeedRange::new(min, max)?;
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;
@@ -215,7 +215,7 @@ pub(crate) async fn build_sequential_drain(
                         range: FeedRange::new(
                             cursor.current_min_epk.clone(),
                             cursor.current_max_epk.clone(),
-                        ),
+                        )?,
                         partition_key_range_id: resolved_range.partition_key_range_id.clone(),
                     };
                     let resumed_continuation = cursor.server_continuation.take();
@@ -229,7 +229,7 @@ pub(crate) async fn build_sequential_drain(
                         range: FeedRange::new(
                             cursor.current_max_epk.clone(),
                             resolved_range.range.max_exclusive().clone(),
-                        ),
+                        )?,
                         partition_key_range_id: resolved_range.partition_key_range_id,
                     };
                     request_nodes.push(Box::new(Request::new(
@@ -463,7 +463,8 @@ mod tests {
             range: FeedRange::new(
                 EffectivePartitionKey::from(min),
                 EffectivePartitionKey::from(max),
-            ),
+            )
+            .unwrap(),
         }
     }
 
@@ -502,7 +503,8 @@ mod tests {
                     range: FeedRange::new(
                         EffectivePartitionKey::from(min),
                         EffectivePartitionKey::from(max),
-                    ),
+                    )
+                    .unwrap(),
                     partition_key_range_id: pk_range_id.to_string(),
                 },
                 "mismatch for pk range {pk_range_id}"
@@ -539,7 +541,8 @@ mod tests {
                     range: FeedRange::new(
                         EffectivePartitionKey::from(min),
                         EffectivePartitionKey::from(max),
-                    ),
+                    )
+                    .unwrap(),
                     partition_key_range_id: pk_range_id.to_string(),
                 },
                 "mismatch for pk range {pk_range_id}"

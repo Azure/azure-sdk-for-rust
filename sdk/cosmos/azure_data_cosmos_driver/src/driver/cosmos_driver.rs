@@ -2552,7 +2552,8 @@ mod tests {
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::from("10"),
             EffectivePartitionKey::from("20"),
-        );
+        )
+        .unwrap();
         let overrides = request_target_overrides(
             RequestTarget::EffectivePartitionKeyRange {
                 range: range.clone(),

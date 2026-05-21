@@ -78,13 +78,15 @@ where
                 }
             };
 
-            Ok(pk_ranges
+            pk_ranges
                 .into_iter()
-                .map(|pkr| ResolvedRange {
-                    partition_key_range_id: pkr.id,
-                    range: FeedRange::new(pkr.min_inclusive, pkr.max_exclusive),
+                .map(|pkr| {
+                    Ok(ResolvedRange {
+                        partition_key_range_id: pkr.id,
+                        range: FeedRange::new(pkr.min_inclusive, pkr.max_exclusive)?,
+                    })
                 })
-                .collect())
+                .collect::<Result<Vec<_>, azure_core::Error>>()
         })
     }
 }
@@ -243,7 +245,8 @@ mod tests {
         let left_half = FeedRange::new(
             EffectivePartitionKey::min(),
             EffectivePartitionKey::from("80"),
-        );
+        )
+        .unwrap();
         let ranges = provider
             .resolve_ranges(&left_half, PartitionRoutingRefresh::ForceRefresh)
             .await
