@@ -159,7 +159,7 @@ fn main() {
                     .collect::<Vec<String>>()
                     .join("\n* ")
             );
-            println!("Add dependencies to the workspac and change the package dependency to `{{ workspace = true }}`, or use a `path` dependency if changes to the dependency are required.");
+            println!("Add dependencies to the workspace and change the package dependency to `{{ workspace = true }}`, or use a `path` dependency if changes to the dependency are required.");
             println!("See <https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md#versions> for more information.");
             println!();
 
