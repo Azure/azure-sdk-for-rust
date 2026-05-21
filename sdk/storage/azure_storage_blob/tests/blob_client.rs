@@ -981,6 +981,61 @@ async fn test_managed_download(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[recorded::test]
+async fn test_managed_download_into(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    for TestManagedDownloadArgSet {
+        data_len,
+        parallel,
+        partition_len,
+        download_range,
+        expected_gets,
+    } in test_managed_download_args()
+    {
+        let data: Vec<u8> = (0..data_len).map(|_| recording.random()).collect();
+        blob_client
+            .upload(RequestContent::from(data.to_vec()), None)
+            .await?;
+        let download_len = download_range.map_or(data_len, |r| min(data_len, r.1) - r.0);
+        let mut buffer = vec![0; download_len];
+
+        request_count.store(0, Ordering::Relaxed);
+        let _scope = count_policy.check_request_scope();
+        let copied = blob_client
+            .download_into(
+                &mut buffer,
+                Some(BlobClientDownloadOptions {
+                    partition_size: Some(NonZero::new(partition_len).unwrap()),
+                    parallel: Some(NonZero::new(parallel).unwrap()),
+                    range: download_range.map(|r| (r.0..r.1).into()),
+                    ..Default::default()
+                }),
+            )
+            .await?;
+
+        assert_eq!(copied, download_len);
+        assert_eq!(
+            &buffer,
+            download_range.map_or(&data[..], |r| &data[r.0..min(r.1, data.len())])
+        );
+        assert_eq!(request_count.load(Ordering::Relaxed), expected_gets);
+    }
+
+    Ok(())
+}
+
 // TODO edge case where a range was requested on a 0-length blob
 #[recorded::test]
 async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -1012,6 +1067,37 @@ async fn test_managed_download_empty(ctx: TestContext) -> Result<(), Box<dyn Err
     let downloaded_data = downloaded_data.freeze();
 
     assert_eq!(downloaded_data.len(), 0);
+    // 1 op with a range, 1 op without after the first one fails
+    assert_eq!(request_count.load(Ordering::Relaxed), 2);
+
+    Ok(())
+}
+
+// TODO edge case where a range was requested on a 0-length blob
+#[recorded::test]
+async fn test_managed_download_into_empty(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let count_policy = Arc::new(TestPolicy::count_requests(request_count.clone(), None));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(count_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    blob_client
+        .upload(RequestContent::from(vec![]), None)
+        .await?;
+
+    request_count.store(0, Ordering::Relaxed);
+    let _scope = count_policy.check_request_scope();
+    let copied = blob_client.download_into(&mut [0; 1024], None).await?;
+
+    assert_eq!(copied, 0);
     // 1 op with a range, 1 op without after the first one fails
     assert_eq!(request_count.load(Ordering::Relaxed), 2);
 
@@ -1054,6 +1140,66 @@ async fn test_managed_download_etag_lock(ctx: TestContext) -> Result<(), Box<dyn
             .await?
             .body
             .collect()
+            .await?;
+    }
+
+    assert!(request_rx
+        .recv()?
+        .headers()
+        .get_str(&"if-match".into())
+        .is_err());
+
+    let subsequent_requests: Vec<_> = request_rx.try_iter().collect();
+    assert_eq!(subsequent_requests.len(), parts - 1);
+
+    let mut locked_etag = None;
+    for req in subsequent_requests.into_iter() {
+        let req_etag_lock = req.headers().get_str(&"if-match".into())?; // ? tests the value was present
+        match &locked_etag {
+            Some(etag) => assert_eq!(etag, req_etag_lock),
+            None => locked_etag = Some(req_etag_lock.to_string()),
+        }
+    }
+
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_managed_download_into_etag_lock(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let data_len = 2048usize;
+    let parts = 9;
+    let partition_len = data_len.div_ceil(parts);
+
+    let (request_tx, request_rx) = mpsc::channel();
+    let capture_policy = Arc::new(TestPolicy::capture(Some(request_tx)));
+
+    let recording = ctx.recording();
+    let container_client = get_container_client(
+        recording,
+        true,
+        StorageAccount::Standard,
+        Some(BlobContainerClientOptions::default().with_per_call_policy(capture_policy.clone())),
+    )
+    .await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+
+    blob_client
+        .upload(
+            RequestContent::from((0..data_len).map(|_| recording.random()).collect()),
+            None,
+        )
+        .await?;
+
+    {
+        let _capture_scope = capture_policy.check_request_scope();
+        let _ = blob_client
+            .download_into(
+                &mut vec![0; data_len],
+                Some(BlobClientDownloadOptions {
+                    partition_size: Some(NonZero::new(partition_len).unwrap()),
+                    ..Default::default()
+                }),
+            )
             .await?;
     }
 
