@@ -111,11 +111,7 @@
     "finalizer",
     "callsite",
     "callsites",
-    "footgun",
-    "hedgeable",
-    "inlines",
-    "unroutable",
-    "widenings"
+    "footgun"
   ],
   "dictionaryDefinitions": [
     {
