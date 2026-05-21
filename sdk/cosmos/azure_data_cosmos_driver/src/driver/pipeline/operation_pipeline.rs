@@ -2044,14 +2044,20 @@ async fn execute_hedged(
             // §6.5 #7 / §14.2: app-cancel observed at Stage 2 — only the
             // primary is in-flight (no secondary was ever built). Harvest
             // it within HARVEST_WINDOW for diagnostics, then re-raise.
+            // No leg produced a final response, so attach the
+            // DeadlineExceededPreThreshold terminal state (was_hedge=false)
+            // rather than primary_only — the operation surfaces
+            // application_cancelled_error and hedge win-rate metrics must
+            // not count this as a primary win (review #1, spec §10.1).
             tracing::debug!(
                 activity_id = %ctx.activity_id,
                 "execute_hedged: deadline fired pre-threshold; harvesting primary",
             );
             harvest_remaining_attempt(remaining_primary, &mut parent_diagnostics).await;
             if let Some(region) = primary_region.clone() {
-                parent_diagnostics
-                    .set_hedge_diagnostics(HedgeDiagnostics::primary_only(strategy_config, region));
+                parent_diagnostics.set_hedge_diagnostics(
+                    HedgeDiagnostics::primary_only_deadline_exceeded(strategy_config, region),
+                );
             }
             return Err(application_cancelled_error());
         }
@@ -2165,12 +2171,15 @@ async fn execute_hedged(
                             activity_id = %ctx.activity_id,
                             "execute_hedged: deadline fired awaiting secondary after primary transient",
                         );
+                        // No leg produced a final response — attach
+                        // CancelledAwaitingPartner terminal state
+                        // (was_hedge=false) so hedge win-rate metrics do
+                        // not count this as an alternate win
+                        // (review #1, spec §10.1).
                         if let (Some(p), Some(s)) = (primary_region, secondary_region) {
-                            parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
-                                strategy_config,
-                                p,
-                                s,
-                            ));
+                            parent_diagnostics.set_hedge_diagnostics(
+                                HedgeDiagnostics::cancelled_awaiting_partner(strategy_config, p, s),
+                            );
                         }
                         return Err(application_cancelled_error());
                     };
@@ -2203,17 +2212,26 @@ async fn execute_hedged(
                             finalize_hedge_attempt(tr, parent_diagnostics)
                         }
                         HedgeClass::Transient => {
-                            // Both transient — attach hedge diagnostics for
+                            // Both transient — attach BothTransient terminal
+                            // state (was_hedge=false, no leg won) for
                             // observability and surface either the app-cancel
                             // error (§6.5 #7) or the synthetic
                             // both-transient error depending on whether the
-                            // deadline drove the outcome.
+                            // deadline drove the outcome. Capture
+                            // deadline_elapsed once before the if-let-Some
+                            // pattern moves the regions (review #1, spec §10.1).
+                            let deadline_was_elapsed = deadline_elapsed(ctx.deadline);
                             if let (Some(p), Some(s)) = (primary_region, secondary_region) {
                                 parent_diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::hedge_won(strategy_config, p, s),
+                                    HedgeDiagnostics::both_transient(
+                                        strategy_config,
+                                        p,
+                                        s,
+                                        deadline_was_elapsed,
+                                    ),
                                 );
                             }
-                            if deadline_elapsed(ctx.deadline) {
+                            if deadline_was_elapsed {
                                 tracing::debug!(
                                     activity_id = %ctx.activity_id,
                                     "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
@@ -2292,12 +2310,15 @@ async fn execute_hedged(
                             activity_id = %ctx.activity_id,
                             "execute_hedged: deadline fired awaiting primary after secondary transient",
                         );
+                        // No leg produced a final response — attach
+                        // CancelledAwaitingPartner terminal state
+                        // (was_hedge=false) so hedge win-rate metrics do
+                        // not count this as an alternate win
+                        // (review #1, spec §10.1).
                         if let (Some(p), Some(s)) = (primary_region, secondary_region) {
-                            parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
-                                strategy_config,
-                                p,
-                                s,
-                            ));
+                            parent_diagnostics.set_hedge_diagnostics(
+                                HedgeDiagnostics::cancelled_awaiting_partner(strategy_config, p, s),
+                            );
                         }
                         return Err(application_cancelled_error());
                     };
@@ -2334,12 +2355,22 @@ async fn execute_hedged(
                             finalize_hedge_attempt(tr, parent_diagnostics)
                         }
                         HedgeClass::Transient => {
+                            // Both transient — attach BothTransient terminal
+                            // state (was_hedge=false, no leg won). Capture
+                            // deadline_elapsed once before the if-let-Some
+                            // pattern moves the regions (review #1, spec §10.1).
+                            let deadline_was_elapsed = deadline_elapsed(ctx.deadline);
                             if let (Some(p), Some(s)) = (primary_region, secondary_region) {
                                 parent_diagnostics.set_hedge_diagnostics(
-                                    HedgeDiagnostics::hedge_won(strategy_config, p, s),
+                                    HedgeDiagnostics::both_transient(
+                                        strategy_config,
+                                        p,
+                                        s,
+                                        deadline_was_elapsed,
+                                    ),
                                 );
                             }
-                            if deadline_elapsed(ctx.deadline) {
+                            if deadline_was_elapsed {
                                 tracing::debug!(
                                     activity_id = %ctx.activity_id,
                                     "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",

@@ -1636,31 +1636,101 @@ for the operation — i.e. `should_hedge()` returned `true` and the
 | `response_region` | `regions[0]` |
 | `total_requests_launched` | `1` |
 | `was_hedge` | `false` |
+| `terminal_state` | `HedgeTerminalState::PrimaryWonPreThreshold` |
 
 This lets callers distinguish *"hedging was active and the primary won
 amongst the launched requests"* from *"hedging was active but no hedge
 ever fired because the primary returned within the threshold window"*.
 
+**Terminal-state taxonomy (authoritative for observability).** Because
+the race can end in six structurally distinct ways — including states
+where **no leg produced a final response** — `HedgeDiagnostics` carries
+an explicit `terminal_state: HedgeTerminalState` field. Downstream
+consumers (hedge win-rate metrics, alerting, dashboards) **must**
+consult `terminal_state` rather than inferring intent from `was_hedge`
+or the regions list alone.
+
+| `HedgeTerminalState`              | `was_hedge` | Total reqs | Race outcome                                                           | Operation result                                       |
+|-----------------------------------|-------------|------------|------------------------------------------------------------------------|--------------------------------------------------------|
+| `PrimaryWonPreThreshold`          | `false`     | 1          | Primary finished before the threshold timer; alternate never spawned. | Success / final HTTP response                          |
+| `DeadlineExceededPreThreshold`    | `false`     | 1          | Deadline fired pre-threshold; primary harvested for diagnostics.       | `application_cancelled_error`                          |
+| `PrimaryWonAfterHedge`            | `false`     | 2          | Threshold elapsed, alternate spawned, primary still won the race.      | Success / final HTTP response                          |
+| `AlternateWon`                    | `true`      | 2          | Alternate produced a `Final` outcome before the primary completed.     | Success / final HTTP response                          |
+| `BothTransient { deadline_elapsed: true }`  | `false` | 2 | Both legs returned transient outcomes while the deadline had elapsed.  | `application_cancelled_error`                          |
+| `BothTransient { deadline_elapsed: false }` | `false` | 2 | Both legs returned transient outcomes without the deadline firing.     | `transient_outcome_error`                              |
+| `CancelledAwaitingPartner`        | `false`     | 2          | One leg transient, deadline fired while awaiting the partner leg.      | `application_cancelled_error`                          |
+
+**Hedge win-rate invariant.** `was_hedge` is `true` **only** when
+`terminal_state == AlternateWon`. Metrics computed as
+`count(was_hedge=true) / count(*)` therefore correctly reflect the
+fraction of operations where the alternate produced the response that
+was returned to the caller — terminal-error states do **not** inflate
+the numerator.
+
 ```rust
-/// Diagnostic information about a hedging execution, attached to the winning
-/// response.
+/// Diagnostic information about a hedging execution.
+///
+/// For successful responses this is attached to the winning response.
+/// For terminal-error outcomes (deadline exceeded, both legs transient)
+/// this is recorded for observability but the operation still returns
+/// an `Err` to the caller.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct HedgeDiagnostics {
     /// The hedging strategy configuration that was active.
     pub strategy_config: HedgingStrategyConfig,
     /// Regions that had requests launched (up to and including the winner).
     ///
     /// With the single-alternate model (§6) this is either
-    /// `vec![primary]` (primary won before the threshold timer fired)
-    /// or `vec![primary, alternate]` (the alternate hedge was spawned).
+    /// `vec![primary]` (primary won before the threshold timer fired,
+    /// or the deadline fired before any hedge was launched) or
+    /// `vec![primary, alternate]` (the alternate hedge was spawned).
     pub regions_contacted: Vec<Region>,
     /// The target region of the winning response.
+    ///
+    /// For terminal-error states (`BothTransient`, `CancelledAwaitingPartner`,
+    /// `DeadlineExceededPreThreshold`) this is the primary region as a
+    /// sentinel — no response was actually returned to the caller.
     pub response_region: Region,
     /// How many hedge requests were launched (including primary).
     /// Either `1` (no hedge fired) or `2` (alternate spawned).
     pub total_requests_launched: usize,
-    /// Whether the primary or the alternate hedge won.
+    /// Whether the alternate hedge produced the response returned to
+    /// the caller.
+    ///
+    /// **Invariant:** `was_hedge == true` if and only if
+    /// `terminal_state == HedgeTerminalState::AlternateWon`. Win-rate
+    /// metrics must use this field (or equivalently `terminal_state`)
+    /// rather than inspecting `regions_contacted` length.
     pub was_hedge: bool,
+    /// Structured classification of how the hedge race terminated.
+    /// See the terminal-state taxonomy table above for semantics.
+    pub terminal_state: HedgeTerminalState,
+}
+
+/// Structured classification of how a hedge race terminated. Used by
+/// observability consumers to distinguish "alternate genuinely won"
+/// from "race ended in a terminal error" — the latter must not be
+/// counted in hedge win-rate metrics.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum HedgeTerminalState {
+    /// Primary returned `Final` before the threshold timer fired.
+    PrimaryWonPreThreshold,
+    /// Deadline fired before the primary or any hedge produced an
+    /// outcome. Only the primary was launched.
+    DeadlineExceededPreThreshold,
+    /// Threshold elapsed and alternate was spawned, but the primary
+    /// won the race anyway.
+    PrimaryWonAfterHedge,
+    /// Alternate produced the winning `Final` outcome.
+    AlternateWon,
+    /// Both legs returned transient outcomes. `deadline_elapsed`
+    /// distinguishes the deadline-fired vs. fast-fail variants.
+    BothTransient { deadline_elapsed: bool },
+    /// One leg returned transient and the deadline fired while
+    /// awaiting the partner leg's completion.
+    CancelledAwaitingPartner,
 }
 
 #[derive(Clone, Debug)]

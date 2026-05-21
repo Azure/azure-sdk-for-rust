@@ -29,4 +29,6 @@ pub use diagnostics_context::{
 };
 pub use proxy_configuration::ProxyConfiguration;
 
-pub use crate::driver::pipeline::hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig};
+pub use crate::driver::pipeline::hedging_diagnostics::{
+    HedgeDiagnostics, HedgeTerminalState, HedgingStrategyConfig,
+};
