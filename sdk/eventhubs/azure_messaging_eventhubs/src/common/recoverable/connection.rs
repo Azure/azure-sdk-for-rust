@@ -700,7 +700,7 @@ impl RecoverableConnection {
     /// errors are bucketed by their `AmqpErrorCondition`. `TransportImplementationError`
     /// is intentionally left to fall through to `ReturnError`: it covers errors local
     /// to the AMQP backend with no defined recovery semantics, and blind retries risk
-    /// hammering a deterministic bug. Anything else not recognised likewise falls
+    /// hammering a deterministic bug. Anything else not recognized likewise falls
     /// through to `ReturnError`.
     pub(super) fn should_retry_amqp_error(amqp_error: &AmqpError) -> ErrorRecoveryAction {
         match amqp_error.kind() {
@@ -1114,8 +1114,8 @@ mod tests {
         // `AmqpError::from(azure_core::Error::with_error(AzureErrorKind::Other, e, "..."))`.
         // Before this test we'd classify the outer error as ReturnError via the
         // catch-all, silently turning a recoverable transport failure into a
-        // non-retriable one. should_retry_amqp_error must walk the source chain
-        // and honour the inner kind's classification.
+        // non-retryable one. should_retry_amqp_error must walk the source chain
+        // and honor the inner kind's classification.
         use azure_core::error::ErrorKind as AzureErrorKind;
 
         // AzureCore(... ConnectionDropped ...) -> ReconnectConnection
@@ -1168,7 +1168,7 @@ mod tests {
         );
 
         // AzureCore wrapping something that isn't an AmqpError -> ReturnError.
-        // (No recoverable inner kind to honour; preserve the catch-all default.)
+        // (No recoverable inner kind to honor; preserve the catch-all default.)
         let wrapped = AmqpError::from(azure_core::Error::with_error(
             AzureErrorKind::Other,
             std::io::Error::other("non-AMQP failure"),
