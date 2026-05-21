@@ -1074,9 +1074,9 @@ mod tests {
 
         // Test DetachError -> ReconnectLink. The link's detach handshake failed;
         // reattach is required to make any further use of it.
-        let err = AmqpError::from(AmqpErrorKind::DetachError(Box::new(
-            std::io::Error::other("detach error"),
-        )));
+        let err = AmqpError::from(AmqpErrorKind::DetachError(Box::new(std::io::Error::other(
+            "detach error",
+        ))));
         assert_eq!(
             RecoverableConnection::should_retry_amqp_error(&err),
             ErrorRecoveryAction::ReconnectLink
