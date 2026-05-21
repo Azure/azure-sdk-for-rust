@@ -1285,7 +1285,9 @@ impl CosmosDriver {
     ) -> azure_core::Result<crate::models::CosmosResponse> {
         debug_assert!(
             !operation.operation_type().is_feed(),
-            "execute_singleton_operation should only be used for operations that return a single result"
+            "execute_singleton_operation should only be used for operations that return a single result, but '{} {}' is a feed operation",
+            operation.operation_type(),
+            operation.resource_type()
         );
         match self.execute_operation(operation, options).await {
             Ok(Some(r)) => Ok(r),

@@ -626,10 +626,13 @@ mod tests {
             response: response(b"c1-final"),
             is_terminal: true,
         })])
-        .with_feed_range(FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("80"),
-        ));
+        .with_feed_range(
+            FeedRange::new(
+                EffectivePartitionKey::from("00"),
+                EffectivePartitionKey::from("80"),
+            )
+            .unwrap(),
+        );
         let child2 = MockLeaf::with_pages(vec![
             Ok(PageResult::Page {
                 response: response(b"c2-p1"),
@@ -637,10 +640,13 @@ mod tests {
             }),
             Ok(PageResult::Drained),
         ])
-        .with_feed_range(FeedRange::new(
-            EffectivePartitionKey::from("80"),
-            EffectivePartitionKey::from("FF"),
-        ));
+        .with_feed_range(
+            FeedRange::new(
+                EffectivePartitionKey::from("80"),
+                EffectivePartitionKey::from("FF"),
+            )
+            .unwrap(),
+        );
 
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;
@@ -668,10 +674,13 @@ mod tests {
             response: response(b"final"),
             is_terminal: true,
         })])
-        .with_feed_range(FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("FF"),
-        ));
+        .with_feed_range(
+            FeedRange::new(
+                EffectivePartitionKey::from("00"),
+                EffectivePartitionKey::from("FF"),
+            )
+            .unwrap(),
+        );
 
         let mut drain = SequentialDrain::new(vec![Box::new(only_child)]);
         let mut executor = NoopRequestExecutor;
