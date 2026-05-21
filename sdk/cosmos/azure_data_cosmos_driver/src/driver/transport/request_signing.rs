@@ -18,11 +18,15 @@ const MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 ///
 /// Computes the HMAC-SHA256 signature (master key) or obtains an AAD token,
 /// then sets both `x-ms-date` and `Authorization` headers.
+///
+/// Returns a Cosmos-typed [`crate::error::Error`]; `azure_core::Error` values
+/// produced by the credential provider or HMAC routine are mapped through the
+/// boundary mapper in [`crate::error`] via `?`.
 pub(crate) async fn sign_request(
     request: &mut HttpRequest,
     credential: &Credential,
     auth_context: &AuthorizationContext,
-) -> azure_core::Result<()> {
+) -> crate::error::Result<()> {
     let date_string = time::to_rfc7231(&OffsetDateTime::now_utc()).to_lowercase();
 
     let auth = generate_authorization(credential, auth_context, &date_string).await?;

@@ -27,10 +27,9 @@ impl VirtualAccountConfig {
     /// The first region is the hub/primary write region in single-write mode.
     pub fn new(mut regions: Vec<VirtualRegion>) -> azure_core::Result<Self> {
         if regions.is_empty() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "at least one region is required",
-            ));
+            return Err(
+                crate::error::Error::client("at least one region is required", None).into(),
+            );
         }
         // Auto-assign monotonically increasing region IDs by position for any
         // region that did not have one set explicitly via `with_region_id`.
@@ -85,28 +84,31 @@ impl VirtualAccountConfig {
     ) -> azure_core::Result<Self> {
         let known: Vec<&str> = self.regions.iter().map(|r| r.name.as_str()).collect();
         if !known.contains(&source) {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::error::Error::client(
                 format!(
                     "replication override source region '{}' is not configured (known: {:?})",
                     source, known
                 ),
-            ));
+                None,
+            )
+            .into());
         }
         if !known.contains(&target) {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::error::Error::client(
                 format!(
                     "replication override target region '{}' is not configured (known: {:?})",
                     target, known
                 ),
-            ));
+                None,
+            )
+            .into());
         }
         if source == target {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::error::Error::client(
                 "replication override source and target must be different regions",
-            ));
+                None,
+            )
+            .into());
         }
         self.replication_overrides
             .insert((source.to_string(), target.to_string()), config);
@@ -353,10 +355,7 @@ impl ReplicationConfig {
     /// Random delay within a range.
     pub fn range(min: Duration, max: Duration) -> azure_core::Result<Self> {
         if min > max {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "min delay must be <= max delay",
-            ));
+            return Err(crate::error::Error::client("min delay must be <= max delay", None).into());
         }
         Ok(Self {
             min_delay: min,
@@ -534,23 +533,22 @@ impl ContainerConfig {
     /// Returns `azure_core::Error` on the first violation.
     pub fn build(self) -> azure_core::Result<Self> {
         if self.partition_count == 0 {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "partition count must be > 0",
-            ));
+            return Err(crate::error::Error::client("partition count must be > 0", None).into());
         }
         if self.partition_count > MAX_PARTITION_COUNT {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::error::Error::client(
                 format!("partition count must be <= {MAX_PARTITION_COUNT}"),
-            ));
+                None,
+            )
+            .into());
         }
         if let Some(ru) = self.provisioned_throughput_ru {
             if ru < 400 {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
+                return Err(crate::error::Error::client(
                     "provisioned throughput must be >= 400 RU/s",
-                ));
+                    None,
+                )
+                .into());
             }
         }
         Ok(self)

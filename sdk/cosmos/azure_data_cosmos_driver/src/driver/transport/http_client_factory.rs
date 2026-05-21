@@ -141,7 +141,7 @@ pub trait HttpClientFactory: fmt::Debug + Send + Sync {
         &self,
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>>;
+    ) -> crate::error::Result<Arc<dyn TransportClient>>;
 }
 
 #[derive(Debug)]
@@ -159,7 +159,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         &self,
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
+    ) -> crate::error::Result<Arc<dyn TransportClient>> {
         let mut builder = reqwest::Client::builder();
 
         builder =
@@ -211,9 +211,13 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         };
 
         let client = builder.build().map_err(|error| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            // HTTP client construction is caller-controlled configuration
+            // (TLS / pool sizing / version pinning), so surface it as a typed
+            // configuration error. `From<Error> for azure_core::Error` wraps
+            // it for the trait-bound return type.
+            crate::error::Error::configuration(
                 format!("Failed to create HTTP client: {error}"),
+                Some(std::sync::Arc::new(error)),
             )
         })?;
         Ok(Arc::new(
@@ -228,10 +232,11 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         &self,
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
-        Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
+    ) -> crate::error::Result<Arc<dyn TransportClient>> {
+        Err(crate::error::Error::configuration(
             "azure_data_cosmos_driver requires the `reqwest` feature to construct the default transport",
-        ))
+            None,
+        )
+        .into())
     }
 }

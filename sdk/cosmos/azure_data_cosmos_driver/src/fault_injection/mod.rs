@@ -221,10 +221,11 @@ impl FromStr for FaultOperationType {
             "MetadataReadDatabaseAccount" => Ok(FaultOperationType::MetadataReadDatabaseAccount),
             "MetadataQueryPlan" => Ok(FaultOperationType::MetadataQueryPlan),
             "MetadataPartitionKeyRanges" => Ok(FaultOperationType::MetadataPartitionKeyRanges),
-            _ => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
+            _ => Err(crate::error::Error::client(
                 format!("unknown fault operation type: {s}"),
-            )),
+                None,
+            )
+            .into()),
         }
     }
 }
@@ -261,10 +262,11 @@ impl FromStr for FaultInjectionErrorType {
             "DatabaseAccountNotFound" => Ok(Self::DatabaseAccountNotFound),
             "ConnectionError" => Ok(Self::ConnectionError),
             "ResponseTimeout" => Ok(Self::ResponseTimeout),
-            _ => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
+            _ => Err(crate::error::Error::client(
                 format!("unknown fault injection error type: {s}"),
-            )),
+                None,
+            )
+            .into()),
         }
     }
 }

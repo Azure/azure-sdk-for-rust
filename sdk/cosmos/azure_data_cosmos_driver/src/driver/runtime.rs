@@ -615,9 +615,7 @@ impl CosmosDriverRuntimeBuilder {
     ) -> azure_core::Result<Self> {
         self.throughput_control_groups
             .register(group)
-            .map_err(|e| {
-                azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
-            })?;
+            .map_err(|e| crate::error::Error::client(e.to_string(), None))?;
         Ok(self)
     }
 
@@ -664,10 +662,11 @@ impl CosmosDriverRuntimeBuilder {
 
         for rule in &rules {
             if !seen.insert(rule.id().to_string()) {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
+                return Err(crate::error::Error::client(
                     format!("duplicate fault injection rule id: {}", rule.id()),
-                ));
+                    None,
+                )
+                .into());
             }
         }
 

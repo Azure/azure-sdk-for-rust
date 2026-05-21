@@ -87,11 +87,15 @@ impl AuthorizationContext {
 }
 
 /// Generates the Cosmos DB authorization header value.
+///
+/// Returns a Cosmos-typed [`crate::error::Error`]; `azure_core::Error` values
+/// from the credential provider / HMAC routine flow through the boundary
+/// mapper in [`crate::error`] via `?`.
 pub(crate) async fn generate_authorization(
     credential: &Credential,
     auth_ctx: &AuthorizationContext,
     date_string: &str,
-) -> azure_core::Result<String> {
+) -> crate::error::Result<String> {
     let token = match credential {
         Credential::TokenCredential(cred) => {
             let token = cred

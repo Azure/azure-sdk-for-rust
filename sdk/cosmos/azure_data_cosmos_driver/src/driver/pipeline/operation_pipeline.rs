@@ -918,10 +918,11 @@ fn build_cosmos_response(
         }
         _ => {
             // This should only be called with a Complete(Success) result
-            Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            Err(crate::error::Error::client(
                 "build_cosmos_response called with non-success result",
-            ))
+                None,
+            )
+            .into())
         }
     }
 }
@@ -1130,10 +1131,11 @@ fn enforce_deadline_or_timeout(
         azure_core::http::StatusCode::RequestTimeout,
         Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
     );
-    Err(azure_core::Error::new(
-        azure_core::error::ErrorKind::Other,
+    Err(crate::error::Error::end_to_end_timeout(
         format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-    ))
+        None,
+    )
+    .into())
 }
 
 /// On a successful PPCB probe request, removes the `ProbeCandidate` entry

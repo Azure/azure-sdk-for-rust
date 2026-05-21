@@ -14,7 +14,7 @@ use std::sync::Arc;
 /// [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)).
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
-pub struct CosmosResponsePayload {
+pub(crate) struct CosmosResponsePayload {
     /// Response body, possibly composed of multiple byte slices.
     body: ResponseBody,
 
@@ -32,17 +32,18 @@ impl CosmosResponsePayload {
     }
 
     /// Returns a reference to the typed response body.
-    pub fn body(&self) -> &ResponseBody {
+    pub(crate) fn body(&self) -> &ResponseBody {
         &self.body
     }
 
     /// Consumes the payload and returns the body.
-    pub fn into_body(self) -> ResponseBody {
+    #[allow(dead_code)]
+    pub(crate) fn into_body(self) -> ResponseBody {
         self.body
     }
 
     /// Returns a reference to the extracted headers.
-    pub fn headers(&self) -> &CosmosResponseHeaders {
+    pub(crate) fn headers(&self) -> &CosmosResponseHeaders {
         &self.headers
     }
 }
@@ -106,12 +107,13 @@ impl CosmosResponse {
     }
 
     /// Returns a reference to the wire-level payload (body + headers).
-    pub fn payload(&self) -> &CosmosResponsePayload {
+    #[allow(dead_code)]
+    pub(crate) fn payload(&self) -> &CosmosResponsePayload {
         &self.payload
     }
 
     /// Consumes the response and returns the wire-level payload.
-    pub fn into_payload(self) -> CosmosResponsePayload {
+    pub(crate) fn into_payload(self) -> CosmosResponsePayload {
         self.payload
     }
 

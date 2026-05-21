@@ -91,12 +91,15 @@ impl Error {
     /// rendered as a human-readable string, when the global rate-limited
     /// capture budget allowed it.
     ///
-    /// Backtraces are captured by default for SDK-origin error kinds but are
-    /// rate-limited (default `100` captures / minute, configurable via the
-    /// driver's `CosmosDriverRuntimeBuilder::with_max_error_backtraces_per_minute`
-    /// or the `AZURE_COSMOS_BACKTRACE_CAPTURE_PER_MINUTE` environment variable).
-    /// Returns `None` when the current 60-second budget has been exhausted or
-    /// when capture has been disabled.
+    /// Capture itself is unconditional (cheap stack walk); the expensive
+    /// part — resolving instruction pointers to symbol names — is
+    /// rate-limited (default `5` resolutions per second, configurable via
+    /// the driver's
+    /// [`CosmosDriverRuntimeBuilder::with_max_error_backtraces_per_second`](azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder::with_max_error_backtraces_per_second)
+    /// or the `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` environment
+    /// variable). Cache hits do not consume budget. Returns `None` when
+    /// the limiter denied fresh resolution for at least one cache-missed
+    /// frame; partial backtraces are never produced.
     pub fn backtrace(&self) -> Option<&str> {
         self.0.backtrace()
     }

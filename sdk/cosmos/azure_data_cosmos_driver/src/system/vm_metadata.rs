@@ -265,19 +265,35 @@ impl VmMetadataServiceInner {
             .connect_timeout(IMDS_CONNECT_TIMEOUT)
             .timeout(IMDS_REQUEST_TIMEOUT)
             .build()
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
+            .map_err(|e| {
+                crate::error::Error::configuration(
+                    format!("failed to build IMDS HTTP client: {e}"),
+                    Some(std::sync::Arc::new(e)),
+                )
+            })?;
 
         let response = http_client
             .get(IMDS_ENDPOINT)
             .header("metadata", "true")
             .send()
             .await
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
+            .map_err(|e| {
+                crate::error::Error::transport(
+                    crate::models::CosmosStatus::TRANSPORT_IO_FAILED,
+                    format!("IMDS request failed: {e}"),
+                    None,
+                    Some(std::sync::Arc::new(e)),
+                )
+            })?;
 
-        let body = response
-            .text()
-            .await
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
+        let body = response.text().await.map_err(|e| {
+            crate::error::Error::transport(
+                crate::models::CosmosStatus::TRANSPORT_BODY_READ_FAILED,
+                format!("failed to read IMDS response body: {e}"),
+                None,
+                Some(std::sync::Arc::new(e)),
+            )
+        })?;
 
         let metadata: AzureVmMetadata = serde_json::from_str(&body)?;
         Ok(metadata)
@@ -285,10 +301,10 @@ impl VmMetadataServiceInner {
 
     #[cfg(not(feature = "reqwest"))]
     async fn do_fetch() -> azure_core::Result<AzureVmMetadata> {
-        Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "IMDS fetch requires the `reqwest` feature",
-        ))
+        Err(
+            crate::error::Error::configuration("IMDS fetch requires the `reqwest` feature", None)
+                .into(),
+        )
     }
 }
 

@@ -15,7 +15,6 @@
 
 use std::time::{Duration, Instant};
 
-use azure_core::error::ErrorKind;
 use futures::{future::Either, pin_mut};
 use tracing::trace;
 
@@ -233,19 +232,19 @@ pub(crate) async fn execute_transport_pipeline(
         // Apply standard Cosmos headers
         apply_cosmos_headers(&mut http_request, ctx.user_agent);
 
-        // Sign the request
-        if let Err(e) = sign_request(&mut http_request, ctx.credential, &request.auth_context).await
+        if let Err(cosmos_err) =
+            sign_request(&mut http_request, ctx.credential, &request.auth_context).await
         {
             diagnostics.fail_transport_request(
                 request_handle,
-                e.to_string(),
+                cosmos_err.to_string(),
                 RequestSentStatus::NotSent,
                 CosmosStatus::CLIENT_GENERATED_401,
             );
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
                     status: CosmosStatus::CLIENT_GENERATED_401,
-                    error: e,
+                    error: cosmos_err,
                     request_sent: RequestSentStatus::NotSent,
                 },
             };
@@ -540,12 +539,8 @@ fn should_retry_connectivity_failure(
     }
 }
 
-fn is_connectivity_error(error: &azure_core::Error) -> bool {
-    matches!(error.kind(), ErrorKind::Connection | ErrorKind::Io)
-}
-
-fn format_transport_error_details(error: &azure_core::Error) -> String {
-    crate::driver::error_chain_summary(error)
+fn is_connectivity_error(error: &crate::error::Error) -> bool {
+    error.kind() == crate::error::Kind::Transport
 }
 
 fn transport_error_result(
@@ -554,13 +549,20 @@ fn transport_error_result(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
+    // Convert to a typed Cosmos error up front so subsequent inspection uses
+    // `Kind` / sub-status instead of raw `azure_core::ErrorKind`. The mapper
+    // preserves the original `azure_core::Error` as `source`, so no
+    // information is lost. The `TransportError.error` field still propagates
+    // `azure_core::Error` for now; convert back via `.into()` at the
+    // boundary.
+    let cosmos_error = crate::error::Error::from(error);
     let sent_status = if headers_received {
         RequestSentStatus::Sent
     } else {
-        infer_request_sent_status(&error)
+        infer_request_sent_status(&cosmos_error)
     };
     let status = CosmosStatus::TRANSPORT_GENERATED_503;
-    let error_details = format_transport_error_details(&error);
+    let error_details = format_transport_error_details_cosmos(&cosmos_error);
 
     if headers_received {
         diagnostics.add_event(
@@ -578,10 +580,14 @@ fn transport_error_result(
     TransportResult {
         outcome: TransportOutcome::TransportError {
             status,
-            error,
+            error: cosmos_error,
             request_sent: sent_status,
         },
     }
+}
+
+fn format_transport_error_details_cosmos(error: &crate::error::Error) -> String {
+    crate::driver::error_chain_summary(error)
 }
 
 enum HttpAttemptResult {
@@ -618,7 +624,10 @@ fn failed_transport_shard(
         } => Some(FailedTransportShardDiagnostics::new(
             transport_shard,
             *request_sent,
-            error.to_string(),
+            // Surface just the underlying message — the [Kind] / status
+            // prefix from the Cosmos Display is captured separately in
+            // the request status.
+            error.message().to_owned(),
         )),
         _ => None,
     }
@@ -665,6 +674,7 @@ mod tests {
     };
 
     use async_trait::async_trait;
+    use azure_core::error::ErrorKind;
 
     use crate::{
         diagnostics::DiagnosticsContextBuilder,
@@ -974,10 +984,12 @@ mod tests {
             &self,
             _connection_pool: &crate::options::ConnectionPoolOptions,
             _config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn TransportClient>> {
-            self.clients.lock().unwrap().pop().ok_or_else(|| {
-                azure_core::Error::with_message(ErrorKind::Other, "no scripted client available")
-            })
+        ) -> crate::error::Result<Arc<dyn TransportClient>> {
+            self.clients
+                .lock()
+                .unwrap()
+                .pop()
+                .ok_or_else(|| crate::error::Error::client("no scripted client available", None))
         }
     }
 
@@ -1215,8 +1227,9 @@ mod tests {
             inner,
             "failed to execute `reqwest` request",
         );
+        let cosmos = crate::error::Error::from(error);
 
-        let details = format_transport_error_details(&error);
+        let details = format_transport_error_details_cosmos(&cosmos);
         assert!(details.contains("failed to execute `reqwest` request"));
         assert!(details.contains("socket reset"));
     }

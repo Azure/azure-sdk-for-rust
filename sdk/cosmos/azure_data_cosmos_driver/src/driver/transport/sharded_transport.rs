@@ -17,8 +17,6 @@ use std::{
 
 use arc_swap::ArcSwap;
 
-use azure_core::error::ErrorKind;
-
 use super::cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError};
 #[cfg(any(feature = "tokio", test))]
 use std::time::Duration;
@@ -83,7 +81,7 @@ impl ShardedHttpTransport {
             Err(error) => {
                 return TransportDispatch {
                     result: Err(TransportError::new(
-                        error,
+                        error.into(),
                         crate::diagnostics::RequestSentStatus::NotSent,
                     )),
                     shard_id: None,
@@ -97,7 +95,7 @@ impl ShardedHttpTransport {
             Err(error) => {
                 return TransportDispatch {
                     result: Err(TransportError::new(
-                        error,
+                        error.into(),
                         crate::diagnostics::RequestSentStatus::NotSent,
                     )),
                     shard_id: None,
@@ -157,7 +155,7 @@ impl ShardedHttpTransport {
     fn get_or_create_pool(
         &self,
         endpoint_key: EndpointKey,
-    ) -> azure_core::Result<Arc<EndpointShardPool>> {
+    ) -> crate::error::Result<Arc<EndpointShardPool>> {
         // Safe to ignore poisoning: the critical section only performs
         // HashMap::get/insert + Arc::clone which cannot panic.
         let mut pools = self.pools.lock().unwrap_or_else(|e| e.into_inner());
@@ -241,15 +239,15 @@ impl TryFrom<&Url> for EndpointKey {
 
     fn try_from(url: &Url) -> azure_core::Result<Self> {
         let host = url.host_str().ok_or_else(|| {
-            azure_core::Error::with_message(
-                ErrorKind::DataConversion,
+            crate::error::Error::configuration(
                 format!("request URL is missing a host: {url}"),
+                None,
             )
         })?;
         let port = url.port_or_known_default().ok_or_else(|| {
-            azure_core::Error::with_message(
-                ErrorKind::DataConversion,
+            crate::error::Error::configuration(
                 format!("request URL is missing a known port: {url}"),
+                None,
             )
         })?;
         Ok(Self(Arc::from(format!("{host}:{port}").as_str())))
@@ -278,7 +276,7 @@ impl EndpointShardPool {
         connection_pool: ConnectionPoolOptions,
         client_factory: Arc<dyn HttpClientFactory>,
         base_client_config: HttpClientConfig,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         let pool = Self {
             endpoint,
             connection_pool,
@@ -320,7 +318,7 @@ impl EndpointShardPool {
         &self,
         excluded_shard_id: Option<u64>,
         preferred_shard_id: Option<u64>,
-    ) -> azure_core::Result<Arc<ClientShard>> {
+    ) -> crate::error::Result<Arc<ClientShard>> {
         let max_streams = self.connection_pool.max_http2_streams_per_client();
         let min_connections = self.connection_pool.min_http2_connections_per_endpoint();
 
@@ -351,12 +349,14 @@ impl EndpointShardPool {
             .min_by_key(|s| s.inflight())
             .cloned()
             .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    ErrorKind::Other,
+                crate::error::Error::transport(
+                    crate::models::CosmosStatus::TRANSPORT_GENERATED_503,
                     format!(
                         "endpoint shard pool {} has no available shards",
                         self.endpoint.0
                     ),
+                    None,
+                    None,
                 )
             })
     }
@@ -371,7 +371,7 @@ impl EndpointShardPool {
 
     /// Creates a new shard if below the max limit. Serialized via `write_lock`
     /// to prevent concurrent scale-up from exceeding `max_connections`.
-    fn try_create_shard(&self) -> azure_core::Result<Option<Arc<ClientShard>>> {
+    fn try_create_shard(&self) -> crate::error::Result<Option<Arc<ClientShard>>> {
         // Safe to ignore poisoning: the critical section only reads
         // ArcSwap, builds a shard, and stores a new Vec — none of
         // which panic.
@@ -394,7 +394,7 @@ impl EndpointShardPool {
         Ok(Some(shard))
     }
 
-    fn build_shard(&self) -> azure_core::Result<ClientShard> {
+    fn build_shard(&self) -> crate::error::Result<ClientShard> {
         let client_config = self.base_client_config;
 
         let client = self
@@ -410,7 +410,7 @@ impl EndpointShardPool {
 
 #[cfg(any(feature = "tokio", test))]
 impl EndpointShardPool {
-    fn run_health_sweep(&self) -> azure_core::Result<()> {
+    fn run_health_sweep(&self) -> crate::error::Result<()> {
         let now = Instant::now();
         let threshold = self.connection_pool.http2_consecutive_failure_threshold();
         let grace = self.connection_pool.http2_eviction_grace_period();
@@ -933,6 +933,7 @@ mod tests {
         HttpRequest, HttpResponse, TransportError,
     };
     use async_trait::async_trait;
+    use azure_core::error::ErrorKind;
 
     #[derive(Debug, Default)]
     struct TrackingFactory {
@@ -953,7 +954,7 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn TransportClient>> {
+        ) -> crate::error::Result<Arc<dyn TransportClient>> {
             self.idle_ping_flags
                 .lock()
                 .expect("tracking lock poisoned")

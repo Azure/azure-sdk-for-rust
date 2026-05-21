@@ -347,10 +347,7 @@ pub(crate) fn generate_query_plan_with_parameters(
 /// distinguish it from other parameter-resolution failures.
 fn resolve_integer_parameter(name: &str, parameters: &Params) -> Result<i64, azure_core::Error> {
     crate::query::common::resolve_non_negative_integer_parameter(parameters, name).map_err(|msg| {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
-            format!("{msg} (TOP/OFFSET/LIMIT clause)"),
-        )
+        crate::error::Error::client(format!("{msg} (TOP/OFFSET/LIMIT clause)"), None).into()
     })
 }
 
@@ -489,13 +486,14 @@ fn expr_to_path_string(expr: &SqlScalarExpression) -> Result<String, azure_core:
     if collect_path_parts(expr, &mut parts) {
         Ok(parts.join("."))
     } else {
-        Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
+        Err(crate::error::Error::client(
             format!(
                 "{} GROUP BY / ORDER BY expression is not a property path; local plan generation cannot reproduce the Gateway's rewrite. Fall back to the Gateway query-plan endpoint. expression: {expr:?}",
                 LocalPlanFallbackError::NEEDS_GATEWAY_FALLBACK
             ),
-        ))
+            None,
+        )
+        .into())
     }
 }
 
@@ -1270,13 +1268,21 @@ pub fn __test_only_generate_query_plan_for_pk_paths(
     pk_paths: &[&str],
     parameters: &[(String, serde_json::Value)],
 ) -> Result<serde_json::Value, azure_core::Error> {
-    let program = crate::query::parse(sql)
-        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+    let program = crate::query::parse(sql).map_err(|e| {
+        crate::error::Error::serialization(format!("failed to parse query: {e}"), None, None, e)
+    })?;
 
     let raw_plan = generate_query_plan_with_parameters(&program.query, pk_paths, parameters)?;
 
-    serde_json::to_value(&raw_plan)
-        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))
+    serde_json::to_value(&raw_plan).map_err(|e| {
+        crate::error::Error::serialization(
+            format!("failed to serialize query plan: {e}"),
+            None,
+            None,
+            e,
+        )
+        .into()
+    })
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

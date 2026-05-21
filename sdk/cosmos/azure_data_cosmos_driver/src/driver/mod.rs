@@ -25,8 +25,10 @@ pub use runtime::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 /// Walks an error's `.source()` chain and joins all distinct messages into a
 /// single colon-separated string. Duplicate consecutive messages (common when
 /// error wrappers repeat the inner message) are collapsed.
-pub(crate) fn error_chain_summary(error: &azure_core::Error) -> String {
-    use std::error::Error as _;
+///
+/// Accepts any `std::error::Error` so callers can pass either an
+/// `azure_core::Error` or a typed `crate::error::Error` without conversion.
+pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> String {
     let mut parts = vec![error.to_string()];
     let mut source = error.source();
     while let Some(cause) = source {

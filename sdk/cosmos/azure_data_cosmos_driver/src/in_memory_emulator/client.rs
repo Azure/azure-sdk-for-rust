@@ -78,7 +78,7 @@ impl InMemoryEmulatorHttpClient {
     /// # Example
     ///
     /// ```no_run
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> crate::error::Result<()> {
     /// use azure_data_cosmos_driver::in_memory_emulator::*;
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
@@ -164,7 +164,7 @@ impl HttpClientFactory for EmulatorHttpClientFactory {
         &self,
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
+    ) -> crate::error::Result<Arc<dyn TransportClient>> {
         Ok(Arc::new(EmulatorTransportClient {
             emulator: Arc::clone(&self.client),
         }))

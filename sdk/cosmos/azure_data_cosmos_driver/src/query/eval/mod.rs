@@ -729,8 +729,9 @@ pub fn query_documents(
     parameters: &Params,
     documents: &[serde_json::Value],
 ) -> azure_core::Result<Vec<serde_json::Value>> {
-    let program = crate::query::parse(sql)
-        .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+    let program = crate::query::parse(sql).map_err(|e| {
+        crate::error::Error::serialization(format!("failed to parse query: {e}"), None, None, e)
+    })?;
     let query = &program.query;
     let root_alias = get_root_alias(query);
 
@@ -755,17 +756,17 @@ pub fn query_documents(
         if use_binding_context {
             let from = &query.from.as_ref().unwrap().collection;
             let bindings_list = expand_from(doc, from, &serde_json::Map::new())
-                .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
+                .map_err(|e| crate::error::Error::client(e.to_string(), None))?;
             for bindings in bindings_list {
                 let ctx = serde_json::Value::Object(bindings);
                 if eval_where(&ctx, &query.where_clause, None, parameters)
-                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                    .map_err(|e| crate::error::Error::client(e.to_string(), None))?
                 {
                     filtered_rows.push(ctx);
                 }
             }
         } else if eval_where(doc, &query.where_clause, eval_alias, parameters)
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+            .map_err(|e| crate::error::Error::client(e.to_string(), None))?
         {
             filtered_rows.push(doc.clone());
         }
@@ -778,68 +779,67 @@ pub fn query_documents(
         Vec<serde_json::Value>,
         Vec<serde_json::Value>,
         Option<Vec<Vec<serde_json::Value>>>,
-    ) =
-        if use_aggregates {
-            if let Some(group_by) = &query.group_by {
-                // Explicit GROUP BY — partition rows into groups by key.
-                let mut groups: Vec<Vec<serde_json::Value>> = Vec::new();
-                let mut key_map: HashMap<String, usize> = HashMap::new();
+    ) = if use_aggregates {
+        if let Some(group_by) = &query.group_by {
+            // Explicit GROUP BY — partition rows into groups by key.
+            let mut groups: Vec<Vec<serde_json::Value>> = Vec::new();
+            let mut key_map: HashMap<String, usize> = HashMap::new();
 
-                for row in &filtered_rows {
-                    let key_parts: Result<Vec<serde_json::Value>, _> = group_by
-                        .expressions
-                        .iter()
-                        .map(|e| eval_scalar(e, row, eval_alias, parameters).map(|v| v.to_json()))
-                        .collect();
-                    let key = serde_json::to_string(&key_parts.map_err(|e| {
-                        azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
-                    })?)
-                    .unwrap_or_default();
-
-                    if let Some(&idx) = key_map.get(&key) {
-                        groups[idx].push(row.clone());
-                    } else {
-                        key_map.insert(key, groups.len());
-                        groups.push(vec![row.clone()]);
-                    }
-                }
-
-                let mut projected = Vec::new();
-                let mut reps = Vec::new();
-                for group in &groups {
-                    projected.push(project_group(group, query, eval_alias, parameters).map_err(
-                        |e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e),
-                    )?);
-                    reps.push(group[0].clone());
-                }
-                (projected, reps, Some(groups))
-            } else {
-                // Aggregates without GROUP BY → implicit single group over all rows.
-                let projected = project_group(&filtered_rows, query, eval_alias, parameters)
-                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
-                let rep = filtered_rows
-                    .first()
-                    .cloned()
-                    .unwrap_or(serde_json::Value::Null);
-                (
-                    vec![projected],
-                    vec![rep],
-                    Some(vec![filtered_rows.clone()]),
-                )
-            }
-        } else {
-            // No aggregates — project each row individually.
-            let mut projected = Vec::new();
-            let originals = filtered_rows.clone();
             for row in &filtered_rows {
-                projected.push(
-                    project_row(row, query, eval_alias, parameters).map_err(|e| {
-                        azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
-                    })?,
-                );
+                let key_parts: Result<Vec<serde_json::Value>, _> = group_by
+                    .expressions
+                    .iter()
+                    .map(|e| eval_scalar(e, row, eval_alias, parameters).map(|v| v.to_json()))
+                    .collect();
+                let key = serde_json::to_string(
+                    &key_parts.map_err(|e| crate::error::Error::client(e.to_string(), None))?,
+                )
+                .unwrap_or_default();
+
+                if let Some(&idx) = key_map.get(&key) {
+                    groups[idx].push(row.clone());
+                } else {
+                    key_map.insert(key, groups.len());
+                    groups.push(vec![row.clone()]);
+                }
             }
-            (projected, originals, None)
-        };
+
+            let mut projected = Vec::new();
+            let mut reps = Vec::new();
+            for group in &groups {
+                projected.push(
+                    project_group(group, query, eval_alias, parameters)
+                        .map_err(|e| crate::error::Error::client(e.to_string(), None))?,
+                );
+                reps.push(group[0].clone());
+            }
+            (projected, reps, Some(groups))
+        } else {
+            // Aggregates without GROUP BY → implicit single group over all rows.
+            let projected = project_group(&filtered_rows, query, eval_alias, parameters)
+                .map_err(|e| crate::error::Error::client(e.to_string(), None))?;
+            let rep = filtered_rows
+                .first()
+                .cloned()
+                .unwrap_or(serde_json::Value::Null);
+            (
+                vec![projected],
+                vec![rep],
+                Some(vec![filtered_rows.clone()]),
+            )
+        }
+    } else {
+        // No aggregates — project each row individually.
+        let mut projected = Vec::new();
+        let originals = filtered_rows.clone();
+        for row in &filtered_rows {
+            projected.push(
+                project_row(row, query, eval_alias, parameters)
+                    .map_err(|e| crate::error::Error::client(e.to_string(), None))?,
+            );
+        }
+        (projected, originals, None)
+    };
 
     // ── Step 3: ORDER BY ─────────────────────────────────────────────────
     //
@@ -863,11 +863,10 @@ pub fn query_documents(
                         eval_alias,
                         parameters,
                     )
-                    .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                    .map_err(|e| crate::error::Error::client(e.to_string(), None))?
                 } else {
-                    eval_scalar(&item.expression, &originals[i], eval_alias, parameters).map_err(
-                        |e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e),
-                    )?
+                    eval_scalar(&item.expression, &originals[i], eval_alias, parameters)
+                        .map_err(|e| crate::error::Error::client(e.to_string(), None))?
                 };
                 row_keys.push(v);
             }
@@ -895,13 +894,13 @@ pub fn query_documents(
     if let Some(top) = &query.select.top {
         let n = match top {
             SqlTopSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
+                crate::error::Error::client(
                     format!("TOP literal must be non-negative; got {n}"),
+                    None,
                 )
             })?,
             SqlTopSpec::Parameter(name) => resolve_integer_param(parameters, name)
-                .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                .map_err(|e| crate::error::Error::client(e.to_string(), None))?
                 as usize,
         };
         results.truncate(n);
@@ -911,24 +910,24 @@ pub fn query_documents(
     if let Some(ol) = &query.offset_limit {
         let offset = match &ol.offset {
             SqlOffsetSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
+                crate::error::Error::client(
                     format!("OFFSET literal must be non-negative; got {n}"),
+                    None,
                 )
             })?,
             SqlOffsetSpec::Parameter(name) => resolve_integer_param(parameters, name)
-                .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                .map_err(|e| crate::error::Error::client(e.to_string(), None))?
                 as usize,
         };
         let limit = match &ol.limit {
             SqlLimitSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
+                crate::error::Error::client(
                     format!("LIMIT literal must be non-negative; got {n}"),
+                    None,
                 )
             })?,
             SqlLimitSpec::Parameter(name) => resolve_integer_param(parameters, name)
-                .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?
+                .map_err(|e| crate::error::Error::client(e.to_string(), None))?
                 as usize,
         };
         if offset < results.len() {

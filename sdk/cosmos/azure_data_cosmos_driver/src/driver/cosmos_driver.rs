@@ -75,8 +75,26 @@ pub struct CosmosDriver {
 }
 
 impl CosmosDriver {
+    /// Returns `true` if `error` indicates an HTTP/2 incompatibility for
+    /// which falling back to HTTP/1.1 is appropriate.
+    ///
+    /// The Cosmos boundary mapper in [`crate::error`] walks the source chain
+    /// for `h2::Error` reasons such as `HTTP_1_1_REQUIRED` / `PROTOCOL_ERROR`
+    /// / `FRAME_SIZE_ERROR` and mints
+    /// [`SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE`] when it sees one, so
+    /// pipeline-produced errors are recognised via
+    /// [`crate::error::Error::try_extract`]. Raw `azure_core::Error` values
+    /// from paths that do not go through the boundary mapper still fall
+    /// back to a direct `h2::Error` downcast.
     #[cfg(feature = "reqwest")]
     fn has_explicit_http2_incompatibility(error: &azure_core::Error) -> bool {
+        if let Some(cosmos) = crate::error::Error::try_extract(error) {
+            if cosmos.sub_status()
+                == Some(crate::models::SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE)
+            {
+                return true;
+            }
+        }
         let mut source = error.source();
         while let Some(cause) = source {
             if let Some(h2_error) = cause.downcast_ref::<h2::Error>() {
@@ -317,10 +335,22 @@ impl CosmosDriver {
                 "",
             ),
         )
-        .await?;
+        .await
+        .map_err(|err| {
+            err.with_context(format!("AccountProperties sign_request for {endpoint}"))
+        })?;
 
-        let response = transport.send(&request).await.map_err(|e| e.error)?;
-        let props = Self::parse_account_properties_payload(&response.body)?;
+        let response = transport.send(&request).await.map_err(|e| {
+            crate::error::Error::from(e.error)
+                .with_context(format!("AccountProperties fetch from {endpoint}"))
+        })?;
+        let props = Self::parse_account_properties_payload(&response.body).map_err(|err| {
+            let cosmos_headers =
+                crate::models::CosmosResponseHeaders::from_headers(&response.headers);
+            crate::error::Error::from(err)
+                .with_cosmos_headers(cosmos_headers)
+                .with_context(format!("AccountProperties payload from {endpoint}"))
+        })?;
         tracing::info!(
             endpoint = %endpoint,
             write_region = ?props.write_region(),
@@ -332,8 +362,15 @@ impl CosmosDriver {
     fn parse_account_properties_payload(
         payload: &[u8],
     ) -> azure_core::Result<super::cache::AccountProperties> {
-        serde_json::from_slice(payload)
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))
+        serde_json::from_slice(payload).map_err(|e| {
+            crate::error::Error::serialization(
+                format!("failed to parse AccountProperties: {e}"),
+                None,
+                None,
+                e,
+            )
+            .into()
+        })
     }
 
     fn user_agent_header(runtime: &CosmosDriverRuntime) -> azure_core::http::headers::HeaderValue {
@@ -620,14 +657,22 @@ impl CosmosDriver {
                 options.clone(),
             )
             .await?;
-        let db_props: DatabaseProperties = db_result
-            .into_body()
-            .into_single()
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let db_headers = db_result.headers().clone();
+        let db_diagnostics = db_result.diagnostics();
+        let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
+            crate::error::Error::serialization(
+                format!("failed to deserialize database response: {e}"),
+                Some(db_headers.clone()),
+                Some(db_diagnostics.clone()),
+                e,
+            )
+        })?;
         let db_rid = db_props.system_properties.rid.ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
+            crate::error::Error::serialization(
                 "database response missing _rid",
+                Some(db_headers),
+                Some(db_diagnostics),
+                std::io::Error::other("missing _rid"),
             )
         })?;
 
@@ -637,18 +682,27 @@ impl CosmosDriver {
                 options,
             )
             .await?;
-        let container_props: ContainerProperties = container_result
-            .into_body()
-            .into_single()
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let container_headers = container_result.headers().clone();
+        let container_diagnostics = container_result.diagnostics();
+        let container_props: ContainerProperties =
+            container_result.into_body().into_single().map_err(|e| {
+                crate::error::Error::serialization(
+                    format!("failed to deserialize container response: {e}"),
+                    Some(container_headers.clone()),
+                    Some(container_diagnostics.clone()),
+                    e,
+                )
+            })?;
         let container_rid = container_props
             .system_properties
             .rid
             .clone()
             .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
+                crate::error::Error::serialization(
                     "container response missing _rid",
+                    Some(container_headers),
+                    Some(container_diagnostics),
+                    std::io::Error::other("missing _rid"),
                 )
             })?;
 
@@ -676,10 +730,16 @@ impl CosmosDriver {
                 options.clone(),
             )
             .await?;
-        let db_props: DatabaseProperties = db_result
-            .into_body()
-            .into_single()
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let db_headers = db_result.headers().clone();
+        let db_diagnostics = db_result.diagnostics();
+        let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
+            crate::error::Error::serialization(
+                format!("failed to deserialize database response (db_rid='{db_rid}'): {e}"),
+                Some(db_headers),
+                Some(db_diagnostics),
+                e,
+            )
+        })?;
         let resolved_db_rid = db_props
             .system_properties
             .rid
@@ -692,10 +752,21 @@ impl CosmosDriver {
                 options,
             )
             .await?;
+        let container_headers = container_result.headers().clone();
+        let container_diagnostics = container_result.diagnostics();
         let container_props: ContainerProperties = container_result
             .into_body()
             .into_single()
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+            .map_err(|e| {
+                crate::error::Error::serialization(
+                    format!(
+                        "failed to deserialize container response (db_rid='{db_rid}', container_rid='{container_rid}'): {e}"
+                    ),
+                    Some(container_headers),
+                    Some(container_diagnostics),
+                    e,
+                )
+            })?;
         let resolved_container_rid = container_props
             .system_properties
             .rid
@@ -1036,14 +1107,25 @@ impl CosmosDriver {
                 }
             }
             Err(e) => {
-                if let azure_core::error::ErrorKind::HttpResponse { status, .. } = e.kind() {
+                // Recover the typed Cosmos status when the error originated
+                // in the pipeline; fall back to the raw `azure_core` HTTP
+                // status for paths that don't go through the boundary
+                // mapper.
+                let http_status = crate::error::Error::try_extract(&e)
+                    .filter(|cosmos| cosmos.is_service_error())
+                    .map(|cosmos| cosmos.status_code())
+                    .or_else(|| match e.kind() {
+                        azure_core::error::ErrorKind::HttpResponse { status, .. } => Some(*status),
+                        _ => None,
+                    });
+                if let Some(status) = http_status {
                     // Permanent errors (auth/config issues) are logged at error
                     // level so operators can distinguish misconfiguration from
                     // transient blips.
                     // TODO: Consider adding a negative-cache TTL to suppress
                     // repeated fetches on permanent errors (401/403/404).
                     if matches!(
-                        *status,
+                        status,
                         azure_core::http::StatusCode::Unauthorized
                             | azure_core::http::StatusCode::Forbidden
                             | azure_core::http::StatusCode::NotFound
@@ -1378,6 +1460,11 @@ impl CosmosDriver {
             .get_or_fetch_by_name(&endpoint, db_name, container_name, || async move {
                 self.fetch_container_by_name(&db_name_owned, &container_name_owned)
                     .await
+                    .map_err(|err| {
+                        crate::error::Error::from(err).with_context(format!(
+                            "resolve container by name (db='{db_name_owned}', container='{container_name_owned}')"
+                        ))
+                    })
             })
             .await?;
 
@@ -1403,6 +1490,11 @@ impl CosmosDriver {
             .get_or_fetch_by_rid(&endpoint, container_rid, || async move {
                 self.fetch_container_by_rid(&db_rid_owned, &container_rid_owned)
                     .await
+                    .map_err(|err| {
+                        crate::error::Error::from(err).with_context(format!(
+                            "resolve container by rid (db_rid='{db_rid_owned}', container_rid='{container_rid_owned}')"
+                        ))
+                    })
             })
             .await?;
 
@@ -1614,7 +1706,7 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn TransportClient>> {
+        ) -> crate::error::Result<Arc<dyn TransportClient>> {
             self.configs
                 .lock()
                 .expect("config lock poisoned")

@@ -482,7 +482,7 @@ pub(crate) enum TransportOutcome {
     /// Transport/connection error (no HTTP response received).
     TransportError {
         status: CosmosStatus,
-        error: azure_core::Error,
+        error: crate::error::Error,
         request_sent: RequestSentStatus,
     },
     /// End-to-end deadline exceeded while this transport attempt was pending.

@@ -112,10 +112,13 @@ impl std::error::Error for PatchEvalError {}
 
 impl From<PatchEvalError> for azure_core::Error {
     fn from(err: PatchEvalError) -> Self {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
-            err.to_string(),
-        )
+        crate::error::Error::from(err).into()
+    }
+}
+
+impl From<PatchEvalError> for crate::error::Error {
+    fn from(err: PatchEvalError) -> Self {
+        crate::error::Error::client(err.to_string(), None)
     }
 }
 

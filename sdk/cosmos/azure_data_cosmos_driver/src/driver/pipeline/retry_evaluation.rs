@@ -535,7 +535,7 @@ fn evaluate_transport_layer_outcome(
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: CosmosStatus,
-    error: azure_core::Error,
+    error: crate::error::Error,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
     if request_sent.definitely_not_sent() && retry_state.can_retry_failover() {
@@ -611,7 +611,7 @@ fn evaluate_deadline_exceeded_outcome(
 
     (
         OperationAction::Abort {
-            error: azure_core::Error::new(azure_core::error::ErrorKind::Other, cosmos_err),
+            error: cosmos_err.into(),
             status: Some(synthetic_status),
         },
         Vec::new(),
@@ -658,7 +658,7 @@ fn build_service_error(
     crate::error::Error::service(response, service_error_message(status))
 }
 
-fn build_transport_error(status: &CosmosStatus, error: azure_core::Error) -> azure_core::Error {
+fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> azure_core::Error {
     let status_code = status.status_code();
     let name = status.name().unwrap_or("Unknown");
     let sub_status_str = match status.sub_status() {
@@ -676,19 +676,13 @@ fn build_transport_error(status: &CosmosStatus, error: azure_core::Error) -> azu
         detail_summary,
     );
 
-    let original_kind = error.kind().clone();
+    // Wrap into a fresh `Error::transport` carrying the enriched message and
+    // the original Cosmos error as source, then convert to `azure_core::Error`
+    // for propagation through `OperationAction::Abort.error`.
+    let cosmos_err =
+        crate::error::Error::transport(*status, message, None, Some(std::sync::Arc::new(error)));
 
-    // Embed a typed `Error` (synthetic transport status, original
-    // error as source) so the boundary recovers the typed Cosmos status
-    // without re-classifying.
-    let cosmos_err = crate::error::Error::transport(
-        *status,
-        message.clone(),
-        None,
-        Some(std::sync::Arc::new(error)),
-    );
-
-    azure_core::Error::with_error(original_kind, cosmos_err, message)
+    cosmos_err.into()
 }
 
 #[cfg(test)]
@@ -738,7 +732,8 @@ mod tests {
                 error: azure_core::Error::new(
                     azure_core::error::ErrorKind::Connection,
                     "connection refused",
-                ),
+                )
+                .into(),
                 request_sent: sent,
             },
         }
@@ -836,7 +831,8 @@ mod tests {
                     azure_core::error::ErrorKind::Io,
                     std::io::Error::new(std::io::ErrorKind::BrokenPipe, "socket reset"),
                     "failed to execute `reqwest` request",
-                ),
+                )
+                .into(),
                 request_sent: RequestSentStatus::Unknown,
             },
         };
@@ -850,11 +846,18 @@ mod tests {
         match action {
             OperationAction::Abort { status, error } => {
                 assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
-                assert_eq!(error.kind(), &azure_core::error::ErrorKind::Io);
+                // Cosmos errors now propagate as `ErrorKind::Other` over the
+                // azure_core::Error envelope (the typed Cosmos status is the
+                // discriminator; the recoverable Cosmos `Error` is embedded
+                // as the source).
+                assert_eq!(error.kind(), &azure_core::error::ErrorKind::Other);
+                let cosmos =
+                    crate::error::Error::try_extract(&error).expect("embedded cosmos error");
+                assert_eq!(cosmos.status(), CosmosStatus::TRANSPORT_GENERATED_503);
                 let text = error.to_string();
                 assert!(text.contains("HTTP 503/20003"));
                 assert!(text.contains("TransportGenerated503"));
-                assert!(text.contains("kind: Io"));
+                assert!(text.contains("kind: Transport"));
                 assert!(text.contains("failed to execute `reqwest` request"));
                 assert!(text.contains("socket reset"));
             }

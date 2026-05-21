@@ -68,8 +68,8 @@ impl ContainerRidKey {
 /// same container share one fetch operation.
 #[derive(Debug)]
 pub(crate) struct ContainerCache {
-    by_name: AsyncCache<ContainerNameKey, azure_core::Result<ContainerReference>>,
-    by_rid: AsyncCache<ContainerRidKey, azure_core::Result<ContainerReference>>,
+    by_name: AsyncCache<ContainerNameKey, crate::error::Result<ContainerReference>>,
+    by_rid: AsyncCache<ContainerRidKey, crate::error::Result<ContainerReference>>,
 }
 
 impl ContainerCache {
@@ -92,10 +92,10 @@ impl ContainerCache {
         db_name: &str,
         container_name: &str,
         fetch_fn: F,
-    ) -> azure_core::Result<Arc<ContainerReference>>
+    ) -> crate::error::Result<Arc<ContainerReference>>
     where
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
+        Fut: std::future::Future<Output = crate::error::Result<ContainerReference>>,
     {
         let key = ContainerNameKey {
             account_endpoint: account_endpoint.to_owned(),
@@ -115,10 +115,10 @@ impl ContainerCache {
         account_endpoint: &str,
         container_rid: &str,
         fetch_fn: F,
-    ) -> azure_core::Result<Arc<ContainerReference>>
+    ) -> crate::error::Result<Arc<ContainerReference>>
     where
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
+        Fut: std::future::Future<Output = crate::error::Result<ContainerReference>>,
     {
         let key = ContainerRidKey {
             account_endpoint: account_endpoint.to_owned(),
@@ -163,14 +163,14 @@ impl ContainerCache {
     /// cross-populates on success, and invalidates on error.
     async fn get_or_fetch_impl<K, F, Fut>(
         &self,
-        cache: &AsyncCache<K, azure_core::Result<ContainerReference>>,
+        cache: &AsyncCache<K, crate::error::Result<ContainerReference>>,
         key: K,
         fetch_fn: F,
-    ) -> azure_core::Result<Arc<ContainerReference>>
+    ) -> crate::error::Result<Arc<ContainerReference>>
     where
         K: Eq + std::hash::Hash + Clone,
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
+        Fut: std::future::Future<Output = crate::error::Result<ContainerReference>>,
     {
         if let Some(cached) = self.get_from(cache, &key).await {
             return Ok(cached);
@@ -185,13 +185,9 @@ impl ContainerCache {
             }
             Err(error) => {
                 cache.invalidate(&key).await;
-                // The error is behind an Arc (from the cache) so we can't move
-                // it out. Reconstruct with the full source chain preserved as
-                // text so diagnostics remain actionable.
-                Err(azure_core::Error::with_message(
-                    error.kind().clone(),
-                    crate::driver::error_chain_summary(error),
-                ))
+                // The cached `crate::error::Error` is `Clone` (cheap Arc
+                // refcount bump), so the typed payload propagates directly.
+                Err(error.clone())
             }
         }
     }
@@ -199,7 +195,7 @@ impl ContainerCache {
     /// Reads a cached value from one of the underlying caches.
     async fn get_from<K>(
         &self,
-        cache: &AsyncCache<K, azure_core::Result<ContainerReference>>,
+        cache: &AsyncCache<K, crate::error::Result<ContainerReference>>,
         key: &K,
     ) -> Option<Arc<ContainerReference>>
     where
