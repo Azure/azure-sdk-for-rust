@@ -670,6 +670,8 @@ impl RecoverableConnection {
         Ok(())
     }
 
+    /// Side-effecting half of `recover_from_error`: takes the locks and clears
+    /// whichever caches the [`RecoveryPlan`] flagged.
     async fn apply_recovery_plan(&self, plan: RecoveryPlan) {
         if plan.drop_connection {
             self.connections.lock().await.take();
@@ -691,6 +693,12 @@ impl RecoverableConnection {
         }
     }
 
+    /// Classifies an [`AmqpError`] into the recovery action the retry loop should take.
+    ///
+    /// Connection-level transport failures (dropped, framing, idle timeout) require a
+    /// full reconnect. Link/session-level failures only require reattach. Described
+    /// errors are bucketed by their `AmqpErrorCondition`. Anything not recognised falls
+    /// through to `ReturnError`.
     pub(super) fn should_retry_amqp_error(amqp_error: &AmqpError) -> ErrorRecoveryAction {
         match amqp_error.kind() {
             AmqpErrorKind::ManagementStatusCode(code, _) => {
