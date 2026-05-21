@@ -13,4 +13,5 @@ pub mod diagnostics;
 pub mod driver;
 pub mod operation;
 pub mod partition_key;
+pub mod references;
 pub mod response;
