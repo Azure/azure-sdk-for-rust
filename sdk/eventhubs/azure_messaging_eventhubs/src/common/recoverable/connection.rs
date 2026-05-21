@@ -697,7 +697,10 @@ impl RecoverableConnection {
     ///
     /// Connection-level transport failures (dropped, framing, idle timeout) require a
     /// full reconnect. Link/session-level failures only require reattach. Described
-    /// errors are bucketed by their `AmqpErrorCondition`. Anything not recognised falls
+    /// errors are bucketed by their `AmqpErrorCondition`. `TransportImplementationError`
+    /// is intentionally left to fall through to `ReturnError`: it covers errors local
+    /// to the AMQP backend with no defined recovery semantics, and blind retries risk
+    /// hammering a deterministic bug. Anything else not recognised likewise falls
     /// through to `ReturnError`.
     pub(super) fn should_retry_amqp_error(amqp_error: &AmqpError) -> ErrorRecoveryAction {
         match amqp_error.kind() {
@@ -734,7 +737,11 @@ impl RecoverableConnection {
             AmqpErrorKind::LinkClosedByRemote(_)
             | AmqpErrorKind::LinkDetachedByRemote(_)
             | AmqpErrorKind::LinkStateError(_)
-            | AmqpErrorKind::DetachError(_) => {
+            | AmqpErrorKind::DetachError(_)
+            | AmqpErrorKind::TransferLimitExceeded(_) => {
+                // TransferLimitExceeded means more transfers were sent than the
+                // link's credit allowed. Reattaching resets link credit; a full
+                // session/connection reconnect is unnecessary.
                 debug!("Link state error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectLink
             }
@@ -748,6 +755,8 @@ impl RecoverableConnection {
                         | AmqpErrorCondition::EntityUpdated
                         | AmqpErrorCondition::EntityDisabledError
                         | AmqpErrorCondition::TimeoutError
+                        | AmqpErrorCondition::InternalError
+                        | AmqpErrorCondition::OperationCancelled
                 ) {
                     debug!("AMQP described error can be retried: {:?}", described_error);
                     ErrorRecoveryAction::RetryAction
@@ -1168,6 +1177,50 @@ mod tests {
         assert_eq!(
             RecoverableConnection::should_retry_amqp_error(&wrapped),
             ErrorRecoveryAction::ReturnError
+        );
+    }
+
+    #[test]
+    fn transfer_limit_exceeded_reattaches_link() {
+        // amqp:link:transfer-limit-exceeded: peer sent more transfers than the
+        // link's credit allowed. Reattaching resets link credit; ReturnError
+        // would have surfaced a recoverable condition to the caller.
+        let err = AmqpError::from(AmqpErrorKind::TransferLimitExceeded(Box::new(
+            std::io::Error::other("transfer limit exceeded"),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectLink
+        );
+    }
+
+    #[test]
+    fn internal_error_and_operation_cancelled_are_retried() {
+        use azure_core_amqp::AmqpDescribedError;
+
+        // amqp:internal-error is conventionally transient (consistent with the
+        // .NET / Java Service Bus + Event Hubs SDKs). The link and connection
+        // are unaffected.
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::InternalError,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::RetryAction
+        );
+
+        // com.microsoft:operation-cancelled: service-side cancel of a single
+        // operation. The link is alive, the op can be retried.
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::OperationCancelled,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::RetryAction
         );
     }
 
