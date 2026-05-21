@@ -10,9 +10,21 @@ serde_json = "1.0.114"
 toml = "1.0.1"
 ---
 
+//! This cargo script helps maintain that most crates should take a workspace dependency on core.
+//!
+//! This is congruent with most other Azure SDK languages that use centralized dependency management.
+//! Whenever a service crates ships, it should depend on the latest azure_core.
+//! That is much easier to manage centrally. Service crates can take a path dependency on azure_core
+//! when changes are needed but must switch back to a workspace dependency once that new version is released.
+//!
+//! Service crates can also take version dependencies on other crates in their service directory e.g., sdk/cosmos.
+//! This is useful in cases where a crate is not expected to change often and you always want to dependency on the released version.
+//! It is up to service owners to update those references when they ship a new version of that dependency.
+
 use cargo_util_schemas::manifest::{InheritableDependency, TomlDependency, TomlManifest};
 use serde::Deserialize;
 use std::{
+    collections::HashMap,
     path::{Path, PathBuf},
     process::Command,
 };
@@ -38,8 +50,15 @@ fn main() {
 
     let package_manifest_path = package_manifest_path(&manifest_path);
     let workspace_manifest_path = workspace_manifest_path();
-    let packages = if package_manifest_path == workspace_manifest_path {
-        workspace_packages(&workspace_manifest_path)
+
+    // Always collect workspace packages to build the crate-name → service-directory map.
+    let all_workspace_packages = workspace_packages(&workspace_manifest_path);
+
+    let packages: Vec<PathBuf> = if package_manifest_path == workspace_manifest_path {
+        all_workspace_packages
+            .values()
+            .map(|p| PathBuf::from(&p.manifest_path))
+            .collect()
     } else {
         vec![package_manifest_path]
     };
@@ -109,7 +128,18 @@ fn main() {
             })
             .filter(|v| {
                 package_manifest.package.as_ref().is_some_and(|package| {
-                    !EXEMPTIONS.contains(&(package.name.as_ref().unwrap().as_str(), &v.name))
+                    let package_name = package.name.as_ref().unwrap().as_str();
+                    if EXEMPTIONS.contains(&(package_name, &v.name)) {
+                        return false;
+                    }
+                    // Allow version deps on other crates within the same service directory.
+                    let pkg_service_dir = all_workspace_packages
+                        .get(package_name)
+                        .and_then(|p| p.service_dir.as_ref());
+                    let dep_service_dir = all_workspace_packages
+                        .get(v.name.as_str())
+                        .and_then(|p| p.service_dir.as_ref());
+                    !matches!((pkg_service_dir, dep_service_dir), (Some(a), Some(b)) if a == b)
                 })
             })
             .collect();
@@ -129,7 +159,7 @@ fn main() {
                     .collect::<Vec<String>>()
                     .join("\n* ")
             );
-            println!("Add dependencies to workspace and change the package dependency to `{{ workspace = true }}`.");
+            println!("Add dependencies to the workspac and change the package dependency to `{{ workspace = true }}`, or use a `path` dependency if changes to the dependency are required.");
             println!("See <https://github.com/Azure/azure-sdk-for-rust/blob/main/CONTRIBUTING.md#versions> for more information.");
             println!();
 
@@ -184,7 +214,7 @@ fn workspace_manifest_path() -> PathBuf {
     path
 }
 
-fn workspace_packages(manifest_path: &Path) -> Vec<PathBuf> {
+fn workspace_packages(manifest_path: &Path) -> HashMap<String, ManifestPackage> {
     let output = Command::new("cargo")
         .args([
             "metadata",
@@ -199,12 +229,34 @@ fn workspace_packages(manifest_path: &Path) -> Vec<PathBuf> {
     let manifest: Manifest =
         serde_json::from_slice(&output.stdout).expect("bad workspace metadata");
 
-    let mut paths = Vec::with_capacity(manifest.packages.len());
-    for package in manifest.packages {
-        paths.push(package.manifest_path.into());
-    }
+    let workspace_root = PathBuf::from(&manifest.workspace_root);
+    manifest
+        .packages
+        .into_iter()
+        .map(|mut p| {
+            let manifest_path = PathBuf::from(&p.manifest_path);
+            let relative = manifest_path
+                .strip_prefix(&workspace_root)
+                .unwrap_or(&manifest_path);
+            p.service_dir = service_dir(relative);
+            (p.name.clone(), p)
+        })
+        .collect()
+}
 
-    paths
+fn service_dir(manifest_path: &Path) -> Option<PathBuf> {
+    // manifest_path must be workspace-relative. If the first component is "sdk",
+    // return "sdk/<service>" as the service directory; otherwise return None to
+    // indicate the crate is outside the sdk/ tree and should be ignored.
+    let mut components = manifest_path.components();
+    if components.next()?.as_os_str() != "sdk" {
+        return None;
+    }
+    components.next().map(|service| {
+        let mut path = PathBuf::from("sdk");
+        path.push(service);
+        path
+    })
 }
 
 fn find_file(dir: impl AsRef<std::path::Path>, name: &str) -> Option<String> {
@@ -219,12 +271,16 @@ fn find_file(dir: impl AsRef<std::path::Path>, name: &str) -> Option<String> {
 
 #[derive(Deserialize)]
 struct Manifest {
+    workspace_root: String,
     packages: Vec<ManifestPackage>,
 }
 
 #[derive(Deserialize)]
 struct ManifestPackage {
+    name: String,
     manifest_path: String,
+    #[serde(skip)]
+    service_dir: Option<PathBuf>,
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
