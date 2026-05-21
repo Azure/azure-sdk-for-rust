@@ -74,6 +74,16 @@ impl CosmosResponse {
         &self.body
     }
 
+    /// Test-only helper: returns the body as raw bytes, panicking if the body is
+    /// not a [`ResponseBody::Bytes`] variant.
+    #[cfg(test)]
+    pub(crate) fn body_bytes(&self) -> &[u8] {
+        match &self.body {
+            ResponseBody::Bytes(b) => b.as_ref(),
+            _ => panic!("expected ResponseBody::Bytes"),
+        }
+    }
+
     /// Consumes the response and returns the body.
     pub fn into_body(self) -> ResponseBody {
         self.body

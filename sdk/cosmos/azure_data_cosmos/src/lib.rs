@@ -11,9 +11,7 @@ mod connection_string;
 pub mod constants;
 mod credential;
 mod feed;
-mod feed_range;
 pub mod options;
-mod partition_key;
 pub mod query;
 mod session_helpers;
 
@@ -35,7 +33,6 @@ pub use models::{
     ResourceResponse, ResponseBody, ResponseHeaders,
 };
 pub use options::*;
-pub use partition_key::*;
 pub use query::Query;
 pub use routing_strategy::RoutingStrategy;
 pub use transactional_batch::{
@@ -43,13 +40,16 @@ pub use transactional_batch::{
     TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
 };
 
+// Driver re-exports
+#[doc(inline)]
+pub use azure_data_cosmos_driver::models::{
+    ContinuationToken, EffectivePartitionKey, FeedRange, PartitionKey, PartitionKeyValue,
+};
+
 pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
-pub use feed_range::FeedRange;
 mod driver_bridge;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
-mod hash;
-mod murmur_hash;
 mod region_proximity;
 pub mod regions;
 mod routing_strategy;

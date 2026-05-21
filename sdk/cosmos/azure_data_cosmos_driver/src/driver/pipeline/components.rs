@@ -545,9 +545,14 @@ impl std::fmt::Display for TransportOutcome {
 impl std::fmt::Debug for TransportOutcome {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TransportOutcome::Success { status, .. } => f
+            TransportOutcome::Success {
+                status,
+                cosmos_headers,
+                ..
+            } => f
                 .debug_struct("Success")
                 .field("status", status)
+                .field("cosmos_headers", &cosmos_headers)
                 .field("body", &"...")
                 .finish(),
             TransportOutcome::HttpError {

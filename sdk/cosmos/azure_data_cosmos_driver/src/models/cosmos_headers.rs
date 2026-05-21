@@ -3,6 +3,8 @@
 
 //! Cosmos DB request/response header models.
 
+use std::borrow::Cow;
+
 use crate::models::{ActivityId, ETag, Precondition, RequestCharge, SessionToken, SubStatusCode};
 use azure_core::http::headers::{HeaderValue, Headers};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
@@ -36,9 +38,10 @@ pub(crate) mod request_header_names {
     pub const IF_MATCH: &str = "if-match";
     pub const IF_NONE_MATCH: &str = "if-none-match";
     pub const PREFER: &str = "prefer";
-    pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const IS_QUERY: &str = "x-ms-documentdb-isquery";
-    pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
+    pub const IS_QUERY_PLAN_REQUEST: &str = "x-ms-cosmos-is-query-plan-request";
+    pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
+    pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
     /// Change-feed indicator ("Incremental feed"). HTTP standard name `a-im`.
     pub const A_IM: &str = "a-im";
@@ -49,10 +52,16 @@ pub(crate) mod request_header_names {
     pub const IS_BATCH_REQUEST: &str = "x-ms-cosmos-is-batch-request";
     pub const BATCH_ATOMIC: &str = "x-ms-cosmos-batch-atomic";
     pub const BATCH_CONTINUE_ON_ERROR: &str = "x-ms-cosmos-batch-continue-on-error";
+    pub const CONTINUATION: &str = "x-ms-continuation";
     pub const OFFER_THROUGHPUT: &str = "x-ms-offer-throughput";
     pub const OFFER_AUTOPILOT_SETTINGS: &str = "x-ms-cosmos-offer-autopilot-settings";
     pub const PRIORITY_LEVEL: &str = "x-ms-cosmos-priority-level";
     pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
+    pub const START_EPK: &str = "x-ms-start-epk";
+    pub const END_EPK: &str = "x-ms-end-epk";
+    #[allow(dead_code)] // Reserved for future direct partition-key header writes.
+    pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
+    pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
     /// Request-only header that asks the backend, on retries after a
     /// `404 / 1002 (READ_SESSION_NOT_AVAILABLE)` on single-master accounts,
     /// to route only to a region that has caught up to the requested LSN.
@@ -104,6 +113,8 @@ pub(crate) mod response_header_names {
     pub const COLLECTION_LAZY_INDEXING_PROGRESS: &str =
         "x-ms-documentdb-collection-lazy-indexing-progress";
 }
+
+pub const QUERY_CONTENT_TYPE: &str = "application/query+json";
 
 /// Header names used by the fault injection framework.
 #[cfg(feature = "fault_injection")]
@@ -169,6 +180,12 @@ pub struct CosmosRequestHeaders {
     /// partitions (`x-ms-documentdb-query-enablecrosspartition`). Required for
     /// query-plan requests and for queries without a partition-key scope.
     pub enable_cross_partition_query: bool,
+
+    /// Supported query features (`x-ms-cosmos-supported-query-features`).
+    ///
+    /// Sent on query plan requests to indicate which query capabilities the
+    /// client supports. The backend uses this to shape its response.
+    pub supported_query_features: Option<Cow<'static, str>>,
 }
 
 impl CosmosRequestHeaders {
@@ -249,6 +266,15 @@ impl CosmosRequestHeaders {
             headers.insert(
                 request_header_names::ENABLE_CROSS_PARTITION_QUERY,
                 HeaderValue::from_static("True"),
+            );
+        }
+        if let Some(features) = self.supported_query_features.as_ref() {
+            headers.insert(
+                request_header_names::SUPPORTED_QUERY_FEATURES,
+                match features {
+                    Cow::Borrowed(s) => HeaderValue::from(*s),
+                    Cow::Owned(s) => HeaderValue::from(s.clone()),
+                },
             );
         }
     }
@@ -1000,5 +1026,30 @@ mod tests {
                 "{v:?} should not parse"
             );
         }
+    }
+
+    #[test]
+    fn write_to_headers_emits_max_item_count() {
+        let cosmos_headers = CosmosRequestHeaders {
+            max_item_count: Some(MaxItemCount::Limit(NonZeroU32::new(7).unwrap())),
+            ..Default::default()
+        };
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("x-ms-max-item-count")),
+            Some("7")
+        );
+    }
+
+    #[test]
+    fn write_to_headers_omits_max_item_count_when_none() {
+        let cosmos_headers = CosmosRequestHeaders::default();
+        let mut headers = Headers::new();
+        cosmos_headers.write_to_headers(&mut headers);
+        assert_eq!(
+            headers.get_optional_str(&HeaderName::from_static("x-ms-max-item-count")),
+            None
+        );
     }
 }
