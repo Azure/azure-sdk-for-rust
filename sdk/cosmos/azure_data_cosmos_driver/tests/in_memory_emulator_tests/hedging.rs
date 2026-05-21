@@ -126,7 +126,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use azure_core::http::{HttpClient, Url};
-use azure_data_cosmos_driver::diagnostics::HedgeDiagnostics;
+use azure_data_cosmos_driver::diagnostics::{HedgeDiagnostics, HedgeTerminalState};
 use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
@@ -307,6 +307,12 @@ async fn hedging_read_primary_fast() {
         "primary should win pre-threshold; diag={hedge_diag:?}",
     );
     assert_eq!(
+        hedge_diag.terminal_state,
+        HedgeTerminalState::PrimaryWonPreThreshold,
+        "zero-overhead happy path → terminal state must classify as \
+         PrimaryWonPreThreshold (spec §10.1.1); diag={hedge_diag:?}",
+    );
+    assert_eq!(
         hedge_diag.total_requests_launched, 1,
         "only the primary should have been launched (§6.5 #3 zero-overhead \
          happy path); diag={hedge_diag:?}",
@@ -366,6 +372,12 @@ async fn hedging_read_primary_slow() {
     assert!(
         hedge_diag.was_hedge,
         "alternate region should win the hedge race; diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.terminal_state,
+        HedgeTerminalState::AlternateWon,
+        "alternate must win when primary is slow past threshold → terminal \
+         state must classify as AlternateWon (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
         hedge_diag.total_requests_launched, 2,
@@ -435,6 +447,12 @@ async fn hedging_read_primary_503() {
     assert!(
         hedge_diag.was_hedge,
         "alternate region should win the hedge race; diag={hedge_diag:?}",
+    );
+    assert_eq!(
+        hedge_diag.terminal_state,
+        HedgeTerminalState::AlternateWon,
+        "delayed-503 primary + healthy alternate must classify as \
+         AlternateWon (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
         hedge_diag.total_requests_launched, 2,
@@ -727,6 +745,12 @@ async fn hedging_read_both_regions_slow() {
     // Both regions were contacted because the alternate did spawn at the
     // threshold; the primary won the race because its 500 ms delay
     // finished before the alternate's 100 ms + 700 ms = 800 ms.
+    assert_eq!(
+        hedge_diag.terminal_state,
+        HedgeTerminalState::PrimaryWonAfterHedge,
+        "primary completing first after the alternate spawned must \
+         classify as PrimaryWonAfterHedge (spec §10.1.1); diag={hedge_diag:?}",
+    );
     assert_eq!(
         hedge_diag.total_requests_launched, 2,
         "both pipelines should have been spawned (graceful degradation); \

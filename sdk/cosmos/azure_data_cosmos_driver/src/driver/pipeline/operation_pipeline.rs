@@ -1568,6 +1568,25 @@ fn classify_hedge_result(result: azure_core::Result<TransportResult>) -> HedgeCl
     }
 }
 
+/// Non-consuming version of [`classify_hedge_result`] for the
+/// pre-threshold primary-completion branch, where the caller still
+/// needs the original `TransportResult` to surface the response via
+/// [`finalize_hedge_attempt`] but only wants to know whether the
+/// primary's outcome was `Final` for [`record_hedge_outcome`] gating.
+///
+/// Returns `true` iff a `Success` or an `HttpError` whose status passes
+/// [`is_final_result`]. Mirrors `classify_hedge_result` exactly — keep
+/// the two in lockstep.
+fn result_is_final(tr: &TransportResult) -> bool {
+    match &tr.outcome {
+        TransportOutcome::Success { .. } => true,
+        TransportOutcome::HttpError { status, .. } => is_final_result(status),
+        TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
+            false
+        }
+    }
+}
+
 /// Converts a final-classified [`TransportResult`] (success or final HTTP
 /// error) into the response shape that `execute_operation_pipeline` would
 /// otherwise return from STAGE 7's `Complete` or `Abort` arms.
@@ -1920,12 +1939,12 @@ fn deadline_elapsed(deadline: Option<Instant>) -> bool {
 /// is layered onto both races: the deadline future is wrapped into a
 /// 3-way `select` with the threshold timer (Stage 2) and the
 /// primary/secondary pair (Stage 4). When the deadline wins,
-/// [`harvest_remaining_attempt`] / [`harvest_remaining_pair`] give the
-/// most-advanced in-flight pipeline up to `HARVEST_WINDOW` to complete
-/// so its diagnostics can be attached to the returned
-/// [`application_cancelled_error`] (spec §6.5 #7 / §14.2). Loser
-/// futures are dropped — structural cancellation propagates through
-/// the transport pipeline (spec §6.5 #5).
+/// [`harvest_remaining_attempt`] gives the most-advanced in-flight
+/// pipeline up to `HARVEST_WINDOW` to complete so its diagnostics can
+/// be attached to the returned [`application_cancelled_error`] (spec
+/// §6.5 #7 / §14.2). Loser futures are dropped — structural
+/// cancellation propagates through the transport pipeline (spec §6.5
+/// #5).
 ///
 /// PPCB feedback (spec §6.5 #8 / §9.5) is wired here via
 /// [`record_hedge_outcome`]: every Final outcome routed to either side
@@ -2028,20 +2047,28 @@ async fn execute_hedged(
             // Spec §9.5: a `Final` primary outcome — success *or*
             // application-classified HTTP failure (404, 409, 412, etc.) —
             // resets the consecutive-hedge-win counter on this
-            // `(partition, primary_region)` pair. Symmetric with the
-            // post-threshold primary-win branches below, which also
-            // record unconditionally. Recording even on the
-            // zero-overhead path ensures a streak of fast `Final`
-            // primaries clears any prior alternate-win backlog and
-            // prevents partition-routing oscillation under sticky 4xx
-            // traffic (review #2).
-            record_hedge_outcome(
-                ctx.hedge_outcome_recorder,
-                HedgeOutcome::PrimaryWin,
-                ctx.partition_key_range_id.as_ref(),
-                primary_region.as_ref(),
-            );
-            return finalize_hedge_attempt(Box::new(result?), parent_diagnostics);
+            // `(partition, primary_region)` pair. The post-threshold
+            // primary-win branches below also gate on
+            // `HedgeClass::Final`; recording for a `Transient` primary
+            // outcome (e.g., a fast 503/449/transport-reset that
+            // completes before the threshold) would silently neutralize
+            // the §9.5 PPCB signal for exactly the failure mode it is
+            // designed to detect — a partition serving sticky-fast
+            // transients would perpetually reset the alternate-win
+            // counter and never trip routing. Classify first, mirror the
+            // post-threshold semantics, and surface the response either
+            // way (review #2).
+            let tr = result?;
+            let primary_was_final = result_is_final(&tr);
+            if primary_was_final {
+                record_hedge_outcome(
+                    ctx.hedge_outcome_recorder,
+                    HedgeOutcome::PrimaryWin,
+                    ctx.partition_key_range_id.as_ref(),
+                    primary_region.as_ref(),
+                );
+            }
+            return finalize_hedge_attempt(Box::new(tr), parent_diagnostics);
         }
         Either::Right((TimerEvent::ThresholdElapsed, remaining_primary)) => remaining_primary,
         Either::Right((TimerEvent::DeadlineFired, remaining_primary)) => {
@@ -4336,6 +4363,86 @@ mod tests {
             super::classify_hedge_result(Err(err)),
             super::HedgeClass::Transient
         ));
+    }
+
+    // ── result_is_final (Part 4b — pre-threshold PrimaryWin gating) ────
+    //
+    // Regression tests for the pre-threshold primary-completion branch
+    // in `execute_hedged`. Before the fix the branch recorded
+    // `PrimaryWin` unconditionally — including for `Transient` primary
+    // outcomes — which would perpetually reset the §9.5
+    // consecutive-hedge-win counter under sticky-fast-transient
+    // traffic, neutralizing the very PPCB signal the counter was
+    // designed to detect. `result_is_final` is the non-consuming
+    // classifier used to gate the recording; it must agree with
+    // `classify_hedge_result` for every input shape.
+
+    #[test]
+    fn result_is_final_success_is_true() {
+        let tr = http_result(200, None);
+        assert!(super::result_is_final(&tr));
+    }
+
+    #[test]
+    fn result_is_final_409_conflict_is_true() {
+        let tr = http_result(409, None);
+        assert!(super::result_is_final(&tr));
+    }
+
+    #[test]
+    fn result_is_final_503_is_false() {
+        let tr = http_result(503, None);
+        assert!(!super::result_is_final(&tr));
+    }
+
+    #[test]
+    fn result_is_final_404_1002_is_false() {
+        // 404/1002 ReadSessionNotAvailable is transient — the
+        // pre-threshold branch must NOT record PrimaryWin (review #2,
+        // c328cf50 over-correction).
+        let tr = http_result(404, Some(1002));
+        assert!(!super::result_is_final(&tr));
+    }
+
+    #[test]
+    fn result_is_final_deadline_exceeded_is_false() {
+        let tr =
+            super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent);
+        assert!(!super::result_is_final(&tr));
+    }
+
+    /// Cross-check: every `Ok(tr)` shape that `classify_hedge_result`
+    /// maps to `HedgeClass::Final` must also be `true` under
+    /// `result_is_final`, and vice versa. Keeping the two in lockstep
+    /// is the load-bearing invariant for the pre-threshold PrimaryWin
+    /// gating fix — drift between them re-opens the c328cf50 bug.
+    #[test]
+    fn result_is_final_agrees_with_classify_hedge_result() {
+        let cases = [
+            http_result(200, None),
+            http_result(201, None),
+            http_result(204, None),
+            http_result(400, None),
+            http_result(404, None),
+            http_result(404, Some(1002)),
+            http_result(409, None),
+            http_result(412, None),
+            http_result(429, None),
+            http_result(500, None),
+            http_result(503, None),
+            super::TransportResult::deadline_exceeded(crate::diagnostics::RequestSentStatus::Sent),
+        ];
+        for tr in cases {
+            let by_peek = super::result_is_final(&tr);
+            let by_classify = matches!(
+                super::classify_hedge_result(Ok(tr)),
+                super::HedgeClass::Final(_)
+            );
+            assert_eq!(
+                by_peek, by_classify,
+                "result_is_final must agree with classify_hedge_result",
+            );
+        }
     }
 
     // ── finalize_hedge_attempt (Part 4b) ──────────────────────────────

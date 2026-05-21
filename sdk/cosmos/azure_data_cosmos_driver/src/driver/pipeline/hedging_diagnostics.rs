@@ -75,6 +75,7 @@ pub enum HedgeTerminalState {
     /// Both legs returned a transient outcome. The race produced no winner;
     /// the operation surfaced either `application_cancelled_error` (if the
     /// deadline drove termination) or `transient_outcome_error`.
+    #[non_exhaustive]
     BothTransient {
         /// `true` iff the operation-level deadline had elapsed when the
         /// race concluded.
