@@ -176,7 +176,7 @@ where
     let (initial_response, response_analysis) =
         get_initial_response_and_analyze(range, partition_size, client.clone()).await?;
 
-    let status = initial_response.status();
+    let _status = initial_response.status();
     let headers = initial_response.headers().clone();
     let etag_lock = headers.get_optional_str(&"etag".into()).map(Etag::from);
 
@@ -1251,6 +1251,39 @@ mod tests {
         .await;
 
         assert!(download_result.is_err());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn download_into_insufficient_buffer() -> AzureResult<()> {
+        const DATA_LEN: usize = 1024;
+        let data = get_random_data(DATA_LEN);
+        for (buffer_len, range) in [
+            (0, None),
+            (DATA_LEN - 1, None),
+            (DATA_LEN / 2, None),
+            (0, Some(0..1)),
+            (0, Some(101..102)),
+            (0, Some(0..DATA_LEN)),
+            (DATA_LEN - 1, Some(0..DATA_LEN)),
+            (DATA_LEN / 2, Some(0..DATA_LEN / 2 + 1)),
+        ] {
+            let http_range = range.map(HttpRange::from);
+            for parallel in [1, 8] {
+                for partition_len in [DATA_LEN * 2, DATA_LEN / 8] {
+                    let download_result = download_into(
+                        &mut vec![0; buffer_len],
+                        http_range.clone(),
+                        NonZero::new(parallel).unwrap(),
+                        NonZero::new(partition_len).unwrap(),
+                        Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None)),
+                    )
+                    .await;
+                    assert!(download_result.is_err(), "Expected error for buffer_len: {}, range: {:?}, parallel: {}, partition_len: {}", buffer_len, http_range, parallel, partition_len);
+                }
+            }
+        }
 
         Ok(())
     }
