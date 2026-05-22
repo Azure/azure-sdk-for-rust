@@ -165,13 +165,9 @@ pub struct CosmosDriver {
     /// refresh loop. Held for the driver's lifetime; on drop the entry is
     /// removed from the runtime's account-refresh registry so subsequent
     /// ticks skip this account.
-    ///
-    /// `Option` so test scaffolding can construct a driver without the
-    /// guard (when no runtime registration is desired). Production paths
-    /// (`CosmosDriver::new`) always set it to `Some`.
     #[cfg(feature = "tokio")]
     #[allow(dead_code, reason = "held for Drop side effect")]
-    account_refresh_guard: Option<super::account_refresh::AccountRefreshRegistration>,
+    account_refresh_guard: super::account_refresh::AccountRefreshRegistration,
 }
 
 impl CosmosDriver {
@@ -900,11 +896,11 @@ impl CosmosDriver {
             let endpoint_for_registration = AccountEndpoint::from(&account);
             let refresh_fn_for_registration = Arc::clone(&refresh_callback);
             let on_success = on_success_for_lss(Arc::downgrade(&location_state_store));
-            Some(runtime.register_for_account_refresh(
+            runtime.register_for_account_refresh(
                 endpoint_for_registration,
                 refresh_fn_for_registration,
                 on_success,
-            ))
+            )
         };
 
         Self {

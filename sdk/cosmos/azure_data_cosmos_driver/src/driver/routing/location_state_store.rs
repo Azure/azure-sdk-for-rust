@@ -28,11 +28,8 @@ use super::{
     AccountEndpointState, CosmosEndpoint, LocationEffect,
 };
 
-/// Re-exported here so existing call sites (`LocationStateStore::new`)
-/// continue to compile against the same type the driver uses for the
-/// runtime-owned refresh registration. Single source of truth lives in
-/// `crate::driver::account_refresh`.
-pub(crate) type AccountRefreshFn = crate::driver::account_refresh::AccountRefreshFn;
+use crate::driver::account_refresh::AccountRefreshFn;
+
 #[derive(Clone, Debug)]
 pub(crate) struct LocationSnapshot {
     pub account: Arc<AccountEndpointState>,

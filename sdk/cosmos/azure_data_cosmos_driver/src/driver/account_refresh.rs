@@ -40,8 +40,8 @@ use crate::{
 };
 
 /// Interval between iterations of the runtime-owned account-metadata refresh
-/// loop. Hardcoded per PR #4407 review history; independent of the 5-second
-/// rate limit used by `LocationStateStore::refresh_account_properties_if_due`.
+/// loop. Independent of the 5-second rate limit used by
+/// `LocationStateStore::refresh_account_properties_if_due`.
 #[cfg(feature = "tokio")]
 pub(crate) const BACKGROUND_REFRESH_INTERVAL: Duration = Duration::from_secs(300);
 
@@ -94,7 +94,7 @@ impl std::fmt::Debug for AccountRefreshEntry {
 
 /// Generates the next per-registration token.
 pub(crate) fn next_registration_id(counter: &AtomicU64) -> u64 {
-    counter.fetch_add(1, Ordering::Relaxed)
+    counter.fetch_add(1, Ordering::SeqCst)
 }
 
 /// Implemented by the runtime so guards can call back into it to deregister
