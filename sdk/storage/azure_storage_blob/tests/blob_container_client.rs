@@ -933,3 +933,84 @@ async fn test_lease_already_present_error_code(ctx: TestContext) -> Result<(), B
     container_client.delete(None).await?;
     Ok(())
 }
+
+#[recorded::test]
+async fn test_list_blob_hierarchy_segment(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, false, StorageAccount::Standard, None).await?;
+
+    container_client.create(None).await?;
+
+    // Create blobs with hierarchical names to exercise virtual directory listing.
+    // Two blobs under "dir1/", one under "dir2/", and one at the root level.
+    let hierarchical_blobs = [
+        "dir1/blob1".to_string(),
+        "dir1/blob2".to_string(),
+        "dir2/blob3".to_string(),
+        "root_blob".to_string(),
+    ];
+    for name in &hierarchical_blobs {
+        create_test_blob(&container_client.blob_client(name), None, None).await?;
+    }
+
+    // APPROACH 1: Page-level access via into_pages() + into_model().
+    // This is the only way to access blob_prefixes (virtual directories), but it's
+    // cumbersome compared to the typical item-level paging that most users would reach for.
+    let mut pages = container_client
+        .list_blob_hierarchy_segment("/", None)?
+        .into_pages();
+
+    let page = pages.try_next().await?;
+    let response = page.unwrap().into_model()?;
+
+    // blob_prefixes ARE accessible here — they represent virtual directories.
+    let prefixes = response.hierarchical_list.blob_prefixes.unwrap_or_default();
+    let prefix_names: Vec<String> = prefixes.iter().filter_map(|p| p.name.clone()).collect();
+    assert!(
+        prefix_names.contains(&"dir1/".to_string()),
+        "expected 'dir1/' in prefixes, got: {prefix_names:?}"
+    );
+    assert!(
+        prefix_names.contains(&"dir2/".to_string()),
+        "expected 'dir2/' in prefixes, got: {prefix_names:?}"
+    );
+
+    // blob_items only contains blobs at the root level (not nested ones).
+    let item_names: Vec<String> = response
+        .hierarchical_list
+        .blob_items
+        .iter()
+        .filter_map(|b| b.name.clone())
+        .collect();
+    assert_eq!(
+        item_names,
+        vec!["root_blob".to_string()],
+        "expected only root-level blobs in blob_items, got: {item_names:?}"
+    );
+
+    // APPROACH 2: Item-level paging — the typical way most users would consume a Pager.
+    // The Pager implements Stream<Item = BlobItem>, which is how list_blobs() is normally
+    // consumed. However, for the hierarchical API this silently drops blob_prefixes because
+    // the Page impl only yields blob_items.
+    let mut pager = container_client.list_blob_hierarchy_segment("/", None)?;
+    let mut all_items = Vec::new();
+    while let Some(item) = pager.try_next().await? {
+        all_items.push(item);
+    }
+
+    // Only the root-level blob is yielded; the 2 virtual directory prefixes ("dir1/",
+    // "dir2/") are silently discarded. Users relying on item-level paging have no way
+    // to discover that subdirectories exist.
+    assert_eq!(
+        all_items.len(),
+        1,
+        "Page::into_items() discards blob_prefixes — only blob_items are yielded. \
+         Got {} items but expected 1 (the root blob). The 2 directory prefixes are lost.",
+        all_items.len()
+    );
+
+    container_client.delete(None).await?;
+    Ok(())
+}

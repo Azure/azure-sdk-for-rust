@@ -124,6 +124,19 @@ pub struct BlobContainerClientReleaseLeaseResult;
 #[derive(SafeDebug)]
 pub struct BlobContainerClientRenewLeaseResult;
 
+/// Represents an array of blobs.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+pub struct BlobHierarchyList {
+    /// The blob items.
+    #[serde(default, rename = "Blob")]
+    pub blob_items: Vec<BlobItem>,
+
+    /// The blob prefixes.
+    #[serde(rename = "BlobPrefix", skip_serializing_if = "Option::is_none")]
+    pub blob_prefixes: Option<Vec<BlobPrefix>>,
+}
+
 /// Represents a blob.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]
@@ -185,6 +198,19 @@ pub struct BlobName {
     /// Whether the blob name is encoded.
     #[serde(rename = "@Encoded", skip_serializing_if = "Option::is_none")]
     pub encoded: Option<bool>,
+}
+
+/// Represents a blob prefix.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+pub struct BlobPrefix {
+    /// The blob name.
+    #[serde(
+        deserialize_with = "crate::models::blob_name::option::deserialize",
+        rename = "Name",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub name: Option<String>,
 }
 
 /// The properties of a blob.
@@ -850,6 +876,45 @@ pub struct GeoReplication {
     /// The status of the secondary location.
     #[serde(rename = "Status", skip_serializing_if = "Option::is_none")]
     pub status: Option<GeoReplicationStatusType>,
+}
+
+/// The result of the List Blobs Hierarchical API.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[non_exhaustive]
+#[serde(rename = "EnumerationResults")]
+pub struct ListBlobsHierarchicalResponse {
+    /// The container name.
+    #[serde(rename = "@ContainerName", skip_serializing_if = "Option::is_none")]
+    pub container_name: Option<String>,
+
+    /// The delimiter of the blobs.
+    #[serde(rename = "Delimiter", skip_serializing_if = "Option::is_none")]
+    pub delimiter: Option<String>,
+
+    /// The list of hierarchical blobs.
+    #[serde(default, rename = "Blobs")]
+    pub hierarchical_list: BlobHierarchyList,
+
+    /// An opaque string value that identifies the portion of the result set returned with this operation.
+    #[serde(rename = "Marker", skip_serializing_if = "Option::is_none")]
+    pub marker: Option<String>,
+
+    /// The maximum number of blobs to be returned with this operation.
+    #[serde(rename = "MaxResults", skip_serializing_if = "Option::is_none")]
+    pub max_results: Option<i32>,
+
+    /// An opaque string value that identifies the portion of the result set to be returned with the next operation. Use this
+    /// value in the next request to continue the listing operation.
+    #[serde(rename = "NextMarker", skip_serializing_if = "Option::is_none")]
+    pub next_marker: Option<String>,
+
+    /// The prefix of the blobs.
+    #[serde(rename = "Prefix", skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+
+    /// The service endpoint.
+    #[serde(rename = "@ServiceEndpoint", skip_serializing_if = "Option::is_none")]
+    pub service_endpoint: Option<String>,
 }
 
 /// The result of the List Blobs API.
