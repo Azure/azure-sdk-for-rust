@@ -76,6 +76,14 @@ parameters:
 - name: EnvVars
   type: object
   default: {}
+# Additional pipeline stages spliced in after the live test stage and before
+# Release. Used by services (e.g. cosmos vnext emulator) that need to wire in
+# non-blocking parallel stages without forking this archetype. Each entry
+# must already have a stage-shaped definition; see
+# `sdk/cosmos/eng/cosmos-vnext-stage.yml` for the canonical example.
+- name: AdditionalStages
+  type: object
+  default: []
 
 extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
@@ -144,6 +152,12 @@ extends:
                     SubscriptionConfiguration: ${{ cloud.value.SubscriptionConfiguration }}
                     SubscriptionConfigurations: ${{ cloud.value.SubscriptionConfigurations }}
                     SubscriptionConfigurationFilePaths: ${{ cloud.value.SubscriptionConfigurationFilePaths }}
+
+    # Service-supplied additional stages (e.g. cosmos vnext emulator). These
+    # are intentionally NOT in any DependsOn list, so failures here do not
+    # block Build, live tests, Pack, Prerelease or Release.
+    - ${{ each stage in parameters.AdditionalStages }}:
+      - ${{ stage }}
 
     # The Prerelease and Release stages are conditioned on:
     # 1. Internal trigger, not Pull Request trigger

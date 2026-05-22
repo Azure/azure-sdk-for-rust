@@ -28,6 +28,16 @@ parameters:
   type: boolean
 - name: PersistOidcToken
   type: boolean
+# When true, skip everything that interacts with Azure RM: subscription-config
+# merging, ARM deployment of `test-resources.bicep`, and resource teardown.
+# Test, JUnit-conversion and publish steps run unconditionally instead of being
+# gated on `CI_HAS_DEPLOYED_RESOURCES=true`. Used by services that run live
+# tests against a local container (e.g. the Cosmos vnext emulator job) where
+# no Azure account is needed and `CloudConfig.ServiceConnection` may not exist
+# (e.g. fork PRs in the public project).
+- name: SkipDeployTestResources
+  type: boolean
+  default: false
 
 jobs:
 - job:
@@ -70,29 +80,30 @@ jobs:
 
   - ${{ parameters.PreSteps }}
 
-  - template: /eng/common/TestResources/build-test-resource-config.yml
-    parameters:
-      SubscriptionConfiguration: ${{ parameters.CloudConfig.SubscriptionConfiguration }}
-      SubscriptionConfigurations: ${{ parameters.CloudConfig.SubscriptionConfigurations }}
-      SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths }}
-      EnvVars:
-        Pool: $(Pool)
-        ${{insert}}: ${{ parameters.EnvVars }}
+  - ${{ if not(parameters.SkipDeployTestResources) }}:
+    - template: /eng/common/TestResources/build-test-resource-config.yml
+      parameters:
+        SubscriptionConfiguration: ${{ parameters.CloudConfig.SubscriptionConfiguration }}
+        SubscriptionConfigurations: ${{ parameters.CloudConfig.SubscriptionConfigurations }}
+        SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths }}
+        EnvVars:
+          Pool: $(Pool)
+          ${{insert}}: ${{ parameters.EnvVars }}
 
-  - template: /eng/common/TestResources/deploy-test-resources.yml
-    parameters:
-      ${{ if or(parameters.Location, parameters.CloudConfig.Location) }}:
-        Location: ${{ coalesce(parameters.Location, parameters.CloudConfig.Location) }}
-      ServiceDirectory: ${{ parameters.ServiceDirectory }}
-      SubscriptionConfiguration: $(SubscriptionConfiguration)
-      ArmTemplateParameters: $(ArmTemplateParameters)
-      UseFederatedAuth: ${{ parameters.UseFederatedAuth }}
-      ServiceConnection: ${{ parameters.CloudConfig.ServiceConnection }}
-      SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths}}
-      PersistOidcToken: ${{ parameters.PersistOidcToken }}
-      EnvVars:
-        Pool: $(Pool)
-        ${{insert}}: ${{ parameters.EnvVars }}
+    - template: /eng/common/TestResources/deploy-test-resources.yml
+      parameters:
+        ${{ if or(parameters.Location, parameters.CloudConfig.Location) }}:
+          Location: ${{ coalesce(parameters.Location, parameters.CloudConfig.Location) }}
+        ServiceDirectory: ${{ parameters.ServiceDirectory }}
+        SubscriptionConfiguration: $(SubscriptionConfiguration)
+        ArmTemplateParameters: $(ArmTemplateParameters)
+        UseFederatedAuth: ${{ parameters.UseFederatedAuth }}
+        ServiceConnection: ${{ parameters.CloudConfig.ServiceConnection }}
+        SubscriptionConfigurationFilePaths: ${{ parameters.CloudConfig.SubscriptionConfigurationFilePaths}}
+        PersistOidcToken: ${{ parameters.PersistOidcToken }}
+        EnvVars:
+          Pool: $(Pool)
+          ${{insert}}: ${{ parameters.EnvVars }}
 
   # To allow tests to run in parallel to Pack, we don't reuse the PackageInfo directory
   # from the Pack job. We just let each test leg create its own PackageInfo directory.
@@ -109,7 +120,10 @@ jobs:
   - ${{ if parameters.UseFederatedAuth }}:
     - task: AzurePowerShell@5
       displayName: "Test Packages - Federated Auth"
-      condition: and(succeeded(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
+      ${{ if parameters.SkipDeployTestResources }}:
+        condition: succeeded()
+      ${{ else }}:
+        condition: and(succeeded(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
       timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
       env:
         CIBW_BUILD_VERBOSITY: 3
@@ -137,7 +151,10 @@ jobs:
   - ${{ else }}:
     - task: Powershell@2
       displayName: "Test Packages"
-      condition: and(succeeded(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
+      ${{ if parameters.SkipDeployTestResources }}:
+        condition: succeeded()
+      ${{ else }}:
+        condition: and(succeeded(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
       timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
       env:
         CIBW_BUILD_VERBOSITY: 3
@@ -152,14 +169,20 @@ jobs:
 
   - task: Powershell@2
     displayName: Convert Test Results to JUnit XML
-    condition: and(succeededOrFailed(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
+    ${{ if parameters.SkipDeployTestResources }}:
+      condition: succeededOrFailed()
+    ${{ else }}:
+      condition: and(succeededOrFailed(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
     inputs:
       pwsh: true
       filePath: $(Build.SourcesDirectory)/eng/scripts/Convert-TestResultsToJUnit.ps1
 
   - task: PublishTestResults@2
     displayName: Publish Test Results
-    condition: and(succeededOrFailed(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
+    ${{ if parameters.SkipDeployTestResources }}:
+      condition: succeededOrFailed()
+    ${{ else }}:
+      condition: and(succeededOrFailed(), eq(variables['CI_HAS_DEPLOYED_RESOURCES'], 'true'))
     inputs:
       testResultsFormat: JUnit
       testResultsFiles: '**/test-results/junit/*.xml'
@@ -169,10 +192,11 @@ jobs:
 
   - ${{ parameters.PostSteps }}
 
-  - template: /eng/common/TestResources/remove-test-resources.yml
-    parameters:
-      ServiceDirectory: ${{ parameters.ServiceDirectory }}
-      SubscriptionConfiguration: $(SubscriptionConfiguration)
-      UseFederatedAuth: ${{ parameters.UseFederatedAuth }}
-      ServiceConnection: ${{ parameters.CloudConfig.ServiceConnection }}
-      EnvVars: ${{ parameters.EnvVars }}
+  - ${{ if not(parameters.SkipDeployTestResources) }}:
+    - template: /eng/common/TestResources/remove-test-resources.yml
+      parameters:
+        ServiceDirectory: ${{ parameters.ServiceDirectory }}
+        SubscriptionConfiguration: $(SubscriptionConfiguration)
+        UseFederatedAuth: ${{ parameters.UseFederatedAuth }}
+        ServiceConnection: ${{ parameters.CloudConfig.ServiceConnection }}
+        EnvVars: ${{ parameters.EnvVars }}
