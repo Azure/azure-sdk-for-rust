@@ -2,12 +2,16 @@
 # Licensed under the MIT License.
 #
 # Job template for running Rust integration tests against the Cosmos DB vnext
-# (Linux) emulator running in Docker on the same agent. Derived from
-# `live.tests.yml` but with all Azure RM deploy / cleanup machinery removed
-# because no Azure account is needed — the emulator is a local container.
+# (Linux) emulator running in Docker on the same agent. Owned by the Cosmos
+# service and lives under `sdk/cosmos/eng/` (per heaths review feedback on
+# PR #4457) so changes don't require touching shared engineering infra.
 #
 # Triggered from `eng/pipelines/templates/stages/archetype-sdk-client.yml`'s
-# `AdditionalStages` parameter via `sdk/cosmos/eng/cosmos-vnext-stage.yml`.
+# generic `AdditionalStages` parameter via `sdk/cosmos/eng/cosmos-vnext-stage.yml`.
+#
+# HTTP-only on day one. An HTTPS-mode variant (using
+# `allow_invalid_certificates` + `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`)
+# is left as a follow-up.
 
 parameters:
 # required matrix parameters
@@ -26,15 +30,15 @@ parameters:
   type: string
 - name: TimeoutInMinutes
   type: number
-- name: Https
-  type: boolean
-  default: false
 - name: EmulatorImage
   type: string
   default: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
 - name: ContainerName
   type: string
   default: cosmosdb-emulator-vnext
+- name: ReadinessTimeoutSeconds
+  type: number
+  default: 180
 # Well-known emulator master key — same value used by the legacy Windows
 # emulator and accepted by the vnext image. Safe to commit; not a secret.
 - name: EmulatorKey
@@ -56,14 +60,6 @@ jobs:
     image: $(OSVmImage)
     os: ${{ parameters.OSName }}
 
-  variables:
-  - ${{ if parameters.Https }}:
-    - name: VNextScheme
-      value: https
-  - ${{ else }}:
-    - name: VNextScheme
-      value: http
-
   steps:
   - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
     parameters:
@@ -80,11 +76,54 @@ jobs:
 
   - template: /eng/pipelines/templates/steps/vcpkg.yml
 
-  - template: /eng/pipelines/templates/steps/cosmos-vnext-emulator.yml
-    parameters:
-      Https: ${{ parameters.Https }}
-      ContainerName: ${{ parameters.ContainerName }}
-      Image: ${{ parameters.EmulatorImage }}
+  # --- Start the vnext (Linux) emulator container ---
+  # Inlined (previously a standalone step template under eng/) per PR #4457
+  # review feedback to keep all vnext machinery in sdk/cosmos/eng.
+  - task: Docker@0
+    displayName: "Pull Cosmos DB vnext (Linux) emulator image"
+    inputs:
+      command: 'Run a Docker command'
+      action: 'Run a Docker command'
+      customCommand: 'pull ${{ parameters.EmulatorImage }}'
+
+  - task: Docker@0
+    displayName: "Run Cosmos DB vnext emulator (HTTP)"
+    inputs:
+      command: 'Run a Docker command'
+      action: 'Run a Docker command'
+      customCommand: >-
+        run --detach
+        --name ${{ parameters.ContainerName }}
+        --publish 8081:8081
+        --publish 8080:8080
+        -e ENABLE_EXPLORER=false
+        ${{ parameters.EmulatorImage }}
+
+  - pwsh: |
+      # Best-effort readiness probe. Tests will surface a clearer failure
+      # than a stuck step if the probe never succeeds.
+      $deadline = (Get-Date).AddSeconds(${{ parameters.ReadinessTimeoutSeconds }})
+      $probeUrl = 'http://localhost:8080/ready'
+      $ready = $false
+      while ((Get-Date) -lt $deadline) {
+        try {
+          $resp = Invoke-WebRequest -Uri $probeUrl -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+          if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 300) {
+            Write-Host "vnext emulator reports ready (HTTP $($resp.StatusCode))."
+            $ready = $true
+            break
+          }
+        } catch {
+          Write-Host "Waiting for vnext emulator readiness: $($_.Exception.Message)"
+        }
+        Start-Sleep -Seconds 5
+      }
+      if (-not $ready) {
+        Write-Warning "vnext emulator readiness probe did not succeed within ${{ parameters.ReadinessTimeoutSeconds }}s — proceeding anyway."
+        Write-Host "Container logs (last 50 lines):"
+        docker logs --tail 50 ${{ parameters.ContainerName }} 2>&1 | Write-Host
+      }
+    displayName: "Wait for Cosmos DB vnext emulator to be ready"
 
   - template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self
     parameters:
@@ -104,7 +143,7 @@ jobs:
       CIBW_BUILD_VERBOSITY: 3
       AZURE_TEST_MODE: 'live'
       AZURE_COSMOS_EMULATOR_FLAVOR: 'vnext'
-      AZURE_COSMOS_CONNECTION_STRING: 'AccountEndpoint=$(VNextScheme)://localhost:8081;AccountKey=${{ parameters.EmulatorKey }};'
+      AZURE_COSMOS_CONNECTION_STRING: 'AccountEndpoint=http://localhost:8081;AccountKey=${{ parameters.EmulatorKey }};'
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
     inputs:
       pwsh: true

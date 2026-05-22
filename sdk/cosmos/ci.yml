@@ -1,4 +1,15 @@
 # NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
+#
+# Cosmos extends the 1ES redirect directly rather than the shared
+# `archetype-sdk-client.yml` template. This is intentional: we need to splice
+# in the non-blocking vnext (Linux) emulator stage on every PR and main
+# build, and the archetype template does not (and should not) expose a
+# generic "additional stages" hook for that. Keeping the composition local
+# to `sdk/cosmos/ci.yml` is the trade-off agreed in PR #4457 review.
+#
+# When updating the shared archetype, please mirror the relevant changes
+# below — diff against `eng/pipelines/templates/stages/archetype-sdk-client.yml`
+# to spot drift.
 
 trigger:
   branches:
@@ -6,6 +17,17 @@ trigger:
     - main
     - hotfix/*
     - release/*
+  paths:
+    include:
+    - sdk/cosmos/
+
+pr:
+  branches:
+    include:
+      - main
+      - feature/*
+      - hotfix/*
+      - release/*
   paths:
     include:
     - sdk/cosmos/
@@ -28,36 +50,146 @@ parameters:
   type: boolean
   default: false
 
+variables:
+- name: ServiceDirectory
+  value: cosmos
+- name: TestTimeoutInMinutes
+  value: 60
+# Well-known emulator master key — same value used by the legacy Windows
+# emulator and accepted by the vnext image. Safe to commit; not a secret.
+- name: VNextEmulatorImage
+  value: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+- name: VNextEmulatorKey
+  value: 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=='
+
 extends:
-  template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
+  template: /eng/pipelines/templates/stages/1es-redirect.yml
   parameters:
-    ServiceDirectory: cosmos
-    RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}
-    Artifacts:
-    - name: azure_data_cosmos_macros
-      releaseInBatch: ${{ parameters.release_azure_data_cosmos_macros }}
-    - name: azure_data_cosmos_driver
-      releaseInBatch: ${{ parameters.release_azure_data_cosmos_driver }}
-    - name: azure_data_cosmos
-      releaseInBatch: ${{ parameters.release_azure_data_cosmos }}
-    CloudConfig:
-      Public:
-        ServiceConnection: azure-sdk-tests-cosmos
-    MatrixConfigs:
-      - Name: Cosmos_release
-        Path: sdk/cosmos/release-platform-matrix.json
-        Selection: sparse
-        NonSparseParameters: RustToolchainName
-        GenerateVMJobs: true
-    LiveTestMatrixConfigs:
-      - Name: Cosmos_live_test
-        Path: sdk/cosmos/live-platform-matrix.json
-        Selection: sparse
-        GenerateVMJobs: true
-    # Non-blocking vnext (Linux) emulator stage. See
-    # sdk/cosmos/eng/cosmos-vnext-stage.yml for the dependsOn: []/Skip.VnextEmulator
-    # contract. This stage runs on every PR + main in both public and internal
-    # projects; failures do not block Release because the Release stage's
-    # DependsOn list excludes it.
-    AdditionalStages:
-      - template: /sdk/cosmos/eng/cosmos-vnext-stage.yml
+    AutoBaseline: false
+    stages:
+
+    # ---------------------------------------------------------------
+    # Build stage (mirrors archetype-sdk-client.yml's Build stage).
+    # ---------------------------------------------------------------
+    - stage: Build
+      variables:
+      - template: /eng/pipelines/templates/variables/image.yml
+      - template: /eng/pipelines/templates/variables/rust.yml
+      jobs:
+      - template: /eng/pipelines/templates/jobs/ci.yml
+        parameters:
+          ServiceDirectory: cosmos
+          PipelineArtifactName: packages
+          Artifacts:
+          - name: azure_data_cosmos_macros
+            releaseInBatch: ${{ parameters.release_azure_data_cosmos_macros }}
+          - name: azure_data_cosmos_driver
+            releaseInBatch: ${{ parameters.release_azure_data_cosmos_driver }}
+          - name: azure_data_cosmos
+            releaseInBatch: ${{ parameters.release_azure_data_cosmos }}
+          TestPipeline: false
+          TestTimeoutInMinutes: 60
+          TestProxy: true
+          MatrixConfigs:
+            - Name: Cosmos_release
+              Path: sdk/cosmos/release-platform-matrix.json
+              Selection: sparse
+              NonSparseParameters: RustToolchainName
+              GenerateVMJobs: true
+
+    # ---------------------------------------------------------------
+    # Live test stage (mirrors archetype-sdk-client.yml's live block).
+    # Internal-only, gated on RunLiveTests or scheduled/weekly builds.
+    # ---------------------------------------------------------------
+    - ${{ if and(eq(variables['System.TeamProject'], 'internal'), or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly'))) }}:
+      - stage: Public
+        displayName: Live Test Public
+        variables:
+        - template: /eng/pipelines/templates/variables/globals.yml
+        - template: /eng/pipelines/templates/variables/image.yml
+        - template: /eng/pipelines/templates/variables/rust.yml
+        dependsOn: []
+        jobs:
+        - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
+          parameters:
+            JobTemplatePath: /eng/pipelines/templates/jobs/live.tests.yml
+            AdditionalParameters:
+              ServiceDirectory: cosmos
+              TimeoutInMinutes: 60
+              EnvVars: {}
+              PreSteps: []
+              PostSteps: []
+              Location: ''
+              UseFederatedAuth: true
+              PersistOidcToken: false
+            MatrixConfigs:
+              - Name: Cosmos_live_test
+                Path: sdk/cosmos/live-platform-matrix.json
+                Selection: sparse
+                GenerateVMJobs: true
+            CloudConfig:
+              Cloud: Public
+              ServiceConnection: azure-sdk-tests-cosmos
+
+    # ---------------------------------------------------------------
+    # Non-blocking vnext (Linux) emulator stage. Cosmos-owned.
+    # Triple-layered non-blocking contract:
+    #   1. `dependsOn: []` — runs in parallel with Build; nothing waits on it.
+    #   2. The Release/Pack stages below do NOT include it in their dependsOn,
+    #      so a red vnext stage cannot block release or merge.
+    #   3. The `Skip.VnextEmulator` pipeline variable acts as a kill-switch:
+    #      setting it to `true` skips the stage entirely with no code change.
+    # ---------------------------------------------------------------
+    - stage: CosmosVNextEmulator
+      displayName: Cosmos vnext emulator (Linux)
+      dependsOn: []
+      condition: and(succeeded(), ne(variables['Skip.VnextEmulator'], 'true'))
+      variables:
+      - template: /eng/pipelines/templates/variables/globals.yml
+      - template: /eng/pipelines/templates/variables/image.yml
+      - template: /eng/pipelines/templates/variables/rust.yml
+      jobs:
+      - template: /eng/common/pipelines/templates/jobs/generate-job-matrix.yml
+        parameters:
+          JobTemplatePath: /sdk/cosmos/eng/cosmos-vnext-job.yml
+          AdditionalParameters:
+            ServiceDirectory: cosmos
+            TimeoutInMinutes: 60
+            EmulatorImage: $(VNextEmulatorImage)
+            EmulatorKey: $(VNextEmulatorKey)
+          MatrixConfigs:
+            - Name: Cosmos_vnext_emulator
+              Path: sdk/cosmos/vnext-emulator-matrix.json
+              Selection: sparse
+              GenerateVMJobs: true
+          CloudConfig:
+            Cloud: Public
+
+    # ---------------------------------------------------------------
+    # Prerelease / Release stages (mirrors archetype-sdk-client.yml).
+    # Conditioned on:
+    #   1. Internal trigger, not Pull Request trigger
+    #   2. Not weekly build
+    #   3. Manual trigger or scheduled
+    # Release DependsOn is `Build` only — the vnext emulator stage is
+    # intentionally NOT a dependency (non-blocking contract).
+    # ---------------------------------------------------------------
+    - ${{ if and(not(startsWith(variables['Build.SourceBranchName'], 'refs/pull/')), eq(variables['System.TeamProject'], 'internal')) }}:
+      - ${{ if not(contains(variables['Build.DefinitionName'], 'weekly')) }}:
+        - ${{ if in(variables['Build.Reason'], 'Manual', '') }}:
+          - template: /eng/pipelines/templates/stages/archetype-rust-release.yml
+            parameters:
+              DependsOn: "Build"
+              ServiceDirectory: cosmos
+              Artifacts:
+                - ${{ if ne(parameters.release_azure_data_cosmos_macros, false) }}:
+                  - name: azure_data_cosmos_macros
+                    releaseInBatch: ${{ parameters.release_azure_data_cosmos_macros }}
+                - ${{ if ne(parameters.release_azure_data_cosmos_driver, false) }}:
+                  - name: azure_data_cosmos_driver
+                    releaseInBatch: ${{ parameters.release_azure_data_cosmos_driver }}
+                - ${{ if ne(parameters.release_azure_data_cosmos, false) }}:
+                  - name: azure_data_cosmos
+                    releaseInBatch: ${{ parameters.release_azure_data_cosmos }}
+              TestPipeline: false
+              PipelineArtifactName: packages
