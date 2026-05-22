@@ -126,7 +126,7 @@ impl CosmosResponse {
     /// not a [`ResponseBody::Bytes`] variant.
     #[cfg(test)]
     pub(crate) fn body_bytes(&self) -> &[u8] {
-        match &self.body {
+        match self.body() {
             ResponseBody::Bytes(b) => b.as_ref(),
             _ => panic!("expected ResponseBody::Bytes"),
         }

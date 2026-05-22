@@ -59,18 +59,19 @@ impl ContinuationToken {
     pub(crate) fn encode_v1(
         operation: &CosmosOperation,
         root_state: &PipelineNodeState,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         if operation.operation_type() != OperationType::Query {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 "client-side continuation tokens are only supported for query operations",
-            ));
+            )
+            .into());
         }
         let container = operation.container().ok_or_else(|| {
-            azure_core::Error::with_message(
+            crate::error::Error::from(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 "client-side continuation tokens require a query operation targeting a container",
-            )
+            ))
         })?;
         let state = TokenState {
             operation: TokenOperation::Query,
@@ -79,10 +80,10 @@ impl ContinuationToken {
         };
 
         let json = serde_json::to_vec(&state).map_err(|e| {
-            azure_core::Error::with_message(
+            crate::error::Error::from(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 format!("failed to serialize continuation token state: {e}"),
-            )
+            ))
         })?;
         let body = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(json);
         let mut out = String::with_capacity(SDK_V1_PREFIX.len() + body.len());
@@ -375,10 +376,7 @@ mod tests {
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let read = CosmosOperation::read_item(item);
         let err = ContinuationToken::encode_v1(&read, &PipelineNodeState::Drained).unwrap_err();
-        assert!(matches!(
-            err.kind(),
-            azure_core::error::ErrorKind::DataConversion
-        ));
+        assert_eq!(err.kind(), crate::error::Kind::Serialization);
     }
 
     // ── Deserialization ─────────────────────────────────────────────────

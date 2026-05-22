@@ -256,7 +256,10 @@ impl LiveState {
                 let container = this.container.clone();
                 let options = this.options.clone();
                 let fut: DriverPageFuture = Box::pin(async move {
-                    let result = driver.execute_plan(&mut plan, container, options).await;
+                    let result = driver
+                        .execute_plan(&mut plan, container, options)
+                        .await
+                        .map_err(Into::into);
                     (plan, result)
                 });
                 this.in_flight.insert(fut)
@@ -315,7 +318,7 @@ impl LiveState {
                 None,
             )
         })?;
-        plan.to_continuation_token()
+        plan.to_continuation_token().map_err(Into::into)
     }
 }
 

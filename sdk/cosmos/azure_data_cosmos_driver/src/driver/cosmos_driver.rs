@@ -88,7 +88,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         target: RequestTarget,
         _partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         let driver = self.driver;
         let overrides = request_target_overrides(target, continuation);
 
@@ -1518,27 +1518,24 @@ impl CosmosDriver {
         );
 
         // Step 8: Execute via the new operation pipeline
-        let pipeline_ctx = super::pipeline::operation_pipeline::PipelineContext {
-            location_state_store: self.location_state_store.as_ref(),
-            transport: &transport,
-            account_endpoint: &endpoint,
-            credential: auth,
-            user_agent: &user_agent,
-            activity_id: &activity_id,
-            session_manager: &self.session_manager,
-            pipeline_type,
-            transport_security,
-            account_default_consistency: account_properties
-                .user_consistency_policy
-                .default_consistency_level,
-        };
         super::pipeline::operation_pipeline::execute_operation_pipeline(
             operation,
             overrides,
             &effective_options,
             options.custom_headers(),
-            &pipeline_ctx,
+            self.location_state_store.as_ref(),
+            &transport,
+            &endpoint,
+            auth,
+            &user_agent,
+            &activity_id,
+            pipeline_type,
+            transport_security,
             diagnostics_builder,
+            &self.session_manager,
+            account_properties
+                .user_consistency_policy
+                .default_consistency_level,
             effective_control_group.as_ref(),
             pre_resolved_pk_range_id,
         )

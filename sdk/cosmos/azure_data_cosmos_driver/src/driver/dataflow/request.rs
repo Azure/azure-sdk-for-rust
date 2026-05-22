@@ -131,7 +131,7 @@ impl PipelineNode for Request {
     async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         tracing::trace!(
             target = ?self.target,
             state = ?self.state,
@@ -154,7 +154,7 @@ impl PipelineNode for Request {
             .await
         {
             Ok(response) => Ok(self.handle_response(response)),
-            Err(error) if is_partition_topology_change(&error) => {
+            Err(error) if error.status().is_partition_topology_change() => {
                 self.handle_partition_topology_change(context, error, continuation)
                     .await
             }
@@ -222,9 +222,9 @@ impl Request {
     async fn handle_partition_topology_change(
         &mut self,
         context: &mut PipelineContext<'_>,
-        error: azure_core::Error,
+        error: crate::error::Error,
         continuation: Option<String>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         match &self.target {
             RequestTarget::NonPartitioned => {
                 // Non-partitioned resources don't have partition topology changes.
@@ -266,7 +266,7 @@ impl Request {
         &self,
         context: &mut PipelineContext<'_>,
         range: &FeedRange,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         let resolved = context
             .resolve_ranges(range, PartitionRoutingRefresh::ForceRefresh)
             .await?;
@@ -312,6 +312,7 @@ impl Request {
 // Other substatus mappings live in `pipeline::retry_evaluation`; this one stays
 // here because it drives pipeline-level repair (splitting a node into
 // replacements) rather than per-attempt retry.
+#[allow(dead_code)]
 fn is_partition_topology_change(error: &azure_core::Error) -> bool {
     match error.kind() {
         azure_core::error::ErrorKind::HttpResponse {
@@ -324,6 +325,7 @@ fn is_partition_topology_change(error: &azure_core::Error) -> bool {
     }
 }
 
+#[allow(dead_code)]
 fn is_partition_topology_change_substatus(substatus: u32) -> bool {
     matches!(
         SubStatusCode::new(substatus),
@@ -374,7 +376,7 @@ mod tests {
             &'a mut self,
             range: &'a FeedRange,
             _refresh: PartitionRoutingRefresh,
-        ) -> futures::future::BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
+        ) -> futures::future::BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
             let resolved = self
                 .resolved_ranges
                 .iter()
@@ -390,7 +392,7 @@ mod tests {
                     Err(azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
                         "scenario topology produced no overlapping ranges",
-                    ))
+                    ).into())
                 } else {
                     Ok(resolved)
                 }
@@ -407,7 +409,7 @@ mod tests {
             _target: RequestTarget,
             _partition_routing_refresh: PartitionRoutingRefresh,
             _continuation: Option<String>,
-        ) -> futures::future::BoxFuture<'a, azure_core::Result<CosmosResponse>> {
+        ) -> futures::future::BoxFuture<'a, crate::error::Result<CosmosResponse>> {
             Box::pin(async { Err(gone_error()) })
         }
     }
@@ -565,7 +567,7 @@ mod tests {
 
         let error = request.next_page(&mut context).await.unwrap_err();
 
-        assert!(is_partition_topology_change(&error));
+        assert!(error.status().is_partition_topology_change());
         assert_eq!(
             executor.refresh_calls,
             vec![
@@ -585,7 +587,7 @@ mod tests {
 
         let error = request.next_page(&mut context).await.unwrap_err();
 
-        assert!(!is_partition_topology_change(&error));
+        assert!(!error.status().is_partition_topology_change());
         assert_eq!(
             executor.refresh_calls,
             vec![PartitionRoutingRefresh::UseCached]
@@ -754,11 +756,11 @@ mod tests {
         let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "topology fetch failed",
-        ))]);
+        ).into())]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "topology fetch failed");
+        assert_eq!(err.message(), "topology fetch failed");
     }
 
     #[tokio::test]
@@ -769,6 +771,6 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();
-        assert!(is_partition_topology_change(&err));
+        assert!(err.status().is_partition_topology_change());
     }
 }

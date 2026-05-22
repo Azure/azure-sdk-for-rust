@@ -55,7 +55,7 @@ where
         &'a mut self,
         range: &'a FeedRange,
         refresh: PartitionRoutingRefresh,
-    ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
+    ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         let force_refresh = matches!(refresh, PartitionRoutingRefresh::ForceRefresh);
         Box::pin(async move {
             let pk_ranges = self
@@ -74,7 +74,8 @@ where
                     return Err(azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
                         "failed to resolve partition key ranges from topology cache",
-                    ));
+                    )
+                    .into());
                 }
             };
 
@@ -86,7 +87,7 @@ where
                         range: FeedRange::new(pkr.min_inclusive, pkr.max_exclusive)?,
                     })
                 })
-                .collect::<Result<Vec<_>, azure_core::Error>>()
+                .collect::<crate::error::Result<Vec<_>>>()
         })
     }
 }
@@ -282,7 +283,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.to_string(),
+            err.message(),
             "failed to resolve partition key ranges from topology cache"
         );
     }

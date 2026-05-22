@@ -41,13 +41,12 @@ use crate::driver::pipeline::from_local_body::from_local_body_and_driver_headers
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::driver::CosmosDriver;
 use crate::models::{
-    cosmos_headers::response_header_names, CosmosOperation, CosmosResponse, PartitionKeyKind,
-    PatchOp, PatchSpec, Precondition, SessionToken,
+    CosmosOperation, CosmosResponse, PartitionKeyKind, PatchOp, PatchSpec, Precondition,
+    SessionToken,
 };
 use crate::options::OperationOptions;
 use async_trait::async_trait;
 use azure_core::error::ErrorKind;
-use azure_core::http::headers::HeaderName;
 use azure_core::http::StatusCode;
 use std::num::NonZeroU8;
 use std::sync::Arc;
@@ -77,7 +76,7 @@ pub(crate) trait SubOperationDispatcher: Send + Sync {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
-    ) -> azure_core::Result<CosmosResponse>;
+    ) -> crate::error::Result<CosmosResponse>;
 }
 
 #[async_trait]
@@ -86,7 +85,7 @@ impl SubOperationDispatcher for CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
-    ) -> azure_core::Result<CosmosResponse> {
+    ) -> crate::error::Result<CosmosResponse> {
         CosmosDriver::execute_singleton_operation(self, operation, options).await
     }
 }
@@ -100,7 +99,7 @@ pub(crate) async fn execute(
     operation: CosmosOperation,
     options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
-) -> azure_core::Result<CosmosResponse> {
+) -> crate::error::Result<CosmosResponse> {
     execute_with_dispatcher(driver, operation, options, max_attempts).await
 }
 
@@ -112,7 +111,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     operation: CosmosOperation,
     options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
-) -> azure_core::Result<CosmosResponse> {
+) -> crate::error::Result<CosmosResponse> {
     // -- 1. Reject caller-set preconditions --
     //
     // PATCH manages its own `If-Match` precondition internally — the handler
@@ -130,7 +129,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             azure_core::error::ErrorKind::Other,
             "PATCH does not support caller-set preconditions; \
              the handler manages If-Match internally",
-        ));
+        ).into());
     }
 
     // -- 2. Parse and validate the patch spec --
@@ -138,17 +137,18 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchSpec body"))?;
     let spec: PatchSpec = serde_json::from_slice(body).map_err(|err| {
-        azure_core::Error::with_message(
+        crate::error::Error::from(azure_core::Error::with_message(
             azure_core::error::ErrorKind::DataConversion,
             format!("failed to parse PATCH body as PatchSpec: {err}"),
-        )
+        ))
     })?;
 
     if spec.operations.is_empty() {
         return Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "PATCH operation must include at least one PatchOp",
-        ));
+        )
+        .into());
     }
 
     let item_ref = operation
@@ -156,10 +156,10 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .cloned()
         .and_then(|pk| operation.resource_reference().try_into_item_reference(pk))
         .ok_or_else(|| {
-            azure_core::Error::with_message(
+            crate::error::Error::from(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "PATCH dispatch requires an item-level operation with a partition key",
-            )
+            ))
         })?;
 
     validate_partition_key_paths(&spec.operations, &item_ref)?;
@@ -183,7 +183,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     let mut effective_session_token = operation.request_headers().session_token.clone();
 
     // -- 3..7. RMW loop --
-    let mut last_412: Option<azure_core::Error> = None;
+    let mut last_412: Option<crate::error::Error> = None;
     // Aggregated diagnostics across every successful sub-op the loop
     // dispatches. We hand this to `from_local_body_and_driver_headers`
     // when we synthesize the success response so callers see one
@@ -208,9 +208,9 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             .await?;
         sub_op_diagnostics.push(read_resp.diagnostics());
         let etag = read_resp.headers().etag.clone().ok_or_else(|| {
-            azure_core::Error::with_message(
-                ErrorKind::Other,
+            crate::error::Error::client(
                 "PATCH cannot proceed: the Read response did not include an ETag",
+                None,
             )
         })?;
         // R3-DRIVER: forward the session token returned by the Read on the
@@ -227,24 +227,24 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 
         // Locally apply the patch ops.
         let read_body_bytes = read_resp.into_body().single().map_err(|err| {
-            azure_core::Error::with_message(
+            crate::error::Error::from(azure_core::Error::with_message(
                 ErrorKind::DataConversion,
                 format!("PATCH could not extract Read response body: {err}"),
-            )
+            ))
         })?;
         let mut value: serde_json::Value =
             serde_json::from_slice(&read_body_bytes).map_err(|err| {
-                azure_core::Error::with_message(
+                crate::error::Error::from(azure_core::Error::with_message(
                     ErrorKind::DataConversion,
                     format!("PATCH could not deserialize current item body: {err}"),
-                )
+                ))
             })?;
         apply_patch_ops(&mut value, &spec.operations)?;
         let merged_bytes = serde_json::to_vec(&value).map_err(|err| {
-            azure_core::Error::with_message(
+            crate::error::Error::from(azure_core::Error::with_message(
                 ErrorKind::DataConversion,
                 format!("PATCH could not serialize merged item: {err}"),
-            )
+            ))
         })?;
 
         // Issue the ETag-guarded Replace, forwarding the Read response's
@@ -358,8 +358,8 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     Err(exhaustion_error(attempts, last_412))
 }
 
-fn missing_body_error(msg: &'static str) -> azure_core::Error {
-    azure_core::Error::with_message(ErrorKind::Other, msg)
+fn missing_body_error(msg: &'static str) -> crate::error::Error {
+    azure_core::Error::with_message(ErrorKind::Other, msg).into()
 }
 
 /// Returns `true` if `err` is the driver pipeline's representation of a
@@ -373,11 +373,8 @@ fn missing_body_error(msg: &'static str) -> azure_core::Error {
 /// The patch handler's RMW loop is the *one* place where 412 needs to be
 /// recovered into a retry, so we narrow on the kind here instead of relying
 /// on a status check that the `await?` above would never reach.
-fn is_precondition_failed(err: &azure_core::Error) -> bool {
-    matches!(
-        err.kind(),
-        ErrorKind::HttpResponse { status, .. } if *status == StatusCode::PreconditionFailed
-    )
+fn is_precondition_failed(err: &crate::error::Error) -> bool {
+    err.is_precondition_failed()
 }
 
 /// Extracts the `x-ms-session-token` response header from an
@@ -393,19 +390,32 @@ fn is_precondition_failed(err: &azure_core::Error) -> bool {
 /// synthesized unit-test errors built via `Error::with_message`) or when
 /// the response carries no session-token header (e.g. accounts not
 /// configured for Session consistency).
-fn session_token_from_error(err: &azure_core::Error) -> Option<SessionToken> {
-    let ErrorKind::HttpResponse {
-        raw_response: Some(raw),
-        ..
-    } = err.kind()
-    else {
-        return None;
-    };
-    raw.headers()
-        .get_optional_str(&HeaderName::from_static(
-            response_header_names::SESSION_TOKEN,
-        ))
-        .map(|s| SessionToken::new(s.to_owned()))
+fn session_token_from_error(err: &crate::error::Error) -> Option<SessionToken> {
+    if let Some(token) = err.cosmos_headers().and_then(|h| h.session_token.clone()) {
+        return Some(token);
+    }
+    // Walk the source chain looking for a wrapped azure_core::Error that
+    // carries the raw HTTP response (the typical shape when the cosmos
+    // error was built via `From<azure_core::Error>`).
+    let mut cur: Option<&(dyn std::error::Error + 'static)> = Some(err);
+    while let Some(src) = cur {
+        if let Some(az) = src.downcast_ref::<azure_core::Error>() {
+            if let ErrorKind::HttpResponse {
+                raw_response: Some(raw),
+                ..
+            } = az.kind()
+            {
+                return raw
+                    .headers()
+                    .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
+                        crate::models::cosmos_headers::response_header_names::SESSION_TOKEN,
+                    ))
+                    .map(|s| SessionToken::new(s.to_owned()));
+            }
+        }
+        cur = src.source();
+    }
+    None
 }
 
 /// Reconciles the locally-merged post-image JSON with the Replace response so
@@ -489,7 +499,7 @@ fn build_replace_sub_op(
 /// `attempts` retries without ever landing a Replace. The underlying 412 is
 /// preserved as the source so `Error::source()` / debug formatting still
 /// surfaces the original cause.
-fn exhaustion_error(attempts: u8, last_412: Option<azure_core::Error>) -> azure_core::Error {
+fn exhaustion_error(attempts: u8, last_412: Option<crate::error::Error>) -> crate::error::Error {
     let message = format!("patch_item: ETag conflict after {attempts} attempts");
     match last_412 {
         Some(source) => {
@@ -499,13 +509,25 @@ fn exhaustion_error(attempts: u8, last_412: Option<azure_core::Error>) -> azure_
             // `err.raw_response()`) see the same shape they would from any
             // other 412 path in this SDK — instead of having to walk
             // `Error::source()` to recover them.
-            let (error_code, raw_response) = match source.kind() {
-                ErrorKind::HttpResponse {
-                    error_code,
-                    raw_response,
-                    ..
-                } => (error_code.clone(), raw_response.clone()),
-                _ => (None, None),
+            let (error_code, raw_response) = {
+                let mut cur: Option<&(dyn std::error::Error + 'static)> = Some(&source);
+                let mut found: Option<(Option<String>, Option<Box<azure_core::http::RawResponse>>)> =
+                    None;
+                while let Some(src) = cur {
+                    if let Some(az) = src.downcast_ref::<azure_core::Error>() {
+                        if let ErrorKind::HttpResponse {
+                            error_code,
+                            raw_response,
+                            ..
+                        } = az.kind()
+                        {
+                            found = Some((error_code.clone(), raw_response.clone()));
+                        }
+                        break;
+                    }
+                    cur = src.source();
+                }
+                found.unwrap_or((None, None))
             };
             azure_core::Error::with_error(
                 ErrorKind::HttpResponse {
@@ -514,8 +536,9 @@ fn exhaustion_error(attempts: u8, last_412: Option<azure_core::Error>) -> azure_
                     raw_response,
                 },
                 source,
-                message,
+                message.clone(),
             )
+            .into_cosmos_error_with_context(message)
         }
         None => azure_core::Error::with_message(
             ErrorKind::HttpResponse {
@@ -523,8 +546,27 @@ fn exhaustion_error(attempts: u8, last_412: Option<azure_core::Error>) -> azure_
                 error_code: None,
                 raw_response: None,
             },
-            message,
-        ),
+            message.clone(),
+        )
+        .into_cosmos_error_with_context(message),
+    }
+}
+
+/// Convenience extension used by [`exhaustion_error`] to preserve the
+/// caller-facing message text even when [`From<azure_core::Error>`]'s
+/// `to_string()` round-trip would prefer the source's display.
+trait IntoCosmosErrorWithContext {
+    fn into_cosmos_error_with_context(self, ctx: String) -> crate::error::Error;
+}
+
+impl IntoCosmosErrorWithContext for azure_core::Error {
+    fn into_cosmos_error_with_context(self, ctx: String) -> crate::error::Error {
+        let cosmos: crate::error::Error = self.into();
+        if cosmos.message() == ctx {
+            cosmos
+        } else {
+            cosmos.with_context(ctx)
+        }
     }
 }
 
@@ -537,7 +579,7 @@ fn exhaustion_error(attempts: u8, last_412: Option<azure_core::Error>) -> azure_
 fn validate_partition_key_paths(
     ops: &[PatchOp],
     item_ref: &crate::models::ItemReference,
-) -> azure_core::Result<()> {
+) -> crate::error::Result<()> {
     let pk_def = item_ref.container().partition_key_definition();
     let pk_paths: Vec<&str> = pk_def.paths().iter().map(|p| p.as_ref()).collect();
     // Hash and MultiHash treat each path as a JSON Pointer rooted at the
@@ -570,7 +612,8 @@ fn validate_partition_key_paths(
                             "PATCH op '{path}' overlaps partition key path '{pk_path}'; \
                              cannot mutate partition key with a client-side Read-Modify-Write"
                         ),
-                    ));
+                    )
+                    .into());
                 }
             }
         }
@@ -769,6 +812,7 @@ mod tests {
             },
             "412 from server",
         );
+        let err: crate::error::Error = err.into();
         assert!(is_precondition_failed(&err));
     }
 
@@ -790,6 +834,7 @@ mod tests {
                 },
                 "non-412 service error",
             );
+            let err: crate::error::Error = err.into();
             assert!(
                 !is_precondition_failed(&err),
                 "should not match status {status:?}",
@@ -806,6 +851,7 @@ mod tests {
             Error::with_message(ErrorKind::DataConversion, "bad json"),
             Error::with_message(ErrorKind::Io, "tcp reset"),
         ] {
+            let err: crate::error::Error = err.into();
             assert!(
                 !is_precondition_failed(&err),
                 "should not match {:?}",
@@ -887,15 +933,11 @@ mod tests {
             },
             "ETag mismatch from server",
         );
-        let err = exhaustion_error(7, Some(underlying));
+        let err = exhaustion_error(7, Some(underlying.into()));
 
         // (a) Shape.
         assert!(
-            matches!(
-                err.kind(),
-                ErrorKind::HttpResponse { status, .. }
-                    if *status == StatusCode::PreconditionFailed
-            ),
+            err.status_code() == StatusCode::PreconditionFailed,
             "exhaustion error must surface as a 412 HttpResponse; got {:?}",
             err.kind()
         );
@@ -929,17 +971,18 @@ mod tests {
         let err = exhaustion_error(0, None);
 
         assert!(
-            matches!(
-                err.kind(),
-                ErrorKind::HttpResponse { status, .. }
-                    if *status == StatusCode::PreconditionFailed
-            ),
+            err.status_code() == StatusCode::PreconditionFailed,
             "exhaustion error must surface as a 412 HttpResponse; got {:?}",
             err.kind()
         );
+        // The cosmos Error wraps the synthetic azure_core::Error as its
+        // source; that wrapped azure_core::Error must itself have no source
+        // (no deeper chain) when no underlying 412 was passed in.
+        let direct_source = std::error::Error::source(&err)
+            .expect("cosmos error wraps the synthetic azure_core::Error as its source");
         assert!(
-            std::error::Error::source(&err).is_none(),
-            "exhaustion_error must NOT synthesize a source when none was passed"
+            std::error::Error::source(direct_source).is_none(),
+            "exhaustion_error must NOT synthesize a further source when none was passed"
         );
         let msg = format!("{err}");
         assert!(
@@ -971,27 +1014,38 @@ mod tests {
             },
             "ETag mismatch from server",
         );
-        let err = exhaustion_error(4, Some(underlying));
+        let err = exhaustion_error(4, Some(underlying.into()));
 
-        match err.kind() {
-            ErrorKind::HttpResponse {
-                status,
-                error_code,
-                raw_response,
-            } => {
-                assert_eq!(*status, StatusCode::PreconditionFailed);
-                assert_eq!(
-                    error_code.as_deref(),
-                    Some("EtagPreconditionFailed"),
-                    "exhaustion error must forward the wrapped 412's `error_code` field"
-                );
-                assert!(
-                    raw_response.is_some(),
-                    "exhaustion error must forward the wrapped 412's `raw_response`"
-                );
+        assert_eq!(err.status_code(), StatusCode::PreconditionFailed);
+        // The raw_response and error_code accessors live on azure_core::Error;
+        // walk the source chain to inspect them on the inner 412.
+        let mut cur: Option<&(dyn std::error::Error + 'static)> = Some(&err);
+        let mut found = false;
+        while let Some(src) = cur {
+            if let Some(az) = src.downcast_ref::<azure_core::Error>() {
+                if let ErrorKind::HttpResponse {
+                    status,
+                    error_code,
+                    raw_response,
+                } = az.kind()
+                {
+                    assert_eq!(*status, StatusCode::PreconditionFailed);
+                    assert_eq!(
+                        error_code.as_deref(),
+                        Some("EtagPreconditionFailed"),
+                        "exhaustion error must forward the wrapped 412's `error_code` field"
+                    );
+                    assert!(
+                        raw_response.is_some(),
+                        "exhaustion error must forward the wrapped 412's `raw_response`"
+                    );
+                    found = true;
+                    break;
+                }
             }
-            other => panic!("expected HttpResponse kind, got {other:?}"),
+            cur = src.source();
         }
+        assert!(found, "expected inner azure_core 412 in source chain");
     }
 
     // ====== Dispatcher-driven loop coverage ======
@@ -1074,7 +1128,7 @@ mod tests {
             &self,
             operation: CosmosOperation,
             _options: OperationOptions,
-        ) -> azure_core::Result<CosmosResponse> {
+        ) -> crate::error::Result<CosmosResponse> {
             let if_match = match operation.precondition() {
                 Some(Precondition::IfMatch(tag)) => Some(tag.as_ref().to_string()),
                 _ => None,
@@ -1091,7 +1145,7 @@ mod tests {
                 );
 
             match reply {
-                ScriptedReply::Err(e) => Err(e),
+                ScriptedReply::Err(e) => Err(e.into()),
                 ScriptedReply::Ok {
                     body,
                     etag,
@@ -1301,10 +1355,7 @@ mod tests {
         .expect_err("non-412 Replace error must abort the loop");
 
         assert!(
-            matches!(
-                err.kind(),
-                ErrorKind::HttpResponse { status, .. } if *status == StatusCode::InternalServerError
-            ),
+            err.status_code() == StatusCode::InternalServerError,
             "non-412 must propagate verbatim; got {:?}",
             err.kind()
         );
@@ -1333,10 +1384,7 @@ mod tests {
         .expect_err("PATCH on a missing item must fail on the Read");
 
         assert!(
-            matches!(
-                err.kind(),
-                ErrorKind::HttpResponse { status, .. } if *status == StatusCode::NotFound
-            ),
+            err.status_code() == StatusCode::NotFound,
             "PATCH on missing item must surface the Read's 404 verbatim; got {:?}",
             err.kind()
         );
@@ -1366,7 +1414,7 @@ mod tests {
         .await
         .expect_err("missing ETag on Read must fail PATCH");
 
-        assert!(matches!(err.kind(), ErrorKind::Other));
+        assert!(err.kind() == crate::error::Kind::Client);
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 1, "no Replace must be issued without an ETag");
         assert_eq!(calls[0].op_type, OperationType::Read);
@@ -1743,7 +1791,7 @@ mod tests {
                 &self,
                 operation: CosmosOperation,
                 _options: OperationOptions,
-            ) -> azure_core::Result<CosmosResponse> {
+            ) -> crate::error::Result<CosmosResponse> {
                 let body = match operation.operation_type() {
                     OperationType::Read => br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
                     OperationType::Replace => br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),

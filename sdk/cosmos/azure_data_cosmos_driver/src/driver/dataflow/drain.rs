@@ -47,7 +47,7 @@ impl PipelineNode for SequentialDrain {
     async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         let mut split_retries = 0;
 
         loop {
@@ -91,7 +91,7 @@ impl PipelineNode for SequentialDrain {
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"
                             ),
-                        ));
+                        ).into());
                     }
 
                     // Remove the split child and splice in replacements at the front.
@@ -239,14 +239,14 @@ mod tests {
         let child = MockLeaf::with_pages(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "test error",
-        ))]);
+        ).into())]);
         let mut drain = SequentialDrain::new(vec![Box::new(child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "test error");
+        assert_eq!(err.message(), "test error");
     }
 
     #[tokio::test]
@@ -439,7 +439,7 @@ mod tests {
 
         let err = drain.next_page(&mut context).await.unwrap_err();
         assert_eq!(
-            err.to_string(),
+            err.message(),
             "exceeded maximum split retries (10) in SequentialDrain"
         );
     }
@@ -527,7 +527,7 @@ mod tests {
         let child2 = MockLeaf::with_pages(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "boom",
-        ))]);
+        ).into())]);
 
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;
@@ -539,7 +539,7 @@ mod tests {
             b"ok"
         );
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "boom");
+        assert_eq!(err.message(), "boom");
     }
 
     #[tokio::test]

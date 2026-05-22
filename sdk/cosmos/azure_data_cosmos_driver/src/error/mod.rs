@@ -528,8 +528,20 @@ fn derive_status_from_azure_core_error(error: &azure_core::Error) -> CosmosStatu
 
     // HttpResponse is the only kind that already carries a real wire status,
     // so it wins over any source-chain refinement.
-    if let AzKind::HttpResponse { status, .. } = error.kind() {
-        return CosmosStatus::new(*status).with_kind(Kind::Service);
+    if let AzKind::HttpResponse {
+        status,
+        error_code,
+        ..
+    } = error.kind()
+    {
+        let mut cs = CosmosStatus::new(*status).with_kind(Kind::Service);
+        if let Some(sub) = error_code
+            .as_deref()
+            .and_then(|c| c.parse::<u32>().ok())
+        {
+            cs = cs.with_sub_status(sub);
+        }
+        return cs;
     }
 
     // Otherwise inspect the source chain for a more specific cause than

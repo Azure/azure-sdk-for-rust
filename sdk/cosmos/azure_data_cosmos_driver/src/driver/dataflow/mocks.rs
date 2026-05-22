@@ -26,13 +26,13 @@ use crate::{
 
 /// A mock leaf node that returns pre-configured page results.
 pub(crate) struct MockLeaf {
-    pages: VecDeque<azure_core::Result<PageResult>>,
+    pages: VecDeque<crate::error::Result<PageResult>>,
     feed_range: Option<FeedRange>,
 }
 
 impl MockLeaf {
     /// Creates a mock leaf with a sequence of results to return from `next_page`.
-    pub fn with_pages(pages: Vec<azure_core::Result<PageResult>>) -> Self {
+    pub fn with_pages(pages: Vec<crate::error::Result<PageResult>>) -> Self {
         Self {
             pages: pages.into(),
             feed_range: None,
@@ -52,7 +52,7 @@ impl PipelineNode for MockLeaf {
     async fn next_page(
         &mut self,
         _context: &mut PipelineContext<'_>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         self.pages
             .pop_front()
             .expect("MockLeaf: no more page results")
@@ -89,25 +89,26 @@ impl RequestExecutor for NoopRequestExecutor {
         _target: RequestTarget,
         _partition_routing_refresh: PartitionRoutingRefresh,
         _continuation: Option<String>,
-    ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         Box::pin(async {
             Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "noop executor should not be called",
-            ))
+            )
+            .into())
         })
     }
 }
 
 /// A mock request executor that records calls and returns pre-configured responses.
 pub(crate) struct MockRequestExecutor {
-    pub responses: VecDeque<azure_core::Result<CosmosResponse>>,
+    pub responses: VecDeque<crate::error::Result<CosmosResponse>>,
     pub refresh_calls: Vec<PartitionRoutingRefresh>,
     pub continuation_calls: Vec<Option<String>>,
 }
 
 impl MockRequestExecutor {
-    pub fn new(responses: Vec<azure_core::Result<CosmosResponse>>) -> Self {
+    pub fn new(responses: Vec<crate::error::Result<CosmosResponse>>) -> Self {
         Self {
             responses: responses.into(),
             refresh_calls: Vec::new(),
@@ -123,7 +124,7 @@ impl RequestExecutor for MockRequestExecutor {
         _target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         self.refresh_calls.push(partition_routing_refresh);
         self.continuation_calls.push(continuation);
         let response = self.responses.pop_front().expect("mock request response");
@@ -141,23 +142,24 @@ impl TopologyProvider for NoopTopologyProvider {
         &'a mut self,
         _range: &'a FeedRange,
         _refresh: PartitionRoutingRefresh,
-    ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
+    ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         Box::pin(async {
             Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "noop topology provider should not be called",
-            ))
+            )
+            .into())
         })
     }
 }
 
 /// A mock topology provider that returns pre-configured resolved ranges.
 pub(crate) struct MockTopologyProvider {
-    results: VecDeque<azure_core::Result<Vec<ResolvedRange>>>,
+    results: VecDeque<crate::error::Result<Vec<ResolvedRange>>>,
 }
 
 impl MockTopologyProvider {
-    pub fn new(results: Vec<azure_core::Result<Vec<ResolvedRange>>>) -> Self {
+    pub fn new(results: Vec<crate::error::Result<Vec<ResolvedRange>>>) -> Self {
         Self {
             results: results.into(),
         }
@@ -169,7 +171,7 @@ impl TopologyProvider for MockTopologyProvider {
         &'a mut self,
         _range: &'a FeedRange,
         _refresh: PartitionRoutingRefresh,
-    ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
+    ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         let result = self
             .results
             .pop_front()
@@ -181,7 +183,7 @@ impl TopologyProvider for MockTopologyProvider {
 // ── Test helpers ────────────────────────────────────────────────────────────
 
 /// Extracts the `CosmosResponse` from a `PageResult::Page`, panicking otherwise.
-pub(crate) fn unwrap_page(result: azure_core::Result<PageResult>) -> CosmosResponse {
+pub(crate) fn unwrap_page(result: crate::error::Result<PageResult>) -> CosmosResponse {
     match result.expect("expected Ok result") {
         PageResult::Page { response, .. } => response,
         PageResult::Drained => panic!("expected Page, got Drained"),
@@ -190,7 +192,7 @@ pub(crate) fn unwrap_page(result: azure_core::Result<PageResult>) -> CosmosRespo
 }
 
 /// Asserts that a `PageResult` is `Drained`.
-pub(crate) fn assert_drained(result: azure_core::Result<PageResult>) {
+pub(crate) fn assert_drained(result: crate::error::Result<PageResult>) {
     match result.expect("expected Ok result") {
         PageResult::Drained => {}
         PageResult::Page { .. } => panic!("expected Drained, got Page"),
@@ -251,7 +253,7 @@ pub(crate) fn response_with_continuation(
 }
 
 /// Creates a 410 Gone error with a partition topology change substatus.
-pub(crate) fn gone_error() -> azure_core::Error {
+pub(crate) fn gone_error() -> crate::error::Error {
     azure_core::Error::new(
         azure_core::error::ErrorKind::HttpResponse {
             status: StatusCode::Gone,
@@ -260,10 +262,11 @@ pub(crate) fn gone_error() -> azure_core::Error {
         },
         "partition topology changed",
     )
+    .into()
 }
 
 /// Creates a 410 Gone error with a non-topology substatus.
-pub(crate) fn non_topology_gone_error() -> azure_core::Error {
+pub(crate) fn non_topology_gone_error() -> crate::error::Error {
     azure_core::Error::new(
         azure_core::error::ErrorKind::HttpResponse {
             status: StatusCode::Gone,
@@ -272,4 +275,5 @@ pub(crate) fn non_topology_gone_error() -> azure_core::Error {
         },
         "name cache is stale",
     )
+    .into()
 }

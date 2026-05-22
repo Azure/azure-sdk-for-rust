@@ -45,7 +45,7 @@ use super::{
 pub(crate) fn build_trivial_pipeline(
     operation: Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
-) -> azure_core::Result<Pipeline> {
+) -> crate::error::Result<Pipeline> {
     debug_assert!(
         operation.is_trivial(),
         "build_trivial_pipeline called with non-trivial operation: {:?} targeting {:?}",
@@ -70,7 +70,7 @@ pub(crate) fn build_trivial_pipeline(
                     "continuation token shape {} does not match a trivial operation",
                     snapshot_kind(&other)
                 ),
-            ));
+            ).into());
         }
     };
 
@@ -87,7 +87,7 @@ pub(crate) fn build_trivial_pipeline(
                     azure_core::error::ErrorKind::Other,
                     "FeedRange targeting requires a fan-out pipeline; \
                  use plan_operation for cross-partition queries",
-                ));
+                ).into());
             }
         }
     };
@@ -129,7 +129,7 @@ pub(crate) async fn build_sequential_drain(
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
-) -> azure_core::Result<Pipeline> {
+) -> crate::error::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
     let resume = match resume {
@@ -154,7 +154,7 @@ pub(crate) async fn build_sequential_drain(
                             "continuation token has unsupported nested shape inside SequentialDrain: {}",
                             snapshot_kind(&other)
                         ),
-                    ));
+                    ).into());
                 }
             };
             let current_min_epk = EffectivePartitionKey::from(current_min_epk);
@@ -163,7 +163,7 @@ pub(crate) async fn build_sequential_drain(
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::DataConversion,
                     "continuation token has invalid SequentialDrain range (min > max)",
-                ));
+                ).into());
             }
             Some(ResumeCursor {
                 current_min_epk,
@@ -267,7 +267,7 @@ pub(crate) async fn build_sequential_drain(
         return Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "query plan produced no partition ranges to query",
-        ));
+        ).into());
     }
 
     // Even when there's only one request node, we still need to wrap it in a SequentialDrain
@@ -293,7 +293,7 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
 }
 
 /// Validates that the query plan does not require features we don't yet support.
-fn validate_query_plan(plan: &QueryPlan) -> azure_core::Result<()> {
+fn validate_query_plan(plan: &QueryPlan) -> crate::error::Result<()> {
     if plan.hybrid_search_query_info.is_some() {
         return Err(unsupported_feature("hybrid search queries"));
     }
@@ -305,7 +305,7 @@ fn validate_query_plan(plan: &QueryPlan) -> azure_core::Result<()> {
     Ok(())
 }
 
-fn validate_query_info(info: &QueryInfo) -> azure_core::Result<()> {
+fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
     if info.top.is_some() {
         return Err(unsupported_feature("TOP clause in cross-partition queries"));
     }
@@ -329,11 +329,11 @@ fn validate_query_info(info: &QueryInfo) -> azure_core::Result<()> {
     Ok(())
 }
 
-fn unsupported_feature(feature: &str) -> azure_core::Error {
+fn unsupported_feature(feature: &str) -> crate::error::Error {
     azure_core::Error::with_message(
         azure_core::error::ErrorKind::Other,
         format!("unsupported query feature: {feature}"),
-    )
+    ).into()
 }
 
 #[cfg(test)]
@@ -435,7 +435,7 @@ mod tests {
             // Returned Err in release mode (also acceptable)
             Ok(Err(err)) => {
                 assert_eq!(
-                    err.to_string(),
+                    err.message(),
                     "FeedRange targeting requires a fan-out pipeline; \
                      use plan_operation for cross-partition queries"
                 );
@@ -692,7 +692,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.to_string(),
+            err.message(),
             "unsupported query feature: TOP clause in cross-partition queries"
         );
     }
@@ -713,7 +713,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.to_string(),
+            err.message(),
             "unsupported query feature: LIMIT clause in cross-partition queries"
         );
     }
@@ -735,7 +735,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.to_string(),
+            err.message(),
             "unsupported query feature: ORDER BY in cross-partition queries"
         );
     }
@@ -756,7 +756,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.to_string(),
+            err.message(),
             "unsupported query feature: aggregates in cross-partition queries"
         );
     }
@@ -777,7 +777,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.to_string(),
+            err.message(),
             "unsupported query feature: GROUP BY in cross-partition queries"
         );
     }
@@ -802,7 +802,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.to_string(),
+            err.message(),
             "unsupported query feature: hybrid search queries"
         );
     }
@@ -829,7 +829,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.to_string(),
+            err.message(),
             "query plan produced no partition ranges to query"
         );
     }
@@ -841,12 +841,12 @@ mod tests {
         let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "topology resolution failed",
-        ))]);
+        ).into())]);
 
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(err.to_string(), "topology resolution failed");
+        assert_eq!(err.message(), "topology resolution failed");
     }
 
     // -----------------------------------------------------------------

@@ -917,13 +917,11 @@ mod tests {
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
 
         match action {
-            OperationAction::Abort { status, .. } => {
+            OperationAction::Abort { error, .. } => {
                 assert_eq!(
-                    status,
-                    Some(
-                        CosmosStatus::new(StatusCode::Gone)
-                            .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value())
-                    )
+                    error.status(),
+                    CosmosStatus::new(StatusCode::Gone)
+                        .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value())
                 );
             }
             other => panic!("expected abort, got {other:?}"),
