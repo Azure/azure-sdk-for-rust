@@ -296,6 +296,7 @@ pub(crate) async fn execute_operation_pipeline(
             ) {
                 let attempt_ctx = AttemptContext {
                     operation,
+                    overrides: &overrides,
                     custom_headers,
                     transport,
                     account_endpoint,
@@ -577,6 +578,7 @@ pub(crate) async fn execute_operation_pipeline(
                 // `build_cosmos_response(result, diagnostics)` shape).
                 let attempt_ctx = AttemptContext {
                     operation,
+                    overrides: &overrides,
                     custom_headers,
                     transport,
                     account_endpoint,
@@ -1567,6 +1569,12 @@ pub(crate) enum HedgeOutcome {
 /// field is borrowed from there.
 struct AttemptContext<'a> {
     operation: &'a CosmosOperation,
+    /// Per-operation header/body overrides applied by
+    /// [`build_transport_request`] (e.g., PK-range-id targeting for
+    /// query/feed operations dispatched against a specific partition).
+    /// Carried so hedge legs in [`execute_hedged`] / [`perform_single_attempt`]
+    /// rebuild the request identically to the main pipeline's STAGE 3.
+    overrides: &'a OperationOverrides,
     custom_headers: Option<&'a std::collections::HashMap<HeaderName, HeaderValue>>,
     transport: &'a CosmosTransport,
     account_endpoint: &'a AccountEndpoint,
@@ -1818,8 +1826,12 @@ async fn perform_single_attempt(
         throughput_control: ctx.throughput_control,
     };
 
-    let mut transport_request =
-        build_transport_request(ctx.operation, ctx.custom_headers, &request_ctx)?;
+    let mut transport_request = build_transport_request(
+        ctx.operation,
+        ctx.overrides,
+        ctx.custom_headers,
+        &request_ctx,
+    )?;
     // Hedging attempts have no per-state latch to consult — the only
     // signal is the cross-hedge shared latch (§9.6).
     if should_emit_hub_region_header(false, shared_hub_region_latch) {

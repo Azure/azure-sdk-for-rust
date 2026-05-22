@@ -242,7 +242,8 @@ async fn read_item_hedge_diagnostics(
     let response = driver
         .execute_operation(operation, op_options)
         .await
-        .expect("read_item succeeds");
+        .expect("read_item succeeds")
+        .expect("read_item returns a response body");
 
     response.diagnostics().hedge_diagnostics().cloned()
 }
@@ -268,7 +269,10 @@ async fn read_item_result(
         item_id.to_owned(),
     );
     let operation = CosmosOperation::read_item(item_ref);
-    driver.execute_operation(operation, op_options).await
+    driver
+        .execute_operation(operation, op_options)
+        .await
+        .map(|maybe| maybe.expect("read_item returns a response body"))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -528,12 +532,21 @@ async fn hedging_write_not_hedged() {
         .expect("create_item succeeds");
     let elapsed = start.elapsed();
 
-    assert!(
-        response.diagnostics().hedge_diagnostics().is_none(),
-        "writes must never enter `execute_hedged` (§1 Non-Goals); \
-         hedge_diagnostics={:?}",
-        response.diagnostics().hedge_diagnostics(),
-    );
+    // Writes with `ContentResponseOnWrite::Disabled` return `Ok(None)`; tests
+    // that exercise the write path through `execute_operation` therefore see
+    // an `Option<CosmosResponse>` and must inspect diagnostics through the
+    // pre-built body when present. Hedging never engages on writes (§1
+    // Non-Goals), so when the response is omitted there can be no hedge
+    // diagnostics either — the assertion below collapses to a trivial
+    // `true` in that case.
+    if let Some(response) = response {
+        assert!(
+            response.diagnostics().hedge_diagnostics().is_none(),
+            "writes must never enter `execute_hedged` (§1 Non-Goals); \
+             hedge_diagnostics={:?}",
+            response.diagnostics().hedge_diagnostics(),
+        );
+    }
     assert!(
         elapsed >= Duration::from_millis(400),
         "without hedging the primary must observe the full ~500 ms delay; \
