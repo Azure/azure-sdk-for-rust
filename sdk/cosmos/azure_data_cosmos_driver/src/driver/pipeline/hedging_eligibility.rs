@@ -216,9 +216,11 @@ fn default_threshold(request_timeout: Option<Duration>) -> HedgeThreshold {
 ///
 /// `secondary_index` defaults to `1` in normal flow (second preferred
 /// region), but is parameterized so callers can pin to any specific
-/// index. If `secondary_index` is out of range the function falls back
-/// to excluding nothing additional — the caller's existing exclusions
-/// are returned unchanged.
+/// index. If `secondary_index` is out of range, no region matches the
+/// pin and every region in `all_regions` is added on top of
+/// `user_excluded`, producing an unroutable hedge that the caller
+/// surfaces as a transient "all eligible regions excluded" result per
+/// spec §14.1.
 pub(crate) fn build_secondary_excluded_regions(
     user_excluded: &[Region],
     all_regions: &[Region],
@@ -618,7 +620,7 @@ mod tests {
     }
 
     #[test]
-    fn alternate_region_pin_out_of_range_returns_user_set() {
+    fn alternate_region_pin_out_of_range_excludes_all_regions() {
         let user_excluded = [Region::WEST_EUROPE];
         let regions = [Region::EAST_US, Region::WEST_US_2];
         let excluded = build_secondary_excluded_regions(&user_excluded, &regions, 99);
