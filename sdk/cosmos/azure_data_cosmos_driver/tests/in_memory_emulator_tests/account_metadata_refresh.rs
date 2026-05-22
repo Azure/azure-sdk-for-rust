@@ -457,3 +457,126 @@ async fn runtime_drop_aborts_refresh_task() {
         "no refreshes should fire after runtime drop; pre={pre_drop_count}, post={post_drop_count}"
     );
 }
+
+/// Same account, same runtime, multiple `get_or_create_driver` calls must
+/// return the exact same `Arc<CosmosDriver>` — so every higher-level
+/// `CosmosClient` built on top shares the same `LocationStateStore`,
+/// `PartitionKeyRangeCache`, `SessionManager`, transport, and
+/// account-refresh registration. This is the invariant that lets the
+/// runtime-owned refresh loop hold a single entry per account regardless
+/// of how many clients exist.
+///
+/// Also asserts that the registry size stays at 1 and only one tick's
+/// worth of `GET /` is observed per refresh interval, proving the second
+/// `get_or_create_driver` call did not re-register.
+#[tokio::test(start_paused = true)]
+async fn multiple_clients_same_account_same_runtime_share_one_driver() {
+    let counter = AccountReadCounter::new();
+    let emulator = build_emulator_with_observer(GATEWAY_URL, "East US", counter.clone());
+
+    let runtime = emulator
+        .runtime_builder()
+        .build()
+        .await
+        .expect("runtime should build");
+
+    let driver_one = runtime
+        .get_or_create_driver(account_for(GATEWAY_URL), None)
+        .await
+        .expect("first driver should initialize");
+    let driver_two = runtime
+        .get_or_create_driver(account_for(GATEWAY_URL), None)
+        .await
+        .expect("second call must return the cached driver");
+
+    assert!(
+        Arc::ptr_eq(&driver_one, &driver_two),
+        "same account must dedup to the same Arc<CosmosDriver>; all internal state \
+         (LocationStateStore, PartitionKeyRangeCache, SessionManager, transport, \
+         account-refresh registration) is shared by construction"
+    );
+    assert_eq!(
+        runtime.account_refresh_registry_len(),
+        1,
+        "the second get_or_create_driver call must not register a second refresh entry"
+    );
+
+    // Fast-forward through several refresh intervals and confirm the
+    // background loop still ticks exactly once per interval — i.e. the
+    // shared driver does not produce duplicate `GET /` traffic just
+    // because a second client handle exists.
+    let after_init = counter.count();
+    const TICKS: u32 = 3;
+    tokio::time::sleep(REFRESH_INTERVAL * (TICKS + 1)).await;
+    let post_tick = counter.count() - after_init;
+
+    assert!(
+        post_tick >= TICKS as usize && post_tick <= (TICKS as usize + 2),
+        "with one shared driver, expected ~{TICKS} refreshes from the runtime loop, got {post_tick}"
+    );
+}
+
+/// Same account, **different runtimes**: each runtime owns its own driver
+/// registry, refresh registry, and background loop, so two runtimes built
+/// for the same account endpoint must produce two distinct
+/// `Arc<CosmosDriver>` instances and two independent refresh tasks. This
+/// guards against an accidental cross-runtime singleton (e.g., a static
+/// global cache) being introduced later.
+#[tokio::test(start_paused = true)]
+async fn same_account_different_runtimes_do_not_share_driver() {
+    let counter = AccountReadCounter::new();
+    let emulator = build_emulator_with_observer(GATEWAY_URL, "East US", counter.clone());
+
+    let runtime_a = emulator
+        .runtime_builder()
+        .build()
+        .await
+        .expect("runtime A should build");
+    let runtime_b = emulator
+        .runtime_builder()
+        .build()
+        .await
+        .expect("runtime B should build");
+
+    let driver_a = runtime_a
+        .get_or_create_driver(account_for(GATEWAY_URL), None)
+        .await
+        .expect("driver A should initialize");
+    let driver_b = runtime_b
+        .get_or_create_driver(account_for(GATEWAY_URL), None)
+        .await
+        .expect("driver B should initialize");
+
+    assert!(
+        !Arc::ptr_eq(&driver_a, &driver_b),
+        "different runtimes must NOT share a driver instance even for the same account"
+    );
+    assert_eq!(
+        runtime_a.account_refresh_registry_len(),
+        1,
+        "runtime A's registry must hold its own single entry"
+    );
+    assert_eq!(
+        runtime_b.account_refresh_registry_len(),
+        1,
+        "runtime B's registry must hold its own single entry"
+    );
+    assert!(
+        runtime_a.account_refresh_loop_started() && runtime_b.account_refresh_loop_started(),
+        "each runtime must spawn its own refresh loop"
+    );
+
+    // Confirm both loops fire independently. With two runtimes each
+    // refreshing the same endpoint, the per-interval `GET /` count should
+    // grow at roughly 2× the single-runtime rate.
+    let after_init = counter.count();
+    const TICKS: u32 = 3;
+    tokio::time::sleep(REFRESH_INTERVAL * (TICKS + 1)).await;
+    let post_tick = counter.count() - after_init;
+
+    let expected_min = 2 * TICKS as usize;
+    assert!(
+        post_tick >= expected_min,
+        "expected ≥ {expected_min} refreshes (2 runtimes × {TICKS} ticks), got {post_tick}"
+    );
+}
