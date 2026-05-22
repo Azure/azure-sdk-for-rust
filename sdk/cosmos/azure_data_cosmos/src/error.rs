@@ -152,7 +152,7 @@ impl Error {
 
     /// Builds a `Client` error (caller misuse / precondition), optionally
     /// wrapping an underlying source error.
-    pub fn client(
+    pub(crate) fn client(
         message: impl Into<std::borrow::Cow<'static, str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
@@ -161,7 +161,7 @@ impl Error {
 
     /// Builds a `Configuration` error (bad endpoint URL, malformed connection
     /// string, etc.), optionally wrapping an underlying source error.
-    pub fn configuration(
+    pub(crate) fn configuration(
         message: impl Into<std::borrow::Cow<'static, str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
@@ -169,23 +169,11 @@ impl Error {
     }
 
     /// Builds a `Serialization` error wrapping the underlying serde failure.
-    pub fn serialization(
+    pub(crate) fn serialization(
         message: impl Into<std::borrow::Cow<'static, str>>,
         source: impl StdError + Send + Sync + 'static,
     ) -> Self {
         Self(DriverError::serialization(message, None, None, source))
-    }
-
-    /// Returns a reference to the underlying driver-level [`Error`].
-    #[allow(dead_code)]
-    pub(crate) fn as_driver(&self) -> &DriverError {
-        &self.0
-    }
-
-    /// Consumes the wrapper and returns the underlying driver error.
-    #[allow(dead_code)]
-    pub(crate) fn into_driver(self) -> DriverError {
-        self.0
     }
 }
 

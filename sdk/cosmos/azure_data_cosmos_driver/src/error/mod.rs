@@ -172,6 +172,11 @@ impl Error {
 
     /// Builds a `Client` error (caller misuse / precondition), optionally
     /// wrapping an underlying source error.
+    ///
+    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
+    /// (`azure_data_cosmos`) and other in-tree consumers can construct
+    /// typed errors; not part of the public surface.
+    #[doc(hidden)]
     pub fn client(
         message: impl Into<Cow<'static, str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
@@ -196,6 +201,11 @@ impl Error {
     /// Pass `None` only when the failure is detached from any in-flight
     /// operation (e.g. parsing a user-supplied continuation token at the SDK
     /// boundary before any request has been issued).
+    ///
+    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
+    /// (`azure_data_cosmos`) and other in-tree consumers can construct
+    /// typed errors; not part of the public surface.
+    #[doc(hidden)]
     pub fn serialization(
         message: impl Into<Cow<'static, str>>,
         cosmos_headers: Option<CosmosResponseHeaders>,
@@ -217,6 +227,11 @@ impl Error {
 
     /// Builds a `Configuration` error (bad endpoint URL, malformed connection
     /// string, etc.), optionally wrapping an underlying source error.
+    ///
+    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
+    /// (`azure_data_cosmos`) and other in-tree consumers can construct
+    /// typed errors; not part of the public surface.
+    #[doc(hidden)]
     pub fn configuration(
         message: impl Into<Cow<'static, str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
@@ -280,6 +295,11 @@ impl Error {
     /// mapper-classified error before propagating it further.
     ///
     /// The resulting message has the shape `"{context}: {original}"`.
+    ///
+    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
+    /// (`azure_data_cosmos`) and other in-tree consumers can enrich
+    /// errors with request context; not part of the public surface.
+    #[doc(hidden)]
     #[must_use]
     pub fn with_context(mut self, context: impl Into<Cow<'static, str>>) -> Self {
         let inner = self.inner_mut();

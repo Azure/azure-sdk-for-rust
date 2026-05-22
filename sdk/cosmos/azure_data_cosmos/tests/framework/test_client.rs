@@ -884,20 +884,10 @@ impl TestRunContext {
             &env_var
         };
 
-        let parsed: ConnectionString = connection_string.parse().map_err(|e| {
-            azure_data_cosmos::Error::configuration(
-                format!("Failed to parse connection string: {}", e),
-                None,
-            )
-        })?;
+        let parsed: ConnectionString = connection_string.parse()?;
 
         let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            parsed.account_endpoint.parse().map_err(|e| {
-                azure_data_cosmos::Error::configuration(
-                    format!("Failed to parse account endpoint: {}", e),
-                    None,
-                )
-            })?;
+            parsed.account_endpoint.parse()?;
         let mut builder = CosmosClient::builder();
 
         #[cfg(feature = "allow_invalid_certificates")]
