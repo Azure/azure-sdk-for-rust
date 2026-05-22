@@ -452,33 +452,73 @@ impl Error {
 // -----------------------------------------------------------------
 
 impl fmt::Display for Error {
+    /// Default (`{e}`): a single-line header — `[Kind] message (status: code/sub)`.
+    ///
+    /// Alternate (`{e:#}`): the same header followed by the source chain
+    /// and (if captured) the rendered backtrace. This matches the
+    /// `anyhow::Error` / `eyre::Report` convention: terse for log lines,
+    /// rich when callers explicitly opt in via `{:#}`.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let status = self.inner.status;
-        write!(
-            f,
-            "[{}] {} (status: {}",
-            status.kind(),
-            self.inner.message,
-            u16::from(status.status_code())
-        )?;
-        if let Some(sub) = status.sub_status() {
-            write!(f, "/{}", sub.value())?;
+        write_header(f, &self.inner)?;
+        if f.alternate() {
+            write_source_chain(f, self)?;
+            write_backtrace(f, self)?;
         }
-        f.write_str(")")
+        Ok(())
     }
 }
 
 impl fmt::Debug for Error {
+    /// Pretty (`{e:#?}`): the structured fields plus the source chain and
+    /// rendered backtrace.
+    ///
+    /// Default (`{e:?}`): the same content but as the standard one-line
+    /// derived-Debug dump. `Result::unwrap` / `expect` panic messages and
+    /// `tracing::error!(err = ?e)` call sites pick up the backtrace via
+    /// this impl without any additional plumbing.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Error")
-            .field("status", &self.inner.status)
-            .field("message", &self.inner.message)
-            .field("has_payload", &self.inner.payload.is_some())
-            .field("has_diagnostics", &self.inner.diagnostics.is_some())
-            .field("has_source", &self.inner.source.is_some())
-            .field("has_backtrace", &self.inner.backtrace.is_some())
-            .finish()
+        write_header(f, &self.inner)?;
+        write_source_chain(f, self)?;
+        write_backtrace(f, self)?;
+        Ok(())
     }
+}
+
+fn write_header(f: &mut fmt::Formatter<'_>, inner: &ErrorInner) -> fmt::Result {
+    let status = inner.status;
+    write!(
+        f,
+        "[{}] {} (status: {}",
+        status.kind(),
+        inner.message,
+        u16::from(status.status_code())
+    )?;
+    if let Some(sub) = status.sub_status() {
+        write!(f, "/{}", sub.value())?;
+    }
+    f.write_str(")")
+}
+
+fn write_source_chain(f: &mut fmt::Formatter<'_>, err: &Error) -> fmt::Result {
+    let mut cur: Option<&(dyn StdError + 'static)> = StdError::source(err);
+    let mut depth = 0;
+    while let Some(src) = cur {
+        if depth == 0 {
+            f.write_str("\n\nCaused by:")?;
+        }
+        write!(f, "\n  {depth}: {src}")?;
+        cur = src.source();
+        depth += 1;
+    }
+    Ok(())
+}
+
+fn write_backtrace(f: &mut fmt::Formatter<'_>, err: &Error) -> fmt::Result {
+    if let Some(bt) = err.backtrace() {
+        f.write_str("\n\nStack backtrace:\n")?;
+        f.write_str(bt)?;
+    }
+    Ok(())
 }
 
 impl StdError for Error {
