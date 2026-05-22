@@ -562,12 +562,24 @@ impl DriverTestRunContext {
             "Should use data plane pipeline for item operations"
         );
 
-        // Check transport security for emulator
-        if first_request.endpoint().contains("localhost") {
+        // Check transport security for emulator. The legacy emulator and the
+        // vnext emulator in HTTPS mode use a self-signed cert and surface as
+        // `EmulatorWithInsecureCertificates`. The vnext emulator in HTTP mode
+        // has no TLS at all and is classified as `Secure` today (the enum
+        // predates plain-HTTP emulator support — tracked separately).
+        if first_request.endpoint().contains("localhost")
+            || first_request.endpoint().contains("127.0.0.1")
+        {
+            let expected = if first_request.endpoint().starts_with("https://") {
+                TransportSecurity::EmulatorWithInsecureCertificates
+            } else {
+                TransportSecurity::Secure
+            };
             assert_eq!(
                 first_request.transport_security(),
-                TransportSecurity::EmulatorWithInsecureCertificates,
-                "Should use emulator transport security for localhost"
+                expected,
+                "Unexpected transport security for emulator endpoint {}",
+                first_request.endpoint()
             );
         }
 
