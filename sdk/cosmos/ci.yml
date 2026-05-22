@@ -70,6 +70,17 @@ extends:
       AZURE_COSMOS_GW20_KEY: $(thinclient-test-key)
       AZURE_COSMOS_GW20_MULTI_REGION_ENDPOINT: $(thin-client-canary-multi-region-session-endpoint)
       AZURE_COSMOS_GW20_MULTI_REGION_KEY: $(thin-client-canary-multi-region-session-key)
+    # Link the cosmos live-test variable group so the `$(thinclient-test-*)`
+    # / `$(thin-client-canary-*)` secret references above actually resolve.
+    # Without this, those `$()` expressions would be passed verbatim into
+    # the test process's environment as literal strings.
+    #
+    # NOTE: the first pipeline run after adding a new variable group is
+    # blocked until an admin grants permission via the pipeline UI
+    # ("This pipeline needs permission to access a resource"). Approve
+    # access in the Permissions tab of the variable group.
+    VariableGroups:
+    - 'Test Secrets for Cosmos Live Tests - user administered'
     MatrixConfigs:
       - Name: Cosmos_release
         Path: sdk/cosmos/release-platform-matrix.json
