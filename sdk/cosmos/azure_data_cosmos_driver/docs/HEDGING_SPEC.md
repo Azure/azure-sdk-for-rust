@@ -540,7 +540,7 @@ pub struct OperationOptions {
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `AZURE_COSMOS_HEDGING_THRESHOLD_MS` | Overrides the driver default threshold in milliseconds. Zero or non-numeric values are ignored. | (driver default — see §5.2) |
-| `AZURE_COSMOS_HEDGING_DISABLED` | When `true`, disables hedging entirely at runtime regardless of code-level config. Useful as a deployment-time kill switch. | `false` |
+| `AZURE_COSMOS_HEDGING_DISABLED` | When set to any common truthy value (`true`, `1`, `yes`, `on` — case-insensitive, whitespace ignored), disables hedging entirely at runtime regardless of code-level config. Any other value (`false`, `0`, `no`, `off`, empty, unrecognized) leaves hedging enabled. Useful as a deployment-time kill switch. | `false` |
 
 The env-var threshold sits at priority 3 in the resolution order
 (§11.3.1) — it overrides the built-in default but is overridden by any

@@ -308,9 +308,16 @@ pub(crate) fn parse_hedging_threshold_from_env_with(
     }
 }
 
-/// Parses `AZURE_COSMOS_HEDGING_DISABLED`. Returns `true` iff the variable is
-/// set to `"true"` (case-insensitive). Any other value (including unset,
-/// `"false"`, `"1"`, empty) returns `false`.
+/// Parses `AZURE_COSMOS_HEDGING_DISABLED`. Returns `true` when the variable
+/// is set to any common truthy value (`"true"`, `"1"`, `"yes"`, `"on"`,
+/// case-insensitive, surrounding whitespace ignored). Any other value
+/// — including unset, `"false"`, `"0"`, `"no"`, `"off"`, empty, or
+/// unrecognized strings — returns `false`.
+///
+/// Operators reaching for a kill switch during an incident should not
+/// have to remember exactly which spelling the driver accepts; the
+/// broadened set matches widely-used Unix conventions (e.g. systemd,
+/// docker, shell scripts).
 ///
 /// Per `docs/HEDGING_SPEC.md` §4.4, this is the env-var kill switch for
 /// hedging at the lowest layer.
@@ -329,7 +336,13 @@ pub(crate) fn parse_hedging_disabled_from_env_with(
     env_var: impl Fn(&str) -> Result<String, std::env::VarError>,
 ) -> bool {
     env_var("AZURE_COSMOS_HEDGING_DISABLED")
-        .map(|v| v.trim().eq_ignore_ascii_case("true"))
+        .map(|v| {
+            let trimmed = v.trim();
+            trimmed.eq_ignore_ascii_case("true")
+                || trimmed.eq_ignore_ascii_case("1")
+                || trimmed.eq_ignore_ascii_case("yes")
+                || trimmed.eq_ignore_ascii_case("on")
+        })
         .unwrap_or(false)
 }
 
@@ -536,22 +549,40 @@ mod tests {
     }
 
     #[test]
-    fn parse_hedging_disabled_true_for_true_case_insensitive() {
+    fn parse_hedging_disabled_true_for_common_truthy_values() {
+        // Canonical spelling, case-insensitive, surrounding whitespace ignored.
         assert!(parse_hedging_disabled_from_env_with(|_| Ok("true".into())));
         assert!(parse_hedging_disabled_from_env_with(|_| Ok("TRUE".into())));
         assert!(parse_hedging_disabled_from_env_with(|_| Ok("True".into())));
         assert!(parse_hedging_disabled_from_env_with(|_| Ok(
             "  true ".into()
         )));
+
+        // Common Unix-convention truthy values (systemd, docker, shell scripts).
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok("1".into())));
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok("yes".into())));
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok("YES".into())));
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok("on".into())));
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok("ON".into())));
+        assert!(parse_hedging_disabled_from_env_with(|_| Ok("  1 ".into())));
     }
 
     #[test]
-    fn parse_hedging_disabled_false_for_other_values() {
+    fn parse_hedging_disabled_false_for_falsy_or_unrecognized_values() {
+        // Explicit falsy values.
         assert!(!parse_hedging_disabled_from_env_with(
             |_| Ok("false".into())
         ));
-        assert!(!parse_hedging_disabled_from_env_with(|_| Ok("1".into())));
-        assert!(!parse_hedging_disabled_from_env_with(|_| Ok("yes".into())));
+        assert!(!parse_hedging_disabled_from_env_with(|_| Ok("0".into())));
+        assert!(!parse_hedging_disabled_from_env_with(|_| Ok("no".into())));
+        assert!(!parse_hedging_disabled_from_env_with(|_| Ok("off".into())));
+
+        // Empty / whitespace / unrecognized strings.
         assert!(!parse_hedging_disabled_from_env_with(|_| Ok(String::new())));
+        assert!(!parse_hedging_disabled_from_env_with(|_| Ok("  ".into())));
+        assert!(!parse_hedging_disabled_from_env_with(|_| Ok(
+            "enable".into()
+        )));
+        assert!(!parse_hedging_disabled_from_env_with(|_| Ok("2".into())));
     }
 }
