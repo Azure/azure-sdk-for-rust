@@ -99,21 +99,21 @@ impl EffectivePartitionKey {
     pub fn compute_range(
         pk_values: &[PartitionKeyValue],
         pk_definition: &PartitionKeyDefinition,
-    ) -> azure_core::Result<std::ops::Range<Self>> {
+    ) -> crate::error::Result<std::ops::Range<Self>> {
         if pk_values.is_empty() {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::error::Error::client(
                 "compute_range called with empty pk_values",
+                None,
             ));
         }
         if pk_values.len() > pk_definition.paths().len() {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::error::Error::client(
                 format!(
                     "more partition key components ({}) than definition paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()
                 ),
+                None,
             ));
         }
 
@@ -125,13 +125,13 @@ impl EffectivePartitionKey {
             kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
 
         if kind != PartitionKeyKind::MultiHash && pk_values.len() != pk_definition.paths().len() {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::error::Error::client(
                 format!(
                     "non-MultiHash containers require exactly as many components ({}) as paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()
                 ),
+                None,
             ));
         }
 

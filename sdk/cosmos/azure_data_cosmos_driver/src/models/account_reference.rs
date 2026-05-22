@@ -322,7 +322,7 @@ impl AccountReferenceBuilder {
     /// # Errors
     ///
     /// Returns an error if authentication has not been configured.
-    pub fn build(self) -> azure_core::Result<AccountReference> {
+    pub fn build(self) -> crate::error::Result<AccountReference> {
         let credential = self.credential.ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Credential,

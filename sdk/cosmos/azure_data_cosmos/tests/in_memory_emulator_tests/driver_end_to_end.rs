@@ -576,20 +576,16 @@ async fn read_with_stale_session_token_returns_404_1002() {
 
     let emu_err = emu_err.expect_err("Emulator should return an error for stale session read");
     assert_eq!(
-        emu_err.http_status(),
+        Some(emu_err.status_code()),
         Some(azure_core::http::StatusCode::NotFound),
         "Emulator error should be HTTP 404",
     );
-    match emu_err.kind() {
-        azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
-            assert_eq!(
-                error_code.as_deref(),
-                Some("1002"),
-                "Emulator error should have substatus 1002",
-            );
-        }
-        other => panic!("Expected HttpResponse error, got: {other}"),
-    }
+    let error_code = emu_err.sub_status().map(|s| s.value().to_string());
+    assert_eq!(
+        error_code.as_deref(),
+        Some("1002"),
+        "Emulator error should have substatus 1002",
+    );
 
     // ── Real account (if available) ──────────────────────────────
     if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
@@ -610,21 +606,17 @@ async fn read_with_stale_session_token_returns_404_1002() {
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
         assert_eq!(
-            real_err.http_status(),
+            Some(real_err.status_code()),
             Some(azure_core::http::StatusCode::NotFound),
             "Real error should be HTTP 404",
         );
-        match real_err.kind() {
-            azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
-                if error_code.as_deref() != Some("1002") {
-                    eprintln!(
-                        "  [warning] Real service returned substatus {:?} instead of 1002 — \
-                         gateway may not enforce session consistency for V1 tokens on this account",
-                        error_code,
-                    );
-                }
-            }
-            other => panic!("Expected HttpResponse error, got: {other}"),
+        let error_code = real_err.sub_status().map(|s| s.value().to_string());
+        if error_code.as_deref() != Some("1002") {
+            eprintln!(
+                "  [warning] Real service returned substatus {:?} instead of 1002 — \
+                 gateway may not enforce session consistency for V1 tokens on this account",
+                error_code,
+            );
         }
     }
 
@@ -909,7 +901,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .expect_err("paused satellite should not observe the hub write yet");
     assert_eq!(
-        west_read_before_resume.http_status(),
+        Some(west_read_before_resume.status_code()),
         Some(azure_core::http::StatusCode::NotFound),
         "read should fail while West US replication is paused",
     );

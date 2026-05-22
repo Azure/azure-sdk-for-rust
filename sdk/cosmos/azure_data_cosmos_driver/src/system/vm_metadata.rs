@@ -258,7 +258,7 @@ impl VmMetadataServiceInner {
     }
 
     #[cfg(feature = "reqwest")]
-    async fn do_fetch() -> azure_core::Result<AzureVmMetadata> {
+    async fn do_fetch() -> crate::error::Result<AzureVmMetadata> {
         // Build a dedicated client with short timeouts so non-Azure hosts
         // fail fast instead of blocking callers for a full TCP timeout.
         let http_client = reqwest::Client::builder()
@@ -295,16 +295,18 @@ impl VmMetadataServiceInner {
             )
         })?;
 
-        let metadata: AzureVmMetadata = serde_json::from_str(&body)?;
+        let metadata: AzureVmMetadata = serde_json::from_str(&body).map_err(|e| {
+            crate::error::Error::serialization("failed to parse IMDS response", None, None, e)
+        })?;
         Ok(metadata)
     }
 
     #[cfg(not(feature = "reqwest"))]
-    async fn do_fetch() -> azure_core::Result<AzureVmMetadata> {
-        Err(
-            crate::error::Error::configuration("IMDS fetch requires the `reqwest` feature", None)
-                .into(),
-        )
+    async fn do_fetch() -> crate::error::Result<AzureVmMetadata> {
+        Err(crate::error::Error::configuration(
+            "IMDS fetch requires the `reqwest` feature",
+            None,
+        ))
     }
 }
 

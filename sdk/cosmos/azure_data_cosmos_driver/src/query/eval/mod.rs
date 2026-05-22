@@ -728,7 +728,7 @@ pub fn query_documents(
     sql: &str,
     parameters: &Params,
     documents: &[serde_json::Value],
-) -> azure_core::Result<Vec<serde_json::Value>> {
+) -> crate::error::Result<Vec<serde_json::Value>> {
     let program = crate::query::parse(sql).map_err(|e| {
         crate::error::Error::serialization(format!("failed to parse query: {e}"), None, None, e)
     })?;

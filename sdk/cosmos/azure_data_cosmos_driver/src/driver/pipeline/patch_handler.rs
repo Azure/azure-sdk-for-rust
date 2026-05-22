@@ -85,9 +85,7 @@ impl SubOperationDispatcher for CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<CosmosResponse> {
-        CosmosDriver::execute_operation(self, operation, options)
-            .await
-            .map_err(Into::into)
+        CosmosDriver::execute_operation(self, operation, options).await
     }
 }
 
@@ -100,10 +98,8 @@ pub(crate) async fn execute(
     operation: CosmosOperation,
     options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
-) -> azure_core::Result<CosmosResponse> {
-    execute_with_dispatcher(driver, operation, options, max_attempts)
-        .await
-        .map_err(Into::into)
+) -> crate::error::Result<CosmosResponse> {
+    execute_with_dispatcher(driver, operation, options, max_attempts).await
 }
 
 /// Same as [`execute`], but parameterized over the sub-operation dispatcher.
@@ -518,7 +514,7 @@ fn exhaustion_error(attempts: u8, last_412: Option<crate::error::Error>) -> crat
 fn validate_partition_key_paths(
     ops: &[PatchOp],
     item_ref: &crate::models::ItemReference,
-) -> azure_core::Result<()> {
+) -> crate::error::Result<()> {
     let pk_def = item_ref.container().partition_key_definition();
     let pk_paths: Vec<&str> = pk_def.paths().iter().map(|p| p.as_ref()).collect();
     // Hash and MultiHash treat each path as a JSON Pointer rooted at the
@@ -551,8 +547,7 @@ fn validate_partition_key_paths(
                              cannot mutate partition key with a client-side Read-Modify-Write"
                         ),
                         None,
-                    )
-                    .into());
+                    ));
                 }
             }
         }

@@ -59,7 +59,7 @@ impl LocationSnapshot {
 type AccountRefreshFn = Arc<
     dyn Fn(
             Option<Arc<AccountProperties>>,
-        ) -> BoxFuture<'static, azure_core::Result<AccountProperties>>
+        ) -> BoxFuture<'static, crate::error::Result<AccountProperties>>
         + Send
         + Sync,
 >;
@@ -668,7 +668,7 @@ mod tests {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
             let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
                 Box::pin(async move { Ok(payload) });
             fut
         });
@@ -703,7 +703,7 @@ mod tests {
         let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
             let refresh_calls = Arc::clone(&refresh_calls_clone);
             let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
                 Box::pin(async move {
                     refresh_calls.fetch_add(1, Ordering::SeqCst);
                     Ok(payload)
@@ -749,13 +749,13 @@ mod tests {
             let total = Arc::clone(&total_refreshes_clone);
             let success = Arc::clone(&success_refreshes_clone);
             let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
                 Box::pin(async move {
                     let n = total.fetch_add(1, Ordering::SeqCst);
                     if n == 0 {
-                        Err(azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::Other,
+                        Err(crate::error::Error::client(
                             "simulated network failure",
+                            None,
                         ))
                     } else {
                         success.fetch_add(1, Ordering::SeqCst);
@@ -800,7 +800,7 @@ mod tests {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
             let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
                 Box::pin(async move { Ok(payload) });
             fut
         });
@@ -862,7 +862,7 @@ mod tests {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
             let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, azure_core::Result<AccountProperties>> =
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
                 Box::pin(async move { Ok(payload) });
             fut
         });

@@ -24,7 +24,6 @@ use crate::{
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
-use std::error::Error as _;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -82,20 +81,15 @@ impl CosmosDriver {
     /// for `h2::Error` reasons such as `HTTP_1_1_REQUIRED` / `PROTOCOL_ERROR`
     /// / `FRAME_SIZE_ERROR` and mints
     /// [`SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE`] when it sees one, so
-    /// pipeline-produced errors are recognized via
-    /// [`crate::error::Error::try_extract`]. Raw `azure_core::Error` values
-    /// from paths that do not go through the boundary mapper still fall
-    /// back to a direct `h2::Error` downcast.
+    /// pipeline-produced errors carry the sub-status directly. Raw `h2`
+    /// errors that arrived through other paths are still detected via a
+    /// source-chain downcast.
     #[cfg(feature = "reqwest")]
-    fn has_explicit_http2_incompatibility(error: &azure_core::Error) -> bool {
-        if let Some(cosmos) = crate::error::Error::try_extract(error) {
-            if cosmos.sub_status()
-                == Some(crate::models::SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE)
-            {
-                return true;
-            }
+    fn has_explicit_http2_incompatibility(error: &crate::error::Error) -> bool {
+        if error.sub_status() == Some(crate::models::SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE) {
+            return true;
         }
-        let mut source = error.source();
+        let mut source = std::error::Error::source(error);
         while let Some(cause) = source {
             if let Some(h2_error) = cause.downcast_ref::<h2::Error>() {
                 return matches!(
@@ -113,13 +107,13 @@ impl CosmosDriver {
     }
 
     #[cfg(not(feature = "reqwest"))]
-    fn has_explicit_http2_incompatibility(_error: &azure_core::Error) -> bool {
+    fn has_explicit_http2_incompatibility(_error: &crate::error::Error) -> bool {
         false
     }
 
     fn should_downgrade_http2(
         current_version: TransportHttpVersion,
-        error: &azure_core::Error,
+        error: &crate::error::Error,
         http2_allowed: bool,
     ) -> bool {
         http2_allowed
@@ -139,7 +133,7 @@ impl CosmosDriver {
         http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
-    ) -> azure_core::Result<(
+    ) -> crate::error::Result<(
         CosmosTransport,
         super::transport::adaptive_transport::AdaptiveTransport,
     )> {
@@ -153,7 +147,7 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
         version: TransportHttpVersion,
-    ) -> azure_core::Result<(super::cache::AccountProperties, CosmosTransport)> {
+    ) -> crate::error::Result<(super::cache::AccountProperties, CosmosTransport)> {
         let endpoint = AccountEndpoint::from(account);
         let (transport, metadata_transport) = Self::build_metadata_transport_for_version(
             runtime.connection_pool(),
@@ -177,7 +171,7 @@ impl CosmosDriver {
     async fn fetch_account_properties_with_runtime(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
-    ) -> azure_core::Result<super::cache::AccountProperties> {
+    ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let transport = runtime.bootstrap_transport();
         let metadata_transport = transport.get_metadata_transport(&endpoint)?;
@@ -201,7 +195,7 @@ impl CosmosDriver {
     async fn fetch_initial_account_properties(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
-    ) -> azure_core::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
+    ) -> crate::error::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
         match Self::fetch_initial_account_properties_for_endpoint(runtime, account).await {
             Ok(result) => Ok(result),
             Err(primary_error) if !account.backup_endpoints().is_empty() => {
@@ -251,7 +245,7 @@ impl CosmosDriver {
     async fn fetch_initial_account_properties_for_endpoint(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
-    ) -> azure_core::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
+    ) -> crate::error::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
         if !runtime.connection_pool().is_http2_allowed() {
             // User explicitly disabled HTTP/2 — skip the probe.
             let (props, _) = Self::fetch_account_properties_with_version(
@@ -314,7 +308,7 @@ impl CosmosDriver {
         transport: &super::transport::adaptive_transport::AdaptiveTransport,
         account: &AccountReference,
         user_agent: &azure_core::http::headers::HeaderValue,
-    ) -> azure_core::Result<super::cache::AccountProperties> {
+    ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let mut request = HttpRequest {
             url: endpoint.join_path("/"),
@@ -347,8 +341,7 @@ impl CosmosDriver {
         let props = Self::parse_account_properties_payload(&response.body).map_err(|err| {
             let cosmos_headers =
                 crate::models::CosmosResponseHeaders::from_headers(&response.headers);
-            crate::error::Error::from(err)
-                .with_cosmos_headers(cosmos_headers)
+            err.with_cosmos_headers(cosmos_headers)
                 .with_context(format!("AccountProperties payload from {endpoint}"))
         })?;
         tracing::info!(
@@ -361,7 +354,7 @@ impl CosmosDriver {
 
     fn parse_account_properties_payload(
         payload: &[u8],
-    ) -> azure_core::Result<super::cache::AccountProperties> {
+    ) -> crate::error::Result<super::cache::AccountProperties> {
         serde_json::from_slice(payload).map_err(|e| {
             crate::error::Error::serialization(
                 format!("failed to parse AccountProperties: {e}"),
@@ -369,7 +362,6 @@ impl CosmosDriver {
                 None,
                 e,
             )
-            .into()
         })
     }
 
@@ -392,7 +384,7 @@ impl CosmosDriver {
     async fn fetch_account_properties(
         &self,
         account: &AccountReference,
-    ) -> azure_core::Result<super::cache::AccountProperties> {
+    ) -> crate::error::Result<super::cache::AccountProperties> {
         Self::refresh_account_properties(&self.runtime, account, &self.transport, None).await
     }
 
@@ -420,7 +412,7 @@ impl CosmosDriver {
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
-    ) -> azure_core::Result<super::cache::AccountProperties> {
+    ) -> crate::error::Result<super::cache::AccountProperties> {
         let current_transport = transport_holder.load_full();
         let current_version = current_transport.negotiated_version();
         let endpoint = AccountEndpoint::from(account);
@@ -484,9 +476,9 @@ impl CosmosDriver {
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         primary_endpoint: &AccountEndpoint,
-        primary_error: azure_core::Error,
+        primary_error: crate::error::Error,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
-    ) -> azure_core::Result<super::cache::AccountProperties> {
+    ) -> crate::error::Result<super::cache::AccountProperties> {
         let Some(cached_props) = previous_props else {
             return Err(primary_error);
         };
@@ -613,8 +605,8 @@ impl CosmosDriver {
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
-        error: azure_core::Error,
-    ) -> azure_core::Result<super::cache::AccountProperties> {
+        error: crate::error::Error,
+    ) -> crate::error::Result<super::cache::AccountProperties> {
         if Self::should_downgrade_http2(
             current_version,
             &error,
@@ -647,7 +639,7 @@ impl CosmosDriver {
         &self,
         db_name: &str,
         container_name: &str,
-    ) -> azure_core::Result<ContainerReference> {
+    ) -> crate::error::Result<ContainerReference> {
         let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
         let options = OperationOptions::default();
 
@@ -720,7 +712,7 @@ impl CosmosDriver {
         &self,
         db_rid: &str,
         container_rid: &str,
-    ) -> azure_core::Result<ContainerReference> {
+    ) -> crate::error::Result<ContainerReference> {
         let db_ref = DatabaseReference::from_rid(self.account().clone(), db_rid.to_owned());
         let options = OperationOptions::default();
 
@@ -805,7 +797,7 @@ impl CosmosDriver {
                 let runtime = Arc::clone(&runtime_for_callback);
                 let account = account_for_callback.clone();
                 let transport_holder = Arc::clone(&transport_for_callback);
-                let fut: BoxFuture<'static, azure_core::Result<super::cache::AccountProperties>> =
+                let fut: BoxFuture<'static, crate::error::Result<super::cache::AccountProperties>> =
                     Box::pin(async move {
                         CosmosDriver::refresh_account_properties(
                             &runtime,
@@ -911,7 +903,7 @@ impl CosmosDriver {
     /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver).
     /// Callers may invoke it again to retry if the initial attempt failed
     /// (the result is idempotent).
-    pub async fn initialize(&self) -> azure_core::Result<()> {
+    pub async fn initialize(&self) -> crate::error::Result<()> {
         let account = self.options.account();
         let account_endpoint = AccountEndpoint::from(account);
 
@@ -954,7 +946,7 @@ impl CosmosDriver {
         &self,
         db_name: &str,
         container_name: &str,
-    ) -> azure_core::Result<()> {
+    ) -> crate::error::Result<()> {
         self.resolve_container_by_name(db_name, container_name)
             .await?;
         Ok(())
@@ -995,19 +987,19 @@ impl CosmosDriver {
         &self,
         effective_options: &OperationOptionsView<'_>,
         container: &ContainerReference,
-    ) -> azure_core::Result<Option<ThroughputControlGroupSnapshot>> {
+    ) -> crate::error::Result<Option<ThroughputControlGroupSnapshot>> {
         if let Some(name) = effective_options.throughput_control_group() {
             let group = self
                 .runtime
                 .get_throughput_control_group(container, name)
                 .ok_or_else(|| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
+                    crate::error::Error::client(
                         format!(
                             "throughput control group '{}' not found in registry for container '{}'",
                             name,
                             container.name()
                         ),
+                        None,
                     )
                 })?;
             return Ok(Some(ThroughputControlGroupSnapshot::from(group.as_ref())));
@@ -1107,17 +1099,13 @@ impl CosmosDriver {
                 }
             }
             Err(e) => {
-                // Recover the typed Cosmos status when the error originated
-                // in the pipeline; fall back to the raw `azure_core` HTTP
-                // status for paths that don't go through the boundary
-                // mapper.
-                let http_status = crate::error::Error::try_extract(&e)
-                    .filter(|cosmos| cosmos.is_service_error())
-                    .map(|cosmos| cosmos.status_code())
-                    .or_else(|| match e.kind() {
-                        azure_core::error::ErrorKind::HttpResponse { status, .. } => Some(*status),
-                        _ => None,
-                    });
+                // The error is already a typed Cosmos error; just consult
+                // its status when classifying terminal vs. transient.
+                let http_status = if e.is_service_error() {
+                    Some(e.status_code())
+                } else {
+                    None
+                };
                 if let Some(status) = http_status {
                     // Permanent errors (auth/config issues) are logged at error
                     // level so operators can distinguish misconfiguration from
@@ -1249,15 +1237,15 @@ impl CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
-    ) -> azure_core::Result<crate::models::CosmosResponse> {
+    ) -> crate::error::Result<crate::models::CosmosResponse> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            return Err(crate::error::Error::client(
                 format!(
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
                      use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
                 ),
+                None,
             ));
         }
 
@@ -1436,7 +1424,7 @@ impl CosmosDriver {
         &self,
         db_name: &str,
         container_name: &str,
-    ) -> azure_core::Result<ContainerReference> {
+    ) -> crate::error::Result<ContainerReference> {
         self.resolve_container_by_name(db_name, container_name)
             .await
     }
@@ -1449,7 +1437,7 @@ impl CosmosDriver {
         &self,
         db_name: &str,
         container_name: &str,
-    ) -> azure_core::Result<ContainerReference> {
+    ) -> crate::error::Result<ContainerReference> {
         let endpoint = self.account().endpoint().as_str().to_owned();
         let db_name_owned = db_name.to_owned();
         let container_name_owned = container_name.to_owned();
@@ -1461,7 +1449,7 @@ impl CosmosDriver {
                 self.fetch_container_by_name(&db_name_owned, &container_name_owned)
                     .await
                     .map_err(|err| {
-                        crate::error::Error::from(err).with_context(format!(
+                        err.with_context(format!(
                             "resolve container by name (db='{db_name_owned}', container='{container_name_owned}')"
                         ))
                     })
@@ -1479,7 +1467,7 @@ impl CosmosDriver {
         &self,
         db_rid: &str,
         container_rid: &str,
-    ) -> azure_core::Result<ContainerReference> {
+    ) -> crate::error::Result<ContainerReference> {
         let endpoint = self.account().endpoint().as_str().to_owned();
         let db_rid_owned = db_rid.to_owned();
         let container_rid_owned = container_rid.to_owned();
@@ -1491,7 +1479,7 @@ impl CosmosDriver {
                 self.fetch_container_by_rid(&db_rid_owned, &container_rid_owned)
                     .await
                     .map_err(|err| {
-                        crate::error::Error::from(err).with_context(format!(
+                        err.with_context(format!(
                             "resolve container by rid (db_rid='{db_rid_owned}', container_rid='{container_rid_owned}')"
                         ))
                     })
@@ -2082,7 +2070,7 @@ mod tests {
 
         assert!(CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
-            &error,
+            &crate::error::Error::from(error),
             true,
         ));
     }
@@ -2093,7 +2081,7 @@ mod tests {
 
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
-            &error,
+            &crate::error::Error::from(error),
             true,
         ));
     }
@@ -2104,7 +2092,7 @@ mod tests {
 
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
-            &error,
+            &crate::error::Error::from(error),
             true,
         ));
     }
@@ -2115,7 +2103,7 @@ mod tests {
 
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http11,
-            &error,
+            &crate::error::Error::from(error),
             true,
         ));
     }
@@ -2126,7 +2114,7 @@ mod tests {
 
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
-            &error,
+            &crate::error::Error::from(error),
             false,
         ));
     }

@@ -609,7 +609,7 @@ impl SessionToken {
     ///
     /// This is the primary API for combining session tokens without exposing
     /// internal token format details.
-    pub fn merge(&self, other: &Self) -> azure_core::Result<Self> {
+    pub fn merge(&self, other: &Self) -> crate::error::Result<Self> {
         use std::collections::HashMap;
 
         let mut pk_order: Vec<String> = Vec::new();

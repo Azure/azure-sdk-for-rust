@@ -365,7 +365,7 @@ impl CosmosDriverRuntime {
         self: &Arc<Self>,
         account: AccountReference,
         driver_options: Option<DriverOptions>,
-    ) -> azure_core::Result<Arc<CosmosDriver>> {
+    ) -> crate::error::Result<Arc<CosmosDriver>> {
         let key = account.endpoint().to_string();
 
         // Fast path: return an already-initialized driver.
@@ -612,7 +612,7 @@ impl CosmosDriverRuntimeBuilder {
     pub fn register_throughput_control_group(
         mut self,
         group: ThroughputControlGroupOptions,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         self.throughput_control_groups
             .register(group)
             .map_err(|e| crate::error::Error::client(e.to_string(), None))?;
@@ -647,7 +647,7 @@ impl CosmosDriverRuntimeBuilder {
     pub fn with_fault_injection_rules(
         mut self,
         rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         if rules.is_empty() {
             return Ok(self);
         }
@@ -665,8 +665,7 @@ impl CosmosDriverRuntimeBuilder {
                 return Err(crate::error::Error::client(
                     format!("duplicate fault injection rule id: {}", rule.id()),
                     None,
-                )
-                .into());
+                ));
             }
         }
 
@@ -690,7 +689,7 @@ impl CosmosDriverRuntimeBuilder {
     /// Returns an error if the HTTP transport cannot be created (e.g., TLS
     /// configuration failure).
     ///
-    pub async fn build(self) -> azure_core::Result<Arc<CosmosDriverRuntime>> {
+    pub async fn build(self) -> crate::error::Result<Arc<CosmosDriverRuntime>> {
         // Compute user agent from suffix/workloadId/correlationId (in priority order)
         let user_agent = if let Some(ref suffix) = self.user_agent_suffix {
             UserAgent::from_suffix(suffix)

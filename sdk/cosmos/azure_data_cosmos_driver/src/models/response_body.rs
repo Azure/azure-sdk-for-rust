@@ -7,7 +7,7 @@
 //! single-payload responses (point reads/writes, batches) and feed-style
 //! responses (Query / ChangeFeed) that carry one element per document.
 
-use azure_core::{error::ErrorKind, fmt::SafeDebug, Bytes};
+use azure_core::{fmt::SafeDebug, Bytes};
 use serde::de::DeserializeOwned;
 
 /// The body of a [`CosmosResponse`](super::CosmosResponse).
@@ -89,16 +89,16 @@ impl ResponseBody {
     /// yields an empty [`Bytes`].
     ///
     /// Used by single-document response paths (point reads/writes, batch, etc.).
-    pub fn single(self) -> azure_core::Result<Bytes> {
+    pub fn single(self) -> crate::error::Result<Bytes> {
         match self {
             Self::NoPayload => Ok(Bytes::new()),
             Self::Bytes(b) => Ok(b),
-            Self::Items(items) => Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
+            Self::Items(items) => Err(crate::error::Error::client(
                 format!(
                     "expected single response body, found feed response with {} item(s)",
                     items.len()
                 ),
+                None,
             )),
         }
     }
@@ -110,7 +110,7 @@ impl ResponseBody {
     /// This is the raw-bytes counterpart to
     /// [`into_items`](Self::into_items); use it when callers want to decode
     /// each item themselves instead of going through JSON.
-    pub fn items(self) -> azure_core::Result<Vec<Bytes>> {
+    pub fn items(self) -> crate::error::Result<Vec<Bytes>> {
         match self {
             Self::NoPayload => Ok(Vec::new()),
             Self::Bytes(b) => Ok(vec![b]),
@@ -122,24 +122,42 @@ impl ResponseBody {
     ///
     /// Returns an error if the body is a feed [`Items`](Self::Items) response
     /// or if the body is [`NoPayload`](Self::NoPayload) (nothing to parse).
-    pub fn into_single<T: DeserializeOwned>(self) -> azure_core::Result<T> {
+    pub fn into_single<T: DeserializeOwned>(self) -> crate::error::Result<T> {
         let bytes = self.single()?;
-        serde_json::from_slice(&bytes).map_err(azure_core::Error::from)
+        serde_json::from_slice(&bytes).map_err(|e| {
+            crate::error::Error::serialization("failed to deserialize response body", None, None, e)
+        })
     }
 
     /// Deserializes every item in a feed response, or the single payload, as
     /// JSON of type `T`. A [`NoPayload`](Self::NoPayload) body yields an empty
     /// `Vec`.
-    pub fn into_items<T: DeserializeOwned>(self) -> azure_core::Result<Vec<T>> {
+    pub fn into_items<T: DeserializeOwned>(self) -> crate::error::Result<Vec<T>> {
         match self {
             Self::NoPayload => Ok(Vec::new()),
             Self::Bytes(b) => {
-                let item = serde_json::from_slice(&b).map_err(azure_core::Error::from)?;
+                let item = serde_json::from_slice(&b).map_err(|e| {
+                    crate::error::Error::serialization(
+                        "failed to deserialize response body",
+                        None,
+                        None,
+                        e,
+                    )
+                })?;
                 Ok(vec![item])
             }
             Self::Items(items) => items
                 .into_iter()
-                .map(|b| serde_json::from_slice(&b).map_err(azure_core::Error::from))
+                .map(|b| {
+                    serde_json::from_slice(&b).map_err(|e| {
+                        crate::error::Error::serialization(
+                            "failed to deserialize feed item",
+                            None,
+                            None,
+                            e,
+                        )
+                    })
+                })
                 .collect(),
         }
     }
@@ -192,7 +210,7 @@ mod tests {
     fn no_payload_into_item_errors() {
         // No bytes to deserialize.
         let body = ResponseBody::NoPayload;
-        let result: azure_core::Result<serde_json::Value> = body.into_single();
+        let result: crate::error::Result<serde_json::Value> = body.into_single();
         assert!(result.is_err());
     }
 

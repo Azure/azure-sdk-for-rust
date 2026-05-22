@@ -69,8 +69,8 @@ async fn ensure_database(driver: &CosmosDriver) {
         // Anything else (auth failure, throttling, network issues, ...) should surface as a
         // panic instead of leaving the next `resolve_container` call to fail with a confusing
         // "container not found" message.
-        let status = e.http_status();
-        if status != Some(azure_core::http::StatusCode::Conflict) {
+        let status = e.status_code();
+        if status != azure_core::http::StatusCode::Conflict {
             panic!("failed to ensure test database '{DB_NAME}': status={status:?} {e}");
         }
     }
@@ -97,8 +97,8 @@ async fn ensure_container(
     if let Err(e) = driver.execute_operation(op, Default::default()).await {
         // Same rationale as ensure_database: only 409 Conflict is expected (re-runs);
         // other errors must not be silently dropped.
-        let status = e.http_status();
-        if status != Some(azure_core::http::StatusCode::Conflict) {
+        let status = e.status_code();
+        if status != azure_core::http::StatusCode::Conflict {
             panic!("failed to ensure test container '{container_name}': status={status:?} {e}");
         }
     }
@@ -148,8 +148,11 @@ async fn fetch_gateway_plan(
         .with_request_headers(request_headers)
         .with_body(body);
 
-    let response = driver.execute_operation(operation, op_options).await?;
-    response.into_body().into_single()
+    let response = driver
+        .execute_operation(operation, op_options)
+        .await
+        .map_err(azure_core::Error::from)?;
+    response.into_body().into_single().map_err(Into::into)
 }
 
 /// Compare a locally-generated `queryInfo` JSON object against what the Cosmos DB

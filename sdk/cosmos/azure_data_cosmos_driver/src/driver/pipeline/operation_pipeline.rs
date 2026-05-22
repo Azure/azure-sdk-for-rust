@@ -82,7 +82,7 @@ pub(crate) async fn execute_operation_pipeline(
     diagnostics: DiagnosticsContextBuilder,
     throughput_control: Option<&ThroughputControlGroupSnapshot>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
-) -> azure_core::Result<CosmosResponse> {
+) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = pipeline_ctx.location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
@@ -401,7 +401,7 @@ pub(crate) async fn execute_operation_pipeline(
                         cosmos_status.sub_status(),
                     );
                 }
-                return Err(error);
+                return Err(error.into());
             }
         }
     }
@@ -752,7 +752,7 @@ fn build_transport_request(
     operation: &CosmosOperation,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     request_ctx: &TransportRequestContext<'_>,
-) -> azure_core::Result<TransportRequest> {
+) -> crate::error::Result<TransportRequest> {
     let paths = operation.compute_resource_paths();
     let url = {
         let mut base = request_ctx.routing.selected_url.clone();
@@ -898,7 +898,7 @@ fn build_transport_request(
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
-) -> azure_core::Result<CosmosResponse> {
+) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         TransportOutcome::Success {
             status,
@@ -921,8 +921,7 @@ fn build_cosmos_response(
             Err(crate::error::Error::client(
                 "build_cosmos_response called with non-success result",
                 None,
-            )
-            .into())
+            ))
         }
     }
 }
@@ -1114,7 +1113,7 @@ fn enforce_deadline_or_timeout(
     deadline: Option<Instant>,
     options: &OperationOptionsView<'_>,
     diagnostics: &mut DiagnosticsContextBuilder,
-) -> azure_core::Result<()> {
+) -> crate::error::Result<()> {
     let Some(d) = deadline else {
         return Ok(());
     };
@@ -1134,8 +1133,7 @@ fn enforce_deadline_or_timeout(
     Err(crate::error::Error::end_to_end_timeout(
         format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
         None,
-    )
-    .into())
+    ))
 }
 
 /// On a successful PPCB probe request, removes the `ProbeCandidate` entry
@@ -3013,7 +3011,7 @@ mod tests {
         let deadline = std::time::Instant::now() - Duration::from_millis(1);
         let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
         let err = result.expect_err("past deadline should produce an error");
-        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
+        assert!(matches!(err.kind(), crate::error::Kind::Transport));
         let msg = err.to_string();
         assert!(
             msg.contains("end-to-end operation timeout exceeded"),

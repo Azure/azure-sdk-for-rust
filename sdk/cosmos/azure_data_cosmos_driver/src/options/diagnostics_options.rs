@@ -186,7 +186,7 @@ impl DiagnosticsOptionsBuilder {
     /// Returns an error if:
     /// - `max_summary_size_bytes` is less than 4096
     /// - Environment variable parsing fails
-    pub fn build(self) -> azure_core::Result<DiagnosticsOptions> {
+    pub fn build(self) -> crate::error::Result<DiagnosticsOptions> {
         let max_summary_size_bytes = parse_from_env(
             self.max_summary_size_bytes,
             "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES",
