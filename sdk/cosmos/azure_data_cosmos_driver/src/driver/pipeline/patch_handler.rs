@@ -394,28 +394,22 @@ fn session_token_from_error(err: &crate::error::Error) -> Option<SessionToken> {
     if let Some(token) = err.cosmos_headers().and_then(|h| h.session_token.clone()) {
         return Some(token);
     }
-    // Walk the source chain looking for a wrapped azure_core::Error that
-    // carries the raw HTTP response (the typical shape when the cosmos
-    // error was built via `From<azure_core::Error>`).
-    let mut cur: Option<&(dyn std::error::Error + 'static)> = Some(err);
-    while let Some(src) = cur {
-        if let Some(az) = src.downcast_ref::<azure_core::Error>() {
-            if let ErrorKind::HttpResponse {
-                raw_response: Some(raw),
-                ..
-            } = az.kind()
-            {
-                return raw
-                    .headers()
-                    .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
-                        crate::models::cosmos_headers::response_header_names::SESSION_TOKEN,
-                    ))
-                    .map(|s| SessionToken::new(s.to_owned()));
-            }
-        }
-        cur = src.source();
-    }
-    None
+    // The cosmos error may wrap an azure_core::Error that still carries the
+    // raw HTTP response (the typical shape when the cosmos error was built
+    // via `From<azure_core::Error>`). Recover the session-token header off
+    // it when present.
+    let raw = match err.find_azure_core_error()?.kind() {
+        ErrorKind::HttpResponse {
+            raw_response: Some(raw),
+            ..
+        } => raw,
+        _ => return None,
+    };
+    raw.headers()
+        .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
+            crate::models::cosmos_headers::response_header_names::SESSION_TOKEN,
+        ))
+        .map(|s| SessionToken::new(s.to_owned()))
 }
 
 /// Reconciles the locally-merged post-image JSON with the Replace response so
@@ -509,25 +503,16 @@ fn exhaustion_error(attempts: u8, last_412: Option<crate::error::Error>) -> crat
             // `err.raw_response()`) see the same shape they would from any
             // other 412 path in this SDK — instead of having to walk
             // `Error::source()` to recover them.
-            let (error_code, raw_response) = {
-                let mut cur: Option<&(dyn std::error::Error + 'static)> = Some(&source);
-                let mut found: Option<(Option<String>, Option<Box<azure_core::http::RawResponse>>)> =
-                    None;
-                while let Some(src) = cur {
-                    if let Some(az) = src.downcast_ref::<azure_core::Error>() {
-                        if let ErrorKind::HttpResponse {
-                            error_code,
-                            raw_response,
-                            ..
-                        } = az.kind()
-                        {
-                            found = Some((error_code.clone(), raw_response.clone()));
-                        }
-                        break;
-                    }
-                    cur = src.source();
-                }
-                found.unwrap_or((None, None))
+            let (error_code, raw_response) = match source
+                .find_azure_core_error()
+                .map(azure_core::Error::kind)
+            {
+                Some(ErrorKind::HttpResponse {
+                    error_code,
+                    raw_response,
+                    ..
+                }) => (error_code.clone(), raw_response.clone()),
+                _ => (None, None),
             };
             azure_core::Error::with_error(
                 ErrorKind::HttpResponse {
@@ -1019,33 +1004,27 @@ mod tests {
         assert_eq!(err.status_code(), StatusCode::PreconditionFailed);
         // The raw_response and error_code accessors live on azure_core::Error;
         // walk the source chain to inspect them on the inner 412.
-        let mut cur: Option<&(dyn std::error::Error + 'static)> = Some(&err);
-        let mut found = false;
-        while let Some(src) = cur {
-            if let Some(az) = src.downcast_ref::<azure_core::Error>() {
-                if let ErrorKind::HttpResponse {
-                    status,
-                    error_code,
-                    raw_response,
-                } = az.kind()
-                {
-                    assert_eq!(*status, StatusCode::PreconditionFailed);
-                    assert_eq!(
-                        error_code.as_deref(),
-                        Some("EtagPreconditionFailed"),
-                        "exhaustion error must forward the wrapped 412's `error_code` field"
-                    );
-                    assert!(
-                        raw_response.is_some(),
-                        "exhaustion error must forward the wrapped 412's `raw_response`"
-                    );
-                    found = true;
-                    break;
-                }
-            }
-            cur = src.source();
-        }
-        assert!(found, "expected inner azure_core 412 in source chain");
+        let az = err
+            .find_azure_core_error()
+            .expect("expected inner azure_core 412 in source chain");
+        let ErrorKind::HttpResponse {
+            status,
+            error_code,
+            raw_response,
+        } = az.kind()
+        else {
+            panic!("expected HttpResponse kind, got {:?}", az.kind());
+        };
+        assert_eq!(*status, StatusCode::PreconditionFailed);
+        assert_eq!(
+            error_code.as_deref(),
+            Some("EtagPreconditionFailed"),
+            "exhaustion error must forward the wrapped 412's `error_code` field"
+        );
+        assert!(
+            raw_response.is_some(),
+            "exhaustion error must forward the wrapped 412's `raw_response`"
+        );
     }
 
     // ====== Dispatcher-driven loop coverage ======

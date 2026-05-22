@@ -445,6 +445,25 @@ impl Error {
         }
         None
     }
+
+    /// Walks `self` and its `.source()` chain looking for a wrapped
+    /// [`azure_core::Error`] and returns a borrow of it if one is found.
+    ///
+    /// Used by handlers that need to inspect azure_core-specific fields
+    /// (such as `HttpResponse::raw_response` or `error_code`) on a cosmos
+    /// [`Error`] that was minted via [`From<azure_core::Error>`]. The
+    /// cosmos error preserves the originating azure_core error in its
+    /// source chain; this helper centralises the downcast walk.
+    pub(crate) fn find_azure_core_error(&self) -> Option<&azure_core::Error> {
+        let mut cur: Option<&(dyn StdError + 'static)> = Some(self);
+        while let Some(src) = cur {
+            if let Some(az) = src.downcast_ref::<azure_core::Error>() {
+                return Some(az);
+            }
+            cur = src.source();
+        }
+        None
+    }
 }
 
 // -----------------------------------------------------------------
