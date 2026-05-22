@@ -1056,9 +1056,7 @@ pub async fn gateway20_connection_error_fails_fast_after_all_regions_attempted(
             // region. With fail-fast semantics, the read must surface the
             // connection error rather than silently retry on the standard
             // gateway.
-            let result = fault_container_client
-                .read_item(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
             let err = result.expect_err(
                 "read must fail fast after Gateway 2.0 connection errors on every region",
             );

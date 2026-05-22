@@ -49,7 +49,10 @@
 #![cfg(feature = "key_auth")]
 
 use azure_core::credentials::Secret;
-use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition};
+use azure_data_cosmos::models::{
+    ContainerProperties, PartitionKeyDefinition, ThroughputProperties,
+};
+use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::{
     CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, Query, Region, RoutingStrategy,
@@ -158,9 +161,7 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     assert!(!create_resp.diagnostics().activity_id().as_str().is_empty());
     assert!(create_resp.diagnostics().duration() > std::time::Duration::ZERO);
 
-    let read_resp = container
-        .read_item(&pk_value, &item_id, None)
-        .await?;
+    let read_resp = container.read_item(&pk_value, &item_id, None).await?;
     assert!(!read_resp.diagnostics().activity_id().as_str().is_empty());
     let read_item: Gw20TestItem = read_resp.into_model()?;
     assert_eq!(read_item, item);
@@ -429,9 +430,7 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
         .create_item(&pk_value, "diag-item", &item, None)
         .await?;
 
-    let read_resp = container
-        .read_item(&pk_value, "diag-item", None)
-        .await?;
+    let read_resp = container.read_item(&pk_value, "diag-item", None).await?;
     let diagnostics = read_resp.diagnostics();
     assert!(
         !diagnostics.activity_id().as_str().is_empty(),
@@ -597,9 +596,7 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
         "session-0".to_string(),
     ));
     let full_id = format!("{target_tenant}-user-0-session-0");
-    let read_resp = container
-        .read_item(full_pk, &full_id, None)
-        .await?;
+    let read_resp = container.read_item(full_pk, &full_id, None).await?;
     let item: Gw20HpkItem = read_resp.into_model()?;
     assert_eq!(item.id, full_id);
     assert_eq!(item.tenant_id, target_tenant);
@@ -633,6 +630,275 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
     expected_target_ids.sort();
     returned_ids.sort();
     assert_eq!(returned_ids, expected_target_ids);
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+// ----------------------------------------------------------------------------
+// Cross-partition query coverage (PR #4440 Feed Operation Pipeline × Gateway 2.0)
+// ----------------------------------------------------------------------------
+//
+// The single-partition query tests above exercise the `FeedScope::partition(...)`
+// path, which targets exactly one physical partition. The new Feed Operation
+// Pipeline (`azure_data_cosmos_driver::driver::dataflow`) introduced in PR
+// #4440 plans cross-partition queries as a `SequentialDrain` over one leaf
+// node per physical partition, with each leaf request flowing through the
+// standard operation pipeline (and therefore the Gateway 2.0 transport when
+// the operation is eligible — `Query` / `SqlQuery` / `QueryPlan` / `ReadFeed`
+// on `Document` are all Gateway-2.0-eligible per `gateway20_eligibility.rs`).
+//
+// The tests below provision a **multi-partition** container (11 000 RU/s
+// forces at least two physical partitions on a real Cosmos account) and then
+// exercise the two cross-partition `FeedScope` variants:
+//
+// * `FeedScope::full_container()` — fans out to every physical partition.
+// * `FeedScope::range(FeedRange::full())` — the same wire effect, but
+//   constructed via the explicit `FeedRange` API rather than the convenience
+//   helper.
+//
+// Together with the existing `FeedScope::partition(...)` tests these cover
+// all three `FeedScope` constructors against Gateway 2.0.
+
+/// Provisions a fresh database + container with enough throughput to be
+/// split across multiple physical partitions on a real Cosmos account.
+///
+/// 11 000 RU/s is the minimum throughput that guarantees at least two
+/// physical partitions on a standard provisioned-throughput account today
+/// (the per-partition cap is 10 000 RU/s). This makes
+/// `FeedScope::full_container()` fan out into more than one leaf request
+/// at the driver layer, which is the behaviour these tests need to
+/// observe.
+async fn provision_database_and_multi_partition_container(
+    client: &CosmosClient,
+) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
+    let unique = azure_core::Uuid::new_v4();
+    let db_name = format!("gw20-test-db-{unique}");
+    let container_name = format!("gw20-test-xpart-container-{unique}");
+
+    client.create_database(&db_name, None).await?;
+    let db_client = client.database_client(&db_name);
+
+    let pk_def: PartitionKeyDefinition = "/pk".into();
+    let properties = ContainerProperties::new(container_name.clone(), pk_def);
+    let create_options =
+        CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(11_000));
+    db_client
+        .create_container(properties, Some(create_options))
+        .await?;
+    let container_client = db_client.container_client(&container_name).await?;
+
+    Ok((db_name, container_client))
+}
+
+/// Cross-partition `SELECT *` over `FeedScope::full_container()` on Gateway
+/// 2.0. Inserts items across many distinct logical partition keys so they
+/// land on multiple physical partitions, then asserts that the fanned-out
+/// query returns every item exactly once.
+///
+/// This is the headline regression test for PR #4440 (Feed Operation
+/// Pipeline) running on the Gateway 2.0 transport: each leaf request the
+/// `SequentialDrain` issues is a `Query`/`Document` operation, which
+/// `gateway20_eligibility::is_operation_supported_by_gateway20` reports as
+/// eligible, so all N leaf requests must route through Gateway 2.0 and
+/// their pages must reassemble into the full result set with no
+/// duplicates and no drops across partition boundaries.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+)]
+pub async fn gateway20_cross_partition_query_full_container(
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::collections::HashSet;
+
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key, false).await?;
+    let (db_name, container) = provision_database_and_multi_partition_container(&client).await?;
+
+    // 32 distinct logical PKs gives the partition router meaningful spread
+    // across the multiple physical partitions provisioned above.
+    let total_items: usize = 32;
+    let mut expected_ids: HashSet<String> = HashSet::new();
+    for i in 0..total_items {
+        let pk = format!("pk-{i:02}-{}", azure_core::Uuid::new_v4());
+        let id = format!("xpart-item-{i:02}");
+        let item = Gw20TestItem {
+            id: id.clone(),
+            pk: pk.clone(),
+            value: i as i64,
+            label: format!("row-{i}"),
+        };
+        container.create_item(&pk, &id, &item, None).await?;
+        expected_ids.insert(id);
+    }
+
+    let query = Query::from("SELECT * FROM c");
+    let mut pages = container
+        .query_items::<Gw20TestItem>(query, FeedScope::full_container(), None)
+        .await?
+        .into_pages();
+
+    let mut pages_seen = 0_usize;
+    let mut seen_ids: HashSet<String> = HashSet::new();
+    while let Some(page) = pages.next().await {
+        let page = page?;
+        pages_seen += 1;
+        assert!(
+            !page.diagnostics().activity_id().as_str().is_empty(),
+            "every cross-partition Gateway 2.0 page must surface an activity-id",
+        );
+        for item in page.items() {
+            assert!(
+                seen_ids.insert(item.id.clone()),
+                "item {} returned twice — sequential drain over physical \
+                 partitions must not duplicate items across partition boundaries",
+                item.id,
+            );
+        }
+    }
+
+    assert!(
+        pages_seen >= 1,
+        "expected at least one page from the cross-partition fanout",
+    );
+    assert_eq!(
+        seen_ids, expected_ids,
+        "cross-partition query must return every inserted item exactly once",
+    );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Cross-partition projection + filter (`SELECT VALUE c.id ... WHERE ...`)
+/// over `FeedScope::full_container()` on Gateway 2.0. Mirrors the
+/// `cosmos_query::cross_partition_query_with_projection_and_filter` shape
+/// from the standard-gateway suite so we know the projected/filtered path
+/// also routes correctly through Gateway 2.0.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+)]
+pub async fn gateway20_cross_partition_query_with_projection_and_filter(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key, false).await?;
+    let (db_name, container) = provision_database_and_multi_partition_container(&client).await?;
+
+    let total_items: usize = 20;
+    let mut expected_ids: Vec<String> = Vec::new();
+    for i in 0..total_items {
+        let pk = format!("pk-{i:02}-{}", azure_core::Uuid::new_v4());
+        let id = format!("xpart-filter-{i:02}");
+        let item = Gw20TestItem {
+            id: id.clone(),
+            pk: pk.clone(),
+            value: i as i64,
+            label: format!("row-{i}"),
+        };
+        container.create_item(&pk, &id, &item, None).await?;
+        if (5..=14).contains(&(i as i64)) {
+            expected_ids.push(id);
+        }
+    }
+
+    let query = Query::from("SELECT VALUE c.id FROM c WHERE c.value BETWEEN 5 AND 14");
+    let mut pages = container
+        .query_items::<String>(query, FeedScope::full_container(), None)
+        .await?
+        .into_pages();
+
+    let mut returned: Vec<String> = Vec::new();
+    let mut pages_seen = 0_usize;
+    while let Some(page) = pages.next().await {
+        let page = page?;
+        pages_seen += 1;
+        assert!(!page.diagnostics().activity_id().as_str().is_empty());
+        returned.extend(page.items().iter().cloned());
+    }
+
+    assert!(pages_seen >= 1, "expected at least one query page");
+    expected_ids.sort();
+    returned.sort();
+    assert_eq!(
+        returned, expected_ids,
+        "cross-partition projection + filter on Gateway 2.0 must return \
+         exactly the rows matching the WHERE clause",
+    );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Cross-partition `SELECT *` over `FeedScope::range(FeedRange::full())` on
+/// Gateway 2.0. Exercises the explicit `FeedRange` constructor on the
+/// `FeedScope` enum (as opposed to the `full_container()` convenience) so
+/// we know both constructors plan to the same SequentialDrain shape and
+/// produce equivalent results against the Gateway 2.0 transport.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "gateway20"),
+    ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
+)]
+pub async fn gateway20_cross_partition_query_via_feed_range_full(
+) -> Result<(), Box<dyn std::error::Error>> {
+    use azure_data_cosmos::FeedRange;
+    use std::collections::HashSet;
+
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key, false).await?;
+    let (db_name, container) = provision_database_and_multi_partition_container(&client).await?;
+
+    let total_items: usize = 16;
+    let mut expected_ids: HashSet<String> = HashSet::new();
+    for i in 0..total_items {
+        let pk = format!("pk-{i:02}-{}", azure_core::Uuid::new_v4());
+        let id = format!("xpart-range-{i:02}");
+        let item = Gw20TestItem {
+            id: id.clone(),
+            pk: pk.clone(),
+            value: i as i64,
+            label: format!("row-{i}"),
+        };
+        container.create_item(&pk, &id, &item, None).await?;
+        expected_ids.insert(id);
+    }
+
+    let query = Query::from("SELECT * FROM c");
+    let mut pages = container
+        .query_items::<Gw20TestItem>(query, FeedScope::range(FeedRange::full()), None)
+        .await?
+        .into_pages();
+
+    let mut seen_ids: HashSet<String> = HashSet::new();
+    while let Some(page) = pages.next().await {
+        let page = page?;
+        assert!(!page.diagnostics().activity_id().as_str().is_empty());
+        for item in page.items() {
+            assert!(
+                seen_ids.insert(item.id.clone()),
+                "item {} returned twice via FeedRange::full() — explicit \
+                 feed-range fanout must not duplicate items",
+                item.id,
+            );
+        }
+    }
+    assert_eq!(
+        seen_ids, expected_ids,
+        "FeedScope::range(FeedRange::full()) on Gateway 2.0 must yield \
+         the same complete result set as FeedScope::full_container()",
+    );
 
     drop_database(&client, &db_name).await;
     Ok(())
