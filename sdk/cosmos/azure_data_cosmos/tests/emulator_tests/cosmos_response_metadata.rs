@@ -63,8 +63,8 @@ fn header_u64(headers: &Headers, name: &azure_core::http::headers::HeaderName) -
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -108,8 +108,8 @@ pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
 ) -> Result<(), Box<dyn Error>> {
@@ -240,8 +240,8 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn query_pages_do_not_leak_lsn_in_items() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(

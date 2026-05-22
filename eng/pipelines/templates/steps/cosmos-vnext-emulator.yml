@@ -1,0 +1,92 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Pulls and starts the Cosmos DB vnext (Linux) emulator in Docker for use by
+# Rust integration tests. Mirrors the equivalent step in azure-sdk-for-java
+# (eng/pipelines/templates/steps/cosmos-vnext-emulator.yml).
+#
+# The container exposes:
+#   - 8081  Cosmos gateway (data + control plane)
+#   - 8080  health endpoints (/alive, /ready, /status)
+#
+# This step DOES NOT set AZURE_COSMOS_CONNECTION_STRING — the job template is
+# responsible for that, so the value is visible to both Test-Setup.ps1 and
+# Test-Packages.ps1.
+
+parameters:
+- name: Https
+  type: boolean
+  default: false
+- name: ContainerName
+  type: string
+  default: cosmosdb-emulator-vnext
+- name: Image
+  type: string
+  default: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+- name: ReadinessTimeoutSeconds
+  type: number
+  default: 180
+
+steps:
+- task: Docker@0
+  displayName: "Pull Cosmos DB vnext (Linux) emulator image"
+  inputs:
+    command: 'Run a Docker command'
+    action: 'Run a Docker command'
+    customCommand: 'pull ${{ parameters.Image }}'
+
+- ${{ if parameters.Https }}:
+  - task: Docker@0
+    displayName: "Run Cosmos DB vnext emulator (HTTPS)"
+    inputs:
+      command: 'Run a Docker command'
+      action: 'Run a Docker command'
+      customCommand: >-
+        run --detach
+        --name ${{ parameters.ContainerName }}
+        --publish 8081:8081
+        --publish 8080:8080
+        -e ENABLE_EXPLORER=false
+        -e PROTOCOL=https
+        ${{ parameters.Image }}
+- ${{ else }}:
+  - task: Docker@0
+    displayName: "Run Cosmos DB vnext emulator (HTTP)"
+    inputs:
+      command: 'Run a Docker command'
+      action: 'Run a Docker command'
+      customCommand: >-
+        run --detach
+        --name ${{ parameters.ContainerName }}
+        --publish 8081:8081
+        --publish 8080:8080
+        -e ENABLE_EXPLORER=false
+        ${{ parameters.Image }}
+
+- pwsh: |
+    # Best-effort readiness probe. The azure-sdk-for-java pipeline skips this
+    # entirely, but a short wait reduces test-startup flake. If the probe
+    # never succeeds we still proceed — tests will surface a clearer failure
+    # than a stuck step.
+    $deadline = (Get-Date).AddSeconds(${{ parameters.ReadinessTimeoutSeconds }})
+    $probeUrl = 'http://localhost:8080/ready'
+    $ready = $false
+    while ((Get-Date) -lt $deadline) {
+      try {
+        $resp = Invoke-WebRequest -Uri $probeUrl -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+        if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 300) {
+          Write-Host "vnext emulator reports ready (HTTP $($resp.StatusCode))."
+          $ready = $true
+          break
+        }
+      } catch {
+        Write-Host "Waiting for vnext emulator readiness: $($_.Exception.Message)"
+      }
+      Start-Sleep -Seconds 5
+    }
+    if (-not $ready) {
+      Write-Warning "vnext emulator readiness probe did not succeed within ${{ parameters.ReadinessTimeoutSeconds }}s — proceeding anyway."
+      Write-Host "Container logs (last 50 lines):"
+      docker logs --tail 50 ${{ parameters.ContainerName }} 2>&1 | Write-Host
+    }
+  displayName: "Wait for Cosmos DB vnext emulator to be ready"

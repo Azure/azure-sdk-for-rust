@@ -1,0 +1,139 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+#
+# Job template for running Rust integration tests against the Cosmos DB vnext
+# (Linux) emulator running in Docker on the same agent. Derived from
+# `live.tests.yml` but with all Azure RM deploy / cleanup machinery removed
+# because no Azure account is needed — the emulator is a local container.
+#
+# Triggered from `eng/pipelines/templates/stages/archetype-sdk-client.yml`'s
+# `AdditionalStages` parameter via `sdk/cosmos/eng/cosmos-vnext-stage.yml`.
+
+parameters:
+# required matrix parameters
+- name: UsePlatformContainer
+  type: boolean
+- name: OSName
+  type: string
+- name: Matrix
+  type: object
+- name: DependsOn
+  type: string
+- name: CloudConfig
+  type: object
+# custom parameters
+- name: ServiceDirectory
+  type: string
+- name: TimeoutInMinutes
+  type: number
+- name: Https
+  type: boolean
+  default: false
+- name: EmulatorImage
+  type: string
+  default: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+- name: ContainerName
+  type: string
+  default: cosmosdb-emulator-vnext
+# Well-known emulator master key — same value used by the legacy Windows
+# emulator and accepted by the vnext image. Safe to commit; not a secret.
+- name: EmulatorKey
+  type: string
+  default: 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=='
+
+jobs:
+- job:
+  displayName: "Test"
+  condition: and(succeeded(), ne(variables['Skip.Tests'],'true'), ne(${{ parameters.Matrix }}, '{}'))
+  timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+  dependsOn: ${{ parameters.DependsOn }}
+
+  strategy:
+    matrix: $[ ${{ parameters.Matrix }} ]
+
+  pool:
+    name: $(Pool)
+    image: $(OSVmImage)
+    os: ${{ parameters.OSName }}
+
+  variables:
+  - ${{ if parameters.Https }}:
+    - name: VNextScheme
+      value: https
+  - ${{ else }}:
+    - name: VNextScheme
+      value: http
+
+  steps:
+  - template: /eng/common/pipelines/templates/steps/sparse-checkout.yml
+    parameters:
+      paths:
+      - "/*"
+
+  - template: /eng/common/pipelines/templates/steps/verify-agent-os.yml
+    parameters:
+      AgentImage: $(OSVmImage)
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      Toolchain: $(RustToolchainName)
+
+  - template: /eng/pipelines/templates/steps/vcpkg.yml
+
+  - template: /eng/pipelines/templates/steps/cosmos-vnext-emulator.yml
+    parameters:
+      Https: ${{ parameters.Https }}
+      ContainerName: ${{ parameters.ContainerName }}
+      Image: ${{ parameters.EmulatorImage }}
+
+  - template: /eng/common/pipelines/templates/steps/save-package-properties.yml@self
+    parameters:
+      ServiceDirectory: ${{ parameters.ServiceDirectory }}
+      PackageInfoDirectory: $(Build.ArtifactStagingDirectory)/PackageInfo
+
+  - pwsh: |
+      Write-Host "##vso[task.setvariable variable=Logging__LogLevel__Default]Debug"
+    displayName: 'Enable Verbose Logging'
+    condition: eq(variables['System.Debug'], 'true')
+
+  - task: Powershell@2
+    displayName: "Test Packages (vnext emulator)"
+    condition: succeeded()
+    timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
+    env:
+      CIBW_BUILD_VERBOSITY: 3
+      AZURE_TEST_MODE: 'live'
+      AZURE_COSMOS_EMULATOR_FLAVOR: 'vnext'
+      AZURE_COSMOS_CONNECTION_STRING: 'AccountEndpoint=$(VNextScheme)://localhost:8081;AccountKey=${{ parameters.EmulatorKey }};'
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Test-Packages.ps1
+      arguments: >
+        -PackageInfoDirectory '$(Build.ArtifactStagingDirectory)/PackageInfo'
+
+  - task: Powershell@2
+    displayName: Convert Test Results to JUnit XML
+    condition: succeededOrFailed()
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/Convert-TestResultsToJUnit.ps1
+
+  - task: PublishTestResults@2
+    displayName: Publish Test Results
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: '**/test-results/junit/*.xml'
+      testRunTitle: Rust Tests (vnext emulator) - $(Agent.JobName)
+      mergeTestResults: true
+      failTaskOnFailedTests: false
+
+  - pwsh: |
+      Write-Host "Capturing vnext emulator logs (last 200 lines) for diagnostics..."
+      docker logs --tail 200 ${{ parameters.ContainerName }} 2>&1 | Write-Host
+      Write-Host "Removing vnext emulator container..."
+      docker rm -f ${{ parameters.ContainerName }} 2>&1 | Write-Host
+    displayName: "Tear down Cosmos DB vnext emulator"
+    condition: always()
+    continueOnError: true

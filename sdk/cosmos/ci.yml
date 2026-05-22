@@ -54,3 +54,10 @@ extends:
         Path: sdk/cosmos/live-platform-matrix.json
         Selection: sparse
         GenerateVMJobs: true
+    # Non-blocking vnext (Linux) emulator stage. See
+    # sdk/cosmos/eng/cosmos-vnext-stage.yml for the dependsOn: []/Skip.VnextEmulator
+    # contract. This stage runs on every PR + main in both public and internal
+    # projects; failures do not block Release because the Release stage's
+    # DependsOn list excludes it.
+    AdditionalStages:
+      - template: /sdk/cosmos/eng/cosmos-vnext-stage.yml

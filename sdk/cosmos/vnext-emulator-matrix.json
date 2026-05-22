@@ -1,0 +1,15 @@
+{
+  "displayNames": {
+    "vnext_http": "Http"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"]
+  },
+  "include": []
+}

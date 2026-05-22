@@ -17,6 +17,15 @@ if ($env:COSMOS_RUSTFLAGS) {
 # Skip emulator setup if AZURE_COSMOS_CONNECTION_STRING is already set
 if ($env:AZURE_COSMOS_CONNECTION_STRING) {
     Write-Host "AZURE_COSMOS_CONNECTION_STRING is already set. Skipping Cosmos DB Emulator setup."
+    if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
+        # The vnext (Linux) emulator container is started by the pipeline step
+        # `cosmos-vnext-emulator.yml`, not here. We only need to plumb the
+        # test-category cfg into RUSTFLAGS and serialize tests to avoid env-var
+        # contamination from proxy tests, matching the legacy emulator path.
+        $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_vnext`""
+        Write-Host "AZURE_COSMOS_EMULATOR_FLAVOR=vnext detected. RUSTFLAGS set to: $env:RUSTFLAGS"
+        $env:RUST_TEST_THREADS = "1"
+    }
     return
 }
 
