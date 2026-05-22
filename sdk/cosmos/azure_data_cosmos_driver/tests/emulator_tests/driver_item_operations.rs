@@ -196,12 +196,22 @@ pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>>
             "Endpoint should be captured"
         );
 
-        // For emulator, verify transport security
+        // For emulator, verify transport security. The legacy emulator and
+        // the vnext emulator in HTTPS mode use a self-signed cert and surface
+        // as `EmulatorWithInsecureCertificates`. The vnext emulator in HTTP
+        // mode has no TLS at all and is classified as `Secure` today (the
+        // enum predates plain-HTTP emulator support — tracked separately).
         if request.endpoint().contains("localhost") || request.endpoint().contains("127.0.0.1") {
+            let expected = if request.endpoint().starts_with("https://") {
+                TransportSecurity::EmulatorWithInsecureCertificates
+            } else {
+                TransportSecurity::Secure
+            };
             assert_eq!(
                 request.transport_security(),
-                TransportSecurity::EmulatorWithInsecureCertificates,
-                "Emulator should use insecure certificates transport"
+                expected,
+                "Unexpected transport security for emulator endpoint {}",
+                request.endpoint()
             );
         }
 
