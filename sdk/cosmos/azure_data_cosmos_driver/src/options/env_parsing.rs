@@ -263,16 +263,7 @@ pub(super) fn parse_optional_duration_millis_from_env(
 /// then falls back to the built-in default.
 ///
 /// Consumed by
-/// [`crate::driver::pipeline::hedging_eligibility::resolve_availability_strategy`].
-/// The resolver itself is not wired into the operation pipeline until
-/// Part 4 of `docs/HEDGING_IMPLEMENTATION_PLAN.md`, so this helper is
-/// allowed-dead in production builds until then.
-#[allow(dead_code)]
-pub(crate) fn parse_hedging_threshold_from_env() -> Option<Duration> {
-    parse_hedging_threshold_from_env_with(|name| std::env::var(name))
-}
-
-#[allow(dead_code)]
+/// [`crate::driver::pipeline::hedging_eligibility::resolve_availability_strategy_with`].
 pub(crate) fn parse_hedging_threshold_from_env_with(
     env_var: impl Fn(&str) -> Result<String, std::env::VarError>,
 ) -> Option<Duration> {
@@ -323,15 +314,7 @@ pub(crate) fn parse_hedging_threshold_from_env_with(
 /// hedging at the lowest layer.
 ///
 /// Consumed by
-/// [`crate::driver::pipeline::hedging_eligibility::resolve_availability_strategy`].
-/// Allowed dead until Part 4 wires the resolver into the operation
-/// pipeline (see `docs/HEDGING_IMPLEMENTATION_PLAN.md`).
-#[allow(dead_code)]
-pub(crate) fn parse_hedging_disabled_from_env() -> bool {
-    parse_hedging_disabled_from_env_with(|name| std::env::var(name))
-}
-
-#[allow(dead_code)]
+/// [`crate::driver::pipeline::hedging_eligibility::resolve_availability_strategy_with`].
 pub(crate) fn parse_hedging_disabled_from_env_with(
     env_var: impl Fn(&str) -> Result<String, std::env::VarError>,
 ) -> bool {
