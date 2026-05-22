@@ -412,7 +412,6 @@ impl TransportResult {
     /// are mapped to `HttpError` with `request_sent` set to `Sent`.
     pub fn from_http_response(
         status: CosmosStatus,
-        headers: Headers,
         cosmos_headers: CosmosResponseHeaders,
         body: Vec<u8>,
     ) -> Self {
@@ -428,7 +427,6 @@ impl TransportResult {
             Self {
                 outcome: TransportOutcome::HttpError {
                     status,
-                    headers,
                     cosmos_headers,
                     body,
                     request_sent: RequestSentStatus::Sent,
@@ -447,17 +445,6 @@ impl TransportResult {
             }
         }
     }
-
-    /// Returns the raw response headers for HTTP error responses.
-    ///
-    /// Raw headers are only retained for error responses (needed to build a `RawResponse`
-    /// for callers). For success responses, only parsed `CosmosResponseHeaders` are kept.
-    pub fn response_headers(&self) -> Option<&Headers> {
-        match &self.outcome {
-            TransportOutcome::HttpError { headers, .. } => Some(headers),
-            _ => None,
-        }
-    }
 }
 
 /// The outcome of a single transport attempt.
@@ -472,8 +459,6 @@ pub(crate) enum TransportOutcome {
     /// HTTP error response (non-2xx) that may be retryable at the operation level.
     HttpError {
         status: CosmosStatus,
-        /// Raw headers retained for building `RawResponse` in error reporting.
-        headers: Headers,
         /// Parsed Cosmos-specific response headers.
         cosmos_headers: CosmosResponseHeaders,
         body: Vec<u8>,
@@ -517,11 +502,13 @@ impl std::fmt::Debug for TransportOutcome {
                 .field("body", &"...")
                 .finish(),
             TransportOutcome::HttpError {
-                status, headers, ..
+                status,
+                cosmos_headers,
+                ..
             } => f
                 .debug_struct("HttpError")
                 .field("status", status)
-                .field("headers", headers)
+                .field("cosmos_headers", &cosmos_headers)
                 .field("body", &"...")
                 .finish(),
             TransportOutcome::TransportError {

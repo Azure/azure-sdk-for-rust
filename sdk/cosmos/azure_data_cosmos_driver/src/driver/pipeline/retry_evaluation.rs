@@ -192,7 +192,6 @@ pub(crate) fn evaluate_transport_result(
 
         TransportOutcome::HttpError {
             status,
-            headers: _,
             cosmos_headers,
             body,
             request_sent,
@@ -726,7 +725,6 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(status_code),
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -738,7 +736,6 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::HttpError {
                 status,
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -955,7 +952,6 @@ mod tests {
         let result = TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::WRITE_FORBIDDEN,
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -979,7 +975,6 @@ mod tests {
         let result = TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -1428,7 +1423,6 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,

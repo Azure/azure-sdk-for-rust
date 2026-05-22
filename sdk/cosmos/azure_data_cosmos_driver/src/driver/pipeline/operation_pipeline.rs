@@ -1703,7 +1703,7 @@ mod tests {
     }
 
     mod should_capture_session_token_from_status_tests {
-        use azure_core::http::{headers::Headers, StatusCode};
+        use azure_core::http::StatusCode;
 
         use crate::{
             driver::pipeline::components::TransportOutcome,
@@ -1723,7 +1723,6 @@ mod tests {
         fn http_error_outcome(status: StatusCode) -> TransportOutcome {
             TransportOutcome::HttpError {
                 status: CosmosStatus::new(status),
-                headers: Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: Vec::new(),
                 request_sent: crate::diagnostics::RequestSentStatus::Sent,

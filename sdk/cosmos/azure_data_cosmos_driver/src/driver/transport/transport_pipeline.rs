@@ -109,12 +109,11 @@ pub(crate) fn evaluate_transport_retry(
         return ThrottleAction::Propagate;
     }
 
-    // Extract the service-specified retry delay from response headers,
-    // or fall back to exponential backoff.
+    // Extract the service-specified retry delay from the parsed cosmos
+    // response headers, or fall back to exponential backoff.
     let service_delay = result
-        .response_headers()
-        .and_then(|h| h.get_optional_str(&RETRY_AFTER_MS))
-        .and_then(|v| v.parse::<u64>().ok())
+        .cosmos_headers()
+        .and_then(|h| h.retry_after_ms)
         .map(Duration::from_millis);
 
     let delay = service_delay.unwrap_or_else(|| throttle_state.fallback_delay());
@@ -664,7 +663,7 @@ fn map_http_response_payload(
     });
 
     diagnostics.complete_request(request_handle, status_code, sub_status);
-    TransportResult::from_http_response(cosmos_status, headers, cosmos_headers, body)
+    TransportResult::from_http_response(cosmos_status, cosmos_headers, body)
 }
 
 #[cfg(test)]
@@ -721,7 +720,6 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(azure_core::http::StatusCode::TooManyRequests),
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -730,13 +728,12 @@ mod tests {
     }
 
     fn make_throttled_result_with_retry_after(ms: u64) -> TransportResult {
-        let mut headers = azure_core::http::headers::Headers::new();
-        headers.insert("x-ms-retry-after-ms", ms.to_string());
+        let mut cosmos_headers = CosmosResponseHeaders::default();
+        cosmos_headers.retry_after_ms = Some(ms);
         TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(azure_core::http::StatusCode::TooManyRequests),
-                headers,
-                cosmos_headers: CosmosResponseHeaders::default(),
+                cosmos_headers,
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
             },
