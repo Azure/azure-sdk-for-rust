@@ -10,10 +10,10 @@ use azure_core::{
     http::{headers::Headers, StatusCode},
     Uuid,
 };
-use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::constants::{LSN, PARTITION_KEY_RANGE_ID, SESSION_TOKEN};
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::Query;
+use azure_data_cosmos::{clients::ContainerClient, query::FeedScope};
 use framework::{TestClient, TestRunContext};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -278,7 +278,8 @@ pub async fn query_pages_do_not_leak_lsn_in_items() -> Result<(), Box<dyn Error>
             .with_parameter("@prefix", id_prefix)?;
 
             let mut pages = container_client
-                .query_items::<serde_json::Value>(query, pk.clone(), None)?
+                .query_items::<serde_json::Value>(query, FeedScope::partition(pk), None)
+                .await?
                 .into_pages();
 
             let mut returned_ids = Vec::new();

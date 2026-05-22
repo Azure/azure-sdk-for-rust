@@ -416,7 +416,8 @@ fn try_handle_retry_trigger_group(
         && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE);
     let is_service_unavailable =
         status.status_code() == azure_core::http::StatusCode::ServiceUnavailable;
-    let is_gone = status.is_gone();
+    // Partition Topology changes (410 with sub-status 1009) are handled by the dataflow layer, not classified as retry triggers here. Only non-topology 410s trigger retries.
+    let is_gone = status.is_gone() && !status.is_partition_topology_change();
     let is_request_timeout = status.status_code() == azure_core::http::StatusCode::RequestTimeout;
 
     let in_trigger_group =
@@ -733,6 +734,18 @@ mod tests {
         }
     }
 
+    fn make_http_error_status(status: CosmosStatus) -> TransportResult {
+        TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status,
+                headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        }
+    }
+
     #[test]
     fn success_completes() {
         let op = make_read_operation();
@@ -884,6 +897,55 @@ mod tests {
         );
         let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::Abort { .. }));
+    }
+
+    #[test]
+    fn partition_topology_gone_aborts_for_dataflow_handling() {
+        let op = make_read_operation();
+        let result = make_http_error_status(
+            CosmosStatus::new(StatusCode::Gone)
+                .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value()),
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        match action {
+            OperationAction::Abort { status, .. } => {
+                assert_eq!(
+                    status,
+                    Some(
+                        CosmosStatus::new(StatusCode::Gone)
+                            .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value())
+                    )
+                );
+            }
+            other => panic!("expected abort, got {other:?}"),
+        }
+        assert!(effects.is_empty());
+    }
+
+    #[test]
+    fn non_topology_gone_still_retries() {
+        let op = make_read_operation();
+        let result = make_http_error_status(
+            CosmosStatus::new(StatusCode::Gone)
+                .with_sub_status(SubStatusCode::NAME_CACHE_STALE.value()),
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
     #[test]
