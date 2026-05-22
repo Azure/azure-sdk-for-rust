@@ -1005,7 +1005,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
 /// engaged.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_connection_error_fails_fast_after_all_regions_attempted(

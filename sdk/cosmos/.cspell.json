@@ -15,6 +15,7 @@
     "azurecosmos",
     "backoff",
     "backpressure",
+    "behaviour",
     "brazilsouth",
     "bytearray",
     "canadacentral",
@@ -59,6 +60,7 @@
     "fabianm",
     "failback",
     "failovers",
+    "fanout",
     "FILETIME",
     "firewalled",
     "flamegraph",
@@ -215,6 +217,7 @@
     "westus",
     "winget",
     "xorshift",
+    "xpart",
     "yxxx"
   ],
   "ignorePaths": [

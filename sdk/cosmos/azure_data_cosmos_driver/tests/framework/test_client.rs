@@ -121,7 +121,24 @@ fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, B
 
     match (endpoint, key) {
         (Some(endpoint), Some(key)) => {
-            let endpoint = endpoint.parse()?;
+            // Pre-provisioned Gateway 2.0 secret variables in the
+            // `azure-sdk-tests-cosmos` service connection are stored as bare
+            // hostnames (e.g. `gw20-test.documents.azure.com`) — they lack
+            // both the `https://` scheme and a trailing slash that `Url::parse`
+            // requires. Normalize defensively so the parse can't fail with
+            // `RelativeUrlWithoutBase` here while the SDK-side path
+            // (`gateway20_e2e.rs`) silently does the same trick via its own
+            // `build_client` helper.
+            let normalized = normalize_gateway20_endpoint(&endpoint);
+            let endpoint = normalized
+                .parse()
+                .map_err(|e: url::ParseError| -> Box<dyn Error> {
+                    format!(
+                        "{} value {:?} (normalized to {:?}) is not a valid URL: {}",
+                        GATEWAY20_ENDPOINT_ENV_VAR, endpoint, normalized, e,
+                    )
+                    .into()
+                })?;
             let account = AccountReference::with_master_key(endpoint, key);
             let connection_pool = ConnectionPoolOptions::builder().build()?;
             Ok(Some(TestEnv {
@@ -149,6 +166,35 @@ fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, B
             GATEWAY20_KEY_ENV_VAR,
             if key.is_some() { "set" } else { "unset" },
         ),
+    }
+}
+
+/// Normalizes a Gateway 2.0 endpoint string so it can be parsed by `Url::parse`.
+///
+/// The pre-provisioned Gateway 2.0 secret variables in the `azure-sdk-tests-cosmos`
+/// service connection are stored without scheme or trailing slash (e.g.
+/// `gw20-test.documents.azure.com`). `Url::parse` requires an absolute URL with
+/// a scheme, so this helper:
+///
+/// * trims surrounding whitespace,
+/// * prepends `https://` when no scheme is present, and
+/// * appends a trailing `/` so the result matches Cosmos's canonical
+///   `https://<host>/` endpoint form.
+///
+/// Values that already include a scheme (e.g. `https://...`) are passed through
+/// after the whitespace trim and trailing-slash normalization.
+#[cfg(any(test_category = "gateway20", test_category = "gateway20_multi_region"))]
+fn normalize_gateway20_endpoint(raw: &str) -> String {
+    let trimmed = raw.trim();
+    let with_scheme = if trimmed.contains("://") {
+        trimmed.to_owned()
+    } else {
+        format!("https://{trimmed}")
+    };
+    if with_scheme.ends_with('/') {
+        with_scheme
+    } else {
+        format!("{with_scheme}/")
     }
 }
 

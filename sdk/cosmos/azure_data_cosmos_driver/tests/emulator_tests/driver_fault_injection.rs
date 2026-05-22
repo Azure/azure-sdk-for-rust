@@ -364,7 +364,7 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 /// account; see `docs/GATEWAY_20_SPEC.md` (Phase 6).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_service_unavailable_triggers_regional_failover() -> Result<(), Box<dyn Error>>
@@ -423,7 +423,7 @@ pub async fn gateway20_service_unavailable_triggers_regional_failover() -> Resul
 /// endpoints, so this test is gated behind the `gateway20` test category.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Box<dyn Error>> {
@@ -483,7 +483,7 @@ pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Bo
 /// test category until CI gains a Gateway 2.0 account.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(), Box<dyn Error>> {
@@ -557,7 +557,7 @@ pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(
 /// implement Gateway 2.0 either.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_unknown_rntbd_response_token_is_silently_skipped(
@@ -711,7 +711,7 @@ fn build_rntbd_response_with_unknown_token(request_charge: f64, body: &[u8]) -> 
 /// are noisy.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_server_response_delay_is_injected() -> Result<(), Box<dyn Error>> {
@@ -777,7 +777,7 @@ pub async fn gateway20_server_response_delay_is_injected() -> Result<(), Box<dyn
 /// (never exceeds the limit).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20'"
 )]
 pub async fn gateway20_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>> {

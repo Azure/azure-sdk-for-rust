@@ -65,6 +65,28 @@ fn read_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.trim().is_empty())
 }
 
+/// Normalizes a Gateway 2.0 endpoint string so it can be parsed by
+/// `CosmosAccountEndpoint::from_str` (which is a thin wrapper over
+/// `Url::parse`).
+///
+/// The pre-provisioned Gateway 2.0 secret variables in the
+/// `azure-sdk-tests-cosmos` service connection are stored as bare hostnames
+/// (e.g. `gw20-test.documents.azure.com`) without scheme or trailing slash.
+/// Prepend `https://` and a trailing `/` so the URL parser accepts them.
+fn normalize_gateway20_endpoint(raw: &str) -> String {
+    let trimmed = raw.trim();
+    let with_scheme = if trimmed.contains("://") {
+        trimmed.to_owned()
+    } else {
+        format!("https://{trimmed}")
+    };
+    if with_scheme.ends_with('/') {
+        with_scheme
+    } else {
+        format!("{with_scheme}/")
+    }
+}
+
 /// Returns `Some((endpoint, key))` only when both env vars are set.
 fn live_credentials() -> Option<(String, String)> {
     Some((
@@ -83,7 +105,7 @@ async fn build_client(
     key: &str,
     gateway20_disabled: bool,
 ) -> Result<CosmosClient, Box<dyn std::error::Error>> {
-    let endpoint: CosmosAccountEndpoint = endpoint.parse()?;
+    let endpoint: CosmosAccountEndpoint = normalize_gateway20_endpoint(endpoint).parse()?;
     let account_ref =
         CosmosAccountReference::with_master_key(endpoint, Secret::from(key.to_string()));
     let client = CosmosClient::builder()
@@ -135,7 +157,7 @@ struct Gw20TestItem {
 /// transport kind from the driver.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error::Error>> {
@@ -188,7 +210,7 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
 /// kind on the page diagnostics.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_query_streams() -> Result<(), Box<dyn std::error::Error>> {
@@ -247,7 +269,7 @@ pub async fn gateway20_query_streams() -> Result<(), Box<dyn std::error::Error>>
 /// one and return duplicates instead of advancing.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_query_paginates_via_continuation_tokens(
@@ -332,7 +354,7 @@ pub async fn gateway20_query_paginates_via_continuation_tokens(
 /// once the SDK surfaces the driver transport kind on batch diagnostics.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_transactional_batch() -> Result<(), Box<dyn std::error::Error>> {
@@ -387,7 +409,7 @@ pub async fn gateway20_transactional_batch() -> Result<(), Box<dyn std::error::E
 /// public API.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_change_feed_latest_version() {
@@ -408,7 +430,7 @@ pub async fn gateway20_change_feed_latest_version() {
 /// pipeline.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error::Error>> {
@@ -456,7 +478,7 @@ pub async fn gateway20_diagnostics_validation() -> Result<(), Box<dyn std::error
 /// [`CosmosClientBuilder::with_gateway20_disabled`]: azure_data_cosmos::CosmosClientBuilder::with_gateway20_disabled
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_operator_override_at_sdk_boundary() -> Result<(), Box<dyn std::error::Error>>
@@ -545,7 +567,7 @@ struct Gw20HpkItem {
 /// once the SDK surfaces the driver transport kind.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
@@ -705,7 +727,7 @@ async fn provision_database_and_multi_partition_container(
 /// duplicates and no drops across partition boundaries.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_cross_partition_query_full_container(
@@ -781,7 +803,7 @@ pub async fn gateway20_cross_partition_query_full_container(
 /// also routes correctly through Gateway 2.0.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_cross_partition_query_with_projection_and_filter(
@@ -845,7 +867,7 @@ pub async fn gateway20_cross_partition_query_with_projection_and_filter(
 /// produce equivalent results against the Gateway 2.0 transport.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "gateway20"),
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
     ignore = "requires test_category 'gateway20' and AZURE_COSMOS_GW20_ENDPOINT/_KEY"
 )]
 pub async fn gateway20_cross_partition_query_via_feed_range_full(
