@@ -20,7 +20,7 @@ use uuid::Uuid;
 
 use super::env::{
     get_test_mode, is_azure_pipelines, CosmosTestMode, CONNECTION_STRING_ENV_VAR,
-    EMULATOR_CONNECTION_STRING,
+    EMULATOR_CONNECTION_STRING, GATEWAY20_ENDPOINT_ENV_VAR, GATEWAY20_KEY_ENV_VAR,
 };
 
 /// A test client that provides access to a Cosmos DB driver for testing.
@@ -54,6 +54,22 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         return Ok(None);
     }
 
+    // For `test_category = "gateway20"` and `"gateway20_multi_region"` builds,
+    // the ARM-provisioned `AZURE_COSMOS_CONNECTION_STRING` account does NOT
+    // advertise a Gateway 2.0 endpoint. Fault-injection rules scoped to
+    // `TransportKind::Gateway20` will therefore never fire against it. Use the
+    // pre-provisioned Gateway 2.0 account whose credentials are surfaced in
+    // `AZURE_COSMOS_GW20_ENDPOINT` / `AZURE_COSMOS_GW20_KEY` by
+    // `sdk/cosmos/ci.yml`. We deliberately do NOT fall back to the standard
+    // connection string here — running gateway20 tests against a non-Gateway-2.0
+    // account would silently produce confusing failures (transport-kind-gated
+    // fault rules would never match).
+    #[cfg(any(test_category = "gateway20", test_category = "gateway20_multi_region"))]
+    {
+        return resolve_gateway20_env(test_mode);
+    }
+
+    #[allow(unreachable_code)]
     let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
         Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
         Ok(val) => val,
@@ -84,6 +100,56 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         account,
         connection_pool,
     }))
+}
+
+/// Builds a [`TestEnv`] from the pre-provisioned Gateway 2.0 account
+/// credentials (`AZURE_COSMOS_GW20_ENDPOINT` / `AZURE_COSMOS_GW20_KEY`).
+///
+/// Returns `Ok(None)` when either env var is missing or empty (the caller
+/// then falls back to the standard `AZURE_COSMOS_CONNECTION_STRING` path).
+/// Panics on Azure Pipelines or `Required` test mode when only one of the
+/// two vars is set — that's a misconfigured pipeline rather than an
+/// intentional skip.
+#[cfg(any(test_category = "gateway20", test_category = "gateway20_multi_region"))]
+fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, Box<dyn Error>> {
+    fn read(name: &str) -> Option<String> {
+        std::env::var(name).ok().filter(|v| !v.trim().is_empty())
+    }
+
+    let endpoint = read(GATEWAY20_ENDPOINT_ENV_VAR);
+    let key = read(GATEWAY20_KEY_ENV_VAR);
+
+    match (endpoint, key) {
+        (Some(endpoint), Some(key)) => {
+            let endpoint = endpoint.parse()?;
+            let account = AccountReference::with_master_key(endpoint, key);
+            let connection_pool = ConnectionPoolOptions::builder().build()?;
+            Ok(Some(TestEnv {
+                account,
+                connection_pool,
+            }))
+        }
+        (None, None) => {
+            if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                panic!(
+                    "{} / {} are not set but test_category=\"gateway20\" requires a \
+                     pre-provisioned Gateway 2.0 account",
+                    GATEWAY20_ENDPOINT_ENV_VAR, GATEWAY20_KEY_ENV_VAR,
+                );
+            }
+            Ok(None)
+        }
+        (endpoint, key) => panic!(
+            "exactly one of {} / {} is set ({}={}, {}={}); both must be present \
+             for test_category=\"gateway20\"",
+            GATEWAY20_ENDPOINT_ENV_VAR,
+            GATEWAY20_KEY_ENV_VAR,
+            GATEWAY20_ENDPOINT_ENV_VAR,
+            if endpoint.is_some() { "set" } else { "unset" },
+            GATEWAY20_KEY_ENV_VAR,
+            if key.is_some() { "set" } else { "unset" },
+        ),
+    }
 }
 
 impl DriverTestClient {

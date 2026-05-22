@@ -346,13 +346,14 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 //   - 408 Request Timeout     → cross-region for reads / local-only for writes
 //   - 404/1002 Read Session   → remote-preferred + no PKRange refresh
 //
-// **Limitation**: `FaultInjectionCondition` does not yet expose a per-transport-
-// kind filter — there is no `with_transport_kind(TransportKind::Gateway20)`
-// today. As a result, faults injected here apply to whichever transport happens
-// to be selected at dispatch time. To reliably exercise these against Gateway
-// 2.0, the Phase 6 CI matrix must run them on a live Gateway 2.0 account
-// (`testCategory = 'gateway20'`); the emulator does not yet expose Gateway
-// 2.0 endpoints. See `docs/GATEWAY_20_SPEC.md` (Phase 6) for the harness gap.
+// Each rule is scoped to `TransportKind::Gateway20` via
+// `with_transport_kind(...)` so it only fires on Gateway 2.0 traffic. The
+// emulator does not expose Gateway 2.0 endpoints, so these tests are gated
+// behind the `gateway20` test category and rely on the
+// `Session SingleRegion Gateway20` CI matrix entry pointing at a
+// pre-provisioned Gateway 2.0 account (see `sdk/cosmos/ci.yml` and the
+// `AZURE_COSMOS_GW20_ENDPOINT` / `AZURE_COSMOS_GW20_KEY` plumbing in the
+// driver test framework's `resolve_test_env`).
 
 /// Gateway 2.0 503 Service Unavailable should trigger regional failover.
 ///

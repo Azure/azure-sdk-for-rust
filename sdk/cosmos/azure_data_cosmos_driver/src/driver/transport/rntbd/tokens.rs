@@ -580,7 +580,9 @@ impl From<OperationType> for RntbdOperationType {
             // transport encoder. Reaching this arm is a bug in the driver
             // dispatch path.
             OperationType::Patch => {
-                unreachable!("OperationType::Patch must be handled by patch_handler before RNTBD encoding")
+                unreachable!(
+                    "OperationType::Patch must be handled by patch_handler before RNTBD encoding"
+                )
             }
         };
         Self(id)
