@@ -61,9 +61,11 @@ use super::{
 /// closure no-ops (the next tick will skip this endpoint entirely once the
 /// registration guard's `Drop` removes the registry entry).
 ///
-/// On a successful upgrade the closure calls
-/// [`LocationStateStore::sync_account_properties`] to update the per-driver
-/// routing snapshot.
+/// On a successful upgrade the closure forwards to
+/// [`LocationStateStore::note_periodic_refresh_succeeded`], which bumps the
+/// event-driven rate-limit clock (so a follow-up
+/// `LocationEffect::RefreshAccountProperties` won't immediately re-fetch what
+/// the timer just fetched) and then syncs the routing snapshot.
 #[cfg(feature = "tokio")]
 fn on_success_for_lss(
     weak_lss: std::sync::Weak<LocationStateStore>,
@@ -72,8 +74,7 @@ fn on_success_for_lss(
         let Some(lss) = weak_lss.upgrade() else {
             return;
         };
-        let default_endpoint = lss.default_endpoint().clone();
-        lss.sync_account_properties(properties, &default_endpoint);
+        lss.note_periodic_refresh_succeeded(properties);
     })
 }
 

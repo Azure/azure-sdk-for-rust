@@ -18,9 +18,11 @@
 //! 3. **Per-driver refresh tasks** — two drivers in the same runtime must
 //!    share a single refresh loop task and refresh each registered endpoint
 //!    once per tick.
-//! 4. **Refresh outlives the driver** — dropping a driver must remove its
-//!    registration so subsequent ticks skip that endpoint, while other
-//!    registered drivers keep refreshing.
+//! 4. **Cross-driver refresh continuity** — registered drivers keep
+//!    getting refreshed independently. The deregister-on-guard-drop side of
+//!    this invariant is covered by a focused unit test on
+//!    `AccountRefreshRegistration::Drop`; this integration-test file
+//!    asserts the always-on-while-registered side.
 //!
 //! The tests use [`tokio::time::pause()`] so virtual time advances under the
 //! test's control. This makes them deterministic regardless of CI load and
@@ -317,21 +319,23 @@ async fn single_loop_serves_two_drivers_in_same_runtime() {
     );
 }
 
-/// Regression test for the Drop guard: dropping driver A removes its
-/// registration from the runtime's registry so subsequent ticks skip its
-/// endpoint, while driver B (still alive) keeps being refreshed.
+/// Verifies that, given two drivers registered with the runtime's
+/// refresh registry, **both endpoints continue to be refreshed** even
+/// when a local handle to one driver is dropped — because the runtime's
+/// `driver_registry` holds its own `Arc<CosmosDriver>` per account, so
+/// `drop(driver_local)` does not actually drop the underlying driver
+/// (`CosmosDriver` holds `Arc<CosmosDriverRuntime>` and
+/// `CosmosDriverRuntime::driver_registry` holds `Arc<CosmosDriver>` — a
+/// strong-ref cycle).
 ///
-/// Note: the `runtime` and `CosmosDriver` types currently form a strong-ref
-/// cycle (`CosmosDriver` holds `Arc<CosmosDriverRuntime>`,
-/// `CosmosDriverRuntime::driver_registry` holds `Arc<CosmosDriver>`), so
-/// `drop(driver_local)` does not actually drop the underlying driver. As a
-/// result this test verifies the inverse property: as long as both
-/// drivers' Arcs are held by the runtime registry, both endpoints continue
-/// to refresh. The deregister-on-guard-drop semantics are covered directly
-/// by the unit test
+/// This is the *inverse* of the deregister-on-guard-drop behavior — that
+/// behavior is covered directly by
 /// `driver::account_refresh::tests::registration_drop_calls_deregister_with_captured_id_and_endpoint`.
+/// Test renamed from `dropping_one_driver_stops_refresh_for_that_account_only`
+/// because the original name promised behavior that cannot be observed
+/// from this integration-test layer while the strong-ref cycle exists.
 #[tokio::test(start_paused = true)]
-async fn dropping_one_driver_stops_refresh_for_that_account_only() {
+async fn registered_drivers_keep_refreshing_when_local_handle_dropped() {
     let counter = AccountReadCounterByHost::new();
     let config = VirtualAccountConfig::new(vec![
         VirtualRegion::new("East US", Url::parse(GATEWAY_URL).unwrap()),
@@ -366,17 +370,11 @@ async fn dropping_one_driver_stops_refresh_for_that_account_only() {
     let baseline_b = counter.count_for("westus.emulator.local");
     assert!(baseline_a >= 1 && baseline_b >= 1);
 
-    // Drop driver A. The runtime singleton-driver-per-account map holds
-    // the Arc<CosmosDriver>; calling .close_driver(...) is not exposed, but
-    // we can verify guard semantics by directly removing from the registry
-    // via the runtime's internal driver_registry. Since that's not exposed
-    // either, we rely on Arc::strong_count semantics: dropping the local
-    // driver_a does NOT actually drop the inner Arc<CosmosDriver> because
-    // the runtime's driver_registry holds another strong ref. We therefore
-    // assert registry_len stays at 2 and skip the "decremented after drop"
-    // check — that's covered by the unit test of the AccountRefreshRegistration
-    // guard directly. What we CAN assert here is the inverse: as long as
-    // both drivers are alive, both endpoints continue to be refreshed.
+    // Drop the local handle to driver A. The runtime singleton-driver-per-account
+    // map still holds an Arc<CosmosDriver>, so the underlying driver is NOT
+    // dropped and the registration guard is not invoked. The deregister-on-
+    // guard-drop semantics are covered by the unit test on
+    // AccountRefreshRegistration::Drop directly.
     drop(driver_a);
     assert_eq!(
         runtime.account_refresh_registry_len(),

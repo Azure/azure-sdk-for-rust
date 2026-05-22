@@ -432,6 +432,27 @@ impl LocationStateStore {
         self.sync_account_properties(properties, &default_endpoint);
     }
 
+    /// Records that the runtime-owned periodic refresh just successfully
+    /// installed a fresh `AccountProperties` value in the cache. Bumps the
+    /// event-driven rate-limit clock (`last_refresh_epoch_ms`) so that the
+    /// event-driven [`LocationEffect::RefreshAccountProperties`] path —
+    /// served by `refresh_account_properties_if_due` — will throttle for at
+    /// least one refresh interval before reissuing the fetch, then forwards
+    /// to [`sync_account_properties`] to update the routing snapshot.
+    ///
+    /// Mirrors the per-success bookkeeping that
+    /// [`refresh_account_properties_inner`] performs for the event-driven
+    /// path: clock bump + snapshot sync. The runtime-owned loop calls this
+    /// helper (via the `on_success` closure registered in
+    /// [`crate::driver::cosmos_driver`]) so the two paths cannot starve each
+    /// other.
+    pub(crate) fn note_periodic_refresh_succeeded(&self, properties: Arc<AccountProperties>) {
+        self.last_refresh_epoch_ms
+            .store(epoch_millis(), Ordering::Release);
+        let default_endpoint = self.default_endpoint.clone();
+        self.sync_account_properties(properties, &default_endpoint);
+    }
+
     /// Updates account state from properties using a CAS loop that preserves
     /// existing `unavailable_endpoints` marks set by concurrent operations.
     ///
