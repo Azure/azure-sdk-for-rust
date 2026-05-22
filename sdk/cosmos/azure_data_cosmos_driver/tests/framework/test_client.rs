@@ -21,6 +21,7 @@ use uuid::Uuid;
 use super::env::{
     get_test_mode, is_azure_pipelines, CosmosTestMode, CONNECTION_STRING_ENV_VAR,
     EMULATOR_CONNECTION_STRING, GATEWAY20_ENDPOINT_ENV_VAR, GATEWAY20_KEY_ENV_VAR,
+    GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY20_MULTI_REGION_KEY_ENV_VAR,
 };
 
 /// A test client that provides access to a Cosmos DB driver for testing.
@@ -103,21 +104,40 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
 }
 
 /// Builds a [`TestEnv`] from the pre-provisioned Gateway 2.0 account
-/// credentials (`AZURE_COSMOS_GW20_ENDPOINT` / `AZURE_COSMOS_GW20_KEY`).
+/// credentials.
 ///
-/// Returns `Ok(None)` when either env var is missing or empty (the caller
-/// then falls back to the standard `AZURE_COSMOS_CONNECTION_STRING` path).
-/// Panics on Azure Pipelines or `Required` test mode when only one of the
-/// two vars is set — that's a misconfigured pipeline rather than an
-/// intentional skip.
+/// Picks the endpoint/key pair based on the active `test_category`:
+///
+/// * `test_category = "gateway20_multi_region"` →
+///   `AZURE_COSMOS_GW20_MULTI_REGION_ENDPOINT` /
+///   `AZURE_COSMOS_GW20_MULTI_REGION_KEY` (a multi-region GW20 account).
+/// * `test_category = "gateway20"` →
+///   `AZURE_COSMOS_GW20_ENDPOINT` / `AZURE_COSMOS_GW20_KEY` (a single-region
+///   GW20 account).
+///
+/// Returns `Ok(None)` when both env vars are missing or empty in local-dev
+/// mode (the caller's `cfg` block returns `Ok(None)` directly). Panics on
+/// Azure Pipelines or `Required` test mode when only one of the two vars is
+/// set — that's a misconfigured pipeline rather than an intentional skip.
 #[cfg(any(test_category = "gateway20", test_category = "gateway20_multi_region"))]
 fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, Box<dyn Error>> {
     fn read(name: &str) -> Option<String> {
         std::env::var(name).ok().filter(|v| !v.trim().is_empty())
     }
 
-    let endpoint = read(GATEWAY20_ENDPOINT_ENV_VAR);
-    let key = read(GATEWAY20_KEY_ENV_VAR);
+    // Multi-region tests need a multi-region GW20 account; single-region
+    // tests use the single-region account. Both fall back to "no GW20
+    // env vars set" rather than crossing wires between pools.
+    #[cfg(test_category = "gateway20_multi_region")]
+    let (endpoint_var, key_var) = (
+        GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR,
+        GATEWAY20_MULTI_REGION_KEY_ENV_VAR,
+    );
+    #[cfg(all(test_category = "gateway20", not(test_category = "gateway20_multi_region")))]
+    let (endpoint_var, key_var) = (GATEWAY20_ENDPOINT_ENV_VAR, GATEWAY20_KEY_ENV_VAR);
+
+    let endpoint = read(endpoint_var);
+    let key = read(key_var);
 
     match (endpoint, key) {
         (Some(endpoint), Some(key)) => {
@@ -135,7 +155,7 @@ fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, B
                 .map_err(|e: url::ParseError| -> Box<dyn Error> {
                     format!(
                         "{} value {:?} (normalized to {:?}) is not a valid URL: {}",
-                        GATEWAY20_ENDPOINT_ENV_VAR, endpoint, normalized, e,
+                        endpoint_var, endpoint, normalized, e,
                     )
                     .into()
                 })?;
@@ -151,7 +171,7 @@ fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, B
                 panic!(
                     "{} / {} are not set but test_category=\"gateway20\" requires a \
                      pre-provisioned Gateway 2.0 account",
-                    GATEWAY20_ENDPOINT_ENV_VAR, GATEWAY20_KEY_ENV_VAR,
+                    endpoint_var, key_var,
                 );
             }
             Ok(None)
@@ -159,11 +179,11 @@ fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, B
         (endpoint, key) => panic!(
             "exactly one of {} / {} is set ({}={}, {}={}); both must be present \
              for test_category=\"gateway20\"",
-            GATEWAY20_ENDPOINT_ENV_VAR,
-            GATEWAY20_KEY_ENV_VAR,
-            GATEWAY20_ENDPOINT_ENV_VAR,
+            endpoint_var,
+            key_var,
+            endpoint_var,
             if endpoint.is_some() { "set" } else { "unset" },
-            GATEWAY20_KEY_ENV_VAR,
+            key_var,
             if key.is_some() { "set" } else { "unset" },
         ),
     }

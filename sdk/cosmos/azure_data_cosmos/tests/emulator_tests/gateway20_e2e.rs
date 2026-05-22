@@ -88,11 +88,21 @@ fn normalize_gateway20_endpoint(raw: &str) -> String {
 }
 
 /// Returns `Some((endpoint, key))` only when both env vars are set.
+///
+/// Multi-region tests (`test_category = "gateway20_multi_region"`) read the
+/// multi-region GW20 account; single-region tests read the single-region
+/// account. The pair is gated at compile time so the test code stays
+/// uniform.
 fn live_credentials() -> Option<(String, String)> {
-    Some((
-        read_env("AZURE_COSMOS_GW20_ENDPOINT")?,
-        read_env("AZURE_COSMOS_GW20_KEY")?,
-    ))
+    #[cfg(test_category = "gateway20_multi_region")]
+    let (endpoint_var, key_var) = (
+        "AZURE_COSMOS_GW20_MULTI_REGION_ENDPOINT",
+        "AZURE_COSMOS_GW20_MULTI_REGION_KEY",
+    );
+    #[cfg(not(test_category = "gateway20_multi_region"))]
+    let (endpoint_var, key_var) = ("AZURE_COSMOS_GW20_ENDPOINT", "AZURE_COSMOS_GW20_KEY");
+
+    Some((read_env(endpoint_var)?, read_env(key_var)?))
 }
 
 /// Build a [`CosmosClient`] against the live Gateway 2.0 account.
