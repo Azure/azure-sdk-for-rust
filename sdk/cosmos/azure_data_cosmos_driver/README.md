@@ -34,6 +34,39 @@ The driver is intentionally ignorant of document/item schemas. Data plane operat
 
 This crate follows **strict semantic versioning** but can move to new major versions more frequently than `azure_data_cosmos`. Breaking changes in the driver do not force SDK version bumps because the SDK uses adapter patterns to maintain backward compatibility.
 
+### Error Backtraces
+
+Every `Error` carries a stack backtrace captured at construction. Unlike `RUST_BACKTRACE=1` (process-wide, unconditional, all-or-nothing), the driver is designed to keep backtraces *on* in production without paying the cost on every error.
+
+**Two-tier cost model.**
+
+- **Capture** runs unconditionally on every `Error` and is microseconds — only the call-stack instruction pointers are recorded. Symbols are not resolved at this point.
+- **Symbol resolution** (turning an IP into `module::function (file:line)`) is deferred until the first call to `error.backtrace()` → `Display`. Resolved frames are cached process-wide by IP, so repeat captures of the same call site only pay the resolution cost once per process lifetime.
+
+**Resolution-rate limiter.** A single global rolling-window budget caps how many backtraces may do *fresh* symbol-resolution work in any 1-second window (default `5`). Cache hits never consume budget, so backtraces whose frames are already known render at full fidelity regardless of limiter state. When the budget is exhausted, unresolved frames render as `<unresolved> @ 0xIP` rather than blocking the caller — still useful for correlating with later fully-resolved captures from the same code paths.
+
+**Tuning.**
+
+```rust,ignore
+let runtime = CosmosDriverRuntimeBuilder::new()
+    // Raise the per-second resolution budget; `0` disables symbol
+    // resolution entirely (every frame renders as `<unresolved> @ 0xIP`).
+    .with_max_error_backtraces_per_second(50)
+    .build();
+```
+
+The budget can also be set via the `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` environment variable.
+
+**Reading a backtrace.**
+
+```rust,ignore
+if let Err(err) = driver.execute_operation(op, options).await {
+    if let Some(bt) = err.backtrace() {
+        eprintln!("{bt}");
+    }
+}
+```
+
 ## Architecture
 
 ```mermaid
