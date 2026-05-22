@@ -332,7 +332,7 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
 /// Used during setup to ignore "resource already exists" responses when
 /// creating the benchmark database, container, and item.
 fn ignore_conflict(
-    result: azure_core::Result<azure_data_cosmos_driver::CosmosResponse>,
+    result: azure_core::Result<Option<azure_data_cosmos_driver::CosmosResponse>>,
 ) -> azure_core::Result<()> {
     match result {
         Ok(_) => Ok(()),

@@ -81,7 +81,7 @@ async fn driver_operations_work_after_backup_boot() -> Result<(), Box<dyn Error>
     let operation = CosmosOperation::create_database(account.clone()).with_body(body.into_bytes());
 
     let result = driver
-        .execute_operation(operation, OperationOptions::default())
+        .execute_singleton_operation(operation, OperationOptions::default())
         .await;
 
     assert!(
@@ -93,7 +93,7 @@ async fn driver_operations_work_after_backup_boot() -> Result<(), Box<dyn Error>
     // Cleanup
     let db_ref = DatabaseReference::from_name(account, db_name);
     let _ = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::delete_database(db_ref),
             OperationOptions::default(),
         )
