@@ -50,6 +50,7 @@
 
 use azure_core::credentials::Secret;
 use azure_data_cosmos::models::{ContainerProperties, PartitionKeyDefinition};
+use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::{
     CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, Query, Region, RoutingStrategy,
     TransactionalBatch,
@@ -211,7 +212,8 @@ pub async fn gateway20_query_streams() -> Result<(), Box<dyn std::error::Error>>
 
     let query = Query::from("SELECT * FROM c ORDER BY c.value");
     let mut pages = container
-        .query_items::<Gw20TestItem>(query, pk_value.clone(), None)?
+        .query_items::<Gw20TestItem>(query, FeedScope::partition(pk_value.clone()), None)
+        .await?
         .into_pages();
 
     let mut pages_seen = 0_usize;
@@ -283,7 +285,12 @@ pub async fn gateway20_query_paginates_via_continuation_tokens(
 
     let query = Query::from("SELECT * FROM c ORDER BY c.value");
     let mut pages = container
-        .query_items::<Gw20TestItem>(query, pk_value.clone(), Some(query_options))?
+        .query_items::<Gw20TestItem>(
+            query,
+            FeedScope::partition(pk_value.clone()),
+            Some(query_options),
+        )
+        .await?
         .into_pages();
 
     let mut pages_seen = 0_usize;
@@ -604,7 +611,8 @@ pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
     let partial_pk = PartitionKey::from(vec![PartitionKeyValue::from(target_tenant.clone())]);
     let query = Query::from("SELECT * FROM c");
     let mut pages = container
-        .query_items::<Gw20HpkItem>(query, partial_pk, None)?
+        .query_items::<Gw20HpkItem>(query, FeedScope::partition(partial_pk), None)
+        .await?
         .into_pages();
 
     let mut returned_ids: Vec<String> = Vec::new();

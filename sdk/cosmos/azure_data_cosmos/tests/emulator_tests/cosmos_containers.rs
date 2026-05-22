@@ -72,11 +72,13 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 indexing_policy.indexing_mode.unwrap()
             );
 
-            let mut query_pager = db_client.query_containers(
-                Query::from("SELECT * FROM root r WHERE r.id = @id")
-                    .with_parameter("@id", &properties.id)?,
-                None,
-            )?;
+            let mut query_pager = db_client
+                .query_containers(
+                    Query::from("SELECT * FROM root r WHERE r.id = @id")
+                        .with_parameter("@id", &properties.id)?,
+                    None,
+                )
+                .await?;
             let mut ids = vec![];
             while let Some(db) = query_pager.try_next().await? {
                 ids.push(db.id);
@@ -120,11 +122,13 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
             container_client.delete(None).await?;
 
-            query_pager = db_client.query_containers(
-                Query::from("SELECT * FROM root r WHERE r.id = @id")
-                    .with_parameter("@id", &properties.id)?,
-                None,
-            )?;
+            query_pager = db_client
+                .query_containers(
+                    Query::from("SELECT * FROM root r WHERE r.id = @id")
+                        .with_parameter("@id", &properties.id)?,
+                    None,
+                )
+                .await?;
             let mut ids = vec![];
             while let Some(db) = query_pager.try_next().await? {
                 ids.push(db.id);
