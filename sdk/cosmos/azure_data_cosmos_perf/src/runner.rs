@@ -443,7 +443,7 @@ async fn upsert_results(
 async fn upsert_error(
     container: &ContainerClient,
     operation: &str,
-    error: &azure_core::Error,
+    error: &azure_data_cosmos::Error,
     workload_id: &str,
     commit_sha: &str,
     hostname: &str,

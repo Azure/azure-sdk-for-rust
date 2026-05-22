@@ -31,7 +31,7 @@
 //!   must be distinct; destination cannot be a descendant of the source.
 //!
 //! Failures return [`PatchEvalError`], which the PATCH handler converts into
-//! an `azure_core::Error` before surfacing it to callers.
+//! a [`crate::error::Error`] (kind `Client`) before surfacing it to callers.
 
 use crate::models::{IncrValue, PatchOp};
 use serde_json::Value;
@@ -109,12 +109,6 @@ impl fmt::Display for PatchEvalError {
 }
 
 impl std::error::Error for PatchEvalError {}
-
-impl From<PatchEvalError> for azure_core::Error {
-    fn from(err: PatchEvalError) -> Self {
-        crate::error::Error::from(err).into()
-    }
-}
 
 impl From<PatchEvalError> for crate::error::Error {
     fn from(err: PatchEvalError) -> Self {

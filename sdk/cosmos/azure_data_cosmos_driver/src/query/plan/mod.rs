@@ -279,7 +279,7 @@ impl std::hash::Hash for PartitionKeyValue {
 pub(crate) fn generate_query_plan(
     query: &SqlQuery,
     pk_paths: &[&str],
-) -> Result<QueryPlan, azure_core::Error> {
+) -> crate::error::Result<QueryPlan> {
     // Convenience wrapper for callers that do not need parameter substitution
     // for `TOP` / `OFFSET` / `LIMIT`. If the query references a parameter in
     // any of those clauses this returns an error — use
@@ -307,7 +307,7 @@ pub(crate) fn generate_query_plan_with_parameters(
     query: &SqlQuery,
     pk_paths: &[&str],
     parameters: &Params,
-) -> Result<QueryPlan, azure_core::Error> {
+) -> crate::error::Result<QueryPlan> {
     let query_info = analyze_query(query, parameters)?;
     let root_alias = get_root_alias(query);
 
@@ -340,14 +340,14 @@ pub(crate) fn generate_query_plan_with_parameters(
 /// Look up a parameter value by name and return it as a non-negative `i64`.
 ///
 /// Used to substitute parameterized `TOP` / `OFFSET` / `LIMIT` values. Thin
-/// `azure_core::Error`-flavored wrapper around the shared
+/// `crate::error::Result`-flavored wrapper around the shared
 /// [`crate::query::common::resolve_non_negative_integer_parameter`] helper so
 /// the plan and eval pipelines validate parameters identically. Adds a
 /// `TOP/OFFSET/LIMIT` clause-context tag to the error message so callers can
 /// distinguish it from other parameter-resolution failures.
-fn resolve_integer_parameter(name: &str, parameters: &Params) -> Result<i64, azure_core::Error> {
+fn resolve_integer_parameter(name: &str, parameters: &Params) -> crate::error::Result<i64> {
     crate::query::common::resolve_non_negative_integer_parameter(parameters, name).map_err(|msg| {
-        crate::error::Error::client(format!("{msg} (TOP/OFFSET/LIMIT clause)"), None).into()
+        crate::error::Error::client(format!("{msg} (TOP/OFFSET/LIMIT clause)"), None)
     })
 }
 
@@ -370,10 +370,7 @@ fn is_constant_expression(expr: &SqlScalarExpression) -> bool {
     }
 }
 
-fn analyze_query(
-    query: &SqlQuery,
-    parameters: &Params,
-) -> Result<LocalQueryInfo, azure_core::Error> {
+fn analyze_query(query: &SqlQuery, parameters: &Params) -> crate::error::Result<LocalQueryInfo> {
     let mut info = LocalQueryInfo {
         has_select_value: matches!(query.select.spec, SqlSelectSpec::Value(_)),
         has_where: query.where_clause.is_some(),
@@ -481,7 +478,7 @@ fn analyze_query(
 /// local plan generator into the SDK can distinguish a "please fall back to
 /// Gateway" outcome from a generic conversion failure without parsing free-form
 /// text fragments.
-fn expr_to_path_string(expr: &SqlScalarExpression) -> Result<String, azure_core::Error> {
+fn expr_to_path_string(expr: &SqlScalarExpression) -> crate::error::Result<String> {
     let mut parts = Vec::new();
     if collect_path_parts(expr, &mut parts) {
         Ok(parts.join("."))
@@ -492,8 +489,7 @@ fn expr_to_path_string(expr: &SqlScalarExpression) -> Result<String, azure_core:
                 LocalPlanFallbackError::NEEDS_GATEWAY_FALLBACK
             ),
             None,
-        )
-        .into())
+        ))
     }
 }
 
@@ -505,7 +501,6 @@ fn expr_to_path_string(expr: &SqlScalarExpression) -> Result<String, azure_core:
 /// production path; once it is, the wiring layer can match on this sentinel to
 /// distinguish a recoverable "plan this on the server" outcome from a hard
 /// error. Kept as a constant rather than a typed error variant because the
-/// outer return type is already `azure_core::Error` and we do not want to
 /// fragment the error model just for an internal fallback signal.
 pub(crate) struct LocalPlanFallbackError;
 
@@ -1267,7 +1262,7 @@ pub fn __test_only_generate_query_plan_for_pk_paths(
     sql: &str,
     pk_paths: &[&str],
     parameters: &[(String, serde_json::Value)],
-) -> Result<serde_json::Value, azure_core::Error> {
+) -> crate::error::Result<serde_json::Value> {
     let program = crate::query::parse(sql).map_err(|e| {
         crate::error::Error::serialization(format!("failed to parse query: {e}"), None, None, e)
     })?;
@@ -1281,7 +1276,6 @@ pub fn __test_only_generate_query_plan_for_pk_paths(
             None,
             e,
         )
-        .into()
     })
 }
 

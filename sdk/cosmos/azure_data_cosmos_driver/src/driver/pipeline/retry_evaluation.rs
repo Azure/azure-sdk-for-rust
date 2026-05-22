@@ -271,8 +271,7 @@ fn evaluate_http_outcome(
 
     (
         OperationAction::Abort {
-            error: build_service_error(&status, &cosmos_headers, &body).into(),
-            status: Some(status),
+            error: build_service_error(&status, &cosmos_headers, &body),
         },
         Vec::new(),
     )
@@ -336,8 +335,7 @@ fn try_handle_read_session_not_available(
     if !retry_state.can_use_multiple_write_locations && retry_state.session_token_retry_count >= 2 {
         return Some((
             OperationAction::Abort {
-                error: build_service_error(status, cosmos_headers, body).into(),
-                status: Some(*status),
+                error: build_service_error(status, cosmos_headers, body),
             },
             Vec::new(),
         ));
@@ -461,8 +459,7 @@ fn try_handle_retry_trigger_group(
         }
         return Some((
             OperationAction::Abort {
-                error: build_service_error(status, cosmos_headers, body).into(),
-                status: Some(*status),
+                error: build_service_error(status, cosmos_headers, body),
             },
             effects,
         ));
@@ -577,7 +574,6 @@ fn evaluate_transport_layer_outcome(
     (
         OperationAction::Abort {
             error: build_transport_error(&status, error),
-            status: Some(status),
         },
         effects,
     )
@@ -599,23 +595,13 @@ fn evaluate_deadline_exceeded_outcome(
         "end-to-end operation timeout exceeded"
     };
 
-    let synthetic_status = CosmosStatus::from_parts(
-        azure_core::http::StatusCode::RequestTimeout,
-        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-    );
-
-    // Embed a typed `Error` as the source of the `azure_core::Error`
-    // so the driver/SDK boundary recovers the synthetic Cosmos status
-    // (408 / 20008) via `Error::from(azure_core_error)`.
+    // Build the typed end-to-end timeout error (carries
+    // `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` on `error.status()`)
+    // and abort. The operation pipeline propagates
+    // `crate::error::Error` directly via `OperationAction::Abort.error`.
     let cosmos_err = crate::error::Error::end_to_end_timeout(message, None);
 
-    (
-        OperationAction::Abort {
-            error: cosmos_err.into(),
-            status: Some(synthetic_status),
-        },
-        Vec::new(),
-    )
+    (OperationAction::Abort { error: cosmos_err }, Vec::new())
 }
 
 /// Formats the human-readable message for a Cosmos HTTP error status.
@@ -658,7 +644,7 @@ fn build_service_error(
     crate::error::Error::service(response, service_error_message(status))
 }
 
-fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> azure_core::Error {
+fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> crate::error::Error {
     let status_code = status.status_code();
     let name = status.name().unwrap_or("Unknown");
     let sub_status_str = match status.sub_status() {
@@ -677,12 +663,8 @@ fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> a
     );
 
     // Wrap into a fresh `Error::transport` carrying the enriched message and
-    // the original Cosmos error as source, then convert to `azure_core::Error`
-    // for propagation through `OperationAction::Abort.error`.
-    let cosmos_err =
-        crate::error::Error::transport(*status, message, None, Some(std::sync::Arc::new(error)));
-
-    cosmos_err.into()
+    // the original Cosmos error as source.
+    crate::error::Error::transport(*status, message, None, Some(std::sync::Arc::new(error)))
 }
 
 #[cfg(test)]
@@ -808,8 +790,8 @@ mod tests {
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         match action {
-            OperationAction::Abort { status, .. } => {
-                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
+            OperationAction::Abort { error } => {
+                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
             }
             other => panic!("expected abort, got {other:?}"),
         }
@@ -844,16 +826,11 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
 
         match action {
-            OperationAction::Abort { status, error } => {
-                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
-                // Cosmos errors now propagate as `ErrorKind::Other` over the
-                // azure_core::Error envelope (the typed Cosmos status is the
-                // discriminator; the recoverable Cosmos `Error` is embedded
-                // as the source).
-                assert_eq!(error.kind(), &azure_core::error::ErrorKind::Other);
-                let cosmos =
-                    crate::error::Error::try_extract(&error).expect("embedded cosmos error");
-                assert_eq!(cosmos.status(), CosmosStatus::TRANSPORT_GENERATED_503);
+            OperationAction::Abort { error } => {
+                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
+                // `error` is now the typed Cosmos error directly — no
+                // round-trip through `azure_core::Error` is required.
+                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
                 let text = error.to_string();
                 assert!(text.contains("HTTP 503/20003"));
                 assert!(text.contains("TransportGenerated503"));
@@ -892,8 +869,8 @@ mod tests {
         );
         let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         match action {
-            OperationAction::Abort { status, .. } => {
-                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
+            OperationAction::Abort { error } => {
+                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
             }
             other => panic!("expected abort, got {other:?}"),
         }
@@ -1048,8 +1025,8 @@ mod tests {
 
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         match action {
-            OperationAction::Abort { status, .. } => {
-                let status = status.expect("timeout status should be set");
+            OperationAction::Abort { error } => {
+                let status = error.status();
                 assert_eq!(status.status_code(), StatusCode::RequestTimeout);
                 assert_eq!(
                     status.sub_status(),

@@ -219,12 +219,6 @@ impl From<Error> for DriverError {
     }
 }
 
-impl From<Error> for azure_core::Error {
-    fn from(value: Error) -> Self {
-        azure_core::Error::from(value.0)
-    }
-}
-
 impl From<azure_core::Error> for Error {
     fn from(error: azure_core::Error) -> Self {
         Self(DriverError::from(error))

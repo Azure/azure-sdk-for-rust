@@ -554,10 +554,11 @@ pub(crate) enum OperationAction {
     /// Retry for session consistency.
     SessionRetry { new_state: OperationRetryState },
     /// Abort the operation with this error.
-    Abort {
-        error: azure_core::Error,
-        status: Option<CosmosStatus>,
-    },
+    ///
+    /// The typed `CosmosStatus` is always available via `error.status()`;
+    /// callers that need the status for routing decisions (e.g.
+    /// flush-on-confirming-status) read it from there.
+    Abort { error: crate::error::Error },
 }
 
 /// What the transport pipeline should do after a 429.

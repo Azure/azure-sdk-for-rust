@@ -363,7 +363,7 @@ pub(crate) async fn execute_operation_pipeline(
                 );
                 enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
             }
-            OperationAction::Abort { error, status } => {
+            OperationAction::Abort { error } => {
                 // Flush deferred write-path effects if the abort status
                 // confirms the region processed the request (e.g., 409
                 // Conflict, 412 Precondition Failed). On non-confirming
@@ -371,7 +371,8 @@ pub(crate) async fn execute_operation_pipeline(
                 // the buffered effects are discarded — we never proved any
                 // region was actually healthy, so polluting routing state
                 // would be wrong.
-                let confirming = status.as_ref().is_some_and(is_region_confirming_status);
+                let status = error.status();
+                let confirming = is_region_confirming_status(&status);
                 if confirming {
                     flush_pending_write_effects(
                         &mut retry_state,
@@ -395,13 +396,8 @@ pub(crate) async fn execute_operation_pipeline(
                     pk_range_id = ?retry_state.partition_key_range_id,
                     "operation aborted",
                 );
-                if let Some(cosmos_status) = status {
-                    diagnostics.set_operation_status(
-                        cosmos_status.status_code(),
-                        cosmos_status.sub_status(),
-                    );
-                }
-                return Err(error.into());
+                diagnostics.set_operation_status(status.status_code(), status.sub_status());
+                return Err(error);
             }
         }
     }

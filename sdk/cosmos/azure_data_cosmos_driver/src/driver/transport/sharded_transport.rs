@@ -79,9 +79,19 @@ impl ShardedHttpTransport {
         let pool = match self.get_or_create_pool(endpoint_key.clone()) {
             Ok(pool) => pool,
             Err(error) => {
+                // Embed the typed Cosmos error as the `azure_core::Error`
+                // source so the boundary mapper's `try_extract` can recover
+                // it. We construct the `azure_core::Error` directly here
+                // because the `TransportError.error` seam is still typed as
+                // `azure_core::Error`.
+                let message = error.to_string();
                 return TransportDispatch {
                     result: Err(TransportError::new(
-                        error.into(),
+                        azure_core::Error::with_error(
+                            azure_core::error::ErrorKind::Other,
+                            error,
+                            message,
+                        ),
                         crate::diagnostics::RequestSentStatus::NotSent,
                     )),
                     shard_id: None,
@@ -93,9 +103,14 @@ impl ShardedHttpTransport {
         let shard = match pool.select_shard(excluded_shard_id, preferred_shard_id) {
             Ok(shard) => shard,
             Err(error) => {
+                let message = error.to_string();
                 return TransportDispatch {
                     result: Err(TransportError::new(
-                        error.into(),
+                        azure_core::Error::with_error(
+                            azure_core::error::ErrorKind::Other,
+                            error,
+                            message,
+                        ),
                         crate::diagnostics::RequestSentStatus::NotSent,
                     )),
                     shard_id: None,
@@ -239,15 +254,15 @@ impl TryFrom<&Url> for EndpointKey {
 
     fn try_from(url: &Url) -> azure_core::Result<Self> {
         let host = url.host_str().ok_or_else(|| {
-            crate::error::Error::configuration(
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
                 format!("request URL is missing a host: {url}"),
-                None,
             )
         })?;
         let port = url.port_or_known_default().ok_or_else(|| {
-            crate::error::Error::configuration(
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
                 format!("request URL is missing a known port: {url}"),
-                None,
             )
         })?;
         Ok(Self(Arc::from(format!("{host}:{port}").as_str())))

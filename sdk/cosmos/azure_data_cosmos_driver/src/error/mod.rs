@@ -513,48 +513,6 @@ impl From<azure_core::Error> for Error {
     }
 }
 
-impl From<Error> for azure_core::Error {
-    /// Converts a typed `Error` into an `azure_core::Error` for
-    /// propagation through `azure_core::Result<T>` channels in the pipeline.
-    ///
-    /// For `Service` errors with a known status, the resulting error uses
-    /// `Kind::HttpResponse { status, error_code, raw_response }` where
-    /// `raw_response` carries the captured body bytes (if any) so callers
-    /// can match on the standard azure_core surface. The original
-    /// `Error` is embedded as the source so the driver/SDK boundary
-    /// can recover the typed payload via
-    /// [`Error::try_extract`] / [`Error::from`].
-    fn from(cosmos: Error) -> Self {
-        let message = cosmos.inner.message.to_string();
-        let status = cosmos.inner.status;
-        let kind = if status.kind() == Kind::Service {
-            let raw_response = cosmos
-                .inner
-                .payload
-                .as_deref()
-                .and_then(|p| match p.body() {
-                    ResponseBody::Bytes(b) => Some(b.to_vec()),
-                    ResponseBody::NoPayload | ResponseBody::Items(_) => None,
-                })
-                .map(|body| {
-                    Box::new(azure_core::http::RawResponse::from_bytes(
-                        status.status_code(),
-                        azure_core::http::headers::Headers::new(),
-                        body,
-                    ))
-                });
-            azure_core::error::ErrorKind::HttpResponse {
-                status: status.status_code(),
-                error_code: status.sub_status().map(|s| s.value().to_string()),
-                raw_response,
-            }
-        } else {
-            azure_core::error::ErrorKind::Other
-        };
-        azure_core::Error::with_error(kind, cosmos, message)
-    }
-}
-
 /// Boundary mapper: converts an `azure_core::Error` (typically produced by
 /// the HTTP pipeline, credential provider, or response deserialization) into
 /// a typed [`Error`] carrying the most specific [`CosmosStatus`] the source

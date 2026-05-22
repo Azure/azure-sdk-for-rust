@@ -59,7 +59,10 @@ pub trait Operation: Send + Sync {
     /// wall-clock latency). Returns `Ok(None)` when no backend duration
     /// could be observed (multi-page query streams may aggregate, see
     /// individual implementations).
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<Option<Duration>>;
+    async fn execute(
+        &self,
+        container: &ContainerClient,
+    ) -> azure_data_cosmos::Result<Option<Duration>>;
 }
 
 /// The item type used for seeding, reading, querying, and upserting.

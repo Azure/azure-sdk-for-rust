@@ -151,8 +151,12 @@ async fn fetch_gateway_plan(
     let response = driver
         .execute_operation(operation, op_options)
         .await
-        .map_err(azure_core::Error::from)?;
-    response.into_body().into_single().map_err(Into::into)
+        .map_err(|e| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
+        })?;
+    response.into_body().into_single().map_err(|e| {
+        azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
+    })
 }
 
 /// Compare a locally-generated `queryInfo` JSON object against what the Cosmos DB
@@ -557,7 +561,7 @@ async fn validate_hpk_expects_400(sql: &str, reason: &str) {
 /// `pub(crate)` so cannot be referenced directly from this integration test.
 const NEEDS_GATEWAY_FALLBACK: &str = "[NEEDS_GATEWAY_FALLBACK]";
 
-fn local_error_is_gateway_fallback(err: &azure_core::Error) -> bool {
+fn local_error_is_gateway_fallback(err: &azure_data_cosmos_driver::Error) -> bool {
     format!("{err}").contains(NEEDS_GATEWAY_FALLBACK)
 }
 
