@@ -283,7 +283,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.message(),
+            err.to_string(),
             "failed to resolve partition key ranges from topology cache"
         );
     }

@@ -435,7 +435,7 @@ mod tests {
             // Returned Err in release mode (also acceptable)
             Ok(Err(err)) => {
                 assert_eq!(
-                    err.message(),
+                    err.to_string(),
                     "FeedRange targeting requires a fan-out pipeline; \
                      use plan_operation for cross-partition queries"
                 );
@@ -692,7 +692,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.message(),
+            err.to_string(),
             "unsupported query feature: TOP clause in cross-partition queries"
         );
     }
@@ -713,7 +713,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.message(),
+            err.to_string(),
             "unsupported query feature: LIMIT clause in cross-partition queries"
         );
     }
@@ -735,7 +735,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.message(),
+            err.to_string(),
             "unsupported query feature: ORDER BY in cross-partition queries"
         );
     }
@@ -756,7 +756,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.message(),
+            err.to_string(),
             "unsupported query feature: aggregates in cross-partition queries"
         );
     }
@@ -777,7 +777,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.message(),
+            err.to_string(),
             "unsupported query feature: GROUP BY in cross-partition queries"
         );
     }
@@ -802,7 +802,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.message(),
+            err.to_string(),
             "unsupported query feature: hybrid search queries"
         );
     }
@@ -829,7 +829,7 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(
-            err.message(),
+            err.to_string(),
             "query plan produced no partition ranges to query"
         );
     }
@@ -846,7 +846,7 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(err.message(), "topology resolution failed");
+        assert_eq!(err.to_string(), "topology resolution failed");
     }
 
     // -----------------------------------------------------------------

@@ -628,7 +628,7 @@ fn failed_transport_shard(
             // Surface just the underlying message — the [Kind] / status
             // prefix from the Cosmos Display is captured separately in
             // the request status.
-            error.message().to_owned(),
+            error.to_string(),
         )),
         _ => None,
     }

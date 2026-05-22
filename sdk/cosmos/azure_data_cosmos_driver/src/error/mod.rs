@@ -352,11 +352,6 @@ impl Error {
         self.inner.diagnostics.as_ref()
     }
 
-    /// Returns the error message.
-    pub fn message(&self) -> &str {
-        &self.inner.message
-    }
-
     /// Returns the raw service response body bytes when available
     /// (e.g. the JSON error payload returned by Cosmos for a
     /// 400 / BadRequest response). Only populated for `Service` errors
@@ -472,30 +467,34 @@ impl Error {
 // -----------------------------------------------------------------
 
 impl fmt::Display for Error {
-    /// Default (`{e}`): a single-line header — `[Kind] message (status: code/sub)`.
+    /// Default (`{e}`): the bare error message text — matching the
+    /// `anyhow::Error` / `azure_core::Error` / `std::io::Error` convention
+    /// that `e.to_string()` returns the human-readable message. Typed
+    /// metadata (kind, status, sub-status, headers, diagnostics, source,
+    /// backtrace) is reachable via the dedicated accessors on [`Error`].
     ///
-    /// Alternate (`{e:#}`): the same header followed by the source chain
-    /// and (if captured) the rendered backtrace. This matches the
-    /// `anyhow::Error` / `eyre::Report` convention: terse for log lines,
-    /// rich when callers explicitly opt in via `{:#}`.
+    /// Alternate (`{e:#}`): the message prefixed with the categorical
+    /// [`Kind`] and the typed status, followed by the source chain and
+    /// (if captured) the rendered backtrace. Matches the `anyhow::Error` /
+    /// `eyre::Report` convention of opting in to a richer multi-line
+    /// representation via the alternate flag.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write_header(f, &self.inner)?;
         if f.alternate() {
+            write_header(f, &self.inner)?;
             write_source_chain(f, self)?;
             write_backtrace(f, self)?;
+        } else {
+            f.write_str(&self.inner.message)?;
         }
         Ok(())
     }
 }
 
 impl fmt::Debug for Error {
-    /// Pretty (`{e:#?}`): the structured fields plus the source chain and
-    /// rendered backtrace.
-    ///
-    /// Default (`{e:?}`): the same content but as the standard one-line
-    /// derived-Debug dump. `Result::unwrap` / `expect` panic messages and
-    /// `tracing::error!(err = ?e)` call sites pick up the backtrace via
-    /// this impl without any additional plumbing.
+    /// Both `{e:?}` and `{e:#?}` emit the structured header plus the source
+    /// chain and rendered backtrace. `Result::unwrap` / `expect` panic
+    /// messages and `tracing::error!(err = ?e)` call sites pick up the
+    /// backtrace via this impl without any additional plumbing.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write_header(f, &self.inner)?;
         write_source_chain(f, self)?;

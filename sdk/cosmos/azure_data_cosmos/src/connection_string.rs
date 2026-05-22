@@ -149,7 +149,7 @@ mod tests {
         let secret = Secret::new(connection_string.to_owned());
         let connection_str = ConnectionString::try_from(&secret);
         let err = connection_str.unwrap_err();
-        let actual_error_message = err.message();
+        let actual_error_message = err.to_string();
         assert_eq!(expected_error_message, actual_error_message)
     }
 }

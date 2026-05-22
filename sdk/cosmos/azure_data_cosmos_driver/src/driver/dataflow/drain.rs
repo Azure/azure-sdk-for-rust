@@ -246,7 +246,7 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.message(), "test error");
+        assert_eq!(err.to_string(), "test error");
     }
 
     #[tokio::test]
@@ -439,7 +439,7 @@ mod tests {
 
         let err = drain.next_page(&mut context).await.unwrap_err();
         assert_eq!(
-            err.message(),
+            err.to_string(),
             "exceeded maximum split retries (10) in SequentialDrain"
         );
     }
@@ -539,7 +539,7 @@ mod tests {
             b"ok"
         );
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.message(), "boom");
+        assert_eq!(err.to_string(), "boom");
     }
 
     #[tokio::test]

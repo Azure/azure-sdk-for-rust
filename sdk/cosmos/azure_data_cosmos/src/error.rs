@@ -71,11 +71,6 @@ impl Error {
         self.0.diagnostics()
     }
 
-    /// Returns the error message.
-    pub fn message(&self) -> &str {
-        self.0.message()
-    }
-
     /// Returns the raw service response body bytes when available
     /// (e.g. the JSON error payload returned by Cosmos for a
     /// 400 / BadRequest response). Only populated for `Service` errors.
