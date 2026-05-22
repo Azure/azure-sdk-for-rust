@@ -117,29 +117,37 @@ impl CosmosClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # use azure_data_cosmos::CosmosClient;
     /// # let client: CosmosClient = panic!("this is a non-running example");
-    /// let dbs = client.query_databases(
-    ///     "SELECT * FROM dbs",
-    ///     None)?;
+    /// let dbs = client
+    ///     .query_databases("SELECT * FROM dbs", None)
+    ///     .await?;
     /// # }
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
-    pub fn query_databases(
+    pub async fn query_databases(
         &self,
         query: impl Into<Query>,
-        _options: Option<QueryDatabasesOptions>,
+        #[allow(unused_variables, reason = "This parameter may be used in the future")]
+        options: Option<QueryDatabasesOptions>,
     ) -> crate::Result<FeedItemIterator<DatabaseProperties>> {
+        let query = query.into();
         let account = self.context.driver.account().clone();
-        let factory = move || CosmosOperation::query_databases(account.clone());
+        let initial_operation =
+            CosmosOperation::query_databases(account).with_body(serde_json::to_vec(&query)?);
+        let operation_options = OperationOptions::default();
 
-        crate::query::executor::QueryExecutor::new(
+        let plan = self
+            .context
+            .driver
+            .plan_operation(initial_operation, &operation_options, None)
+            .await?;
+
+        Ok(FeedItemIterator::new(
             self.context.driver.clone(),
-            factory,
-            query.into(),
-            Default::default(),
-            crate::query::QueryExecutorConfig::default(),
-        )
-        .into_stream()
+            None,
+            plan,
+            operation_options,
+        ))
     }
 
     /// Creates a new database.
@@ -173,11 +181,28 @@ impl CosmosClient {
         let driver_response = self
             .context
             .driver
-            .execute_operation(operation, operation_options)
+            .execute_singleton_operation(operation, operation_options)
             .await?;
 
         Ok(ResourceResponse::new(
             crate::driver_bridge::driver_response_to_cosmos_response(driver_response),
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `CosmosClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &CosmosClient = todo!();
+        assert_send(client.query_databases(Query::from("SELECT * FROM dbs"), todo!()));
+        assert_send(client.create_database(todo!(), todo!()));
     }
 }

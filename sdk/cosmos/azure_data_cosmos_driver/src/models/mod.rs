@@ -13,6 +13,7 @@ mod account_reference;
 mod activity_id;
 mod connection_string;
 mod consistency_level;
+mod continuation_token;
 pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
@@ -33,6 +34,7 @@ pub(crate) use cosmos_headers::request_header_names;
 pub(crate) use finite_f64::FiniteF64;
 #[allow(dead_code)]
 pub mod effective_partition_key;
+mod feed_range;
 #[allow(dead_code)]
 mod murmur_hash;
 #[allow(dead_code)]
@@ -44,6 +46,8 @@ pub use account_reference::{AccountReference, AccountReferenceBuilder, Credentia
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
 pub(crate) use consistency_level::DefaultConsistencyLevel;
+pub use continuation_token::ContinuationToken;
+pub(crate) use continuation_token::ResolvedToken;
 pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
     CosmosResponseHeaders, MaxItemCount, OfferAutoscaleSettings,
@@ -55,7 +59,9 @@ pub use cosmos_response::CosmosResponse;
 pub(crate) use cosmos_response::CosmosResponsePayload;
 pub use cosmos_status::SubStatusCode;
 pub use cosmos_status::{CosmosStatus, Kind};
+pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
+pub use feed_range::FeedRange;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
 pub use patch::{IncrValue, PatchOp, PatchSpec};
 pub use request_charge::RequestCharge;
@@ -161,6 +167,11 @@ impl PartitionKeyDefinition {
     /// Returns the partition key kind.
     pub fn kind(&self) -> PartitionKeyKind {
         self.kind
+    }
+
+    /// Returns true if the given partition key value is complete for this definition (i.e. has values for all paths).
+    pub fn is_complete(&self, pk: &PartitionKey) -> bool {
+        pk.len() == self.paths.len()
     }
 }
 
@@ -495,6 +506,17 @@ pub enum OperationType {
 }
 
 impl OperationType {
+    /// Returns true if this operation type is a feed operation that returns multiple results.
+    pub fn is_feed(self) -> bool {
+        matches!(
+            self,
+            OperationType::ReadFeed
+                | OperationType::HeadFeed
+                | OperationType::Query
+                | OperationType::SqlQuery
+        )
+    }
+
     /// Returns the HTTP method for this operation type.
     pub fn http_method(self) -> azure_core::http::Method {
         use azure_core::http::Method;

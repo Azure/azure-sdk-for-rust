@@ -1432,6 +1432,19 @@ impl CosmosStatus {
             && self.sub_status == Some(SubStatusCode::PARTITION_KEY_RANGE_GONE)
     }
 
+    /// Returns `true` if this is an HTTP 410 caused by partition topology changing.
+    pub(crate) fn is_partition_topology_change(&self) -> bool {
+        u16::from(self.status_code) == 410
+            && matches!(
+                self.sub_status,
+                Some(
+                    SubStatusCode::PARTITION_KEY_RANGE_GONE
+                        | SubStatusCode::COMPLETING_SPLIT
+                        | SubStatusCode::COMPLETING_PARTITION_MIGRATION
+                )
+            )
+    }
+
     /// Returns `true` if this indicates a transport-generated 503 (client-side).
     pub fn is_transport_generated_503(&self) -> bool {
         u16::from(self.status_code) == 503

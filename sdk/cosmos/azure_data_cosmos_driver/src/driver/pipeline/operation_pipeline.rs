@@ -22,8 +22,9 @@ use crate::{
     },
     driver::transport::CosmosTransport,
     models::{
-        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
+        cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
+        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel,
+        EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
     },
     options::{
         OperationOptionsView, ReadConsistencyStrategy, Region, ThroughputControlGroupSnapshot,
@@ -45,25 +46,74 @@ use crate::driver::transport::{
     AuthorizationContext,
 };
 
-/// Ambient context for a single `execute_operation_pipeline` invocation.
+/// Per-request overrides that take precedence over values from [`CosmosOperation`].
 ///
-/// Groups the shared driver-scoped resources (transport, routing state,
-/// session manager, credential, user-agent) and per-operation telemetry
-/// identity (activity id, pipeline type, transport security, account
-/// consistency) so they don't have to be passed as individual arguments.
-/// Constructed once by `CosmosDriver::execute_operation` and passed by
-/// reference into the pipeline.
-pub(crate) struct PipelineContext<'a> {
-    pub location_state_store: &'a LocationStateStore,
-    pub transport: &'a CosmosTransport,
-    pub account_endpoint: &'a AccountEndpoint,
-    pub credential: &'a Credential,
-    pub user_agent: &'a HeaderValue,
-    pub activity_id: &'a ActivityId,
-    pub session_manager: &'a SessionManager,
-    pub pipeline_type: PipelineType,
-    pub transport_security: TransportSecurity,
-    pub account_default_consistency: DefaultConsistencyLevel,
+/// Used by the dataflow pipeline to inject routing and pagination state that
+/// varies per physical partition or per page, without mutating the shared
+/// `CosmosOperation`. Each field, when `Some`, emits the corresponding request
+/// header in [`OperationOverrides::apply_headers`].
+#[derive(Debug, Clone, Default)]
+pub(crate) struct OperationOverrides {
+    /// Feed range to constrain the request to (emits `x-ms-start-epk` / `x-ms-end-epk`).
+    pub feed_range: Option<crate::models::FeedRange>,
+
+    /// Physical partition key range ID (emits `x-ms-documentdb-partitionkeyrangeid`).
+    pub partition_key_range_id: Option<String>,
+
+    /// Logical partition key (emits `x-ms-documentdb-partitionkey`).
+    pub partition_key: Option<crate::models::PartitionKey>,
+
+    /// Continuation token for pagination (emits `x-ms-continuation`).
+    pub continuation: Option<String>,
+}
+
+impl OperationOverrides {
+    /// Applies the override headers to the given header map.
+    ///
+    /// Headers set here take precedence over any previously-set values for
+    /// the same header name (they overwrite on conflict).
+    pub fn apply_headers(
+        &self,
+        headers: &mut azure_core::http::headers::Headers,
+    ) -> azure_core::Result<()> {
+        if let Some(feed_range) = &self.feed_range {
+            if feed_range.min_inclusive() != &EffectivePartitionKey::min() {
+                headers.insert(
+                    HeaderName::from_static(request_header_names::START_EPK),
+                    HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
+                );
+            }
+            if feed_range.max_exclusive() != &EffectivePartitionKey::max() {
+                headers.insert(
+                    HeaderName::from_static(request_header_names::END_EPK),
+                    HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
+                );
+            }
+        }
+
+        if let Some(pk_range_id) = &self.partition_key_range_id {
+            headers.insert(
+                HeaderName::from_static(request_header_names::PARTITION_KEY_RANGE_ID),
+                HeaderValue::from(pk_range_id.clone()),
+            );
+        }
+
+        if let Some(pk) = &self.partition_key {
+            let pk_headers = pk.as_headers()?;
+            for (name, value) in pk_headers {
+                headers.insert(name, value);
+            }
+        }
+
+        if let Some(continuation) = &self.continuation {
+            headers.insert(
+                HeaderName::from_static(request_header_names::CONTINUATION),
+                HeaderValue::from(continuation.clone()),
+            );
+        }
+
+        Ok(())
+    }
 }
 
 /// Executes a Cosmos DB operation through the new pipeline architecture.
@@ -74,17 +124,28 @@ pub(crate) struct PipelineContext<'a> {
 /// When `pre_resolved_pk_range_id` is `Some`, it is used to seed the
 /// `OperationRetryState` so that partition-level failover overrides (PPAF/PPCB)
 /// can take effect from the very first attempt.
+#[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
+    overrides: OperationOverrides,
     options: &OperationOptionsView<'_>,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
-    pipeline_ctx: &PipelineContext<'_>,
+    location_state_store: &LocationStateStore,
+    transport: &CosmosTransport,
+    account_endpoint: &AccountEndpoint,
+    credential: &Credential,
+    user_agent: &azure_core::http::headers::HeaderValue,
+    activity_id: &ActivityId,
+    pipeline_type: PipelineType,
+    transport_security: TransportSecurity,
     diagnostics: DiagnosticsContextBuilder,
+    session_manager: &SessionManager,
+    account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<&ThroughputControlGroupSnapshot>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
-) -> crate::error::Result<CosmosResponse> {
+) -> azure_core::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
-    let location_snapshot = pipeline_ctx.location_state_store.snapshot();
+    let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
 
     // Determine if session consistency is active for this operation.
@@ -97,7 +158,7 @@ pub(crate) async fn execute_operation_pipeline(
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
     let session_consistency_active = !session_capturing_disabled
-        && read_consistency_strategy.is_session_effective(pipeline_ctx.account_default_consistency);
+        && read_consistency_strategy.is_session_effective(account_default_consistency);
     let max_session_retries = options
         .max_session_retry_count()
         .copied()
@@ -161,7 +222,7 @@ pub(crate) async fn execute_operation_pipeline(
     // would silently bypass an equality gate. Equivalently
     // `!pipeline_type.is_metadata()` (the metadata pipeline is the only
     // current variant that is out of spec scope).
-    retry_state.is_dataplane = pipeline_ctx.pipeline_type.is_data_plane();
+    retry_state.is_dataplane = pipeline_type.is_data_plane();
 
     let deadline = options
         .end_to_end_latency_policy()
@@ -169,17 +230,15 @@ pub(crate) async fn execute_operation_pipeline(
 
     loop {
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
-        let location = pipeline_ctx.location_state_store.snapshot();
+        let location = location_state_store.snapshot();
 
         // ── STAGE 2: Resolve endpoint ──────────────────────────────────
         let routing = resolve_endpoint(
             operation,
             &retry_state,
             &location,
-            pipeline_ctx.pipeline_type.is_data_plane(),
-            pipeline_ctx
-                .location_state_store
-                .endpoint_unavailability_ttl(),
+            pipeline_type.is_data_plane(),
+            location_state_store.endpoint_unavailability_ttl(),
         );
 
         // Emit one structured debug record per attempt with the chosen
@@ -193,14 +252,14 @@ pub(crate) async fn execute_operation_pipeline(
         // ── STAGE 3: Build transport request ───────────────────────────
         let execution_context = compute_execution_context(&retry_state);
 
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
-            activity_id: pipeline_ctx.activity_id,
+            activity_id,
             execution_context,
             deadline,
             resolved_session_token: session_consistency_active
                 .then(|| {
-                    pipeline_ctx.session_manager.resolve_session_token(
+                    session_manager.resolve_session_token(
                         operation,
                         operation.request_headers().session_token.as_ref(),
                     )
@@ -209,7 +268,7 @@ pub(crate) async fn execute_operation_pipeline(
             throughput_control,
         };
         let mut transport_request =
-            build_transport_request(operation, custom_headers, &request_ctx)?;
+            build_transport_request(operation, &overrides, custom_headers, &ctx)?;
 
         // HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §3.4:
         // Emit the `x-ms-cosmos-hub-region-processing-only: True` header
@@ -226,13 +285,11 @@ pub(crate) async fn execute_operation_pipeline(
             url = %transport_request.url,
             "transport request created");
 
-        let selected_transport = match pipeline_ctx.pipeline_type {
-            PipelineType::DataPlane => pipeline_ctx
-                .transport
-                .get_dataplane_transport(pipeline_ctx.account_endpoint, routing.transport_mode)?,
-            PipelineType::Metadata => pipeline_ctx
-                .transport
-                .get_metadata_transport(pipeline_ctx.account_endpoint)?,
+        let selected_transport = match pipeline_type {
+            PipelineType::DataPlane => {
+                transport.get_dataplane_transport(account_endpoint, routing.transport_mode)?
+            }
+            PipelineType::Metadata => transport.get_metadata_transport(account_endpoint)?,
         };
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
@@ -242,10 +299,10 @@ pub(crate) async fn execute_operation_pipeline(
             &TransportPipelineContext {
                 transport: &selected_transport,
                 allow_sent_transport_retry: operation.is_read_only() || operation.is_idempotent(),
-                credential: pipeline_ctx.credential,
-                user_agent: pipeline_ctx.user_agent,
-                pipeline_type: pipeline_ctx.pipeline_type,
-                transport_security: pipeline_ctx.transport_security,
+                credential,
+                user_agent,
+                pipeline_type,
+                transport_security,
                 endpoint_key: routing.endpoint.endpoint_key(),
             },
             &mut diagnostics,
@@ -279,9 +336,7 @@ pub(crate) async fn execute_operation_pipeline(
                     cosmos_headers.substatus.as_ref(),
                     &result.outcome,
                 ) {
-                    pipeline_ctx
-                        .session_manager
-                        .capture_session_token(operation, cosmos_headers);
+                    session_manager.capture_session_token(operation, cosmos_headers);
                 }
             }
         }
@@ -309,10 +364,7 @@ pub(crate) async fn execute_operation_pipeline(
             effects,
         );
         retry_state.pending_write_effects.extend(deferred_effects);
-        pipeline_ctx
-            .location_state_store
-            .apply(&immediate_effects)
-            .await;
+        location_state_store.apply(&immediate_effects).await;
 
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
@@ -322,17 +374,16 @@ pub(crate) async fn execute_operation_pipeline(
                 // healthy, so the previously-failed regions can be safely
                 // marked unavailable for this partition (and endpoint, when
                 // PPAF is active).
-                flush_pending_write_effects(&mut retry_state, pipeline_ctx.location_state_store)
-                    .await;
+                flush_pending_write_effects(&mut retry_state, location_state_store).await;
 
                 // If a PPCB probe request succeeded, remove the ProbeCandidate entry.
-                try_cleanup_probe_candidate(&retry_state, pipeline_ctx.location_state_store);
+                try_cleanup_probe_candidate(&retry_state, location_state_store);
 
                 return build_cosmos_response(result, diagnostics);
             }
             OperationAction::FailoverRetry { new_state, delay } => {
                 tracing::debug!(
-                    activity_id = %pipeline_ctx.activity_id,
+                    activity_id = %activity_id,
                     failover_attempt = new_state.failover_retry_count,
                     delay = ?delay,
                     effects = ?immediate_effects,
@@ -343,7 +394,7 @@ pub(crate) async fn execute_operation_pipeline(
                 advance_to_next_attempt(
                     &mut retry_state,
                     new_state,
-                    pipeline_ctx.location_state_store,
+                    location_state_store,
                     operation.is_read_only(),
                 );
                 enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
@@ -358,12 +409,12 @@ pub(crate) async fn execute_operation_pipeline(
                 advance_to_next_attempt(
                     &mut retry_state,
                     new_state,
-                    pipeline_ctx.location_state_store,
+                    location_state_store,
                     operation.is_read_only(),
                 );
                 enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
             }
-            OperationAction::Abort { error } => {
+            OperationAction::Abort { error, status } => {
                 // Flush deferred write-path effects if the abort status
                 // confirms the region processed the request (e.g., 409
                 // Conflict, 412 Precondition Failed). On non-confirming
@@ -371,20 +422,15 @@ pub(crate) async fn execute_operation_pipeline(
                 // the buffered effects are discarded — we never proved any
                 // region was actually healthy, so polluting routing state
                 // would be wrong.
-                let status = error.status();
-                let confirming = is_region_confirming_status(&status);
+                let confirming = status.as_ref().is_some_and(is_region_confirming_status);
                 if confirming {
-                    flush_pending_write_effects(
-                        &mut retry_state,
-                        pipeline_ctx.location_state_store,
-                    )
-                    .await;
+                    flush_pending_write_effects(&mut retry_state, location_state_store).await;
                 } else {
                     retry_state.pending_write_effects.clear();
                 }
 
                 tracing::error!(
-                    activity_id = %pipeline_ctx.activity_id,
+                    activity_id = %activity_id,
                     status = ?status,
                     error = %error,
                     operation_type = ?operation.operation_type(),
@@ -396,7 +442,12 @@ pub(crate) async fn execute_operation_pipeline(
                     pk_range_id = ?retry_state.partition_key_range_id,
                     "operation aborted",
                 );
-                diagnostics.set_operation_status(status.status_code(), status.sub_status());
+                if let Some(cosmos_status) = status {
+                    diagnostics.set_operation_status(
+                        cosmos_status.status_code(),
+                        cosmos_status.sub_status(),
+                    );
+                }
                 return Err(error);
             }
         }
@@ -744,14 +795,17 @@ struct TransportRequestContext<'a> {
 /// Builds a `TransportRequest` from the operation and routing decision.
 ///
 /// If `resolved_session_token` is provided, it is added to the request headers.
+/// Override headers from `overrides` are applied after operation headers, so they
+/// take precedence.
 fn build_transport_request(
     operation: &CosmosOperation,
+    overrides: &OperationOverrides,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
-    request_ctx: &TransportRequestContext<'_>,
-) -> crate::error::Result<TransportRequest> {
+    ctx: &TransportRequestContext<'_>,
+) -> azure_core::Result<TransportRequest> {
     let paths = operation.compute_resource_paths();
     let url = {
-        let mut base = request_ctx.routing.selected_url.clone();
+        let mut base = ctx.routing.selected_url.clone();
         let request_path = paths.request_path();
         let normalized = if request_path.starts_with('/') {
             request_path.to_string()
@@ -786,58 +840,57 @@ fn build_transport_request(
     if operation.request_headers().activity_id.is_none() {
         headers.insert(
             HeaderName::from_static("x-ms-activity-id"),
-            HeaderValue::from(request_ctx.activity_id.as_str().to_owned()),
+            HeaderValue::from(ctx.activity_id.as_str().to_owned()),
         );
     }
 
-    // Add partition key headers
-    if let Some(pk) = operation.partition_key() {
-        let pk_headers = pk.as_headers()?;
-        for (name, value) in pk_headers {
-            headers.insert(name, value);
+    // Apply operation type-specific headers.
+    match operation.operation_type() {
+        OperationType::Upsert => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_UPSERT),
+                HeaderValue::from_static("true"),
+            );
         }
-    }
-
-    // Cosmos DB uses POST for both create and upsert; the service
-    // distinguishes them via this header.
-    if operation.operation_type() == OperationType::Upsert {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_UPSERT),
-            HeaderValue::from_static("true"),
-        );
-    }
-
-    // Cosmos DB queries are POST requests with a JSON body of shape
-    // `{"query": "...", "parameters": [...]}`. The service requires both the
-    // IsQuery flag and the query+json content type. Emitting these here
-    // (driven by OperationType::Query) means SDK callers and tests never need
-    // to put these well-known headers into `custom_headers`.
-    if operation.operation_type() == OperationType::Query {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_QUERY),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            azure_core::http::headers::CONTENT_TYPE,
-            HeaderValue::from_static(request_header_names::QUERY_CONTENT_TYPE),
-        );
-    }
-
-    // Cosmos DB uses POST for batch (same endpoint as create/upsert);
-    // the service requires these headers to process the request as a batch.
-    if operation.operation_type() == OperationType::Batch {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_BATCH_REQUEST),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            HeaderName::from_static(request_header_names::BATCH_ATOMIC),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
-            HeaderValue::from_static("False"),
-        );
+        OperationType::Batch => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_BATCH_REQUEST),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::BATCH_ATOMIC),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
+                HeaderValue::from_static("False"),
+            );
+        }
+        OperationType::Query | OperationType::SqlQuery => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(QUERY_CONTENT_TYPE),
+            );
+        }
+        OperationType::QueryPlan => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(QUERY_CONTENT_TYPE),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY_PLAN_REQUEST),
+                HeaderValue::from_static("True"),
+            );
+        }
+        _ => {}
     }
 
     // Add operation type header for fault injection rule matching
@@ -854,8 +907,12 @@ fn build_transport_request(
         }
     }
 
+    // Apply overrides — these take precedence over operation-level headers
+    // (e.g., an override partition key replaces the operation's partition key).
+    overrides.apply_headers(&mut headers)?;
+
     // Add resolved session token
-    if let Some(token) = &request_ctx.resolved_session_token {
+    if let Some(token) = &ctx.resolved_session_token {
         headers.insert(
             request_header_names::SESSION_TOKEN,
             HeaderValue::from(token.as_str().to_owned()),
@@ -863,7 +920,7 @@ fn build_transport_request(
     }
 
     // Add throughput control headers from the resolved group
-    if let Some(group) = request_ctx.throughput_control {
+    if let Some(group) = ctx.throughput_control {
         if let Some(priority) = group.priority_level() {
             headers.insert(
                 request_header_names::PRIORITY_LEVEL,
@@ -880,13 +937,13 @@ fn build_transport_request(
 
     Ok(TransportRequest {
         method,
-        endpoint: request_ctx.routing.endpoint.clone(),
+        endpoint: ctx.routing.endpoint.clone(),
         url,
         headers,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,
-        execution_context: request_ctx.execution_context,
-        deadline: request_ctx.deadline,
+        execution_context: ctx.execution_context,
+        deadline: ctx.deadline,
     })
 }
 
@@ -894,7 +951,7 @@ fn build_transport_request(
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
-) -> crate::error::Result<CosmosResponse> {
+) -> azure_core::Result<CosmosResponse> {
     match result.outcome {
         TransportOutcome::Success {
             status,
@@ -914,9 +971,9 @@ fn build_cosmos_response(
         }
         _ => {
             // This should only be called with a Complete(Success) result
-            Err(crate::error::Error::client(
+            Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
                 "build_cosmos_response called with non-success result",
-                None,
             ))
         }
     }
@@ -1109,7 +1166,7 @@ fn enforce_deadline_or_timeout(
     deadline: Option<Instant>,
     options: &OperationOptionsView<'_>,
     diagnostics: &mut DiagnosticsContextBuilder,
-) -> crate::error::Result<()> {
+) -> azure_core::Result<()> {
     let Some(d) = deadline else {
         return Ok(());
     };
@@ -1126,9 +1183,9 @@ fn enforce_deadline_or_timeout(
         azure_core::http::StatusCode::RequestTimeout,
         Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
     );
-    Err(crate::error::Error::end_to_end_timeout(
+    Err(azure_core::Error::new(
+        azure_core::error::ErrorKind::Other,
         format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-        None,
     ))
 }
 
@@ -1185,6 +1242,7 @@ mod tests {
     use url::Url;
 
     use super::build_transport_request;
+    use super::OperationOverrides;
     use super::TransportRequestContext;
     use crate::{
         diagnostics::ExecutionContext,
@@ -1197,8 +1255,8 @@ mod tests {
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
-            ContainerReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey,
-            PartitionKeyDefinition, SystemProperties, ThroughputControlGroupName,
+            ContainerReference, CosmosOperation, DatabaseReference, FeedRange, ItemReference,
+            PartitionKey, PartitionKeyDefinition, SystemProperties, ThroughputControlGroupName,
         },
         options::{PriorityLevel, ThroughputControlGroupSnapshot},
     };
@@ -1249,7 +1307,7 @@ mod tests {
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -1258,7 +1316,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs");
     }
@@ -1270,7 +1329,7 @@ mod tests {
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -1279,7 +1338,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
@@ -1291,7 +1351,7 @@ mod tests {
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -1300,7 +1360,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         let activity_header = request
             .headers
@@ -1317,7 +1378,7 @@ mod tests {
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Retry,
@@ -1325,8 +1386,12 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
         };
-        let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+        let overrides = OperationOverrides {
+            partition_key: Some(PartitionKey::from("pk1")),
+            ..Default::default()
+        };
+        let request = build_transport_request(&operation, &overrides, None, &ctx)
+            .expect("request should build");
 
         let partition_key_header = request
             .headers
@@ -1350,7 +1415,7 @@ mod tests {
         };
 
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -1359,7 +1424,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(
             request.url.as_str(),
@@ -1380,7 +1446,7 @@ mod tests {
         };
 
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -1389,7 +1455,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(
             request.url.as_str(),
@@ -2529,7 +2596,7 @@ mod tests {
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -2538,7 +2605,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         let is_upsert = request
             .headers
@@ -2561,7 +2629,7 @@ mod tests {
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -2570,7 +2638,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert!(
             request
@@ -2595,7 +2664,7 @@ mod tests {
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -2604,7 +2673,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(
             request
@@ -2641,7 +2711,7 @@ mod tests {
 
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -2650,7 +2720,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &request_ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert!(
             request
@@ -2679,7 +2750,7 @@ mod tests {
         )
         .with_priority_level(PriorityLevel::Low);
 
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -2687,7 +2758,9 @@ mod tests {
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
-        let request = build_transport_request(&operation, None, &request_ctx).unwrap();
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .unwrap();
 
         let priority = request
             .headers
@@ -2722,7 +2795,7 @@ mod tests {
         )
         .with_throughput_bucket(42);
 
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -2730,7 +2803,9 @@ mod tests {
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
-        let request = build_transport_request(&operation, None, &request_ctx).unwrap();
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .unwrap();
 
         let bucket = request
             .headers
@@ -2766,7 +2841,7 @@ mod tests {
         .with_priority_level(PriorityLevel::High)
         .with_throughput_bucket(100);
 
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -2774,7 +2849,9 @@ mod tests {
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
-        let request = build_transport_request(&operation, None, &request_ctx).unwrap();
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .unwrap();
 
         assert_eq!(
             request.headers.get_optional_str(&HeaderName::from_static(
@@ -2792,15 +2869,19 @@ mod tests {
 
     #[test]
     fn build_transport_request_auto_emits_query_headers_for_query_operations() {
-        // Single-partition item query
-        let op = CosmosOperation::query_items(test_container(), PartitionKey::from("pk1"))
-            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
-        assert_query_headers_present(&op, "query_items");
+        let container = test_container();
+        let pk_def = container.partition_key_definition().clone();
 
-        // Cross-partition item query
-        let op = CosmosOperation::query_items_cross_partition(test_container())
+        // Single-partition item query (scoped to a logical partition via FeedRange)
+        let feed_range = FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
+        let op = CosmosOperation::query_items(container.clone(), Some(feed_range))
             .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
-        assert_query_headers_present(&op, "query_items_cross_partition");
+        assert_query_headers_present(&op, "query_items (single partition)");
+
+        // Cross-partition item query (full container via FeedRange::full)
+        let op = CosmosOperation::query_items(container, Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        assert_query_headers_present(&op, "query_items (cross partition)");
 
         // Offer query (used by find_offer / throughput poller path)
         let op = CosmosOperation::query_offers(test_account())
@@ -2814,7 +2895,7 @@ mod tests {
     fn assert_query_headers_present(op: &CosmosOperation, label: &str) {
         let routing = test_routing();
         let activity_id = ActivityId::new_uuid();
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -2822,7 +2903,8 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
         };
-        let req = build_transport_request(op, None, &request_ctx).expect("request should build");
+        let req = build_transport_request(op, &OperationOverrides::default(), None, &ctx)
+            .expect("request should build");
         assert_eq!(
             req.headers
                 .get_optional_str(&HeaderName::from_static(request_header_names::IS_QUERY)),
@@ -2832,7 +2914,7 @@ mod tests {
         assert_eq!(
             req.headers
                 .get_optional_str(&azure_core::http::headers::CONTENT_TYPE),
-            Some(request_header_names::QUERY_CONTENT_TYPE),
+            Some(crate::models::cosmos_headers::QUERY_CONTENT_TYPE),
             "{label}: Content-Type should be application/query+json"
         );
     }
@@ -2894,7 +2976,7 @@ mod tests {
         let operation = CosmosOperation::read_all_databases(test_account());
         let routing = test_routing();
         let activity_id = ActivityId::from_string("hub-region-test".to_string());
-        let request_ctx = TransportRequestContext {
+        let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
             execution_context: ExecutionContext::Initial,
@@ -2902,7 +2984,8 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
         };
-        build_transport_request(&operation, None, &request_ctx).expect("request should build")
+        build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+            .expect("request should build")
     }
 
     /// T-6 — When the latch is set on `retry_state`, the helper emits
@@ -3007,7 +3090,7 @@ mod tests {
         let deadline = std::time::Instant::now() - Duration::from_millis(1);
         let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
         let err = result.expect_err("past deadline should produce an error");
-        assert!(matches!(err.kind(), crate::error::Kind::Transport));
+        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
         let msg = err.to_string();
         assert!(
             msg.contains("end-to-end operation timeout exceeded"),

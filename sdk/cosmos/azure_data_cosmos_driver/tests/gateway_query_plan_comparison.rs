@@ -135,28 +135,29 @@ async fn fetch_gateway_plan(
     };
     let body = serde_json::to_vec(&query_body)?;
 
-    // Headers required for a query-plan request are folded in by
-    // `CosmosOperation::query_plan` (see #12). We pre-populate the
-    // cross-partition toggle (specific to gateway-comparison tests) via the
-    // typed request-headers field, and let the factory merge the four
-    // mandatory query-plan headers on top.
-    let caller_options = OperationOptions::default();
-    let (operation, op_options) = CosmosOperation::query_plan(container.clone(), caller_options);
-    let mut request_headers = operation.request_headers().clone();
-    request_headers.enable_cross_partition_query = true;
-    let operation = operation
-        .with_request_headers(request_headers)
-        .with_body(body);
-
+    let operation = CosmosOperation::query_plan(
+        container.clone(),
+        azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES.into(),
+    )
+    .with_body(body);
     let response = driver
-        .execute_operation(operation, op_options)
+        .execute_operation(operation, OperationOptions::default())
         .await
         .map_err(|e| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
         })?;
-    response.into_body().into_single().map_err(|e| {
-        azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
-    })
+    response
+        .ok_or_else(|| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "gateway query-plan request returned no response body",
+            )
+        })?
+        .into_body()
+        .into_single()
+        .map_err(|e| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
+        })
 }
 
 /// Compare a locally-generated `queryInfo` JSON object against what the Cosmos DB

@@ -7,20 +7,31 @@ use crate::{
     diagnostics::{
         DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
     },
-    driver::routing::{
-        partition_endpoint_state::PartitionFailoverConfig,
-        partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
-        CosmosEndpoint, LocationStateStore,
+    driver::{
+        cache::{PartitionKeyRangeCache, PkRangeFetchResult},
+        dataflow::{
+            planner, query_plan::QueryPlan, CachedTopologyProvider, OperationPlan,
+            PartitionRoutingRefresh, PipelineContext, PipelineNodeState, RequestExecutor,
+            RequestTarget, TopologyProvider,
+        },
+        pipeline::operation_pipeline::OperationOverrides,
+        routing::{
+            partition_endpoint_state::PartitionFailoverConfig,
+            partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
+            CosmosEndpoint, LocationStateStore,
+        },
+        transport::{is_emulator_host, uses_dataplane_pipeline},
     },
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
-        ActivityId, ContainerProperties, ContainerReference, CosmosOperation, DatabaseProperties,
-        DatabaseReference, PartitionKey, ResourceType,
+        ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
+        DatabaseProperties, DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
     },
     options::{
-        ConnectionPoolOptions, DiagnosticsOptions, DriverOptions, OperationOptions,
-        OperationOptionsView, ThroughputControlGroupSnapshot,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
+        ThroughputControlGroupSnapshot,
     },
+    ActivityId, CosmosResponse, DiagnosticsOptions,
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
@@ -30,13 +41,64 @@ use std::time::Duration;
 use url::Url;
 
 use super::{
-    cache::{parse_pk_ranges_response, AccountRegion, PartitionKeyRangeCache, PkRangeFetchResult},
+    cache::{parse_pk_ranges_response, AccountRegion},
     transport::{
-        cosmos_headers, cosmos_transport_client::HttpRequest, is_emulator_host, request_signing,
-        uses_dataplane_pipeline, AuthorizationContext, CosmosTransport,
+        cosmos_headers, cosmos_transport_client::HttpRequest, request_signing,
+        AuthorizationContext, CosmosTransport,
     },
     CosmosDriverRuntime,
 };
+
+struct DriverRequestExecutor<'a> {
+    driver: &'a CosmosDriver,
+    options: &'a OperationOptions,
+}
+
+fn request_target_overrides(
+    target: RequestTarget,
+    continuation: Option<String>,
+) -> OperationOverrides {
+    match target {
+        RequestTarget::LogicalPartitionKey(pk) => OperationOverrides {
+            partition_key: Some(pk),
+            continuation,
+            ..Default::default()
+        },
+        RequestTarget::EffectivePartitionKeyRange {
+            partition_key_range_id,
+            range,
+            ..
+        } => OperationOverrides {
+            partition_key_range_id: Some(partition_key_range_id),
+            feed_range: Some(range),
+            continuation,
+            ..Default::default()
+        },
+        RequestTarget::NonPartitioned => OperationOverrides {
+            continuation,
+            ..Default::default()
+        },
+    }
+}
+
+impl RequestExecutor for DriverRequestExecutor<'_> {
+    fn execute_request<'a>(
+        &'a mut self,
+        operation: &'a CosmosOperation,
+        target: RequestTarget,
+        _partition_routing_refresh: PartitionRoutingRefresh,
+        continuation: Option<String>,
+    ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>> {
+        let driver = self.driver;
+        let overrides = request_target_overrides(target, continuation);
+
+        Box::pin(async move {
+            driver
+                .execute_operation_direct(operation, overrides, self.options)
+                .await
+        })
+    }
+}
 
 /// Cosmos DB driver instance.
 ///
@@ -644,7 +706,7 @@ impl CosmosDriver {
         let options = OperationOptions::default();
 
         let db_result = self
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_database(db_ref.clone()),
                 options.clone(),
             )
@@ -669,7 +731,7 @@ impl CosmosDriver {
         })?;
 
         let container_result = self
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
                 options,
             )
@@ -717,7 +779,7 @@ impl CosmosDriver {
         let options = OperationOptions::default();
 
         let db_result = self
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_database(db_ref.clone()),
                 options.clone(),
             )
@@ -739,7 +801,7 @@ impl CosmosDriver {
             .unwrap_or_else(|| db_rid.to_owned());
 
         let container_result = self
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_container_by_rid(db_ref, container_rid.to_owned()),
                 options,
             )
@@ -1059,7 +1121,10 @@ impl CosmosDriver {
 
         let options = OperationOptions::default();
 
-        match self.execute_operation(operation, options).await {
+        match self
+            .execute_operation_direct(&operation, OperationOverrides::default(), &options)
+            .await
+        {
             Ok(response) => {
                 let etag = response.headers().etag.as_ref().map(|e| e.to_string());
 
@@ -1175,7 +1240,9 @@ impl CosmosDriver {
 
         // Need both a container reference and a partition key.
         let container = operation.container()?;
-        let partition_key = operation.partition_key()?;
+        let Some(partition_key) = operation.target().and_then(|t| t.partition_key()) else {
+            return None;
+        };
 
         self.pk_range_cache
             .resolve_partition_key_range_id(container, partition_key, false, |c, cont| {
@@ -1187,23 +1254,32 @@ impl CosmosDriver {
 
     /// Executes a Cosmos DB operation.
     ///
-    /// This method computes effective options by merging the provided operation options
-    /// with driver and runtime defaults, then executes the operation.
+    /// This method executes an operation by planning it first and then immediately
+    /// executing one page. This is sufficient for operations with trivial plans,
+    /// such as point operations and single-partition queries.
+    /// However, if planning is complicated and multiple pages are going to be requested,
+    /// in that case, the caller should use the [`plan_operation`](Self::plan_operation)
+    /// method to build a [`OperationPlan`] and then call [`execute_plan`](Self::execute_plan)
+    /// for each page of the plan.
+    /// Retaining the [`OperationPlan`] allows the caller to resume execution from a
+    /// previous page, maintaining all state, and avoiding unnecessary replanning
+    /// and continuation token management.
     ///
     /// # Parameters
     ///
-    /// - `operation`: The operation to execute
-    /// - `options`: Operation-specific options that override driver and runtime defaults
+    /// - `operation`: The operation to execute.
+    /// - `options`: Operation-specific options that override driver and runtime defaults.
     ///
     /// # Returns
     ///
-    /// Returns a [`crate::models::CosmosResponse`] on success.
+    /// Returns `Ok(Some(response))` when a page of results is produced, or
+    /// `Ok(None)` when the pipeline is fully drained (no more pages).
     ///
     /// # Errors
     ///
     /// Returns an error if:
-    /// - The account has no authentication configured
-    /// - The resource reference cannot produce a valid path
+    /// - The driver has not been initialized
+    /// - Planning fails (e.g. invalid operation target, backend query plan error)
     /// - The HTTP request fails
     ///
     /// # Example
@@ -1224,12 +1300,12 @@ impl CosmosDriver {
     ///
     /// let driver = runtime.get_or_create_driver(account, None).await?;
     ///
-    /// // Execute operations with operation-specific options that override defaults
+    /// // Point operation: plan and execute in one call.
     /// let options = OperationOptionsBuilder::new()
     ///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
     ///     .build();
     ///
-    /// // let result = driver.execute_operation(operation, options).await?;
+    /// // let result = driver.execute_operation(operation, options, None).await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -1237,7 +1313,79 @@ impl CosmosDriver {
         &self,
         operation: CosmosOperation,
         options: OperationOptions,
+    ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
+        // PATCH is a virtual operation type: dispatch it to the dedicated
+        // Read-Modify-Write handler before any of the standard pipeline steps
+        // run, because the handler issues its own Read/Replace operations
+        // through this same entry point. `Box::pin` is required so the
+        // resulting async future has a fixed size even though it can recurse.
+        if operation.operation_type() == crate::models::OperationType::Patch {
+            let max_attempts = operation.patch_max_attempts();
+            return Box::pin(async {
+                let result = crate::driver::pipeline::patch_handler::execute(
+                    self,
+                    operation,
+                    options,
+                    max_attempts,
+                )
+                .await?;
+                Ok(Some(result))
+            })
+            .await;
+        }
+
+        // TODO: This boxing is a temporary fix to avoid a large future.
+        // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
+        Box::pin(async {
+            let container = operation.container().cloned();
+            let mut plan = self.plan_operation(operation, &options, None).await?;
+            self.execute_plan(&mut plan, container, options).await
+        })
+        .await
+    }
+
+    /// Executes a singleton operation (operations which return only a single result).
+    ///
+    /// This is a convenience method around [`execute_operation`](CosmosDriver::execute_operation) that asserts at debug-time that the operation
+    /// does not return an empty page.
+    pub async fn execute_singleton_operation(
+        &self,
+        operation: CosmosOperation,
+        options: OperationOptions,
     ) -> crate::error::Result<crate::models::CosmosResponse> {
+        debug_assert!(
+            !operation.operation_type().is_feed(),
+            "execute_singleton_operation should only be used for operations that return a single result, but '{} {}' is a feed operation",
+            operation.operation_type(),
+            operation.resource_type()
+        );
+        match self.execute_operation(operation, options).await {
+            Ok(Some(r)) => Ok(r),
+            Ok(None) => {
+                if cfg!(debug_assertions) {
+                    panic!("singleton operation returned an empty page")
+                }
+                Err(crate::error::Error::client(
+                    "internal error: singleton operation returned an empty page",
+                    None,
+                ))
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    /// Executes a single page of a pre-planned operation using the given plan and options.
+    ///
+    /// This function mutates the plan in place to account for any changes that occur during execution
+    /// (e.g. topology repairs, advancing page state, etc.).
+    /// After this returns, the plan may be executed again to fetch the next page of results, if any.
+    /// Once this returns `None`, there are no more pages to fetch, and the operation is complete.
+    pub async fn execute_plan(
+        &self,
+        plan: &mut OperationPlan,
+        container: Option<ContainerReference>,
+        options: OperationOptions,
+    ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
             return Err(crate::error::Error::client(
@@ -1248,27 +1396,43 @@ impl CosmosDriver {
                 None,
             ));
         }
+        tracing::debug!("plan execution started");
 
-        // PATCH is a virtual operation type: dispatch it to the dedicated
-        // Read-Modify-Write handler before any of the standard pipeline steps
-        // run, because the handler issues its own Read/Replace operations
-        // through this same entry point. `Box::pin` is required so the
-        // resulting async future has a fixed size even though it can recurse.
-        if operation.operation_type() == crate::models::OperationType::Patch {
-            let max_attempts = operation.patch_max_attempts();
-            return Box::pin(crate::driver::pipeline::patch_handler::execute(
-                self,
-                operation,
-                options,
-                max_attempts,
-            ))
-            .await;
-        }
+        let mut executor = DriverRequestExecutor {
+            driver: self,
+            options: &options,
+        };
 
-        tracing::debug!("operation started");
+        let mut topology = container.map(|c| {
+            CachedTopologyProvider::new(&self.pk_range_cache, c, |container, continuation| {
+                self.fetch_pk_ranges_from_service(container, continuation)
+            })
+        });
+
+        let mut context = PipelineContext::new(
+            &mut executor,
+            topology.as_mut().map(|t| t as &mut dyn TopologyProvider),
+        );
+
+        plan.pipeline.next_page(&mut context).await
+    }
+
+    async fn execute_operation_direct(
+        &self,
+        operation: &CosmosOperation,
+        overrides: OperationOverrides,
+        options: &OperationOptions,
+    ) -> crate::error::Result<CosmosResponse> {
+        tracing::debug!(
+            operation_type = ?operation.operation_type(),
+            resource_type = ?operation.resource_type(),
+            resource_reference = ?operation.resource_reference(),
+            overrides = ?overrides,
+            body_length = operation.body().map(|b| b.len()),
+            "executing operation");
 
         // Step 1: Build the single OperationOptionsView for layered resolution.
-        let effective_options = self.operation_options_view(&options);
+        let effective_options = self.operation_options_view(options);
 
         // Step 2: Resolve effective throughput control group (if any).
         let effective_control_group = match operation.container() {
@@ -1314,7 +1478,7 @@ impl CosmosDriver {
         // When partition-level failover is enabled, resolving the range ID
         // before the first attempt lets the pipeline apply partition overrides
         // from the very first request instead of only after the first retry.
-        let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(&operation).await;
+        let pre_resolved_pk_range_id = self.pre_resolve_partition_key_range_id(operation).await;
 
         // Step 6: Select the adaptive transport context for the chosen pipeline
         let transport = self.transport();
@@ -1369,7 +1533,8 @@ impl CosmosDriver {
                 .default_consistency_level,
         };
         super::pipeline::operation_pipeline::execute_operation_pipeline(
-            &operation,
+            operation,
+            overrides,
             &effective_options,
             options.custom_headers(),
             &pipeline_ctx,
@@ -1415,7 +1580,7 @@ impl CosmosDriver {
     /// // Use the resolved container for item operations
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
     /// let result = driver
-    ///     .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
+    ///     .execute_singleton_operation(CosmosOperation::read_item(item), OperationOptions::default())
     ///     .await?;
     /// # Ok(())
     /// # }
@@ -1487,6 +1652,131 @@ impl CosmosDriver {
             .await?;
 
         Ok(resolved.as_ref().clone())
+    }
+
+    /// Plans the execution of a Cosmos DB operation.
+    ///
+    /// For trivial operations (non-query or single-partition), returns a
+    /// singleton pipeline immediately. For cross-partition queries, fetches a
+    /// query plan from the backend and builds a fan-out pipeline.
+    ///
+    /// `continuation` optionally provides resume state from a prior call. Two
+    /// kinds of tokens are accepted:
+    ///
+    /// - SDK-issued tokens (`c1.…`) carry a serialized snapshot of the
+    ///   previous pipeline's state and can resume any operation.
+    /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
+    ///   for trivial operations; passing one to a cross-partition query
+    ///   returns a [`DataConversion`](azure_core::error::ErrorKind::DataConversion)
+    ///   error.
+    pub async fn plan_operation(
+        &self,
+        operation: CosmosOperation,
+        options: &OperationOptions,
+        continuation: Option<&ContinuationToken>,
+    ) -> crate::error::Result<OperationPlan> {
+        if !self.initialized.load(Ordering::Acquire) {
+            let endpoint = AccountEndpoint::from(self.options.account());
+            return Err(crate::error::Error::client(
+                format!(
+                    "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
+                     use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
+                ),
+                None,
+            ));
+        }
+
+        tracing::debug!(operation_type = ?operation.operation_type(), resource_type = ?operation.resource_type(), resource_reference = ?operation.resource_reference(), "planning operation");
+
+        // Share the operation across every Request node in the resulting plan.
+        // Per-Request differences are layered on at execution time via
+        // OperationOverrides; the operation itself is never mutated.
+        let operation = Arc::new(operation);
+
+        // Resolve the continuation token (if any) into a planner-ready resume
+        // state. Server-issued tokens are only valid for trivial operations.
+        let resume_state = match continuation {
+            None => None,
+            Some(token) => match token.resolve()? {
+                ResolvedToken::ClientV1(state) => {
+                    // Validate the state is valid for this operation.
+                    state.is_valid_for_operation(&operation)?;
+                    Some(state.into_root_node_state())
+                }
+                ResolvedToken::ServerOpaque(server_token) => {
+                    if !operation.is_trivial() {
+                        return Err(crate::error::Error::client(
+                            "an opaque server continuation token cannot be used to resume a \
+                             cross-partition query; use the SDK-issued continuation token from \
+                             FeedPageIterator::to_continuation_token()",
+                            None,
+                        ));
+                    }
+                    Some(PipelineNodeState::Request {
+                        server_continuation: Some(server_token),
+                    })
+                }
+            },
+        };
+
+        // Trivial plan: anything that isn't a cross-partition query.
+        if operation.is_trivial() {
+            let pipeline = planner::build_trivial_pipeline(operation.clone(), resume_state)?;
+            return Ok(OperationPlan::new(pipeline, operation));
+        }
+
+        // Cross-partition query: fetch query plan from backend.
+        let container = operation.container().ok_or_else(|| {
+            crate::error::Error::client(
+                "cross-partition query requires a container reference",
+                None,
+            )
+        })?;
+
+        // Currently, we don't support any extra query features (like ordering, etc.)
+        let query_plan_operation = CosmosOperation::query_plan(container.clone(), "".into())
+            .with_body(operation.body().unwrap_or_default().to_vec());
+
+        let response = self
+            .execute_operation_direct(
+                &query_plan_operation,
+                OperationOverrides::default(),
+                options,
+            )
+            .await?;
+
+        let query_plan_body = match response.body() {
+            crate::models::ResponseBody::Bytes(b) => b.clone(),
+            _ => {
+                return Err(crate::error::Error::serialization(
+                    "query plan response did not contain a body",
+                    None,
+                    None,
+                    std::io::Error::other("missing body"),
+                ));
+            }
+        };
+        let query_plan: QueryPlan = serde_json::from_slice(&query_plan_body).map_err(|e| {
+            crate::error::Error::serialization(
+                format!("failed to parse query plan response: {e}"),
+                None,
+                None,
+                e,
+            )
+        })?;
+
+        // Build the fan-out pipeline using the query plan.
+        let container_ref = container.clone();
+        let mut topology = CachedTopologyProvider::new(
+            &self.pk_range_cache,
+            container_ref,
+            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
+        );
+
+        let pipeline =
+            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
+                .await?;
+        Ok(OperationPlan::new(pipeline, operation))
     }
 
     /// Returns all partition key ranges for a container, ordered by min EPK.
@@ -2306,15 +2596,17 @@ mod tests {
         );
     }
 
-    /// Compile-time assertion that the `execute_operation` future is `Send`.
+    /// Compile-time assertion that functions are send.
     ///
     /// This function is never called; it only needs to compile.
-    /// If the future returned by `execute_operation` is not `Send`, compilation will fail.
     #[allow(dead_code, unreachable_code, unused_variables)]
-    fn _assert_execute_operation_future_is_send() {
+    fn _assert_functions_are_send() {
         fn assert_send<T: Send>(_: T) {}
         let driver: &CosmosDriver = todo!();
         assert_send(driver.execute_operation(todo!(), todo!()));
+        assert_send(driver.execute_singleton_operation(todo!(), todo!()));
+        assert_send(driver.execute_plan(todo!(), todo!(), todo!()));
+        assert_send(driver.plan_operation(todo!(), todo!(), todo!()));
     }
 
     // Account properties with two readable locations for regional fallback tests.
@@ -2342,6 +2634,26 @@ mod tests {
 
     fn multi_region_previous_props() -> Arc<CachedAccountProperties> {
         Arc::new(serde_json::from_str(MULTI_REGION_ACCOUNT_PROPERTIES).unwrap())
+    }
+
+    #[test]
+    fn effective_partition_key_range_override_sets_feed_range() {
+        let range = crate::models::FeedRange::new(
+            EffectivePartitionKey::from("10"),
+            EffectivePartitionKey::from("20"),
+        )
+        .unwrap();
+        let overrides = request_target_overrides(
+            RequestTarget::EffectivePartitionKeyRange {
+                range: range.clone(),
+                partition_key_range_id: "merged".to_string(),
+            },
+            Some("ct".to_string()),
+        );
+
+        assert_eq!(overrides.partition_key_range_id.as_deref(), Some("merged"));
+        assert_eq!(overrides.continuation.as_deref(), Some("ct"));
+        assert_eq!(overrides.feed_range, Some(range));
     }
 
     #[tokio::test]

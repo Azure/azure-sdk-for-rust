@@ -45,7 +45,7 @@ impl EffectivePartitionKey {
     ///
     /// This hashes the given values according to the partition key kind and version,
     /// producing the EPK that determines which partition key range owns a given item.
-    pub fn compute(
+    pub(crate) fn compute(
         pk_values: &[PartitionKeyValue],
         kind: PartitionKeyKind,
         version: PartitionKeyVersion,
@@ -96,7 +96,7 @@ impl EffectivePartitionKey {
     /// - `pk_values.len()` exceeds `pk_definition.paths().len()`.
     /// - For non-MultiHash containers, `pk_values.len()` does not equal
     ///   `pk_definition.paths().len()` (prefix keys are only valid for MultiHash).
-    pub fn compute_range(
+    pub(crate) fn compute_range(
         pk_values: &[PartitionKeyValue],
         pk_definition: &PartitionKeyDefinition,
     ) -> crate::error::Result<std::ops::Range<Self>> {

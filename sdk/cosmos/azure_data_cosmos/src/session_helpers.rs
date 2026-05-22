@@ -3,7 +3,7 @@
 
 //! Helpers for merging and managing session tokens across feed ranges.
 
-use crate::feed_range::FeedRange;
+use crate::FeedRange;
 use azure_data_cosmos_driver::models::{SessionToken, SessionTokenSegment};
 
 /// Returns `true` if the session token string contains multiple comma-separated segments.
@@ -98,9 +98,9 @@ fn merge_ranges_with_subsets(
     // Sort by range size descending: larger ranges (parents) first.
     // Primary: max_exclusive descending, secondary: min_inclusive ascending.
     overlapping.sort_by(|(a, _), (b, _)| {
-        b.max_exclusive
-            .cmp(&a.max_exclusive)
-            .then(a.min_inclusive.cmp(&b.min_inclusive))
+        b.max_exclusive()
+            .cmp(a.max_exclusive())
+            .then(a.min_inclusive().cmp(b.min_inclusive()))
     });
 
     let mut processed = Vec::new();
@@ -187,7 +187,7 @@ fn analyze_subsets(
 ) -> crate::Result<MergeAction> {
     // Sort subsets by min_inclusive so adjacent children are always in order
     let mut sorted_subsets = subsets.to_vec();
-    sorted_subsets.sort_by(|a, b| a.1.min_inclusive.cmp(&b.1.min_inclusive));
+    sorted_subsets.sort_by(|a, b| a.1.min_inclusive().cmp(b.1.min_inclusive()));
 
     for start_idx in 0..sorted_subsets.len() {
         let mut merged_range = sorted_subsets[start_idx].1.clone();
@@ -353,13 +353,10 @@ pub(crate) fn get_latest_session_token(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hash::EffectivePartitionKey;
+    use azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey as DriverEpk;
 
     fn fr(min: &str, max: &str) -> FeedRange {
-        FeedRange {
-            min_inclusive: EffectivePartitionKey::from(min),
-            max_exclusive: EffectivePartitionKey::from(max),
-        }
+        FeedRange::new(DriverEpk::from(min), DriverEpk::from(max)).unwrap()
     }
 
     fn st(s: &str) -> SessionToken {

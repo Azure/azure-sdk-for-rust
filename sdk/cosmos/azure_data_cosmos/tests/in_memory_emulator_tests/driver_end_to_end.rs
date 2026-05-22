@@ -244,7 +244,7 @@ async fn create_database_and_container_through_driver() {
         CosmosOperation::create_container(emu_db_ref).with_body(coll_body.clone());
     let emu_create_coll = backend
         .emulator_driver
-        .execute_operation(emu_create_coll_op, OperationOptions::default())
+        .execute_singleton_operation(emu_create_coll_op, OperationOptions::default())
         .await
         .unwrap();
 
@@ -254,7 +254,7 @@ async fn create_database_and_container_through_driver() {
         let real_db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
         let real_op = CosmosOperation::create_container(real_db_ref).with_body(coll_body.clone());
         let resp = driver
-            .execute_operation(real_op, OperationOptions::default())
+            .execute_singleton_operation(real_op, OperationOptions::default())
             .await
             .unwrap();
         Some(resp)
@@ -359,7 +359,7 @@ async fn delete_item_through_driver() {
     // ── Verify item is gone (emulator) ───────────────────────────
     let emu_read_deleted = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -376,7 +376,7 @@ async fn delete_item_through_driver() {
     // ── Verify item is gone (real) ───────────────────────────────
     if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
         let real_read_deleted = driver
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_item(ItemReference::from_name(
                     real_ctr,
                     PartitionKey::from("pk1"),
@@ -508,7 +508,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
     let real_stale_token =
         if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
             let seed_result = driver
-                .execute_operation(
+                .execute_singleton_operation(
                     CosmosOperation::create_item(ItemReference::from_name(
                         real_ctr,
                         PartitionKey::from("pk1"),
@@ -535,7 +535,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
     // the emulator routed the seed write to.
     let emu_seed_result = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -563,7 +563,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
     // ── Emulator ─────────────────────────────────────────────────
     let emu_err = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -593,7 +593,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
             .clone()
             .expect("real_stale_token should be set when real driver is available");
         let real_err = driver
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_item(ItemReference::from_name(
                     real_ctr,
                     PartitionKey::from("pk1"),
@@ -630,7 +630,7 @@ async fn read_after_split_refreshes_driver_routing_map() {
 
     let create = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -667,7 +667,7 @@ async fn read_after_split_refreshes_driver_routing_map() {
 
     let read = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -846,7 +846,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .unwrap();
 
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -866,7 +866,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .unwrap();
 
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::replace_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -890,7 +890,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .build();
 
     let west_read_before_resume = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -909,7 +909,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
     emulator_store.resume_replication("West US");
 
     let west_read_after_resume = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -991,7 +991,7 @@ async fn create_retries_after_429_throttling() {
     }))
     .unwrap();
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1013,7 +1013,7 @@ async fn create_retries_after_429_throttling() {
 
     let start = std::time::Instant::now();
     let create = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1034,7 +1034,7 @@ async fn create_retries_after_429_throttling() {
     assert_eq!(u16::from(create.status()), 201);
 
     let read = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1173,7 +1173,7 @@ async fn read_failover_on_503_via_fault_injection() {
     .unwrap();
 
     let emu_create = emu_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -1193,7 +1193,7 @@ async fn read_failover_on_503_via_fault_injection() {
 
     // ── Read item — should failover from East US → West US ───────
     let emu_read = emu_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -1355,7 +1355,7 @@ async fn try_real_failover_comparison(
         db_name.clone(),
     );
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_database(account.clone()).with_body(db_body),
             OperationOptions::default(),
         )
@@ -1368,7 +1368,7 @@ async fn try_real_failover_comparison(
     }))
     .ok()?;
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_container(db_ref.clone()).with_body(coll_body),
             OperationOptions::default(),
         )
@@ -1382,7 +1382,7 @@ async fn try_real_failover_comparison(
 
     // Create item.
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1396,7 +1396,7 @@ async fn try_real_failover_comparison(
 
     // Read item — should failover.
     let read_result = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1408,7 +1408,7 @@ async fn try_real_failover_comparison(
 
     // Cleanup.
     let _ = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::delete_database(db_ref),
             OperationOptions::default(),
         )
@@ -1576,7 +1576,7 @@ async fn v1_writes_distribute_across_partitions() {
         let body_bytes = serde_json::to_vec(&body).unwrap();
         let resp = backend
             .emulator_driver
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::create_item(ItemReference::from_name(
                     &emu_container,
                     PartitionKey::from(pk.clone()),
@@ -1603,7 +1603,7 @@ async fn v1_writes_distribute_across_partitions() {
         let id = format!("v1-doc-{}", i);
         let resp = backend
             .emulator_driver
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_item(ItemReference::from_name(
                     &emu_container,
                     PartitionKey::from(pk),

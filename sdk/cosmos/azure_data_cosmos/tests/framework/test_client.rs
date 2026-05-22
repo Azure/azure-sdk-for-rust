@@ -11,6 +11,7 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionRule;
 use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemReadOptions;
+use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::Region;
 use azure_data_cosmos::{
     clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
@@ -428,7 +429,13 @@ impl TestClient {
         // Initialize tracing subscriber for logging, if not already initialized.
         // The error is ignored because it only happens if the subscriber is already initialized.
         _ = tracing_subscriber::fmt()
-            .with_env_filter(EnvFilter::from_default_env())
+            .with_env_filter(
+                EnvFilter::builder()
+                    // Tests with intentional failures cause noise, so we set the default level to "off"
+                    // to silence them unless the user explicitly configures it.
+                    .with_default_directive("off".parse().unwrap())
+                    .from_env_lossy(),
+            )
             .try_init();
 
         let test_client = Self::from_env(options.client_application_region.clone()).await?;
@@ -696,7 +703,14 @@ impl TestRunContext {
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
         loop {
-            match container.query_items::<T>(query.clone(), partition_key.clone(), None) {
+            match container
+                .query_items::<T>(
+                    query.clone(),
+                    FeedScope::partition(partition_key.clone()),
+                    None,
+                )
+                .await
+            {
                 Ok(pager) => match pager.try_collect::<Vec<T>>().await {
                     Ok(items) => return Ok(items),
                     Err(e) if e.status_code() == StatusCode::NotFound => {
@@ -911,7 +925,7 @@ impl TestRunContext {
             "SELECT * FROM root r WHERE r.id LIKE 'auto-test-{}'",
             self.run_id
         ));
-        let mut pager = self.client().query_databases(query, None)?;
+        let mut pager = self.client().query_databases(query, None).await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             ids.push(db.id);
