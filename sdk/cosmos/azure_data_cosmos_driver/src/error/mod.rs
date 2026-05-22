@@ -2,36 +2,24 @@
 // Licensed under the MIT License.
 
 //! Cosmos DB-specific error type carrying typed status, parsed Cosmos response
-//! headers, and diagnostics — for both service errors (real HTTP responses) and
-//! synthetic client-side conditions (e.g. end-to-end operation timeouts).
+//! headers, and diagnostics — for both service errors (real HTTP responses)
+//! and synthetic client-side conditions (e.g. end-to-end operation timeouts).
 //!
-//! The error mirrors the shape of the Java SDK's `CosmosException` and the
-//! .NET SDK's `CosmosException`: a single error type that surfaces typed Cosmos
-//! status (status code + sub-status, including synthetic codes such as
-//! `408 / 20008` for end-to-end timeout), the parsed [`CosmosResponseHeaders`],
-//! and the operation [`DiagnosticsContext`] regardless of whether the failure
-//! was generated server-side or client-side.
+//! Mirrors the .NET / Java SDKs' `CosmosException`: a single error type that
+//! surfaces typed Cosmos status (status code + sub-status, including synthetic
+//! codes such as `408 / 20008` for end-to-end timeout), the parsed
+//! [`CosmosResponseHeaders`], and the operation [`DiagnosticsContext`].
 //!
-//! ## Flow through the pipeline
+//! ## Boundary with `azure_core`
 //!
-//! Driver-internal code produces and propagates the typed [`Error`] directly
-//! via `crate::error::Result<T>` wherever possible. The boundary mapper
-//! [`classify_azure_core_error`] converts at the lowest layer that interacts
-//! with `azure_core` machinery (HTTP client, credential provider, response
-//! deserialization) — it inspects `azure_core::ErrorKind` plus the
-//! source chain (`reqwest`/`hyper`/`h2`/`io`) and mints the most specific
-//! [`CosmosStatus`] available, preserving the original `azure_core::Error`
-//! as [`StdError::source`] so callers can still downcast through it.
-//!
-//! At seams that must continue to speak `azure_core::Result<T>` (trait impls
-//! forced by `azure_core` such as [`azure_core::http::HttpClient::execute_request`],
-//! [`TryFrom`]/[`FromStr`] impls, and the SDK/driver public-API boundary that
-//! still exposes `azure_core::Result<T>` for back-compat), the
-//! [`From<Error> for azure_core::Error`] impl wraps the typed `Error` as the
-//! `source` of the produced `azure_core::Error` (using
-//! `ErrorKind::HttpResponse { status, .. }` for `Service` errors and
-//! `ErrorKind::Other` otherwise). The driver/SDK boundary recovers the typed
-//! payload via [`Error::try_extract`], so the round-trip is lossless.
+//! Driver-internal code produces and propagates [`Error`] directly via
+//! [`crate::error::Result<T>`]. At the lowest layer that interacts with
+//! `azure_core` machinery (HTTP client, credential provider, response
+//! deserialization), [`classify_azure_core_error`] inspects the
+//! `azure_core::ErrorKind` plus the source chain
+//! (`reqwest`/`hyper`/`h2`/`io`) and mints the most specific [`CosmosStatus`]
+//! available, preserving the original `azure_core::Error` as
+//! [`StdError::source`] so callers can still downcast through it.
 
 use std::{borrow::Cow, error::Error as StdError, fmt, sync::Arc};
 
