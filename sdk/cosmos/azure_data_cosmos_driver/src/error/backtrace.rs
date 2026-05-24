@@ -96,6 +96,26 @@ pub(crate) const BACKTRACE_CAPTURES_PER_SECOND_ENV: &str =
 
 const WINDOW_SECS: u64 = 1;
 
+/// Soft ceiling on the number of resolved frames retained in the
+/// process-global symbol cache before it is swapped out and re-warmed
+/// from scratch.
+///
+/// At ~100 bytes per entry the steady-state memory ceiling is ~10 MB.
+/// Hit on the write path (next cache-miss after the cap is reached);
+/// when triggered, the old map is *swapped* with a fresh empty one and
+/// the write lock is released before the old map is dropped — so the
+/// per-entry refcount-decrement and string-free work happens outside
+/// the critical section, keeping lock-held time `O(1)`. After the
+/// swap, subsequent renders pay the normal resolution cost (gated by
+/// the resolution limiter), so the only visible effect is a few
+/// renders returning `None` while the hot set re-warms — the same
+/// contract callers already get under resolution pressure.
+///
+/// In Rust-only steady-state deployments the cache rarely approaches
+/// this number; the cap exists to bound memory in long-lived hosts that
+/// load/unload modules (JNI / P/Invoke / `dlopen`).
+const FRAME_CACHE_SOFT_CAP: usize = 100_000;
+
 /// Captured (but unresolved) backtrace attached to a [`Error`](super::Error).
 ///
 /// Capture itself is cheap — only frame instruction pointers are recorded.
@@ -286,6 +306,18 @@ fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
             resolved.push((*idx, Arc::new(resolve_single(*ip))));
         }
         let mut cache = frame_cache().write().unwrap();
+        // Bound the cache to keep long-lived hosts that load/unload
+        // modules (JNI / P/Invoke / dlopen) from accumulating frames
+        // indefinitely. Swap the full map out for a fresh empty one and
+        // hand the old map to a separate binding so its Drop — atomic
+        // refcount decrements on every `Arc<ResolvedFrame>` plus String
+        // frees — runs *after* the write lock is released. Keeps the
+        // critical section `O(1)` even at the cap.
+        let evicted = if cache.len() >= FRAME_CACHE_SOFT_CAP {
+            Some(std::mem::take(&mut *cache))
+        } else {
+            None
+        };
         for (idx, frame) in resolved {
             let cached = cache
                 .entry(frame.ip)
@@ -293,6 +325,8 @@ fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
                 .clone();
             out[idx] = Some((*cached).clone());
         }
+        drop(cache);
+        drop(evicted);
     }
     Some(
         out.into_iter()
