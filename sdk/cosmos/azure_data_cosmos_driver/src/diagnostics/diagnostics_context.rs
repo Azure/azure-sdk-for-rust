@@ -1841,6 +1841,34 @@ impl PartialEq for DiagnosticsContext {
 
 impl Eq for DiagnosticsContext {}
 
+impl std::fmt::Display for DiagnosticsContext {
+    /// `{ctx}` — one-line summary suitable for `tracing` fields and log
+    /// lines: `activity=… duration=…ms requests=N charge=…RU [status=…]`.
+    ///
+    /// `{ctx:#}` — the one-line summary followed by the summarized
+    /// diagnostics JSON (`DiagnosticsVerbosity::Summary`). The detailed
+    /// JSON remains available via
+    /// [`to_json_string`](Self::to_json_string).
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "activity={} duration={}ms requests={} charge={}RU",
+            self.activity_id(),
+            self.duration().as_millis(),
+            self.request_count(),
+            self.total_request_charge(),
+        )?;
+        if let Some(status) = self.status() {
+            write!(f, " status={status}")?;
+        }
+        if f.alternate() {
+            f.write_str("\n")?;
+            f.write_str(self.to_json_string(Some(DiagnosticsVerbosity::Summary)))?;
+        }
+        Ok(())
+    }
+}
+
 /// Builds a summary for requests in a single region.
 fn build_region_summary(
     region: Option<Region>,
