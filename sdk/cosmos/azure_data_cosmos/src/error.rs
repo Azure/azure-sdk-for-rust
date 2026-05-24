@@ -90,7 +90,7 @@ impl Error {
     /// part — resolving instruction pointers to symbol names — is
     /// rate-limited (default `5` resolutions per second, configurable via
     /// the driver's
-    /// [`CosmosDriverRuntimeBuilder::with_max_error_backtraces_per_second`](azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder::with_max_error_backtraces_per_second)
+    /// [`CosmosDriverRuntimeBuilder::with_max_error_backtrace_resolutions_per_second`](azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_resolutions_per_second)
     /// or the `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` environment
     /// variable). Cache hits do not consume budget. Returns `None` when
     /// the limiter denied fresh resolution for at least one cache-missed

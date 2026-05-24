@@ -40,22 +40,41 @@ Every `Error` carries a stack backtrace captured at construction. Unlike `RUST_B
 
 **Two-tier cost model.**
 
-- **Capture** runs unconditionally on every `Error` and is microseconds — only the call-stack instruction pointers are recorded. Symbols are not resolved at this point.
+- **Capture** runs on every `Error` (subject to the safety guards below) and is microseconds — only the call-stack instruction pointers are recorded. Symbols are not resolved at this point.
 - **Symbol resolution** (turning an IP into `module::function (file:line)`) is deferred until the first call to `error.backtrace()` → `Display`. Resolved frames are cached process-wide by IP, so repeat captures of the same call site only pay the resolution cost once per process lifetime.
 
-**Resolution-rate limiter.** A single global rolling-window budget caps how many backtraces may do *fresh* symbol-resolution work in any 1-second window (default `5`). Cache hits never consume budget, so backtraces whose frames are already known render at full fidelity regardless of limiter state. When the budget is exhausted, unresolved frames render as `<unresolved> @ 0xIP` rather than blocking the caller — still useful for correlating with later fully-resolved captures from the same code paths.
+**Two production-safety knobs (independent rolling-1-second limiters).**
+
+| Knob | Builder method | Env var | Default | What it bounds |
+|---|---|---|---|---|
+| Resolution budget | `with_max_error_backtrace_resolutions_per_second` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` | `5` | How many backtraces may perform *fresh* symbol resolution per second. Cache hits do **not** consume budget. |
+| Capture throttle | `with_max_error_backtrace_captures_per_second` | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` | `1000` | Hard ceiling on stack walks per second, regardless of cache state. |
+
+Both knobs take `NonZeroU32`; backtrace capture cannot be disabled. `build()` rejects `0` from the env-var fallback with a validation error.
+
+**Auto-disable on resolution pressure.** The moment the resolution limiter denies a request, `Backtrace::capture()` short-circuits to `None` for the rest of that 1-second window (the resulting `Error` carries no backtrace). The window naturally re-opens every second, and any subsequent resolution grant clears the flag immediately — so the system can never get stuck in the disabled state.
+
+**When to adjust which.**
+
+- **Resolution budget** — raise when you want richer backtraces in development or when investigating a specific recurring failure (resolved frames are cached forever, so a one-time spike costs nothing long-term). Lower when symbol resolution is dominating CPU during incident debugging.
+- **Capture throttle** — lower when profiling shows raw stack-walk cost is dominating during a same-call-site error storm (e.g. a sustained 429 storm where every backtrace is a cache hit and the resolution limiter is never consulted). Raise (or leave at the generous default) when you want maximum diagnostic coverage and capture cost is not a concern.
+
+When the resolution budget is exhausted but the cache covers every frame, backtraces render at full fidelity for free. When the budget is exhausted *and* there is a cache-missed frame, the render returns `None` — partial / `<unresolved> @ 0xIP` renders are never produced.
 
 **Tuning.**
 
 ```rust,ignore
+use std::num::NonZeroU32;
+
 let runtime = CosmosDriverRuntimeBuilder::new()
-    // Raise the per-second resolution budget; `0` disables symbol
-    // resolution entirely (every frame renders as `<unresolved> @ 0xIP`).
-    .with_max_error_backtraces_per_second(50)
+    // Raise the per-second resolution budget. Backtrace capture cannot
+    // be disabled; the API takes `NonZeroU32` and `build()` rejects `0`
+    // from the env-var fallback with a validation error.
+    .with_max_error_backtrace_resolutions_per_second(NonZeroU32::new(50).unwrap())
+    // Cap raw captures to avoid CPU pressure on same-call-site storms.
+    .with_max_error_backtrace_captures_per_second(NonZeroU32::new(500).unwrap())
     .build();
 ```
-
-The budget can also be set via the `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` environment variable.
 
 **Reading a backtrace.**
 
