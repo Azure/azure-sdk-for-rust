@@ -209,6 +209,17 @@ impl fmt::Debug for Backtrace {
     }
 }
 
+#[cfg(test)]
+impl Backtrace {
+    /// Returns a pointer-identity handle (as `usize`) to the inner Arc,
+    /// for tests that need to assert two `Backtrace` values refer to the
+    /// same captured stack (e.g. backtrace-inheritance from a wrapped
+    /// source).
+    pub(crate) fn inner_arc_identity_for_tests(&self) -> usize {
+        Arc::as_ptr(&self.inner) as usize
+    }
+}
+
 // -----------------------------------------------------------------
 // Rendering pipeline
 // -----------------------------------------------------------------

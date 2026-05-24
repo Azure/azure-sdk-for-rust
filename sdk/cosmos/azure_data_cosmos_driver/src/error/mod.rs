@@ -96,7 +96,24 @@ impl Clone for ErrorInner {
 impl Error {
     fn from_inner(mut inner: ErrorInner) -> Self {
         if inner.backtrace.is_none() {
-            inner.backtrace = Backtrace::capture();
+            // If we are wrapping another Cosmos `Error` as the source
+            // (status-changing re-wrap, e.g. `build_transport_error`
+            // promoting a service error to a transport error), inherit
+            // that error's backtrace instead of paying for a fresh
+            // capture at the wrap site. The wrap site is always the same
+            // handful of lines in the pipeline and adds no diagnostic
+            // value over the originating call stack \u2014 inheriting also
+            // saves one capture-throttle token per re-wrap, doubling the
+            // effective capture budget on retry-heavy paths.
+            if let Some(src) = inner.source.as_deref() {
+                let src_dyn: &(dyn StdError + 'static) = src;
+                if let Some(inner_cosmos) = src_dyn.downcast_ref::<Error>() {
+                    inner.backtrace = inner_cosmos.inner.backtrace.clone();
+                }
+            }
+            if inner.backtrace.is_none() {
+                inner.backtrace = Backtrace::capture();
+            }
         }
         Self {
             inner: Arc::new(inner),
@@ -759,6 +776,40 @@ mod tests {
         assert_eq!(
             cosmos.sub_status(),
             Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE)
+        );
+    }
+
+    #[test]
+    fn wrap_inherits_backtrace_from_cosmos_source() {
+        // Build an inner Cosmos error so it carries a captured backtrace.
+        let inner = Error::end_to_end_timeout("inner", None);
+        let inner_bt_id = inner
+            .inner
+            .backtrace
+            .as_ref()
+            .map(|bt| bt.inner_arc_identity_for_tests());
+        assert!(
+            inner_bt_id.is_some(),
+            "inner must have a captured backtrace for this test to be meaningful"
+        );
+
+        // Wrap the inner error as the source of an outer transport error.
+        // The outer constructor must inherit the inner's backtrace rather
+        // than capturing a fresh one at the wrap site.
+        let outer = Error::transport(
+            CosmosStatus::TRANSPORT_GENERATED_503,
+            "outer",
+            None,
+            Some(Arc::new(inner)),
+        );
+        let outer_bt_id = outer
+            .inner
+            .backtrace
+            .as_ref()
+            .map(|bt| bt.inner_arc_identity_for_tests());
+        assert_eq!(
+            outer_bt_id, inner_bt_id,
+            "outer error must share the inner's backtrace Arc, not capture a new one"
         );
     }
 }
