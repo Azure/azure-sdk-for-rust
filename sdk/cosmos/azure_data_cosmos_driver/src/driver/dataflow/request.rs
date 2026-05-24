@@ -392,7 +392,8 @@ mod tests {
                     Err(azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
                         "scenario topology produced no overlapping ranges",
-                    ).into())
+                    )
+                    .into())
                 } else {
                     Ok(resolved)
                 }
@@ -756,7 +757,8 @@ mod tests {
         let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "topology fetch failed",
-        ).into())]);
+        )
+        .into())]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();

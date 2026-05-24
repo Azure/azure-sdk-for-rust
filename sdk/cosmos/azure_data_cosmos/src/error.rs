@@ -103,7 +103,12 @@ impl Error {
 
     /// Builds a `Client` error (caller misuse / precondition), optionally
     /// wrapping an underlying source error.
-    pub(crate) fn client(
+    ///
+    /// **Internal use only.** Reachable cross-crate so in-tree consumers
+    /// (e.g. `azure_data_cosmos_perf`) can construct typed errors; not part
+    /// of the public surface.
+    #[doc(hidden)]
+    pub fn client(
         message: impl Into<std::borrow::Cow<'static, str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
@@ -120,6 +125,7 @@ impl Error {
     }
 
     /// Builds a `Serialization` error wrapping the underlying serde failure.
+    #[allow(dead_code)]
     pub(crate) fn serialization(
         message: impl Into<std::borrow::Cow<'static, str>>,
         source: impl StdError + Send + Sync + 'static,

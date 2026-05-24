@@ -984,7 +984,11 @@ impl ContainerClient {
             ));
         }
 
-        ranges.iter().map(FeedRange::try_from).collect::<Result<Vec<_>, azure_core::Error>>().map_err(Into::into)
+        ranges
+            .iter()
+            .map(FeedRange::try_from)
+            .collect::<Result<Vec<_>, azure_core::Error>>()
+            .map_err(Into::into)
     }
 
     /// Returns the [`FeedRange`]s covering the given partition key.
@@ -1060,9 +1064,17 @@ impl ContainerClient {
                 ));
             }
 
-            ranges.iter().map(FeedRange::try_from).collect::<Result<Vec<_>, azure_core::Error>>().map_err(Into::into)
+            ranges
+                .iter()
+                .map(FeedRange::try_from)
+                .collect::<Result<Vec<_>, azure_core::Error>>()
+                .map_err(Into::into)
         } else {
-            ranges.iter().map(FeedRange::try_from).collect::<Result<Vec<_>, azure_core::Error>>().map_err(Into::into)
+            ranges
+                .iter()
+                .map(FeedRange::try_from)
+                .collect::<Result<Vec<_>, azure_core::Error>>()
+                .map_err(Into::into)
         }
     }
 

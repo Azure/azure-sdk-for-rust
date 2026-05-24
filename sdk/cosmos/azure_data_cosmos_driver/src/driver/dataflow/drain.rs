@@ -91,7 +91,8 @@ impl PipelineNode for SequentialDrain {
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"
                             ),
-                        ).into());
+                        )
+                        .into());
                     }
 
                     // Remove the split child and splice in replacements at the front.
@@ -239,7 +240,8 @@ mod tests {
         let child = MockLeaf::with_pages(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "test error",
-        ).into())]);
+        )
+        .into())]);
         let mut drain = SequentialDrain::new(vec![Box::new(child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
@@ -527,7 +529,8 @@ mod tests {
         let child2 = MockLeaf::with_pages(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "boom",
-        ).into())]);
+        )
+        .into())]);
 
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;

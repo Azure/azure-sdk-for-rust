@@ -70,7 +70,8 @@ pub(crate) fn build_trivial_pipeline(
                     "continuation token shape {} does not match a trivial operation",
                     snapshot_kind(&other)
                 ),
-            ).into());
+            )
+            .into());
         }
     };
 
@@ -87,7 +88,8 @@ pub(crate) fn build_trivial_pipeline(
                     azure_core::error::ErrorKind::Other,
                     "FeedRange targeting requires a fan-out pipeline; \
                  use plan_operation for cross-partition queries",
-                ).into());
+                )
+                .into());
             }
         }
     };
@@ -163,7 +165,8 @@ pub(crate) async fn build_sequential_drain(
                 return Err(azure_core::Error::with_message(
                     azure_core::error::ErrorKind::DataConversion,
                     "continuation token has invalid SequentialDrain range (min > max)",
-                ).into());
+                )
+                .into());
             }
             Some(ResumeCursor {
                 current_min_epk,
@@ -267,7 +270,8 @@ pub(crate) async fn build_sequential_drain(
         return Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "query plan produced no partition ranges to query",
-        ).into());
+        )
+        .into());
     }
 
     // Even when there's only one request node, we still need to wrap it in a SequentialDrain
@@ -333,7 +337,8 @@ fn unsupported_feature(feature: &str) -> crate::error::Error {
     azure_core::Error::with_message(
         azure_core::error::ErrorKind::Other,
         format!("unsupported query feature: {feature}"),
-    ).into()
+    )
+    .into()
 }
 
 #[cfg(test)]
@@ -841,7 +846,8 @@ mod tests {
         let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
             "topology resolution failed",
-        ).into())]);
+        )
+        .into())]);
 
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await

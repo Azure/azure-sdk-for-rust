@@ -129,7 +129,8 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             azure_core::error::ErrorKind::Other,
             "PATCH does not support caller-set preconditions; \
              the handler manages If-Match internally",
-        ).into());
+        )
+        .into());
     }
 
     // -- 2. Parse and validate the patch spec --
@@ -473,7 +474,7 @@ fn build_replace_sub_op(
 /// 412 is supplied it is reused as-is (with the attempts-count message
 /// prepended via [`Error::with_context`]) so the typed status, sub-status,
 /// cosmos response headers, response body, and diagnostics all flow
-/// through verbatim. The `None` branch synthesises a 412-shaped service
+/// through verbatim. The `None` branch synthesizes a 412-shaped service
 /// error for the `attempts = 0` short-circuit path.
 fn exhaustion_error(attempts: u8, last_412: Option<crate::error::Error>) -> crate::error::Error {
     let message = format!("patch_item: ETag conflict after {attempts} attempts");
@@ -721,7 +722,8 @@ mod tests {
         // the RMW loop's 412 detection runs on the `Err(_)` produced
         // by the driver pipeline (`build_service_error`). Build the same
         // shape here.
-        let err = cosmos_service_error(StatusCode::PreconditionFailed, "412 from server", None, &[]);
+        let err =
+            cosmos_service_error(StatusCode::PreconditionFailed, "412 from server", None, &[]);
         assert!(is_precondition_failed(&err));
     }
 
@@ -870,7 +872,7 @@ mod tests {
         let err = exhaustion_error(0, None);
 
         assert_eq!(err.status_code(), StatusCode::PreconditionFailed);
-        // No underlying service error was supplied, so the synthesised
+        // No underlying service error was supplied, so the synthesized
         // error has no further std::error::Error source chain.
         assert!(
             std::error::Error::source(&err).is_none(),
@@ -901,8 +903,7 @@ mod tests {
         assert_eq!(
             err.response_body(),
             Some(
-                b"{\"code\":\"PreconditionFailed\",\"message\":\"server: stale etag\"}"
-                    .as_slice()
+                b"{\"code\":\"PreconditionFailed\",\"message\":\"server: stale etag\"}".as_slice()
             ),
             "exhaustion error must forward the wrapped 412's response body verbatim"
         );

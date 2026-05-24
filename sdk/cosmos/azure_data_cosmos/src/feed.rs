@@ -193,8 +193,7 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
     }
 }
 
-type DriverPageFuture =
-    BoxFuture<'static, (OperationPlan, crate::Result<Option<DriverResponse>>)>;
+type DriverPageFuture = BoxFuture<'static, (OperationPlan, crate::Result<Option<DriverResponse>>)>;
 
 /// Live pipeline state held by [`FeedPageIterator`] / [`FeedItemIterator`].
 #[pin_project::pin_project]

@@ -443,10 +443,8 @@ pub(crate) async fn execute_operation_pipeline(
                     pk_range_id = ?retry_state.partition_key_range_id,
                     "operation aborted",
                 );
-                diagnostics.set_operation_status(
-                    cosmos_status.status_code(),
-                    cosmos_status.sub_status(),
-                );
+                diagnostics
+                    .set_operation_status(cosmos_status.status_code(), cosmos_status.sub_status());
                 return Err(error);
             }
         }

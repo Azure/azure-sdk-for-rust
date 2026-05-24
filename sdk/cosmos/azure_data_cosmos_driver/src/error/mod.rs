@@ -366,10 +366,7 @@ impl Error {
     /// reopens (and frames resolved by other errors meanwhile have been
     /// added to the cache).
     pub fn backtrace(&self) -> Option<&str> {
-        self.inner
-            .backtrace
-            .as_ref()
-            .and_then(Backtrace::rendered)
+        self.inner.backtrace.as_ref().and_then(Backtrace::rendered)
     }
 
     // -----------------------------------------------------------------
