@@ -90,7 +90,7 @@ impl ReplaceCommand {
                     .replace_item(pk, &item_id, item, options)
                     .await;
                 match response {
-                    Err(e) if e.is_not_found() => {
+                    Err(e) if e.status().is_not_found() => {
                         println!("Item not found!")
                     }
                     Ok(r) => {

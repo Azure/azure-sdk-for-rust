@@ -374,7 +374,7 @@ fn missing_body_error(msg: &'static str) -> crate::error::Error {
 /// recovered into a retry, so we narrow on the kind here instead of relying
 /// on a status check that the `await?` above would never reach.
 fn is_precondition_failed(err: &crate::error::Error) -> bool {
-    err.is_precondition_failed()
+    err.status().is_precondition_failed()
 }
 
 /// Extracts the `x-ms-session-token` from a service-built cosmos error's

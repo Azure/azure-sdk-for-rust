@@ -337,7 +337,7 @@ fn ignore_conflict(
     match result {
         Ok(_) => Ok(()),
         Err(e) => {
-            if e.is_conflict() {
+            if e.status().is_conflict() {
                 return Ok(());
             }
             Err(e)

@@ -1414,6 +1414,31 @@ impl CosmosStatus {
         u16::from(self.status_code) == 412
     }
 
+    /// Returns `true` if this is an HTTP 408 (request timeout) response —
+    /// covers both a service-side timeout and a synthetic client-side
+    /// end-to-end timeout (`408 / 20008`).
+    pub fn is_timeout(&self) -> bool {
+        u16::from(self.status_code) == 408
+    }
+
+    /// Returns `true` if this status was produced by a real Cosmos HTTP
+    /// response (categorical [`Kind::Service`]).
+    pub fn is_service_error(&self) -> bool {
+        matches!(self.kind(), Kind::Service)
+    }
+
+    /// Returns `true` if the error is generally considered transient and could
+    /// reasonably be retried by a higher layer.
+    ///
+    /// Transport-kind statuses are always transient; for service responses
+    /// the categorical retry-trigger set is `408 / 429 / 449 / 503`.
+    pub fn is_transient(&self) -> bool {
+        if matches!(self.kind(), Kind::Transport) {
+            return true;
+        }
+        matches!(u16::from(self.status_code), 408 | 429 | 449 | 503)
+    }
+
     /// Returns `true` if this is a write-forbidden error (HTTP 403, sub-status 3).
     pub fn is_write_forbidden(&self) -> bool {
         u16::from(self.status_code) == 403

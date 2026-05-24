@@ -99,50 +99,6 @@ impl Error {
         self.0.backtrace()
     }
 
-    // -- predicates --
-
-    /// `true` if this is a service-side error (`Service` kind).
-    pub fn is_service_error(&self) -> bool {
-        self.0.is_service_error()
-    }
-
-    /// `true` if the request was throttled (HTTP 429).
-    pub fn is_throttled(&self) -> bool {
-        self.0.is_throttled()
-    }
-
-    /// `true` if the resource was not found (HTTP 404).
-    pub fn is_not_found(&self) -> bool {
-        self.0.is_not_found()
-    }
-
-    /// `true` if the operation hit a conflict (HTTP 409).
-    pub fn is_conflict(&self) -> bool {
-        self.0.is_conflict()
-    }
-
-    /// `true` if a precondition was not met (HTTP 412).
-    pub fn is_precondition_failed(&self) -> bool {
-        self.0.is_precondition_failed()
-    }
-
-    /// `true` if the status is HTTP 408 (server timeout or synthetic
-    /// client-side end-to-end timeout).
-    pub fn is_timeout(&self) -> bool {
-        self.0.is_timeout()
-    }
-
-    /// `true` if this is an HTTP 410 Gone response.
-    pub fn is_gone(&self) -> bool {
-        self.0.is_gone()
-    }
-
-    /// `true` if the error is generally considered transient and could be
-    /// retried by a higher layer.
-    pub fn is_transient(&self) -> bool {
-        self.0.is_transient()
-    }
-
     // -- construction & interop helpers --
 
     /// Builds a `Client` error (caller misuse / precondition), optionally

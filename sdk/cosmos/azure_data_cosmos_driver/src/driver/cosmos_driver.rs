@@ -1166,7 +1166,7 @@ impl CosmosDriver {
             Err(e) => {
                 // The error is already a typed Cosmos error; just consult
                 // its status when classifying terminal vs. transient.
-                let http_status = if e.is_service_error() {
+                let http_status = if e.status().is_service_error() {
                     Some(e.status_code())
                 } else {
                     None

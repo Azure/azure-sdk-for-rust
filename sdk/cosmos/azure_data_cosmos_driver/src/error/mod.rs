@@ -391,57 +391,6 @@ impl Error {
     }
 
     // -----------------------------------------------------------------
-    // Predicates
-    // -----------------------------------------------------------------
-
-    /// `true` if this is a service-side error (`Service` kind).
-    pub fn is_service_error(&self) -> bool {
-        matches!(self.kind(), Kind::Service)
-    }
-
-    /// `true` if the status indicates the request was throttled (HTTP 429).
-    pub fn is_throttled(&self) -> bool {
-        self.inner.status.is_throttled()
-    }
-
-    /// `true` if the status indicates the resource was not found (HTTP 404).
-    pub fn is_not_found(&self) -> bool {
-        self.inner.status.is_not_found()
-    }
-
-    /// `true` if the status indicates a conflict (HTTP 409).
-    pub fn is_conflict(&self) -> bool {
-        self.inner.status.is_conflict()
-    }
-
-    /// `true` if the status indicates a precondition failure (HTTP 412).
-    pub fn is_precondition_failed(&self) -> bool {
-        self.inner.status.is_precondition_failed()
-    }
-
-    /// `true` if the status is HTTP 408 (request timeout) for either a
-    /// service-side timeout or a synthetic client-side end-to-end timeout.
-    pub fn is_timeout(&self) -> bool {
-        u16::from(self.inner.status.status_code()) == 408
-    }
-
-    /// `true` if the status indicates an HTTP 410 Gone response.
-    pub fn is_gone(&self) -> bool {
-        self.inner.status.is_gone()
-    }
-
-    /// `true` if the error is generally considered transient and could
-    /// reasonably be retried by a higher layer.
-    pub fn is_transient(&self) -> bool {
-        if matches!(self.kind(), Kind::Transport) {
-            return true;
-        }
-        let code = u16::from(self.inner.status.status_code());
-        // 408 timeout, 429 throttled, 449 retry-with, 503 service-unavailable.
-        matches!(code, 408 | 429 | 449 | 503)
-    }
-
-    // -----------------------------------------------------------------
     // Interop with azure_core::Error
     // -----------------------------------------------------------------
 
@@ -588,16 +537,11 @@ fn derive_status_from_azure_core_error(error: &azure_core::Error) -> CosmosStatu
     // HttpResponse is the only kind that already carries a real wire status,
     // so it wins over any source-chain refinement.
     if let AzKind::HttpResponse {
-        status,
-        error_code,
-        ..
+        status, error_code, ..
     } = error.kind()
     {
         let mut cs = CosmosStatus::new(*status).with_kind(Kind::Service);
-        if let Some(sub) = error_code
-            .as_deref()
-            .and_then(|c| c.parse::<u32>().ok())
-        {
+        if let Some(sub) = error_code.as_deref().and_then(|c| c.parse::<u32>().ok()) {
             cs = cs.with_sub_status(sub);
         }
         return cs;
@@ -683,8 +627,8 @@ mod tests {
         );
         let err = Error::service(response, "throttled");
         assert_eq!(err.kind(), Kind::Service);
-        assert!(err.is_throttled());
-        assert!(err.is_transient());
+        assert!(err.status().is_throttled());
+        assert!(err.status().is_transient());
         assert_eq!(err.status_code(), StatusCode::TooManyRequests);
         assert!(err.cosmos_headers().is_some());
     }
@@ -698,8 +642,8 @@ mod tests {
             err.sub_status(),
             Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
         );
-        assert!(err.is_timeout());
-        assert!(err.is_transient());
+        assert!(err.status().is_timeout());
+        assert!(err.status().is_transient());
     }
 
     #[test]
@@ -721,7 +665,7 @@ mod tests {
         );
         let recovered = Error::try_extract(&wrapped).expect("embedded error");
         assert_eq!(recovered.kind(), Kind::Service);
-        assert!(recovered.is_not_found());
+        assert!(recovered.status().is_not_found());
     }
 
     #[test]
@@ -741,7 +685,7 @@ mod tests {
         let cosmos: Error = raw.into();
         assert_eq!(cosmos.kind(), Kind::Service);
         assert_eq!(cosmos.status_code(), StatusCode::Conflict);
-        assert!(cosmos.is_conflict());
+        assert!(cosmos.status().is_conflict());
     }
 
     #[test]
