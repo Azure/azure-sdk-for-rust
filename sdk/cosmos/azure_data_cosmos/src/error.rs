@@ -103,12 +103,7 @@ impl Error {
 
     /// Builds a `Client` error (caller misuse / precondition), optionally
     /// wrapping an underlying source error.
-    ///
-    /// **Internal use only.** Reachable cross-crate so in-tree consumers
-    /// (e.g. `azure_data_cosmos_perf`) can construct typed errors; not part
-    /// of the public surface.
-    #[doc(hidden)]
-    pub fn client(
+    pub(crate) fn client(
         message: impl Into<std::borrow::Cow<'static, str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {

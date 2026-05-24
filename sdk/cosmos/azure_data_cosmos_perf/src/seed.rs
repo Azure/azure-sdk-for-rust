@@ -129,7 +129,11 @@ pub async fn seed_container(
             Some(Ok((_, None))) => {} // Task succeeded, continue
             Some(Err(e)) => {
                 workers.abort_all();
-                return Err(azure_data_cosmos::Error::client(e.to_string(), None));
+                return Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Other,
+                    e.to_string(),
+                )
+                .into());
             }
             None => {} // No more tasks
         }
