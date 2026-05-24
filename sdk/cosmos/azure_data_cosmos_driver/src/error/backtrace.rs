@@ -71,15 +71,15 @@ const WINDOW_SECS: u64 = 1;
 /// the result is cached as an [`Arc<str>`], so repeat renders return the
 /// cached string without re-walking debug info.
 #[derive(Clone)]
-pub(crate) struct CosmosBacktrace {
-    inner: Arc<CosmosBacktraceInner>,
+pub(crate) struct Backtrace {
+    inner: Arc<BacktraceInner>,
 }
 
-struct CosmosBacktraceInner {
+struct BacktraceInner {
     /// Instruction pointers in stack order (innermost frame first).
     ips: Vec<usize>,
     /// Lazily rendered display string, populated on first `rendered()` call.
-    rendered: OnceLock<Arc<str>>,
+    rendered: OnceLock<String>,
 }
 
 /// A single resolved stack frame.
@@ -95,7 +95,7 @@ struct ResolvedFrame {
     lineno: Option<u32>,
 }
 
-impl CosmosBacktrace {
+impl Backtrace {
     /// Captures a backtrace unconditionally. The walk-stack step is cheap
     /// (microseconds); symbol resolution is deferred to [`Self::rendered`]
     /// and rate-limited there.
@@ -110,7 +110,7 @@ impl CosmosBacktrace {
             return None;
         }
         Some(Self {
-            inner: Arc::new(CosmosBacktraceInner {
+            inner: Arc::new(BacktraceInner {
                 ips,
                 rendered: OnceLock::new(),
             }),
@@ -136,10 +136,10 @@ impl CosmosBacktrace {
         if let Some(cached) = self.inner.rendered.get() {
             return Some(cached);
         }
-        let arc = try_render(&self.inner.ips)?;
+        let rendered = try_render(&self.inner.ips)?;
         // Race-tolerant: if another thread won the init, both threads
         // produced equivalent strings; discard ours.
-        let _ = self.inner.rendered.set(arc);
+        let _ = self.inner.rendered.set(rendered);
         Some(
             self.inner
                 .rendered
@@ -149,9 +149,9 @@ impl CosmosBacktrace {
     }
 }
 
-impl fmt::Debug for CosmosBacktrace {
+impl fmt::Debug for Backtrace {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CosmosBacktrace")
+        f.debug_struct("Backtrace")
             .field("frame_count", &self.inner.ips.len())
             .field("rendered", &self.inner.rendered.get().is_some())
             .finish()
@@ -165,7 +165,7 @@ impl fmt::Debug for CosmosBacktrace {
 /// Renders `ips` into a single human-readable string, returning `None` when
 /// the limiter denies fresh resolution for any cache-missed frame. Never
 /// produces a partially-resolved rendering.
-fn try_render(ips: &[usize]) -> Option<Arc<str>> {
+fn try_render(ips: &[usize]) -> Option<String> {
     let frames = try_resolve_frames(ips)?;
     let mut out = String::with_capacity(frames.len() * 64);
     for (i, frame) in frames.iter().enumerate() {
@@ -185,7 +185,7 @@ fn try_render(ips: &[usize]) -> Option<Arc<str>> {
         }
         out.push('\n');
     }
-    Some(Arc::from(out))
+    Some(out)
 }
 
 /// For each IP in `ips`, returns the resolved frame from the process-global
@@ -307,7 +307,7 @@ impl BacktraceCaptureLimiter {
     }
 
     /// Returns the current capacity (resolutions allowed per 1-second window).
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn capacity(&self) -> u32 {
         self.capacity.load(Ordering::Relaxed)
     }
@@ -371,7 +371,7 @@ fn global_limiter() -> &'static BacktraceCaptureLimiter {
 ///
 /// The runtime builder uses this to apply caller-supplied configuration; most
 /// other callers should not need direct access.
-pub(crate) fn capture_limiter() -> &'static BacktraceCaptureLimiter {
+pub(crate) fn global_capture_limiter() -> &'static BacktraceCaptureLimiter {
     global_limiter()
 }
 
@@ -386,12 +386,12 @@ mod tests {
 
     fn with_limiter_capacity<R>(capacity: u32, f: impl FnOnce() -> R) -> R {
         let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let prev = capture_limiter().capacity();
-        capture_limiter().set_capacity(capacity);
-        capture_limiter().reset_for_tests();
+        let prev = global_capture_limiter().capacity();
+        global_capture_limiter().set_capacity(capacity);
+        global_capture_limiter().reset_for_tests();
         let r = f();
-        capture_limiter().set_capacity(prev);
-        capture_limiter().reset_for_tests();
+        global_capture_limiter().set_capacity(prev);
+        global_capture_limiter().reset_for_tests();
         r
     }
 
@@ -399,7 +399,7 @@ mod tests {
     fn capture_always_succeeds() {
         // Capture is unconditional; the limiter only gates symbol resolution.
         with_limiter_capacity(0, || {
-            assert!(CosmosBacktrace::capture().is_some());
+            assert!(Backtrace::capture().is_some());
         });
     }
 
@@ -407,7 +407,7 @@ mod tests {
     fn rendering_returns_none_when_budget_exhausted_for_cache_misses() {
         with_limiter_capacity(0, || {
             clear_frame_cache_for_tests();
-            let bt = CosmosBacktrace::capture().expect("capture always succeeds");
+            let bt = Backtrace::capture().expect("capture always succeeds");
             assert!(
                 bt.rendered().is_none(),
                 "expected None when budget=0 and cache is empty"
@@ -422,14 +422,14 @@ mod tests {
         with_limiter_capacity(1, || {
             clear_frame_cache_for_tests();
             // First render uses budget to populate the cache fully.
-            let bt1 = CosmosBacktrace::capture().expect("capture");
+            let bt1 = Backtrace::capture().expect("capture");
             let s1 = bt1.rendered().expect("first render succeeds");
             assert!(!s1.is_empty());
             assert!(frame_cache_len_for_tests() > 0);
             // Budget is now exhausted, but a second backtrace whose frames
             // are already cached should still render. (Same call site as
             // the first capture, so frames overlap heavily.)
-            let bt2 = CosmosBacktrace::capture().expect("capture");
+            let bt2 = Backtrace::capture().expect("capture");
             // If every frame is a cache hit, rendered() returns Some.
             // If any frame is new (inlining variance), rendered() returns
             // None because budget is exhausted — we never produce a
@@ -446,7 +446,7 @@ mod tests {
     #[test]
     fn rendered_is_cached_per_backtrace() {
         with_limiter_capacity(5, || {
-            let bt = CosmosBacktrace::capture().expect("capture");
+            let bt = Backtrace::capture().expect("capture");
             let s1 = bt.rendered().expect("render");
             let s2 = bt.rendered().expect("render");
             // Same string identity (same Arc<str> behind the OnceLock).

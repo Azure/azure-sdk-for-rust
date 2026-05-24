@@ -33,11 +33,8 @@ use crate::{
     },
 };
 
-mod backtrace;
-pub(crate) use backtrace::{
-    capture_limiter, CosmosBacktrace, BACKTRACE_RESOLUTIONS_PER_SECOND_ENV,
-    DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND,
-};
+pub(crate) mod backtrace;
+pub(crate) use backtrace::Backtrace;
 
 /// Categorical kind for an [`Error`] — re-exported from
 /// [`crate::models::Kind`] (where the canonical definition lives alongside
@@ -80,7 +77,7 @@ struct ErrorInner {
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     /// Captured stack backtrace, present when the global rate-limited
     /// backtrace capture budget allowed it. See [`backtrace`] module.
-    backtrace: Option<CosmosBacktrace>,
+    backtrace: Option<Backtrace>,
 }
 
 impl Clone for ErrorInner {
@@ -99,7 +96,7 @@ impl Clone for ErrorInner {
 impl Error {
     fn from_inner(mut inner: ErrorInner) -> Self {
         if inner.backtrace.is_none() {
-            inner.backtrace = CosmosBacktrace::capture();
+            inner.backtrace = Backtrace::capture();
         }
         Self {
             inner: Arc::new(inner),
@@ -387,7 +384,7 @@ impl Error {
         self.inner
             .backtrace
             .as_ref()
-            .and_then(CosmosBacktrace::rendered)
+            .and_then(Backtrace::rendered)
     }
 
     // -----------------------------------------------------------------

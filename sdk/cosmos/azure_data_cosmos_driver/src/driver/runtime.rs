@@ -783,12 +783,12 @@ impl CosmosDriverRuntimeBuilder {
         // defines the policy.
         let backtrace_capacity = parse_u32_from_env(
             self.max_error_backtraces_per_second,
-            crate::error::BACKTRACE_RESOLUTIONS_PER_SECOND_ENV,
-            crate::error::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND,
+            crate::error::backtrace::BACKTRACE_RESOLUTIONS_PER_SECOND_ENV,
+            crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND,
             1,
             u32::MAX,
         )?;
-        crate::error::capture_limiter().set_capacity(backtrace_capacity);
+        crate::error::backtrace::global_capture_limiter().set_capacity(backtrace_capacity);
 
         Ok(Arc::new(CosmosDriverRuntime {
             id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),
