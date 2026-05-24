@@ -267,21 +267,6 @@ impl Error {
         self
     }
 
-    /// Attaches diagnostics (replacing any existing value).
-    #[must_use]
-    #[allow(dead_code)]
-    pub(crate) fn with_diagnostics(mut self, diagnostics: Arc<DiagnosticsContext>) -> Self {
-        self.inner_mut().diagnostics = Some(diagnostics);
-        self
-    }
-
-    /// Attaches a source error (replacing any existing value).
-    #[must_use]
-    pub(crate) fn with_source(mut self, source: Arc<dyn StdError + Send + Sync + 'static>) -> Self {
-        self.inner_mut().source = Some(source);
-        self
-    }
-
     /// Prepends operational context to the error message, preserving all
     /// other typed fields (status, sub-status, headers, diagnostics, source,
     /// backtrace).

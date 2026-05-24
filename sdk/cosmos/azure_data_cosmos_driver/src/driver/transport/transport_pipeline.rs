@@ -37,10 +37,6 @@ use crate::driver::pipeline::components::{
     ThrottleAction, ThrottleRetryState, TransportOutcome, TransportRequest, TransportResult,
 };
 
-/// Cosmos DB retry-after header (milliseconds).
-const RETRY_AFTER_MS: azure_core::http::headers::HeaderName =
-    azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms");
-
 /// Keep a small budget before the e2e deadline so we still have time
 /// to send one final attempt.
 const DEADLINE_RETRY_SAFETY_MARGIN: Duration = Duration::from_millis(100);
