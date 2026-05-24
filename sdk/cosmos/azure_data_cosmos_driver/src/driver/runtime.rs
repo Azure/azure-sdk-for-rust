@@ -788,6 +788,11 @@ impl CosmosDriverRuntimeBuilder {
             1,
             u32::MAX,
         )?;
+        // `parse_u32_from_env` enforced `min=1` above, so the unwrap is
+        // infallible. Use `NonZeroU32` to hand the type-encoded invariant
+        // to the limiter API.
+        let backtrace_capacity = std::num::NonZeroU32::new(backtrace_capacity)
+            .expect("parse_u32_from_env enforced min=1");
         crate::error::backtrace::global_capture_limiter().set_capacity(backtrace_capacity);
 
         Ok(Arc::new(CosmosDriverRuntime {

@@ -21,10 +21,10 @@
 //!   pay the cost once *per process lifetime*.
 //! * **Rate limiting** — a single global [`BacktraceCaptureLimiter`] caps how
 //!   many backtraces may perform fresh symbol resolution in any rolling
-//!   1-second window (default `5`, configurable via
+//!   1-second window (default `5`, minimum `1`, configurable via
 //!   [`CosmosDriverRuntimeBuilder::with_max_error_backtraces_per_second`](crate::driver::CosmosDriverRuntimeBuilder::with_max_error_backtraces_per_second)
 //!   or the `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` environment
-//!   variable; set to `0` to disable symbol resolution entirely). **Cache
+//!   variable; the runtime builder rejects `0`). **Cache
 //!   hits do not consume budget** — if every frame of a backtrace is already
 //!   in the process-wide cache, rendering is essentially free and proceeds
 //!   even when the budget is exhausted. The budget only protects against
@@ -38,6 +38,7 @@
 use std::{
     collections::HashMap,
     fmt,
+    num::NonZeroU32,
     sync::{
         atomic::{AtomicU32, AtomicU64, Ordering},
         Arc, OnceLock, RwLock,
@@ -57,8 +58,11 @@ pub(crate) const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND: u32 = 5;
 /// Environment variable that overrides the default symbol-resolution budget
 /// when no explicit value is supplied via the runtime builder.
 ///
-/// Value: a non-negative integer (`0` disables symbol resolution entirely;
-/// every frame renders as `<unresolved> @ 0xIP`).
+/// Value: a positive integer (`>= 1`). The runtime builder rejects `0` with
+/// a validation error — backtrace capture cannot be disabled. To minimize
+/// the cost during an error storm, set a low value like `1`; the
+/// process-global symbol-resolution cache means recurring failures from
+/// the same call sites still render at full fidelity for free.
 pub(crate) const BACKTRACE_RESOLUTIONS_PER_SECOND_ENV: &str =
     "AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND";
 
@@ -312,15 +316,29 @@ impl BacktraceCaptureLimiter {
         self.capacity.load(Ordering::Relaxed)
     }
 
-    /// Sets the capacity. `0` disables symbol resolution; every backtrace
-    /// renders with placeholder frames for cache misses.
-    pub fn set_capacity(&self, capacity: u32) {
+    /// Sets the capacity (resolutions allowed per 1-second window).
+    ///
+    /// Takes a [`NonZeroU32`] because backtrace capture cannot be disabled
+    /// in production — the type encodes the invariant the runtime builder
+    /// also enforces up-front (rejecting `0` with a validation error).
+    pub fn set_capacity(&self, capacity: NonZeroU32) {
+        self.capacity.store(capacity.get(), Ordering::Relaxed);
+    }
+
+    /// Test-only escape hatch that allows setting capacity to `0` so the
+    /// budget-exhausted code path (no-partial-render guard) can be
+    /// exercised deterministically. Never call from production code.
+    #[cfg(test)]
+    pub fn set_capacity_for_tests(&self, capacity: u32) {
         self.capacity.store(capacity, Ordering::Relaxed);
     }
 
     /// Attempts to consume one resolution token. Returns `true` if a token
-    /// was granted, `false` if the current 1-second window is exhausted (or
-    /// if symbol resolution is disabled).
+    /// was granted, `false` if the current 1-second window is exhausted.
+    ///
+    /// A capacity of `0` is reachable only via
+    /// [`Self::set_capacity_for_tests`] and always denies, so tests can
+    /// deterministically exercise the budget-exhausted code path.
     pub fn try_acquire(&self) -> bool {
         let capacity = self.capacity.load(Ordering::Relaxed);
         if capacity == 0 {
@@ -387,10 +405,10 @@ mod tests {
     fn with_limiter_capacity<R>(capacity: u32, f: impl FnOnce() -> R) -> R {
         let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let prev = global_capture_limiter().capacity();
-        global_capture_limiter().set_capacity(capacity);
+        global_capture_limiter().set_capacity_for_tests(capacity);
         global_capture_limiter().reset_for_tests();
         let r = f();
-        global_capture_limiter().set_capacity(prev);
+        global_capture_limiter().set_capacity_for_tests(prev);
         global_capture_limiter().reset_for_tests();
         r
     }
