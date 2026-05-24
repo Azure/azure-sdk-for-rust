@@ -83,18 +83,30 @@ impl Error {
     }
 
     /// Returns the stack backtrace captured at error construction time,
-    /// rendered as a human-readable string, when the global rate-limited
-    /// capture budget allowed it.
+    /// rendered as a human-readable string, when the production-safety
+    /// gates allowed capture and resolution.
     ///
-    /// Capture itself is unconditional (cheap stack walk); the expensive
-    /// part — resolving instruction pointers to symbol names — is
-    /// rate-limited (default `5` resolutions per second, configurable via
-    /// the driver's
+    /// Capture is bounded by two rolling-1-second limiters (capture
+    /// throttle + resolution rate), both configurable via the driver's
     /// [`CosmosDriverRuntimeBuilder::with_max_error_backtrace_resolutions_per_second`](azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_resolutions_per_second)
-    /// or the `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` environment
-    /// variable). Cache hits do not consume budget. Returns `None` when
-    /// the limiter denied fresh resolution for at least one cache-missed
-    /// frame; partial backtraces are never produced.
+    /// /
+    /// [`with_max_error_backtrace_captures_per_second`](azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second)
+    /// builder methods or the corresponding
+    /// `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` /
+    /// `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` environment variables.
+    /// Cache hits do not consume budget. Returns `None` when capture was
+    /// throttled, when the resolution limiter denied a cache-missed frame,
+    /// or when capture was auto-disabled by recent resolution pressure;
+    /// partial backtraces are never produced.
+    ///
+    /// **Errors arriving from `azure_core::Error`** (transport,
+    /// credential, serialization failures bubbling up from below the
+    /// Cosmos layer) carry a backtrace pointing at the Cosmos boundary
+    /// mapper, not at the original failure site \u2014 `azure_core::Error`
+    /// does not carry its own backtrace, so the originating call stack is
+    /// unrecoverable. The typed [`Kind`], status, and
+    /// [`std::error::Error::source`] chain remain the primary diagnostic
+    /// signal in that case.
     pub fn backtrace(&self) -> Option<&str> {
         self.0.backtrace()
     }

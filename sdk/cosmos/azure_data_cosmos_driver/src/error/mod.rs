@@ -369,19 +369,45 @@ impl Error {
     /// Returns the stack backtrace captured at error construction time,
     /// rendered as a human-readable string.
     ///
-    /// Capture itself is unconditional (cheap: just walking the stack). The
-    /// expensive part — resolving instruction pointers to symbol names — is
-    /// rate-limited via a process-global limiter (default `5` resolutions /
-    /// second). Cache hits do **not** consume budget, so backtraces whose
+    /// Capture is bounded by two production-safety gates (resolution-rate
+    /// limiter + per-second capture throttle, both rolling 1-second
+    /// windows). Cache hits do **not** consume budget, so backtraces whose
     /// frames are already known render at full fidelity regardless of
     /// limiter state.
     ///
-    /// Returns `None` only when the limiter denies fresh resolution for at
-    /// least one cache-missed frame. Partial backtraces are never produced —
-    /// callers either get a fully-resolved render or nothing. `None` results
-    /// are not cached: a later call may succeed once the limiter window
-    /// reopens (and frames resolved by other errors meanwhile have been
-    /// added to the cache).
+    /// Returns `None` when:
+    /// * The capture throttle was exhausted at construction time, or
+    /// * the resolution limiter denied fresh resolution for at least one
+    ///   cache-missed frame, or
+    /// * the auto-disable flag was set by a recent resolution denial and
+    ///   the window has not yet reopened.
+    ///
+    /// Partial backtraces are never produced — callers either get a fully-
+    /// resolved render or nothing. `None` from resolution denial is not
+    /// cached on the [`Error`] instance: a later call may succeed once the
+    /// limiter window reopens (and frames resolved by other errors
+    /// meanwhile have been added to the cache).
+    ///
+    /// ## What the backtrace points at
+    ///
+    /// * **Errors originating inside the Cosmos pipeline** (HTTP error
+    ///   responses, end-to-end timeouts, internal validation failures)
+    ///   resolve to the actual construction site.
+    /// * **Errors wrapping another Cosmos [`Error`]** as their source
+    ///   (status-changing re-wraps such as `build_transport_error`
+    ///   promoting a service error to a transport error) **inherit** the
+    ///   inner error's backtrace, so the originating site is still
+    ///   visible.
+    /// * **Errors produced by the `From<azure_core::Error>` boundary
+    ///   mapper** (transport / credential / serialization failures
+    ///   arriving from `azure_core` without an embedded Cosmos error)
+    ///   point at the boundary mapper itself, not at the original failure
+    ///   site. `azure_core::Error` does not carry its own backtrace, so
+    ///   the originating call stack is unrecoverable at this layer. The
+    ///   typed [`Kind`], status, and `std::error::Error::source()` chain
+    ///   (which preserves the underlying `azure_core::Error`,
+    ///   `reqwest::Error`, `h2::Error`, `io::Error`, …) remain the
+    ///   primary diagnostic signal in that case.
     pub fn backtrace(&self) -> Option<&str> {
         self.inner.backtrace.as_ref().and_then(Backtrace::rendered)
     }
