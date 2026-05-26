@@ -1053,7 +1053,7 @@ impl CosmosDriver {
         // Typed changefeed headers (`a-im: Incremental feed`, server-decides page size).
         let mut request_headers = operation.request_headers().clone();
         request_headers.incremental_feed = true;
-        request_headers.max_item_count = Some(crate::models::MaxItemCount::ServerDecides);
+        request_headers.max_item_count = Some(crate::models::MaxItemCountHint::ServerDecides);
         operation = operation.with_request_headers(request_headers);
 
         let options = OperationOptions::default();

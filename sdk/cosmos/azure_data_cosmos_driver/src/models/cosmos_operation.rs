@@ -175,7 +175,7 @@ impl CosmosOperation {
     /// (the `x-ms-max-item-count` request header).
     ///
     /// Applies to feed-style operations such as queries and read-feed.
-    pub fn with_max_item_count(mut self, max_item_count: crate::models::MaxItemCount) -> Self {
+    pub fn with_max_item_count(mut self, max_item_count: crate::models::MaxItemCountHint) -> Self {
         self.request_headers.max_item_count = Some(max_item_count);
         self
     }

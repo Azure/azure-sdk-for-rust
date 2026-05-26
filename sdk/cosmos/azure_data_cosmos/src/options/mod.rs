@@ -9,7 +9,7 @@ use std::fmt::Display;
 // Re-exported types that form part of the azure_data_cosmos public API.
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
-    ETag, MaxItemCount as MaxItemCountHint, Precondition, SessionToken, ThroughputControlGroupName,
+    ETag, MaxItemCountHint, Precondition, SessionToken, ThroughputControlGroupName,
 };
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{

@@ -18,7 +18,7 @@ use std::num::NonZeroU32;
 /// don't have to traffic in the `-1` wire sentinel directly.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum MaxItemCount {
+pub enum MaxItemCountHint {
     /// Let the service decide the page size (emits `x-ms-max-item-count: -1`).
     ServerDecides,
 
@@ -152,7 +152,7 @@ pub struct CosmosRequestHeaders {
     /// Used by feed/query/changefeed reads. See [`MaxItemCount`] for the two
     /// explicit values; the `-1` wire sentinel for "server decides" is
     /// represented by [`MaxItemCount::ServerDecides`].
-    pub max_item_count: Option<MaxItemCount>,
+    pub max_item_count: Option<MaxItemCountHint>,
 
     /// Requests an incremental change feed read (`a-im: Incremental feed`).
     ///
@@ -237,8 +237,8 @@ impl CosmosRequestHeaders {
         }
         if let Some(count) = self.max_item_count {
             let wire = match count {
-                MaxItemCount::ServerDecides => "-1".to_string(),
-                MaxItemCount::Limit(n) => n.get().to_string(),
+                MaxItemCountHint::ServerDecides => "-1".to_string(),
+                MaxItemCountHint::Limit(n) => n.get().to_string(),
             };
             headers.insert(
                 request_header_names::MAX_ITEM_COUNT,
@@ -1032,7 +1032,7 @@ mod tests {
     #[test]
     fn write_to_headers_emits_max_item_count() {
         let cosmos_headers = CosmosRequestHeaders {
-            max_item_count: Some(MaxItemCount::Limit(NonZeroU32::new(7).unwrap())),
+            max_item_count: Some(MaxItemCountHint::Limit(NonZeroU32::new(7).unwrap())),
             ..Default::default()
         };
         let mut headers = Headers::new();

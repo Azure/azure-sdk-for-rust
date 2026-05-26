@@ -50,7 +50,7 @@ pub use continuation_token::ContinuationToken;
 pub(crate) use continuation_token::ResolvedToken;
 pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
-    CosmosResponseHeaders, MaxItemCount, OfferAutoscaleSettings,
+    CosmosResponseHeaders, MaxItemCountHint, OfferAutoscaleSettings,
 };
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
