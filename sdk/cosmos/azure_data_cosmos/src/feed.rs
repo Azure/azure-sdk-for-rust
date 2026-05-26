@@ -96,6 +96,17 @@ pub struct QueryFeedPage<T> {
 }
 
 impl<T> QueryFeedPage<T> {
+    /// Returns a reference to the underlying [`FeedPage`].
+    ///
+    /// Use this when passing a query page to APIs that accept the more general
+    /// [`FeedPage`] type. The query-specific metadata (index metrics, query
+    /// metrics) is not visible through the returned reference; access it via
+    /// [`index_metrics`](Self::index_metrics) and
+    /// [`query_metrics`](Self::query_metrics) on this `QueryFeedPage` instead.
+    pub fn as_feed_page(&self) -> &FeedPage<T> {
+        &self.page
+    }
+
     /// Gets the items in this page of results.
     pub fn items(&self) -> &[T] {
         self.page.items()
