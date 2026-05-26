@@ -242,10 +242,7 @@ impl fmt::Debug for Backtrace {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Backtrace")
             .field("frame_count", &self.inner.ips.len())
-            .field(
-                "rendered",
-                &self.inner.rendered.get().map(Option::is_some),
-            )
+            .field("rendered", &self.inner.rendered.get().map(Option::is_some))
             .finish()
     }
 }
@@ -258,6 +255,15 @@ impl Backtrace {
     /// source).
     pub(crate) fn inner_arc_identity_for_tests(&self) -> usize {
         Arc::as_ptr(&self.inner) as usize
+    }
+
+    /// Returns the captured instruction pointers, for tests that need to
+    /// assert against the process-global symbol cache (e.g. "a failed
+    /// render did not insert any of this backtrace's IPs"). Per-IP
+    /// assertions are race-free even when other tests render backtraces
+    /// in parallel.
+    pub(crate) fn ips_for_tests(&self) -> &[usize] {
+        &self.inner.ips
     }
 }
 
@@ -413,6 +419,16 @@ pub(crate) fn clear_frame_cache_for_tests() {
     frame_cache().write().unwrap().clear();
 }
 
+/// Returns `true` if `ip` is currently in the process-global symbol
+/// cache. Used by tests that need a race-free assertion against cache
+/// state (e.g. "a failed render did not insert this IP"), since the
+/// cache is shared with any other test that renders backtraces in
+/// parallel and absolute-size assertions on it are inherently fragile.
+#[cfg(test)]
+pub(crate) fn frame_cache_contains_for_tests(ip: usize) -> bool {
+    frame_cache().read().unwrap().contains_key(&ip)
+}
+
 /// Returns the current size of the process-global symbol cache.
 #[cfg(test)]
 pub(crate) fn frame_cache_len_for_tests() -> usize {
@@ -564,8 +580,11 @@ mod tests {
     use super::*;
     use std::sync::Mutex;
 
-    // The capture limiter is process-global, so tests that mutate its state
-    // must run serially.
+    // Serializes backtrace tests that mutate the per-second limiter
+    // capacity (also process-global). Tests in *other* modules that
+    // merely render backtraces don't need this lock — they assert on
+    // per-IP properties, not absolute cache size, so concurrent renders
+    // cannot break them.
     static TEST_LOCK: Mutex<()> = Mutex::new(());
 
     fn with_limiter_capacity<R>(capacity: u32, f: impl FnOnce() -> R) -> R {
@@ -621,12 +640,21 @@ mod tests {
         with_limiter_capacity(0, || {
             clear_frame_cache_for_tests();
             let bt = Backtrace::capture().expect("capture always succeeds");
+            let ips: Vec<usize> = bt.ips_for_tests().to_vec();
             assert!(
                 bt.rendered().is_none(),
                 "expected None when budget=0 and cache is empty"
             );
-            // Failed render must not pollute the process-global cache.
-            assert_eq!(frame_cache_len_for_tests(), 0);
+            // Failed render must not pollute the process-global cache
+            // with any of this backtrace's IPs. Per-IP check is race-free
+            // even when other tests render unrelated backtraces in
+            // parallel (asserting on absolute cache size would not be).
+            for ip in &ips {
+                assert!(
+                    !frame_cache_contains_for_tests(*ip),
+                    "failed render leaked IP 0x{ip:x} into the cache"
+                );
+            }
         });
     }
 
@@ -677,8 +705,9 @@ mod tests {
             // Open the limiter wide so a subsequent render *would* succeed
             // if `None` were not cached. With per-instance caching the
             // first outcome wins and we still see None.
-            global_resolution_limiter()
-                .set_capacity_for_tests(crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND);
+            global_resolution_limiter().set_capacity_for_tests(
+                crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND,
+            );
             global_resolution_limiter().reset_for_tests();
             assert!(
                 bt.rendered().is_none(),
@@ -695,6 +724,12 @@ mod tests {
         // OS thread) and only the new entries from the triggering call
         // survive. We deliberately set the cap low so the path fires
         // without filling 100k entries.
+        //
+        // Use synthetic low-address IPs that nothing else in the process
+        // will ever insert, and assert per-IP membership instead of
+        // absolute cache size — concurrent tests rendering real
+        // backtraces in parallel may push other entries into the cache,
+        // and an absolute-size assertion would be racy.
         with_limiter_capacity(100, || {
             clear_frame_cache_for_tests();
             let prev_cap = set_frame_cache_soft_cap_for_tests(10);
@@ -702,28 +737,37 @@ mod tests {
             // Use synthetic IPs that the platform symbol resolver almost
             // certainly cannot resolve (low addresses). `resolve_single`
             // tolerates an unresolved IP and still inserts a stub frame
-            // into the cache, which is all we need for the size check.
+            // into the cache.
             let first: Vec<usize> = (1..=12).collect();
             assert!(
                 try_resolve_frames(&first).is_some(),
                 "first resolve_frames call must succeed (budget acquired once)"
             );
-            assert_eq!(
-                frame_cache_len_for_tests(),
-                12,
-                "cache should hold all 12 frames before eviction trips"
-            );
+            for ip in &first {
+                assert!(
+                    frame_cache_contains_for_tests(*ip),
+                    "expected IP {ip} in cache before eviction trips"
+                );
+            }
 
-            // Second call: cache len (12) >= cap (10) before insert, so
-            // the existing 12 entries are swapped out and only the 3 new
-            // ones land in the fresh map.
+            // Second call: cache len (>= 12) >= cap (10) before insert,
+            // so the existing entries are swapped out and only the 3 new
+            // ones land in the fresh map. The OLD 12 must be gone; the
+            // NEW 3 must be present.
             let second: Vec<usize> = (13..=15).collect();
             assert!(try_resolve_frames(&second).is_some());
-            assert_eq!(
-                frame_cache_len_for_tests(),
-                3,
-                "after eviction the cache must contain only the newly inserted entries"
-            );
+            for ip in &first {
+                assert!(
+                    !frame_cache_contains_for_tests(*ip),
+                    "pre-eviction IP {ip} must be gone after swap"
+                );
+            }
+            for ip in &second {
+                assert!(
+                    frame_cache_contains_for_tests(*ip),
+                    "post-eviction IP {ip} must be present in fresh cache"
+                );
+            }
 
             // Restore the production cap so this test does not affect
             // others sharing the process-global static.

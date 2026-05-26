@@ -1896,7 +1896,10 @@ mod tests {
     #[test]
     fn display_with_name() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
-        assert_eq!(format!("{}", status), "[Service] 429/3200 (RUBudgetExceeded)");
+        assert_eq!(
+            format!("{}", status),
+            "[Service] 429/3200 (RUBudgetExceeded)"
+        );
     }
 
     #[test]

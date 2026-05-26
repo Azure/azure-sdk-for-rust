@@ -2400,7 +2400,11 @@ mod tests {
                 builder.update_request(handle, |req| {
                     req.request_charge = RequestCharge::new(i as f64)
                 });
-                builder.complete_request(handle, StatusCode::TooManyRequests,Some(SubStatusCode::RU_BUDGET_EXCEEDED));
+                builder.complete_request(
+                    handle,
+                    StatusCode::TooManyRequests,
+                    Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+                );
             }
         });
 

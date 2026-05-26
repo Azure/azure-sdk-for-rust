@@ -443,7 +443,12 @@ impl fmt::Display for Error {
             // chain remains human-readable; Debug uses `{src:?}` /
             // `{src:#?}` to expose structured state.
             write_source_chain(f, self, /* debug */ false, /* alternate */ true)?;
-            write_diagnostics(f, &self.inner, /* debug */ false, /* alternate */ true)?;
+            write_diagnostics(
+                f,
+                &self.inner,
+                /* debug */ false,
+                /* alternate */ true,
+            )?;
             write_backtrace(f, self)?;
         }
         Ok(())
@@ -504,6 +509,18 @@ fn write_source_chain(
     while let Some(src) = cur {
         if depth == 0 {
             f.write_str("\n\nCaused by:")?;
+        }
+        // Bound the walk by the same cap as `refine_status_from_source_chain`
+        // so a pathological or cyclic `source()` chain cannot pin a thread
+        // formatting an error. This runs on every `tracing::error!`,
+        // `format!`, and panic message, so the protection matters even more
+        // here than at the boundary mapper.
+        if depth >= MAX_SOURCE_CHAIN_DEPTH {
+            write!(
+                f,
+                "\n  {depth}: ... <source chain truncated at {MAX_SOURCE_CHAIN_DEPTH} frames>"
+            )?;
+            break;
         }
         match (debug, alternate) {
             (true, true) => write!(f, "\n  {depth}: {src:#?}")?,
@@ -986,6 +1003,57 @@ mod tests {
         assert!(
             after_diag.contains("\n    "),
             "alternate flag must cascade into DiagnosticsContext::Debug (expected indented multi-line layout), got:\n{after_diag}"
+        );
+    }
+
+    /// Regression guard: a cyclic (or pathologically deep) `source()` chain
+    /// must not cause `Display`/`Debug` on `Error` to run unbounded. The
+    /// source-chain walker caps at `MAX_SOURCE_CHAIN_DEPTH` frames and
+    /// emits a `<source chain truncated ...>` marker so a single
+    /// `tracing::error!` cannot pin a thread.
+    #[test]
+    fn display_and_debug_bound_source_chain_walk() {
+        // Self-referential `StdError::source` returning the same error
+        // forever — simulates a cyclic chain without needing unsafe.
+        #[derive(Debug)]
+        struct CyclicError;
+        impl fmt::Display for CyclicError {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("cyclic")
+            }
+        }
+        impl StdError for CyclicError {
+            fn source(&self) -> Option<&(dyn StdError + 'static)> {
+                // Return &'static self via a leaked static so the borrow
+                // lifetime is satisfied without unsafe.
+                static SELF: CyclicError = CyclicError;
+                Some(&SELF)
+            }
+        }
+
+        let err = Error::transport(
+            CosmosStatus::TRANSPORT_GENERATED_503,
+            "outer",
+            None,
+            Some(Arc::new(CyclicError)),
+        );
+
+        // Debug must terminate and emit the truncation marker. We only
+        // exercise the Debug path (`{err:?}`) here: it emits the source
+        // chain without rendering the backtrace block, so this test does
+        // not pollute the process-global frame cache and cannot race with
+        // sibling backtrace tests that assert on its size. The walker is
+        // shared between Display and Debug, so covering one path proves
+        // the cap fires on both.
+        let rendered = format!("{err:?}");
+        assert!(
+            rendered.contains("<source chain truncated"),
+            "expected truncation marker for cyclic source chain, got:\n{rendered}"
+        );
+        assert!(
+            rendered.len() < 64 * 1024,
+            "rendered length ({}) suggests unbounded walk",
+            rendered.len(),
         );
     }
 }

@@ -826,7 +826,8 @@ impl CosmosDriverRuntimeBuilder {
         // fallback > documented default. The most recently built runtime
         // defines the policy.
         let backtrace_capacity = parse_u32_from_env(
-            self.max_error_backtrace_resolutions_per_second.map(|n| n.get()),
+            self.max_error_backtrace_resolutions_per_second
+                .map(|n| n.get()),
             crate::error::backtrace::BACKTRACE_RESOLUTIONS_PER_SECOND_ENV,
             crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND,
             1,
@@ -840,7 +841,8 @@ impl CosmosDriverRuntimeBuilder {
         crate::error::backtrace::global_resolution_limiter().set_capacity(backtrace_capacity);
 
         let backtrace_capture_capacity = parse_u32_from_env(
-            self.max_error_backtrace_captures_per_second.map(|n| n.get()),
+            self.max_error_backtrace_captures_per_second
+                .map(|n| n.get()),
             crate::error::backtrace::BACKTRACE_CAPTURES_PER_SECOND_ENV,
             crate::error::backtrace::DEFAULT_BACKTRACE_CAPTURES_PER_SECOND,
             1,
@@ -848,8 +850,7 @@ impl CosmosDriverRuntimeBuilder {
         )?;
         let backtrace_capture_capacity = std::num::NonZeroU32::new(backtrace_capture_capacity)
             .expect("parse_u32_from_env enforced min=1");
-        crate::error::backtrace::global_capture_throttle()
-            .set_capacity(backtrace_capture_capacity);
+        crate::error::backtrace::global_capture_throttle().set_capacity(backtrace_capture_capacity);
 
         Ok(Arc::new(CosmosDriverRuntime {
             id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),

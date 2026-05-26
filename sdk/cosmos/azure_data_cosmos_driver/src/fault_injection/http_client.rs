@@ -740,9 +740,7 @@ mod tests {
             let az_err = std::error::Error::source(&err.error)
                 .and_then(|s| s.downcast_ref::<azure_core::Error>())
                 .unwrap_or_else(|| panic!("{:?} should preserve azure_core source", error_type));
-            if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } =
-                az_err.kind()
-            {
+            if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = az_err.kind() {
                 let response = raw_response
                     .as_ref()
                     .unwrap_or_else(|| panic!("{:?} should have a raw_response", error_type));
