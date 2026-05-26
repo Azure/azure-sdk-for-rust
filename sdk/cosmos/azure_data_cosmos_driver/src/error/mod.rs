@@ -416,9 +416,13 @@ impl Error {
     /// Returns `None` when:
     /// * The capture throttle was exhausted at construction time, or
     /// * the resolution limiter denied fresh resolution for at least one
-    ///   cache-missed frame, or
-    /// * the auto-disable flag was set by a recent resolution denial and
-    ///   the window has not yet reopened.
+    ///   cache-missed frame.
+    ///
+    /// The two limiters are intentionally **independent** — capture
+    /// pressure and resolution pressure do not feed back into one
+    /// another. Capture is cheap (microseconds + a small allocation)
+    /// and is bounded by the capture throttle alone; resolution is the
+    /// expensive work and is bounded by the resolution limiter alone.
     ///
     /// Partial backtraces are never produced — callers either get a fully-
     /// resolved render or nothing. **The outcome of the first call is

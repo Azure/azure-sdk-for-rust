@@ -52,8 +52,6 @@ Every `Error` carries a stack backtrace captured at construction. Unlike `RUST_B
 
 Both knobs take `NonZeroU32`; backtrace capture cannot be disabled. `build()` rejects `0` from the env-var fallback with a validation error.
 
-**Auto-disable on resolution pressure.** The moment the resolution limiter denies a request, `Backtrace::capture()` short-circuits to `None` for the rest of that 1-second window (the resulting `Error` carries no backtrace). The window naturally re-opens every second, and any subsequent resolution grant clears the flag immediately — so the system can never get stuck in the disabled state.
-
 **When to adjust which.**
 
 - **Resolution budget** — raise when you want richer backtraces in development or when investigating a specific recurring failure (resolved frames are cached forever, so a one-time spike costs nothing long-term). Lower when symbol resolution is dominating CPU during incident debugging.

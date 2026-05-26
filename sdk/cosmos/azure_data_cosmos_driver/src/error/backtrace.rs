@@ -316,7 +316,7 @@ fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
     if !missing.is_empty() {
         // Charge the rate limiter exactly once per backtrace render that
         // needs fresh resolution. Cache hits already happened above and did
-        // not consume budget. The grant/denial is also fed back into the
+        // not consume budget.
         if !global_resolution_limiter().try_acquire() {
             // Budget denied — give up entirely. Returning a partially
             // resolved backtrace would be misleading; the caller will see
