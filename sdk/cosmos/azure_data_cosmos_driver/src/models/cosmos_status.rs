@@ -1023,11 +1023,6 @@ impl SubStatusCode {
     /// detection via `io::Error` / reqwest error inspection.
     pub const TRANSPORT_DNS_FAILED: SubStatusCode = SubStatusCode(20012);
 
-    /// TLS handshake failed (20013). Best-effort detection via reqwest /
-    /// rustls / native-tls error inspection. Often non-retriable
-    /// (cert/hostname mismatch).
-    pub const TRANSPORT_TLS_HANDSHAKE_FAILED: SubStatusCode = SubStatusCode(20013);
-
     /// Failure while streaming or reading the response body (20014). Distinct
     /// from a serde / JSON parse failure on already-buffered bytes.
     pub const TRANSPORT_BODY_READ_FAILED: SubStatusCode = SubStatusCode(20014);
@@ -1038,23 +1033,11 @@ impl SubStatusCode {
     /// downcasting through the source chain for `h2::Error`.
     pub const TRANSPORT_HTTP2_INCOMPATIBLE: SubStatusCode = SubStatusCode(20015);
 
-    // ----- Serialization boundary mapping codes (20020-20021) -----
+    // ----- Serialization boundary mapping code (20020) -----
 
     /// Response body failed to deserialize (20020). Maps from
     /// `azure_core::ErrorKind::DataConversion` on the response path.
     pub const SERIALIZATION_RESPONSE_BODY_INVALID: SubStatusCode = SubStatusCode(20020);
-
-    /// Request body failed to serialize (20021). Maps from
-    /// `azure_core::ErrorKind::DataConversion` on the request path.
-    pub const SERIALIZATION_REQUEST_BUILD_FAILED: SubStatusCode = SubStatusCode(20021);
-
-    // ----- Configuration boundary mapping code (20030) -----
-
-    /// Header parse / serialization failure that is caller-controlled
-    /// configuration rather than a wire-level failure (20030). Today raised
-    /// as `DataConversion` for things like an invalid consistency-level
-    /// header value.
-    pub const CONFIGURATION_INVALID_HEADER: SubStatusCode = SubStatusCode(20030);
 
     // ----- Authentication boundary mapping code (20402) -----
 
@@ -1550,13 +1533,6 @@ impl CosmosStatus {
         kind: Kind::Transport,
     };
 
-    /// TLS handshake failed (HTTP 503, sub-status 20013).
-    pub const TRANSPORT_TLS_HANDSHAKE_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::ServiceUnavailable,
-        sub_status: Some(SubStatusCode::TRANSPORT_TLS_HANDSHAKE_FAILED),
-        kind: Kind::Transport,
-    };
-
     /// Response body read failure (HTTP 503, sub-status 20014).
     pub const TRANSPORT_BODY_READ_FAILED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::ServiceUnavailable,
@@ -1577,21 +1553,6 @@ impl CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID),
         kind: Kind::Serialization,
-    };
-
-    /// Request body failed to serialize (HTTP 500, sub-status 20021).
-    pub const SERIALIZATION_REQUEST_BUILD_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::SERIALIZATION_REQUEST_BUILD_FAILED),
-        kind: Kind::Serialization,
-    };
-
-    /// Invalid header value (caller-controlled configuration)
-    /// (HTTP 400, sub-status 20030).
-    pub const CONFIGURATION_INVALID_HEADER: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CONFIGURATION_INVALID_HEADER),
-        kind: Kind::Configuration,
     };
 
     /// AAD / credential provider token acquisition failed
