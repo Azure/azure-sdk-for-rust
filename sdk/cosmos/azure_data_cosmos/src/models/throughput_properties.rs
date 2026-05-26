@@ -13,9 +13,10 @@ use crate::{constants, models::SystemProperties};
 
 const OFFER_VERSION_2: &str = "V2";
 
-#[derive(Clone, Default, SafeDebug, Deserialize, Serialize)]
+#[derive(Clone, SafeDebug, Deserialize, Serialize)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct ThroughputProperties {
     resource: String,
     #[serde(rename = "content")]
@@ -32,12 +33,16 @@ pub struct ThroughputProperties {
 impl ThroughputProperties {
     pub fn manual(throughput: usize) -> ThroughputProperties {
         ThroughputProperties {
-            offer_version: OFFER_VERSION_2.into(),
+            resource: String::new(),
             offer: Offer {
                 offer_throughput: Some(throughput),
-                ..Default::default()
+                offer_autopilot_settings: None,
             },
-            ..Default::default()
+            offer_id: String::new(),
+            offer_resource_id: String::new(),
+            offer_type: String::new(),
+            offer_version: OFFER_VERSION_2.into(),
+            system_properties: SystemProperties::default(),
         }
     }
 
@@ -46,8 +51,9 @@ impl ThroughputProperties {
         increment_percent: Option<usize>,
     ) -> ThroughputProperties {
         ThroughputProperties {
-            offer_version: OFFER_VERSION_2.into(),
+            resource: String::new(),
             offer: Offer {
+                offer_throughput: None,
                 offer_autopilot_settings: Some(OfferAutoscaleSettings {
                     max_throughput: starting_maximum_throughput,
                     auto_upgrade_policy: increment_percent.map(|p| AutoscaleAutoUpgradePolicy {
@@ -56,9 +62,12 @@ impl ThroughputProperties {
                         }),
                     }),
                 }),
-                ..Default::default()
             },
-            ..Default::default()
+            offer_id: String::new(),
+            offer_resource_id: String::new(),
+            offer_type: String::new(),
+            offer_version: OFFER_VERSION_2.into(),
+            system_properties: SystemProperties::default(),
         }
     }
 
@@ -175,15 +184,6 @@ impl ThroughputProperties {
 mod tests {
     use super::*;
     use azure_data_cosmos_driver::models::CosmosRequestHeaders;
-
-    #[test]
-    fn default_throughput_produces_empty_headers() {
-        let tp = ThroughputProperties::default();
-        let mut headers = CosmosRequestHeaders::new();
-        tp.apply_headers(&mut headers);
-        assert!(headers.offer_throughput.is_none());
-        assert!(headers.offer_autopilot_settings.is_none());
-    }
 
     #[test]
     fn manual_throughput_sets_offer_throughput() {
