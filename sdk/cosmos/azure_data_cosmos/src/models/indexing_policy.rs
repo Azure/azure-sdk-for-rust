@@ -83,6 +83,7 @@ impl IndexingPolicy {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum IndexingMode {
     Consistent,
     None,
@@ -121,6 +122,7 @@ pub struct SpatialIndex {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "PascalCase")]
+#[non_exhaustive]
 pub enum SpatialType {
     Point,
     Polygon,
@@ -158,6 +160,7 @@ pub struct CompositeIndexProperty {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum CompositeIndexOrder {
     Ascending,
     Descending,
@@ -183,6 +186,7 @@ pub struct VectorIndex {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum VectorIndexType {
     /// Represents the `flat` vector index type.
     Flat,

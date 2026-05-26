@@ -226,6 +226,7 @@ pub struct VectorEmbedding {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum VectorDataType {
     /// Represents the `float16` data type.
     Float16,
@@ -244,6 +245,7 @@ pub enum VectorDataType {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum VectorDistanceFunction {
     /// Represents the `euclidian` distance function.
     Euclidean,
@@ -302,6 +304,7 @@ pub struct ConflictResolutionPolicy {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "PascalCase")]
+#[non_exhaustive]
 pub enum ConflictResolutionMode {
     /// Conflict resolution will be performed by using the highest value of the property specified by [`ConflictResolutionPolicy::resolution_path`].
     LastWriterWins,

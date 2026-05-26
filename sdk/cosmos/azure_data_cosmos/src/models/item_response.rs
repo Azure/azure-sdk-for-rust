@@ -20,6 +20,7 @@ use serde::de::DeserializeOwned;
 /// control. The item payload is consumed via [`into_body`](Self::into_body)
 /// or deserialized in one shot via [`into_model::<T>`](Self::into_model).
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct ItemResponse {
     response: CosmosResponse,
 }

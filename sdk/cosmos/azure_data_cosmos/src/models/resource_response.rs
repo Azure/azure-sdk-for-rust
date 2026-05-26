@@ -21,6 +21,7 @@ use serde::de::DeserializeOwned;
 /// keeping `T` on the response type lets callers write `.into_model()?` without
 /// a turbofish.
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct ResourceResponse<T> {
     response: CosmosResponse,
     _marker: PhantomData<fn() -> T>,

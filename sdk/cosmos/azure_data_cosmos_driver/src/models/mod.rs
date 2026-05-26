@@ -239,6 +239,7 @@ fn default_pk_version() -> PartitionKeyVersion {
 /// - `2` -> `V2`
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u32", into = "u32")]
+#[non_exhaustive]
 pub enum PartitionKeyVersion {
     /// Partition key version 1.
     V1,

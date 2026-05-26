@@ -21,6 +21,7 @@ use crate::SessionToken;
 /// [`TransactionalBatchOperationResult`](crate::TransactionalBatchOperationResult)
 /// entries for per-item ETags.
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct BatchResponse {
     response: CosmosResponse,
 }
