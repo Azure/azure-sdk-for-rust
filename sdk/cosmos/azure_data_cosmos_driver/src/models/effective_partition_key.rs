@@ -319,7 +319,7 @@ mod tests {
 
     #[test]
     fn infinity_pk_returns_max() {
-        let inf = PartitionKeyValue::infinity();
+        let inf = PartitionKeyValue::INFINITY;
         let result =
             EffectivePartitionKey::compute(&[inf], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
         assert_eq!(result, EffectivePartitionKey::MAX.clone());
@@ -580,7 +580,7 @@ mod tests {
     fn multi_hash_with_undefined() {
         let pk = vec![
             PartitionKeyValue::from("tenant1".to_string()),
-            PartitionKeyValue::undefined(),
+            PartitionKeyValue::UNDEFINED,
         ];
         let multi = EffectivePartitionKey::compute(
             &pk,
@@ -599,7 +599,7 @@ mod tests {
 
         // Second segment: hash of Undefined (0x00 byte)
         let single_undef = EffectivePartitionKey::compute(
-            &[PartitionKeyValue::undefined()],
+            &[PartitionKeyValue::UNDEFINED],
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );
