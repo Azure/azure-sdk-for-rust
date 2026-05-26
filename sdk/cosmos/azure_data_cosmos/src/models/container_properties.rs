@@ -230,6 +230,47 @@ pub struct VectorEmbedding {
     pub distance_function: VectorDistanceFunction,
 }
 
+impl VectorEmbedding {
+    /// Creates a new [`VectorEmbedding`] with the given path, data type, dimensions, and distance function.
+    pub fn new(
+        path: impl Into<String>,
+        data_type: VectorDataType,
+        dimensions: u32,
+        distance_function: VectorDistanceFunction,
+    ) -> Self {
+        Self {
+            path: path.into(),
+            data_type,
+            dimensions,
+            distance_function,
+        }
+    }
+
+    /// Sets the path of this embedding.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
+
+    /// Sets the data type of this embedding.
+    pub fn with_data_type(mut self, data_type: VectorDataType) -> Self {
+        self.data_type = data_type;
+        self
+    }
+
+    /// Sets the number of dimensions of this embedding.
+    pub fn with_dimensions(mut self, dimensions: u32) -> Self {
+        self.dimensions = dimensions;
+        self
+    }
+
+    /// Sets the distance function used by this embedding.
+    pub fn with_distance_function(mut self, distance_function: VectorDistanceFunction) -> Self {
+        self.distance_function = distance_function;
+        self
+    }
+}
+
 /// Defines the data types of the elements of a vector.
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
@@ -322,6 +363,33 @@ pub struct ConflictResolutionPolicy {
     /// The stored procedure path to use to perform [`Custom`](ConflictResolutionMode::Custom) conflict resolution.
     #[serde(rename = "conflictResolutionProcedure")]
     pub resolution_procedure: String,
+}
+
+impl ConflictResolutionPolicy {
+    /// Creates a new [`ConflictResolutionPolicy`] with the given conflict resolution mode.
+    ///
+    /// `resolution_path` and `resolution_procedure` are initialized to empty strings; set
+    /// the field appropriate for the chosen mode via [`with_resolution_path`](Self::with_resolution_path)
+    /// or [`with_resolution_procedure`](Self::with_resolution_procedure).
+    pub fn new(mode: ConflictResolutionMode) -> Self {
+        Self {
+            mode,
+            resolution_path: String::new(),
+            resolution_procedure: String::new(),
+        }
+    }
+
+    /// Sets the path within the item used to resolve [`LastWriterWins`](ConflictResolutionMode::LastWriterWins) conflicts.
+    pub fn with_resolution_path(mut self, resolution_path: impl Into<String>) -> Self {
+        self.resolution_path = resolution_path.into();
+        self
+    }
+
+    /// Sets the stored procedure path used to resolve [`Custom`](ConflictResolutionMode::Custom) conflicts.
+    pub fn with_resolution_procedure(mut self, resolution_procedure: impl Into<String>) -> Self {
+        self.resolution_procedure = resolution_procedure.into();
+        self
+    }
 }
 
 /// Defines conflict resolution types available in Azure Cosmos DB
