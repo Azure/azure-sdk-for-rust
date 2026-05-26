@@ -153,30 +153,27 @@ struct ResolvedFrame {
 }
 
 impl Backtrace {
-    /// Captures a backtrace, subject to two independent production-safety
-    /// gates:
+    /// Captures a backtrace, subject to a single production-safety gate:
+    /// the **per-second capture throttle** ([`global_capture_throttle`]).
     ///
-    /// 1. **Auto-disable on resolution pressure** — if the symbol-resolution
-    ///    rate limiter denied at least one resolve in the current rolling
-    ///    1-second window, capture is skipped until either the window
-    ///    rolls over or a subsequent resolve succeeds (the limiter is
-    ///    flipped back to "healthy" the moment any resolve grants again).
-    ///    Returns `None` while disabled so the resulting [`Error`](super::Error)
-    ///    carries no backtrace.
-    /// 2. **Per-second capture throttle** — even when not auto-disabled,
-    ///    each successful capture consumes one token from a process-global
-    ///    1-second budget (default `1000`). When the budget is exhausted
-    ///    capture returns `None` for the rest of the window, bounding the
-    ///    worst-case stack-walk cost during a same-call-site error storm
-    ///    that the resolution limiter would otherwise miss (cache hits do
-    ///    not consume resolution budget).
+    /// Each successful capture consumes one token from a process-global
+    /// rolling 1-second budget (default `1000`, configurable via
+    /// [`CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second`](crate::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second)
+    /// or the [`BACKTRACE_CAPTURES_PER_SECOND_ENV`] environment variable).
+    /// When the budget is exhausted, capture returns `None` for the rest
+    /// of the window, bounding the worst-case stack-walk cost during an
+    /// error storm.
     ///
-    /// Returns `None` when either gate denies, or when the platform's
+    /// Capture and symbol resolution are deliberately decoupled: the
+    /// resolution limiter (charged later by [`Self::rendered`]) gates
+    /// expensive symbol-resolution work, not capture itself. Resolution
+    /// pressure on one error site has no effect on capture for unrelated
+    /// sites — capture is cheap (microseconds + small allocation) and is
+    /// bounded by this throttle alone.
+    ///
+    /// Returns `None` when the throttle denies, or when the platform's
     /// `backtrace` crate refuses to produce any frames.
     pub(crate) fn capture() -> Option<Self> {
-        if capture_auto_disabled() {
-            return None;
-        }
         if !global_capture_throttle().try_acquire() {
             return None;
         }
@@ -299,8 +296,7 @@ fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
         // Charge the rate limiter exactly once per backtrace render that
         // needs fresh resolution. Cache hits already happened above and did
         // not consume budget. The grant/denial is also fed back into the
-        // auto-disable signal that gates [`Backtrace::capture`].
-        if !try_acquire_resolution() {
+        if !global_resolution_limiter().try_acquire() {
             // Budget denied — give up entirely. Returning a partially
             // resolved backtrace would be misleading; the caller will see
             // `None` and can retry later when the limiter window reopens.
@@ -508,55 +504,6 @@ pub(crate) fn global_capture_throttle() -> &'static BacktraceCaptureLimiter {
     &LIMITER
 }
 
-// -----------------------------------------------------------------
-// Auto-disable on resolution-limiter denial
-// -----------------------------------------------------------------
-
-/// Unix-seconds timestamp of the most recent rolling 1-second window in
-/// which the resolution limiter denied a request. While this equals the
-/// current second, [`Backtrace::capture`] is short-circuited to `None` so
-/// the driver stops paying capture cost on storm sites whose resolution
-/// budget is already exhausted.
-///
-/// The window naturally reopens every second (current second advances past
-/// the stored value), and is *also* cleared immediately by the next
-/// successful resolution grant — either path recovers, so the system can
-/// never get stuck in the disabled state.
-static LAST_RESOLUTION_DENIAL_WINDOW: AtomicU64 = AtomicU64::new(0);
-
-fn note_resolution_grant() {
-    // Clear the auto-disable signal eagerly the moment any resolve
-    // succeeds — the limiter is no longer under pressure.
-    LAST_RESOLUTION_DENIAL_WINDOW.store(0, Ordering::Release);
-}
-
-fn note_resolution_denial() {
-    LAST_RESOLUTION_DENIAL_WINDOW.store(now_unix_secs(), Ordering::Release);
-}
-
-fn capture_auto_disabled() -> bool {
-    let last = LAST_RESOLUTION_DENIAL_WINDOW.load(Ordering::Acquire);
-    last != 0 && now_unix_secs() == last
-}
-
-/// Wrapper around `global_resolution_limiter().try_acquire()` that also
-/// feeds the grant/denial outcome into the [`capture_auto_disabled`]
-/// signal.
-fn try_acquire_resolution() -> bool {
-    if global_resolution_limiter().try_acquire() {
-        note_resolution_grant();
-        true
-    } else {
-        note_resolution_denial();
-        false
-    }
-}
-
-#[cfg(test)]
-fn reset_auto_disable_for_tests() {
-    LAST_RESOLUTION_DENIAL_WINDOW.store(0, Ordering::Release);
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -573,45 +520,28 @@ mod tests {
         global_resolution_limiter().reset_for_tests();
         // Ensure the capture throttle starts with a fresh window and a
         // generous capacity so it never accidentally gates these tests —
-        // we are exercising the resolution limiter / auto-disable, not
-        // capture throttling.
+        // we are exercising the resolution limiter, not capture throttling.
         let prev_throttle = global_capture_throttle().capacity();
         global_capture_throttle().set_capacity_for_tests(DEFAULT_BACKTRACE_CAPTURES_PER_SECOND);
         global_capture_throttle().reset_for_tests();
-        reset_auto_disable_for_tests();
         let r = f();
         global_resolution_limiter().set_capacity_for_tests(prev);
         global_resolution_limiter().reset_for_tests();
         global_capture_throttle().set_capacity_for_tests(prev_throttle);
         global_capture_throttle().reset_for_tests();
-        reset_auto_disable_for_tests();
         r
     }
 
     #[test]
-    fn capture_always_succeeds() {
-        // Capture is unconditional when the auto-disable flag is clear and
-        // the throttle budget is not exhausted. The resolution limiter
-        // only gates symbol resolution, not capture.
+    fn capture_succeeds_under_resolution_pressure() {
+        // Capture is bounded only by the capture throttle, not by the
+        // resolution limiter. Even with the resolution budget at zero
+        // (i.e. rendering will fail) capture must still succeed, because
+        // the captured IPs are useful for later renders once the
+        // resolution window rolls over, and resolution pressure on one
+        // error site must never blind capture for unrelated sites.
         with_limiter_capacity(0, || {
             assert!(Backtrace::capture().is_some());
-        });
-    }
-
-    #[test]
-    fn capture_returns_none_after_resolution_denial_in_same_window() {
-        with_limiter_capacity(0, || {
-            clear_frame_cache_for_tests();
-            // First capture is fine — auto-disable is clear.
-            let bt = Backtrace::capture().expect("first capture");
-            // Render denies (budget=0) and flips the auto-disable flag.
-            assert!(bt.rendered().is_none());
-            // While the denial window is still current, capture short-
-            // circuits to None so we stop walking stacks.
-            assert!(
-                Backtrace::capture().is_none(),
-                "capture must be auto-disabled after resolution denial in same window"
-            );
         });
     }
 
@@ -622,7 +552,6 @@ mod tests {
             // it deterministically; resolution capacity is irrelevant here.
             global_capture_throttle().set_capacity_for_tests(2);
             global_capture_throttle().reset_for_tests();
-            reset_auto_disable_for_tests();
             assert!(Backtrace::capture().is_some(), "1st within budget");
             assert!(Backtrace::capture().is_some(), "2nd within budget");
             assert!(

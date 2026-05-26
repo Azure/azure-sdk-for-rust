@@ -418,28 +418,33 @@ impl Error {
 // -----------------------------------------------------------------
 
 impl fmt::Display for Error {
-    /// Default (`{e}`): the bare error message text — matching the
-    /// `anyhow::Error` / `azure_core::Error` / `std::io::Error` convention
-    /// that `e.to_string()` returns the human-readable message. Typed
-    /// metadata (kind, status, sub-status, headers, diagnostics, source,
-    /// backtrace) is reachable via the dedicated accessors on [`Error`].
+    /// Default (`{e}`): a single-line `[Kind] status/sub (name): message`
+    /// header. This intentionally diverges from the `anyhow` / `azure_core`
+    /// / `io::Error` "bare message" convention so that every existing log
+    /// site (`tracing::error!("{e}")`, `format!("op failed: {e}")`, panic
+    /// messages) automatically surfaces the typed Cosmos status that this
+    /// error type exists to expose — losing it silently in default rendering
+    /// would defeat the purpose of the typed surface. The format is bounded
+    /// in length (a few dozen bytes) and stays on a single line.
     ///
-    /// Alternate (`{e:#}`): the message prefixed with the categorical
-    /// [`Kind`] and the typed status, followed by the source chain and
+    /// Alternate (`{e:#}`): the single-line header followed by the
+    /// `Caused by:` source chain, the structured diagnostics block, and
     /// (if captured) the rendered backtrace. Matches the `anyhow::Error` /
     /// `eyre::Report` convention of opting in to a richer multi-line
     /// representation via the alternate flag.
+    ///
+    /// Structured fields (kind, status, sub-status, headers, diagnostics,
+    /// source chain, backtrace) are also reachable directly via the
+    /// dedicated accessors on [`Error`].
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write_header(f, &self.inner)?;
         if f.alternate() {
-            write_header(f, &self.inner)?;
             // Display form uses `{src}` / `{src:#}` per entry so the
             // chain remains human-readable; Debug uses `{src:?}` /
             // `{src:#?}` to expose structured state.
             write_source_chain(f, self, /* debug */ false, /* alternate */ true)?;
-            write_diagnostics(f, &self.inner, /* alternate */ true)?;
+            write_diagnostics(f, &self.inner, /* debug */ false, /* alternate */ true)?;
             write_backtrace(f, self)?;
-        } else {
-            f.write_str(&self.inner.message)?;
         }
         Ok(())
     }
@@ -463,7 +468,7 @@ impl fmt::Debug for Error {
         let alternate = f.alternate();
         write_header(f, &self.inner)?;
         write_source_chain(f, self, /* debug */ true, alternate)?;
-        write_diagnostics(f, &self.inner, alternate)?;
+        write_diagnostics(f, &self.inner, /* debug */ true, alternate)?;
         if alternate {
             write_backtrace(f, self)?;
         }
@@ -512,27 +517,36 @@ fn write_source_chain(
     Ok(())
 }
 
-/// Appends the `DiagnosticsContext` (when present) using its `Debug`
-/// representation. Diagnostics carry structured per-request data
-/// (regions contacted, RU charges, retry events, transport state) that
-/// is essential for triaging failures; rendering it as a boolean
-/// presence flag would lose that signal.
+/// Appends the `DiagnosticsContext` (when present). The renderer is
+/// chosen by the `debug` and `alternate` flags so the same helper can
+/// serve both the Display and Debug paths on [`Error`]:
 ///
-/// `alternate` selects between `{diag:?}` and `{diag:#?}` so the
-/// outer `{e:#?}` / `{e:#}` flag cascades into the diagnostics block.
+/// * Display path (`debug = false`) uses `DiagnosticsContext::Display`,
+///   which renders the high-signal one-line summary
+///   (`activity=… duration=…ms requests=N charge=…RU [status=…]`) and,
+///   under `{:#}`, follows it with the summarized diagnostics JSON.
+///   Keeping Display-mode output rendered via Display avoids splicing
+///   derived-Debug `Field { … }` blocks into the user-facing rich
+///   `{e:#}` rendering.
+/// * Debug path (`debug = true`) uses `DiagnosticsContext::Debug` so
+///   the structured representation cascades out of `{e:?}` / `{e:#?}`
+///   alongside the rest of the Debug output.
 fn write_diagnostics(
     f: &mut fmt::Formatter<'_>,
     inner: &ErrorInner,
+    debug: bool,
     alternate: bool,
 ) -> fmt::Result {
-    if let Some(diag) = inner.diagnostics.as_deref() {
-        if alternate {
-            write!(f, "\n\nDiagnostics:\n{diag:#?}")?;
-        } else {
-            write!(f, "\n\nDiagnostics:\n{diag:?}")?;
-        }
+    let Some(diag) = inner.diagnostics.as_deref() else {
+        return Ok(());
+    };
+    f.write_str("\n\nDiagnostics:\n")?;
+    match (debug, alternate) {
+        (true, true) => write!(f, "{diag:#?}"),
+        (true, false) => write!(f, "{diag:?}"),
+        (false, true) => write!(f, "{diag:#}"),
+        (false, false) => write!(f, "{diag}"),
     }
-    Ok(())
 }
 
 fn write_backtrace(f: &mut fmt::Formatter<'_>, err: &Error) -> fmt::Result {
@@ -850,13 +864,35 @@ mod tests {
     }
 
     #[test]
-    fn display_plain_returns_only_the_message() {
-        // `{e}` must match the `anyhow` / `azure_core` / `std::io` convention:
-        // the bare human-readable message, with no header/source/backtrace
-        // noise that would corrupt callers concatenating it into other strings.
+    fn display_plain_includes_typed_header_and_message_on_one_line() {
+        // `{e}` must surface the typed `[Kind] status/sub (name): message`
+        // header on a single line so existing log sites that didn't opt
+        // into `{e:#}` still see the Cosmos status this error type exists
+        // to expose. The source chain, diagnostics block, and backtrace
+        // are reserved for the opt-in `{e:#}` form so they don't corrupt
+        // callers concatenating the message into other strings.
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err}");
-        assert_eq!(rendered, "outer transport failure");
+        assert!(
+            !rendered.contains('\n'),
+            "plain display must stay on one line, got:\n{rendered}"
+        );
+        assert!(
+            rendered.contains("[Transport]"),
+            "plain display must include the categorical kind, got:\n{rendered}"
+        );
+        assert!(
+            rendered.ends_with(": outer transport failure"),
+            "plain display must end with `: <message>`, got:\n{rendered}"
+        );
+        assert!(
+            !rendered.contains("Caused by:"),
+            "plain display must not emit the source chain, got:\n{rendered}"
+        );
+        assert!(
+            !rendered.contains("Diagnostics:"),
+            "plain display must not emit the diagnostics block, got:\n{rendered}"
+        );
     }
 
     #[test]

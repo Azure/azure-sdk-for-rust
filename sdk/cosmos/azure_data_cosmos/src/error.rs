@@ -93,8 +93,7 @@ impl Error {
     /// `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` /
     /// `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` environment variables.
     /// Cache hits do not consume budget. Returns `None` when capture was
-    /// throttled, when the resolution limiter denied a cache-missed frame,
-    /// or when capture was auto-disabled by recent resolution pressure;
+    /// throttled or when the resolution limiter denied a cache-missed frame;
     /// partial backtraces are never produced. **The outcome of the first
     /// call is cached on this [`Error`] instance**, so every subsequent
     /// call returns the same answer regardless of later changes in
