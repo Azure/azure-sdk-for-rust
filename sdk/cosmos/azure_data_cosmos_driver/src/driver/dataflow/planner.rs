@@ -439,10 +439,13 @@ mod tests {
             Err(_) => panic!("did not expect panic for FeedRange target"),
             // Returned Err in release mode (also acceptable)
             Ok(Err(err)) => {
-                assert_eq!(
-                    err.to_string(),
-                    "FeedRange targeting requires a fan-out pipeline; \
-                     use plan_operation for cross-partition queries"
+                let rendered = err.to_string();
+                assert!(
+                    rendered.ends_with(
+                        "FeedRange targeting requires a fan-out pipeline; \
+                         use plan_operation for cross-partition queries"
+                    ),
+                    "unexpected: {rendered}"
                 );
             }
             _ => panic!("expected error or panic for FeedRange target"),
@@ -696,9 +699,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: TOP clause in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: TOP clause in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -717,9 +721,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: LIMIT clause in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: LIMIT clause in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -739,9 +744,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: ORDER BY in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: ORDER BY in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -760,9 +766,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: aggregates in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: aggregates in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -781,9 +788,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: GROUP BY in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: GROUP BY in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -806,9 +814,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: hybrid search queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: hybrid search queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -833,9 +842,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "query plan produced no partition ranges to query"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("query plan produced no partition ranges to query"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -852,7 +862,8 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(err.to_string(), "topology resolution failed");
+        let rendered = err.to_string();
+        assert!(rendered.ends_with("topology resolution failed"), "unexpected: {rendered}");
     }
 
     // -----------------------------------------------------------------

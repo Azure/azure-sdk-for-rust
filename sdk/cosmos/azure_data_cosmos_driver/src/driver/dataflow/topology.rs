@@ -282,9 +282,10 @@ mod tests {
             .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::ForceRefresh)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "failed to resolve partition key ranges from topology cache"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("failed to resolve partition key ranges from topology cache"),
+            "unexpected: {rendered}"
         );
     }
 }

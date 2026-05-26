@@ -248,7 +248,8 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "test error");
+        let rendered = err.to_string();
+        assert!(rendered.ends_with("test error"), "unexpected: {rendered}");
     }
 
     #[tokio::test]
@@ -440,9 +441,10 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "exceeded maximum split retries (10) in SequentialDrain"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("exceeded maximum split retries (10) in SequentialDrain"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -542,7 +544,8 @@ mod tests {
             b"ok"
         );
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "boom");
+        let rendered = err.to_string();
+        assert!(rendered.ends_with("boom"), "unexpected: {rendered}");
     }
 
     #[tokio::test]

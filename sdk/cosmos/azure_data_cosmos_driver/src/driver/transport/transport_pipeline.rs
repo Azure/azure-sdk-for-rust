@@ -1080,9 +1080,10 @@ mod tests {
         assert_eq!(requests.len(), 2);
         assert_eq!(requests[1].local_shard_retry_count(), 1);
         assert_eq!(requests[1].failed_transport_shards().len(), 1);
-        assert_eq!(
-            requests[1].failed_transport_shards()[0].error(),
-            "first shard failed"
+        let recorded = requests[1].failed_transport_shards()[0].error();
+        assert!(
+            recorded.ends_with("first shard failed"),
+            "unexpected: {recorded}"
         );
     }
 

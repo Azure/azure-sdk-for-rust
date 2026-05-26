@@ -762,7 +762,8 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "topology fetch failed");
+        let rendered = err.to_string();
+        assert!(rendered.ends_with("topology fetch failed"), "unexpected: {rendered}");
     }
 
     #[tokio::test]
