@@ -22,16 +22,16 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, Region, RoutingStrategy};
+/// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, Region, RoutingStrategy};
 /// use std::sync::Arc;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
 ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+/// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/"
 ///     .parse()
 ///     .unwrap();
-/// let account = CosmosAccountReference::with_credential(endpoint, credential);
+/// let account = AccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClient::builder()
 ///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
@@ -42,14 +42,14 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, Region, RoutingStrategy};
+/// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, Region, RoutingStrategy};
 /// use azure_core::credentials::Secret;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+/// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/"
 ///     .parse()
 ///     .unwrap();
-/// let account = CosmosAccountReference::with_authentication_key(
+/// let account = AccountReference::with_authentication_key(
 ///     endpoint,
 ///     Secret::from("my_account_key"),
 /// );
@@ -70,15 +70,15 @@ impl CosmosClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, Region, RoutingStrategy};
+    /// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, Region, RoutingStrategy};
     ///
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
     ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-    /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+    /// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/"
     ///     .parse()
     ///     .unwrap();
-    /// let account = CosmosAccountReference::with_credential(endpoint, credential);
+    /// let account = AccountReference::with_credential(endpoint, credential);
     /// let client = CosmosClient::builder()
     ///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
     ///     .await?;

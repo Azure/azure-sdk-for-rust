@@ -22,8 +22,8 @@ pub use clients::CosmosClient;
 #[doc(inline)]
 pub use clients::CosmosClientBuilder;
 
-pub use account_endpoint::CosmosAccountEndpoint;
-pub use account_reference::CosmosAccountReference;
+pub use account_endpoint::AccountEndpoint;
+pub use account_reference::AccountReference;
 pub use clients::ThroughputPoller;
 pub use credential::CosmosCredential;
 pub use models::{

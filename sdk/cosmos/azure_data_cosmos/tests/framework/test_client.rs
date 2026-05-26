@@ -369,13 +369,11 @@ impl TestClient {
             builder = builder.with_fault_injection(fault_rules);
         }
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
+        let endpoint: azure_data_cosmos::AccountEndpoint =
             connection_string.account_endpoint().parse()?;
         let cosmos_client = builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_authentication_key(
-                    endpoint, credential,
-                ),
+                azure_data_cosmos::AccountReference::with_authentication_key(endpoint, credential),
                 strategy,
             )
             .await?;
@@ -904,7 +902,7 @@ impl TestRunContext {
             )
         })?;
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
+        let endpoint: azure_data_cosmos::AccountEndpoint =
             parsed.account_endpoint().parse().map_err(|e| {
                 azure_core::Error::new(
                     azure_core::error::ErrorKind::Other,
@@ -920,7 +918,7 @@ impl TestRunContext {
 
         builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_authentication_key(
+                azure_data_cosmos::AccountReference::with_authentication_key(
                     endpoint,
                     parsed.account_key().clone(),
                 ),

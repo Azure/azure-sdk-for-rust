@@ -50,7 +50,7 @@
 //!     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
 //! };
 //! use azure_data_cosmos::CosmosClientBuilder;
-//! use azure_data_cosmos::CosmosAccountReference;
+//! use azure_data_cosmos::AccountReference;
 //! use azure_core::credentials::Secret;
 //! use std::sync::Arc;
 //! use std::time::{Duration, Instant};
@@ -81,7 +81,7 @@
 //! let client = CosmosClientBuilder::new()
 //!     .with_fault_injection(vec![rule])
 //!     .build(
-//!         CosmosAccountReference::with_authentication_key(
+//!         AccountReference::with_authentication_key(
 //!             "https://myaccount.documents.azure.com/".parse().unwrap(),
 //!             Secret::new("my_account_key"),
 //!         ),

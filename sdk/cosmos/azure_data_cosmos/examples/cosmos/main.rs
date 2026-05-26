@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_data_cosmos::{
-    CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, RoutingStrategy,
-};
+use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClient, RoutingStrategy};
 use azure_identity::DeveloperToolsCredential;
 use clap::{Args, CommandFactory, Parser, Subcommand};
 use std::error::Error;
@@ -86,12 +84,12 @@ pub async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 async fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>> {
-    let endpoint: CosmosAccountEndpoint = args.endpoint.parse()?;
+    let endpoint: AccountEndpoint = args.endpoint.parse()?;
     let strategy = RoutingStrategy::ProximityTo(args.region.clone().into());
     if let Some(key) = args.key.as_ref() {
         #[cfg(feature = "key_auth")]
         {
-            let account = CosmosAccountReference::with_authentication_key(
+            let account = AccountReference::with_authentication_key(
                 endpoint,
                 azure_core::credentials::Secret::from(key.clone()),
             );
@@ -105,7 +103,7 @@ async fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>
     } else {
         let cred: Arc<dyn azure_core::credentials::TokenCredential> =
             DeveloperToolsCredential::new(None).unwrap();
-        let account = CosmosAccountReference::with_credential(endpoint, cred);
+        let account = AccountReference::with_credential(endpoint, cred);
         Ok(CosmosClient::builder().build(account, strategy).await?)
     }
 }
