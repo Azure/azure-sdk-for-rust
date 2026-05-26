@@ -123,13 +123,13 @@ All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signa
 | **Sent** or unknown | Reads | Cross-region failover retry | 3 failover attempts |
 | **Sent** or unknown | Writes (all) | **Cross-region failover retry** | 3 failover attempts |
 
-When the request was definitely not sent, no effects are applied because the failure may be transient and the endpoint is not necessarily unhealthy.
+When the request was definitely not sent (connection refused, DNS failure, TLS error), the endpoint itself is unreachable. The driver marks the endpoint as unavailable (affecting all partitions on it) and records a partition-level failure for PPCB tracking, then retries on the next preferred region.
 
-When the request was possibly sent, endpoint/partition marks are applied to route subsequent requests away from the failing endpoint.
+When the request was possibly sent, the endpoint is clearly reachable — only partition-level marking is applied (via PPCB). The endpoint is not marked unavailable since other partitions on it are unaffected.
 
 For connectivity errors (connection refused, I/O errors), the transport layer performs 1 local retry on a different TCP shard to the same endpoint before escalating to the operation pipeline for cross-region failover.
 
-**Note**: The Rust driver retries non-idempotent writes even when the request may have been sent. This aligns with the "availability over idempotency" philosophy.
+**Note**: The Rust driver retries non-idempotent writes even when the request may have been sent, because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). Stored procedure execution is excluded.
 
 ### Deadline Exceeded (Client-Side Timeout)
 

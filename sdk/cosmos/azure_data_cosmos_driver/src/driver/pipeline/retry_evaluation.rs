@@ -488,10 +488,22 @@ fn try_handle_server_error(
 /// Handles transport-layer errors (connection failures, TLS errors, etc.) —
 /// no HTTP response was produced.
 ///
-/// Two sub-cases:
-/// 1. Request definitely not sent → safe failover retry, no side effects.
-/// 2. Request sent (or unknown) → failover retry with marks when budget
-///    allows, abort when budget is exhausted.
+/// Two sub-cases with **inverted** marking semantics:
+///
+/// 1. **Request definitely not sent** (connection refused, DNS failure, TLS
+///    error before any bytes left the client) → the endpoint itself is
+///    unreachable. Emit `MarkEndpointUnavailable` (affects all partitions
+///    on this endpoint) and `MarkPartitionUnavailable` (so PPCB also
+///    increments), then failover retry.
+///
+/// 2. **Request sent (or unknown)** → the endpoint accepted the connection
+///    but the operation failed for this partition. Emit only
+///    `MarkPartitionUnavailable` (PPCB tracks partition-level failures);
+///    do *not* mark the endpoint unavailable since it is clearly reachable.
+///
+/// This matches .NET (Gateway-mode `HttpRequestException` marks the full
+/// endpoint; Direct-mode 503 marks partition only) and Python
+/// (`ServiceRequestError` marks endpoint; `ServiceResponseError` does not).
 fn evaluate_transport_layer_outcome(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -500,25 +512,48 @@ fn evaluate_transport_layer_outcome(
     error: azure_core::Error,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
-    if request_sent.definitely_not_sent() && retry_state.can_retry_failover() {
-        return (
-            OperationAction::FailoverRetry {
-                new_state: retry_state.clone().advance_failover(),
-                delay: None,
+    if request_sent.definitely_not_sent() {
+        // Endpoint is unreachable — mark it unavailable regardless of PPCB
+        // state, since a connection failure affects all partitions on this
+        // endpoint. Also record a partition-level failure for PPCB tracking.
+        let effects = vec![
+            LocationEffect::MarkEndpointUnavailable {
+                endpoint: endpoint.clone(),
+                reason: UnavailableReason::TransportError,
             },
-            Vec::new(),
+            LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
+                operation,
+                endpoint,
+                retry_state,
+                operation.is_read_only(),
+            )),
+        ];
+
+        if retry_state.can_retry_failover() {
+            return (
+                OperationAction::FailoverRetry {
+                    new_state: retry_state.clone().advance_failover(),
+                    delay: None,
+                },
+                effects,
+            );
+        }
+
+        return (
+            OperationAction::Abort {
+                error: build_transport_error(&status, error),
+                status: Some(status),
+            },
+            effects,
         );
     }
 
-    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+    // Request was sent (or unknown) — the endpoint is reachable, but this
+    // partition had an issue. Only mark the partition; do NOT mark the
+    // endpoint since other partitions on it are unaffected.
+    let effects = vec![LocationEffect::MarkPartitionUnavailable(
         make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
     )];
-    if !is_ppcb_managed(operation, retry_state) {
-        effects.push(LocationEffect::MarkEndpointUnavailable {
-            endpoint: endpoint.clone(),
-            reason: UnavailableReason::TransportError,
-        });
-    }
 
     if retry_state.can_retry_failover() {
         return (
@@ -713,8 +748,15 @@ mod tests {
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
-        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        // Not-sent → endpoint is unreachable, mark both endpoint and partition.
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
 
     #[test]
@@ -728,10 +770,11 @@ mod tests {
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        // Sent → endpoint is reachable, only mark partition (not endpoint).
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
@@ -747,10 +790,11 @@ mod tests {
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        // Sent → endpoint is reachable, only mark partition (not endpoint).
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
@@ -944,7 +988,7 @@ mod tests {
     #[test]
     fn transport_error_non_idempotent_retries_with_ppaf() {
         // With PPAF enabled, behavior is the same as without — non-idempotent
-        // writes always retry. This test validates PPAF doesn't interfere.
+        // writes always retry. Sent → only partition mark (no endpoint mark).
         let op = make_create_operation();
         let result = make_transport_error(RequestSentStatus::Sent);
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -958,7 +1002,7 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
@@ -1024,7 +1068,8 @@ mod tests {
     }
 
     #[test]
-    fn transport_error_not_sent_does_not_mark_partition_or_endpoint() {
+    fn transport_error_not_sent_marks_endpoint_and_partition() {
+        // Not-sent → endpoint is unreachable, mark both endpoint and partition.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1034,7 +1079,12 @@ mod tests {
 
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
-        assert!(effects.is_empty());
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
 
     #[test]
