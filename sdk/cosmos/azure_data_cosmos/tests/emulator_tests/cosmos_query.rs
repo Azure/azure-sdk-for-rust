@@ -7,9 +7,9 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     clients::DatabaseClient,
+    models::CosmosStatus,
     options::{MaxItemCountHint, QueryOptions},
     query::FeedScope,
     ContinuationToken, Query,
@@ -277,14 +277,10 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
                 panic!("Expected query to fail due to cross-partition ORDER BY");
             };
             assert_eq!(
-                err.status_code(),
-                StatusCode::BadRequest,
-                "Expected 400 Bad Request for cross-partition ORDER BY"
+                err.status(),
+                CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE,
+                "Expected 400 / 1004 (CrossPartitionQueryNotServable) for cross-partition ORDER BY"
             );
-            // 1004 = CrossPartitionQueryNotServable. Read directly from typed
-            // CosmosStatus rather than re-parsing the raw response header.
-            let sub_status = err.sub_status().map(|s| s.value());
-            assert_eq!(Some(1004u32), sub_status);
 
             let body = err
                 .response_body()

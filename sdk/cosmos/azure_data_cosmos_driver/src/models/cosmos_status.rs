@@ -1602,6 +1602,23 @@ impl CosmosStatus {
         kind: Kind::Authentication,
     };
 
+    // ----- 400: Bad Request -----
+
+    /// Cross-partition query not servable by the client
+    /// (HTTP 400, sub-status 1004).
+    ///
+    /// The service rejected the query because it requires client-side
+    /// features the calling SDK does not support (e.g. cross-partition
+    /// `ORDER BY`, aggregates, or other features that need a query plan
+    /// the SDK cannot execute). Callers should upgrade the SDK to a
+    /// version that implements the requested features, or rewrite the
+    /// query.
+    pub const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CROSS_PARTITION_QUERY_NOT_SERVABLE),
+        kind: Kind::Service,
+    };
+
     // ----- 404: Not Found -----
 
     /// Read session not available (HTTP 404, sub-status 1002).

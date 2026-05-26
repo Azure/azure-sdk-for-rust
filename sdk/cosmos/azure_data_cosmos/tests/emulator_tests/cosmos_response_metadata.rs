@@ -36,7 +36,7 @@ async fn create_container(
     db_client.container_client(&container_id).await
 }
 
-fn cosmos_headers_from_error(error: &azure_data_cosmos::Error) -> &ResponseHeaders {
+fn cosmos_headers_from_error(error: &azure_data_cosmos::Error) -> ResponseHeaders {
     error
         .cosmos_headers()
         .unwrap_or_else(|| panic!("expected typed Cosmos response headers on error, got {error:?}"))
