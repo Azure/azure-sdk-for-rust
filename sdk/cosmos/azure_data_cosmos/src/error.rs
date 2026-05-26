@@ -102,11 +102,25 @@ impl Error {
     /// **Errors arriving from `azure_core::Error`** (transport,
     /// credential, serialization failures bubbling up from below the
     /// Cosmos layer) carry a backtrace pointing at the Cosmos boundary
-    /// mapper, not at the original failure site \u2014 `azure_core::Error`
+    /// mapper, not at the original failure site — `azure_core::Error`
     /// does not carry its own backtrace, so the originating call stack is
     /// unrecoverable. The typed [`Kind`], status, and
     /// [`std::error::Error::source`] chain remain the primary diagnostic
     /// signal in that case.
+    ///
+    /// **Async caveat:** stack capture records the synchronous call
+    /// stack at the construction site, which in an `async` context is
+    /// the current poll frame — typically `tokio runtime → poll →
+    /// your_async_fn`, not the chain of `.await` ancestors that
+    /// logically led there. For errors constructed inside the driver's
+    /// async pipeline that means the captured frames will frequently
+    /// look like driver-internal poll machinery (retry loop, transport
+    /// pipeline, tokio task scheduler) rather than the calling code that
+    /// issued the operation. This is a fundamental limitation of stack
+    /// capture in async Rust. For the logical async call chain, use
+    /// `tracing` spans wrapping the calling code — span context is
+    /// preserved across `.await` points and shows up in structured logs
+    /// alongside the captured backtrace.
     pub fn backtrace(&self) -> Option<&str> {
         self.0.backtrace()
     }

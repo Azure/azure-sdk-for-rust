@@ -201,13 +201,20 @@ impl Error {
     /// Builds a `Serialization` error wrapping the underlying serde / JSON
     /// failure.
     ///
-    /// `cosmos_headers` and `diagnostics` should be populated whenever the
-    /// failure occurs while deserializing a response body or continuation
-    /// token produced by a Cosmos operation — they give callers the request
-    /// charge, activity id, and timeline needed to diagnose the failure.
-    /// Pass `None` only when the failure is detached from any in-flight
-    /// operation (e.g. parsing a user-supplied continuation token at the SDK
-    /// boundary before any request has been issued).
+    /// `cosmos_headers` and `diagnostics` are best-effort: populate them
+    /// when the failure occurs at a call site that already has access to
+    /// the originating operation's headers and diagnostics context (e.g.
+    /// custom response-body deserialization inside the driver pipeline),
+    /// so the resulting error carries the request charge, activity id,
+    /// and timeline needed to diagnose the failure.
+    ///
+    /// In practice the most common construction path is the SDK
+    /// wrapper's blanket `impl From<serde_json::Error> for Error`, which
+    /// is invoked by `?` at the SDK boundary and passes `None, None` —
+    /// at that boundary the originating operation context is not
+    /// reachable. Tolerating `None` here is therefore the rule, not the
+    /// exception; the call sites that *can* enrich the error should
+    /// pass it through, the rest should pass `None`.
     ///
     /// **Internal use only.** Reachable cross-crate so the SDK wrapper
     /// (`azure_data_cosmos`) and other in-tree consumers can construct
@@ -408,6 +415,22 @@ impl Error {
     ///   (which preserves the underlying `azure_core::Error`,
     ///   `reqwest::Error`, `h2::Error`, `io::Error`, …) remain the
     ///   primary diagnostic signal in that case.
+    ///
+    /// ## Async caveat
+    ///
+    /// Stack capture records the **synchronous call stack at the
+    /// construction site**, which in an `async` context is the current
+    /// poll frame — typically `tokio runtime → poll → your_async_fn`,
+    /// not the chain of `.await` ancestors that logically led there. For
+    /// errors constructed inside this driver's async pipeline that means
+    /// the captured frames will frequently look like driver-internal
+    /// poll machinery (retry loop, transport pipeline, tokio task
+    /// scheduler) rather than the calling code that issued the
+    /// operation. This is a fundamental limitation of stack capture in
+    /// async Rust, not specific to this crate. For the logical async
+    /// call chain, use `tracing` spans wrapping the calling code — the
+    /// span context is preserved across `.await` points and shows up in
+    /// structured logs alongside the captured backtrace.
     pub fn backtrace(&self) -> Option<&str> {
         self.inner.backtrace.as_ref().and_then(Backtrace::rendered)
     }
