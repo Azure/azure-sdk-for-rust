@@ -149,9 +149,9 @@ pub struct CosmosRequestHeaders {
 
     /// Maximum number of items to return per page (`x-ms-max-item-count`).
     ///
-    /// Used by feed/query/changefeed reads. See [`MaxItemCount`] for the two
+    /// Used by feed/query/changefeed reads. See [`MaxItemCountHint`] for the two
     /// explicit values; the `-1` wire sentinel for "server decides" is
-    /// represented by [`MaxItemCount::ServerDecides`].
+    /// represented by [`MaxItemCountHint::ServerDecides`].
     pub max_item_count: Option<MaxItemCountHint>,
 
     /// Requests an incremental change feed read (`a-im: Incremental feed`).

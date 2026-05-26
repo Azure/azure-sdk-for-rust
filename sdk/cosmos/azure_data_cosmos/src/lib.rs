@@ -42,6 +42,7 @@ pub use transactional_batch::{
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
     ContinuationToken, EffectivePartitionKey, FeedRange, PartitionKey, PartitionKeyValue,
+    SubStatusCode,
 };
 
 pub use feed::{FeedPage, QueryFeedPage, QueryItemIterator, QueryPageIterator};

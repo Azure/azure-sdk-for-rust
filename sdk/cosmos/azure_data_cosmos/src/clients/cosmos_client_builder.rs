@@ -21,9 +21,9 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 /// Use this builder to configure and create a `CosmosClient` for interacting with Azure Cosmos DB.
 ///
 /// An account reference (endpoint + credential) is required when calling [`build()`](Self::build).
-/// Pass any type that implements `Into<AccountReference>`, such as a
-/// [`AccountReference`] created via convenience constructors, or a tuple of
-/// `(AccountEndpoint, credential)` or `(Url, credential)`.
+/// Construct an [`AccountReference`] via [`AccountReference::with_credential`] (for token-credential
+/// auth) or [`AccountReference::with_authentication_key`] (for shared-key auth, requires the
+/// `key_auth` feature), then pass it to `build`.
 ///
 /// A [`RoutingStrategy`] is also required to specify how the SDK should select regions.
 ///
