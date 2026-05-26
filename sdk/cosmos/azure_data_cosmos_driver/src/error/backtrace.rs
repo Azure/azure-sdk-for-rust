@@ -43,7 +43,7 @@ use std::{
         atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering},
         Arc, OnceLock, RwLock,
     },
-    time::{SystemTime, UNIX_EPOCH},
+    time::Instant,
 };
 
 /// Default maximum number of backtraces that may perform fresh symbol
@@ -491,7 +491,7 @@ impl BacktraceCaptureLimiter {
         if capacity == 0 {
             return false;
         }
-        let now_secs = now_unix_secs();
+        let now_secs = now_monotonic_secs();
         loop {
             let raw = self.state.load(Ordering::Acquire);
             let window_start = raw >> 32;
@@ -520,11 +520,17 @@ impl BacktraceCaptureLimiter {
     }
 }
 
-fn now_unix_secs() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0)
+/// Returns the number of whole seconds elapsed since the process-global
+/// monotonic anchor. The anchor is initialised lazily on first use via
+/// [`OnceLock`] and never moves backwards regardless of wall-clock changes
+/// (NTP step, suspend/resume), so the rolling 1-second window in
+/// [`BacktraceCaptureLimiter`] is robust against clock skew. `SystemTime`
+/// was used previously and could trigger spurious window rollovers or
+/// stalls when the wall clock jumped.
+fn now_monotonic_secs() -> u64 {
+    static ANCHOR: OnceLock<Instant> = OnceLock::new();
+    let anchor = ANCHOR.get_or_init(Instant::now);
+    Instant::now().saturating_duration_since(*anchor).as_secs()
 }
 
 fn global_limiter() -> &'static BacktraceCaptureLimiter {
