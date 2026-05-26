@@ -5,12 +5,16 @@
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
+use azure_core::http::headers::HeaderName;
 use azure_core::{
     error::ErrorKind,
     http::{headers::Headers, StatusCode},
     Uuid,
 };
-use azure_data_cosmos::constants::{LSN, PARTITION_KEY_RANGE_ID, SESSION_TOKEN};
+const LSN: HeaderName = HeaderName::from_static("lsn");
+const PARTITION_KEY_RANGE_ID: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
+const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::Query;
 use azure_data_cosmos::{clients::ContainerClient, query::FeedScope};

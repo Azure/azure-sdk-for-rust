@@ -7,7 +7,7 @@
 mod account_endpoint;
 mod account_reference;
 pub mod clients;
-pub mod constants;
+mod constants;
 mod credential;
 mod feed;
 pub mod options;
