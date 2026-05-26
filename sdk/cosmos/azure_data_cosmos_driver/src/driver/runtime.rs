@@ -54,7 +54,7 @@ use super::{
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use url::Url;
 ///
-/// # async fn example() -> azure_core::Result<()> {
+/// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
 /// let operation_options = OperationOptionsBuilder::new()
 ///     .with_max_failover_retry_count(5)
 ///     .build();
@@ -344,7 +344,7 @@ impl CosmosDriverRuntime {
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
     ///
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     ///
     /// let account = AccountReference::with_master_key(
@@ -627,7 +627,7 @@ impl CosmosDriverRuntimeBuilder {
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
     ///
-    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let account = AccountReference::with_master_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",

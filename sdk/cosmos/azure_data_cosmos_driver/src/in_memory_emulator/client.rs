@@ -78,7 +78,7 @@ impl InMemoryEmulatorHttpClient {
     /// # Example
     ///
     /// ```no_run
-    /// # async fn example() -> crate::error::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// use azure_data_cosmos_driver::in_memory_emulator::*;
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
