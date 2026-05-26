@@ -1059,9 +1059,9 @@ impl SubStatusCode {
     // ----- Authentication boundary mapping code (20402) -----
 
     /// Credential / AAD token acquisition failed before the request was
-    /// signed (20402). Distinct from [`CLIENT_GENERATED_401`] which means the
-    /// SDK synthesized a 401 itself; this one means the credential provider
-    /// call failed.
+    /// signed (20402). Distinct from [`SubStatusCode::CLIENT_GENERATED_401`]
+    /// which means the SDK synthesized a 401 itself; this one means the
+    /// credential provider call failed.
     pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: SubStatusCode = SubStatusCode(20402);
 
     // ----- SDK Server-side codes (21xxx) -----

@@ -15,7 +15,7 @@ use std::sync::Arc;
 ///
 /// This type bundles together the account endpoint and the credential needed to
 /// authenticate with it. Use convenience constructors [`with_credential()`](Self::with_credential)
-/// or [`with_master_key()`](Self::with_master_key) to create instances.
+/// or `with_master_key()` (requires the `key_auth` feature) to create instances.
 ///
 /// # Examples
 ///

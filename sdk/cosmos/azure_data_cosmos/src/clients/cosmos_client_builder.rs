@@ -266,7 +266,8 @@ impl CosmosClientBuilder {
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
     /// The account reference bundles an endpoint and credential. You can create one using
-    /// [`CosmosAccountReference::with_credential()`] or [`CosmosAccountReference::with_master_key()`].
+    /// [`CosmosAccountReference::with_credential()`] or `CosmosAccountReference::with_master_key()`
+    /// (requires the `key_auth` feature).
     ///
     /// You can also pass a tuple of `(CosmosAccountEndpoint, credential)` or `(Url, credential)`,
     /// where `credential` is any type that implements `Into<CosmosCredential>`.

@@ -15,7 +15,7 @@
 //! Driver-internal code produces and propagates [`Error`] directly via
 //! [`crate::error::Result<T>`]. At the lowest layer that interacts with
 //! `azure_core` machinery (HTTP client, credential provider, response
-//! deserialization), [`classify_azure_core_error`] inspects the
+//! deserialization), `classify_azure_core_error` inspects the
 //! `azure_core::ErrorKind` plus the source chain
 //! (`reqwest`/`hyper`/`h2`/`io`) and mints the most specific [`CosmosStatus`]
 //! available, preserving the original `azure_core::Error` as
@@ -23,8 +23,7 @@
 //!
 //! The conversion is one-way: nothing in the driver wraps a Cosmos
 //! [`Error`] back inside an `azure_core::Error`. The transport layer
-//! carries typed Cosmos errors end-to-end (see
-//! [`TransportError`](crate::driver::transport::TransportError)).
+//! carries typed Cosmos errors end-to-end.
 
 use std::{error::Error as StdError, fmt, sync::Arc};
 
