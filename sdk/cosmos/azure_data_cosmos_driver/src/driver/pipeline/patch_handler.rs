@@ -349,7 +349,18 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                     );
                 }
                 // Stash the real service error so exhaustion_error can
-                // chain it as the underlying cause.
+                // chain it as the underlying cause. Also capture the
+                // failed sub-op's diagnostics into the aggregated list so
+                // every PATCH attempt (Reads + this failed Replace) is
+                // visible on the final exhaustion error, not just the
+                // Reads that succeeded. The Replace's error already
+                // carries its sub-op's `DiagnosticsContext` (the
+                // operation pipeline's abort branch attaches it via
+                // `Error::with_diagnostics` before returning) — extract
+                // and forward it.
+                if let Some(diag) = err.diagnostics() {
+                    sub_op_diagnostics.push(Arc::clone(diag));
+                }
                 last_412 = Some(err);
                 continue;
             }
@@ -357,7 +368,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         }
     }
 
-    Err(exhaustion_error(attempts, last_412))
+    Err(exhaustion_error(attempts, last_412, &sub_op_diagnostics))
 }
 
 fn missing_body_error(msg: &'static str) -> crate::error::Error {
@@ -480,16 +491,38 @@ fn build_replace_sub_op(
 /// cosmos response headers, response body, and diagnostics all flow
 /// through verbatim. The `None` branch synthesizes a 412-shaped service
 /// error for the `attempts = 0` short-circuit path.
-fn exhaustion_error(attempts: u8, last_412: Option<crate::error::Error>) -> crate::error::Error {
+///
+/// `sub_op_diagnostics` is the per-attempt diagnostics accumulated by the
+/// RMW loop (one entry per Read + one entry per failed Replace). It is
+/// aggregated into a single `DiagnosticsContext` and attached to the
+/// returned error so callers see "one PATCH operation = one
+/// `DiagnosticsContext`" on the error path, matching the success-path
+/// contract in `aggregate_sub_operations`. Empty only on the
+/// `attempts = 0` short-circuit path, where there is genuinely nothing
+/// to aggregate and the `error_placeholder()` is the honest signal that
+/// no per-op diagnostics exist.
+fn exhaustion_error(
+    attempts: u8,
+    last_412: Option<crate::error::Error>,
+    sub_op_diagnostics: &[Arc<DiagnosticsContext>],
+) -> crate::error::Error {
     let message = format!("patch_item: ETag conflict after {attempts} attempts");
+    let aggregated = DiagnosticsContext::aggregate_sub_operations(sub_op_diagnostics).map(Arc::new);
     match last_412 {
-        Some(source) => source.with_context(message),
+        Some(source) => {
+            let outer = source.with_context(message);
+            match aggregated {
+                Some(diag) => outer.with_diagnostics(diag),
+                None => outer,
+            }
+        }
         None => {
             let response = crate::models::CosmosResponse::new(
                 crate::models::ResponseBody::NoPayload,
                 crate::models::CosmosResponseHeaders::new(),
                 crate::models::CosmosStatus::new(StatusCode::PreconditionFailed),
-                crate::diagnostics::DiagnosticsContext::error_placeholder(),
+                aggregated
+                    .unwrap_or_else(crate::diagnostics::DiagnosticsContext::error_placeholder),
             );
             crate::error::Error::service(response, message)
         }
@@ -838,7 +871,7 @@ mod tests {
             None,
             b"server-body",
         );
-        let err = exhaustion_error(7, Some(underlying));
+        let err = exhaustion_error(7, Some(underlying), &[]);
 
         // (a) Shape.
         assert_eq!(
@@ -873,7 +906,7 @@ mod tests {
         // `attempts = 0` short-circuit), we still want the caller to see a
         // 412-shaped error so they can recognize "we gave up" the same way
         // they would for any other PATCH retry exhaustion.
-        let err = exhaustion_error(0, None);
+        let err = exhaustion_error(0, None, &[]);
 
         assert_eq!(err.status_code(), StatusCode::PreconditionFailed);
         // No underlying service error was supplied, so the synthesized
@@ -901,7 +934,7 @@ mod tests {
             Some("0:1#42"),
             b"{\"code\":\"PreconditionFailed\",\"message\":\"server: stale etag\"}",
         );
-        let err = exhaustion_error(4, Some(underlying));
+        let err = exhaustion_error(4, Some(underlying), &[]);
 
         assert_eq!(err.status_code(), StatusCode::PreconditionFailed);
         assert_eq!(
@@ -917,6 +950,54 @@ mod tests {
                 .map(|t| t.0.as_ref()),
             Some("0:1#42"),
             "exhaustion error must forward the wrapped 412's session token"
+        );
+    }
+
+    #[test]
+    fn exhaustion_error_attaches_aggregated_sub_op_diagnostics() {
+        // Regression guard: when the RMW loop gives up after multiple
+        // attempts, the returned error must carry the aggregated
+        // per-attempt `DiagnosticsContext` (Reads + failed Replaces), not
+        // the `error_placeholder()` static or the source-only single-attempt
+        // view. Triage tooling reads `err.diagnostics().request_count()`
+        // and must see the real per-attempt history.
+        let underlying = cosmos_service_error(
+            StatusCode::PreconditionFailed,
+            "ETag mismatch from server",
+            None,
+            b"server-body",
+        );
+        // Two synthetic per-attempt contexts standing in for what the
+        // RMW loop accumulates: one Read + one failed Replace, repeated.
+        let attempt_diags: Vec<Arc<DiagnosticsContext>> = (0..4)
+            .map(|_| DiagnosticsContext::error_placeholder())
+            .collect();
+        let err = exhaustion_error(2, Some(underlying), &attempt_diags);
+
+        let diag = err
+            .diagnostics()
+            .expect("exhaustion error must carry an aggregated DiagnosticsContext");
+        // `aggregate_sub_operations` is the production aggregator; we
+        // re-run it on the same inputs to derive the expected value and
+        // compare pointer-equivalent contents. The error_placeholder is
+        // a process-wide static so all four `attempt_diags` entries
+        // share the same Arc — the aggregator concatenates their
+        // (zero-length) `requests` vecs and returns a fresh context,
+        // distinct from the placeholder.
+        let expected =
+            DiagnosticsContext::aggregate_sub_operations(&attempt_diags).expect("non-empty");
+        assert_eq!(
+            diag.request_count(),
+            expected.request_count(),
+            "aggregated diagnostics request count must match"
+        );
+        // And critically, the attached diagnostics must NOT be the
+        // process-wide placeholder Arc — that would mean the upgrade
+        // didn't happen.
+        let placeholder = DiagnosticsContext::error_placeholder();
+        assert!(
+            !Arc::ptr_eq(diag, &placeholder),
+            "exhaustion error must not surface the process-wide placeholder"
         );
     }
 
