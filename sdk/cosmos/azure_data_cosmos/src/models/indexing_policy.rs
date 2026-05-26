@@ -90,13 +90,21 @@ pub enum IndexingMode {
 }
 
 /// Represents a JSON path.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct PropertyPath {
     // The path to the property referenced in this index.
     pub path: String,
+}
+
+impl PropertyPath {
+    /// Sets the path of this `PropertyPath`.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
 }
 
 impl<T: Into<String>> From<T> for PropertyPath {
@@ -131,13 +139,21 @@ pub enum SpatialType {
 }
 
 /// Represents a composite index
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(transparent)]
 #[non_exhaustive]
 pub struct CompositeIndex {
     /// The properties in this composite index
     pub properties: Vec<CompositeIndexProperty>,
+}
+
+impl CompositeIndex {
+    /// Appends `property` to the composite index.
+    pub fn with_property(mut self, property: CompositeIndexProperty) -> Self {
+        self.properties.push(property);
+        self
+    }
 }
 
 /// Describes a single property in a composite index.

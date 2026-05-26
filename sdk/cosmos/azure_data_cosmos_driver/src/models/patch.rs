@@ -240,6 +240,12 @@ impl PatchDocument {
     pub fn new(operations: Vec<PatchOperation>) -> Self {
         Self { operations }
     }
+
+    /// Appends `operation` to the document's list of operations.
+    pub fn with_operation(mut self, operation: PatchOperation) -> Self {
+        self.operations.push(operation);
+        self
+    }
 }
 
 #[cfg(test)]

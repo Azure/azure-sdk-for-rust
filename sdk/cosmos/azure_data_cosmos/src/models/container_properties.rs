@@ -193,7 +193,7 @@ impl ContainerProperties {
 }
 
 /// Represents the vector embedding policy for a container.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
@@ -201,6 +201,14 @@ pub struct VectorEmbeddingPolicy {
     /// The [`VectorEmbedding`]s that describe the vector embeddings of items in the container.
     #[serde(rename = "vectorEmbeddings")]
     pub embeddings: Vec<VectorEmbedding>,
+}
+
+impl VectorEmbeddingPolicy {
+    /// Appends `embedding` to the policy's list of embeddings.
+    pub fn with_embedding(mut self, embedding: VectorEmbedding) -> Self {
+        self.embeddings.push(embedding);
+        self
+    }
 }
 
 /// Represents the vector embedding policy for a container.
@@ -261,7 +269,7 @@ pub enum VectorDistanceFunction {
 /// Represents a unique key policy for a container.
 ///
 /// For more information see <https://learn.microsoft.com/azure/cosmos-db/unique-keys>
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
@@ -270,14 +278,30 @@ pub struct UniqueKeyPolicy {
     pub unique_keys: Vec<UniqueKey>,
 }
 
+impl UniqueKeyPolicy {
+    /// Appends `unique_key` to the policy's list of unique keys.
+    pub fn with_unique_key(mut self, unique_key: UniqueKey) -> Self {
+        self.unique_keys.push(unique_key);
+        self
+    }
+}
+
 /// Represents a single unique key for a container.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct UniqueKey {
     /// The set of paths which must be unique for each item.
     pub paths: Vec<String>,
+}
+
+impl UniqueKey {
+    /// Appends `path` to the unique key's list of paths.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.paths.push(path.into());
+        self
+    }
 }
 
 /// Represents a conflict resolution policy for a container
