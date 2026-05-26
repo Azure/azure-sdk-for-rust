@@ -432,7 +432,11 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if f.alternate() {
             write_header(f, &self.inner)?;
-            write_source_chain(f, self)?;
+            // Display form uses `{src}` / `{src:#}` per entry so the
+            // chain remains human-readable; Debug uses `{src:?}` /
+            // `{src:#?}` to expose structured state.
+            write_source_chain(f, self, /* debug */ false, /* alternate */ true)?;
+            write_diagnostics(f, &self.inner, /* alternate */ true)?;
             write_backtrace(f, self)?;
         } else {
             f.write_str(&self.inner.message)?;
@@ -456,9 +460,11 @@ impl fmt::Debug for Error {
     /// Callers that always want the backtrace regardless of format flag
     /// should read it explicitly via [`Error::backtrace`].
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let alternate = f.alternate();
         write_header(f, &self.inner)?;
-        write_source_chain(f, self)?;
-        if f.alternate() {
+        write_source_chain(f, self, /* debug */ true, alternate)?;
+        write_diagnostics(f, &self.inner, alternate)?;
+        if alternate {
             write_backtrace(f, self)?;
         }
         Ok(())
@@ -472,16 +478,59 @@ fn write_header(f: &mut fmt::Formatter<'_>, inner: &ErrorInner) -> fmt::Result {
     write!(f, "{}: {}", inner.status, inner.message)
 }
 
-fn write_source_chain(f: &mut fmt::Formatter<'_>, err: &Error) -> fmt::Result {
+/// Writes the `source()` chain. When `debug` is true, each entry is
+/// rendered with `{:?}` so that wrapped errors carrying structured state
+/// (e.g. another Cosmos [`Error`], an `azure_core::Error`, `io::Error`,
+/// `h2::Error`) surface their full debug representation rather than a
+/// one-line `Display` summary. Display mode (`alternate Display` on
+/// [`Error`]) keeps the human-readable single-line form per entry.
+///
+/// `alternate` is propagated so that `{e:#?}` cascades to `{src:#?}` on
+/// each entry (and `{e:#}` to `{src:#}`), giving callers a way to opt
+/// into the richer multi-line representation of wrapped errors.
+fn write_source_chain(
+    f: &mut fmt::Formatter<'_>,
+    err: &Error,
+    debug: bool,
+    alternate: bool,
+) -> fmt::Result {
     let mut cur: Option<&(dyn StdError + 'static)> = StdError::source(err);
     let mut depth = 0;
     while let Some(src) = cur {
         if depth == 0 {
             f.write_str("\n\nCaused by:")?;
         }
-        write!(f, "\n  {depth}: {src}")?;
+        match (debug, alternate) {
+            (true, true) => write!(f, "\n  {depth}: {src:#?}")?,
+            (true, false) => write!(f, "\n  {depth}: {src:?}")?,
+            (false, true) => write!(f, "\n  {depth}: {src:#}")?,
+            (false, false) => write!(f, "\n  {depth}: {src}")?,
+        }
         cur = src.source();
         depth += 1;
+    }
+    Ok(())
+}
+
+/// Appends the `DiagnosticsContext` (when present) using its `Debug`
+/// representation. Diagnostics carry structured per-request data
+/// (regions contacted, RU charges, retry events, transport state) that
+/// is essential for triaging failures; rendering it as a boolean
+/// presence flag would lose that signal.
+///
+/// `alternate` selects between `{diag:?}` and `{diag:#?}` so the
+/// outer `{e:#?}` / `{e:#}` flag cascades into the diagnostics block.
+fn write_diagnostics(
+    f: &mut fmt::Formatter<'_>,
+    inner: &ErrorInner,
+    alternate: bool,
+) -> fmt::Result {
+    if let Some(diag) = inner.diagnostics.as_deref() {
+        if alternate {
+            write!(f, "\n\nDiagnostics:\n{diag:#?}")?;
+        } else {
+            write!(f, "\n\nDiagnostics:\n{diag:?}")?;
+        }
     }
     Ok(())
 }
@@ -784,6 +833,106 @@ mod tests {
         assert_eq!(
             outer_bt_id, inner_bt_id,
             "outer error must share the inner's backtrace Arc, not capture a new one"
+        );
+    }
+
+    /// Builds an `Error` carrying both a `DiagnosticsContext` and a
+    /// nested Cosmos `Error` as its source, so format tests can exercise
+    /// the source-chain + diagnostics propagation paths together.
+    fn make_error_with_diagnostics_and_source() -> Error {
+        let inner = Error::end_to_end_timeout("inner timeout", None);
+        Error::transport(
+            CosmosStatus::TRANSPORT_GENERATED_503,
+            "outer transport failure",
+            Some(DiagnosticsContext::error_placeholder()),
+            Some(Arc::new(inner)),
+        )
+    }
+
+    #[test]
+    fn display_plain_returns_only_the_message() {
+        // `{e}` must match the `anyhow` / `azure_core` / `std::io` convention:
+        // the bare human-readable message, with no header/source/backtrace
+        // noise that would corrupt callers concatenating it into other strings.
+        let err = make_error_with_diagnostics_and_source();
+        let rendered = format!("{err}");
+        assert_eq!(rendered, "outer transport failure");
+    }
+
+    #[test]
+    fn display_alternate_includes_header_source_chain_and_diagnostics() {
+        // `{e:#}` is the opt-in rich multi-line form: it must surface the
+        // typed status header, the `Caused by:` chain, and the structured
+        // diagnostics block. Backtrace presence is best-effort
+        // (rate-limited globally) and not asserted.
+        let err = make_error_with_diagnostics_and_source();
+        let rendered = format!("{err:#}");
+        assert!(
+            rendered.contains("[Transport]"),
+            "alternate display must include the categorical kind from CosmosStatus::Display, got:\n{rendered}"
+        );
+        assert!(
+            rendered.contains("outer transport failure"),
+            "alternate display must include the error message, got:\n{rendered}"
+        );
+        assert!(
+            rendered.contains("Caused by:") && rendered.contains("inner timeout"),
+            "alternate display must include the source chain, got:\n{rendered}"
+        );
+        assert!(
+            rendered.contains("Diagnostics:"),
+            "alternate display must include the diagnostics block, got:\n{rendered}"
+        );
+    }
+
+    #[test]
+    fn debug_omits_backtrace_block_in_plain_form() {
+        // `{e:?}` is the everyday Debug form used by `tracing::error!(?e)`
+        // and `Result::unwrap` — it must NOT emit the multi-line stack
+        // backtrace block, which is reserved for the opt-in `{e:#?}`.
+        let err = make_error_with_diagnostics_and_source();
+        let rendered = format!("{err:?}");
+        assert!(
+            !rendered.contains("Stack backtrace:"),
+            "plain debug must not emit the backtrace block, got:\n{rendered}"
+        );
+        // The header and source chain must still be present.
+        assert!(rendered.contains("outer transport failure"));
+        assert!(rendered.contains("Caused by:"));
+    }
+
+    #[test]
+    fn debug_alternate_propagates_to_source_and_diagnostics() {
+        // `{e:#?}` must propagate the alternate flag into the wrapped
+        // source entries and the diagnostics block, so callers opting
+        // into the rich form get the pretty-printed multi-line layout
+        // from every type that implements `Debug` along the chain.
+        //
+        // We assert propagation indirectly by comparing the plain and
+        // alternate Debug renderings: the alternate form must be a
+        // strict superset (additional whitespace / newlines from the
+        // pretty layout, plus the optional backtrace block when one was
+        // captured).
+        let err = make_error_with_diagnostics_and_source();
+        let plain = format!("{err:?}");
+        let alternate = format!("{err:#?}");
+
+        assert!(
+            alternate.len() > plain.len(),
+            "alternate debug must be richer than plain debug.\nPlain:\n{plain}\nAlternate:\n{alternate}"
+        );
+        // The diagnostics block must use multi-line Debug layout in the
+        // alternate form. The derived `Debug` for `DiagnosticsContext`
+        // emits field-per-line indentation under `{:#?}`, so a `\n    `
+        // sequence after the `Diagnostics:` marker is a reliable signal
+        // that the alternate flag propagated into it.
+        let diag_idx = alternate
+            .find("Diagnostics:")
+            .expect("alternate debug must include the diagnostics block");
+        let after_diag = &alternate[diag_idx..];
+        assert!(
+            after_diag.contains("\n    "),
+            "alternate flag must cascade into DiagnosticsContext::Debug (expected indented multi-line layout), got:\n{after_diag}"
         );
     }
 }
