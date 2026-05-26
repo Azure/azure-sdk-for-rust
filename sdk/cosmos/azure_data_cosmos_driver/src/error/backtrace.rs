@@ -374,7 +374,24 @@ fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
     }
     Some(
         out.into_iter()
-            .map(|f| f.expect("all frames filled"))
+            .map(|f| {
+                // The invariant — every `None` slot in `out` has a matching
+                // entry in `missing` that the second pass refills — holds
+                // structurally today. We still avoid `.expect()` here: this
+                // module renders into `Display` / `Debug` / panic-message
+                // formatters, and a panic on the error path would recurse
+                // (panic-while-formatting-a-panic) and be effectively
+                // undiagnosable. A future refactor regression instead
+                // surfaces as a single `<unknown>` placeholder frame that
+                // `try_render` already knows how to print.
+                debug_assert!(f.is_some(), "all frame slots must be filled");
+                f.unwrap_or(ResolvedFrame {
+                    ip: 0,
+                    symbol: None,
+                    filename: None,
+                    lineno: None,
+                })
+            })
             .collect(),
     )
 }
