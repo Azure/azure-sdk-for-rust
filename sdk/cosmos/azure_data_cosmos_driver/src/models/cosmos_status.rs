@@ -1767,71 +1767,6 @@ impl Serialize for CosmosStatus {
     }
 }
 
-impl<'de> Deserialize<'de> for CosmosStatus {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        struct Helper {
-            status: Option<String>,
-            status_code: Option<u16>,
-            sub_status_code: Option<u32>,
-        }
-        let h = Helper::deserialize(deserializer)?;
-
-        if let Some(status_code) = h.status_code {
-            return Ok(CosmosStatus {
-                status_code: StatusCode::from(status_code),
-                sub_status: h.sub_status_code.map(SubStatusCode::new),
-                kind: Kind::Service,
-            });
-        }
-
-        if let Some(status) = h.status {
-            // Tolerate the `[Kind] ` prefix produced by `Display` (e.g.
-            // `"[Service] 429/3200 (RUBudgetExceeded)"`) by stripping it
-            // before parsing the numeric portion.
-            let after_kind = match status.strip_prefix('[') {
-                Some(rest) => match rest.split_once("] ") {
-                    Some((_, after)) => after,
-                    None => status.as_str(),
-                },
-                None => status.as_str(),
-            };
-            let normalized = after_kind
-                .split_once(' ')
-                .map_or(after_kind, |(left, _)| left);
-            if let Some((status_code, sub_status_code)) = normalized.split_once('/') {
-                let status_code = status_code
-                    .parse::<u16>()
-                    .map_err(serde::de::Error::custom)?;
-                let sub_status_code = sub_status_code
-                    .parse::<u32>()
-                    .map_err(serde::de::Error::custom)?;
-                return Ok(CosmosStatus {
-                    status_code: StatusCode::from(status_code),
-                    sub_status: Some(SubStatusCode::new(sub_status_code)),
-                    kind: Kind::Service,
-                });
-            }
-
-            let status_code = normalized
-                .parse::<u16>()
-                .map_err(serde::de::Error::custom)?;
-            return Ok(CosmosStatus {
-                status_code: StatusCode::from(status_code),
-                sub_status: None,
-                kind: Kind::Service,
-            });
-        }
-
-        Err(serde::de::Error::custom(
-            "CosmosStatus must include status or status_code",
-        ))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1936,13 +1871,10 @@ mod tests {
     }
 
     #[test]
-    fn serialization_roundtrip() {
+    fn serializes_named_substatus() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
         let json = serde_json::to_string(&status).unwrap();
         assert!(json.contains("\"status\":\"[Service] 429/3200 (RUBudgetExceeded)\""));
-
-        let deserialized: CosmosStatus = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized, status);
     }
 
     #[test]
