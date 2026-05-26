@@ -121,7 +121,7 @@ impl Error {
     /// `tracing` spans wrapping the calling code — span context is
     /// preserved across `.await` points and shows up in structured logs
     /// alongside the captured backtrace.
-    pub fn backtrace(&self) -> Option<&str> {
+    pub fn backtrace(&self) -> Option<&Arc<str>> {
         self.0.backtrace()
     }
 

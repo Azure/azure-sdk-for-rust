@@ -137,12 +137,15 @@ struct BacktraceInner {
     /// Instruction pointers in stack order (innermost frame first).
     ips: Vec<usize>,
     /// Lazily rendered display string, populated on first `rendered()`
-    /// call. `Some(s)` = render succeeded; `Some(None)` semantically (an
-    /// inner `None` inside the outer `Option`) cannot occur here because
-    /// we only store on success; misses are represented by the *outer*
-    /// `OnceLock` being unset until the first successful render. See
-    /// [`Backtrace::rendered`] for how the giving-up signal is cached.
-    rendered: OnceLock<Option<String>>,
+    /// call. Stored as `Arc<str>` so callers that need to retain the
+    /// rendered backtrace beyond the borrow (tracing fields, telemetry
+    /// exporters, owned struct fields) can `Arc::clone` it for a
+    /// refcount bump instead of copying the entire formatted string.
+    /// `Some(s)` = render succeeded; the `Option` inside the `OnceLock`
+    /// is `None` when rendering was attempted but denied by the
+    /// resolution limiter — the outcome is cached either way so
+    /// subsequent calls are deterministic.
+    rendered: OnceLock<Option<Arc<str>>>,
 }
 
 /// A single resolved stack frame.
@@ -230,11 +233,11 @@ impl Backtrace {
     /// per-instance deterministic contract; callers can call it multiple
     /// times (e.g. once for logging, once for telemetry) without risk of
     /// seeing inconsistent results.
-    pub(crate) fn rendered(&self) -> Option<&str> {
+    pub(crate) fn rendered(&self) -> Option<&Arc<str>> {
         self.inner
             .rendered
-            .get_or_init(|| try_render(&self.inner.ips))
-            .as_deref()
+            .get_or_init(|| try_render(&self.inner.ips).map(Arc::<str>::from))
+            .as_ref()
     }
 }
 

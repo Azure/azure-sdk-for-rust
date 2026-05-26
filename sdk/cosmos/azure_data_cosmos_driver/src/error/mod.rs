@@ -431,7 +431,7 @@ impl Error {
     /// call chain, use `tracing` spans wrapping the calling code — the
     /// span context is preserved across `.await` points and shows up in
     /// structured logs alongside the captured backtrace.
-    pub fn backtrace(&self) -> Option<&str> {
+    pub fn backtrace(&self) -> Option<&Arc<str>> {
         self.inner.backtrace.as_ref().and_then(Backtrace::rendered)
     }
 }
@@ -592,7 +592,7 @@ fn write_diagnostics(
 fn write_backtrace(f: &mut fmt::Formatter<'_>, err: &Error) -> fmt::Result {
     if let Some(bt) = err.backtrace() {
         f.write_str("\n\nStack backtrace:\n")?;
-        f.write_str(bt)?;
+        f.write_str(bt.as_ref())?;
     }
     Ok(())
 }
