@@ -723,7 +723,8 @@ mod tests {
             .unwrap_err();
         let rendered = err.to_string();
         assert!(
-            rendered.ends_with("unsupported query feature: LIMIT clause in cross-partition queries"),
+            rendered
+                .ends_with("unsupported query feature: LIMIT clause in cross-partition queries"),
             "unexpected: {rendered}"
         );
     }
@@ -863,7 +864,10 @@ mod tests {
             .await
             .unwrap_err();
         let rendered = err.to_string();
-        assert!(rendered.ends_with("topology resolution failed"), "unexpected: {rendered}");
+        assert!(
+            rendered.ends_with("topology resolution failed"),
+            "unexpected: {rendered}"
+        );
     }
 
     // -----------------------------------------------------------------

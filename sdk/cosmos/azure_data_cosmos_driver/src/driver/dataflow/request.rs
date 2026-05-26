@@ -763,7 +763,10 @@ mod tests {
 
         let err = request.next_page(&mut context).await.unwrap_err();
         let rendered = err.to_string();
-        assert!(rendered.ends_with("topology fetch failed"), "unexpected: {rendered}");
+        assert!(
+            rendered.ends_with("topology fetch failed"),
+            "unexpected: {rendered}"
+        );
     }
 
     #[tokio::test]
