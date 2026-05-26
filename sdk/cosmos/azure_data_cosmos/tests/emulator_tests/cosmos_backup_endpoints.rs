@@ -30,7 +30,7 @@ async fn client_boots_via_backup_when_primary_unreachable() -> Result<(), Box<dy
     let connection_string =
         resolve_connection_string().expect("Cosmos DB connection string must be configured");
 
-    let real_endpoint: CosmosAccountEndpoint = connection_string.account_endpoint.parse()?;
+    let real_endpoint: CosmosAccountEndpoint = connection_string.account_endpoint().parse()?;
     let fake_endpoint: CosmosAccountEndpoint = "https://localhost:9/".parse()?;
 
     let mut builder = CosmosClient::builder().with_backup_endpoints(vec![real_endpoint]);
@@ -44,7 +44,7 @@ async fn client_boots_via_backup_when_primary_unreachable() -> Result<(), Box<dy
         .build(
             CosmosAccountReference::with_master_key(
                 fake_endpoint,
-                connection_string.account_key.clone(),
+                connection_string.account_key().clone(),
             ),
             RoutingStrategy::ProximityTo(HUB_REGION),
         )

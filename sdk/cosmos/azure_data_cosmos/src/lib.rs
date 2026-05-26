@@ -7,7 +7,6 @@
 mod account_endpoint;
 mod account_reference;
 pub mod clients;
-mod connection_string;
 pub mod constants;
 mod credential;
 mod feed;
@@ -26,7 +25,6 @@ pub use clients::CosmosClientBuilder;
 pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
 pub use clients::ThroughputPoller;
-pub use connection_string::*;
 pub use credential::CosmosCredential;
 pub use models::{
     BatchResponse, CosmosStatus, DiagnosticsContext, IncrValue, ItemResponse, PatchDocument,

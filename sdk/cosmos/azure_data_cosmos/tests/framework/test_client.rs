@@ -14,9 +14,10 @@ use azure_data_cosmos::options::ItemReadOptions;
 use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::Region;
 use azure_data_cosmos::{
-    clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
-    Query, RoutingStrategy,
+    clients::DatabaseClient, CosmosClient, CreateContainerOptions, PartitionKey, Query,
+    RoutingStrategy,
 };
+use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
 use std::future::Future;
 use std::pin::Pin;
@@ -340,7 +341,7 @@ impl TestClient {
             }
         }
 
-        let credential = connection_string.account_key.clone();
+        let credential = connection_string.account_key().clone();
         let mut builder = azure_data_cosmos::CosmosClient::builder();
 
         // Determine the region selection strategy
@@ -369,7 +370,7 @@ impl TestClient {
         }
 
         let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            connection_string.account_endpoint.parse()?;
+            connection_string.account_endpoint().parse()?;
         let cosmos_client = builder
             .build(
                 azure_data_cosmos::CosmosAccountReference::with_master_key(endpoint, credential),
@@ -902,7 +903,7 @@ impl TestRunContext {
         })?;
 
         let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            parsed.account_endpoint.parse().map_err(|e| {
+            parsed.account_endpoint().parse().map_err(|e| {
                 azure_core::Error::new(
                     azure_core::error::ErrorKind::Other,
                     format!("Failed to parse account endpoint: {}", e),
@@ -919,7 +920,7 @@ impl TestRunContext {
             .build(
                 azure_data_cosmos::CosmosAccountReference::with_master_key(
                     endpoint,
-                    parsed.account_key.clone(),
+                    parsed.account_key().clone(),
                 ),
                 RoutingStrategy::ProximityTo(region),
             )
