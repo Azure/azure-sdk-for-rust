@@ -637,11 +637,21 @@ fn derive_status_from_azure_core_error(error: &azure_core::Error) -> CosmosStatu
 /// Walks the `.source()` chain looking for downcasts that map to a more
 /// specific [`CosmosStatus`] than the top-level `azure_core::ErrorKind`
 /// provides. Returns `None` if nothing more specific is found.
+///
+/// The walk is bounded by [`MAX_SOURCE_CHAIN_DEPTH`] frames. Real Cosmos
+/// transport chains are never deeper than ~5; the cap exists so this
+/// function — which sits on the hot path of every
+/// `azure_core::Error → driver::Error` conversion — cannot be pinned to a
+/// CPU core by a pathological or cyclic source chain. `Error::source`
+/// does not enforce acyclicity, and arbitrary `azure_core::Error`
+/// chains can originate from any transport / credential / wrapper layer
+/// outside the driver.
 fn refine_status_from_source_chain(
     start: Option<&(dyn StdError + 'static)>,
 ) -> Option<CosmosStatus> {
     let mut cur = start;
-    while let Some(e) = cur {
+    for _ in 0..MAX_SOURCE_CHAIN_DEPTH {
+        let Some(e) = cur else { return None };
         #[cfg(feature = "reqwest")]
         {
             if let Some(h2_err) = e.downcast_ref::<h2::Error>() {
@@ -673,6 +683,13 @@ fn refine_status_from_source_chain(
     }
     None
 }
+
+/// Maximum number of `.source()` frames inspected by
+/// [`refine_status_from_source_chain`]. Generous relative to real Cosmos
+/// transport chains (~5 frames) so we never miss a meaningful inner cause,
+/// but bounded so a pathological or cyclic chain cannot pin the boundary
+/// mapper on a hot path.
+const MAX_SOURCE_CHAIN_DEPTH: usize = 64;
 
 /// Driver-wide `Result` alias.
 pub type Result<T> = std::result::Result<T, Error>;
