@@ -15,5 +15,5 @@
 - Preferred and excluded region configuration.
 - Periodic latency summary reporting (count, min, max, mean, p50, p90, p99, errors).
 - Process-level CPU and memory metrics in each report.
-- Added `--user-agent-suffix` (env `AZURE_COSMOS_USER_AGENT_SUFFIX`, default `rust-perf`) for tagging perf-harness traffic in Cosmos server-side telemetry. Applied to both the primary and results clients; empty string disables.
+- Added `--user-agent-suffix` (env `AZURE_COSMOS_USER_AGENT_SUFFIX`, default `rust-perf`) for tagging perf-harness traffic in Cosmos server-side telemetry. Applied to both the primary and results clients; empty string disables. ([#4465](https://github.com/Azure/azure-sdk-for-rust/pull/4465))
 
