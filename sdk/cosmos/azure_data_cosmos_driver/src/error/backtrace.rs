@@ -40,7 +40,7 @@ use std::{
     fmt,
     num::NonZeroU32,
     sync::{
-        atomic::{AtomicU32, AtomicU64, Ordering},
+        atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering},
         Arc, OnceLock, RwLock,
     },
     time::{SystemTime, UNIX_EPOCH},
@@ -96,25 +96,31 @@ pub(crate) const BACKTRACE_CAPTURES_PER_SECOND_ENV: &str =
 
 const WINDOW_SECS: u64 = 1;
 
-/// Soft ceiling on the number of resolved frames retained in the
+/// Default soft ceiling on the number of resolved frames retained in the
 /// process-global symbol cache before it is swapped out and re-warmed
 /// from scratch.
 ///
 /// At ~100 bytes per entry the steady-state memory ceiling is ~10 MB.
 /// Hit on the write path (next cache-miss after the cap is reached);
 /// when triggered, the old map is *swapped* with a fresh empty one and
-/// the write lock is released before the old map is dropped — so the
-/// per-entry refcount-decrement and string-free work happens outside
-/// the critical section, keeping lock-held time `O(1)`. After the
-/// swap, subsequent renders pay the normal resolution cost (gated by
-/// the resolution limiter), so the only visible effect is a few
-/// renders returning `None` while the hot set re-warms — the same
-/// contract callers already get under resolution pressure.
+/// the actual `drop` of the swapped-out map (~100k `Arc<ResolvedFrame>`
+/// decrements + ~100k `String` frees) is offloaded to a detached OS
+/// thread, so the unlucky thread that triggered the cap hit pays only
+/// the swap cost (`O(1)`). After the swap, subsequent renders pay the
+/// normal resolution cost (gated by the resolution limiter), so the
+/// only visible effect is a few renders returning `None` while the hot
+/// set re-warms — the same contract callers already get under
+/// resolution pressure.
 ///
 /// In Rust-only steady-state deployments the cache rarely approaches
 /// this number; the cap exists to bound memory in long-lived hosts that
 /// load/unload modules (JNI / P/Invoke / `dlopen`).
-const FRAME_CACHE_SOFT_CAP: usize = 100_000;
+const DEFAULT_FRAME_CACHE_SOFT_CAP: usize = 100_000;
+
+/// Currently-active soft cap, read by [`try_resolve_frames`] on the
+/// write path. Stored as an atomic so tests can lower the cap without
+/// recompiling, deterministically exercising the eviction path.
+static FRAME_CACHE_SOFT_CAP: AtomicUsize = AtomicUsize::new(DEFAULT_FRAME_CACHE_SOFT_CAP);
 
 /// Captured (but unresolved) backtrace attached to a [`Error`](super::Error).
 ///
@@ -177,8 +183,21 @@ impl Backtrace {
         if !global_capture_throttle().try_acquire() {
             return None;
         }
-        let bt = backtrace::Backtrace::new_unresolved();
-        let ips: Vec<usize> = bt.frames().iter().map(|f| f.ip() as usize).collect();
+        // Walk the stack directly into a single `Vec<usize>` via the
+        // callback-based `backtrace::trace`, avoiding the intermediate
+        // `Vec<Frame>` allocation that `backtrace::Backtrace::new_unresolved`
+        // would produce. `trace` is the thread-safe variant — fine for
+        // arbitrary concurrent capture across the driver. Pre-size to a
+        // typical Cosmos async stack depth (tower-style middleware +
+        // Cosmos pipeline + tokio runtime frames commonly land in the
+        // 40–60 range) so the common case fits in one allocation;
+        // deeper stacks still capture correctly via `Vec::push`'s
+        // amortized doubling growth.
+        let mut ips: Vec<usize> = Vec::with_capacity(64);
+        backtrace::trace(|frame| {
+            ips.push(frame.ip() as usize);
+            true
+        });
         if ips.is_empty() {
             return None;
         }
@@ -312,9 +331,9 @@ fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
         // indefinitely. Swap the full map out for a fresh empty one and
         // hand the old map to a separate binding so its Drop — atomic
         // refcount decrements on every `Arc<ResolvedFrame>` plus String
-        // frees — runs *after* the write lock is released. Keeps the
+        // frees — runs *off* the calling thread (see below). Keeps the
         // critical section `O(1)` even at the cap.
-        let evicted = if cache.len() >= FRAME_CACHE_SOFT_CAP {
+        let evicted = if cache.len() >= FRAME_CACHE_SOFT_CAP.load(Ordering::Relaxed) {
             Some(std::mem::take(&mut *cache))
         } else {
             None
@@ -327,7 +346,29 @@ fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
             out[idx] = Some((*cached).clone());
         }
         drop(cache);
-        drop(evicted);
+        // Offload the eviction drop (~100k `Arc<ResolvedFrame>` decrements +
+        // ~100k `String` frees, ~10 MB of memory work) to a detached OS
+        // thread so the unlucky thread that triggered the cap hit returns
+        // immediately. Thread creation is ~10–100 μs vs ~1–10 ms of drop
+        // work, so the trade-off is net positive even on the worst case;
+        // cap hits are also rare (steady-state Cosmos workloads stay well
+        // below 100k unique frames), so the spawned thread is essentially
+        // free in aggregate. We deliberately do NOT use
+        // `BackgroundTaskManager` here: that runs on tokio (which may not
+        // be present at this synchronous error-construction call site) and
+        // is per-instance (not reachable from the process-global frame
+        // cache) — both make `std::thread::spawn` the simpler primitive.
+        if let Some(evicted) = evicted {
+            std::thread::Builder::new()
+                .name("cosmos-backtrace-cache-evict".into())
+                .spawn(move || drop(evicted))
+                .map(drop)
+                .unwrap_or_else(|_| {
+                    // Thread creation failed (extreme OS resource pressure).
+                    // Fall back to dropping on the current thread so we
+                    // never leak the evicted map.
+                });
+        }
     }
     Some(
         out.into_iter()
@@ -376,6 +417,14 @@ pub(crate) fn clear_frame_cache_for_tests() {
 #[cfg(test)]
 pub(crate) fn frame_cache_len_for_tests() -> usize {
     frame_cache().read().unwrap().len()
+}
+
+/// Overrides the frame-cache soft cap so eviction can be exercised
+/// deterministically without filling 100k entries. Tests must restore
+/// the previous value before returning.
+#[cfg(test)]
+pub(crate) fn set_frame_cache_soft_cap_for_tests(cap: usize) -> usize {
+    FRAME_CACHE_SOFT_CAP.swap(cap, Ordering::Relaxed)
 }
 
 // -----------------------------------------------------------------
@@ -629,6 +678,50 @@ mod tests {
                 bt.rendered().is_none(),
                 "rendered() must be deterministic per-Backtrace; None must stay None"
             );
+        });
+    }
+
+    #[test]
+    fn frame_cache_evicts_when_soft_cap_reached() {
+        // Validates the soft-cap eviction path on `try_resolve_frames`:
+        // when the cache size *before* an insert reaches the soft cap, the
+        // existing map is swapped out (its drop is offloaded to a detached
+        // OS thread) and only the new entries from the triggering call
+        // survive. We deliberately set the cap low so the path fires
+        // without filling 100k entries.
+        with_limiter_capacity(100, || {
+            clear_frame_cache_for_tests();
+            let prev_cap = set_frame_cache_soft_cap_for_tests(10);
+
+            // Use synthetic IPs that the platform symbol resolver almost
+            // certainly cannot resolve (low addresses). `resolve_single`
+            // tolerates an unresolved IP and still inserts a stub frame
+            // into the cache, which is all we need for the size check.
+            let first: Vec<usize> = (1..=12).collect();
+            assert!(
+                try_resolve_frames(&first).is_some(),
+                "first resolve_frames call must succeed (budget acquired once)"
+            );
+            assert_eq!(
+                frame_cache_len_for_tests(),
+                12,
+                "cache should hold all 12 frames before eviction trips"
+            );
+
+            // Second call: cache len (12) >= cap (10) before insert, so
+            // the existing 12 entries are swapped out and only the 3 new
+            // ones land in the fresh map.
+            let second: Vec<usize> = (13..=15).collect();
+            assert!(try_resolve_frames(&second).is_some());
+            assert_eq!(
+                frame_cache_len_for_tests(),
+                3,
+                "after eviction the cache must contain only the newly inserted entries"
+            );
+
+            // Restore the production cap so this test does not affect
+            // others sharing the process-global static.
+            set_frame_cache_soft_cap_for_tests(prev_cap);
         });
     }
 }
