@@ -538,17 +538,14 @@ impl CosmosDriverRuntimeBuilder {
     /// If the environment variable is also absent, the default of `5`
     /// resolutions / second is used.
     ///
-    /// Must be at least `1` — backtrace capture cannot be disabled. Callers
-    /// passing `0` (or setting the env var to `0`) cause [`build`](Self::build)
-    /// to fail with a validation error. To minimize the cost during an error
-    /// storm, set a low value like `1`; the symbol-resolution cache means
-    /// recurring failures from the same call sites still render at full
-    /// fidelity for free.
     /// Must be at least `1` — backtrace capture cannot be disabled. The
     /// [`NonZeroU32`](std::num::NonZeroU32) parameter encodes the invariant
     /// at the type level so passing `0` is a compile error. The env-var
     /// fallback is validated at [`build`](Self::build) time and rejects `0`
-    /// with a validation error.
+    /// with a validation error. To minimize the cost during an error storm,
+    /// set a low value like `1`; the symbol-resolution cache means
+    /// recurring failures from the same call sites still render at full
+    /// fidelity for free.
     pub fn with_max_error_backtrace_resolutions_per_second(
         mut self,
         max_per_second: std::num::NonZeroU32,
@@ -576,9 +573,6 @@ impl CosmosDriverRuntimeBuilder {
     /// If the environment variable is also absent, the default of `1000`
     /// captures / second is used.
     ///
-    /// Must be at least `1` — backtrace capture cannot be disabled at
-    /// construction time. Callers passing `0` (or setting the env var to
-    /// `0`) cause [`build`](Self::build) to fail with a validation error.
     /// Must be at least `1` — backtrace capture cannot be disabled at
     /// construction time. The [`NonZeroU32`](std::num::NonZeroU32) parameter
     /// encodes the invariant at the type level so passing `0` is a compile

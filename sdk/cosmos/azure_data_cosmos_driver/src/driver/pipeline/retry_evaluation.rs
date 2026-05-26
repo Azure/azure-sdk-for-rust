@@ -871,9 +871,12 @@ mod tests {
 
         match action {
             OperationAction::Abort { error } => {
-                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
-                // `error` is now the typed Cosmos error directly — no
+                // `error` is the typed Cosmos error directly — no
                 // round-trip through `azure_core::Error` is required.
+                // The fact that `.status()` resolves at all is itself the
+                // proof: that accessor only exists on `crate::error::Error`,
+                // so if the abort site had returned an `azure_core::Error`
+                // (the pre-refactor shape) this line would not compile.
                 assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
                 let text = error.to_string();
                 assert!(text.contains("HTTP 503/20003"));
