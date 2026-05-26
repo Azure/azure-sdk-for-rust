@@ -176,6 +176,28 @@ impl Error {
         )
     }
 
+    /// Returns a copy of `self` with `diagnostics` attached (or replaced).
+    ///
+    /// Used by the operation pipeline's abort branch to graft the completed
+    /// operation [`DiagnosticsContext`] (retry history, region attempts,
+    /// per-request events) onto an error that was built deep in the
+    /// pipeline before that context was available. Without this, the
+    /// operation diagnostics would be silently dropped on every aborted
+    /// operation \u2014 callers reading [`Error::diagnostics`] would see `None`
+    /// even though the operation pipeline was still tracking everything.
+    ///
+    /// Cheap: clones the inner [`Arc`]'s contents (one allocation) and
+    /// patches the diagnostics slot. The original [`Error`] is unchanged
+    /// and shareable. Inherited backtrace is preserved as-is so a `?`
+    /// propagating through this helper does not re-capture.
+    pub(crate) fn with_diagnostics(&self, diagnostics: Arc<DiagnosticsContext>) -> Self {
+        let mut next = (*self.inner).clone();
+        next.diagnostics = Some(diagnostics);
+        Self {
+            inner: Arc::new(next),
+        }
+    }
+
     /// Builds a `Client` error (caller misuse / precondition), optionally
     /// wrapping an underlying source error.
     ///
@@ -997,6 +1019,29 @@ mod tests {
             Some(DiagnosticsContext::error_placeholder()),
             Some(Arc::new(inner)),
         )
+    }
+
+    #[test]
+    fn with_diagnostics_attaches_diagnostics_without_mutating_original() {
+        // Starting from an error with no diagnostics, `with_diagnostics`
+        // returns a new error carrying the supplied context. The original
+        // error is left untouched (Clone-on-Arc semantics) and all other
+        // fields survive the clone-and-patch path.
+        let original = Error::end_to_end_timeout("no diags", None);
+        assert!(original.diagnostics().is_none());
+
+        let diag = DiagnosticsContext::error_placeholder();
+        let attached = original.with_diagnostics(Arc::clone(&diag));
+
+        assert!(
+            Arc::ptr_eq(attached.diagnostics().expect("diagnostics attached"), &diag),
+            "with_diagnostics must store the supplied Arc verbatim"
+        );
+        assert!(
+            original.diagnostics().is_none(),
+            "original must be untouched by with_diagnostics"
+        );
+        assert_eq!(attached.status(), original.status());
     }
 
     #[test]

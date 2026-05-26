@@ -663,8 +663,17 @@ fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> c
     );
 
     // Wrap into a fresh `Error::transport` carrying the enriched message and
-    // the original Cosmos error as source.
-    crate::error::Error::transport(*status, message, None, Some(std::sync::Arc::new(error)))
+    // the original Cosmos error as source. Forward the inner error's
+    // diagnostics so `outer.diagnostics()` is not silently `None` — callers
+    // should not have to walk `source()` to recover the operation's
+    // diagnostic context.
+    let diagnostics = error.diagnostics().cloned();
+    crate::error::Error::transport(
+        *status,
+        message,
+        diagnostics,
+        Some(std::sync::Arc::new(error)),
+    )
 }
 
 #[cfg(test)]
@@ -811,6 +820,31 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
+    fn build_transport_error_forwards_inner_diagnostics() {
+        // The wrap performed by `build_transport_error` must not silently
+        // drop the inner error's diagnostics: callers reading
+        // `outer.diagnostics()` should see the same `Arc<DiagnosticsContext>`
+        // that was attached to the inner cosmos error, not `None`.
+        let diag = std::sync::Arc::new(crate::diagnostics::DiagnosticsContext::error_placeholder());
+        let inner = crate::error::Error::transport(
+            CosmosStatus::TRANSPORT_GENERATED_503,
+            "inner transport failure",
+            Some(std::sync::Arc::clone(&diag)),
+            None,
+        );
+
+        let outer = build_transport_error(&CosmosStatus::TRANSPORT_GENERATED_503, inner);
+
+        let outer_diag = outer
+            .diagnostics()
+            .expect("outer error must inherit inner diagnostics");
+        assert!(
+            std::sync::Arc::ptr_eq(outer_diag, &diag),
+            "outer diagnostics must be the same Arc as the inner's"
+        );
     }
 
     #[test]

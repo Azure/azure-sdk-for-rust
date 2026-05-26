@@ -445,7 +445,15 @@ pub(crate) async fn execute_operation_pipeline(
                 );
                 diagnostics
                     .set_operation_status(cosmos_status.status_code(), cosmos_status.sub_status());
-                return Err(error);
+                // Graft the completed operation diagnostics (retry history,
+                // region attempts, per-request events) onto the error before
+                // returning. Without this, callers reading
+                // `error.diagnostics()` would see `None` on every aborted
+                // operation even though the pipeline tracked everything —
+                // the only path that attaches diagnostics in the
+                // non-aborted case is `build_cosmos_response`.
+                let diagnostics_ctx = Arc::new(diagnostics.complete());
+                return Err(error.with_diagnostics(diagnostics_ctx));
             }
         }
     }
