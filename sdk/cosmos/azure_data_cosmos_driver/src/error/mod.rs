@@ -21,7 +21,7 @@
 //! available, preserving the original `azure_core::Error` as
 //! [`StdError::source`] so callers can still downcast through it.
 
-use std::{borrow::Cow, error::Error as StdError, fmt, sync::Arc};
+use std::{error::Error as StdError, fmt, sync::Arc};
 
 use azure_core::http::StatusCode;
 
@@ -73,7 +73,7 @@ struct ErrorInner {
     payload: Option<Box<CosmosResponsePayload>>,
     /// Operation diagnostics for the failed operation, when available.
     diagnostics: Option<Arc<DiagnosticsContext>>,
-    message: Cow<'static, str>,
+    message: Arc<str>,
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     /// Captured stack backtrace, present when the global rate-limited
     /// backtrace capture budget allowed it. See [`backtrace`] module.
@@ -130,7 +130,7 @@ impl Error {
     /// directly, plus the wire-level [`CosmosResponsePayload`] (body +
     /// parsed headers) from the response so the failure can be inspected at
     /// the wire level.
-    pub(crate) fn service(response: CosmosResponse, message: impl Into<Cow<'static, str>>) -> Self {
+    pub(crate) fn service(response: CosmosResponse, message: impl Into<Arc<str>>) -> Self {
         let status = response.status();
         let diagnostics = response.diagnostics();
         let payload = response.into_payload();
@@ -149,7 +149,7 @@ impl Error {
     /// `408 / 20008` for end-to-end operation timeout).
     pub(crate) fn transport(
         status: CosmosStatus,
-        message: impl Into<Cow<'static, str>>,
+        message: impl Into<Arc<str>>,
         diagnostics: Option<Arc<DiagnosticsContext>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
@@ -170,7 +170,7 @@ impl Error {
     /// Convenience constructor for an end-to-end operation timeout
     /// (`408 / 20008`).
     pub(crate) fn end_to_end_timeout(
-        message: impl Into<Cow<'static, str>>,
+        message: impl Into<Arc<str>>,
         diagnostics: Option<Arc<DiagnosticsContext>>,
     ) -> Self {
         Self::transport(
@@ -192,7 +192,7 @@ impl Error {
     /// typed errors; not part of the public surface.
     #[doc(hidden)]
     pub fn client(
-        message: impl Into<Cow<'static, str>>,
+        message: impl Into<Arc<str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
         Self::from_inner(ErrorInner {
@@ -221,7 +221,7 @@ impl Error {
     /// typed errors; not part of the public surface.
     #[doc(hidden)]
     pub fn serialization(
-        message: impl Into<Cow<'static, str>>,
+        message: impl Into<Arc<str>>,
         cosmos_headers: Option<CosmosResponseHeaders>,
         diagnostics: Option<Arc<DiagnosticsContext>>,
         source: impl StdError + Send + Sync + 'static,
@@ -247,7 +247,7 @@ impl Error {
     /// typed errors; not part of the public surface.
     #[doc(hidden)]
     pub fn configuration(
-        message: impl Into<Cow<'static, str>>,
+        message: impl Into<Arc<str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
         Self::from_inner(ErrorInner {
@@ -300,11 +300,11 @@ impl Error {
     /// errors with request context; not part of the public surface.
     #[doc(hidden)]
     #[must_use]
-    pub fn with_context(mut self, context: impl Into<Cow<'static, str>>) -> Self {
+    pub fn with_context(mut self, context: impl Into<Arc<str>>) -> Self {
         let inner = self.inner_mut();
-        let context: Cow<'static, str> = context.into();
+        let context: Arc<str> = context.into();
         let combined = format!("{context}: {}", inner.message);
-        inner.message = Cow::Owned(combined);
+        inner.message = Arc::<str>::from(combined);
         self
     }
 
@@ -383,10 +383,11 @@ impl Error {
     ///   the window has not yet reopened.
     ///
     /// Partial backtraces are never produced — callers either get a fully-
-    /// resolved render or nothing. `None` from resolution denial is not
-    /// cached on the [`Error`] instance: a later call may succeed once the
-    /// limiter window reopens (and frames resolved by other errors
-    /// meanwhile have been added to the cache).
+    /// resolved render or nothing. **The outcome of the first call is
+    /// cached on this [`Error`] instance**, so every subsequent call
+    /// returns the same answer regardless of later changes in limiter or
+    /// throttle state. Callers may call this multiple times (logging,
+    /// telemetry, panic message) without risk of inconsistent results.
     ///
     /// ## What the backtrace points at
     ///
@@ -462,14 +463,25 @@ impl fmt::Display for Error {
 }
 
 impl fmt::Debug for Error {
-    /// Both `{e:?}` and `{e:#?}` emit the structured header plus the source
-    /// chain and rendered backtrace. `Result::unwrap` / `expect` panic
-    /// messages and `tracing::error!(err = ?e)` call sites pick up the
-    /// backtrace via this impl without any additional plumbing.
+    /// Default (`{e:?}`): structured header (kind + message + status) plus
+    /// the source chain. The captured backtrace is **omitted** so that
+    /// high-volume `tracing::error!(err = ?e)` / `Result::unwrap` /
+    /// `assert_eq!` call sites do not emit multi-line stack frame blocks
+    /// per error.
+    ///
+    /// Alternate (`{e:#?}`): same as default plus the rendered backtrace
+    /// block \u2014 opt in for full diagnostic reports. Matches the
+    /// `anyhow::Error` / `eyre::Report` convention of opting in to a
+    /// richer multi-line representation via the alternate flag.
+    ///
+    /// Callers that always want the backtrace regardless of format flag
+    /// should read it explicitly via [`Error::backtrace`].
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write_header(f, &self.inner)?;
         write_source_chain(f, self)?;
-        write_backtrace(f, self)?;
+        if f.alternate() {
+            write_backtrace(f, self)?;
+        }
         Ok(())
     }
 }
@@ -547,7 +559,7 @@ fn classify_azure_core_error(error: azure_core::Error) -> Error {
         status,
         payload: None,
         diagnostics: None,
-        message: Cow::Owned(message),
+        message: Arc::<str>::from(message),
         source: Some(Arc::new(error)),
         backtrace: None,
     })

@@ -130,8 +130,13 @@ pub(crate) struct Backtrace {
 struct BacktraceInner {
     /// Instruction pointers in stack order (innermost frame first).
     ips: Vec<usize>,
-    /// Lazily rendered display string, populated on first `rendered()` call.
-    rendered: OnceLock<String>,
+    /// Lazily rendered display string, populated on first `rendered()`
+    /// call. `Some(s)` = render succeeded; `Some(None)` semantically (an
+    /// inner `None` inside the outer `Option`) cannot occur here because
+    /// we only store on success; misses are represented by the *outer*
+    /// `OnceLock` being unset until the first successful render. See
+    /// [`Backtrace::rendered`] for how the giving-up signal is cached.
+    rendered: OnceLock<Option<String>>,
 }
 
 /// A single resolved stack frame.
@@ -201,22 +206,19 @@ impl Backtrace {
     /// frames are already known render at full fidelity regardless of
     /// limiter state.
     ///
-    /// `None` results are **not** cached — a later call may succeed if the
-    /// limiter window has reopened.
+    /// The first call's outcome (`Some(s)` or `None`) is **cached on
+    /// this [`Backtrace`] instance** — every subsequent call returns the
+    /// same answer for the lifetime of the [`Backtrace`] (and, because
+    /// `Backtrace` is shared by `Arc`, for every cloned/inherited copy).
+    /// This gives [`Error::backtrace`](super::Error::backtrace) a
+    /// per-instance deterministic contract; callers can call it multiple
+    /// times (e.g. once for logging, once for telemetry) without risk of
+    /// seeing inconsistent results.
     pub(crate) fn rendered(&self) -> Option<&str> {
-        if let Some(cached) = self.inner.rendered.get() {
-            return Some(cached);
-        }
-        let rendered = try_render(&self.inner.ips)?;
-        // Race-tolerant: if another thread won the init, both threads
-        // produced equivalent strings; discard ours.
-        let _ = self.inner.rendered.set(rendered);
-        Some(
-            self.inner
-                .rendered
-                .get()
-                .expect("just set or won by another thread"),
-        )
+        self.inner
+            .rendered
+            .get_or_init(|| try_render(&self.inner.ips))
+            .as_deref()
     }
 }
 
@@ -224,7 +226,10 @@ impl fmt::Debug for Backtrace {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Backtrace")
             .field("frame_count", &self.inner.ips.len())
-            .field("rendered", &self.inner.rendered.get().is_some())
+            .field(
+                "rendered",
+                &self.inner.rendered.get().map(Option::is_some),
+            )
             .finish()
     }
 }
@@ -673,8 +678,28 @@ mod tests {
             let bt = Backtrace::capture().expect("capture");
             let s1 = bt.rendered().expect("render");
             let s2 = bt.rendered().expect("render");
-            // Same string identity (same Arc<str> behind the OnceLock).
+            // Same string identity (same backing buffer behind the OnceLock).
             assert!(std::ptr::eq(s1.as_ptr(), s2.as_ptr()));
+        });
+    }
+
+    #[test]
+    fn none_render_is_also_cached_per_backtrace() {
+        with_limiter_capacity(0, || {
+            clear_frame_cache_for_tests();
+            let bt = Backtrace::capture().expect("capture");
+            // First call: budget=0 + cache empty -> None.
+            assert!(bt.rendered().is_none());
+            // Open the limiter wide so a subsequent render *would* succeed
+            // if `None` were not cached. With per-instance caching the
+            // first outcome wins and we still see None.
+            global_resolution_limiter()
+                .set_capacity_for_tests(crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND);
+            global_resolution_limiter().reset_for_tests();
+            assert!(
+                bt.rendered().is_none(),
+                "rendered() must be deterministic per-Backtrace; None must stay None"
+            );
         });
     }
 }

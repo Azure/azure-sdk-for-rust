@@ -32,6 +32,19 @@ use azure_data_cosmos_driver::models::{
 #[repr(transparent)]
 pub struct ResponseHeaders(DriverCosmosResponseHeaders);
 
+// Defense-in-depth against a future regression: `#[repr(transparent)]`
+// already guarantees layout equivalence with the single non-ZST field, but
+// this compile-time assertion makes the precondition impossible to break
+// silently if someone later adds a second field to the wrapper.
+const _: () = {
+    assert!(
+        std::mem::size_of::<ResponseHeaders>()
+            == std::mem::size_of::<DriverCosmosResponseHeaders>(),
+        "ResponseHeaders must remain layout-compatible with DriverCosmosResponseHeaders\
+         for the `from_driver_ref` transmute to be sound"
+    );
+};
+
 impl ResponseHeaders {
     /// Borrows a reference to a driver-owned `CosmosResponseHeaders` as a
     /// `&ResponseHeaders`. Zero-cost — the two types are layout-compatible

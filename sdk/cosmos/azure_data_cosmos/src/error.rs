@@ -97,7 +97,10 @@ impl Error {
     /// Cache hits do not consume budget. Returns `None` when capture was
     /// throttled, when the resolution limiter denied a cache-missed frame,
     /// or when capture was auto-disabled by recent resolution pressure;
-    /// partial backtraces are never produced.
+    /// partial backtraces are never produced. **The outcome of the first
+    /// call is cached on this [`Error`] instance**, so every subsequent
+    /// call returns the same answer regardless of later changes in
+    /// limiter or throttle state.
     ///
     /// **Errors arriving from `azure_core::Error`** (transport,
     /// credential, serialization failures bubbling up from below the
@@ -116,7 +119,7 @@ impl Error {
     /// Builds a `Client` error (caller misuse / precondition), optionally
     /// wrapping an underlying source error.
     pub(crate) fn client(
-        message: impl Into<std::borrow::Cow<'static, str>>,
+        message: impl Into<std::sync::Arc<str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
         Self(DriverError::client(message, source))
@@ -125,7 +128,7 @@ impl Error {
     /// Builds a `Configuration` error (bad endpoint URL, malformed connection
     /// string, etc.), optionally wrapping an underlying source error.
     pub(crate) fn configuration(
-        message: impl Into<std::borrow::Cow<'static, str>>,
+        message: impl Into<std::sync::Arc<str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
         Self(DriverError::configuration(message, source))
@@ -134,7 +137,7 @@ impl Error {
     /// Builds a `Serialization` error wrapping the underlying serde failure.
     #[allow(dead_code)]
     pub(crate) fn serialization(
-        message: impl Into<std::borrow::Cow<'static, str>>,
+        message: impl Into<std::sync::Arc<str>>,
         source: impl StdError + Send + Sync + 'static,
     ) -> Self {
         Self(DriverError::serialization(message, None, None, source))

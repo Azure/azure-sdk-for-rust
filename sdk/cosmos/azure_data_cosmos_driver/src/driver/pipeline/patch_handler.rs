@@ -191,7 +191,8 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // PATCH operation = one DiagnosticsContext containing every
     // sub-op's per-request diagnostics, instead of just the final
     // Replace's. See `DiagnosticsContext::aggregate_sub_operations`.
-    let mut sub_op_diagnostics: Vec<Arc<DiagnosticsContext>> = Vec::with_capacity(2);
+    let mut sub_op_diagnostics: Vec<Arc<DiagnosticsContext>> =
+        Vec::with_capacity(2 * attempts as usize);
     for _ in 0..attempts {
         // Read the current item, propagating the freshest session token we
         // have observed so far (caller's on attempt 1; carried-forward on
@@ -373,9 +374,12 @@ fn missing_body_error(msg: &'static str) -> crate::error::Error {
 /// to `OperationAction::Abort` (it is never retried at the pipeline layer).
 /// The patch handler's RMW loop is the *one* place where 412 needs to be
 /// recovered into a retry, so we narrow on the kind here instead of relying
-/// on a status check that the `await?` above would never reach.
+/// on a status check that the `await?` above would never reach. Requires
+/// `Kind::Service` so a future internal constructor that happens to use
+/// `StatusCode::PreconditionFailed` cannot accidentally trigger the RMW
+/// retry path.
 fn is_precondition_failed(err: &crate::error::Error) -> bool {
-    err.status().is_precondition_failed()
+    err.status().is_service_error() && err.status().is_precondition_failed()
 }
 
 /// Extracts the `x-ms-session-token` from a service-built cosmos error's

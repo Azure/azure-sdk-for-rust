@@ -45,10 +45,10 @@ Every `Error` carries a stack backtrace captured at construction. Unlike `RUST_B
 
 **Two production-safety knobs (independent rolling-1-second limiters).**
 
-| Knob | Builder method | Env var | Default | What it bounds |
-|---|---|---|---|---|
-| Resolution budget | `with_max_error_backtrace_resolutions_per_second` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` | `5` | How many backtraces may perform *fresh* symbol resolution per second. Cache hits do **not** consume budget. |
-| Capture throttle | `with_max_error_backtrace_captures_per_second` | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` | `1000` | Hard ceiling on stack walks per second, regardless of cache state. |
+| Knob              | Builder method                                    | Env var                                         | Default | What it bounds                                                                                              |
+| ----------------- | ------------------------------------------------- | ----------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
+| Resolution budget | `with_max_error_backtrace_resolutions_per_second` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` | `5`     | How many backtraces may perform *fresh* symbol resolution per second. Cache hits do **not** consume budget. |
+| Capture throttle  | `with_max_error_backtrace_captures_per_second`    | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND`    | `1000`  | Hard ceiling on stack walks per second, regardless of cache state.                                          |
 
 Both knobs take `NonZeroU32`; backtrace capture cannot be disabled. `build()` rejects `0` from the env-var fallback with a validation error.
 
