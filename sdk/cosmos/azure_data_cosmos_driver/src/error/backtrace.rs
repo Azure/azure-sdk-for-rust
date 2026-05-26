@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore dlopen
+
 //! Backtrace capture for [`Error`](super::Error).
 //!
 //! Backtraces are mission-critical for debugging — especially when the Rust
