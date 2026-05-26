@@ -265,11 +265,8 @@ impl CosmosClientBuilder {
 
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
-    /// The account reference bundles an endpoint and credential. You can create one using
+    /// The account reference bundles an endpoint and credential. Construct one using
     /// [`AccountReference::with_credential()`] or [`AccountReference::with_authentication_key()`].
-    ///
-    /// You can also pass a tuple of `(AccountEndpoint, credential)` or `(Url, credential)`,
-    /// where `credential` is any type that implements `Into<CosmosCredential>`.
     ///
     /// # Arguments
     ///
@@ -281,7 +278,7 @@ impl CosmosClientBuilder {
     /// Returns an error if the client cannot be constructed.
     pub async fn build(
         mut self,
-        account: impl Into<AccountReference>,
+        account: AccountReference,
         routing_strategy: RoutingStrategy,
     ) -> azure_core::Result<CosmosClient> {
         // Apply the region selection strategy to internal options.
@@ -291,7 +288,7 @@ impl CosmosClientBuilder {
             }
         }
 
-        let (account_endpoint, credential) = account.into().into_parts();
+        let (account_endpoint, credential) = account.into_parts();
         let endpoint = account_endpoint.into_url();
 
         // Clone credential for the driver before the SDK consumes it for auth policy.

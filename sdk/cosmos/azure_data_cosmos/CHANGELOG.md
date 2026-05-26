@@ -12,6 +12,7 @@
 
 ### Breaking Changes
 
+- `CosmosClientBuilder::build` now takes `AccountReference` directly instead of `impl Into<AccountReference>`. With the tuple `From` impls removed in the previous change, the generic bound no longer added flexibility — callers should construct an `AccountReference` explicitly via `AccountReference::with_credential` or `AccountReference::with_authentication_key` and pass it in.
 - Renamed `CosmosAccountEndpoint` → `AccountEndpoint` and `CosmosAccountReference` → `AccountReference`. The `Cosmos` prefix is implied by the containing `azure_data_cosmos` crate. Note that the driver crate has its own `AccountReference` type with a different shape; SDK source files that need both refer to the driver type via its fully-qualified path (`azure_data_cosmos_driver::models::AccountReference`).
 - Renamed `FeedPageIterator` → `QueryPageIterator` and `FeedItemIterator` → `QueryItemIterator`. These iterators are only produced by query APIs today; the `Feed*` names are reserved for future non-query feed APIs.
 - Removed the `request_charge()` and `session_token()` convenience accessors from `FeedPage` and `QueryFeedPage`. Use `page.headers().request_charge()` and `page.headers().session_token()` instead — the parsed `ResponseHeaders` already exposes these values and provides full typed access to every other response header.
