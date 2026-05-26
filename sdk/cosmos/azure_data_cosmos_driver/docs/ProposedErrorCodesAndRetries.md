@@ -4,10 +4,24 @@ This document describes the target retry behavior for the Azure Cosmos DB Rust d
 
 ## Design Philosophy
 
-The Rust driver **prefers availability over idempotency concerns**. Unlike other Azure Cosmos SDKs that gate write retries behind opt-in flags or idempotency checks, the Rust driver retries writes by default for retryable status codes. This decision was made explicitly by the team, acknowledging that:
+The Rust driver retries writes by default for retryable status codes. This is safe because Cosmos DB's write APIs are designed to be idempotent when used correctly:
 
-- Cosmos DB intentionally returns 503 when a write was **not processed** — it is safe to retry.
-- For 500/408, the service team explicitly requested write retries. We extend this to be all 500 status codes for convenience.
+- **503 (Service Unavailable)**: Cosmos DB intentionally returns 503 when a write was **not processed** — it is always safe to retry.
+- **5xx / 408**: Write retries are safe for CRUD operations because customers can (and should) use ETag preconditions (`If-Match`) to guarantee idempotency on replace and upsert. Create operations are inherently idempotent (a duplicate yields 409 Conflict). Delete operations are inherently idempotent (a duplicate yields 404 Not Found).
+- **Stored Procedure execution**: Stored procedures are **not idempotent** and must **not** be retried on timeout or server error. The driver disables write retries for stored procedure operations.
+
+### Idempotency Requirements
+
+For write retries to be safe, customers must use ETag preconditions (`If-Match` headers) on replace and upsert operations. Without ETags, a retried write could silently overwrite a concurrent update. This is a best practice regardless of retries — ETags protect against lost updates from concurrent writers.
+
+| Operation | Idempotent? | Retry safe? |
+|-----------|-------------|-------------|
+| Create | Yes (409 on duplicate) | Always |
+| Delete | Yes (404 on duplicate) | Always |
+| Replace / Upsert | With ETag precondition | Yes — 412 on stale ETag prevents silent overwrites |
+| Replace / Upsert | Without ETag | No — risk of lost update on retry |
+| Patch | Yes (operation-level idempotency) | Always |
+| Stored Procedure | No | **Never** — retries disabled |
 
 ## Status Code Handling
 
@@ -19,9 +33,16 @@ The Rust driver **prefers availability over idempotency concerns**. Unlike other
 | 401 | — | Unauthorized | Abort |
 | 409 | — | Conflict | Abort |
 | 412 | — | Precondition Failed | Abort |
-| 449 | — | Retry With (client must fix request) | Abort |
 
 These are deterministic client errors. No retry will change the outcome.
+
+### 449 — Retry With
+
+| Operation | Action | Budget |
+|-----------|--------|--------|
+| Any | SDK-owned retry | TBD |
+
+449 indicates the request must be retried with a modified configuration (e.g., after a collection recreate or partition split). Gateway V1 can handle 449 retries internally, but the Rust SDK always disables Gateway-side 449 retries and owns them in the SDK. This is required for Gateway V2, where all 449 retries must be handled by the SDK.
 
 ### 403 — Forbidden
 
@@ -37,10 +58,10 @@ These are deterministic client errors. No retry will change the outcome.
 
 | Account Type | Action | Budget |
 |--------------|--------|--------|
-| Single-write | Session retry to account primary | 2 attempts |
+| Single-write | Session retry to write region (hub region) | 2 attempts |
 | Multi-write | Session retry, advance through preferred endpoints | `preferred_endpoints.len()` attempts |
 
-On the final attempt, the session token is cleared to allow the target region to serve a potentially stale read rather than failing.
+The session token is preserved on all retry attempts — it is never cleared to allow stale reads, as that would violate the customer's chosen consistency guarantees. When all session retries are exhausted, the 404/1002 error is surfaced to the caller.
 
 ### 408 — Request Timeout
 
@@ -49,11 +70,11 @@ On the final attempt, the session token is cleared to allow the target region to
 | Reads | Cross-region failover retry | 3 failover attempts |
 | Writes (all) | **Cross-region failover retry** | 3 failover attempts |
 
-408 indicates a server-side timeout. The Rust driver retries writes on 408 because:
+408 indicates a server-side or client-side timeout. The Rust driver retries writes on 408 because:
 
-- The team explicitly agreed to retry writes for 408.
-- Availability is preferred over the theoretical risk of duplicate processing.
-- Cosmos DB's conflict detection (409/412) catches actual duplicates.
+- CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above).
+- 412 (Precondition Failed) prevents silent overwrites if a retried write races with a concurrent update.
+- Stored procedure execution is excluded from write retries (not idempotent).
 
 For single-write accounts, retry cycles through the available endpoint(s). For multi-write accounts, retry advances to the next preferred write region.
 
@@ -86,7 +107,7 @@ Standard 429 is handled entirely within the transport pipeline — the operation
 | Reads | Cross-region failover retry | 3 failover attempts |
 | Writes (all) | **Cross-region failover retry** | 3 failover attempts |
 
-All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signal from Cosmos DB — when the service intentionally returns 503, it guarantees the write was not processed. The team decided all other 5xx codes (500, 502, 504) should be retried identically, applying the "availability over idempotency" philosophy. 502/504 may be raised by intermediate proxies (e.g., Envoy), but Cosmos DB's conflict detection (409/412) catches actual duplicates.
+All 5xx errors are retried uniformly. 503 is the canonical "safe to retry" signal from Cosmos DB — when the service intentionally returns 503, it guarantees the write was not processed. All other 5xx codes (500, 502, 504) are retried identically because CRUD write operations are idempotent when customers use ETag preconditions (see [Idempotency Requirements](#idempotency-requirements) above). 502/504 may be raised by intermediate proxies, but ETag preconditions (412 on stale ETag) prevent silent overwrites on retry. Stored procedure execution is excluded from write retries.
 
 **This is the key divergence from other SDKs**: Python gates write retries behind `retry_write`; Java/.NET only retry for multi-write accounts. The Rust driver always retries.
 
@@ -142,14 +163,14 @@ Cross-region retry is the natural behavior for multi-write accounts since any wr
 PPAF is an **opt-in** feature for **single-master write accounts only**. When enabled (via server account flag `enable_per_partition_failover_behavior`):
 
 - Partition-level routing overrides are recorded on **successful write confirmation** — not on failure.
-- If a write succeeds on a non-primary region during retry, that region is recorded as the partition's current primary.
+- If a write succeeds on a non-write region during retry, that region is recorded as the partition's current write region.
 - PPAF entries do **not** participate in probe-based failback; they are updated only by success-time discovery.
 
 **With the Rust driver's "always retry writes" stance, PPAF primarily adds the partition-level routing intelligence** — the retry itself already happens regardless. PPAF makes the routing *smarter* by remembering which region last successfully served a given partition, and by providing further availability through processing writes in other read regions.
 
 ## Per-Partition Circuit Breaker (PPCB)
 
-PPCB is an **opt-in** feature that provides partition-level health tracking and routing:
+PPCB is an **opt-out** feature (enabled by default) that provides partition-level health tracking and routing:
 
 | Account Type | Reads | Writes |
 |--------------|-------|--------|
