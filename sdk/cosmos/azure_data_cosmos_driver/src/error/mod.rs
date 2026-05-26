@@ -303,8 +303,14 @@ impl Error {
     pub fn with_context(mut self, context: impl Into<Arc<str>>) -> Self {
         let inner = self.inner_mut();
         let context: Arc<str> = context.into();
-        let combined = format!("{context}: {}", inner.message);
-        inner.message = Arc::<str>::from(combined);
+        // Single-allocation concatenation: pre-size a String to the exact
+        // final length so `format!`-style growth doublings are avoided, then
+        // hand it off to `Arc::<str>::from` for the final shared buffer.
+        let mut buf = String::with_capacity(context.len() + 2 + inner.message.len());
+        buf.push_str(&context);
+        buf.push_str(": ");
+        buf.push_str(&inner.message);
+        inner.message = Arc::<str>::from(buf);
         self
     }
 
