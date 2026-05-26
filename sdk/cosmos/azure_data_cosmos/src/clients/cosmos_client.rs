@@ -8,7 +8,6 @@ use crate::{
 };
 use azure_core::http::Url;
 use azure_data_cosmos_driver::models::CosmosOperation;
-use azure_data_cosmos_driver::options::OperationOptions;
 use serde::Serialize;
 
 pub use super::cosmos_client_builder::CosmosClientBuilder;
@@ -127,14 +126,14 @@ impl CosmosClient {
     pub async fn query_databases(
         &self,
         query: impl Into<Query>,
-        #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<QueryDatabasesOptions>,
     ) -> azure_core::Result<QueryItemIterator<DatabaseProperties>> {
+        let options = options.unwrap_or_default();
         let query = query.into();
         let account = self.context.driver.account().clone();
         let initial_operation =
             CosmosOperation::query_databases(account).with_body(serde_json::to_vec(&query)?);
-        let operation_options = OperationOptions::default();
+        let operation_options = options.operation;
 
         let plan = self
             .context
@@ -160,9 +159,9 @@ impl CosmosClient {
     pub async fn create_database(
         &self,
         id: &str,
-        #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<CreateDatabaseOptions>,
     ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
+        let options = options.unwrap_or_default();
         #[derive(Serialize)]
         struct RequestBody<'a> {
             id: &'a str,
@@ -174,7 +173,7 @@ impl CosmosClient {
 
         // Control-plane creates always need the full response body so the
         // caller can inspect the created resource properties.
-        let mut operation_options = OperationOptions::default();
+        let mut operation_options = options.operation;
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 

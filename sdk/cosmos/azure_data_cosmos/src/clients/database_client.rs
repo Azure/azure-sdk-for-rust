@@ -9,7 +9,6 @@ use crate::{
     QueryItemIterator, ThroughputOptions,
 };
 use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
-use azure_data_cosmos_driver::options::OperationOptions;
 
 use super::ThroughputPoller;
 
@@ -73,17 +72,17 @@ impl DatabaseClient {
     ///     .into_model()?;
     /// # }
     /// ```
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
     ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
+        let options = options.unwrap_or_default();
         let operation = CosmosOperation::read_database(self.database_ref.clone());
 
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options.operation)
             .await?;
 
         Ok(ResourceResponse::new(
@@ -114,17 +113,16 @@ impl DatabaseClient {
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn query_containers(
         &self,
         query: impl Into<Query>,
-        #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<QueryContainersOptions>,
     ) -> azure_core::Result<QueryItemIterator<ContainerProperties>> {
+        let options = options.unwrap_or_default();
         let query = query.into();
         let initial_operation = CosmosOperation::query_containers(self.database_ref.clone())
             .with_body(serde_json::to_vec(&query)?);
-        let operation_options = OperationOptions::default();
+        let operation_options = options.operation;
 
         let plan = self
             .context
@@ -165,7 +163,7 @@ impl DatabaseClient {
 
         // Control-plane creates always need the full response body so the
         // caller can inspect the created resource properties.
-        let mut operation_options = OperationOptions::default();
+        let mut operation_options = options.operation;
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
@@ -186,17 +184,17 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions>,
     ) -> azure_core::Result<ResourceResponse<()>> {
+        let options = options.unwrap_or_default();
         let operation = CosmosOperation::delete_database(self.database_ref.clone());
 
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options.operation)
             .await?;
 
         Ok(ResourceResponse::new(
@@ -210,11 +208,11 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions>,
     ) -> azure_core::Result<Option<ThroughputProperties>> {
+        let options = options.unwrap_or_default();
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
@@ -226,6 +224,7 @@ impl DatabaseClient {
             &self.context.driver,
             self.context.driver.account(),
             &resource_id,
+            options.operation,
         )
         .await
     }
@@ -258,10 +257,6 @@ impl DatabaseClient {
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
     ) -> azure_core::Result<ThroughputPoller> {
-        #[allow(
-            unused_variables,
-            reason = "The 'options' variable may be used in the future"
-        )]
         let options = options.unwrap_or_default();
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
@@ -275,6 +270,7 @@ impl DatabaseClient {
             self.context.driver.account().clone(),
             &resource_id,
             throughput,
+            options.operation,
         )
         .await
     }

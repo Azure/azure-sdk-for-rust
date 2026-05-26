@@ -49,6 +49,10 @@ impl CosmosClientOptions {
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct CreateContainerOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+
     pub(crate) throughput: Option<ThroughputProperties>,
 }
 
@@ -58,27 +62,81 @@ impl CreateContainerOptions {
         self.throughput = Some(throughput);
         self
     }
+
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
 }
 
 /// Options to be passed to [`ContainerClient::replace()`](crate::clients::ContainerClient::replace()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReplaceContainerOptions;
+pub struct ReplaceContainerOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl ReplaceContainerOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct CreateDatabaseOptions;
+pub struct CreateDatabaseOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl CreateDatabaseOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct DeleteContainerOptions;
+pub struct DeleteContainerOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl DeleteContainerOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`DatabaseClient::delete()`](crate::clients::DatabaseClient::delete()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct DeleteDatabaseOptions;
+pub struct DeleteDatabaseOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl DeleteDatabaseOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Specifies consistency levels for Cosmos DB accounts.
 ///
@@ -316,12 +374,36 @@ impl BatchOptions {
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct QueryContainersOptions;
+pub struct QueryContainersOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl QueryContainersOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient::query_databases()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct QueryDatabasesOptions;
+pub struct QueryDatabasesOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl QueryDatabasesOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options for query operations.
 ///
@@ -410,23 +492,63 @@ impl QueryOptions {
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReadContainerOptions;
+pub struct ReadContainerOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl ReadContainerOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReadDatabaseOptions;
+pub struct ReadDatabaseOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl ReadDatabaseOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to operations related to Throughput offers.
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ThroughputOptions;
+pub struct ThroughputOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl ThroughputOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options for [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges)
 /// and [`ContainerClient::feed_range_from_partition_key()`](crate::clients::ContainerClient::feed_range_from_partition_key).
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
 pub struct ReadFeedRangesOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+
     force_refresh: bool,
 }
 
@@ -434,6 +556,12 @@ impl ReadFeedRangesOptions {
     /// When `true`, discards any cached routing map and fetches a fresh copy from the service.
     pub fn with_force_refresh(mut self, force_refresh: bool) -> Self {
         self.force_refresh = force_refresh;
+        self
+    }
+
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
         self
     }
 

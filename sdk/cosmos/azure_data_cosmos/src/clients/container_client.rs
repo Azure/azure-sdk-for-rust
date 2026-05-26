@@ -21,7 +21,6 @@ use crate::PatchDocument;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
-use azure_data_cosmos_driver::options::OperationOptions;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A client for working with a specific container in a Cosmos DB account.
@@ -74,18 +73,15 @@ impl ContainerClient {
     /// ```
     pub async fn read(
         &self,
-        #[allow(
-            unused_variables,
-            reason = "The 'options' parameter may be used in the future"
-        )]
         options: Option<ReadContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
+        let options = options.unwrap_or_default();
         let operation = CosmosOperation::read_container(self.container_ref.clone());
 
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options.operation)
             .await?;
 
         Ok(ResourceResponse::new(
@@ -120,19 +116,16 @@ impl ContainerClient {
     pub async fn replace(
         &self,
         properties: ContainerProperties,
-        #[allow(
-            unused_variables,
-            reason = "The 'options' parameter may be used in the future"
-        )]
         options: Option<ReplaceContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<ContainerProperties>> {
+        let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&properties)?;
         let operation =
             CosmosOperation::replace_container(self.container_ref.clone()).with_body(body);
 
         // Control-plane replaces always need the full response body so the
         // caller can inspect the updated resource properties.
-        let mut operation_options = OperationOptions::default();
+        let mut operation_options = options.operation;
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
@@ -155,16 +148,14 @@ impl ContainerClient {
     /// * `options` - Optional parameters for the request.
     pub async fn read_throughput(
         &self,
-        #[allow(
-            unused_variables,
-            reason = "The 'options' parameter may be used in the future"
-        )]
         options: Option<ThroughputOptions>,
     ) -> azure_core::Result<Option<ThroughputProperties>> {
+        let options = options.unwrap_or_default();
         offers_client::find_offer(
             &self.context.driver,
             self.container_ref.account(),
             self.container_ref.rid(),
+            options.operation,
         )
         .await
     }
@@ -197,10 +188,6 @@ impl ContainerClient {
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
     ) -> azure_core::Result<ThroughputPoller> {
-        #[allow(
-            unused_variables,
-            reason = "The 'options' variable may be used in the future"
-        )]
         let options = options.unwrap_or_default();
 
         offers_client::begin_replace(
@@ -208,6 +195,7 @@ impl ContainerClient {
             self.container_ref.account().clone(),
             self.container_ref.rid(),
             throughput,
+            options.operation,
         )
         .await
     }
@@ -220,18 +208,15 @@ impl ContainerClient {
     /// * `options` - Optional parameters for the request.
     pub async fn delete(
         &self,
-        #[allow(
-            unused_variables,
-            reason = "The 'options' parameter may be used in the future"
-        )]
         options: Option<DeleteContainerOptions>,
     ) -> azure_core::Result<ResourceResponse<()>> {
+        let options = options.unwrap_or_default();
         let operation = CosmosOperation::delete_container(self.container_ref.clone());
 
         let driver_response = self
             .context
             .driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options.operation)
             .await?;
 
         Ok(ResourceResponse::new(
