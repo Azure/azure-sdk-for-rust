@@ -11,6 +11,7 @@ param(
   [string[]]$PackageName,
 
   [string]$Toolchain = 'stable',
+  [switch]$Audit,
   [switch]$Deny,
   [switch]$SkipPackageAnalysis
 )
@@ -37,9 +38,11 @@ $packageArgs = if ($PackageName) {
   '--package ' + ($PackageName -join ' --package ')
 }
 
-$cargoAuditVersionParams = Get-VersionParamsFromCgManifest cargo-audit
-Invoke-LoggedCommand "cargo install cargo-audit --locked $($cargoAuditVersionParams -join ' ')" -GroupOutput
-Invoke-LoggedCommand "cargo audit" -GroupOutput
+if ($Audit) {
+  $cargoAuditVersionParams = Get-VersionParamsFromCgManifest cargo-audit
+  Invoke-LoggedCommand "cargo install cargo-audit --locked $($cargoAuditVersionParams -join ' ')" -GroupOutput
+  Invoke-LoggedCommand "cargo audit" -GroupOutput
+}
 
 Invoke-LoggedCommand "cargo check --manifest-path sdk/core/azure_core/Cargo.toml $packageArgs --all-features --all-targets --keep-going" -GroupOutput
 
@@ -76,7 +79,8 @@ if (!$SkipPackageAnalysis) {
   }
 
   if ($Toolchain -eq 'nightly') {
-    Invoke-LoggedCommand "cargo install --locked cargo-docs-rs" -GroupOutput
+    $cargoDocsRsVersionParams = Get-VersionParamsFromCgManifest cargo-docs-rs
+    Invoke-LoggedCommand "cargo install cargo-docs-rs --locked $($cargoDocsRsVersionParams -join ' ')" -GroupOutput
   }
 
   class Package {

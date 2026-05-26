@@ -12,6 +12,13 @@
     {
       "component": {
         "type": "cargo",
+        "cargo": { "name": "cargo-docs-rs", "version": "1.0.3" }
+      },
+      "developmentDependency": true
+    },
+    {
+      "component": {
+        "type": "cargo",
         "cargo": { "name": "cargo-semver-checks", "version": "0.45.0" }
       },
       "developmentDependency": true
