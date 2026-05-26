@@ -622,11 +622,14 @@ fn service_error_message(status: &CosmosStatus) -> String {
 ///
 /// Captures the parsed response headers and the raw response body bytes
 /// (e.g. the JSON error payload returned by the service for a 400 /
-/// BadRequest) on the resulting `Error`. Convert to an
-/// `azure_core::Error` via `.into()` when propagating through the pipeline;
-/// the `From<Error> for azure_core::Error` impl produces the
-/// standard `ErrorKind::HttpResponse { raw_response: Some(_), .. }` shape
-/// so external matchers continue to work.
+/// BadRequest) on the resulting `Error`. The error propagates through the
+/// pipeline as `crate::error::Error` end-to-end — there is no
+/// `From<crate::error::Error> for azure_core::Error` impl. SDK-boundary
+/// callers that still need an `azure_core::Error` shape can read the wire
+/// payload directly via [`Error::status`](crate::error::Error::status),
+/// [`Error::cosmos_headers`](crate::error::Error::cosmos_headers), and
+/// [`Error::response_body`](crate::error::Error::response_body) without
+/// going through a generic round-trip.
 fn build_service_error(
     status: &CosmosStatus,
     cosmos_headers: &CosmosResponseHeaders,

@@ -213,8 +213,9 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         let client = builder.build().map_err(|error| {
             // HTTP client construction is caller-controlled configuration
             // (TLS / pool sizing / version pinning), so surface it as a typed
-            // configuration error. `From<Error> for azure_core::Error` wraps
-            // it for the trait-bound return type.
+            // configuration error. The trait returns `crate::error::Result`
+            // directly — no conversion to `azure_core::Error` is needed at
+            // the boundary.
             crate::error::Error::configuration(
                 format!("Failed to create HTTP client: {error}"),
                 Some(std::sync::Arc::new(error)),
