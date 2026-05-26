@@ -112,11 +112,6 @@ impl CosmosResponse {
         &self.payload
     }
 
-    /// Consumes the response and returns the wire-level payload.
-    pub(crate) fn into_payload(self) -> CosmosResponsePayload {
-        self.payload
-    }
-
     /// Returns a reference to the typed response body.
     pub fn body(&self) -> &ResponseBody {
         self.payload.body()

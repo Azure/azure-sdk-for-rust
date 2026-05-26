@@ -499,8 +499,10 @@ fn build_replace_sub_op(
 /// `DiagnosticsContext`" on the error path, matching the success-path
 /// contract in `aggregate_sub_operations`. Empty only on the
 /// `attempts = 0` short-circuit path, where there is genuinely nothing
-/// to aggregate and the `error_placeholder()` is the honest signal that
-/// no per-op diagnostics exist.
+/// to aggregate; in that case the synthetic 412 is built with no
+/// diagnostics attached and the operation pipeline's abort branch will
+/// graft the operation-level diagnostics onto the error via
+/// [`Error::with_diagnostics`] before it leaves the pipeline.
 fn exhaustion_error(
     attempts: u8,
     last_412: Option<crate::error::Error>,
@@ -517,14 +519,24 @@ fn exhaustion_error(
             }
         }
         None => {
-            let response = crate::models::CosmosResponse::new(
-                crate::models::ResponseBody::NoPayload,
-                crate::models::CosmosResponseHeaders::new(),
+            // No prior Replace attempted (e.g. `attempts == 0` short-circuit
+            // path) → there genuinely are no per-op diagnostics to aggregate.
+            // Build the synthetic 412 directly from raw parts; the caller
+            // (operation pipeline abort branch) will graft real diagnostics
+            // via `Error::with_diagnostics` if any exist by the time the
+            // error leaves the pipeline. Attach `aggregated` here too in
+            // case a future caller seeds `sub_op_diagnostics` without a
+            // `last_412` source.
+            let outer = crate::error::Error::service_from_parts(
                 crate::models::CosmosStatus::new(StatusCode::PreconditionFailed),
-                aggregated
-                    .unwrap_or_else(crate::diagnostics::DiagnosticsContext::error_placeholder),
+                crate::models::CosmosResponseHeaders::new(),
+                &[],
+                message,
             );
-            crate::error::Error::service(response, message)
+            match aggregated {
+                Some(diag) => outer.with_diagnostics(diag),
+                None => outer,
+            }
         }
     }
 }
@@ -958,47 +970,57 @@ mod tests {
         // Regression guard: when the RMW loop gives up after multiple
         // attempts, the returned error must carry the aggregated
         // per-attempt `DiagnosticsContext` (Reads + failed Replaces), not
-        // the `error_placeholder()` static or the source-only single-attempt
-        // view. Triage tooling reads `err.diagnostics().request_count()`
-        // and must see the real per-attempt history.
+        // a default/empty context or the source-only single-attempt view.
+        // Triage tooling reads `err.diagnostics().request_count()` and
+        // must see the real per-attempt history.
         let underlying = cosmos_service_error(
             StatusCode::PreconditionFailed,
             "ETag mismatch from server",
             None,
             b"server-body",
         );
-        // Two synthetic per-attempt contexts standing in for what the
-        // RMW loop accumulates: one Read + one failed Replace, repeated.
+        // Four synthetic per-attempt contexts standing in for what the
+        // RMW loop accumulates. Each one carries a real (completed)
+        // request entry so the aggregation is observably correct — the
+        // expected `request_count` is the sum of inputs, not zero.
         let attempt_diags: Vec<Arc<DiagnosticsContext>> = (0..4)
-            .map(|_| DiagnosticsContext::error_placeholder())
+            .map(|_| {
+                let mut builder = DiagnosticsContextBuilder::new(
+                    crate::models::ActivityId::new_uuid(),
+                    Arc::new(crate::options::DiagnosticsOptions::default()),
+                );
+                let handle = builder.start_request(
+                    crate::diagnostics::ExecutionContext::Initial,
+                    crate::diagnostics::PipelineType::DataPlane,
+                    crate::diagnostics::TransportSecurity::Secure,
+                    crate::diagnostics::TransportKind::Gateway,
+                    crate::diagnostics::TransportHttpVersion::Http11,
+                    &crate::driver::routing::CosmosEndpoint::global(
+                        url::Url::parse("https://test.documents.azure.com/").unwrap(),
+                    ),
+                );
+                builder.complete_request(handle, StatusCode::PreconditionFailed, None);
+                Arc::new(builder.complete())
+            })
             .collect();
         let err = exhaustion_error(2, Some(underlying), &attempt_diags);
 
         let diag = err
             .diagnostics()
             .expect("exhaustion error must carry an aggregated DiagnosticsContext");
-        // `aggregate_sub_operations` is the production aggregator; we
-        // re-run it on the same inputs to derive the expected value and
-        // compare pointer-equivalent contents. The error_placeholder is
-        // a process-wide static so all four `attempt_diags` entries
-        // share the same Arc — the aggregator concatenates their
-        // (zero-length) `requests` vecs and returns a fresh context,
-        // distinct from the placeholder.
-        let expected =
-            DiagnosticsContext::aggregate_sub_operations(&attempt_diags).expect("non-empty");
         assert_eq!(
             diag.request_count(),
-            expected.request_count(),
-            "aggregated diagnostics request count must match"
+            4,
+            "aggregated diagnostics must concatenate every per-attempt RequestDiagnostics",
         );
-        // And critically, the attached diagnostics must NOT be the
-        // process-wide placeholder Arc — that would mean the upgrade
-        // didn't happen.
-        let placeholder = DiagnosticsContext::error_placeholder();
-        assert!(
-            !Arc::ptr_eq(diag, &placeholder),
-            "exhaustion error must not surface the process-wide placeholder"
-        );
+        // And critically, the attached diagnostics must be distinct from
+        // every input Arc — the aggregator returns a fresh context.
+        for input in &attempt_diags {
+            assert!(
+                !Arc::ptr_eq(diag, input),
+                "exhaustion error must surface the aggregated context, not any input Arc",
+            );
+        }
     }
 
     // ====== Dispatcher-driven loop coverage ======
@@ -1164,13 +1186,7 @@ mod tests {
         if let Some(token) = session_token {
             headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
         }
-        let response = crate::models::CosmosResponse::new(
-            crate::models::ResponseBody::from_bytes(bytes::Bytes::copy_from_slice(body)),
-            headers,
-            CosmosStatus::new(status),
-            crate::diagnostics::DiagnosticsContext::error_placeholder(),
-        );
-        crate::error::Error::service(response, msg)
+        crate::error::Error::service_from_parts(CosmosStatus::new(status), headers, body, msg)
     }
 
     fn patch_op_for(item_ref: ItemReference, ops: Vec<PatchOp>) -> CosmosOperation {

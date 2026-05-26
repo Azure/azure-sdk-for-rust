@@ -43,10 +43,12 @@ fn account() -> AccountReference {
 /// Regression guard for diagnostics-on-abort. Reading a non-existent
 /// database produces a 404 that the retry pipeline routes to
 /// `OperationAction::Abort`. The returned `Error` must carry the
-/// operation's real per-attempt diagnostics — not `None`, and not the
-/// process-wide `error_placeholder()` that `build_service_error` stamps
-/// onto the wire-level payload before the pipeline gets a chance to
-/// upgrade it.
+/// operation's real per-attempt diagnostics — not `None`, and not a
+/// default/empty context. The retry layer (`build_service_error`)
+/// intentionally constructs the typed `Error` with `diagnostics: None`
+/// and relies on the operation pipeline's abort branch to graft the
+/// operation's completed `DiagnosticsContext` onto the error via
+/// `Error::with_diagnostics` before it leaves the pipeline.
 #[tokio::test]
 async fn aborted_operation_error_carries_operation_diagnostics() {
     let emulator = build_emulator();
@@ -76,11 +78,12 @@ async fn aborted_operation_error_carries_operation_diagnostics() {
         .diagnostics()
         .expect("aborted operation error must carry the operation's DiagnosticsContext");
 
-    // The placeholder `error_placeholder()` has zero per-request entries and
-    // the all-zeros activity id. The real operation diagnostics minted by
-    // `execute_operation_pipeline` records at least one attempt against the
-    // emulator and uses a freshly generated activity id, so both checks are
-    // sufficient to distinguish the two.
+    // A default/empty `DiagnosticsContext` would have zero per-request
+    // entries and a placeholder activity id. The real operation
+    // diagnostics minted by `execute_operation_pipeline` records at
+    // least one attempt against the emulator and uses a freshly
+    // generated activity id, so both checks are sufficient to
+    // distinguish the two.
     assert!(
         diagnostics.request_count() >= 1,
         "operation diagnostics must record the failing HTTP attempt; got {} requests",

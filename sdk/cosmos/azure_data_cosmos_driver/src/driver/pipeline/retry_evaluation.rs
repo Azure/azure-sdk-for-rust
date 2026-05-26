@@ -630,21 +630,26 @@ fn service_error_message(status: &CosmosStatus) -> String {
 /// [`Error::cosmos_headers`](crate::error::Error::cosmos_headers), and
 /// [`Error::response_body`](crate::error::Error::response_body) without
 /// going through a generic round-trip.
+///
+/// The returned error carries **no** `DiagnosticsContext`. The operation
+/// pipeline's abort branch (the only production caller of this helper, via
+/// [`OperationAction::Abort`]) grafts the completed operation diagnostics
+/// onto the error via [`Error::with_diagnostics`] before it leaves the
+/// pipeline. Keeping this module free of any diagnostics plumbing preserves
+/// `evaluate_transport_result` as a pure function over its inputs and
+/// avoids constructing a throw-away diagnostics value that would
+/// immediately be overwritten downstream.
 fn build_service_error(
     status: &CosmosStatus,
     cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
 ) -> crate::error::Error {
-    // No real diagnostics context is available at this point in the retry
-    // pipeline; use the process-wide placeholder so the wire-level response
-    // payload (status + headers + body) still rides along on the error.
-    let response = crate::models::CosmosResponse::new(
-        crate::models::ResponseBody::from_bytes(bytes::Bytes::copy_from_slice(body)),
-        cosmos_headers.clone(),
+    crate::error::Error::service_from_parts(
         *status,
-        crate::diagnostics::DiagnosticsContext::error_placeholder(),
-    );
-    crate::error::Error::service(response, service_error_message(status))
+        cosmos_headers.clone(),
+        body,
+        service_error_message(status),
+    )
 }
 
 fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> crate::error::Error {
@@ -831,7 +836,13 @@ mod tests {
         // drop the inner error's diagnostics: callers reading
         // `outer.diagnostics()` should see the same `Arc<DiagnosticsContext>`
         // that was attached to the inner cosmos error, not `None`.
-        let diag = std::sync::Arc::new(crate::diagnostics::DiagnosticsContext::error_placeholder());
+        let diag: std::sync::Arc<crate::diagnostics::DiagnosticsContext> = std::sync::Arc::new(
+            crate::diagnostics::DiagnosticsContextBuilder::new(
+                crate::models::ActivityId::new_uuid(),
+                std::sync::Arc::new(crate::options::DiagnosticsOptions::default()),
+            )
+            .complete(),
+        );
         let inner = crate::error::Error::transport(
             CosmosStatus::TRANSPORT_GENERATED_503,
             "inner transport failure",

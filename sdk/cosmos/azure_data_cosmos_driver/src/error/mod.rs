@@ -32,8 +32,7 @@ use azure_core::http::StatusCode;
 use crate::{
     diagnostics::DiagnosticsContext,
     models::{
-        CosmosResponse, CosmosResponseHeaders, CosmosResponsePayload, CosmosStatus, ResponseBody,
-        SubStatusCode,
+        CosmosResponseHeaders, CosmosResponsePayload, CosmosStatus, ResponseBody, SubStatusCode,
     },
 };
 
@@ -116,20 +115,32 @@ impl Error {
     // Constructors
     // -----------------------------------------------------------------
 
-    /// Builds a `Service` error from a real Cosmos HTTP error response.
+    /// Builds a `Service` error from raw wire parts (status, headers, body,
+    /// message) **without** any [`DiagnosticsContext`].
     ///
-    /// The error stores the [`CosmosStatus`] and operation diagnostics
-    /// directly, plus the wire-level [`CosmosResponsePayload`] (body +
-    /// parsed headers) from the response so the failure can be inspected at
-    /// the wire level.
-    pub(crate) fn service(response: CosmosResponse, message: impl Into<Arc<str>>) -> Self {
-        let status = response.status();
-        let diagnostics = response.diagnostics();
-        let payload = response.into_payload();
+    /// Intended for retry/evaluation layers that classify HTTP error
+    /// responses but do not own the operation-level
+    /// [`DiagnosticsContextBuilder`](crate::diagnostics::DiagnosticsContextBuilder).
+    /// The caller (typically the operation pipeline's abort branch) is
+    /// responsible for grafting the completed diagnostics onto the returned
+    /// error via [`Error::with_diagnostics`] before it crosses the SDK
+    /// boundary. Decoupling this constructor from diagnostics keeps the
+    /// retry-evaluation module free of any throw-away placeholder context
+    /// that would immediately be overwritten downstream.
+    pub(crate) fn service_from_parts(
+        status: CosmosStatus,
+        headers: CosmosResponseHeaders,
+        body: &[u8],
+        message: impl Into<Arc<str>>,
+    ) -> Self {
+        let payload = CosmosResponsePayload::new(
+            ResponseBody::from_bytes(bytes::Bytes::copy_from_slice(body)),
+            headers,
+        );
         Self::from_inner(ErrorInner {
             status,
             payload: Some(Box::new(payload)),
-            diagnostics: Some(diagnostics),
+            diagnostics: None,
             message: message.into(),
             source: None,
             backtrace: None,
@@ -787,20 +798,18 @@ mod tests {
     use azure_core::http::headers::Headers;
 
     #[test]
-    fn service_constructor_populates_status_and_headers() {
+    fn service_from_parts_populates_status_and_headers() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
-        let response = CosmosResponse::new(
-            ResponseBody::NoPayload,
-            CosmosResponseHeaders::default(),
-            status,
-            DiagnosticsContext::error_placeholder(),
-        );
-        let err = Error::service(response, "throttled");
+        let err =
+            Error::service_from_parts(status, CosmosResponseHeaders::default(), b"{}", "throttled");
         assert_eq!(err.kind(), Kind::Service);
         assert!(err.status().is_throttled());
         assert!(err.status().is_transient());
         assert_eq!(err.status_code(), StatusCode::TooManyRequests);
         assert!(err.cosmos_headers().is_some());
+        // No diagnostics attached by the constructor; the operation
+        // pipeline grafts them downstream via `with_diagnostics`.
+        assert!(err.diagnostics().is_none());
     }
 
     #[test]
@@ -1016,8 +1025,24 @@ mod tests {
         Error::transport(
             CosmosStatus::TRANSPORT_GENERATED_503,
             "outer transport failure",
-            Some(DiagnosticsContext::error_placeholder()),
+            Some(make_test_diagnostics()),
             Some(Arc::new(inner)),
+        )
+    }
+
+    /// Fabricates a fresh `Arc<DiagnosticsContext>` for tests that need
+    /// any non-`None` diagnostics value. Produced via the real builder so
+    /// no production-only fixture (`error_placeholder`) is required.
+    fn make_test_diagnostics() -> Arc<DiagnosticsContext> {
+        use crate::diagnostics::DiagnosticsContextBuilder;
+        use crate::models::ActivityId;
+        use crate::options::DiagnosticsOptions;
+        Arc::new(
+            DiagnosticsContextBuilder::new(
+                ActivityId::new_uuid(),
+                Arc::new(DiagnosticsOptions::default()),
+            )
+            .complete(),
         )
     }
 
@@ -1030,7 +1055,7 @@ mod tests {
         let original = Error::end_to_end_timeout("no diags", None);
         assert!(original.diagnostics().is_none());
 
-        let diag = DiagnosticsContext::error_placeholder();
+        let diag = make_test_diagnostics();
         let attached = original.with_diagnostics(Arc::clone(&diag));
 
         assert!(
