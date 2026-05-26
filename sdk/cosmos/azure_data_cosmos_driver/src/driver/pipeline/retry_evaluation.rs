@@ -1088,6 +1088,87 @@ mod tests {
     }
 
     #[test]
+    fn transport_error_not_sent_with_ppcb_still_marks_endpoint() {
+        // Not-sent with PPCB active → endpoint is unreachable regardless of
+        // PPCB state. Connection failures are endpoint-wide, so the endpoint
+        // mark must not be suppressed by PPCB.
+        let op = make_read_operation();
+        let result = make_transport_error(RequestSentStatus::NotSent);
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.ppcb_active = true;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    #[test]
+    fn transport_error_unknown_sent_status_marks_partition_only() {
+        // Unknown sent status is treated as "possibly sent" → endpoint is
+        // potentially reachable, so only partition-level marking is applied.
+        let op = make_read_operation();
+        let result = make_transport_error(RequestSentStatus::Unknown);
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
+    fn transport_error_not_sent_over_budget_aborts_with_marks() {
+        // Not-sent with budget exhausted → abort, but still emit endpoint +
+        // partition marks so routing state is updated for future requests.
+        let op = make_read_operation();
+        let result = make_transport_error(RequestSentStatus::NotSent);
+        let state = OperationRetryState {
+            location: crate::driver::routing::LocationIndex::initial(0),
+            failover_retry_count: 1,
+            session_token_retry_count: 0,
+            max_failover_retries: 1,
+            max_session_retries: 1,
+            can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
+            excluded_regions: Vec::new(),
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
+        };
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::Abort { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    #[test]
     fn request_timeout_from_server_marks_partition_and_endpoint_unavailable() {
         let op = make_read_operation();
         let result = make_http_error(StatusCode::RequestTimeout);
