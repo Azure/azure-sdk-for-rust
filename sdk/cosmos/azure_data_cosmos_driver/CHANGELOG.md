@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `PartitionKeyDefinition::with_kind(PartitionKeyKind)` and `PartitionKeyDefinition::with_version(PartitionKeyVersion)` consuming setters so callers can override the auto-inferred kind and the default `V2` version without resorting to private-field workarounds. `PartitionKeyDefinition::new(paths)` continues to auto-infer the kind from the path count.
 - Added `PatchDocument::with_operation(PatchOperation) -> Self` consuming pusher, matching the standard SDK model-builder pattern. The existing `PatchDocument::new(Vec<PatchOperation>)` constructor and `Default` impl remain.
 - Refactored the driver response surface: introduced `ResponseBody` (a `NoPayload` / `Bytes(Bytes)` / `Items(Vec<Bytes>)` enum with `single()`, `items()`, `into_single::<T>()`, `into_items::<T>()`, and `is_empty()` helpers), added typed `CosmosRequestHeaders` fields for query / changefeed headers (`max_item_count`, `incremental_feed`, `populate_index_metrics`, `populate_query_metrics`, `enable_cross_partition_query`) so callers no longer need raw `custom_headers`, the pipeline now auto-emits `x-ms-documentdb-isquery: True` and `Content-Type: application/query+json` for `OperationType::Query`, and `CosmosStatus` gained `PartialEq<StatusCode>`, `From<CosmosStatus> for StatusCode/u16`, and a `CosmosStatus::new(StatusCode)` constructor. ([#4401](https://github.com/Azure/azure-sdk-for-rust/pull/4401))
 

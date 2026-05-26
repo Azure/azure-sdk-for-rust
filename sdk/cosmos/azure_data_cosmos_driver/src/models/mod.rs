@@ -173,6 +173,21 @@ impl PartitionKeyDefinition {
     pub fn is_complete(&self, pk: &PartitionKey) -> bool {
         pk.len() == self.paths.len()
     }
+
+    /// Overrides the [`PartitionKeyKind`] inferred by [`new`](Self::new).
+    ///
+    /// Most callers should rely on the automatic inference; this setter is for
+    /// the rare case where the wire-side kind must differ from the path count.
+    pub fn with_kind(mut self, kind: PartitionKeyKind) -> Self {
+        self.kind = kind;
+        self
+    }
+
+    /// Overrides the [`PartitionKeyVersion`] (defaults to [`PartitionKeyVersion::V2`]).
+    pub fn with_version(mut self, version: PartitionKeyVersion) -> Self {
+        self.version = version;
+        self
+    }
 }
 
 /// Creates a single-path [`PartitionKeyDefinition`] from a string slice.
