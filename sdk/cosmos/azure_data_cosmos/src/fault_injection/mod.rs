@@ -81,7 +81,7 @@
 //! let client = CosmosClientBuilder::new()
 //!     .with_fault_injection(vec![rule])
 //!     .build(
-//!         CosmosAccountReference::with_master_key(
+//!         CosmosAccountReference::with_authentication_key(
 //!             "https://myaccount.documents.azure.com/".parse().unwrap(),
 //!             Secret::new("my_account_key"),
 //!         ),

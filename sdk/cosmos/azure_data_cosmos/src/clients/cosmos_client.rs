@@ -49,7 +49,7 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
 ///     .parse()
 ///     .unwrap();
-/// let account = CosmosAccountReference::with_master_key(
+/// let account = CosmosAccountReference::with_authentication_key(
 ///     endpoint,
 ///     Secret::from("my_account_key"),
 /// );

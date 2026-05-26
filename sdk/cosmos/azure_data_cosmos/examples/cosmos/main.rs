@@ -91,7 +91,7 @@ async fn create_client(args: &SharedArgs) -> Result<CosmosClient, Box<dyn Error>
     if let Some(key) = args.key.as_ref() {
         #[cfg(feature = "key_auth")]
         {
-            let account = CosmosAccountReference::with_master_key(
+            let account = CosmosAccountReference::with_authentication_key(
                 endpoint,
                 azure_core::credentials::Secret::from(key.clone()),
             );

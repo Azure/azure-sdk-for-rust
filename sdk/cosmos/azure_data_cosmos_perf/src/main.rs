@@ -170,8 +170,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let key = config.key.as_deref().ok_or(
                 "Account key is required for key auth. Use --key or set AZURE_COSMOS_KEY env var.",
             )?;
-            let account =
-                CosmosAccountReference::with_master_key(endpoint, Secret::from(key.to_string()));
+            let account = CosmosAccountReference::with_authentication_key(
+                endpoint,
+                Secret::from(key.to_string()),
+            );
             builder.build(account, strategy).await?
         }
         AuthMethod::Aad => {
@@ -243,7 +245,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let key = config.results_key.as_deref().ok_or(
                     "Results account key is required. Use --results-key or set AZURE_COSMOS_RESULTS_KEY.",
                 )?;
-                let account = CosmosAccountReference::with_master_key(
+                let account = CosmosAccountReference::with_authentication_key(
                     results_ep,
                     Secret::from(key.to_string()),
                 );

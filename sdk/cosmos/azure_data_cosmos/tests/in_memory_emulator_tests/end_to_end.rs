@@ -23,6 +23,7 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, DatabaseProperties};
 use azure_data_cosmos::regions::Region;
+use azure_data_cosmos::CosmosAccountEndpoint;
 use azure_data_cosmos::CosmosAccountReference;
 use azure_data_cosmos::{
     ContentResponseOnWrite, CosmosClient, CosmosClientBuilder, ItemReadOptions, ItemResponse,
@@ -237,8 +238,10 @@ impl SdkDualBackend {
         let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
         let emulator_store = emulator.store();
 
-        let emulator_account = CosmosAccountReference::with_master_key(
-            EMULATOR_GATEWAY_URL.parse().unwrap(),
+        let emulator_account = CosmosAccountReference::with_authentication_key(
+            EMULATOR_GATEWAY_URL
+                .parse::<CosmosAccountEndpoint>()
+                .unwrap(),
             azure_core::credentials::Secret::new("dGVzdGtleQ=="),
         );
 
@@ -947,8 +950,10 @@ async fn sdk_create_retries_after_429_throttling() {
             .unwrap(),
     );
 
-    let emulator_account = CosmosAccountReference::with_master_key(
-        EMULATOR_GATEWAY_URL.parse().unwrap(),
+    let emulator_account = CosmosAccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL
+            .parse::<CosmosAccountEndpoint>()
+            .unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emulator_client = CosmosClientBuilder::new()
@@ -1107,8 +1112,8 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
 
     // Build the SDK client with the emulator runtime.
-    let emu_account = CosmosAccountReference::with_master_key(
-        east_url.parse().unwrap(),
+    let emu_account = CosmosAccountReference::with_authentication_key(
+        east_url.parse::<CosmosAccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emu_client = CosmosClientBuilder::new()
@@ -1270,8 +1275,8 @@ async fn resolve_real_client_with_fault_injection(
     let endpoint = conn_str.account_endpoint().to_string();
     let key = conn_str.account_key().secret().to_string();
 
-    let account = CosmosAccountReference::with_master_key(
-        endpoint.parse().unwrap(),
+    let account = CosmosAccountReference::with_authentication_key(
+        endpoint.parse::<CosmosAccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new(key),
     );
 
@@ -1334,8 +1339,8 @@ async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
     let endpoint = conn_str.account_endpoint().to_string();
     let key = conn_str.account_key().secret().to_string();
 
-    let account = CosmosAccountReference::with_master_key(
-        endpoint.parse().unwrap(),
+    let account = CosmosAccountReference::with_authentication_key(
+        endpoint.parse::<CosmosAccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new(key),
     );
 

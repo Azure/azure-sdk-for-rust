@@ -114,7 +114,7 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
     let request_handle = tokio::spawn(async move {
         let client = builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                azure_data_cosmos::CosmosAccountReference::with_authentication_key(
                     endpoint,
                     parsed.account_key().clone(),
                 ),

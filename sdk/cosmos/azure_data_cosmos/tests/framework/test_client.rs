@@ -373,7 +373,9 @@ impl TestClient {
             connection_string.account_endpoint().parse()?;
         let cosmos_client = builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(endpoint, credential),
+                azure_data_cosmos::CosmosAccountReference::with_authentication_key(
+                    endpoint, credential,
+                ),
                 strategy,
             )
             .await?;
@@ -918,7 +920,7 @@ impl TestRunContext {
 
         builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                azure_data_cosmos::CosmosAccountReference::with_authentication_key(
                     endpoint,
                     parsed.account_key().clone(),
                 ),

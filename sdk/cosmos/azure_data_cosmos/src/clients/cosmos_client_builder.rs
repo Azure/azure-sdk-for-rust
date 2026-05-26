@@ -61,7 +61,7 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
-/// let account = CosmosAccountReference::with_master_key(endpoint, Secret::from("my_account_key"));
+/// let account = CosmosAccountReference::with_authentication_key(endpoint, Secret::from("my_account_key"));
 /// let client = CosmosClientBuilder::new()
 ///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
@@ -266,7 +266,7 @@ impl CosmosClientBuilder {
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
     /// The account reference bundles an endpoint and credential. You can create one using
-    /// [`CosmosAccountReference::with_credential()`] or [`CosmosAccountReference::with_master_key()`].
+    /// [`CosmosAccountReference::with_credential()`] or [`CosmosAccountReference::with_authentication_key()`].
     ///
     /// You can also pass a tuple of `(CosmosAccountEndpoint, credential)` or `(Url, credential)`,
     /// where `credential` is any type that implements `Into<CosmosCredential>`.

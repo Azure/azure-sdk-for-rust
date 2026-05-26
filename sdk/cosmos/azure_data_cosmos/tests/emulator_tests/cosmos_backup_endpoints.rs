@@ -42,7 +42,7 @@ async fn client_boots_via_backup_when_primary_unreachable() -> Result<(), Box<dy
 
     let client = builder
         .build(
-            CosmosAccountReference::with_master_key(
+            CosmosAccountReference::with_authentication_key(
                 fake_endpoint,
                 connection_string.account_key().clone(),
             ),
