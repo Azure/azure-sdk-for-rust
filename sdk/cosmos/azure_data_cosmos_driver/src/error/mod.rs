@@ -605,9 +605,34 @@ impl From<azure_core::Error> for Error {
 fn classify_azure_core_error(error: azure_core::Error) -> Error {
     let message = error.to_string();
     let status = derive_status_from_azure_core_error(&error);
+    // When the underlying failure is an HTTP response that already arrived
+    // and was buffered by `azure_core`, lift the wire body + parsed Cosmos
+    // headers onto the typed error so callers can reach them via
+    // `Error::response_body()` / `Error::cosmos_headers()` without having to
+    // downcast `source()` back to `azure_core::Error` and re-extract.
+    //
+    // `RawResponse: Clone` here is cheap: `Headers` is a small map, the body
+    // is `Bytes` (refcount bump), and this path only runs at error
+    // construction time — well off the steady-state hot path.
+    let payload = match error.kind() {
+        azure_core::error::ErrorKind::HttpResponse {
+            raw_response: Some(raw),
+            ..
+        } => {
+            let raw = (**raw).clone();
+            let (_status, headers, body) = raw.deconstruct();
+            let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
+            let body_bytes = azure_core::Bytes::from(body);
+            Some(Box::new(CosmosResponsePayload::new(
+                ResponseBody::Bytes(body_bytes),
+                cosmos_headers,
+            )))
+        }
+        _ => None,
+    };
     Error::from_inner(ErrorInner {
         status,
-        payload: None,
+        payload,
         diagnostics: None,
         message: Arc::<str>::from(message),
         source: Some(Arc::new(error)),
@@ -765,6 +790,61 @@ mod tests {
         assert_eq!(cosmos.kind(), Kind::Service);
         assert_eq!(cosmos.status_code(), StatusCode::Conflict);
         assert!(cosmos.status().is_conflict());
+    }
+
+    #[test]
+    fn from_azure_core_http_response_lifts_body_and_headers_onto_error() {
+        // Regression guard: when the boundary mapper sees an
+        // `AzKind::HttpResponse { raw_response: Some(..), .. }` it must
+        // surface the wire body + parsed Cosmos headers on the resulting
+        // `Error` so callers can read them via `response_body()` /
+        // `cosmos_headers()` without downcasting `source()` back to
+        // `azure_core::Error`.
+        use azure_core::http::headers::HeaderName;
+        let mut headers = Headers::new();
+        // Two representative Cosmos headers: one numeric, one ETag-shaped,
+        // so we can verify both wire-level shape and Cosmos parsing.
+        headers.insert(HeaderName::from_static("x-ms-request-charge"), "12.34");
+        headers.insert(HeaderName::from_static("etag"), "\"abc\"");
+
+        let body = br#"{"code":"BadRequest","message":"missing partition key"}"#.to_vec();
+        let raw = azure_core::Error::new(
+            AzKind::HttpResponse {
+                status: StatusCode::BadRequest,
+                error_code: Some("BadRequest".to_string()),
+                raw_response: Some(Box::new(azure_core::http::RawResponse::from_bytes(
+                    StatusCode::BadRequest,
+                    headers,
+                    body.clone(),
+                ))),
+            },
+            "bad request",
+        );
+
+        let cosmos: Error = raw.into();
+        assert_eq!(cosmos.kind(), Kind::Service);
+        assert_eq!(cosmos.status_code(), StatusCode::BadRequest);
+
+        // Body lifted verbatim.
+        assert_eq!(
+            cosmos.response_body(),
+            Some(body.as_slice()),
+            "response body must be reachable from the typed error"
+        );
+
+        // Cosmos headers parsed from the wire headers.
+        let ch = cosmos
+            .cosmos_headers()
+            .expect("parsed Cosmos headers must be reachable from the typed error");
+        assert_eq!(
+            ch.request_charge.map(|r| r.value()),
+            Some(12.34),
+            "x-ms-request-charge must round-trip into CosmosResponseHeaders"
+        );
+        assert!(
+            ch.etag.is_some(),
+            "etag must round-trip into CosmosResponseHeaders"
+        );
     }
 
     #[test]
