@@ -62,6 +62,7 @@ pub struct Error {
     inner: Arc<ErrorInner>,
 }
 
+#[derive(Clone)]
 struct ErrorInner {
     /// Cosmos status (HTTP status + sub-status + categorical [`Kind`]).
     /// Always present \u2014 non-service constructors mint a synthetic status
@@ -78,19 +79,6 @@ struct ErrorInner {
     /// Captured stack backtrace, present when the global rate-limited
     /// backtrace capture budget allowed it. See [`backtrace`] module.
     backtrace: Option<Backtrace>,
-}
-
-impl Clone for ErrorInner {
-    fn clone(&self) -> Self {
-        Self {
-            status: self.status,
-            payload: self.payload.clone(),
-            diagnostics: self.diagnostics.clone(),
-            message: self.message.clone(),
-            source: self.source.clone(),
-            backtrace: self.backtrace.clone(),
-        }
-    }
 }
 
 impl Error {
