@@ -1626,7 +1626,7 @@ impl CosmosDriver {
                             azure_core::error::ErrorKind::DataConversion,
                             "an opaque server continuation token cannot be used to resume a \
                              cross-partition query; use the SDK-issued continuation token from \
-                             FeedPageIterator::to_continuation_token()",
+                             QueryPageIterator::to_continuation_token()",
                         ));
                     }
                     Some(PipelineNodeState::Request {

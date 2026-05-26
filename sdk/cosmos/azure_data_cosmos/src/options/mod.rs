@@ -362,7 +362,7 @@ pub struct QueryOptions {
 
     /// Continuation token from a prior page iterator, used to resume the query.
     ///
-    /// See [`FeedPageIterator::to_continuation_token`](crate::FeedPageIterator::to_continuation_token).
+    /// See [`QueryPageIterator::to_continuation_token`](crate::QueryPageIterator::to_continuation_token).
     pub continuation_token: Option<ContinuationToken>,
 }
 

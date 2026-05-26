@@ -5,8 +5,8 @@ use crate::{
     clients::{offers_client, ClientContext, ContainerClient},
     models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
     options::ReadDatabaseOptions,
-    CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
-    ThroughputOptions,
+    CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
+    QueryItemIterator, ThroughputOptions,
 };
 use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
 use azure_data_cosmos_driver::options::OperationOptions;
@@ -120,7 +120,7 @@ impl DatabaseClient {
         query: impl Into<Query>,
         #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<QueryContainersOptions>,
-    ) -> azure_core::Result<FeedItemIterator<ContainerProperties>> {
+    ) -> azure_core::Result<QueryItemIterator<ContainerProperties>> {
         let query = query.into();
         let initial_operation = CosmosOperation::query_containers(self.database_ref.clone())
             .with_body(serde_json::to_vec(&query)?);
@@ -132,7 +132,7 @@ impl DatabaseClient {
             .plan_operation(initial_operation, &operation_options, None)
             .await?;
 
-        Ok(FeedItemIterator::new(
+        Ok(QueryItemIterator::new(
             self.context.driver.clone(),
             None,
             plan,

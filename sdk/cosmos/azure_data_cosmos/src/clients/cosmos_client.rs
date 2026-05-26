@@ -4,7 +4,7 @@
 use crate::{
     clients::{ClientContext, DatabaseClient},
     models::{DatabaseProperties, ResourceResponse},
-    CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
+    CreateDatabaseOptions, Query, QueryDatabasesOptions, QueryItemIterator,
 };
 use azure_core::http::Url;
 use azure_data_cosmos_driver::models::CosmosOperation;
@@ -129,7 +129,7 @@ impl CosmosClient {
         query: impl Into<Query>,
         #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<QueryDatabasesOptions>,
-    ) -> azure_core::Result<FeedItemIterator<DatabaseProperties>> {
+    ) -> azure_core::Result<QueryItemIterator<DatabaseProperties>> {
         let query = query.into();
         let account = self.context.driver.account().clone();
         let initial_operation =
@@ -142,7 +142,7 @@ impl CosmosClient {
             .plan_operation(initial_operation, &operation_options, None)
             .await?;
 
-        Ok(FeedItemIterator::new(
+        Ok(QueryItemIterator::new(
             self.context.driver.clone(),
             None,
             plan,

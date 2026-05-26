@@ -12,8 +12,8 @@ use crate::{
     },
     query::FeedScope,
     transactional_batch::TransactionalBatch,
-    DeleteContainerOptions, FeedItemIterator, FeedRange, ItemReadOptions, ItemWriteOptions,
-    PartitionKey, Query, ReplaceContainerOptions, ThroughputOptions,
+    DeleteContainerOptions, FeedRange, ItemReadOptions, ItemWriteOptions, PartitionKey, Query,
+    QueryItemIterator, ReplaceContainerOptions, ThroughputOptions,
 };
 
 use super::ThroughputPoller;
@@ -841,7 +841,7 @@ impl ContainerClient {
         query: impl Into<Query>,
         scope: FeedScope,
         options: Option<QueryOptions>,
-    ) -> azure_core::Result<FeedItemIterator<T>> {
+    ) -> azure_core::Result<QueryItemIterator<T>> {
         let options = options.unwrap_or_default();
         let query = query.into();
 
@@ -875,7 +875,7 @@ impl ContainerClient {
                 options.continuation_token.as_ref(),
             )
             .await?;
-        Ok(FeedItemIterator::new(
+        Ok(QueryItemIterator::new(
             self.context.driver.clone(),
             Some(self.container_ref.clone()),
             plan,

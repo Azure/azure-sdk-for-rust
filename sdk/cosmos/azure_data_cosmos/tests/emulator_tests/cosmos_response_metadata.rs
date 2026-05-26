@@ -286,7 +286,7 @@ pub async fn query_pages_do_not_leak_lsn_in_items() -> Result<(), Box<dyn Error>
             let mut saw_session_token = false;
             while let Some(page) = pages.next().await {
                 let page = page?;
-                if page.session_token().is_some() {
+                if page.headers().session_token().is_some() {
                     saw_session_token = true;
                 }
                 for item in page.into_items() {

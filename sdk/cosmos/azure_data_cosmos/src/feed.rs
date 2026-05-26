@@ -15,7 +15,7 @@ use serde::{de::DeserializeOwned, Deserialize};
 use crate::{
     driver_bridge,
     models::{CosmosResponse, DiagnosticsContext, ResponseHeaders},
-    ContinuationToken, SessionToken,
+    ContinuationToken,
 };
 
 /// Represents a single page of results from a Cosmos DB feed.
@@ -67,18 +67,6 @@ impl<T> FeedPage<T> {
         &self.headers
     }
 
-    /// Returns the request charge (RU consumption) for this page, if available.
-    pub fn request_charge(&self) -> Option<f64> {
-        self.headers.request_charge().map(|rc| rc.value())
-    }
-
-    /// Returns the session token from this page, if available.
-    pub fn session_token(&self) -> Option<SessionToken> {
-        self.headers
-            .session_token()
-            .map(|st| SessionToken::from(st.as_str().to_string()))
-    }
-
     /// Returns the diagnostics for this page.
     ///
     /// The returned [`DiagnosticsContext`] surfaces the full per-operation
@@ -94,7 +82,7 @@ impl<T> FeedPage<T> {
 /// Wraps a [`FeedPage`] and adds query-specific metadata such as
 /// [`index_metrics()`](Self::index_metrics) and [`query_metrics()`](Self::query_metrics).
 ///
-/// This type is yielded by [`FeedItemIterator`] and [`FeedPageIterator`] for query operations.
+/// This type is yielded by [`QueryItemIterator`] and [`QueryPageIterator`] for query operations.
 #[derive(Debug)]
 pub struct QueryFeedPage<T> {
     /// The underlying feed page with common fields.
@@ -121,16 +109,6 @@ impl<T> QueryFeedPage<T> {
     /// Returns the parsed Cosmos-specific response headers for this page.
     pub fn headers(&self) -> &ResponseHeaders {
         self.page.headers()
-    }
-
-    /// Returns the request charge (RU consumption) for this page, if available.
-    pub fn request_charge(&self) -> Option<f64> {
-        self.page.request_charge()
-    }
-
-    /// Returns the session token from this page, if available.
-    pub fn session_token(&self) -> Option<SessionToken> {
-        self.page.session_token()
     }
 
     /// Returns the diagnostics for this page.
@@ -196,7 +174,7 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
 type DriverPageFuture =
     BoxFuture<'static, (OperationPlan, azure_core::Result<Option<DriverResponse>>)>;
 
-/// Live pipeline state held by [`FeedPageIterator`] / [`FeedItemIterator`].
+/// Live pipeline state held by [`QueryPageIterator`] / [`QueryItemIterator`].
 #[pin_project::pin_project]
 struct LiveState {
     driver: Arc<CosmosDriver>,
@@ -319,7 +297,7 @@ impl LiveState {
     }
 }
 
-/// Internal source of pages for [`FeedPageIterator`] and [`FeedItemIterator`].
+/// Internal source of pages for [`QueryPageIterator`] and [`QueryItemIterator`].
 ///
 /// Production iterators use the [`Live`](Self::Live) variant which drives the
 /// underlying [`OperationPlan`]. Unit tests use [`Synthetic`](Self::Synthetic)
@@ -353,15 +331,15 @@ impl<T: Send + DeserializeOwned + 'static> PageSource<T> {
 ///
 /// See [`QueryFeedPage`] for more details on Cosmos DB feeds.
 #[pin_project::pin_project]
-pub struct FeedItemIterator<T: Send> {
+pub struct QueryItemIterator<T: Send> {
     #[pin]
     source: PageSource<T>,
     current: Option<std::vec::IntoIter<T>>,
     _marker: PhantomData<fn() -> T>,
 }
 
-impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
-    /// Creates a new `FeedItemIterator` backed by the given operation plan.
+impl<T: Send + DeserializeOwned + 'static> QueryItemIterator<T> {
+    /// Creates a new `QueryItemIterator` backed by the given operation plan.
     pub(crate) fn new(
         driver: Arc<CosmosDriver>,
         container: Option<ContainerReference>,
@@ -381,15 +359,15 @@ impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
     /// IMPORTANT: This will DISCARD any items from the current page that have
     /// not yet been yielded by the item iterator. Use this method before
     /// consuming any items to cleanly switch to page-based iteration.
-    pub fn into_pages(self) -> FeedPageIterator<T> {
-        FeedPageIterator {
+    pub fn into_pages(self) -> QueryPageIterator<T> {
+        QueryPageIterator {
             source: self.source,
             _marker: PhantomData,
         }
     }
 }
 
-impl<T: Send + DeserializeOwned + 'static> Stream for FeedItemIterator<T> {
+impl<T: Send + DeserializeOwned + 'static> Stream for QueryItemIterator<T> {
     type Item = azure_core::Result<T>;
 
     fn poll_next(
@@ -425,13 +403,13 @@ impl<T: Send + DeserializeOwned + 'static> Stream for FeedItemIterator<T> {
 /// resumption via
 /// [`to_continuation_token`](Self::to_continuation_token).
 #[pin_project::pin_project]
-pub struct FeedPageIterator<T: Send> {
+pub struct QueryPageIterator<T: Send> {
     #[pin]
     source: PageSource<T>,
     _marker: PhantomData<fn() -> T>,
 }
 
-impl<T: Send + DeserializeOwned + 'static> FeedPageIterator<T> {
+impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
     /// Captures the current iterator position as a [`ContinuationToken`].
     ///
     /// Pass the returned token to a subsequent
@@ -461,7 +439,7 @@ impl<T: Send + DeserializeOwned + 'static> FeedPageIterator<T> {
     }
 }
 
-impl<T: Send + DeserializeOwned + 'static> Stream for FeedPageIterator<T> {
+impl<T: Send + DeserializeOwned + 'static> Stream for QueryPageIterator<T> {
     type Item = azure_core::Result<QueryFeedPage<T>>;
 
     fn poll_next(
@@ -494,8 +472,8 @@ mod tests {
 
     fn synthetic_item_iter<T: Send + DeserializeOwned + 'static>(
         pages: Vec<azure_core::Result<QueryFeedPage<T>>>,
-    ) -> FeedItemIterator<T> {
-        FeedItemIterator {
+    ) -> QueryItemIterator<T> {
+        QueryItemIterator {
             source: PageSource::Synthetic(pages.into()),
             current: None,
             _marker: PhantomData,

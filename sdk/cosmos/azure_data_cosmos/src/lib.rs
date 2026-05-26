@@ -44,7 +44,7 @@ pub use azure_data_cosmos_driver::models::{
     ContinuationToken, EffectivePartitionKey, FeedRange, PartitionKey, PartitionKeyValue,
 };
 
-pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
+pub use feed::{FeedPage, QueryFeedPage, QueryItemIterator, QueryPageIterator};
 mod driver_bridge;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
