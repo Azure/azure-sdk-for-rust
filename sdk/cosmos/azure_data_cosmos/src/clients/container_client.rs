@@ -848,7 +848,7 @@ impl ContainerClient {
         if let Some(b) = options.populate_query_metrics {
             initial_operation = initial_operation.with_populate_query_metrics(b);
         }
-        if let Some(hint) = options.max_item_count {
+        if let Some(hint) = options.feed.max_item_count {
             initial_operation = initial_operation.with_max_item_count(hint);
         }
         let plan = self
@@ -857,7 +857,7 @@ impl ContainerClient {
             .plan_operation(
                 initial_operation,
                 &options.operation,
-                options.continuation_token.as_ref(),
+                options.feed.continuation_token.as_ref(),
             )
             .await?;
         Ok(QueryItemIterator::new(
