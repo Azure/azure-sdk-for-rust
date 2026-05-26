@@ -27,7 +27,7 @@
 //! unit-tested in `driver/pipeline/patch_handler.rs`.
 
 use crate::framework::DriverTestClient;
-use azure_data_cosmos_driver::models::{IncrValue, PartitionKey, PatchDocument, PatchOperation};
+use azure_data_cosmos_driver::models::{CosmosNumber, PartitionKey, PatchDocument, PatchOperation};
 use serde_json::{json, Value};
 use std::error::Error;
 
@@ -595,7 +595,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Increment",
             scenario_category: "happy_path",
             initial_props: json!({ "score": 1.5 }),
-            ops: vec![PatchOperation::increment("/score", IncrValue::Float(7.0))],
+            ops: vec![PatchOperation::increment("/score", CosmosNumber::Float(7.0))],
             expected: Expected::PostImageProps(json!({ "score": 8.5 })),
             notes: "Mirrors .NET Increment(double 7.0)",
         },
@@ -605,7 +605,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Increment",
             scenario_category: "happy_path",
             initial_props: json!({ "count": 2 }),
-            ops: vec![PatchOperation::increment("/count", IncrValue::Int(40))],
+            ops: vec![PatchOperation::increment("/count", CosmosNumber::Int(40))],
             expected: Expected::PostImageProps(json!({ "count": 42 })),
             notes: "Mirrors .NET Increment(long 40)",
         },
@@ -647,7 +647,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Increment",
             scenario_category: "i64_fidelity",
             initial_props: json!({ "balance": 9_007_199_254_740_991i64 }),
-            ops: vec![PatchOperation::increment("/balance", IncrValue::Int(2))],
+            ops: vec![PatchOperation::increment("/balance", CosmosNumber::Int(2))],
             expected: Expected::PostImageProps(json!({ "balance": 9_007_199_254_740_993i64 })),
             notes: "Past 2^53: must NOT be demoted to f64",
         },
@@ -657,7 +657,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Increment",
             scenario_category: "i64_fidelity",
             initial_props: json!({ "balance": 100i64 }),
-            ops: vec![PatchOperation::increment("/balance", IncrValue::Int(-25))],
+            ops: vec![PatchOperation::increment("/balance", CosmosNumber::Int(-25))],
             expected: Expected::PostImageProps(json!({ "balance": 75i64 })),
             notes: "Negative integer delta on i64 target",
         },

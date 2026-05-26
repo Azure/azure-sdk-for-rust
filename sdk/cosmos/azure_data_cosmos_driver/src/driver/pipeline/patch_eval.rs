@@ -26,14 +26,14 @@
 //! * [`Replace`](PatchOperation::Replace) — the leaf must already exist.
 //! * [`Remove`](PatchOperation::Remove) — the leaf must exist; cannot target root.
 //! * [`Increment`](PatchOperation::Increment) — leaf must be a JSON number;
-//!   [`IncrValue::Int`] refuses to merge with a fractional target.
+//!   [`CosmosNumber::Int`] refuses to merge with a fractional target.
 //! * [`MoveOp`](PatchOperation::MoveOp) — source must exist; source and destination
 //!   must be distinct; destination cannot be a descendant of the source.
 //!
 //! Failures return [`PatchEvalError`], which the PATCH handler converts into
 //! an `azure_core::Error` before surfacing it to callers.
 
-use crate::models::{IncrValue, PatchOperation};
+use crate::models::{CosmosNumber, PatchOperation};
 use serde_json::Value;
 use std::fmt;
 
@@ -391,7 +391,7 @@ fn remove(doc: &mut Value, path: &str) -> Result<Value, PatchEvalError> {
     }
 }
 
-fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchEvalError> {
+fn increment(doc: &mut Value, path: &str, delta: CosmosNumber) -> Result<(), PatchEvalError> {
     let tokens = parse_pointer(path)?;
     if tokens.is_empty() {
         return Err(PatchEvalError::MissingTarget(path.to_string()));
@@ -428,7 +428,7 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
 
     let new_value = match (delta, num.as_i64(), num.as_f64()) {
         // Integer delta on integer target — preserve integer fidelity.
-        (IncrValue::Int(d), Some(target), _) => {
+        (CosmosNumber::Int(d), Some(target), _) => {
             let sum = target
                 .checked_add(d)
                 .ok_or_else(|| PatchEvalError::TypeMismatch {
@@ -439,7 +439,7 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
             Value::Number(sum.into())
         }
         // Integer delta on floating target — fail rather than demote.
-        (IncrValue::Int(_), None, Some(_)) => {
+        (CosmosNumber::Int(_), None, Some(_)) => {
             return Err(PatchEvalError::TypeMismatch {
                 expected: "integer number",
                 actual: "fractional number",
@@ -456,7 +456,7 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
         // than silently demote precision — the integer-delta arm above is
         // available for callers that need exact arithmetic on large
         // integers.
-        (IncrValue::Float(d), Some(target), _) => {
+        (CosmosNumber::Float(d), Some(target), _) => {
             const F64_INT_LIMIT: u64 = 1u64 << 53;
             if target.unsigned_abs() > F64_INT_LIMIT {
                 return Err(PatchEvalError::TypeMismatch {
@@ -478,7 +478,7 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
             }
         }
         // Float delta on floating target.
-        (IncrValue::Float(d), None, Some(target)) => {
+        (CosmosNumber::Float(d), None, Some(target)) => {
             let sum = target + d;
             match serde_json::Number::from_f64(sum) {
                 Some(n) => Value::Number(n),

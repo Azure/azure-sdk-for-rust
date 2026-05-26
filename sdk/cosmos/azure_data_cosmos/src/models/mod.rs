@@ -30,7 +30,7 @@ pub use throughput_properties::*;
 // These are the canonical definitions; the SDK does not duplicate them.
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosStatus, IncrValue, PartitionKeyDefinition, PartitionKeyKind,
+    ContainerReference, CosmosNumber, CosmosStatus, PartitionKeyDefinition, PartitionKeyKind,
     PartitionKeyVersion, PatchDocument, PatchOperation,
 };
 

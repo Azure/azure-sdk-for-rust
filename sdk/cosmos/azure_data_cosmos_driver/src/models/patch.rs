@@ -40,7 +40,7 @@ use serde_json::Value;
 /// silently demoting integer values to floating point.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[non_exhaustive]
-pub enum IncrValue {
+pub enum CosmosNumber {
     /// Integer increment. Preserves integer fidelity even when serialized into
     /// JSON, and refuses to merge with floating-point targets.
     Int(i64),
@@ -49,34 +49,34 @@ pub enum IncrValue {
     Float(f64),
 }
 
-impl From<i64> for IncrValue {
+impl From<i64> for CosmosNumber {
     fn from(v: i64) -> Self {
-        IncrValue::Int(v)
+        CosmosNumber::Int(v)
     }
 }
 
-impl From<f64> for IncrValue {
+impl From<f64> for CosmosNumber {
     fn from(v: f64) -> Self {
-        IncrValue::Float(v)
+        CosmosNumber::Float(v)
     }
 }
 
-impl Serialize for IncrValue {
+impl Serialize for CosmosNumber {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
-            IncrValue::Int(n) => serializer.serialize_i64(*n),
-            IncrValue::Float(n) => serializer.serialize_f64(*n),
+            CosmosNumber::Int(n) => serializer.serialize_i64(*n),
+            CosmosNumber::Float(n) => serializer.serialize_f64(*n),
         }
     }
 }
 
-impl<'de> Deserialize<'de> for IncrValue {
+impl<'de> Deserialize<'de> for CosmosNumber {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let value = serde_json::Number::deserialize(deserializer)?;
         if let Some(n) = value.as_i64() {
-            Ok(IncrValue::Int(n))
+            Ok(CosmosNumber::Int(n))
         } else if let Some(n) = value.as_f64() {
-            Ok(IncrValue::Float(n))
+            Ok(CosmosNumber::Float(n))
         } else {
             Err(serde::de::Error::custom("increment value is not a number"))
         }
@@ -136,7 +136,7 @@ pub enum PatchOperation {
         /// JSON Pointer path (RFC 6901) targeting an existing JSON number.
         path: String,
         /// Increment delta, preserving int/float fidelity.
-        value: IncrValue,
+        value: CosmosNumber,
     },
     /// Move (rename) the JSON value from `from` to `path`.
     ///
@@ -197,7 +197,7 @@ impl PatchOperation {
     }
 
     /// Builds an [`Increment`](Self::Increment) operation.
-    pub fn increment(path: impl Into<String>, value: impl Into<IncrValue>) -> Self {
+    pub fn increment(path: impl Into<String>, value: impl Into<CosmosNumber>) -> Self {
         PatchOperation::Increment {
             path: path.into(),
             value: value.into(),
@@ -334,9 +334,9 @@ mod tests {
 
     #[test]
     fn incr_value_int_and_float_deserialize() {
-        let i: IncrValue = serde_json::from_str("3").unwrap();
-        assert_eq!(i, IncrValue::Int(3));
-        let f: IncrValue = serde_json::from_str("3.5").unwrap();
-        assert_eq!(f, IncrValue::Float(3.5));
+        let i: CosmosNumber = serde_json::from_str("3").unwrap();
+        assert_eq!(i, CosmosNumber::Int(3));
+        let f: CosmosNumber = serde_json::from_str("3.5").unwrap();
+        assert_eq!(f, CosmosNumber::Float(3.5));
     }
 }

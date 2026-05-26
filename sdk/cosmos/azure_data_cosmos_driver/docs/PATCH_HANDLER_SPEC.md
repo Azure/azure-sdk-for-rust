@@ -182,7 +182,7 @@ Supported (`PatchOperation` variants — all use RFC 6901 JSON Pointers):
 | `Increment` | `"increment"` | Numeric add; preserves i64 fidelity, promotes i64→f64 on float operand.    |
 | `MoveOp`    | `"move"`      | Move a subtree from `from` to `path`; refuses to move into own descendant. |
 
-`IncrValue` is a Rust-only enum (`Int(i64)`, `Float(f64)`) that serializes
+`CosmosNumber` is a Rust-only enum (`Int(i64)`, `Float(f64)`) that serializes
 as a JSON number without precision loss.
 
 ## Errors
