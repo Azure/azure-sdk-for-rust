@@ -26,6 +26,13 @@
     {
       "component": {
         "type": "cargo",
+        "cargo": { "name": "cargo-deny", "version": "0.19.7" }
+      },
+      "developmentDependency": true
+    },
+    {
+      "component": {
+        "type": "cargo",
         "cargo": { "name": "taplo-cli", "version": "0.10.0" }
       },
       "developmentDependency": true
