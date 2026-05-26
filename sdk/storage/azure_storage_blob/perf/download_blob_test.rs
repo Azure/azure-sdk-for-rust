@@ -19,6 +19,8 @@ use azure_storage_blob_test::get_test_credential;
 use bytes::BytesMut;
 use futures::{FutureExt, StreamExt, TryStreamExt};
 
+use crate::extensions::{OnceLockExt, RecordingExt};
+
 enum CollectOptions {
     Stream,
     Core,
@@ -248,17 +250,7 @@ impl PerfTest for DownloadBlobTest {
     }
 
     async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
-        // Cleanup code after running the test
-        let mut iterator = self.client.get().unwrap().list_blobs(None)?;
-        while let Some(blob) = iterator.try_next().await? {
-            let blob_client = self
-                .client
-                .get()
-                .unwrap()
-                .blob_client(blob.name.as_ref().unwrap());
-            let _result = blob_client.delete(None).await?;
-        }
-
+        self.client.get().unwrap().delete(None).await?;
         Ok(())
     }
 }
