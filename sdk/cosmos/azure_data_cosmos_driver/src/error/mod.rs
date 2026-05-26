@@ -466,18 +466,10 @@ impl fmt::Debug for Error {
 }
 
 fn write_header(f: &mut fmt::Formatter<'_>, inner: &ErrorInner) -> fmt::Result {
-    let status = inner.status;
-    write!(
-        f,
-        "[{}] {} (status: {}",
-        status.kind(),
-        inner.message,
-        u16::from(status.status_code())
-    )?;
-    if let Some(sub) = status.sub_status() {
-        write!(f, "/{}", sub.value())?;
-    }
-    f.write_str(")")
+    // `CosmosStatus::Display` already renders the categorical `[Kind]`
+    // plus `<status>/<sub> (<name>)` (or `<status>` when no sub-status),
+    // so reuse it for a single, consistent representation.
+    write!(f, "{}: {}", inner.status, inner.message)
 }
 
 fn write_source_chain(f: &mut fmt::Formatter<'_>, err: &Error) -> fmt::Result {

@@ -2275,7 +2275,7 @@ mod tests {
                         "transport_http_version": "http11",
                         "region": "westus2",
                         "endpoint": "https://test.documents.azure.com/",
-                        "status": "200",
+                        "status": "[Service] 200",
                         "request_charge": 1.0,
                         "activity_id": null,
                         "session_token": null,
@@ -2304,7 +2304,7 @@ mod tests {
                         "transport_http_version": "http11",
                         "region": "westus2",
                         "endpoint": "https://test.documents.azure.com/",
-                        "status": "200",
+                        "status": "[Service] 200",
                         "request_charge": 1.0,
                         "activity_id": null,
                         "session_token": null,
@@ -2322,6 +2322,72 @@ mod tests {
     }
 
     #[test]
+    fn to_json_detailed_with_known_sub_status() {
+        // Verifies that when a request completes with a sub-status that has
+        // a well-known name (e.g. 3200 → RUBudgetExceeded), the serialized
+        // `status` field carries the full `[Kind] {code}/{sub} ({name})`
+        // form produced by `CosmosStatus::Display`.
+        let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
+            let handle = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            builder.complete_request(
+                handle,
+                StatusCode::TooManyRequests,
+                Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+            );
+        });
+
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let value = normalize_diagnostics_json(json);
+        let status = value
+            .get("requests")
+            .and_then(|r| r.as_array())
+            .and_then(|a| a.first())
+            .and_then(|r| r.get("status"))
+            .and_then(|s| s.as_str())
+            .expect("status field must be a string");
+        assert_eq!(
+            status, "[Service] 429/3200 (RUBudgetExceeded)",
+            "named sub-status must serialize as `[Kind] {{code}}/{{sub}} ({{name}})`"
+        );
+    }
+
+    #[test]
+    fn to_json_detailed_with_unknown_sub_status() {
+        // Verifies the `[Kind] {code}/{sub}` form (no name suffix) when the
+        // sub-status code is not in the well-known table.
+        let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
+            let handle = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            builder.complete_request(
+                handle,
+                StatusCode::TooManyRequests,
+                Some(SubStatusCode::new(424242)),
+            );
+        });
+
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let value = normalize_diagnostics_json(json);
+        let status = value
+            .get("requests")
+            .and_then(|r| r.as_array())
+            .and_then(|a| a.first())
+            .and_then(|r| r.get("status"))
+            .and_then(|s| s.as_str())
+            .expect("status field must be a string");
+        assert_eq!(
+            status, "[Service] 429/424242",
+            "unknown sub-status must serialize as `[Kind] {{code}}/{{sub}}` with no name suffix"
+        );
+    }
+
+    #[test]
     fn to_json_summary() {
         let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
             // Add several requests to trigger deduplication
@@ -2334,7 +2400,7 @@ mod tests {
                 builder.update_request(handle, |req| {
                     req.request_charge = RequestCharge::new(i as f64)
                 });
-                builder.complete_request(handle, StatusCode::TooManyRequests, None);
+                builder.complete_request(handle, StatusCode::TooManyRequests,Some(SubStatusCode::RU_BUDGET_EXCEEDED));
             }
         });
 
@@ -2352,7 +2418,7 @@ mod tests {
                 "first": {
                     "execution_context": "retry",
                     "endpoint": "https://test.documents.azure.com/",
-                    "status": "429",
+                    "status": "[Service] 429/3200 (RUBudgetExceeded)",
                     "request_charge": 0.0,
                     "duration_ms": 0,
                     "timed_out": false
@@ -2360,15 +2426,16 @@ mod tests {
                 "last": {
                     "execution_context": "retry",
                     "endpoint": "https://test.documents.azure.com/",
-                    "status": "429",
+                    "status": "[Service] 429/3200 (RUBudgetExceeded)",
                     "request_charge": 4.0,
                     "duration_ms": 0,
                     "timed_out": false
                 },
                 "deduplicated_groups": [{
                     "endpoint": "https://test.documents.azure.com/",
-                    "status": "429",
+                    "status": "[Service] 429/3200 (RUBudgetExceeded)",
                     "execution_context": "retry",
+
                     "count": 3,
                     "total_request_charge": 6.0,
                     "min_duration_ms": 0,

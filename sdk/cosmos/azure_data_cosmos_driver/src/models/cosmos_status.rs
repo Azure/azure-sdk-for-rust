@@ -1672,11 +1672,22 @@ impl fmt::Debug for CosmosStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let status_u16: u16 = self.status_code.into();
         match (self.sub_status, self.name()) {
-            (Some(sub), Some(name)) => {
-                write!(f, "CosmosStatus({}/{} {})", status_u16, sub.value(), name)
-            }
-            (Some(sub), None) => write!(f, "CosmosStatus({}/{})", status_u16, sub.value()),
-            (None, _) => write!(f, "CosmosStatus({})", status_u16),
+            (Some(sub), Some(name)) => write!(
+                f,
+                "CosmosStatus([{}] {}/{} {})",
+                self.kind,
+                status_u16,
+                sub.value(),
+                name,
+            ),
+            (Some(sub), None) => write!(
+                f,
+                "CosmosStatus([{}] {}/{})",
+                self.kind,
+                status_u16,
+                sub.value(),
+            ),
+            (None, _) => write!(f, "CosmosStatus([{}] {})", self.kind, status_u16),
         }
     }
 }
@@ -1685,9 +1696,16 @@ impl fmt::Display for CosmosStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let status_u16: u16 = self.status_code.into();
         match (self.sub_status, self.name()) {
-            (Some(sub), Some(name)) => write!(f, "{}/{} ({})", status_u16, sub.value(), name),
-            (Some(sub), None) => write!(f, "{}/{}", status_u16, sub.value()),
-            (None, _) => write!(f, "{}", status_u16),
+            (Some(sub), Some(name)) => write!(
+                f,
+                "[{}] {}/{} ({})",
+                self.kind,
+                status_u16,
+                sub.value(),
+                name,
+            ),
+            (Some(sub), None) => write!(f, "[{}] {}/{}", self.kind, status_u16, sub.value()),
+            (None, _) => write!(f, "[{}] {}", self.kind, status_u16),
         }
     }
 }
@@ -1754,9 +1772,19 @@ impl<'de> Deserialize<'de> for CosmosStatus {
         }
 
         if let Some(status) = h.status {
-            let normalized = status
+            // Tolerate the `[Kind] ` prefix produced by `Display` (e.g.
+            // `"[Service] 429/3200 (RUBudgetExceeded)"`) by stripping it
+            // before parsing the numeric portion.
+            let after_kind = match status.strip_prefix('[') {
+                Some(rest) => match rest.split_once("] ") {
+                    Some((_, after)) => after,
+                    None => status.as_str(),
+                },
+                None => status.as_str(),
+            };
+            let normalized = after_kind
                 .split_once(' ')
-                .map_or(status.as_str(), |(left, _)| left);
+                .map_or(after_kind, |(left, _)| left);
             if let Some((status_code, sub_status_code)) = normalized.split_once('/') {
                 let status_code = status_code
                     .parse::<u16>()
@@ -1851,19 +1879,19 @@ mod tests {
     #[test]
     fn display_with_name() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
-        assert_eq!(format!("{}", status), "429/3200 (RUBudgetExceeded)");
+        assert_eq!(format!("{}", status), "[Service] 429/3200 (RUBudgetExceeded)");
     }
 
     #[test]
     fn display_without_sub_status() {
         let status = CosmosStatus::new(StatusCode::Ok);
-        assert_eq!(format!("{}", status), "200");
+        assert_eq!(format!("{}", status), "[Service] 200");
     }
 
     #[test]
     fn display_unknown_sub_status() {
         let status = CosmosStatus::new(StatusCode::Ok).with_sub_status(99999);
-        assert_eq!(format!("{}", status), "200/99999");
+        assert_eq!(format!("{}", status), "[Service] 200/99999");
     }
 
     #[test]
@@ -1871,7 +1899,7 @@ mod tests {
         let status = CosmosStatus::new(StatusCode::NotFound).with_sub_status(1002);
         assert_eq!(
             format!("{:?}", status),
-            "CosmosStatus(404/1002 ReadSessionNotAvailable)"
+            "CosmosStatus([Service] 404/1002 ReadSessionNotAvailable)"
         );
     }
 
@@ -1891,7 +1919,7 @@ mod tests {
     fn serialization_roundtrip() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
         let json = serde_json::to_string(&status).unwrap();
-        assert!(json.contains("\"status\":\"429/3200 (RUBudgetExceeded)\""));
+        assert!(json.contains("\"status\":\"[Service] 429/3200 (RUBudgetExceeded)\""));
 
         let deserialized: CosmosStatus = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized, status);
@@ -1901,7 +1929,7 @@ mod tests {
     fn serialization_without_sub_status() {
         let status = CosmosStatus::new(StatusCode::Ok);
         let json = serde_json::to_string(&status).unwrap();
-        assert!(json.contains("\"status\":\"200\""));
+        assert!(json.contains("\"status\":\"[Service] 200\""));
     }
 
     #[test]
