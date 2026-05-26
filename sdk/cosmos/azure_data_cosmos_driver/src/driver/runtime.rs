@@ -15,7 +15,10 @@ use std::{
 
 use crate::{
     diagnostics::ProxyConfiguration,
-    models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
+    models::{
+        normalize_wrapping_sdk_identifier, AccountReference, ContainerReference,
+        ThroughputControlGroupName, UserAgent,
+    },
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
         OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
@@ -527,13 +530,15 @@ impl CosmosDriverRuntimeBuilder {
     /// Higher-level SDKs (such as `azure_data_cosmos`) call this to identify
     /// themselves alongside the driver. The supplied value should already be a
     /// complete token (e.g., `azsdk-rust-cosmos/0.34.0`); the driver only
-    /// sanitises non-ASCII characters and trims whitespace. An empty or
-    /// whitespace-only value is treated as unset.
+    /// sanitizes non-ASCII characters and trims whitespace. An empty or
+    /// whitespace-only value is treated as unset and clears any previously
+    /// configured identifier.
     ///
     /// When set, the User-Agent looks like:
     /// `azsdk-rust-cosmos/0.34.0 azsdk-rust-cosmos-driver/0.3.0 linux/x86_64 rustc/1.85.0`
     pub fn with_wrapping_sdk_identifier(mut self, identifier: impl Into<String>) -> Self {
-        self.wrapping_sdk_identifier = Some(identifier.into());
+        let raw = identifier.into();
+        self.wrapping_sdk_identifier = normalize_wrapping_sdk_identifier(&raw);
         self
     }
 
@@ -883,6 +888,53 @@ mod tests {
         assert!(
             header_value.contains("test-app"),
             "User-Agent header '{header_value}' should contain the suffix 'test-app'"
+        );
+    }
+
+    /// `with_wrapping_sdk_identifier` is documented to treat empty or
+    /// whitespace-only input as unset and to strip non-ASCII. Verify that the
+    /// `wrapping_sdk_identifier()` accessor reflects that normalization so the
+    /// runtime view stays consistent with the rendered `User-Agent`.
+    #[tokio::test]
+    async fn wrapping_sdk_identifier_is_normalized_at_set_time() {
+        // Empty / whitespace-only → cleared.
+        for raw in ["", "   ", "\t\n"] {
+            let runtime = CosmosDriverRuntimeBuilder::new()
+                .with_wrapping_sdk_identifier(raw)
+                .build()
+                .await
+                .unwrap();
+            assert!(
+                runtime.wrapping_sdk_identifier().is_none(),
+                "expected wrapping identifier {raw:?} to normalize to None",
+            );
+            assert!(
+                runtime
+                    .user_agent()
+                    .as_str()
+                    .starts_with("azsdk-rust-cosmos-driver/"),
+                "User-Agent should not start with empty wrapping prefix: {}",
+                runtime.user_agent().as_str(),
+            );
+        }
+
+        // Non-ASCII trimmed and replaced; surrounding whitespace stripped.
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_wrapping_sdk_identifier("  azsdk-rust-café/1.0  ")
+            .build()
+            .await
+            .unwrap();
+        let identifier = runtime
+            .wrapping_sdk_identifier()
+            .expect("wrapping identifier should be set");
+        assert_eq!(identifier, "azsdk-rust-caf_/1.0");
+        assert!(
+            runtime
+                .user_agent()
+                .as_str()
+                .starts_with("azsdk-rust-caf_/1.0 azsdk-rust-cosmos-driver/"),
+            "unexpected User-Agent: {}",
+            runtime.user_agent().as_str(),
         );
     }
 }

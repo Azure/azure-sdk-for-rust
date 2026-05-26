@@ -252,6 +252,29 @@ fn strip_non_ascii(input: &str) -> String {
         .collect()
 }
 
+/// Normalizes a wrapping-SDK identifier the same way [`UserAgent`] would when
+/// rendering the prefix: strips non-ASCII, trims surrounding whitespace, and
+/// returns `None` for empty / whitespace-only input.
+///
+/// Used at builder set-time so a runtime accessor like
+/// `CosmosDriverRuntime::wrapping_sdk_identifier()` returns the same value
+/// that ultimately appears in the `User-Agent` header.
+pub(crate) fn normalize_wrapping_sdk_identifier(value: &str) -> Option<String> {
+    // Trim whitespace (including \t, \n) before ASCII normalization so a
+    // whitespace-only input collapses to `None` instead of a string of
+    // underscores produced by `strip_non_ascii`.
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let normalized = strip_non_ascii(trimmed);
+    if normalized.is_empty() {
+        None
+    } else {
+        Some(normalized)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

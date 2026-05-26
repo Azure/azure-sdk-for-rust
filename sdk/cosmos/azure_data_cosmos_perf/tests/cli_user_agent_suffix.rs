@@ -8,6 +8,14 @@
 //! the `UserAgentSuffix` validation that lives in `main`. These paths sit
 //! outside any library API in this crate, so a `tests/` integration test is
 //! the appropriate coverage layer.
+//!
+//! Skipped when built with the `tokio-console` feature: that feature pulls
+//! in `console-subscriber`, whose initialization requires
+//! `RUSTFLAGS="--cfg tokio_unstable"`. Invoking the binary without those
+//! flags panics before `main` is reached, which would mask the CLI
+//! behavior these tests are meant to exercise.
+
+#![cfg(not(feature = "tokio-console"))]
 
 use std::process::Command;
 
