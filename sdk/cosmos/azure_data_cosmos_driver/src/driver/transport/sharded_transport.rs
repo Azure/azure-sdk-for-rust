@@ -79,19 +79,9 @@ impl ShardedHttpTransport {
         let pool = match self.get_or_create_pool(endpoint_key.clone()) {
             Ok(pool) => pool,
             Err(error) => {
-                // Embed the typed Cosmos error as the `azure_core::Error`
-                // source so the boundary mapper's `try_extract` can recover
-                // it. We construct the `azure_core::Error` directly here
-                // because the `TransportError.error` seam is still typed as
-                // `azure_core::Error`.
-                let message = error.to_string();
                 return TransportDispatch {
                     result: Err(TransportError::new(
-                        azure_core::Error::with_error(
-                            azure_core::error::ErrorKind::Other,
-                            error,
-                            message,
-                        ),
+                        error,
                         crate::diagnostics::RequestSentStatus::NotSent,
                     )),
                     shard_id: None,
@@ -103,14 +93,9 @@ impl ShardedHttpTransport {
         let shard = match pool.select_shard(excluded_shard_id, preferred_shard_id) {
             Ok(shard) => shard,
             Err(error) => {
-                let message = error.to_string();
                 return TransportDispatch {
                     result: Err(TransportError::new(
-                        azure_core::Error::with_error(
-                            azure_core::error::ErrorKind::Other,
-                            error,
-                            message,
-                        ),
+                        error,
                         crate::diagnostics::RequestSentStatus::NotSent,
                     )),
                     shard_id: None,

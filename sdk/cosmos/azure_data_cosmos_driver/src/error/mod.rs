@@ -20,6 +20,11 @@
 //! (`reqwest`/`hyper`/`h2`/`io`) and mints the most specific [`CosmosStatus`]
 //! available, preserving the original `azure_core::Error` as
 //! [`StdError::source`] so callers can still downcast through it.
+//!
+//! The conversion is one-way: nothing in the driver wraps a Cosmos
+//! [`Error`] back inside an `azure_core::Error`. The transport layer
+//! carries typed Cosmos errors end-to-end (see
+//! [`TransportError`](crate::driver::transport::TransportError)).
 
 use std::{error::Error as StdError, fmt, sync::Arc};
 
@@ -406,26 +411,6 @@ impl Error {
     pub fn backtrace(&self) -> Option<&str> {
         self.inner.backtrace.as_ref().and_then(Backtrace::rendered)
     }
-
-    // -----------------------------------------------------------------
-    // Interop with azure_core::Error
-    // -----------------------------------------------------------------
-
-    /// Walks the `.source()` chain of an `azure_core::Error` looking for an
-    /// embedded `Error` and returns a cloned copy if one is found.
-    ///
-    /// Used at the driver/SDK boundary to recover the typed payload from
-    /// internal `azure_core::Error` values produced by the pipeline.
-    pub(crate) fn try_extract(error: &azure_core::Error) -> Option<Self> {
-        let mut source: Option<&(dyn StdError + 'static)> = error.source();
-        while let Some(cause) = source {
-            if let Some(cosmos) = cause.downcast_ref::<Error>() {
-                return Some(cosmos.clone());
-            }
-            source = cause.source();
-        }
-        None
-    }
 }
 
 // -----------------------------------------------------------------
@@ -527,12 +512,11 @@ impl StdError for Error {
 }
 
 impl From<azure_core::Error> for Error {
-    /// Recovers an embedded `Error` from the source chain when present,
-    /// or classifies the error from its `azure_core::ErrorKind` otherwise.
+    /// Boundary mapper from `azure_core::Error`. The driver no longer
+    /// embeds typed Cosmos errors inside `azure_core::Error` containers,
+    /// so this is a one-way classification — no embedded-payload
+    /// recovery is needed.
     fn from(error: azure_core::Error) -> Self {
-        if let Some(extracted) = Self::try_extract(&error) {
-            return extracted;
-        }
         classify_azure_core_error(error)
     }
 }
@@ -675,28 +659,6 @@ mod tests {
     }
 
     #[test]
-    fn try_extract_recovers_embedded_cosmos_error() {
-        let response = CosmosResponse::new(
-            ResponseBody::NoPayload,
-            CosmosResponseHeaders::default(),
-            CosmosStatus::new(StatusCode::NotFound),
-            DiagnosticsContext::error_placeholder(),
-        );
-        let original = Error::service(response, "not found");
-        let wrapped = azure_core::Error::new(
-            AzKind::HttpResponse {
-                status: StatusCode::NotFound,
-                error_code: None,
-                raw_response: None,
-            },
-            original.clone(),
-        );
-        let recovered = Error::try_extract(&wrapped).expect("embedded error");
-        assert_eq!(recovered.kind(), Kind::Service);
-        assert!(recovered.status().is_not_found());
-    }
-
-    #[test]
     fn from_azure_core_error_classifies_when_no_embedded_payload() {
         let raw = azure_core::Error::new(
             AzKind::HttpResponse {
@@ -714,18 +676,6 @@ mod tests {
         assert_eq!(cosmos.kind(), Kind::Service);
         assert_eq!(cosmos.status_code(), StatusCode::Conflict);
         assert!(cosmos.status().is_conflict());
-    }
-
-    #[test]
-    fn from_azure_core_error_recovers_embedded_payload() {
-        let original = Error::end_to_end_timeout("e2e", None);
-        let wrapped = azure_core::Error::new(AzKind::Other, original.clone());
-        let cosmos: Error = wrapped.into();
-        assert_eq!(cosmos.kind(), Kind::Transport);
-        assert_eq!(
-            cosmos.sub_status(),
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
-        );
     }
 
     #[test]

@@ -390,7 +390,6 @@ mod tests {
     use crate::models::SubStatusCode;
     use crate::options::Region;
     use async_trait::async_trait;
-    use azure_core::error::ErrorKind;
     use azure_core::http::{
         headers::{HeaderName, Headers},
         Method, Url,
@@ -545,8 +544,8 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert_eq!(
-            err.error.http_status(),
-            Some(azure_core::http::StatusCode::InternalServerError),
+            err.error.status_code(),
+            azure_core::http::StatusCode::InternalServerError,
             "expected InternalServerError status code"
         );
 
@@ -570,8 +569,8 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert_eq!(
-            err.error.http_status(),
-            Some(azure_core::http::StatusCode::TooManyRequests),
+            err.error.status_code(),
+            azure_core::http::StatusCode::TooManyRequests,
             "expected TooManyRequests status code"
         );
     }
@@ -672,16 +671,16 @@ mod tests {
         let result1 = fault_client.send(&request).await;
         assert!(result1.is_err(), "first request should fail");
         assert_eq!(
-            result1.unwrap_err().error.http_status(),
-            Some(azure_core::http::StatusCode::ServiceUnavailable)
+            result1.unwrap_err().error.status_code(),
+            azure_core::http::StatusCode::ServiceUnavailable
         );
 
         // Second request should also hit the fault
         let result2 = fault_client.send(&request).await;
         assert!(result2.is_err(), "second request should fail");
         assert_eq!(
-            result2.unwrap_err().error.http_status(),
-            Some(azure_core::http::StatusCode::ServiceUnavailable)
+            result2.unwrap_err().error.status_code(),
+            azure_core::http::StatusCode::ServiceUnavailable
         );
 
         // Third request should pass through (times limit reached)
@@ -733,8 +732,16 @@ mod tests {
             assert!(result.is_err(), "{:?} should produce an error", error_type);
 
             let err = result.unwrap_err();
+            // The injected fault constructs an `azure_core::Error` with
+            // `ErrorKind::HttpResponse { raw_response: Some(...), .. }`;
+            // the boundary mapper preserves it as the typed Error's
+            // `source`. Walk the source chain to recover the original
+            // `azure_core::Error` and inspect its raw_response headers.
+            let az_err = std::error::Error::source(&err.error)
+                .and_then(|s| s.downcast_ref::<azure_core::Error>())
+                .unwrap_or_else(|| panic!("{:?} should preserve azure_core source", error_type));
             if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } =
-                err.error.kind()
+                az_err.kind()
             {
                 let response = raw_response
                     .as_ref()
@@ -790,10 +797,14 @@ mod tests {
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
+        // Boundary mapper translates `azure_core::ErrorKind::Connection`
+        // into Cosmos `Kind::Transport` with `TRANSPORT_CONNECTION_FAILED`
+        // sub-status.
+        assert_eq!(err.error.kind(), crate::error::Kind::Transport);
         assert_eq!(
-            err.error.kind(),
-            &ErrorKind::Connection,
-            "connection error should have Connection ErrorKind"
+            err.error.sub_status(),
+            Some(crate::models::SubStatusCode::TRANSPORT_CONNECTION_FAILED),
+            "connection error should map to TRANSPORT_CONNECTION_FAILED"
         );
         assert_eq!(mock_client.call_count(), 0);
     }
@@ -814,10 +825,14 @@ mod tests {
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
+        // Boundary mapper translates `azure_core::ErrorKind::Io` into
+        // Cosmos `Kind::Transport` with `TRANSPORT_IO_FAILED` sub-status
+        // (no DNS / h2 refinement applies).
+        assert_eq!(err.error.kind(), crate::error::Kind::Transport);
         assert_eq!(
-            err.error.kind(),
-            &ErrorKind::Io,
-            "response timeout should have Io ErrorKind"
+            err.error.sub_status(),
+            Some(crate::models::SubStatusCode::TRANSPORT_IO_FAILED),
+            "response timeout should map to TRANSPORT_IO_FAILED"
         );
         assert_eq!(mock_client.call_count(), 0);
     }

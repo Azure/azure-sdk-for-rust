@@ -77,25 +77,26 @@ pub struct HttpResponse {
 
 /// Transport-level error with metadata for retry classification.
 ///
-/// Wraps the underlying `azure_core::Error` and adds flags that the retry
-/// layer uses to decide whether and how to retry:
+/// Wraps the typed Cosmos [`crate::error::Error`] and adds flags that the
+/// retry layer uses to decide whether and how to retry:
 ///
 /// * [`request_sent`](Self::request_sent) — tri-state indicator of whether the
 ///   request reached the wire.
 pub struct TransportError {
-    /// The underlying error, preserved as `azure_core::Error` for public API
-    /// compatibility.
-    pub error: azure_core::Error,
+    /// The underlying typed Cosmos error.
+    pub error: crate::error::Error,
 
     /// Whether the request was definitely sent, not sent, or unknown.
     pub request_sent: RequestSentStatus,
 }
 
 impl TransportError {
-    /// Creates a new [`TransportError`].
-    pub fn new(error: azure_core::Error, request_sent: RequestSentStatus) -> Self {
+    /// Creates a new [`TransportError`]. Accepts anything convertible into
+    /// the typed Cosmos [`crate::error::Error`] \u2014 in particular,
+    /// `azure_core::Error` values converted via the boundary mapper.
+    pub fn new(error: impl Into<crate::error::Error>, request_sent: RequestSentStatus) -> Self {
         Self {
-            error,
+            error: error.into(),
             request_sent,
         }
     }

@@ -541,18 +541,11 @@ fn is_connectivity_error(error: &crate::error::Error) -> bool {
 }
 
 fn transport_error_result(
-    error: azure_core::Error,
+    cosmos_error: crate::error::Error,
     headers_received: bool,
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    // Convert to a typed Cosmos error up front so subsequent inspection uses
-    // `Kind` / sub-status instead of raw `azure_core::ErrorKind`. The mapper
-    // preserves the original `azure_core::Error` as `source`, so no
-    // information is lost. The `TransportError.error` field still propagates
-    // `azure_core::Error` for now; convert back via `.into()` at the
-    // boundary.
-    let cosmos_error = crate::error::Error::from(error);
     let sent_status = if headers_received {
         RequestSentStatus::Sent
     } else {
@@ -596,7 +589,7 @@ enum HttpAttemptResult {
         shard_diagnostics: Option<TransportShardDiagnostics>,
     },
     Error {
-        error: azure_core::Error,
+        error: crate::error::Error,
         headers_received: bool,
         shard_id: Option<u64>,
         shard_diagnostics: Option<TransportShardDiagnostics>,
