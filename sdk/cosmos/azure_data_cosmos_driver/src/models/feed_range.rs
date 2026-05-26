@@ -88,8 +88,8 @@ impl FeedRange {
     /// Creates a feed range covering the entire partition key space (`""..FF`).
     pub fn full() -> Self {
         Self(FeedRangeRepr::Range {
-            min_inclusive: EffectivePartitionKey::min(),
-            max_exclusive: EffectivePartitionKey::max(),
+            min_inclusive: EffectivePartitionKey::MIN.clone(),
+            max_exclusive: EffectivePartitionKey::MAX.clone(),
         })
     }
 
