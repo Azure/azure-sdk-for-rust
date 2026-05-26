@@ -60,10 +60,8 @@ impl Error {
 
     /// Returns the parsed Cosmos response headers (when a service response was
     /// received).
-    pub fn cosmos_headers(&self) -> Option<&ResponseHeaders> {
-        self.0
-            .cosmos_headers()
-            .map(ResponseHeaders::from_driver_ref)
+    pub fn cosmos_headers(&self) -> Option<ResponseHeaders> {
+        self.0.cosmos_headers().map(ResponseHeaders::from_driver)
     }
 
     /// Returns the diagnostics context for the failed operation.

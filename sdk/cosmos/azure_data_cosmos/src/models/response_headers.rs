@@ -29,31 +29,19 @@ use azure_data_cosmos_driver::models::{
 /// `into_driver_headers` helper) so the driver representation is not part of
 /// the SDK's public surface.
 #[derive(Clone, Debug, Default)]
-#[repr(transparent)]
 pub struct ResponseHeaders(DriverCosmosResponseHeaders);
 
-// Defense-in-depth against a future regression: `#[repr(transparent)]`
-// already guarantees layout equivalence with the single non-ZST field, but
-// this compile-time assertion makes the precondition impossible to break
-// silently if someone later adds a second field to the wrapper.
-const _: () = {
-    assert!(
-        std::mem::size_of::<ResponseHeaders>()
-            == std::mem::size_of::<DriverCosmosResponseHeaders>(),
-        "ResponseHeaders must remain layout-compatible with DriverCosmosResponseHeaders\
-         for the `from_driver_ref` transmute to be sound"
-    );
-};
-
 impl ResponseHeaders {
-    /// Borrows a reference to a driver-owned `CosmosResponseHeaders` as a
-    /// `&ResponseHeaders`. Zero-cost — the two types are layout-compatible
-    /// via `#[repr(transparent)]`.
-    pub(crate) fn from_driver_ref(driver: &DriverCosmosResponseHeaders) -> &Self {
-        // SAFETY: `ResponseHeaders` is `#[repr(transparent)]` over
-        // `DriverCosmosResponseHeaders`, so a `&DriverCosmosResponseHeaders`
-        // and a `&ResponseHeaders` have the same layout and validity.
-        unsafe { &*(driver as *const DriverCosmosResponseHeaders as *const Self) }
+    /// Clones the supplied driver-owned `CosmosResponseHeaders` into a
+    /// fresh `ResponseHeaders` wrapper.
+    ///
+    /// Used by the SDK error wrapper to surface per-response headers
+    /// attached to a service error. Cosmos response headers are a small
+    /// bag of `Option<…>` primitives, so the clone is a handful of
+    /// `Option<String>` deep copies — cheap relative to constructing an
+    /// error in the first place and well below any wire/parse cost.
+    pub(crate) fn from_driver(driver: &DriverCosmosResponseHeaders) -> Self {
+        Self(driver.clone())
     }
 
     /// ETag for optimistic concurrency (`etag`).
