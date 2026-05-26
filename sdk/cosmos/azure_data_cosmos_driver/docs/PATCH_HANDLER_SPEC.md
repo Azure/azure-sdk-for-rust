@@ -20,7 +20,7 @@ normal pipeline stages run.
 | Field                                       | Source                                       | Notes                                                            |
 | ------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------- |
 | `CosmosOperation` with `OperationType::Patch` | `CosmosOperation::patch_item(ItemReference)` | Required.                                                        |
-| Body                                        | `with_body(serde_json::to_vec(&PatchSpec))`  | Required. The handler re-parses it as `PatchSpec`.               |
+| Body                                        | `with_body(serde_json::to_vec(&PatchDocument))`  | Required. The handler re-parses it as `PatchDocument`.               |
 | Partition key                               | `with_partition_key(...)`                    | Required. Used to issue the internal Read.                       |
 | `patch_max_attempts`                        | `with_patch_max_attempts(NonZeroU8)`         | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
 
@@ -171,7 +171,7 @@ synthesized response. It is `pub(crate)` and lives in
 
 ## Patch Operations
 
-Supported (`PatchOp` variants — all use RFC 6901 JSON Pointers):
+Supported (`PatchOperation` variants — all use RFC 6901 JSON Pointers):
 
 | Variant     | JSON `op`     | Semantics                                                                  |
 | ----------- | ------------- | -------------------------------------------------------------------------- |
@@ -203,7 +203,7 @@ as a JSON number without precision loss.
 ## Why Driver-Side?
 
 - The Cosmos DB REST data plane does not natively accept the
-  rich `PatchOp` set we expose; alternate "operations" wire formats vary
+  rich `PatchOperation` set we expose; alternate "operations" wire formats vary
   by SDK and have never been consistent across languages.
 - A driver-side RMW gives us a single, schema-agnostic implementation
   that benefits every language SDK once they wrap `OperationType::Patch`.
@@ -224,7 +224,7 @@ as a JSON number without precision loss.
 - The handler owns the `If-Match` precondition on the internal Replace.
   A caller-set `Precondition` on the outer PATCH `CosmosOperation` is
   rejected by the pre-flight guard before any sub-operation is dispatched.
-  Likewise, the PATCH wire format (`PatchSpec`) has no `condition` field,
+  Likewise, the PATCH wire format (`PatchDocument`) has no `condition` field,
   so a SQL filter predicate (peer SDKs' `FilterPredicate`) cannot be
   attached to a PATCH request in this preview.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's

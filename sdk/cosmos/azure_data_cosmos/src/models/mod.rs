@@ -31,7 +31,7 @@ pub use throughput_properties::*;
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosStatus, IncrValue, PartitionKeyDefinition, PartitionKeyKind,
-    PartitionKeyVersion, PatchOp, PatchSpec,
+    PartitionKeyVersion, PatchDocument, PatchOperation,
 };
 
 // Re-export the driver's full diagnostics context as the canonical type for

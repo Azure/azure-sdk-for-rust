@@ -17,7 +17,7 @@ use crate::{
 };
 
 use super::ThroughputPoller;
-use crate::PatchSpec;
+use crate::PatchDocument;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
@@ -437,12 +437,12 @@ impl ContainerClient {
     }
 
     /// Applies a JSON-PATCH-style update to an item by reading it, applying
-    /// the [`PatchSpec`] locally, and issuing an ETag-guarded Replace.
+    /// the [`PatchDocument`] locally, and issuing an ETag-guarded Replace.
     ///
     /// This is implemented as a driver-side Read-Modify-Write (RMW) loop:
     ///
     /// 1. The driver reads the current item and captures its `ETag`.
-    /// 2. It applies the [`PatchSpec`] to a local `serde_json::Value` copy.
+    /// 2. It applies the [`PatchDocument`] to a local `serde_json::Value` copy.
     /// 3. It issues a `Replace` with `If-Match` set to the captured `ETag`.
     /// 4. On `412 PreconditionFailed`, the loop restarts (another writer
     ///    won the race). It retries up to
@@ -457,13 +457,13 @@ impl ContainerClient {
     /// # Arguments
     /// * `partition_key` - The partition key of the item to patch.
     /// * `item_id` - The id of the item to patch.
-    /// * `patch` - The [`PatchSpec`] describing the ops to apply.
+    /// * `patch` - The [`PatchDocument`] describing the ops to apply.
     /// * `options` - Optional parameters for the request.
     ///
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{PatchOp, PatchSpec};
+    /// use azure_data_cosmos::{PatchOperation, PatchDocument};
     /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("non-running example");
@@ -475,9 +475,9 @@ impl ContainerClient {
     ///     visits: i64,
     /// }
     ///
-    /// let patch = PatchSpec::new(vec![
-    ///     PatchOp::set("/displayName", serde_json::json!("New name")),
-    ///     PatchOp::increment("/visits", 1i64),
+    /// let patch = PatchDocument::new(vec![
+    ///     PatchOperation::set("/displayName", serde_json::json!("New name")),
+    ///     PatchOperation::increment("/visits", 1i64),
     /// ]);
     /// // The post-image of the patched item is always available, regardless of
     /// // `content_response_on_write`: the driver synthesizes it from the locally
@@ -517,17 +517,17 @@ impl ContainerClient {
     /// may cross-region retry it. A retry against a replica that has already
     /// replicated the original commit returns 412, which the RMW loop
     /// recovers by re-Reading and re-applying. Non-idempotent operations
-    /// (`PatchOp::increment`, `PatchOp::add` on an array, `PatchOp::move`)
+    /// (`PatchOperation::increment`, `PatchOperation::add` on an array, `PatchOperation::move`)
     /// may therefore be applied **more than once** under this scenario.
     /// Callers that require exactly-once semantics for counters or array
-    /// appends should either build idempotent ops (`PatchOp::set` on a
+    /// appends should either build idempotent ops (`PatchOperation::set` on a
     /// caller-computed value) or detect duplicate-application via a
     /// monotonic application-level sequence number.
     pub async fn patch_item(
         &self,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
-        patch: PatchSpec,
+        patch: PatchDocument,
         options: Option<PatchItemOptions>,
     ) -> azure_core::Result<ItemResponse> {
         let options = options.unwrap_or_default();
@@ -539,7 +539,7 @@ impl ContainerClient {
             item_id.to_owned(),
         );
 
-        // Build the PATCH operation. The handler reads the PatchSpec back
+        // Build the PATCH operation. The handler reads the PatchDocument back
         // out of the body, so we pass it through verbatim.
         let mut operation = CosmosOperation::patch_item(item_ref).with_body(body);
         if let Some(max_attempts) = options.max_attempts {
@@ -1168,7 +1168,7 @@ fn _assert_futures_are_send() {
     let client: &ContainerClient = todo!();
     let partition_key: PartitionKey = todo!();
     let item_id: &str = todo!();
-    let patch: PatchSpec = todo!();
+    let patch: PatchDocument = todo!();
     let options: Option<PatchItemOptions> = todo!();
     assert_send(client.patch_item(partition_key, item_id, patch, options));
 }

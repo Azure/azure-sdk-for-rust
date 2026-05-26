@@ -15,12 +15,12 @@
 //! # Example
 //!
 //! ```
-//! use azure_data_cosmos_driver::models::{PatchOp, PatchSpec};
+//! use azure_data_cosmos_driver::models::{PatchOperation, PatchDocument};
 //!
-//! let spec = PatchSpec::new(vec![
-//!     PatchOp::set("/age", serde_json::json!(31)),
-//!     PatchOp::increment("/visits", 1i64),
-//!     PatchOp::add("/tags/-", serde_json::json!("new-tag")),
+//! let spec = PatchDocument::new(vec![
+//!     PatchOperation::set("/age", serde_json::json!(31)),
+//!     PatchOperation::increment("/visits", 1i64),
+//!     PatchOperation::add("/tags/-", serde_json::json!("new-tag")),
 //! ]);
 //! let bytes = serde_json::to_vec(&spec).unwrap();
 //! // The wire payload is a JSON object with an `operations` array; the
@@ -32,7 +32,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-/// A typed numeric increment delta for [`PatchOp::Increment`].
+/// A typed numeric increment delta for [`PatchOperation::Increment`].
 ///
 /// Distinguishes integer increments (which preserve integer fidelity end-to-end)
 /// from floating-point increments. Mixing an `Int(i64)` with a `f64` target —
@@ -89,14 +89,14 @@ impl<'de> Deserialize<'de> for IncrValue {
 /// semantics are evaluated locally by the driver's PATCH handler against the
 /// item read from the service.
 ///
-/// Both the enum variants and the equivalent factory functions (`PatchOp::add`,
-/// `PatchOp::set`, ...) are part of the public API. The factories mirror the
+/// Both the enum variants and the equivalent factory functions (`PatchOperation::add`,
+/// `PatchOperation::set`, ...) are part of the public API. The factories mirror the
 /// .NET SDK's `PatchOperation.Add` / `.Set` / etc. methods and are the
 /// recommended way to construct ops.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "lowercase")]
 #[non_exhaustive]
-pub enum PatchOp {
+pub enum PatchOperation {
     /// Add (insert) `value` at `path`.
     ///
     /// * The parent path must already exist.
@@ -151,17 +151,17 @@ pub enum PatchOp {
     },
 }
 
-impl PatchOp {
+impl PatchOperation {
     /// Returns the JSON Pointer path targeted by this op (the destination
     /// path for [`MoveOp`](Self::MoveOp)).
     pub fn path(&self) -> &str {
         match self {
-            PatchOp::Add { path, .. }
-            | PatchOp::Set { path, .. }
-            | PatchOp::Replace { path, .. }
-            | PatchOp::Remove { path }
-            | PatchOp::Increment { path, .. }
-            | PatchOp::MoveOp { path, .. } => path,
+            PatchOperation::Add { path, .. }
+            | PatchOperation::Set { path, .. }
+            | PatchOperation::Replace { path, .. }
+            | PatchOperation::Remove { path }
+            | PatchOperation::Increment { path, .. }
+            | PatchOperation::MoveOp { path, .. } => path,
         }
     }
 
@@ -169,7 +169,7 @@ impl PatchOp {
 
     /// Builds an [`Add`](Self::Add) operation.
     pub fn add(path: impl Into<String>, value: Value) -> Self {
-        PatchOp::Add {
+        PatchOperation::Add {
             path: path.into(),
             value,
         }
@@ -177,7 +177,7 @@ impl PatchOp {
 
     /// Builds a [`Set`](Self::Set) operation.
     pub fn set(path: impl Into<String>, value: Value) -> Self {
-        PatchOp::Set {
+        PatchOperation::Set {
             path: path.into(),
             value,
         }
@@ -185,7 +185,7 @@ impl PatchOp {
 
     /// Builds a [`Replace`](Self::Replace) operation.
     pub fn replace(path: impl Into<String>, value: Value) -> Self {
-        PatchOp::Replace {
+        PatchOperation::Replace {
             path: path.into(),
             value,
         }
@@ -193,12 +193,12 @@ impl PatchOp {
 
     /// Builds a [`Remove`](Self::Remove) operation.
     pub fn remove(path: impl Into<String>) -> Self {
-        PatchOp::Remove { path: path.into() }
+        PatchOperation::Remove { path: path.into() }
     }
 
     /// Builds an [`Increment`](Self::Increment) operation.
     pub fn increment(path: impl Into<String>, value: impl Into<IncrValue>) -> Self {
-        PatchOp::Increment {
+        PatchOperation::Increment {
             path: path.into(),
             value: value.into(),
         }
@@ -206,7 +206,7 @@ impl PatchOp {
 
     /// Builds a [`MoveOp`](Self::MoveOp) operation.
     pub fn move_op(from: impl Into<String>, path: impl Into<String>) -> Self {
-        PatchOp::MoveOp {
+        PatchOperation::MoveOp {
             from: from.into(),
             path: path.into(),
         }
@@ -215,7 +215,7 @@ impl PatchOp {
 
 /// A PATCH document — the body of a `Patch` [`CosmosOperation`].
 ///
-/// Wraps the ordered list of [`PatchOp`]s to apply. PATCH is implemented
+/// Wraps the ordered list of [`PatchOperation`]s to apply. PATCH is implemented
 /// driver-side as a Read-Modify-Write loop guarded by an ETag precondition
 /// (`If-Match`), which is managed entirely by the PATCH handler — callers do
 /// not (and cannot) configure a precondition on this type.
@@ -230,14 +230,14 @@ impl PatchOp {
 /// [`CosmosOperation`]: crate::models::CosmosOperation
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[non_exhaustive]
-pub struct PatchSpec {
+pub struct PatchDocument {
     /// Ordered list of operations.
-    pub operations: Vec<PatchOp>,
+    pub operations: Vec<PatchOperation>,
 }
 
-impl PatchSpec {
-    /// Builds a [`PatchSpec`] from a list of operations.
-    pub fn new(operations: Vec<PatchOp>) -> Self {
+impl PatchDocument {
+    /// Builds a [`PatchDocument`] from a list of operations.
+    pub fn new(operations: Vec<PatchOperation>) -> Self {
         Self { operations }
     }
 }
@@ -249,21 +249,21 @@ mod tests {
 
     #[test]
     fn patch_op_serializes_lowercase() {
-        let op = PatchOp::add("/a", json!(1));
+        let op = PatchOperation::add("/a", json!(1));
         let s = serde_json::to_string(&op).unwrap();
         assert_eq!(s, r#"{"op":"add","path":"/a","value":1}"#);
     }
 
     #[test]
     fn move_op_serializes_as_move() {
-        let op = PatchOp::move_op("/a", "/b");
+        let op = PatchOperation::move_op("/a", "/b");
         let s = serde_json::to_string(&op).unwrap();
         assert_eq!(s, r#"{"op":"move","from":"/a","path":"/b"}"#);
     }
 
     #[test]
     fn increment_preserves_int_fidelity() {
-        let op = PatchOp::increment("/n", 9_000_000_000_000_001i64);
+        let op = PatchOperation::increment("/n", 9_000_000_000_000_001i64);
         let s = serde_json::to_string(&op).unwrap();
         assert!(s.contains("9000000000000001"), "actual: {s}");
         // No scientific-notation drift on the value.
@@ -271,7 +271,7 @@ mod tests {
         assert!(!s.contains("E+"), "actual: {s}");
     }
 
-    /// Canonical wire JSON for the `PatchSpec` exercised by the
+    /// Canonical wire JSON for the `PatchDocument` exercised by the
     /// serialize/deserialize tests below. Kept as a single source of
     /// truth so the two halves of the (former) round-trip test cannot
     /// drift apart silently. Matches `PATCH_HANDLER_SPEC.md` §"Wire
@@ -286,21 +286,21 @@ mod tests {
         r#"]}"#,
     );
 
-    fn canonical_patch_spec() -> PatchSpec {
-        PatchSpec::new(vec![
-            PatchOp::set("/age", json!(31)),
-            PatchOp::increment("/visits", 1i64),
-            PatchOp::add("/tags/-", json!("rust")),
-            PatchOp::remove("/legacy"),
-            PatchOp::move_op("/from", "/to"),
+    fn canonical_patch_spec() -> PatchDocument {
+        PatchDocument::new(vec![
+            PatchOperation::set("/age", json!(31)),
+            PatchOperation::increment("/visits", 1i64),
+            PatchOperation::add("/tags/-", json!("rust")),
+            PatchOperation::remove("/legacy"),
+            PatchOperation::move_op("/from", "/to"),
         ])
     }
 
     #[test]
     fn patch_spec_serializes_to_expected_json() {
-        // Builds the PatchSpec, serializes it, and compares to a known
+        // Builds the PatchDocument, serializes it, and compares to a known
         // JSON string. This pins the wire format (key names, op tags,
-        // field ordering for each PatchOp variant) independently of the
+        // field ordering for each PatchOperation variant) independently of the
         // Deserialize impl, so a regression in only one direction is
         // detectable.
         let s = serde_json::to_string(&canonical_patch_spec()).unwrap();
@@ -309,10 +309,10 @@ mod tests {
 
     #[test]
     fn patch_spec_deserializes_from_known_json() {
-        // Parses a known JSON string and asserts the resulting PatchSpec
+        // Parses a known JSON string and asserts the resulting PatchDocument
         // matches the canonical value. This pins the wire-format -> model
         // direction independently of the Serialize impl.
-        let parsed: PatchSpec = serde_json::from_str(PATCH_SPEC_WIRE_JSON).unwrap();
+        let parsed: PatchDocument = serde_json::from_str(PATCH_SPEC_WIRE_JSON).unwrap();
         assert_eq!(parsed, canonical_patch_spec());
     }
 
@@ -324,11 +324,11 @@ mod tests {
         // struct is `#[non_exhaustive]` plus there is no `condition` field,
         // serde's default `deny_unknown_fields = false` would silently drop
         // an unknown field — verify the round-trip is condition-free).
-        let spec = PatchSpec::new(vec![PatchOp::set("/x", json!(1))]);
+        let spec = PatchDocument::new(vec![PatchOperation::set("/x", json!(1))]);
         let s = serde_json::to_string(&spec).unwrap();
         assert!(
             !s.contains("condition"),
-            "PatchSpec serialization must not include a `condition` field: {s}"
+            "PatchDocument serialization must not include a `condition` field: {s}"
         );
     }
 

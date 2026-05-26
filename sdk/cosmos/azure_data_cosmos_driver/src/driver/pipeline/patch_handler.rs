@@ -42,7 +42,7 @@ use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::driver::CosmosDriver;
 use crate::models::{
     cosmos_headers::response_header_names, CosmosOperation, CosmosResponse, PartitionKeyKind,
-    PatchOp, PatchSpec, Precondition, SessionToken,
+    PatchDocument, PatchOperation, Precondition, SessionToken,
 };
 use crate::options::OperationOptions;
 use async_trait::async_trait;
@@ -136,18 +136,18 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // -- 2. Parse and validate the patch spec --
     let body = operation
         .body()
-        .ok_or_else(|| missing_body_error("PATCH operation requires a PatchSpec body"))?;
-    let spec: PatchSpec = serde_json::from_slice(body).map_err(|err| {
+        .ok_or_else(|| missing_body_error("PATCH operation requires a PatchDocument body"))?;
+    let spec: PatchDocument = serde_json::from_slice(body).map_err(|err| {
         azure_core::Error::with_message(
             azure_core::error::ErrorKind::DataConversion,
-            format!("failed to parse PATCH body as PatchSpec: {err}"),
+            format!("failed to parse PATCH body as PatchDocument: {err}"),
         )
     })?;
 
     if spec.operations.is_empty() {
         return Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
-            "PATCH operation must include at least one PatchOp",
+            "PATCH operation must include at least one PatchOperation",
         ));
     }
 
@@ -535,7 +535,7 @@ fn exhaustion_error(attempts: u8, last_412: Option<azure_core::Error>) -> azure_
 /// partitions, which can't be done atomically through a Replace. Fail fast
 /// rather than silently produce an inconsistent state.
 fn validate_partition_key_paths(
-    ops: &[PatchOp],
+    ops: &[PatchOperation],
     item_ref: &crate::models::ItemReference,
 ) -> azure_core::Result<()> {
     let pk_def = item_ref.container().partition_key_definition();
@@ -558,7 +558,7 @@ fn validate_partition_key_paths(
         // would silently delete the partition key field.
         let dest = op.path();
         let from = match op {
-            PatchOp::MoveOp { from, .. } => Some(from.as_str()),
+            PatchOperation::MoveOp { from, .. } => Some(from.as_str()),
             _ => None,
         };
         for path in std::iter::once(dest).chain(from) {
@@ -821,7 +821,7 @@ mod tests {
         // preflight guard must reject it just like a move TO a PK path.
         // Reuses the `/pk` flat PK fixture.
         let item_ref = test_item_ref();
-        let ops = vec![PatchOp::move_op("/pk", "/somewhere_else")];
+        let ops = vec![PatchOperation::move_op("/pk", "/somewhere_else")];
 
         let err = validate_partition_key_paths(&ops, &item_ref)
             .expect_err("MoveOp from /pk on a /pk PK must be rejected");
@@ -857,7 +857,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&container, PartitionKey::from(("t1", "r1", "u1")), "doc1");
 
-        let ops = vec![PatchOp::move_op("/tenant", "/somewhere_else")];
+        let ops = vec![PatchOperation::move_op("/tenant", "/somewhere_else")];
 
         let err = validate_partition_key_paths(&ops, &item_ref)
             .expect_err("MoveOp from /tenant on a hierarchical PK must be rejected");
@@ -1157,15 +1157,18 @@ mod tests {
         )
     }
 
-    fn patch_op_for(item_ref: ItemReference, ops: Vec<PatchOp>) -> CosmosOperation {
-        let body = serde_json::to_vec(&PatchSpec::new(ops)).unwrap();
+    fn patch_op_for(item_ref: ItemReference, ops: Vec<PatchOperation>) -> CosmosOperation {
+        let body = serde_json::to_vec(&PatchDocument::new(ops)).unwrap();
         CosmosOperation::patch_item(item_ref).with_body(body)
     }
 
     /// Builds the canonical (`/pk`, `pk1`, `doc1`) PATCH operation used by
     /// all of these tests — `+1` on `/visits`.
     fn canonical_patch_op() -> CosmosOperation {
-        patch_op_for(test_item_ref(), vec![PatchOp::increment("/visits", 1i64)])
+        patch_op_for(
+            test_item_ref(),
+            vec![PatchOperation::increment("/visits", 1i64)],
+        )
     }
 
     #[tokio::test]
@@ -1383,7 +1386,7 @@ mod tests {
         // SET on `/pk` directly — this is a PK mutation; guard must reject.
         let op = patch_op_for(
             test_item_ref(),
-            vec![PatchOp::set("/pk", serde_json::json!("evicted"))],
+            vec![PatchOperation::set("/pk", serde_json::json!("evicted"))],
         );
 
         let err = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
@@ -1435,7 +1438,7 @@ mod tests {
         let dispatcher = ScriptedDispatcher::new(vec![]);
         let op = patch_op_for(
             test_item_ref(),
-            vec![PatchOp::set("/x", serde_json::json!(1))],
+            vec![PatchOperation::set("/x", serde_json::json!(1))],
         )
         .with_precondition(Precondition::if_match(ETag::from("\"abc\"")));
 

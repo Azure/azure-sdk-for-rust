@@ -29,8 +29,8 @@ pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
 pub use models::{
-    BatchResponse, CosmosStatus, DiagnosticsContext, IncrValue, ItemResponse, PatchOp, PatchSpec,
-    ResourceResponse, ResponseBody, ResponseHeaders,
+    BatchResponse, CosmosStatus, DiagnosticsContext, IncrValue, ItemResponse, PatchDocument,
+    PatchOperation, ResourceResponse, ResponseBody, ResponseHeaders,
 };
 pub use options::*;
 pub use query::Query;
