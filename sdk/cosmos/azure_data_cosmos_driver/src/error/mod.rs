@@ -708,7 +708,7 @@ fn derive_status_from_azure_core_error(error: &azure_core::Error) -> CosmosStatu
 /// function — which sits on the hot path of every
 /// `azure_core::Error → driver::Error` conversion — cannot be pinned to a
 /// CPU core by a pathological or cyclic source chain. `Error::source`
-/// does not enforce acyclicity, and arbitrary `azure_core::Error`
+/// is not required to be acyclic, and arbitrary `azure_core::Error`
 /// chains can originate from any transport / credential / wrapper layer
 /// outside the driver.
 fn refine_status_from_source_chain(

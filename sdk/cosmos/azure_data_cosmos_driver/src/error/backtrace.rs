@@ -531,7 +531,7 @@ impl BacktraceCaptureLimiter {
 }
 
 /// Returns the number of whole seconds elapsed since the process-global
-/// monotonic anchor. The anchor is initialised lazily on first use via
+/// monotonic anchor. The anchor is initialized lazily on first use via
 /// [`OnceLock`] and never moves backwards regardless of wall-clock changes
 /// (NTP step, suspend/resume), so the rolling 1-second window in
 /// [`BacktraceCaptureLimiter`] is robust against clock skew. `SystemTime`

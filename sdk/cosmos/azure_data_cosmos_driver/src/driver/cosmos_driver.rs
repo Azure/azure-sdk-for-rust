@@ -397,7 +397,7 @@ impl CosmosDriver {
         })?;
 
         let response = transport.send(&request).await.map_err(|e| {
-            crate::error::Error::from(e.error)
+            e.error
                 .with_context(format!("AccountProperties fetch from {endpoint}"))
         })?;
         let props = Self::parse_account_properties_payload(&response.body).map_err(|err| {
