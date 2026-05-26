@@ -77,6 +77,7 @@ cargo run -p azure_data_cosmos_perf -- \
 | `--results-key` | — | Account key for results account (or set `AZURE_COSMOS_RESULTS_KEY` env var) |
 | `--workload-id` | random UUID | Unique identifier for this workload instance (for multi-VM correlation) |
 | `--commit-sha` | auto-detected | Git commit SHA stamped on result documents (auto-detected from `git rev-parse --short HEAD` if omitted) |
+| `--user-agent-suffix` | `rust-perf` | Suffix appended to the `User-Agent` header for every Cosmos DB request (max 25 chars, HTTP-header-safe). Pass an empty string to omit. Also configurable via `AZURE_COSMOS_USER_AGENT_SUFFIX`. |
 | `--no-reads` | `false` | Disable point read operations |
 | `--no-queries` | `false` | Disable query operations |
 | `--no-upserts` | `false` | Disable upsert operations |

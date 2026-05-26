@@ -359,6 +359,12 @@ impl CosmosClientBuilder {
         }
         driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
 
+        // The wrapping-SDK identifier always reflects this crate, so requests
+        // can be attributed to `azure_data_cosmos` in addition to the driver.
+        driver_runtime_builder = driver_runtime_builder.with_wrapping_sdk_identifier(format!(
+            "azsdk-rust-cosmos/{}",
+            env!("CARGO_PKG_VERSION")
+        ));
         // Forward the user-agent suffix captured above to the driver runtime.
         if let Some(suffix) = driver_user_agent_suffix {
             driver_runtime_builder = driver_runtime_builder.with_user_agent_suffix(suffix);
