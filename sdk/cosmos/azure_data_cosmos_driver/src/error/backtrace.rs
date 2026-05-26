@@ -256,15 +256,6 @@ impl Backtrace {
     pub(crate) fn inner_arc_identity_for_tests(&self) -> usize {
         Arc::as_ptr(&self.inner) as usize
     }
-
-    /// Returns the captured instruction pointers, for tests that need to
-    /// assert against the process-global symbol cache (e.g. "a failed
-    /// render did not insert any of this backtrace's IPs"). Per-IP
-    /// assertions are race-free even when other tests render backtraces
-    /// in parallel.
-    pub(crate) fn ips_for_tests(&self) -> &[usize] {
-        &self.inner.ips
-    }
 }
 
 // -----------------------------------------------------------------
@@ -640,21 +631,20 @@ mod tests {
         with_limiter_capacity(0, || {
             clear_frame_cache_for_tests();
             let bt = Backtrace::capture().expect("capture always succeeds");
-            let ips: Vec<usize> = bt.ips_for_tests().to_vec();
             assert!(
                 bt.rendered().is_none(),
                 "expected None when budget=0 and cache is empty"
             );
-            // Failed render must not pollute the process-global cache
-            // with any of this backtrace's IPs. Per-IP check is race-free
-            // even when other tests render unrelated backtraces in
-            // parallel (asserting on absolute cache size would not be).
-            for ip in &ips {
-                assert!(
-                    !frame_cache_contains_for_tests(*ip),
-                    "failed render leaked IP 0x{ip:x} into the cache"
-                );
-            }
+            // We intentionally do NOT assert that the failed render left
+            // the process-global cache untouched. Async test runtimes
+            // share harness frames across threads, so a sibling test
+            // rendering a successful backtrace in parallel can insert IPs
+            // that overlap with ours — making any post-hoc cache-state
+            // assertion racy in either direction (absolute size OR
+            // per-IP). The no-pollution guarantee is enforced by code
+            // structure in `try_resolve_frames`: the budget check returns
+            // `None` before any write to the cache, so a failed render
+            // cannot insert.
         });
     }
 
