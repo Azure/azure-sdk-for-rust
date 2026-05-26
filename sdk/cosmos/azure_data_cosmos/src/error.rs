@@ -144,15 +144,6 @@ impl Error {
     ) -> Self {
         Self(DriverError::configuration(message, source))
     }
-
-    /// Builds a `Serialization` error wrapping the underlying serde failure.
-    #[allow(dead_code)]
-    pub(crate) fn serialization(
-        message: impl Into<std::sync::Arc<str>>,
-        source: impl StdError + Send + Sync + 'static,
-    ) -> Self {
-        Self(DriverError::serialization(message, None, None, source))
-    }
 }
 
 impl fmt::Display for Error {
