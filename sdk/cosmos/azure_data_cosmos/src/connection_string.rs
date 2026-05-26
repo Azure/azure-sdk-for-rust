@@ -150,6 +150,9 @@ mod tests {
         let connection_str = ConnectionString::try_from(&secret);
         let err = connection_str.unwrap_err();
         let actual_error_message = err.to_string();
-        assert_eq!(expected_error_message, actual_error_message)
+        assert_eq!(
+            actual_error_message,
+            format!("[Configuration] 400: {expected_error_message}")
+        )
     }
 }
