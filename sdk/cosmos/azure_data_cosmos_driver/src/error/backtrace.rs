@@ -131,7 +131,7 @@ static FRAME_CACHE_SOFT_CAP: AtomicUsize = AtomicUsize::new(DEFAULT_FRAME_CACHE_
 /// the result is cached as an [`Arc<str>`], so repeat renders return the
 /// cached string without re-walking debug info.
 #[derive(Clone)]
-pub(crate) struct Backtrace {
+pub struct Backtrace {
     inner: Arc<BacktraceInner>,
 }
 
@@ -467,7 +467,7 @@ pub(crate) fn set_frame_cache_soft_cap_for_tests(cap: usize) -> usize {
 /// count_in_window)`, so `try_acquire` is a single CAS in the happy path.
 /// Capacity is stored separately in an `AtomicU32` so the runtime builder
 /// can reconfigure it at any time.
-pub(crate) struct BacktraceCaptureLimiter {
+pub struct BacktraceCaptureLimiter {
     capacity: AtomicU32,
     /// High 32 bits: window start (seconds since UNIX epoch, truncated).
     /// Low 32 bits: count of resolutions granted in this window.
@@ -487,7 +487,7 @@ impl BacktraceCaptureLimiter {
     }
 
     /// Returns the current capacity (resolutions allowed per 1-second window).
-    #[cfg(test)]
+    #[cfg(any(test, feature = "__internal_backtrace_bench"))]
     pub fn capacity(&self) -> u32 {
         self.capacity.load(Ordering::Relaxed)
     }
@@ -504,7 +504,7 @@ impl BacktraceCaptureLimiter {
     /// Test-only escape hatch that allows setting capacity to `0` so the
     /// budget-exhausted code path (no-partial-render guard) can be
     /// exercised deterministically. Never call from production code.
-    #[cfg(test)]
+    #[cfg(any(test, feature = "__internal_backtrace_bench"))]
     pub fn set_capacity_for_tests(&self, capacity: u32) {
         self.capacity.store(capacity, Ordering::Relaxed);
     }
@@ -543,7 +543,7 @@ impl BacktraceCaptureLimiter {
         }
     }
 
-    #[cfg(test)]
+    #[cfg(any(test, feature = "__internal_backtrace_bench"))]
     fn reset_for_tests(&self) {
         self.state.store(0, Ordering::Release);
     }
@@ -586,6 +586,53 @@ pub(crate) fn global_capture_throttle() -> &'static BacktraceCaptureLimiter {
     static LIMITER: BacktraceCaptureLimiter =
         BacktraceCaptureLimiter::with_default(DEFAULT_BACKTRACE_CAPTURES_PER_SECOND);
     &LIMITER
+}
+
+/// Internal bench-only surface (gated by the `__internal_backtrace_bench`
+/// feature) used by `azure_data_cosmos_benchmarks` to drive the
+/// rate-limited backtrace machinery deterministically. Not covered by
+/// SemVer; production code MUST NOT enable the feature.
+#[cfg(feature = "__internal_backtrace_bench")]
+#[doc(hidden)]
+pub mod __bench {
+    use super::{
+        global_capture_throttle as inner_capture_throttle,
+        global_resolution_limiter as inner_resolution_limiter, Backtrace, BacktraceCaptureLimiter,
+    };
+    use std::sync::Arc;
+
+    /// Captures a fresh backtrace through the production capture path
+    /// (subject to the global capture throttle). Returns `None` when the
+    /// throttle is exhausted.
+    pub fn capture() -> Option<Backtrace> {
+        Backtrace::capture()
+    }
+
+    /// Renders the captured backtrace through the production render path
+    /// (subject to the global resolution limiter and the process-wide
+    /// frame cache). First call resolves and caches on the `Backtrace`
+    /// instance; subsequent calls are `OnceLock` hits.
+    pub fn render(bt: &Backtrace) -> Option<Arc<str>> {
+        bt.rendered().cloned()
+    }
+
+    /// Returns the process-global capture throttle so benches can set
+    /// capacity to exercise the throttled / un-throttled cases.
+    pub fn capture_throttle() -> &'static BacktraceCaptureLimiter {
+        inner_capture_throttle()
+    }
+
+    /// Returns the process-global symbol-resolution limiter so benches
+    /// can set capacity to exercise the cold-resolution case.
+    pub fn resolution_limiter() -> &'static BacktraceCaptureLimiter {
+        inner_resolution_limiter()
+    }
+
+    /// Forces the limiter's window state back to the initial value so a
+    /// bench can re-prime per group.
+    pub fn reset_limiter(limiter: &BacktraceCaptureLimiter) {
+        limiter.reset_for_tests();
+    }
 }
 
 #[cfg(test)]

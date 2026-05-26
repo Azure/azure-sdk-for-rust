@@ -39,6 +39,14 @@ use crate::{
 pub(crate) mod backtrace;
 pub(crate) use backtrace::Backtrace;
 
+/// Internal bench-only surface (gated by the `__internal_backtrace_bench`
+/// feature) used by `azure_data_cosmos_benchmarks` to measure the
+/// rate-limited backtrace machinery deterministically. Not covered by
+/// SemVer; production code MUST NOT enable the feature.
+#[cfg(feature = "__internal_backtrace_bench")]
+#[doc(hidden)]
+pub use backtrace::__bench as backtrace_bench;
+
 /// Categorical kind for an [`Error`] — re-exported from
 /// [`crate::models::Kind`] (where the canonical definition lives alongside
 /// [`CosmosStatus`]).

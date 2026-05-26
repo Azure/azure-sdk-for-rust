@@ -91,6 +91,12 @@ __internal_in_memory_emulator = [
 __internal_mocking = []
 # Enables test-only DiagnosticsContext construction used by SDK unit tests. NOT a stable API.
 __internal_test_diagnostics_construction = []
+# `__internal_backtrace_bench` exposes [`error::Backtrace`], its capture/
+# render entry points, and the two global limiters so the `*_benchmarks`
+# crate can drive the rate-limited backtrace machinery deterministically.
+# Production code MUST NOT enable this feature; the surface is `#[doc(hidden)]`
+# and not covered by SemVer.
+__internal_backtrace_bench = []
 # `__internal_testing` exposes a small, intentionally-unstable surface
 # (`CosmosOperation::query_plan` and `query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES`,
 # plus `query::__test_only_generate_query_plan_for_pk_paths`) for cross-crate
