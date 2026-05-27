@@ -1268,7 +1268,7 @@ pub fn __test_only_generate_query_plan_for_pk_paths(
     let program = crate::query::parse(sql).map_err(|e| {
         crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-            .with_message(format!("failed to parse query: {e}"))
+            .with_message("failed to parse query")
             .with_source(e)
             .build()
     })?;
@@ -1278,7 +1278,7 @@ pub fn __test_only_generate_query_plan_for_pk_paths(
     serde_json::to_value(&raw_plan).map_err(|e| {
         crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-            .with_message(format!("failed to serialize query plan: {e}"))
+            .with_message("failed to serialize query plan")
             .with_source(e)
             .build()
     })

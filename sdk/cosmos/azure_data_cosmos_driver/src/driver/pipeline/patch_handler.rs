@@ -142,7 +142,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     let spec: PatchSpec = serde_json::from_slice(body).map_err(|err| {
         crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-            .with_message(format!("failed to parse PATCH body as PatchSpec: {err}"))
+            .with_message("failed to parse PATCH body as PatchSpec")
             .with_source(err)
             .build()
     })?;
@@ -241,7 +241,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         let read_body_bytes = read_resp.into_body().single().map_err(|err| {
             crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message(format!("PATCH could not extract Read response body: {err}"))
+                .with_message("PATCH could not extract Read response body")
                 .with_source(err)
                 .build()
         })?;
@@ -259,7 +259,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         let merged_bytes = serde_json::to_vec(&value).map_err(|err| {
             crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message(format!("PATCH could not serialize merged item: {err}"))
+                .with_message("PATCH could not serialize merged item")
                 .with_source(err)
                 .build()
         })?;

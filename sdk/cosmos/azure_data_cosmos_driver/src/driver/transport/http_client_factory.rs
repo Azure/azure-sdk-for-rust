@@ -218,7 +218,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,
                 ))
-                .with_message(format!("Failed to create HTTP client: {error}"))
+                .with_message("failed to create HTTP client")
                 .with_source(error)
                 .build()
         })?;

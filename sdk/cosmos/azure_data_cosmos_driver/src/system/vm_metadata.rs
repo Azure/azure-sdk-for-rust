@@ -270,7 +270,7 @@ impl VmMetadataServiceInner {
                     .with_status(crate::error::CosmosStatus::new(
                         azure_core::http::StatusCode::BadRequest,
                     ))
-                    .with_message(format!("failed to build IMDS HTTP client: {e}"))
+                    .with_message("failed to build IMDS HTTP client")
                     .with_source(e)
                     .build()
             })?;
@@ -284,7 +284,7 @@ impl VmMetadataServiceInner {
                 crate::error::CosmosError::builder()
                     .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(crate::models::CosmosStatus::TRANSPORT_IO_FAILED)
-                    .with_message(format!("IMDS request failed: {e}"))
+                    .with_message("IMDS request failed")
                     .with_source(e)
                     .build()
             })?;
@@ -293,7 +293,7 @@ impl VmMetadataServiceInner {
             crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                 .with_status(crate::models::CosmosStatus::TRANSPORT_BODY_READ_FAILED)
-                .with_message(format!("failed to read IMDS response body: {e}"))
+                .with_message("failed to read IMDS response body")
                 .with_source(e)
                 .build()
         })?;

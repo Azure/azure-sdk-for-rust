@@ -105,7 +105,7 @@ impl CosmosError {
     /// optionally wrapping an underlying source error. Synthesizes a
     /// `400 BadRequest` status.
     pub(crate) fn client(
-        message: impl Into<Arc<str>>,
+        message: impl Into<std::borrow::Cow<'static, str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
         let mut b = DriverCosmosError::builder()
@@ -121,7 +121,7 @@ impl CosmosError {
     /// string, etc.), optionally wrapping an underlying source error.
     /// Synthesizes a `400 BadRequest` status.
     pub(crate) fn configuration(
-        message: impl Into<Arc<str>>,
+        message: impl Into<std::borrow::Cow<'static, str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
         let mut b = DriverCosmosError::builder()
@@ -278,7 +278,7 @@ impl CosmosErrorBuilder {
     }
 
     /// Sets the human-readable error message.
-    pub fn with_message(self, message: impl Into<Arc<str>>) -> Self {
+    pub fn with_message(self, message: impl Into<std::borrow::Cow<'static, str>>) -> Self {
         Self(self.0.with_message(message))
     }
 
@@ -311,7 +311,7 @@ impl CosmosErrorBuilder {
 
     /// Prepends operational context to the final message as
     /// `"{context}: {message}"`.
-    pub fn with_context(self, context: impl Into<Arc<str>>) -> Self {
+    pub fn with_context(self, context: impl Into<std::borrow::Cow<'static, str>>) -> Self {
         Self(self.0.with_context(context))
     }
 

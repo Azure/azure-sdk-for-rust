@@ -282,7 +282,7 @@ impl FromStr for FeedRange {
                     .with_status(crate::error::CosmosStatus::new(
                         azure_core::http::StatusCode::BadRequest,
                     ))
-                    .with_message(format!("feed range is not valid base64: {e}"))
+                    .with_message("feed range is not valid base64")
                     .with_source(e)
                     .build()
             })?;
@@ -290,7 +290,7 @@ impl FromStr for FeedRange {
         let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes).map_err(|e| {
             crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message(format!("feed range JSON is invalid: {e}"))
+                .with_message("feed range JSON is invalid")
                 .with_source(e)
                 .build()
         })?;

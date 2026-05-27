@@ -430,7 +430,7 @@ impl CosmosDriver {
         serde_json::from_slice(payload).map_err(|e| {
             crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message(format!("failed to parse AccountProperties: {e}"))
+                .with_message("failed to parse AccountProperties")
                 .with_source(e)
                 .build()
         })
@@ -725,7 +725,7 @@ impl CosmosDriver {
         let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
             crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message(format!("failed to deserialize database response: {e}"))
+                .with_message("failed to deserialize database response")
                 .with_response_parts(crate::models::CosmosResponsePayload::new(
                     crate::models::ResponseBody::NoPayload,
                     db_headers.clone(),
@@ -759,7 +759,7 @@ impl CosmosDriver {
             container_result.into_body().into_single().map_err(|e| {
                 crate::error::CosmosError::builder()
                     .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                    .with_message(format!("failed to deserialize container response: {e}"))
+                    .with_message("failed to deserialize container response")
                     .with_response_parts(crate::models::CosmosResponsePayload::new(
                         crate::models::ResponseBody::NoPayload,
                         container_headers.clone(),
@@ -1793,7 +1793,7 @@ impl CosmosDriver {
         let query_plan: QueryPlan = serde_json::from_slice(&query_plan_body).map_err(|e| {
             crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message(format!("failed to parse query plan response: {e}"))
+                .with_message("failed to parse query plan response")
                 .with_source(e)
                 .build()
         })?;

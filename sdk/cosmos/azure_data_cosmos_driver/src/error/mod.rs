@@ -17,7 +17,7 @@
 //! third-party API and attached as [`StdError::source`] so callers can still
 //! downcast through the chain.
 
-use std::{error::Error as StdError, fmt, sync::Arc};
+use std::{borrow::Cow, error::Error as StdError, fmt, sync::Arc};
 
 use crate::{
     diagnostics::DiagnosticsContext,
@@ -99,7 +99,13 @@ struct CosmosErrorInner {
     /// Modelled as an enum so the storage rules are enforced by the type
     /// system rather than by runtime convention.
     context: ErrorContext,
-    message: Arc<str>,
+    /// Static literal (`Cow::Borrowed`) for fixed-string error messages,
+    /// or an owned `String` (`Cow::Owned`) for messages that need to
+    /// interpolate case-specific information. `Cow<'static, str>` keeps
+    /// the literal-message path allocation-free while still allowing
+    /// `format!`-built strings without an extra round-trip through
+    /// `Arc::<str>::from`.
+    message: Cow<'static, str>,
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     /// Captured stack backtrace, present when capture is enabled (opt-in
     /// via `RUST_BACKTRACE` or the runtime builder) and the global
@@ -560,10 +566,10 @@ pub struct CosmosErrorBuilder {
     /// response carries its own); used to promote `WirePending` to
     /// `Wire`, or attached as the synthetic diagnostics slot.
     diagnostics: Option<Arc<DiagnosticsContext>>,
-    message: Option<Arc<str>>,
+    message: Option<Cow<'static, str>>,
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     /// Prepended to the final message as `"{context}: {message}"` when set.
-    context_prefix: Option<Arc<str>>,
+    context_prefix: Option<Cow<'static, str>>,
 }
 
 impl CosmosErrorBuilder {
@@ -609,8 +615,11 @@ impl CosmosErrorBuilder {
         self
     }
 
-    /// Sets the human-readable error message.
-    pub fn with_message(mut self, message: impl Into<Arc<str>>) -> Self {
+    /// Sets the human-readable error message. Accepts any
+    /// `Into<Cow<'static, str>>` — string literals are stored as
+    /// `Cow::Borrowed` (no allocation), `String` / `format!` results as
+    /// `Cow::Owned`.
+    pub fn with_message(mut self, message: impl Into<Cow<'static, str>>) -> Self {
         self.message = Some(message.into());
         self
     }
@@ -670,8 +679,8 @@ impl CosmosErrorBuilder {
     /// `"{context}: {message}"`. Repeated calls override (the most recent
     /// context wins); chain multiple `with_context` calls into one
     /// combined string at the call site if multiple layers of context are
-    /// needed.
-    pub fn with_context(mut self, context: impl Into<Arc<str>>) -> Self {
+    /// needed. Accepts any `Into<Cow<'static, str>>`.
+    pub fn with_context(mut self, context: impl Into<Cow<'static, str>>) -> Self {
         self.context_prefix = Some(context.into());
         self
     }
@@ -813,14 +822,17 @@ impl CosmosErrorBuilder {
         };
 
         // Carry forward message / source / backtrace from the base, then
-        // apply any overrides supplied on this builder.
+        // apply any overrides supplied on this builder. `Cow::clone`
+        // is free for `Borrowed` (pointer copy) and allocates for
+        // `Owned` (deep `String` clone); since re-decoration is an
+        // error path, the extra `Owned` clone is acceptable.
         let (mut message, mut source, backtrace) = match &self.base {
             Some(base) => (
-                Arc::clone(&base.inner.message),
+                base.inner.message.clone(),
                 base.inner.source.clone(),
                 base.inner.backtrace.clone(),
             ),
-            None => (Arc::<str>::from(""), None, None),
+            None => (Cow::Borrowed(""), None, None),
         };
         if let Some(m) = self.message {
             message = m;
@@ -833,7 +845,7 @@ impl CosmosErrorBuilder {
             buf.push_str(&prefix);
             buf.push_str(": ");
             buf.push_str(&message);
-            message = Arc::<str>::from(buf);
+            message = Cow::Owned(buf);
         }
 
         CosmosError::from_inner(CosmosErrorInner {
