@@ -1918,7 +1918,7 @@ behavior of every other awaited operation in the driver.
 >   flight to multiple regions simultaneously via async replication.
 > - Adoption in Java v4 has been near-zero; the operational surprise
 >   of a "successful" hedge that produces a 409 on the loser-region
->   replay is consistently called out as a footgun.
+>   replay is consistently called out as a frequent customer issue.
 > - Single-master writes have never been hedged in any SDK; PPAF
 >   handles write failover for single-master.
 >

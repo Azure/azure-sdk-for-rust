@@ -29,7 +29,8 @@ Analyzing code with
 "@
 
 if ($Deny) {
-  Invoke-LoggedCommand "cargo install cargo-deny --locked" -GroupOutput
+  $cargoDenyVersionParams = Get-VersionParamsFromCgManifest cargo-deny
+  Invoke-LoggedCommand "cargo install cargo-deny --locked $($cargoDenyVersionParams -join ' ')" -GroupOutput
 }
 
 $packageArgs = if ($PackageName) {
@@ -43,6 +44,10 @@ Invoke-LoggedCommand "cargo audit" -GroupOutput
 Invoke-LoggedCommand "cargo check --manifest-path sdk/core/azure_core/Cargo.toml $packageArgs --all-features --all-targets --keep-going" -GroupOutput
 
 Invoke-LoggedCommand "cargo fmt $packageArgs -- --check" -GroupOutput
+
+$taploCliVersionParams = Get-VersionParamsFromCgManifest taplo-cli
+Invoke-LoggedCommand "cargo install taplo-cli --locked $($taploCliVersionParams -join ' ')" -GroupOutput
+Invoke-LoggedCommand "taplo format --check"
 
 Invoke-LoggedCommand "cargo clippy $packageArgs --all-features --all-targets --keep-going --no-deps" -GroupOutput
 

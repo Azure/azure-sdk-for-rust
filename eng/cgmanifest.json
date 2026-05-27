@@ -6,7 +6,8 @@
       "component": {
         "type": "cargo",
         "cargo": { "name": "cargo2junit", "version": "0.1.15" }
-      }
+      },
+      "developmentDependency": true
     },
     {
       "component": {
@@ -19,6 +20,20 @@
       "component": {
         "type": "cargo",
         "cargo": { "name": "cargo-audit", "version": "0.22.0" }
+      },
+      "developmentDependency": true
+    },
+    {
+      "component": {
+        "type": "cargo",
+        "cargo": { "name": "cargo-deny", "version": "0.19.7" }
+      },
+      "developmentDependency": true
+    },
+    {
+      "component": {
+        "type": "cargo",
+        "cargo": { "name": "taplo-cli", "version": "0.10.0" }
       },
       "developmentDependency": true
     }
