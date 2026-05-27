@@ -1183,6 +1183,9 @@ mod tests {
 
     #[test]
     fn wrap_inherits_backtrace_from_cosmos_source() {
+        // Capture is opt-in; enable it for this test so the inheritance
+        // check is actually meaningful.
+        crate::error::backtrace::global_capture_throttle().set_capacity(1000);
         let inner = end_to_end_timeout_error("inner");
         let inner_bt_id = inner
             .inner

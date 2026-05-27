@@ -5,17 +5,19 @@
 
 //! Backtrace capture for [`Error`](super::Error).
 //!
-//! Backtraces are mission-critical for debugging — especially when the Rust
-//! driver is consumed as a black box by the Java / .NET SDKs. Rust's stdlib
-//! backtraces are gated on the `RUST_BACKTRACE` env var, which forces
-//! operators to choose between "always on" (unsafe under error storms) and
-//! "always off" (no signal when an incident hits production).
+//! Backtraces are invaluable for debugging — especially when the Rust
+//! driver is consumed as a black box by the Java / .NET SDKs. Following
+//! Rust's stdlib convention, capture is **opt-in**: it stays off until the
+//! operator asks for it, either by setting the stdlib `RUST_BACKTRACE`
+//! environment variable or by passing an explicit capacity to the runtime
+//! builder. Defaults preserve cost predictability under error storms
+//! without surprising callers who expect idiomatic Rust behaviour.
 //!
 //! ## Cost model
 //!
-//! * **Capture** — `backtrace::Backtrace::new_unresolved` is microseconds:
-//!   walking the call stack and recording instruction pointers. We pay this
-//!   on **every** error construction, unconditionally.
+//! * **Capture** — `backtrace::trace` is microseconds: walking the call
+//!   stack and recording instruction pointers. When capture is enabled we
+//!   pay this on every error construction up to the per-second cap.
 //! * **Symbol resolution** — turning an instruction pointer into
 //!   `module::function (file:line)` walks debug info and can take
 //!   milliseconds per frame. We cache resolved frames in a process-wide
@@ -23,14 +25,15 @@
 //!   pay the cost once *per process lifetime*.
 //! * **Rate limiting** — a single global [`BacktraceCaptureLimiter`] caps how
 //!   many backtraces may perform fresh symbol resolution in any rolling
-//!   1-second window (default `5`, minimum `1`, configurable via
+//!   1-second window, configurable via
 //!   [`CosmosDriverRuntimeBuilder::with_max_error_backtrace_resolutions_per_second`](crate::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_resolutions_per_second)
 //!   or the `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` environment
-//!   variable; the runtime builder rejects `0`). **Cache
-//!   hits do not consume budget** — if every frame of a backtrace is already
-//!   in the process-wide cache, rendering is essentially free and proceeds
-//!   even when the budget is exhausted. The budget only protects against
-//!   the cost of *new* symbol-resolution work during an error storm.
+//!   variable. Setting either to `0` fully disables capture for that
+//!   knob. **Cache hits do not consume budget** — if every frame of a
+//!   backtrace is already in the process-wide cache, rendering is
+//!   essentially free and proceeds even when the budget is exhausted. The
+//!   budget only protects against the cost of *new* symbol-resolution
+//!   work during an error storm.
 //! * **Degraded rendering** — when the budget is exhausted but the
 //!   backtrace contains unresolved frames, those frames render as
 //!   `<unresolved> @ 0xIP` instead of being resolved. The backtrace is still
@@ -40,7 +43,6 @@
 use std::{
     collections::HashMap,
     fmt,
-    num::NonZeroU32,
     sync::{
         atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering},
         Arc, OnceLock, RwLock,
@@ -48,53 +50,79 @@ use std::{
     time::Instant,
 };
 
-/// Default maximum number of backtraces that may perform fresh symbol
-/// resolution per rolling 1-second window.
+/// Safe per-second resolution budget used when capture is implicitly
+/// enabled via `RUST_BACKTRACE`.
 ///
 /// Cache hits do not consume budget; this only bounds the number of
 /// backtraces whose *resolution* work fires during an error storm. `5` per
 /// second is plenty for typical production workloads while still leaving
 /// headroom for diagnostic sampling.
-pub(crate) const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND: u32 = 5;
+pub(crate) const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED: u32 = 5;
+
+/// Default per-second resolution budget when capture is *not* explicitly
+/// requested. `0` means "no fresh symbol resolution" — combined with the
+/// disabled capture default below, this leaves backtraces fully off until
+/// the operator opts in.
+pub(crate) const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_DISABLED: u32 = 0;
 
 /// Environment variable that overrides the default symbol-resolution budget
 /// when no explicit value is supplied via the runtime builder.
 ///
-/// Value: a positive integer (`>= 1`). The runtime builder rejects `0` with
-/// a validation error — backtrace capture cannot be disabled. To minimize
-/// the cost during an error storm, set a low value like `1`; the
-/// process-global symbol-resolution cache means recurring failures from
-/// the same call sites still render at full fidelity for free.
+/// Value: a non-negative integer (`>= 0`). Setting it to `0` disables
+/// fresh symbol resolution entirely; captures still happen (subject to
+/// the capture cap below) but unresolved frames render as
+/// `<unresolved> @ 0xIP` placeholders. Set a low value like `1` to keep a
+/// trickle of cold-cache resolution alive during an error storm; the
+/// process-global symbol cache means recurring failures from the same
+/// call sites still render at full fidelity for free.
 pub(crate) const BACKTRACE_RESOLUTIONS_PER_SECOND_ENV: &str =
     "AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND";
 
-/// Default hard cap on the number of [`Backtrace::capture`] calls per
-/// rolling 1-second window.
+/// Safe per-second capture cap used when capture is implicitly enabled
+/// via `RUST_BACKTRACE`.
 ///
-/// The resolution limiter ([`DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND`])
-/// bounds the *expensive* symbol-resolution work, but plain stack capture
-/// itself (walking frames + allocating the IP vector) still costs a few
-/// microseconds and a small allocation per error. Under a sustained error
-/// storm where every failure originates from the same handful of call
-/// sites — cache-hit-only territory where the resolution limiter is never
-/// even asked — unbounded capture would still dominate CPU. This second
-/// throttle puts a hard ceiling on captures so the worst-case capture cost
-/// is `O(cap)` microseconds per second regardless of error rate.
+/// The resolution limiter
+/// ([`DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED`]) bounds the
+/// *expensive* symbol-resolution work, but plain stack capture itself
+/// (walking frames + allocating the IP vector) still costs a few
+/// microseconds and a small allocation per error. Under a sustained
+/// error storm where every failure originates from the same handful of
+/// call sites — cache-hit-only territory where the resolution limiter is
+/// never even asked — unbounded capture would still dominate CPU. This
+/// throttle puts a hard ceiling on captures so the worst-case capture
+/// cost is `O(cap)` microseconds per second regardless of error rate.
 ///
-/// `1000` is a generous default; tighten or relax via
+/// `10_000` is a generous default; tighten or relax via
 /// [`CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second`](crate::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second)
 /// or the [`BACKTRACE_CAPTURES_PER_SECOND_ENV`] environment variable.
-pub(crate) const DEFAULT_BACKTRACE_CAPTURES_PER_SECOND: u32 = 1000;
+pub(crate) const DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_WHEN_ENABLED: u32 = 10_000;
+
+/// Default per-second capture cap when capture is *not* explicitly
+/// requested. `0` means "no captures" — [`Backtrace::capture`] returns
+/// `None` before allocating the IP vector, so the whole pipeline is off.
+pub(crate) const DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_DISABLED: u32 = 0;
 
 /// Environment variable that overrides the default per-second cap on stack
 /// captures when no explicit value is supplied via the runtime builder.
 ///
-/// Value: a positive integer (`>= 1`). The runtime builder rejects `0` with
-/// a validation error — backtrace capture cannot be disabled at
-/// construction time. Use a high value (e.g. the default `1000`) unless
-/// profiling shows capture itself is a hot spot.
+/// Value: a non-negative integer (`>= 0`). Setting it to `0` disables
+/// backtrace capture entirely (capture returns `None` and no IP vector
+/// is allocated).
 pub(crate) const BACKTRACE_CAPTURES_PER_SECOND_ENV: &str =
     "AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND";
+
+/// Returns `true` when the stdlib `RUST_BACKTRACE` environment variable
+/// asks for backtraces, using stdlib semantics: anything other than unset
+/// / empty / `"0"` enables. Read **once** per process via [`OnceLock`]
+/// (matching stdlib); mid-process mutations of the environment variable
+/// have no effect.
+pub(crate) fn rust_backtrace_enabled() -> bool {
+    static ENABLED: OnceLock<bool> = OnceLock::new();
+    *ENABLED.get_or_init(|| match std::env::var("RUST_BACKTRACE") {
+        Ok(value) => !value.is_empty() && value != "0",
+        Err(_) => false,
+    })
+}
 
 const WINDOW_SECS: u64 = 1;
 
@@ -475,46 +503,33 @@ pub struct BacktraceCaptureLimiter {
 }
 
 impl BacktraceCaptureLimiter {
-    const fn new() -> Self {
-        Self::with_default(DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND)
-    }
-
-    const fn with_default(default_capacity: u32) -> Self {
+    /// Constructs a disabled limiter. The runtime builder sets the
+    /// capacity from the resolved configuration (explicit value > env
+    /// var > opt-in default keyed on `RUST_BACKTRACE`) before any
+    /// capture or render observes the new value.
+    const fn new_disabled() -> Self {
         Self {
-            capacity: AtomicU32::new(default_capacity),
+            capacity: AtomicU32::new(0),
             state: AtomicU64::new(0),
         }
     }
 
-    /// Returns the current capacity (resolutions allowed per 1-second window).
+    /// Returns the current capacity (tokens allowed per 1-second window).
     #[cfg(any(test, feature = "__internal_backtrace_bench"))]
     pub fn capacity(&self) -> u32 {
         self.capacity.load(Ordering::Relaxed)
     }
 
-    /// Sets the capacity (resolutions allowed per 1-second window).
-    ///
-    /// Takes a [`NonZeroU32`] because backtrace capture cannot be disabled
-    /// in production — the type encodes the invariant the runtime builder
-    /// also enforces up-front (rejecting `0` with a validation error).
-    pub fn set_capacity(&self, capacity: NonZeroU32) {
-        self.capacity.store(capacity.get(), Ordering::Relaxed);
-    }
-
-    /// Test-only escape hatch that allows setting capacity to `0` so the
-    /// budget-exhausted code path (no-partial-render guard) can be
-    /// exercised deterministically. Never call from production code.
-    #[cfg(any(test, feature = "__internal_backtrace_bench"))]
-    pub fn set_capacity_for_tests(&self, capacity: u32) {
+    /// Sets the capacity (tokens allowed per 1-second window). A capacity
+    /// of `0` disables this limiter — every [`Self::try_acquire`] call
+    /// returns `false` for as long as the capacity stays `0`.
+    pub fn set_capacity(&self, capacity: u32) {
         self.capacity.store(capacity, Ordering::Relaxed);
     }
 
-    /// Attempts to consume one resolution token. Returns `true` if a token
-    /// was granted, `false` if the current 1-second window is exhausted.
-    ///
-    /// A capacity of `0` is reachable only via
-    /// [`Self::set_capacity_for_tests`] and always denies, so tests can
-    /// deterministically exercise the budget-exhausted code path.
+    /// Attempts to consume one token. Returns `true` if a token was
+    /// granted, `false` if the current 1-second window is exhausted or
+    /// the limiter is disabled (capacity `0`).
     pub fn try_acquire(&self) -> bool {
         let capacity = self.capacity.load(Ordering::Relaxed);
         if capacity == 0 {
@@ -563,7 +578,7 @@ fn now_monotonic_secs() -> u64 {
 }
 
 fn global_limiter() -> &'static BacktraceCaptureLimiter {
-    static LIMITER: BacktraceCaptureLimiter = BacktraceCaptureLimiter::new();
+    static LIMITER: BacktraceCaptureLimiter = BacktraceCaptureLimiter::new_disabled();
     &LIMITER
 }
 
@@ -583,8 +598,7 @@ pub(crate) fn global_resolution_limiter() -> &'static BacktraceCaptureLimiter {
 /// window. The runtime builder uses this to apply caller-supplied
 /// configuration.
 pub(crate) fn global_capture_throttle() -> &'static BacktraceCaptureLimiter {
-    static LIMITER: BacktraceCaptureLimiter =
-        BacktraceCaptureLimiter::with_default(DEFAULT_BACKTRACE_CAPTURES_PER_SECOND);
+    static LIMITER: BacktraceCaptureLimiter = BacktraceCaptureLimiter::new_disabled();
     &LIMITER
 }
 
@@ -650,18 +664,18 @@ mod tests {
     fn with_limiter_capacity<R>(capacity: u32, f: impl FnOnce() -> R) -> R {
         let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let prev = global_resolution_limiter().capacity();
-        global_resolution_limiter().set_capacity_for_tests(capacity);
+        global_resolution_limiter().set_capacity(capacity);
         global_resolution_limiter().reset_for_tests();
         // Ensure the capture throttle starts with a fresh window and a
         // generous capacity so it never accidentally gates these tests —
         // we are exercising the resolution limiter, not capture throttling.
         let prev_throttle = global_capture_throttle().capacity();
-        global_capture_throttle().set_capacity_for_tests(DEFAULT_BACKTRACE_CAPTURES_PER_SECOND);
+        global_capture_throttle().set_capacity(DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_WHEN_ENABLED);
         global_capture_throttle().reset_for_tests();
         let r = f();
-        global_resolution_limiter().set_capacity_for_tests(prev);
+        global_resolution_limiter().set_capacity(prev);
         global_resolution_limiter().reset_for_tests();
-        global_capture_throttle().set_capacity_for_tests(prev_throttle);
+        global_capture_throttle().set_capacity(prev_throttle);
         global_capture_throttle().reset_for_tests();
         r
     }
@@ -692,7 +706,7 @@ mod tests {
             // current window (whether by us or by parallel tests), any
             // subsequent call within the same window MUST be denied.
             let capacity = 5;
-            global_capture_throttle().set_capacity_for_tests(capacity);
+            global_capture_throttle().set_capacity(capacity);
             global_capture_throttle().reset_for_tests();
             for _ in 0..(capacity * 2) {
                 let _ = Backtrace::capture();
@@ -773,8 +787,8 @@ mod tests {
             // Open the limiter wide so a subsequent render *would* succeed
             // if `None` were not cached. With per-instance caching the
             // first outcome wins and we still see None.
-            global_resolution_limiter().set_capacity_for_tests(
-                crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND,
+            global_resolution_limiter().set_capacity(
+                crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED,
             );
             global_resolution_limiter().reset_for_tests();
             assert!(
@@ -841,5 +855,66 @@ mod tests {
             // others sharing the process-global static.
             set_frame_cache_soft_cap_for_tests(prev_cap);
         });
+    }
+
+    #[test]
+    fn capacity_zero_disables_capture() {
+        // Explicit `0` is the universal "off switch" and must fully
+        // disable capture: `Backtrace::capture` returns `None` before
+        // walking the stack or allocating the IP vector. Exercising the
+        // production `set_capacity` path (no test-only escape hatch).
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let prev = global_capture_throttle().capacity();
+        global_capture_throttle().set_capacity(0);
+        global_capture_throttle().reset_for_tests();
+        assert!(
+            Backtrace::capture().is_none(),
+            "capacity=0 must disable capture entirely"
+        );
+        global_capture_throttle().set_capacity(prev);
+        global_capture_throttle().reset_for_tests();
+    }
+
+    #[test]
+    fn capacity_nonzero_enables_capture() {
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let prev = global_capture_throttle().capacity();
+        global_capture_throttle().set_capacity(8);
+        global_capture_throttle().reset_for_tests();
+        assert!(
+            Backtrace::capture().is_some(),
+            "capacity>0 must allow capture within the fresh window"
+        );
+        global_capture_throttle().set_capacity(prev);
+        global_capture_throttle().reset_for_tests();
+    }
+
+    #[test]
+    fn rust_backtrace_enabled_is_stable() {
+        // The helper caches its decision in a `OnceLock<bool>`; repeated
+        // reads must return the same value regardless of mid-process
+        // environment mutation, matching stdlib semantics.
+        let first = rust_backtrace_enabled();
+        // Flip the env var; the cached value should not change.
+        let prev = std::env::var("RUST_BACKTRACE").ok();
+        // SAFETY: mutating the process environment in tests is racy with
+        // any test that reads other env vars in parallel, but this test
+        // only inspects the cached `rust_backtrace_enabled()` decision —
+        // it does not observe the live env var. We restore it before
+        // returning.
+        unsafe {
+            std::env::set_var("RUST_BACKTRACE", if first { "0" } else { "1" });
+        }
+        assert_eq!(
+            rust_backtrace_enabled(),
+            first,
+            "rust_backtrace_enabled must be cached (OnceLock) and ignore later env mutations"
+        );
+        unsafe {
+            match prev {
+                Some(v) => std::env::set_var("RUST_BACKTRACE", v),
+                None => std::env::remove_var("RUST_BACKTRACE"),
+            }
+        }
     }
 }

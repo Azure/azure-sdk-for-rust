@@ -79,17 +79,22 @@ impl CosmosError {
     }
 
     /// Returns the stack backtrace captured at error construction time,
-    /// rendered as a human-readable string, when the production-safety
-    /// gates allowed capture and resolution.
+    /// rendered as a human-readable string, when capture was enabled and
+    /// the production-safety gates allowed it.
     ///
-    /// Capture is bounded by two rolling-1-second limiters (capture
-    /// throttle + resolution rate), both configurable via the driver's
+    /// Backtrace capture is **opt-in**: by default it is off and this
+    /// method returns `None` for every error. Operators enable it either
+    /// by setting the stdlib `RUST_BACKTRACE` environment variable (safe
+    /// defaults: 10 000 captures / second, 5 fresh symbol resolutions /
+    /// second) or by passing explicit capacities to the driver's
     /// [`CosmosDriverRuntimeBuilder::with_max_error_backtrace_resolutions_per_second`](azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_resolutions_per_second)
     /// /
     /// [`with_max_error_backtrace_captures_per_second`](azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second)
-    /// builder methods or the corresponding
+    /// builder methods, or via the corresponding
     /// `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` /
     /// `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` environment variables.
+    /// Explicit values (including `0` to force-disable) always win over
+    /// `RUST_BACKTRACE`.
     pub fn backtrace(&self) -> Option<&Arc<str>> {
         self.0.backtrace()
     }

@@ -23,7 +23,7 @@
 //! | Group / variant | What it measures |
 //! |---|---|
 //! | `capture/cosmos_unbounded`        | Cold capture path with the throttle at default capacity. |
-//! | `capture/cosmos_throttle_denied`  | Throttle exhausted (`set_capacity_for_tests(0)`) — single AtomicU64 CAS denial. |
+//! | `capture/cosmos_throttle_denied`  | Throttle exhausted (`set_capacity(0)`) — single AtomicU64 CAS denial. |
 //! | `capture/std_force_capture`       | `std::backtrace::Backtrace::force_capture()` baseline (always pays full cost; no cache, no throttle). |
 //! | `render/cosmos_cached`            | `Backtrace::rendered()` on the same instance — `OnceLock` hit. |
 //! | `render/cosmos_fresh_warm_cache`  | Fresh `Backtrace` per iter, but call site is in the process-global frame cache — pays cache lookup only. |
@@ -80,7 +80,7 @@ fn bench_capture(c: &mut Criterion) {
 
     // --- cosmos_throttle_denied: throttle exhausted, capture returns None
     // after one AtomicU64 CAS denial.
-    throttle.set_capacity_for_tests(0);
+    throttle.set_capacity(0);
     group.bench_function(BenchmarkId::new("cosmos", "throttle_denied"), |b| {
         b.iter(|| {
             let bt = backtrace_bench::capture();
@@ -148,7 +148,7 @@ fn bench_render(c: &mut Criterion) {
     // the resolution limiter exhausted. Even if the cache is warm for this
     // call site, the denial path returns immediately without re-rendering.
     // Demonstrates the "no partial backtraces" guarantee + the cheap denial.
-    resolution.set_capacity_for_tests(0);
+    resolution.set_capacity(0);
     group.bench_function(
         BenchmarkId::new("cosmos", "fresh_cold_resolution_denied"),
         |b| {
