@@ -74,8 +74,8 @@ impl VirtualAccountConfig {
     /// Adds a per-direction replication override.
     ///
     /// Validates that both `source` and `target` match the name of a
-    /// configured region (case-sensitive). Returns `azure_core::Error` on
-    /// either mismatch ΓÇö silently dropping a typo in the region name (the
+    /// configured region (case-sensitive). Returns a `Client` error on
+    /// either mismatch — silently dropping a typo in the region name (the
     /// previous behavior) made misuse hard to spot in tests.
     pub fn with_replication_override(
         mut self,
@@ -531,7 +531,7 @@ impl ContainerConfig {
     /// - `partition_count` must be in `1..=MAX_PARTITION_COUNT`.
     /// - `provisioned_throughput_ru`, when set, must be `>= 400` RU/s.
     ///
-    /// Returns `azure_core::Error` on the first violation.
+    /// Returns a `Client` error on the first violation.
     pub fn build(self) -> crate::error::Result<Self> {
         if self.partition_count == 0 {
             return Err(crate::error::Error::client(

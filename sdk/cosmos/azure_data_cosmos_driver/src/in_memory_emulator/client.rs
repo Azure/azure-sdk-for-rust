@@ -121,8 +121,7 @@ impl InMemoryEmulatorHttpClient {
     /// Dispatches a request against the in-memory store and returns the
     /// emulated response. Inherent method (no longer implements
     /// `azure_core::HttpClient`) so the entire emulator pipeline can
-    /// surface typed [`crate::error::Error`] values directly — no
-    /// `azure_core::Error` round-trip.
+    /// surface typed [`crate::error::Error`] values directly.
     pub async fn execute_request(
         &self,
         request: &Request,

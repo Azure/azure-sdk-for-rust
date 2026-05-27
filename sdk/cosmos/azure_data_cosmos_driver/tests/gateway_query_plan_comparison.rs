@@ -115,7 +115,7 @@ async fn fetch_gateway_plan(
     container: &ContainerReference,
     sql: &str,
     parameters: &[(&str, serde_json::Value)],
-) -> Result<serde_json::Value, azure_core::Error> {
+) -> Result<serde_json::Value, azure_data_cosmos_driver::Error> {
     // Build {"query": ..., "parameters": [{"name":..., "value":...}, ...]}.
     let params_json: Vec<serde_json::Value> = parameters
         .iter()
@@ -133,31 +133,31 @@ async fn fetch_gateway_plan(
     } else {
         serde_json::json!({"query": sql, "parameters": params_json})
     };
-    let body = serde_json::to_vec(&query_body)?;
+    let body = serde_json::to_vec(&query_body).map_err(|e| {
+        azure_data_cosmos_driver::Error::serialization(
+            "failed to serialize query-plan request body",
+            None,
+            None,
+            e,
+        )
+    })?;
 
     let operation = CosmosOperation::query_plan(
         container.clone(),
         azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES.into(),
     )
     .with_body(body);
-    let response = driver
+    driver
         .execute_operation(operation, OperationOptions::default())
-        .await
-        .map_err(|e| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
-        })?;
-    response
+        .await?
         .ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            azure_data_cosmos_driver::Error::client(
                 "gateway query-plan request returned no response body",
+                None,
             )
         })?
         .into_body()
         .into_single()
-        .map_err(|e| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
-        })
 }
 
 /// Compare a locally-generated `queryInfo` JSON object against what the Cosmos DB
@@ -444,10 +444,10 @@ async fn validate_expects_400(
 ) {
     match fetch_gateway_plan(driver, container, sql, &[]).await {
         Err(e) => {
-            let status = e.http_status();
+            let status = e.status_code();
             assert_eq!(
                 status,
-                Some(azure_core::http::StatusCode::BadRequest),
+                azure_core::http::StatusCode::BadRequest,
                 "Expected HTTP 400 ({reason}) for '{sql}' but got status {status:?}: {e}"
             );
         }

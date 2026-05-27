@@ -128,10 +128,15 @@ pub async fn seed_container(
             }
             Some(Ok((_, None))) => {} // Task succeeded, continue
             Some(Err(e)) => {
+                // `JoinError` here means a seed worker panicked or was
+                // cancelled before it could complete. Surface it as a
+                // typed `Client` error so the caller can decide whether
+                // to retry the whole seed pass; we abort the remaining
+                // workers either way.
                 workers.abort_all();
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    e.to_string(),
+                return Err(azure_data_cosmos_driver::Error::client(
+                    format!("seed worker task failed: {e}"),
+                    None,
                 )
                 .into());
             }

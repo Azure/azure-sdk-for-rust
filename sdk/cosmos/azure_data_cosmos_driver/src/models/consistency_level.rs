@@ -52,7 +52,7 @@ impl std::fmt::Display for DefaultConsistencyLevel {
 }
 
 impl std::str::FromStr for DefaultConsistencyLevel {
-    type Err = azure_core::Error;
+    type Err = crate::error::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Case-sensitive first, then case-insensitive fallback.
@@ -74,9 +74,9 @@ impl std::str::FromStr for DefaultConsistencyLevel {
                 } else if s.eq_ignore_ascii_case("Eventual") {
                     Ok(Self::Eventual)
                 } else {
-                    Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
+                    Err(crate::error::Error::client(
                         format!("Unknown consistency level: {s}"),
+                        None,
                     ))
                 }
             }

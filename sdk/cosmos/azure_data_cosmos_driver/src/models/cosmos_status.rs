@@ -1003,20 +1003,20 @@ impl SubStatusCode {
     /// Closed client (20912).
     pub const CLOSED_CLIENT: SubStatusCode = SubStatusCode(20912);
 
-    // ----- Transport boundary mapping codes (20010-20015) -----
-    // Minted by `crate::error::classify_azure_core_error` so upstream code can
-    // discriminate on `CosmosStatus` instead of matching `azure_core::ErrorKind`
-    // or downcasting through the source chain. The original `azure_core::Error`
-    // (and its underlying `reqwest`/`hyper`/`h2`/`io` chain) is always preserved
-    // as the Cosmos error's `source` for callers that still want low-level
-    // detail.
+    // ----- Transport sub-status codes (20010-20015) -----
+    // Used directly by typed transport-error constructors (see
+    // `crate::error::Error::transport`) so upstream code can discriminate on
+    // `CosmosStatus` instead of downcasting through the source chain. The
+    // wrapped third-party error (`reqwest`/`hyper`/`h2`/`io`) is always
+    // preserved as the Cosmos error's `source` for callers that still want
+    // low-level detail.
 
     /// Transport connection failed — TCP connect refused / reset before the
-    /// request reached the wire (20010). Maps from `azure_core::ErrorKind::Connection`.
+    /// request reached the wire (20010).
     pub const TRANSPORT_CONNECTION_FAILED: SubStatusCode = SubStatusCode(20010);
 
     /// Generic transport I/O failure with no more specific discriminator
-    /// available (20011). Maps from `azure_core::ErrorKind::Io` fallback.
+    /// available (20011).
     pub const TRANSPORT_IO_FAILED: SubStatusCode = SubStatusCode(20011);
 
     /// DNS resolution failed for the target endpoint (20012). Best-effort
@@ -1035,8 +1035,8 @@ impl SubStatusCode {
 
     // ----- Serialization boundary mapping code (20020) -----
 
-    /// Response body failed to deserialize (20020). Maps from
-    /// `azure_core::ErrorKind::DataConversion` on the response path.
+    /// Response body failed to deserialize (20020). Used by
+    /// `crate::error::Error::serialization`.
     pub const SERIALIZATION_RESPONSE_BODY_INVALID: SubStatusCode = SubStatusCode(20020);
 
     // ----- Authentication boundary mapping code (20402) -----

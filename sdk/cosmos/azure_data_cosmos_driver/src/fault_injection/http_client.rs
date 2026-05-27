@@ -731,11 +731,8 @@ mod tests {
             assert!(result.is_err(), "{:?} should produce an error", error_type);
 
             let err = result.unwrap_err();
-            // Faults now construct typed Cosmos errors directly via
-            // `Error::service_from_parts`. Inspect the typed sub_status
-            // and the parsed `CosmosResponseHeaders::substatus` field
-            // instead of walking the source chain back to a synthetic
-            // `azure_core::Error::HttpResponse`.
+            // Inspect the typed sub_status and the parsed
+            // `CosmosResponseHeaders::substatus` field directly.
             match expected_substatus {
                 Some(expected) => {
                     assert_eq!(
@@ -788,9 +785,8 @@ mod tests {
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
-        // Boundary mapper translates `azure_core::ErrorKind::Connection`
-        // into Cosmos `Kind::Transport` with `TRANSPORT_CONNECTION_FAILED`
-        // sub-status.
+        // Connection-error faults are constructed as transport errors
+        // with `TRANSPORT_CONNECTION_FAILED` sub-status.
         assert_eq!(err.error.kind(), crate::error::Kind::Transport);
         assert_eq!(
             err.error.sub_status(),
@@ -816,9 +812,8 @@ mod tests {
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
-        // Boundary mapper translates `azure_core::ErrorKind::Io` into
-        // Cosmos `Kind::Transport` with `TRANSPORT_IO_FAILED` sub-status
-        // (no DNS / h2 refinement applies).
+        // Response-timeout faults are constructed as transport errors
+        // with `TRANSPORT_IO_FAILED` sub-status.
         assert_eq!(err.error.kind(), crate::error::Kind::Transport);
         assert_eq!(
             err.error.sub_status(),

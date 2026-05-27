@@ -45,7 +45,7 @@ impl MyType {
 
 // ✅ GOOD: Implement the standard trait
 impl std::str::FromStr for MyType {
-    type Err = azure_core::Error;
+    type Err = azure_data_cosmos::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> { /* ... */ }
 }
 
@@ -66,7 +66,7 @@ If you need a non-fallible parse internally, create a **private** helper method 
 
 #### Error Handling
 
-- Use `azure_core::Result<T>` for all fallible operations
+- Use `azure_data_cosmos::Result<T>` (SDK) or `azure_data_cosmos_driver::error::Result<T>` (driver) for all fallible operations — both alias `Result<T, crate::Error>` over the typed Cosmos error.
 - **Prefer returning `Result::Err` over panicking** in public methods whose inputs could originate from user-constructed types (even indirectly). Callers can then decide whether to propagate, log, or handle — rather than crashing their application. Use `assert!`/`panic!` only for true invariant violations that indicate programmer error in internal code.
 - Cosmos-specific errors should provide:
   - HTTP status code
@@ -190,7 +190,7 @@ pub async fn create_item<T: Serialize>(
     &self,
     item: &T,
     options: &CreateItemOptions,
-) -> azure_core::Result<ItemResponse<T>>
+) -> azure_data_cosmos::Result<ItemResponse<T>>
 where
     T: for<'de> Deserialize<'de>,
 {
@@ -355,7 +355,7 @@ pub mod builders {
             endpoint: impl Into<String>,
             credential: impl TokenCredential,
             options: DriverOptions,
-        ) -> azure_core::Result<Driver> {
+        ) -> azure_data_cosmos_driver::error::Result<Driver> {
             // ... construction logic
         }
     }
