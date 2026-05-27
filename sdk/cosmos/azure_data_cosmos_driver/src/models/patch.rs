@@ -149,7 +149,7 @@ pub enum PatchOperation {
 
 impl PatchOperation {
     /// Returns the JSON Pointer path targeted by this op (the destination
-    /// path for [`MoveOp`](Self::MoveOp)).
+    /// path for [`Move`](Self::Move)).
     pub fn path(&self) -> &str {
         match self {
             PatchOperation::Add { path, .. }

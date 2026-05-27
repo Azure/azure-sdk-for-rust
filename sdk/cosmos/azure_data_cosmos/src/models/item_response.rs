@@ -8,7 +8,6 @@ use std::sync::Arc;
 use crate::models::{
     CosmosResponse, CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders,
 };
-use crate::SessionToken;
 use serde::de::DeserializeOwned;
 
 /// A response from a point item operation (create, read, replace, upsert, delete).
@@ -48,16 +47,6 @@ impl ItemResponse {
         self.response.into_body()
     }
 
-    /// Returns the request charge (RU consumption) for this operation, if available.
-    pub fn request_charge(&self) -> Option<f64> {
-        self.response.request_charge()
-    }
-
-    /// Returns the session token from this response, if available.
-    pub fn session_token(&self) -> Option<SessionToken> {
-        self.response.session_token()
-    }
-
     /// Returns the diagnostics for this operation.
     ///
     /// The returned [`DiagnosticsContext`] surfaces the full per-operation
@@ -65,18 +54,6 @@ impl ItemResponse {
     /// regions contacted, RU charges, status, etc.).
     pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         self.response.diagnostics()
-    }
-
-    /// The logical sequence number (LSN) of the partition replica that served this request.
-    /// Advances with every write on the partition.
-    pub fn lsn(&self) -> Option<u64> {
-        self.response.cosmos_headers().lsn()
-    }
-
-    /// The logical sequence number (LSN) of the specific item/document operated on.
-    /// Reflects the last write to this particular item.
-    pub fn item_lsn(&self) -> Option<u64> {
-        self.response.cosmos_headers().item_lsn()
     }
 
     /// Deserializes the response body into a model type.

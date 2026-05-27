@@ -100,8 +100,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use azure_core::credentials::Secret;
     use azure_data_cosmos::{
-        AccountEndpoint, AccountReference, CosmosAccountEndpoint, CosmosAccountReference,
-        CosmosClientBuilder, RoutingStrategy, UserAgentSuffix,
+        AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy, UserAgentSuffix,
     };
     use clap::Parser;
 

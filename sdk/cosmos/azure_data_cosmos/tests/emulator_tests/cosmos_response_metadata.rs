@@ -153,11 +153,12 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 .await?;
             assert_eq!(create_response.status(), StatusCode::Created);
             assert!(
-                create_response.session_token().is_some(),
+                create_response.headers().session_token().is_some(),
                 "expected session_token on create"
             );
             assert!(create_response.headers().etag().is_some(), "expected etag on create");
             let write_lsn = create_response
+                .headers()
                 .lsn()
                 .expect("create_item should surface partition LSN");
             // Weakened from donor's strict `<`: the partition LSN must never go
@@ -176,16 +177,17 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 .await?;
             assert_eq!(read_response.status(), StatusCode::Ok);
             assert!(
-                read_response.session_token().is_some(),
+                read_response.headers().session_token().is_some(),
                 "expected session_token on read"
             );
             assert!(read_response.headers().etag().is_some(), "expected etag on read");
             assert_eq!(
-                read_response.item_lsn(),
+                read_response.headers().item_lsn(),
                 Some(write_lsn),
                 "item_lsn on a point read should equal the LSN of the most recent write to that item"
             );
             let first_read_partition_lsn = read_response
+                .headers()
                 .lsn()
                 .expect("read_item should surface partition LSN");
             assert!(
@@ -206,6 +208,7 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 .await?;
             assert_eq!(second_write.status(), StatusCode::Created);
             let second_write_lsn = second_write
+                .headers()
                 .lsn()
                 .expect("second create_item should surface partition LSN");
             assert!(
@@ -219,8 +222,9 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
             let second_read = run_context
                 .read_item(&container_client, &pk, &item_id, None)
                 .await?;
-            assert_eq!(second_read.item_lsn(), Some(write_lsn));
+            assert_eq!(second_read.headers().item_lsn(), Some(write_lsn));
             let second_read_partition_lsn = second_read
+                .headers()
                 .lsn()
                 .expect("second read_item should surface partition LSN");
             assert!(second_read_partition_lsn >= second_write_lsn);
