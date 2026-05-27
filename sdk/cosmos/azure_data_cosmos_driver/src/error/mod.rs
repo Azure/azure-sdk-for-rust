@@ -1315,9 +1315,13 @@ mod tests {
             assert_eq!(display_alt_tail, debug_alt_tail);
 
             // (4) Structural parse of the backtrace tail.
+            // Use just the suffix (without the crate name) so the check
+            // is robust to rustc's symbol-mangling disambiguator, which
+            // some platforms (notably macOS) render as
+            // `azure_data_cosmos_driver[<hash>]::error::tests::…`.
             assert_backtrace_tail_shape(
                 display_alt_tail,
-                "azure_data_cosmos_driver::error::tests::backtrace_emission_paths_render_as_documented",
+                "::error::tests::backtrace_emission_paths_render_as_documented",
             );
         });
 
