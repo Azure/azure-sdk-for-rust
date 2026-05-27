@@ -453,7 +453,9 @@ pub(crate) async fn execute_operation_pipeline(
                 // the only path that attaches diagnostics in the
                 // non-aborted case is `build_cosmos_response`.
                 let diagnostics_ctx = Arc::new(diagnostics.complete());
-                return Err(error.with_diagnostics(diagnostics_ctx));
+                return Err(crate::error::ErrorBuilder::from_error(error)
+                    .with_diagnostics(diagnostics_ctx)
+                    .build());
             }
         }
     }

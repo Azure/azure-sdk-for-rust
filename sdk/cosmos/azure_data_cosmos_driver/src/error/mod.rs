@@ -114,32 +114,6 @@ impl Error {
     }
 
     // -----------------------------------------------------------------
-    // Mutators (internal only — public callers go through ErrorBuilder).
-    // -----------------------------------------------------------------
-
-    /// Returns a copy of `self` with `diagnostics` attached (or replaced).
-    ///
-    /// Used by the operation pipeline's abort branch to graft the completed
-    /// operation [`DiagnosticsContext`] (retry history, region attempts,
-    /// per-request events) onto an error that was built deep in the
-    /// pipeline before that context was available. Without this, the
-    /// operation diagnostics would be silently dropped on every aborted
-    /// operation — callers reading [`Error::diagnostics`] would see `None`
-    /// even though the operation pipeline was still tracking everything.
-    ///
-    /// Cheap: clones the inner [`Arc`]'s contents (one allocation) and
-    /// patches the diagnostics slot. The original [`Error`] is unchanged
-    /// and shareable. Inherited backtrace is preserved as-is so a `?`
-    /// propagating through this helper does not re-capture.
-    pub(crate) fn with_diagnostics(&self, diagnostics: Arc<DiagnosticsContext>) -> Self {
-        let mut next = (*self.inner).clone();
-        next.diagnostics = Some(diagnostics);
-        Self {
-            inner: Arc::new(next),
-        }
-    }
-
-    // -----------------------------------------------------------------
     // Accessors
     // -----------------------------------------------------------------
 
@@ -982,8 +956,9 @@ mod tests {
     }
 
     #[test]
-    fn with_diagnostics_attaches_diagnostics_without_mutating_original() {
-        // Starting from an error with no diagnostics, `with_diagnostics`
+    fn from_error_with_diagnostics_does_not_mutate_original() {
+        // Starting from an error with no diagnostics, building a new error
+        // from it via `ErrorBuilder::from_error(...).with_diagnostics(...)`
         // returns a new error carrying the supplied context. The original
         // error is left untouched (Clone-on-Arc semantics) and all other
         // fields survive the clone-and-patch path.
@@ -991,15 +966,17 @@ mod tests {
         assert!(original.diagnostics().is_none());
 
         let diag = make_test_diagnostics();
-        let attached = original.with_diagnostics(Arc::clone(&diag));
+        let attached = ErrorBuilder::from_error(original.clone())
+            .with_diagnostics(Arc::clone(&diag))
+            .build();
 
         assert!(
             Arc::ptr_eq(attached.diagnostics().expect("diagnostics attached"), &diag),
-            "with_diagnostics must store the supplied Arc verbatim"
+            "builder must store the supplied diagnostics Arc verbatim"
         );
         assert!(
             original.diagnostics().is_none(),
-            "original must be untouched by with_diagnostics"
+            "original must be untouched by ErrorBuilder::from_error"
         );
         assert_eq!(attached.status(), original.status());
     }

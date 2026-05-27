@@ -518,33 +518,29 @@ fn exhaustion_error(
     let aggregated = DiagnosticsContext::aggregate_sub_operations(sub_op_diagnostics).map(Arc::new);
     match last_412 {
         Some(source) => {
-            let outer = crate::error::ErrorBuilder::from_error(source)
-                .with_context(message)
-                .build();
-            match aggregated {
-                Some(diag) => outer.with_diagnostics(diag),
-                None => outer,
+            let mut b = crate::error::ErrorBuilder::from_error(source).with_context(message);
+            if let Some(diag) = aggregated {
+                b = b.with_diagnostics(diag);
             }
+            b.build()
         }
         None => {
             // No prior Replace attempted (e.g. `attempts == 0` short-circuit
             // path) → there genuinely are no per-op diagnostics to aggregate.
             // Build the synthetic 412 directly via the builder; the caller
             // (operation pipeline abort branch) will graft real diagnostics
-            // via `Error::with_diagnostics` if any exist by the time the
-            // error leaves the pipeline. Attach `aggregated` here too in
-            // case a future caller seeds `sub_op_diagnostics` without a
-            // `last_412` source.
-            let outer = crate::error::Error::builder(crate::error::Kind::Service)
+            // onto the error if any exist by the time it leaves the
+            // pipeline. Attach `aggregated` here too in case a future caller
+            // seeds `sub_op_diagnostics` without a `last_412` source.
+            let mut b = crate::error::Error::builder(crate::error::Kind::Service)
                 .with_status(crate::models::CosmosStatus::new(
                     StatusCode::PreconditionFailed,
                 ))
-                .with_message(message)
-                .build();
-            match aggregated {
-                Some(diag) => outer.with_diagnostics(diag),
-                None => outer,
+                .with_message(message);
+            if let Some(diag) = aggregated {
+                b = b.with_diagnostics(diag);
             }
+            b.build()
         }
     }
 }
