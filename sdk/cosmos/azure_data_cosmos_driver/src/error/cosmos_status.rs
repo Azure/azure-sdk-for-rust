@@ -546,6 +546,14 @@ impl SubStatusCode {
     // =========================================================================
     // Constants - organized by HTTP status code context
     // =========================================================================
+    //
+    // Many of the constants below mirror sub-status codes emitted by the
+    // Cosmos DB service and are exposed primarily as a documented catalog
+    // for pattern matching on responses; the Rust SDK itself does not
+    // synthesize most of them. Constants in the `CLIENT_*` / `SERVICE_*`
+    // / `TRANSPORT_*` / `AUTHENTICATION_*` / `SERIALIZATION_*` ranges
+    // (20100-20402) are SDK-synthesized and are the ones the driver may
+    // emit directly.
 
     // ----- General -----
 
@@ -647,9 +655,6 @@ impl SubStatusCode {
 
     /// Offer replace disabled for auto-scale offer (1015).
     pub const OFFER_REPLACE_DISABLED_AUTO_SCALE_OFFER: SubStatusCode = SubStatusCode(1015);
-
-    /// Client ID mismatch (1026).
-    pub const CLIENT_ID_MISMATCH: SubStatusCode = SubStatusCode(1026);
 
     /// Unique index re-index in progress (1027).
     pub const UNIQUE_INDEX_RE_INDEX_IN_PROGRESS: SubStatusCode = SubStatusCode(1027);
@@ -836,9 +841,6 @@ impl SubStatusCode {
     /// Prepare time limit exceeded (3207).
     pub const PREPARE_TIME_EXCEEDED: SubStatusCode = SubStatusCode(3207);
 
-    /// Client TCP channel full (3208).
-    pub const CLIENT_TCP_CHANNEL_FULL: SubStatusCode = SubStatusCode(3208);
-
     /// Stored procedure concurrency limit (3084).
     pub const STORED_PROCEDURE_CONCURRENCY: SubStatusCode = SubStatusCode(3084);
 
@@ -1019,38 +1021,17 @@ impl SubStatusCode {
     /// Offer not configured (10004).
     pub const OFFER_NOT_CONFIGURED: SubStatusCode = SubStatusCode(10004);
 
-    /// Transport generated 410 (20001).
-    pub const TRANSPORT_GENERATED_410: SubStatusCode = SubStatusCode(20001);
-
-    /// Timeout generated 410 (20002).
-    pub const TIMEOUT_GENERATED_410: SubStatusCode = SubStatusCode(20002);
-
     /// Transport generated 503 (20003).
     pub const TRANSPORT_GENERATED_503: SubStatusCode = SubStatusCode(20003);
 
     /// Client generated 401 — authorization/signing failure (20401).
     pub const CLIENT_GENERATED_401: SubStatusCode = SubStatusCode(20401);
 
-    /// Client CPU overload (20004).
-    pub const CLIENT_CPU_OVERLOAD: SubStatusCode = SubStatusCode(20004);
-
-    /// Client thread starvation (20005).
-    pub const CLIENT_THREAD_STARVATION: SubStatusCode = SubStatusCode(20005);
-
-    /// Channel closed (20006).
-    pub const CHANNEL_CLOSED: SubStatusCode = SubStatusCode(20006);
-
-    /// Malformed continuation token (20007).
-    pub const MALFORMED_CONTINUATION_TOKEN: SubStatusCode = SubStatusCode(20007);
-
     /// Client operation timeout (20008).
     pub const CLIENT_OPERATION_TIMEOUT: SubStatusCode = SubStatusCode(20008);
 
     /// Transit timeout (20911).
     pub const TRANSIT_TIMEOUT: SubStatusCode = SubStatusCode(20911);
-
-    /// Closed client (20912).
-    pub const CLOSED_CLIENT: SubStatusCode = SubStatusCode(20912);
 
     // ----- Transport sub-status codes (20010-20015) -----
     // Used directly by typed transport-error constructors (see
@@ -1097,37 +1078,6 @@ impl SubStatusCode {
     pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: SubStatusCode = SubStatusCode(20402);
 
     // ----- SDK Server-side codes (21xxx) -----
-
-    /// Name cache stale exceeded retry limit (21001).
-    pub const NAME_CACHE_STALE_EXCEEDED_RETRY_LIMIT: SubStatusCode = SubStatusCode(21001);
-
-    /// Partition key range gone exceeded retry limit (21002).
-    pub const PARTITION_KEY_RANGE_GONE_EXCEEDED_RETRY_LIMIT: SubStatusCode = SubStatusCode(21002);
-
-    /// Completing split exceeded retry limit (21003).
-    pub const COMPLETING_SPLIT_EXCEEDED_RETRY_LIMIT: SubStatusCode = SubStatusCode(21003);
-
-    /// Completing partition migration exceeded retry limit (21004).
-    pub const COMPLETING_PARTITION_MIGRATION_EXCEEDED_RETRY_LIMIT: SubStatusCode =
-        SubStatusCode(21004);
-
-    /// Server generated 410 (21005).
-    pub const SERVER_GENERATED_410: SubStatusCode = SubStatusCode(21005);
-
-    /// Global strong write barrier not met (21006).
-    pub const GLOBAL_STRONG_WRITE_BARRIER_NOT_MET: SubStatusCode = SubStatusCode(21006);
-
-    /// Read quorum not met (21007).
-    pub const READ_QUORUM_NOT_MET: SubStatusCode = SubStatusCode(21007);
-
-    /// Server generated 503 (21008).
-    pub const SERVER_GENERATED_503: SubStatusCode = SubStatusCode(21008);
-
-    /// No valid store response (21009).
-    pub const NO_VALID_STORE_RESPONSE: SubStatusCode = SubStatusCode(21009);
-
-    /// Server generated 408 (21010).
-    pub const SERVER_GENERATED_408: SubStatusCode = SubStatusCode(21010);
 
     /// Server barrier throttled (21011).
     pub const SERVER_BARRIER_THROTTLED: SubStatusCode = SubStatusCode(21011);
@@ -2555,31 +2505,7 @@ mod tests {
     #[test]
     fn sdk_client_codes() {
         // Verify SDK client-side codes match Java/NET
-        assert_eq!(SubStatusCode::TRANSPORT_GENERATED_410.value(), 20001);
-        assert_eq!(SubStatusCode::TIMEOUT_GENERATED_410.value(), 20002);
         assert_eq!(SubStatusCode::TRANSPORT_GENERATED_503.value(), 20003);
-        assert_eq!(SubStatusCode::CLIENT_CPU_OVERLOAD.value(), 20004);
-        assert_eq!(SubStatusCode::CLIENT_THREAD_STARVATION.value(), 20005);
         assert_eq!(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value(), 20008);
-    }
-
-    #[test]
-    fn sdk_server_codes() {
-        // Verify SDK server-side codes match Java/.NET
-        assert_eq!(
-            SubStatusCode::NAME_CACHE_STALE_EXCEEDED_RETRY_LIMIT.value(),
-            21001
-        );
-        assert_eq!(
-            SubStatusCode::PARTITION_KEY_RANGE_GONE_EXCEEDED_RETRY_LIMIT.value(),
-            21002
-        );
-        assert_eq!(SubStatusCode::SERVER_GENERATED_410.value(), 21005);
-        assert_eq!(
-            SubStatusCode::GLOBAL_STRONG_WRITE_BARRIER_NOT_MET.value(),
-            21006
-        );
-        assert_eq!(SubStatusCode::READ_QUORUM_NOT_MET.value(), 21007);
-        assert_eq!(SubStatusCode::SERVER_GENERATED_503.value(), 21008);
     }
 }
