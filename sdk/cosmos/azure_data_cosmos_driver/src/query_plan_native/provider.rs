@@ -129,7 +129,7 @@ impl QueryPlanProvider {
         // Closure to avoid duplicating the 11-argument FFI call.
         // SAFETY: all pointers are valid for the duration of the closure call.
         // The native ABI is documented in QueryPlanInterop.h.
-        let mut call_native = |buf: &mut Vec<u8>, out_len: &mut u32| unsafe {
+        let call_native = |buf: &mut Vec<u8>, out_len: &mut u32| unsafe {
             (lib.get_partition_key_ranges_from_query4)(
                 self.handle,
                 query_spec_native.as_ptr(),
@@ -167,15 +167,6 @@ impl QueryPlanProvider {
 
         let info: QueryPlan = serde_json::from_str(&payload)?;
         Ok(info)
-    }
-}
-
-impl Drop for QueryPlanProvider {
-    fn drop(&mut self) {
-        // We intentionally do NOT call IUnknown::Release() here.
-        // The DLL's internal pool manages provider lifecycle. All resources
-        // are freed when the DLL is unloaded via unload_native_library().
-        self.handle = std::ptr::null_mut();
     }
 }
 

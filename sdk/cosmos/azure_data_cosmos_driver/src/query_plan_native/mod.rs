@@ -35,6 +35,9 @@
 pub(crate) mod error;
 #[path = "generated/native_bindings.rs"]
 #[allow(dead_code)]
+// NOTE: Generated bindings assume Windows (WCHAR = u16). On Linux/macOS
+// WCHAR is u32. These bindings are only used for struct layout validation,
+// not for runtime FFI calls. See native.rs for the platform-correct WChar type.
 pub(crate) mod generated_bindings;
 #[allow(dead_code)]
 pub(crate) mod native;

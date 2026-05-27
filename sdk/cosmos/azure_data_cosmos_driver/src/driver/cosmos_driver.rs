@@ -1761,6 +1761,9 @@ impl CosmosDriver {
         let pk_def = container.partition_key_definition();
         let pk_paths: Vec<&str> = pk_def.paths().iter().map(|p| p.as_ref()).collect();
 
+        // TODO(query-plan-native-wire-up): derive QueryPlanOptions from the
+        // operation/account capabilities so the native and Gateway paths
+        // produce equivalent plans. Today both paths use defaults.
         provider.get_partition_key_ranges(
             query_spec_json,
             &pk_paths,
