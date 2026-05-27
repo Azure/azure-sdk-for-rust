@@ -234,9 +234,9 @@
   "ignorePaths": [
     "live-platform-matrix.json",
     "release-platform-matrix.json",
-    "azure_data_cosmos_driver/src/query_plan_native/QueryPlanInterop.h",
-    "azure_data_cosmos_driver/src/query_plan_native/bindgen_wrapper.h",
-    "azure_data_cosmos_driver/src/query_plan_native/generated/native_bindings.rs"
+    "**/query_plan_native/QueryPlanInterop.h",
+    "**/query_plan_native/bindgen_wrapper.h",
+    "**/query_plan_native/generated/native_bindings.rs"
   ],
   "overrides": [
     {
