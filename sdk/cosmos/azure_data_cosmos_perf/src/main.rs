@@ -101,6 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     use azure_core::credentials::Secret;
     use azure_data_cosmos::{
         CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder, RoutingStrategy,
+        UserAgentSuffix,
     };
     use clap::Parser;
 
@@ -129,12 +130,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
+    // Resolve the (optional) user-agent suffix once and reuse it for both the
+    // primary and results clients. Empty string disables the suffix; any
+    // non-empty value must pass `UserAgentSuffix` validation (max 25 chars,
+    // HTTP-header-safe).
+    let user_agent_suffix = if config.user_agent_suffix.is_empty() {
+        None
+    } else {
+        match UserAgentSuffix::try_new(config.user_agent_suffix.clone()) {
+            Some(s) => Some(s),
+            None => {
+                eprintln!(
+                    "Error: --user-agent-suffix {:?} is invalid (must be \u{2264} 25 ASCII characters and HTTP-header-safe).",
+                    config.user_agent_suffix
+                );
+                std::process::exit(1);
+            }
+        }
+    };
+    if let Some(ref s) = user_agent_suffix {
+        println!("User-Agent suffix: {}", s.as_str());
+    } else {
+        println!("User-Agent suffix: <none>");
+    }
+
     // Build the Cosmos client using the builder pattern
     let application_region: azure_data_cosmos::regions::Region =
         config.application_region.clone().into();
     let strategy = RoutingStrategy::ProximityTo(application_region.clone());
 
-    let builder = CosmosClientBuilder::new();
+    let mut builder = CosmosClientBuilder::new();
+    if let Some(s) = user_agent_suffix.clone() {
+        builder = builder.with_user_agent_suffix(s);
+    }
 
     let endpoint: CosmosAccountEndpoint = config.endpoint.parse()?;
     let client = match &config.auth {
@@ -204,6 +232,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
         let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
         let results_builder = CosmosClientBuilder::new();
+        let results_builder = if let Some(s) = user_agent_suffix.clone() {
+            results_builder.with_user_agent_suffix(s)
+        } else {
+            results_builder
+        };
         let results_strategy = RoutingStrategy::ProximityTo(application_region.clone());
         let results_client = match results_auth {
             AuthMethod::Key => {
