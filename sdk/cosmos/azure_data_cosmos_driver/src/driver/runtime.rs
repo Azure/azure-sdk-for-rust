@@ -658,9 +658,7 @@ impl CosmosDriverRuntimeBuilder {
             .register(group)
             .map_err(|e| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
+                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
                     .with_message(e.to_string())
                     .build()
             })?;
@@ -711,9 +709,9 @@ impl CosmosDriverRuntimeBuilder {
         for rule in &rules {
             if !seen.insert(rule.id().to_string()) {
                 return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
+                    )
                     .with_message(format!("duplicate fault injection rule id: {}", rule.id()))
                     .build());
             }

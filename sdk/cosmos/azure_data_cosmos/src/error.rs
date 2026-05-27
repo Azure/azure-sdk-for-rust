@@ -98,40 +98,6 @@ impl CosmosError {
     pub fn backtrace(&self) -> Option<&Arc<str>> {
         self.0.backtrace()
     }
-
-    // -- construction helpers (pub(crate)) --
-
-    /// Builds a client-side error (caller misuse / precondition),
-    /// optionally wrapping an underlying source error. Synthesizes a
-    /// `400 BadRequest` status.
-    pub(crate) fn client(
-        message: impl Into<std::borrow::Cow<'static, str>>,
-        source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
-    ) -> Self {
-        let mut b = DriverCosmosError::builder()
-            .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
-            .with_message(message);
-        if let Some(s) = source {
-            b = b.with_arc_source(s);
-        }
-        Self(b.build())
-    }
-
-    /// Builds a configuration error (bad endpoint URL, malformed connection
-    /// string, etc.), optionally wrapping an underlying source error.
-    /// Synthesizes a `400 BadRequest` status.
-    pub(crate) fn configuration(
-        message: impl Into<std::borrow::Cow<'static, str>>,
-        source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
-    ) -> Self {
-        let mut b = DriverCosmosError::builder()
-            .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
-            .with_message(message);
-        if let Some(s) = source {
-            b = b.with_arc_source(s);
-        }
-        Self(b.build())
-    }
 }
 
 impl fmt::Display for CosmosError {
@@ -174,7 +140,7 @@ impl From<url::ParseError> for CosmosError {
     fn from(error: url::ParseError) -> Self {
         Self(
             DriverCosmosError::builder()
-                .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+                .with_status(CosmosStatus::CLIENT_INVALID_URL)
                 .with_message("invalid URL")
                 .with_source(error)
                 .build(),

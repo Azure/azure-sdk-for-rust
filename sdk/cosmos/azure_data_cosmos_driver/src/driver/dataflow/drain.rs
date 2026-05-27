@@ -86,9 +86,7 @@ impl PipelineNode for SequentialDrain {
                         // This should be ridiculously rare.
                         // The topology provider already waits for splits to converge before returning.
                         return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::BadRequest,
-                            ))
+                            .with_status(crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED)
                             .with_message(format!(
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"

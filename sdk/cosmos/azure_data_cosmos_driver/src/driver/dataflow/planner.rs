@@ -65,9 +65,7 @@ pub(crate) fn build_trivial_pipeline(
         }
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a trivial operation",
                     snapshot_kind(&other)
@@ -86,9 +84,9 @@ pub(crate) fn build_trivial_pipeline(
                 RequestTarget::LogicalPartitionKey(pk.clone())
             } else {
                 return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE,
+                    )
                     .with_message(
                         "FeedRange targeting requires a fan-out pipeline; \
                  use plan_operation for cross-partition queries",
@@ -154,7 +152,7 @@ pub(crate) async fn build_sequential_drain(
                 } => server_continuation,
                 PipelineNodeState::Drained => None,
                 other => {
-                    return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message(format!(
+                    return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE).with_message(format!(
                             "continuation token has unsupported nested shape inside SequentialDrain: {}",
                             snapshot_kind(&other)
                         )).build());
@@ -164,9 +162,9 @@ pub(crate) async fn build_sequential_drain(
             let current_max_epk = EffectivePartitionKey::from(current_max_epk);
             if current_min_epk > current_max_epk {
                 return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    )
                     .with_message(
                         "continuation token has invalid SequentialDrain range (min > max)",
                     )
@@ -272,9 +270,7 @@ pub(crate) async fn build_sequential_drain(
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::new(
-                azure_core::http::StatusCode::BadRequest,
-            ))
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
             .with_message("query plan produced no partition ranges to query")
             .build());
     }
@@ -340,9 +336,7 @@ fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
 
 fn unsupported_feature(feature: &str) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::new(
-            azure_core::http::StatusCode::BadRequest,
-        ))
+        .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
         .with_message(format!("unsupported query feature: {feature}"))
         .build()
 }

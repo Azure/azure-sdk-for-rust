@@ -267,9 +267,9 @@ impl VmMetadataServiceInner {
             .build()
             .map_err(|e| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED,
+                    )
                     .with_message("failed to build IMDS HTTP client")
                     .with_source(e)
                     .build()
@@ -311,9 +311,7 @@ impl VmMetadataServiceInner {
     #[cfg(not(feature = "reqwest"))]
     async fn do_fetch() -> crate::error::Result<AzureVmMetadata> {
         Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::new(
-                azure_core::http::StatusCode::BadRequest,
-            ))
+            .with_status(crate::error::CosmosStatus::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED)
             .with_message("IMDS fetch requires the `reqwest` feature")
             .build())
     }

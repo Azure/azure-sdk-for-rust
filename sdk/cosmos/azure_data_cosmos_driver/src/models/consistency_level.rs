@@ -75,9 +75,7 @@ impl std::str::FromStr for DefaultConsistencyLevel {
                     Ok(Self::Eventual)
                 } else {
                     Err(crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
+                        .with_status(crate::error::CosmosStatus::CLIENT_UNKNOWN_CONSISTENCY_LEVEL)
                         .with_message(format!("Unknown consistency level: {s}"))
                         .build())
                 }

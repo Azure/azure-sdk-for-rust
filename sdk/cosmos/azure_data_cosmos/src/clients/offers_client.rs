@@ -73,14 +73,22 @@ pub(crate) async fn begin_replace(
     let mut current_throughput = find_offer(&driver, &account, resource_id)
         .await?
         .ok_or_else(|| {
-            crate::CosmosError::client("no throughput offer found for this resource", None)
+            // No offer exists for the resource — typically the caller
+            // pointed at a resource that doesn't support throughput
+            // (e.g. a serverless or shared-throughput container).
+            crate::CosmosError::builder()
+                .with_status(crate::CosmosStatus::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE)
+                .with_message("no throughput offer found for this resource")
+                .build()
         })?;
 
     if current_throughput.offer_id.is_empty() {
-        return Err(crate::CosmosError::client(
-            "throughput offer has an empty id",
-            None,
-        ));
+        // Service contract violation: an offer was returned but it has
+        // no id. Map to 503 with the transport-generated sub-status.
+        return Err(crate::CosmosError::builder()
+            .with_status(crate::CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_message("throughput offer has an empty id")
+            .build());
     }
 
     let offer_id = current_throughput.offer_id.clone();

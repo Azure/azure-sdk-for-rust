@@ -240,17 +240,13 @@ impl TryFrom<&Url> for EndpointKey {
     fn try_from(url: &Url) -> crate::error::Result<Self> {
         let host = url.host_str().ok_or_else(|| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+                .with_status(crate::error::CosmosStatus::CLIENT_REQUEST_URL_MISSING_HOST)
                 .with_message(format!("request URL is missing a host: {url}"))
                 .build()
         })?;
         let port = url.port_or_known_default().ok_or_else(|| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+                .with_status(crate::error::CosmosStatus::CLIENT_REQUEST_URL_MISSING_KNOWN_PORT)
                 .with_message(format!("request URL is missing a known port: {url}"))
                 .build()
         })?;

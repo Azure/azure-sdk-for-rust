@@ -23,10 +23,10 @@ impl FromStr for ConnectionString {
     type Err = crate::CosmosError;
     fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
-            return Err(crate::CosmosError::configuration(
-                "connection string cannot be empty",
-                None,
-            ));
+            return Err(crate::CosmosError::builder()
+                .with_status(crate::CosmosStatus::CLIENT_CONNECTION_STRING_EMPTY)
+                .with_message("connection string cannot be empty")
+                .build());
         }
 
         let splat = connection_string.split(';');
@@ -39,7 +39,10 @@ impl FromStr for ConnectionString {
             }
 
             let (key, value) = part.split_once('=').ok_or_else(|| {
-                crate::CosmosError::configuration("invalid connection string", None)
+                crate::CosmosError::builder()
+                    .with_status(crate::CosmosStatus::CLIENT_CONNECTION_STRING_MALFORMED_PART)
+                    .with_message("invalid connection string")
+                    .build()
             })?;
 
             if key.eq_ignore_ascii_case("AccountEndpoint") {
@@ -52,17 +55,17 @@ impl FromStr for ConnectionString {
         }
 
         let Some(endpoint) = account_endpoint else {
-            return Err(crate::CosmosError::configuration(
-                "invalid connection string, missing 'AccountEndpoint'",
-                None,
-            ));
+            return Err(crate::CosmosError::builder()
+                .with_status(crate::CosmosStatus::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT)
+                .with_message("invalid connection string, missing 'AccountEndpoint'")
+                .build());
         };
 
         let Some(key) = account_key else {
-            return Err(crate::CosmosError::configuration(
-                "invalid connection string, missing 'AccountKey'",
-                None,
-            ));
+            return Err(crate::CosmosError::builder()
+                .with_status(crate::CosmosStatus::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY)
+                .with_message("invalid connection string, missing 'AccountKey'")
+                .build());
         };
 
         Ok(Self {
@@ -110,13 +113,18 @@ mod tests {
 
     #[test]
     pub fn test_empty_connection_string() {
-        test_bad_connection_string("", "connection string cannot be empty")
+        test_bad_connection_string(
+            "",
+            "400/20104 (ClientConnectionStringEmpty)",
+            "connection string cannot be empty",
+        )
     }
 
     #[test]
     pub fn test_malformed_connection_string() {
         test_bad_connection_string(
             "AccountEndpointhttps://accountname.documents.azure.com:443AccountKeyaccountkey",
+            "400/20105 (ClientConnectionStringMalformedPart)",
             "invalid connection string",
         );
     }
@@ -125,6 +133,7 @@ mod tests {
     pub fn test_partially_malformed_connection_string() {
         test_bad_connection_string(
             "AccountEndpointhttps://accountname.documents.azure.com:443/AccountKey=accountkey",
+            "400/20106 (ClientConnectionStringMissingAccountEndpoint)",
             "invalid connection string, missing 'AccountEndpoint'",
         );
     }
@@ -133,6 +142,7 @@ mod tests {
     pub fn test_connection_string_missing_account_endpoint() {
         test_bad_connection_string(
             "AccountKey=key",
+            "400/20106 (ClientConnectionStringMissingAccountEndpoint)",
             "invalid connection string, missing 'AccountEndpoint'",
         );
     }
@@ -141,18 +151,23 @@ mod tests {
     pub fn test_connection_string_missing_account_key() {
         test_bad_connection_string(
             "AccountEndpoint=https://accountname.documents.azure.com:443/;",
+            "400/20107 (ClientConnectionStringMissingAccountKey)",
             "invalid connection string, missing 'AccountKey'",
         );
     }
 
-    fn test_bad_connection_string(connection_string: &str, expected_error_message: &str) {
+    fn test_bad_connection_string(
+        connection_string: &str,
+        expected_status: &str,
+        expected_error_message: &str,
+    ) {
         let secret = Secret::new(connection_string.to_owned());
         let connection_str = ConnectionString::try_from(&secret);
         let err = connection_str.unwrap_err();
         let actual_error_message = err.to_string();
         assert_eq!(
             actual_error_message,
-            format!("400: {expected_error_message}")
+            format!("{expected_status}: {expected_error_message}")
         )
     }
 }

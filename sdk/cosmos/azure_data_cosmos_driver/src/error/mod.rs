@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cSpell:ignore peekable
+
 //! Cosmos DB-specific error type carrying typed Cosmos status, the optional
 //! wire-level [`CosmosResponse`], and operation diagnostics — for both
 //! service errors (real HTTP responses) and synthetic client-side conditions
@@ -1100,10 +1102,7 @@ mod tests {
         assert!(decorated.response().is_none(), "WirePending preserved");
         assert!(decorated.diagnostics().is_none());
         assert!(decorated.wire_payload().is_some());
-        assert_eq!(
-            format!("{decorated}"),
-            "503: op=createItem: attempt-failed",
-        );
+        assert_eq!(format!("{decorated}"), "503: op=createItem: attempt-failed",);
     }
 
     #[test]
@@ -1276,7 +1275,7 @@ mod tests {
     fn backtrace_emission_paths_render_as_documented() {
         // Snapshot + restore the process-global throttle / limiter so
         // this test does not leak capture-on state into sibling tests
-        // that depend on the default-off behaviour.
+        // that depend on the default-off behavior.
         let throttle = crate::error::backtrace::global_capture_throttle();
         let resolution = crate::error::backtrace::global_resolution_limiter();
         let prev_capture = throttle.capacity();
@@ -1306,12 +1305,12 @@ mod tests {
             // (2) Alternate Display / Debug both prepend the same
             //     deterministic prefix to the backtrace tail.
             const ALT_PREFIX: &str = "500: bt-test\n\nStack backtrace:\n";
-            let display_alt_tail = display_alt
-                .strip_prefix(ALT_PREFIX)
-                .unwrap_or_else(|| panic!("alternate Display must start with {ALT_PREFIX:?}, got:\n{display_alt}"));
-            let debug_alt_tail = debug_alt
-                .strip_prefix(ALT_PREFIX)
-                .unwrap_or_else(|| panic!("alternate Debug must start with {ALT_PREFIX:?}, got:\n{debug_alt}"));
+            let display_alt_tail = display_alt.strip_prefix(ALT_PREFIX).unwrap_or_else(|| {
+                panic!("alternate Display must start with {ALT_PREFIX:?}, got:\n{display_alt}")
+            });
+            let debug_alt_tail = debug_alt.strip_prefix(ALT_PREFIX).unwrap_or_else(|| {
+                panic!("alternate Debug must start with {ALT_PREFIX:?}, got:\n{debug_alt}")
+            });
 
             // (3) Both alternate forms emit the same backtrace tail
             //     (no per-instance re-rendering or re-resolution).
@@ -1380,9 +1379,7 @@ mod tests {
                 !symbol.is_empty(),
                 "frame {frame_index} has an empty symbol, line: {line:?}",
             );
-            if !required_symbol_substring.is_empty()
-                && symbol.contains(required_symbol_substring)
-            {
+            if !required_symbol_substring.is_empty() && symbol.contains(required_symbol_substring) {
                 saw_required_symbol = true;
             }
 

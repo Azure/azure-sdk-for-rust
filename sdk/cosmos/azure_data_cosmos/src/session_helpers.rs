@@ -327,10 +327,16 @@ pub(crate) fn get_latest_session_token(
         .collect();
 
     if overlapping.is_empty() {
-        return Err(crate::CosmosError::client(
-            "no overlapping feed ranges with the target feed range",
-            None,
-        ));
+        // The target feed range does not overlap any of the supplied
+        // session-token ranges — most commonly because the underlying
+        // partition has split / merged since the tokens were captured,
+        // making the original ranges stale. `410 Gone` is the
+        // service-style signal that the resource the caller is
+        // referencing no longer exists in the requested shape.
+        return Err(crate::CosmosError::builder()
+            .with_status(crate::CosmosStatus::CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN)
+            .with_message("no overlapping feed ranges with the target feed range")
+            .build());
     }
 
     // Step 2: Merge session tokens for identical feed ranges

@@ -11,7 +11,7 @@
 //! operator asks for it, either by setting the stdlib `RUST_BACKTRACE`
 //! environment variable or by passing an explicit capacity to the runtime
 //! builder. Defaults preserve cost predictability under error storms
-//! without surprising callers who expect idiomatic Rust behaviour.
+//! without surprising callers who expect idiomatic Rust behavior.
 //!
 //! ## Cost model
 //!

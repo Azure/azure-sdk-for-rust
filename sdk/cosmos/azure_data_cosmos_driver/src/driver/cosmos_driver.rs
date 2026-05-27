@@ -1086,7 +1086,7 @@ impl CosmosDriver {
                 .runtime
                 .get_throughput_control_group(container, name)
                 .ok_or_else(|| {
-                    crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+                    crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED)
                         .with_message(format!(
                             "throughput control group '{}' not found in registry for container '{}'",
                             name,
@@ -1396,9 +1396,9 @@ impl CosmosDriver {
                     panic!("singleton operation returned an empty page")
                 }
                 Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE,
+                    )
                     .with_message("internal error: singleton operation returned an empty page")
                     .build())
             }
@@ -1420,7 +1420,7 @@ impl CosmosDriver {
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
                 .with_message(format!(
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
                      use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
@@ -1708,7 +1708,7 @@ impl CosmosDriver {
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
                 .with_message(format!(
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
                      use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
@@ -1736,7 +1736,7 @@ impl CosmosDriver {
                     }
                     ResolvedToken::ServerOpaque(server_token) => {
                         if !operation.is_trivial() {
-                            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+                            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY)
                         .with_message(
                             "an opaque server continuation token cannot be used to resume a \
                              cross-partition query; use the SDK-issued continuation token from \
@@ -1761,9 +1761,9 @@ impl CosmosDriver {
         // Cross-partition query: fetch query plan from backend.
         let container = operation.container().ok_or_else(|| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF,
+                )
                 .with_message("cross-partition query requires a container reference")
                 .build()
         })?;

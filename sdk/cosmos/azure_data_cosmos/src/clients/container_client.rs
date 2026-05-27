@@ -962,7 +962,15 @@ impl ContainerClient {
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
             .await
             .ok_or_else(|| {
-                crate::CosmosError::client("failed to resolve routing map for container", None)
+                // Service was reachable but didn't return a usable routing
+                // map — a service-side invariant violation, surfaced as a
+                // 500 with the client-generated
+                // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
+                // callers can distinguish it from caller misuse.
+                crate::CosmosError::builder()
+                    .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("failed to resolve routing map for container")
+                    .build()
             })?;
 
         if ranges.is_empty() && !options.force_refresh() {
@@ -974,16 +982,26 @@ impl ContainerClient {
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
                 .await
                 .ok_or_else(|| {
-                    crate::CosmosError::client("failed to resolve routing map for container", None)
+                    crate::CosmosError::builder()
+                        .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                        .with_message("failed to resolve routing map for container")
+                        .build()
                 })?;
         }
 
         if ranges.is_empty() {
-            return Err(crate::CosmosError::client(
-                "resolved routing map contains no partition key ranges; \
-                 the container may not exist or the service may be unreachable",
-                None,
-            ));
+            // Forced refresh produced an empty routing map — either the
+            // container truly does not exist or the service is
+            // unreachable. Map to 503 with the transport-generated
+            // sub-status so the caller treats this as a service-side
+            // availability issue (not their bug).
+            return Err(crate::CosmosError::builder()
+                .with_status(crate::CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_message(
+                    "resolved routing map contains no partition key ranges; \
+                     the container may not exist or the service may be unreachable",
+                )
+                .build());
         }
 
         ranges
@@ -1009,29 +1027,29 @@ impl ContainerClient {
         let values = driver_pk.values();
 
         if values.is_empty() {
-            return Err(crate::CosmosError::client(
-                "partition key must have at least one component",
-                None,
-            ));
+            return Err(crate::CosmosError::builder()
+                .with_status(crate::CosmosStatus::CLIENT_PARTITION_KEY_EMPTY)
+                .with_message("partition key must have at least one component")
+                .build());
         }
         if values.len() > pk_def.paths().len() {
-            return Err(crate::CosmosError::client(
-                format!(
+            return Err(crate::CosmosError::builder()
+                .with_status(crate::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                .with_message(format!(
                     "partition key has {} components but container definition has {} paths",
                     values.len(),
                     pk_def.paths().len()
-                ),
-                None,
-            ));
+                ))
+                .build());
         }
 
         let is_prefix =
             pk_def.kind() == PartitionKeyKind::MultiHash && values.len() < pk_def.paths().len();
         if !is_prefix && values.len() != pk_def.paths().len() {
-            return Err(crate::CosmosError::client(
-                "prefix partition keys are only supported for MultiHash (hierarchical) containers",
-                None,
-            ));
+            return Err(crate::CosmosError::builder()
+                .with_status(crate::CosmosStatus::CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH)
+                .with_message("prefix partition keys are only supported for MultiHash (hierarchical) containers")
+                .build());
         }
 
         let ranges = self
@@ -1044,7 +1062,10 @@ impl ContainerClient {
             )
             .await
             .ok_or_else(|| {
-                crate::CosmosError::client("failed to resolve routing map for container", None)
+                crate::CosmosError::builder()
+                    .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("failed to resolve routing map for container")
+                    .build()
             })?;
 
         if ranges.is_empty() && !options.force_refresh() {
@@ -1055,15 +1076,20 @@ impl ContainerClient {
                 .resolve_partition_key_ranges_for_key(&self.container_ref, &driver_pk, true)
                 .await
                 .ok_or_else(|| {
-                    crate::CosmosError::client("failed to resolve routing map for container", None)
+                    crate::CosmosError::builder()
+                        .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                        .with_message("failed to resolve routing map for container")
+                        .build()
                 })?;
 
             if ranges.is_empty() {
-                return Err(crate::CosmosError::client(
-                    "no partition key ranges found for the given partition key; \
-                     the container may not exist or the service may be unreachable",
-                    None,
-                ));
+                return Err(crate::CosmosError::builder()
+                    .with_status(crate::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_message(
+                        "no partition key ranges found for the given partition key; \
+                         the container may not exist or the service may be unreachable",
+                    )
+                    .build());
             }
 
             ranges

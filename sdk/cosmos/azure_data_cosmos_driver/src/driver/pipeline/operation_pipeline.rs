@@ -980,9 +980,7 @@ fn build_cosmos_response(
             // This should only be called with a Complete(Success) result.
             // Treat as a programmer-error invariant violation.
             Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+                .with_status(crate::error::CosmosStatus::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE)
                 .with_message("build_cosmos_response called with non-success result")
                 .build())
         }

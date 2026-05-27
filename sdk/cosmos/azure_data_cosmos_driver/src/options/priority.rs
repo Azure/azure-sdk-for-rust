@@ -45,9 +45,7 @@ impl std::str::FromStr for PriorityLevel {
             "High" => Ok(Self::High),
             "Low" => Ok(Self::Low),
             _ => Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+                .with_status(crate::error::CosmosStatus::CLIENT_UNKNOWN_PRIORITY_LEVEL)
                 .with_message(format!("Unknown priority level: {s}"))
                 .build()),
         }

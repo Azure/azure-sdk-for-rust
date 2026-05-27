@@ -43,7 +43,6 @@ use azure_data_cosmos_driver::error::backtrace_bench;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::hint::black_box;
 
-
 /// Sufficient headroom for the unbounded capture group — set well above the
 /// expected per-iteration count so the throttle stays open through the whole
 /// measurement window.
