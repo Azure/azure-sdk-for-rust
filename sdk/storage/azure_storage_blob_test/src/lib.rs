@@ -21,7 +21,7 @@ use azure_core::{
     },
     Bytes, Result,
 };
-use azure_core_test::Recording;
+use azure_core_test::{Recording, TestMode};
 use azure_identity::ManagedIdentityCredential;
 use azure_storage_blob::{
     models::{
@@ -128,12 +128,20 @@ pub fn recorded_test_setup(
 
 /// Returns a credential suitable for storage operations.
 ///
-/// If the environment variable `AZURE_STORAGE_USE_MANAGED_IDENTITY` is set to `"true"`,
-/// returns a [`ManagedIdentityCredential`]. Otherwise, falls back to the recording's
+/// In playback mode, returns the recording's mock credential immediately.
+/// Otherwise, if the environment variable `AZURE_STORAGE_USE_MANAGED_IDENTITY` is set to
+/// `"true"`, returns a [`ManagedIdentityCredential`]. Falls back to the recording's
 /// test credential via [`Recording::credential`].
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
 pub fn get_test_credential(recording: &Recording) -> Arc<dyn TokenCredential> {
-    let use_managed_identity = recording
-        .var_opt("AZURE_STORAGE_USE_MANAGED_IDENTITY", None)
+    if recording.test_mode() == TestMode::Playback {
+        return recording.credential();
+    }
+
+    let use_managed_identity = std::env::var("AZURE_STORAGE_USE_MANAGED_IDENTITY")
         .map(|v| v.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
 
