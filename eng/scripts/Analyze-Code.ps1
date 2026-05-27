@@ -29,18 +29,24 @@ Analyzing code with
     RUST_LOG: '${env:RUST_LOG}'
 "@
 
+if ($Audit) {
+  $cargoAuditVersionParams = Get-VersionParamsFromCgManifest cargo-audit
+  Invoke-LoggedCommand "cargo install cargo-audit --locked $($cargoAuditVersionParams -join ' ')" -GroupOutput
+}
+
 if ($Deny) {
   $cargoDenyVersionParams = Get-VersionParamsFromCgManifest cargo-deny
   Invoke-LoggedCommand "cargo install cargo-deny --locked $($cargoDenyVersionParams -join ' ')" -GroupOutput
 }
+
+$taploCliVersionParams = Get-VersionParamsFromCgManifest taplo-cli
+Invoke-LoggedCommand "cargo install taplo-cli --locked $($taploCliVersionParams -join ' ')" -GroupOutput
 
 $packageArgs = if ($PackageName) {
   '--package ' + ($PackageName -join ' --package ')
 }
 
 if ($Audit) {
-  $cargoAuditVersionParams = Get-VersionParamsFromCgManifest cargo-audit
-  Invoke-LoggedCommand "cargo install cargo-audit --locked $($cargoAuditVersionParams -join ' ')" -GroupOutput
   Invoke-LoggedCommand "cargo audit" -GroupOutput
 }
 
@@ -48,8 +54,6 @@ Invoke-LoggedCommand "cargo check --manifest-path sdk/core/azure_core/Cargo.toml
 
 Invoke-LoggedCommand "cargo fmt $packageArgs -- --check" -GroupOutput
 
-$taploCliVersionParams = Get-VersionParamsFromCgManifest taplo-cli
-Invoke-LoggedCommand "cargo install taplo-cli --locked $($taploCliVersionParams -join ' ')" -GroupOutput
 Invoke-LoggedCommand "taplo format --check"
 
 Invoke-LoggedCommand "cargo clippy $packageArgs --all-features --all-targets --keep-going --no-deps" -GroupOutput
@@ -78,6 +82,7 @@ if (!$SkipPackageAnalysis) {
     return
   }
 
+  # Ideally would want to install this with the others, but not replicate the conditions in which the tool is run.
   if ($Toolchain -eq 'nightly') {
     $cargoDocsRsVersionParams = Get-VersionParamsFromCgManifest cargo-docs-rs
     Invoke-LoggedCommand "cargo install cargo-docs-rs --locked $($cargoDocsRsVersionParams -join ' ')" -GroupOutput
