@@ -14,13 +14,15 @@ use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::routing::{
-        can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
-        partition_endpoint_state::HealthStatus, partition_key_range_id::PartitionKeyRangeId,
-        remove_probe_succeeded_entry, session_manager::SessionManager, AccountEndpointState,
-        CosmosEndpoint, LocationEffect, LocationSnapshot, LocationStateStore,
+    driver::{
+        routing::{
+            can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
+            partition_endpoint_state::HealthStatus, partition_key_range_id::PartitionKeyRangeId,
+            remove_probe_succeeded_entry, session_manager::SessionManager, AccountEndpointState,
+            CosmosEndpoint, LocationEffect, LocationSnapshot, LocationStateStore,
+        },
+        transport::CosmosTransport,
     },
-    driver::transport::CosmosTransport,
     models::{
         cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
         CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel,
@@ -89,6 +91,10 @@ impl OperationOverrides {
                     HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
                 );
             }
+            headers.insert(
+                HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
+                HeaderValue::from_static("EffectivePartitionKey"),
+            );
         }
 
         if let Some(pk_range_id) = &self.partition_key_range_id {
@@ -1255,8 +1261,9 @@ mod tests {
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
-            ContainerReference, CosmosOperation, DatabaseReference, FeedRange, ItemReference,
-            PartitionKey, PartitionKeyDefinition, SystemProperties, ThroughputControlGroupName,
+            ContainerReference, CosmosOperation, DatabaseReference, EffectivePartitionKey,
+            FeedRange, ItemReference, PartitionKey, PartitionKeyDefinition, SystemProperties,
+            ThroughputControlGroupName,
         },
         options::{PriorityLevel, ThroughputControlGroupSnapshot},
     };
@@ -1299,6 +1306,80 @@ mod tests {
             endpoint,
             transport_mode: TransportMode::Gateway,
         }
+    }
+
+    #[test]
+    fn apply_headers_pk_range_only_omits_read_key_type() {
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("0".to_string()),
+            ..Default::default()
+        };
+        let mut headers = azure_core::http::headers::Headers::new();
+        overrides
+            .apply_headers(&mut headers)
+            .expect("apply_headers should succeed");
+
+        assert_eq!(
+            headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::PARTITION_KEY_RANGE_ID
+                ))
+                .map(|s| s.to_string()),
+            Some("0".to_string())
+        );
+        assert!(
+            headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::READ_FEED_KEY_TYPE
+                ))
+                .is_none(),
+            "whole-PK-range targets must not emit x-ms-read-key-type"
+        );
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(request_header_names::START_EPK))
+            .is_none());
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(request_header_names::END_EPK))
+            .is_none());
+    }
+
+    #[test]
+    fn apply_headers_feed_range_emits_read_key_type_and_epk_bounds() {
+        let feed_range = FeedRange::new(
+            EffectivePartitionKey::from("10"),
+            EffectivePartitionKey::from("20"),
+        )
+        .unwrap();
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("pkrange".to_string()),
+            feed_range: Some(feed_range),
+            ..Default::default()
+        };
+        let mut headers = azure_core::http::headers::Headers::new();
+        overrides
+            .apply_headers(&mut headers)
+            .expect("apply_headers should succeed");
+
+        assert_eq!(
+            headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::READ_FEED_KEY_TYPE
+                ))
+                .map(|s| s.to_string()),
+            Some("EffectivePartitionKey".to_string())
+        );
+        assert_eq!(
+            headers
+                .get_optional_str(&HeaderName::from_static(request_header_names::START_EPK))
+                .map(|s| s.to_string()),
+            Some("10".to_string())
+        );
+        assert_eq!(
+            headers
+                .get_optional_str(&HeaderName::from_static(request_header_names::END_EPK))
+                .map(|s| s.to_string()),
+            Some("20".to_string())
+        );
     }
 
     #[test]
