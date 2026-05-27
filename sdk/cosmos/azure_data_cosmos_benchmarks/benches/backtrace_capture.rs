@@ -25,13 +25,14 @@
 //!
 //! | Group / variant | What it measures |
 //! |---|---|
-//! | `capture/cosmos_unbounded`        | Cold capture path with the throttle at default capacity. |
-//! | `capture/cosmos_throttle_denied`  | Throttle exhausted (`set_capacity(0)`) — single AtomicU64 CAS denial. |
-//! | `capture/std_force_capture`       | `std::backtrace::Backtrace::force_capture()` baseline (always pays full cost; no cache, no throttle). |
-//! | `render/cosmos_cached`            | `Backtrace::rendered()` on the same instance — `OnceLock` hit. |
-//! | `render/cosmos_fresh_warm_cache`  | Fresh `Backtrace` per iter, but call site is in the process-global frame cache — pays cache lookup only. |
-//! | `render/cosmos_fresh_cold_resolution_denied` | Fresh `Backtrace` per iter with the resolution limiter exhausted — proves the denial fast-path. |
-//! | `render/std_to_string`            | `format!("{}", std_bt)` baseline — std has no per-instance render cache, every call walks debug info again. |
+//! | `capture/cosmos/unbounded`        | Cold capture path with the throttle at default capacity. |
+//! | `capture/cosmos/throttle_denied`  | Throttle exhausted (`set_capacity(0)`) — single AtomicU64 CAS denial. This is also the **default production state** when `RUST_BACKTRACE` is unset (capture opt-in). |
+//! | `capture/cosmos/inherit_from_source` | End-to-end `CosmosErrorBuilder::with_arc_source(cosmos_err).build()` — the wrapping path skips a fresh capture and inherits the source's `Backtrace`. Proves the re-wrap cost is independent of stack walk. |
+//! | `capture/std/force_capture`       | `std::backtrace::Backtrace::force_capture()` baseline (always pays full cost; no cache, no throttle). |
+//! | `render/cosmos/cached`            | `Backtrace::rendered()` on the same instance — `OnceLock` hit. |
+//! | `render/cosmos/fresh_warm_cache`  | Fresh `Backtrace` per iter, but call site is in the process-global frame cache — pays cache lookup only. |
+//! | `render/cosmos/fresh_cold_resolution_denied` | Fresh `Backtrace` per iter with the resolution limiter exhausted — proves the denial fast-path. |
+//! | `render/std/to_string`            | `format!("{}", std_bt)` baseline — std has no per-instance render cache, every call walks debug info again. |
 //!
 //! Run with:
 //!
@@ -39,9 +40,9 @@
 //! cargo bench -p azure_data_cosmos_benchmarks --bench backtrace_capture
 //! ```
 
-use azure_data_cosmos_driver::error::backtrace_bench;
+use azure_data_cosmos_driver::error::{backtrace_bench, CosmosError, CosmosErrorBuilder, CosmosStatus};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use std::hint::black_box;
+use std::{hint::black_box, sync::Arc};
 
 /// Sufficient headroom for the unbounded capture group — set well above the
 /// expected per-iteration count so the throttle stays open through the whole
@@ -77,7 +78,8 @@ fn bench_capture(c: &mut Criterion) {
     });
 
     // --- cosmos_throttle_denied: throttle exhausted, capture returns None
-    // after one AtomicU64 CAS denial.
+    // after one AtomicU64 CAS denial. This is also the default production
+    // state when `RUST_BACKTRACE` is unset (capture is opt-in).
     throttle.set_capacity(0);
     group.bench_function(BenchmarkId::new("cosmos", "throttle_denied"), |b| {
         b.iter(|| {
@@ -88,6 +90,26 @@ fn bench_capture(c: &mut Criterion) {
     // Restore throttle so later groups are not affected.
     throttle.set_capacity(UNBOUNDED_CAPACITY);
     backtrace_bench::reset_limiter(throttle);
+
+    // --- cosmos_inherit_from_source: re-wrap path. When a `CosmosError`
+    // is built with another `CosmosError` as its `Arc` source, the new
+    // error inherits the source's backtrace instead of paying for a fresh
+    // stack walk. Measures the end-to-end builder cost on this path.
+    let inner = Arc::new(
+        CosmosError::builder()
+            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_message("inner")
+            .build(),
+    );
+    group.bench_function(BenchmarkId::new("cosmos", "inherit_from_source"), |b| {
+        b.iter(|| {
+            let outer = CosmosErrorBuilder::from_error(CosmosError::builder().build())
+                .with_arc_source(Arc::clone(&inner) as Arc<dyn std::error::Error + Send + Sync>)
+                .with_message("outer")
+                .build();
+            black_box(outer)
+        });
+    });
 
     // --- std baseline: force_capture always walks the stack and produces an
     // unresolved Backtrace; resolution happens on Display.
@@ -116,7 +138,6 @@ fn bench_render(c: &mut Criterion) {
 
     // Prime the process-global frame cache for all subsequent groups so the
     // "fresh-Backtrace-but-cache-hit" path is hot.
-    prime_resolution_cache();
     prime_resolution_cache();
 
     // --- cosmos_cached: single Backtrace, repeated render is a OnceLock hit.
