@@ -55,6 +55,7 @@ azure_identity.workspace = true
 clap.workspace = true
 reqwest = { workspace = true, features = ["http2"] }
 serde = { workspace = true, features = ["derive"] }
+serde_bytes.workspace = true
 time.workspace = true
 tokio = { workspace = true, features = [
   "rt-multi-thread",

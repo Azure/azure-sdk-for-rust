@@ -483,6 +483,7 @@ dependencies = [
  "pin-project",
  "reqwest",
  "serde",
+ "serde_bytes",
  "serde_json",
  "time",
  "tokio",
