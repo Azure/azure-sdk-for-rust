@@ -683,9 +683,7 @@ fn synthesize_cross_partition_query_status(status: CosmosStatus, body: &[u8]) ->
     // Match the gateway's well-known message rather than parsing JSON to
     // avoid a serde dependency on the hot error path. The fragment is
     // stable across .NET / Java / Python emulator gateways.
-    if text.contains("unsupported features")
-        && text.contains("Upgrade your SDK")
-    {
+    if text.contains("unsupported features") && text.contains("Upgrade your SDK") {
         crate::error::CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE
     } else {
         status

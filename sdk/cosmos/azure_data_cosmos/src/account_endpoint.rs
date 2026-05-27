@@ -49,7 +49,7 @@ impl std::str::FromStr for CosmosAccountEndpoint {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let url: Url = s.parse().map_err(|e: url::ParseError| {
-            crate::CosmosError::builder()
+            crate::DriverCosmosError::builder()
                 .with_status(crate::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL)
                 .with_message("invalid account endpoint URL")
                 .with_arc_source(std::sync::Arc::new(e))

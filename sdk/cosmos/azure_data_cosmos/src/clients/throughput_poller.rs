@@ -181,10 +181,12 @@ impl IntoFuture for ThroughputPoller {
                 // sub-status: throughput replace has no service SLA on
                 // completion time, so a timeout-like condition is the
                 // most honest mapping (vs. a misleading 503).
-                crate::CosmosError::builder()
-                    .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_POLLER_INCOMPLETE)
-                    .with_message("throughput poller stream ended without yielding a response")
-                    .build()
+                crate::CosmosError::from(
+                    crate::DriverCosmosError::builder()
+                        .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_POLLER_INCOMPLETE)
+                        .with_message("throughput poller stream ended without yielding a response")
+                        .build(),
+                )
             })
         })
     }

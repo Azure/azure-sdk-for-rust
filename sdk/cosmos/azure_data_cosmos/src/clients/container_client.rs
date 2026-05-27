@@ -45,7 +45,7 @@ impl ContainerClient {
             .resolve_container(database_id, container_id)
             .await
             .map_err(|e| {
-                azure_data_cosmos_driver::CosmosErrorBuilder::from_error(e)
+                azure_data_cosmos_driver::error::CosmosErrorBuilder::from_error(e)
                     .with_context(format!(
                         "failed to resolve container metadata for '{database_id}/{container_id}'"
                     ))
@@ -967,7 +967,7 @@ impl ContainerClient {
                 // 500 with the client-generated
                 // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
                 // callers can distinguish it from caller misuse.
-                crate::CosmosError::builder()
+                crate::DriverCosmosError::builder()
                     .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("failed to resolve routing map for container")
                     .build()
@@ -982,7 +982,7 @@ impl ContainerClient {
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
                 .await
                 .ok_or_else(|| {
-                    crate::CosmosError::builder()
+                    crate::DriverCosmosError::builder()
                         .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                         .with_message("failed to resolve routing map for container")
                         .build()
@@ -995,13 +995,14 @@ impl ContainerClient {
             // unreachable. Map to 503 with the transport-generated
             // sub-status so the caller treats this as a service-side
             // availability issue (not their bug).
-            return Err(crate::CosmosError::builder()
+            return Err(crate::DriverCosmosError::builder()
                 .with_status(crate::CosmosStatus::TRANSPORT_GENERATED_503)
                 .with_message(
                     "resolved routing map contains no partition key ranges; \
                      the container may not exist or the service may be unreachable",
                 )
-                .build());
+                .build()
+                .into());
         }
 
         ranges
@@ -1027,29 +1028,31 @@ impl ContainerClient {
         let values = driver_pk.values();
 
         if values.is_empty() {
-            return Err(crate::CosmosError::builder()
+            return Err(crate::DriverCosmosError::builder()
                 .with_status(crate::CosmosStatus::CLIENT_PARTITION_KEY_EMPTY)
                 .with_message("partition key must have at least one component")
-                .build());
+                .build()
+                .into());
         }
         if values.len() > pk_def.paths().len() {
-            return Err(crate::CosmosError::builder()
+            return Err(crate::DriverCosmosError::builder()
                 .with_status(crate::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
                 .with_message(format!(
                     "partition key has {} components but container definition has {} paths",
                     values.len(),
                     pk_def.paths().len()
                 ))
-                .build());
+                .build()
+                .into());
         }
 
         let is_prefix =
             pk_def.kind() == PartitionKeyKind::MultiHash && values.len() < pk_def.paths().len();
         if !is_prefix && values.len() != pk_def.paths().len() {
-            return Err(crate::CosmosError::builder()
+            return Err(crate::DriverCosmosError::builder()
                 .with_status(crate::CosmosStatus::CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH)
                 .with_message("prefix partition keys are only supported for MultiHash (hierarchical) containers")
-                .build());
+                .build().into());
         }
 
         let ranges = self
@@ -1062,7 +1065,7 @@ impl ContainerClient {
             )
             .await
             .ok_or_else(|| {
-                crate::CosmosError::builder()
+                crate::DriverCosmosError::builder()
                     .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("failed to resolve routing map for container")
                     .build()
@@ -1076,20 +1079,21 @@ impl ContainerClient {
                 .resolve_partition_key_ranges_for_key(&self.container_ref, &driver_pk, true)
                 .await
                 .ok_or_else(|| {
-                    crate::CosmosError::builder()
+                    crate::DriverCosmosError::builder()
                         .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                         .with_message("failed to resolve routing map for container")
                         .build()
                 })?;
 
             if ranges.is_empty() {
-                return Err(crate::CosmosError::builder()
+                return Err(crate::DriverCosmosError::builder()
                     .with_status(crate::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_message(
                         "no partition key ranges found for the given partition key; \
                          the container may not exist or the service may be unreachable",
                     )
-                    .build());
+                    .build()
+                    .into());
             }
 
             ranges

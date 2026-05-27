@@ -23,10 +23,11 @@ impl FromStr for ConnectionString {
     type Err = crate::CosmosError;
     fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
-            return Err(crate::CosmosError::builder()
+            return Err(crate::DriverCosmosError::builder()
                 .with_status(crate::CosmosStatus::CLIENT_CONNECTION_STRING_EMPTY)
                 .with_message("connection string cannot be empty")
-                .build());
+                .build()
+                .into());
         }
 
         let splat = connection_string.split(';');
@@ -39,7 +40,7 @@ impl FromStr for ConnectionString {
             }
 
             let (key, value) = part.split_once('=').ok_or_else(|| {
-                crate::CosmosError::builder()
+                crate::DriverCosmosError::builder()
                     .with_status(crate::CosmosStatus::CLIENT_CONNECTION_STRING_MALFORMED_PART)
                     .with_message("invalid connection string")
                     .build()
@@ -55,17 +56,19 @@ impl FromStr for ConnectionString {
         }
 
         let Some(endpoint) = account_endpoint else {
-            return Err(crate::CosmosError::builder()
+            return Err(crate::DriverCosmosError::builder()
                 .with_status(crate::CosmosStatus::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT)
                 .with_message("invalid connection string, missing 'AccountEndpoint'")
-                .build());
+                .build()
+                .into());
         };
 
         let Some(key) = account_key else {
-            return Err(crate::CosmosError::builder()
+            return Err(crate::DriverCosmosError::builder()
                 .with_status(crate::CosmosStatus::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY)
                 .with_message("invalid connection string, missing 'AccountKey'")
-                .build());
+                .build()
+                .into());
         };
 
         Ok(Self {

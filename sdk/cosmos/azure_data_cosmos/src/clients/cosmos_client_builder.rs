@@ -391,7 +391,7 @@ impl CosmosClientBuilder {
             driver_runtime_builder = driver_runtime_builder
                 .register_throughput_control_group(group)
                 .map_err(|e| {
-                    crate::CosmosError::builder()
+                    crate::DriverCosmosError::builder()
                         .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
                         .with_message(format!("failed to register throughput control group: {e}"))
                         .build()
