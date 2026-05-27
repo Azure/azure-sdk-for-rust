@@ -50,67 +50,6 @@ use std::{
     time::Instant,
 };
 
-/// Safe per-second resolution budget used when capture is implicitly
-/// enabled via `RUST_BACKTRACE`.
-///
-/// Cache hits do not consume budget; this only bounds the number of
-/// backtraces whose *resolution* work fires during an error storm. `5` per
-/// second is plenty for typical production workloads while still leaving
-/// headroom for diagnostic sampling.
-pub(crate) const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED: u32 = 5;
-
-/// Default per-second resolution budget when capture is *not* explicitly
-/// requested. `0` means "no fresh symbol resolution" — combined with the
-/// disabled capture default below, this leaves backtraces fully off until
-/// the operator opts in.
-pub(crate) const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_DISABLED: u32 = 0;
-
-/// Environment variable that overrides the default symbol-resolution budget
-/// when no explicit value is supplied via the runtime builder.
-///
-/// Value: a non-negative integer (`>= 0`). Setting it to `0` disables
-/// fresh symbol resolution entirely; captures still happen (subject to
-/// the capture cap below) but unresolved frames render as
-/// `<unresolved> @ 0xIP` placeholders. Set a low value like `1` to keep a
-/// trickle of cold-cache resolution alive during an error storm; the
-/// process-global symbol cache means recurring failures from the same
-/// call sites still render at full fidelity for free.
-pub(crate) const BACKTRACE_RESOLUTIONS_PER_SECOND_ENV: &str =
-    "AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND";
-
-/// Safe per-second capture cap used when capture is implicitly enabled
-/// via `RUST_BACKTRACE`.
-///
-/// The resolution limiter
-/// ([`DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED`]) bounds the
-/// *expensive* symbol-resolution work, but plain stack capture itself
-/// (walking frames + allocating the IP vector) still costs a few
-/// microseconds and a small allocation per error. Under a sustained
-/// error storm where every failure originates from the same handful of
-/// call sites — cache-hit-only territory where the resolution limiter is
-/// never even asked — unbounded capture would still dominate CPU. This
-/// throttle puts a hard ceiling on captures so the worst-case capture
-/// cost is `O(cap)` microseconds per second regardless of error rate.
-///
-/// `10_000` is a generous default; tighten or relax via
-/// [`CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second`](crate::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second)
-/// or the [`BACKTRACE_CAPTURES_PER_SECOND_ENV`] environment variable.
-pub(crate) const DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_WHEN_ENABLED: u32 = 10_000;
-
-/// Default per-second capture cap when capture is *not* explicitly
-/// requested. `0` means "no captures" — [`Backtrace::capture`] returns
-/// `None` before allocating the IP vector, so the whole pipeline is off.
-pub(crate) const DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_DISABLED: u32 = 0;
-
-/// Environment variable that overrides the default per-second cap on stack
-/// captures when no explicit value is supplied via the runtime builder.
-///
-/// Value: a non-negative integer (`>= 0`). Setting it to `0` disables
-/// backtrace capture entirely (capture returns `None` and no IP vector
-/// is allocated).
-pub(crate) const BACKTRACE_CAPTURES_PER_SECOND_ENV: &str =
-    "AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND";
-
 /// Returns `true` when the stdlib `RUST_BACKTRACE` environment variable
 /// asks for backtraces, using stdlib semantics: anything other than unset
 /// / empty / `"0"` enables. Read **once** per process via [`OnceLock`]
@@ -674,7 +613,7 @@ mod tests {
         // generous capacity so it never accidentally gates these tests —
         // we are exercising the resolution limiter, not capture throttling.
         let prev_throttle = global_capture_throttle().capacity();
-        global_capture_throttle().set_capacity(DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_WHEN_ENABLED);
+        global_capture_throttle().set_capacity(10_000);
         global_capture_throttle().reset_for_tests();
         let r = f();
         global_resolution_limiter().set_capacity(prev);
@@ -791,9 +730,7 @@ mod tests {
             // Open the limiter wide so a subsequent render *would* succeed
             // if `None` were not cached. With per-instance caching the
             // first outcome wins and we still see None.
-            global_resolution_limiter().set_capacity(
-                crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED,
-            );
+            global_resolution_limiter().set_capacity(1_000);
             global_resolution_limiter().reset_for_tests();
             assert!(
                 bt.rendered().is_none(),

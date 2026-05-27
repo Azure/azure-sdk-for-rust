@@ -829,28 +829,41 @@ impl CosmosDriverRuntimeBuilder {
         // `RUST_BACKTRACE`-keyed default (off when unset, safe defaults
         // when set). Explicit values (including `0`) always win and may
         // be used to fully disable capture.
-        let resolutions_default = if crate::error::backtrace::rust_backtrace_enabled() {
-            crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED
+        //
+        // Defaults live here next to the env-var names and the parse
+        // call sites (matching the connection-pool / cosmos-driver
+        // convention); the limiter implementation lives in
+        // `crate::error::backtrace` and is intentionally agnostic to
+        // these specific numbers.
+        const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED: u32 = 5;
+        const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_DISABLED: u32 = 0;
+        const DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_WHEN_ENABLED: u32 = 10_000;
+        const DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_DISABLED: u32 = 0;
+
+        let rust_backtrace_on = crate::error::backtrace::rust_backtrace_enabled();
+
+        let resolutions_default = if rust_backtrace_on {
+            DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED
         } else {
-            crate::error::backtrace::DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_DISABLED
+            DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_DISABLED
         };
         let backtrace_capacity = parse_u32_from_env(
             self.max_error_backtrace_resolutions_per_second,
-            crate::error::backtrace::BACKTRACE_RESOLUTIONS_PER_SECOND_ENV,
+            "AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND",
             resolutions_default,
             0,
             u32::MAX,
         )?;
         crate::error::backtrace::global_resolution_limiter().set_capacity(backtrace_capacity);
 
-        let captures_default = if crate::error::backtrace::rust_backtrace_enabled() {
-            crate::error::backtrace::DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_WHEN_ENABLED
+        let captures_default = if rust_backtrace_on {
+            DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_WHEN_ENABLED
         } else {
-            crate::error::backtrace::DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_DISABLED
+            DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_DISABLED
         };
         let backtrace_capture_capacity = parse_u32_from_env(
             self.max_error_backtrace_captures_per_second,
-            crate::error::backtrace::BACKTRACE_CAPTURES_PER_SECOND_ENV,
+            "AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND",
             captures_default,
             0,
             u32::MAX,
