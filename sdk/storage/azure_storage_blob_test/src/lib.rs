@@ -12,6 +12,7 @@ use std::{
 
 use async_trait::async_trait;
 use azure_core::{
+    credentials::TokenCredential,
     error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
@@ -21,6 +22,7 @@ use azure_core::{
     Bytes, Result,
 };
 use azure_core_test::Recording;
+use azure_identity::ManagedIdentityCredential;
 use azure_storage_blob::{
     models::{
         BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
@@ -122,6 +124,24 @@ pub fn recorded_test_setup(
         "https://{}.blob.core.windows.net/",
         recording.var(account_name_var, None).as_str()
     )
+}
+
+/// Returns a credential suitable for storage operations.
+///
+/// If the environment variable `AZURE_STORAGE_USE_MANAGED_IDENTITY` is set to `"true"`,
+/// returns a [`ManagedIdentityCredential`]. Otherwise, falls back to the recording's
+/// test credential via [`Recording::credential`].
+pub fn get_test_credential(recording: &Recording) -> Arc<dyn TokenCredential> {
+    let use_managed_identity = recording
+        .var_opt("AZURE_STORAGE_USE_MANAGED_IDENTITY", None)
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+
+    if use_managed_identity {
+        ManagedIdentityCredential::new(None).expect("failed to create ManagedIdentityCredential")
+    } else {
+        recording.credential()
+    }
 }
 
 /// Takes in a Recording instance and returns a randomized blob name with prefix "blob" of length 16.
