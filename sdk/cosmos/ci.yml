@@ -54,10 +54,15 @@ extends:
         Path: sdk/cosmos/live-platform-matrix.json
         Selection: sparse
         GenerateVMJobs: true
-    # Non-blocking vnext (Linux) emulator stage. Definition lives in
-    # sdk/cosmos/eng/cosmos-vnext-stage.yml; see that file for the
-    # dependsOn: [] + Skip.VnextEmulator non-blocking contract. Runs on every
-    # PR and main in both public and internal projects; failures do not
-    # block Release because Release's DependsOn list excludes it.
-    AdditionalStages:
-      - template: /sdk/cosmos/eng/cosmos-vnext-stage.yml
+    # Non-blocking vnext (Linux) emulator coverage. Adds a single extra job to
+    # the Build stage's matrix that runs the cosmos integration test suite
+    # against the local vnext Cosmos emulator container. The matrix entry
+    # carries `ContinueOnError: "true"` so failures here surface as
+    # "succeeded with issues" rather than blocking Release. Container
+    # lifecycle is owned by sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1
+    # (started when AZURE_COSMOS_EMULATOR_FLAVOR=vnext is set on the leg).
+    AdditionalMatrixConfigs:
+      - Name: Cosmos_vnext_emulator
+        Path: sdk/cosmos/vnext-emulator-matrix.json
+        Selection: all
+        GenerateVMJobs: true
