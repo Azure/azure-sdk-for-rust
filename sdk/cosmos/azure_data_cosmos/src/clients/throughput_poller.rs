@@ -176,11 +176,13 @@ impl IntoFuture for ThroughputPoller {
                 last_response = Some(result?);
             }
             last_response.map(ResourceResponse::new).ok_or_else(|| {
-                // Service contract violation: the poller stream ended
-                // without yielding any response. Map to 503 with the
-                // transport-generated sub-status.
+                // The poller's underlying stream ended without yielding
+                // any response. Surface as 408 with a dedicated
+                // sub-status: throughput replace has no service SLA on
+                // completion time, so a timeout-like condition is the
+                // most honest mapping (vs. a misleading 503).
                 crate::CosmosError::builder()
-                    .with_status(crate::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_POLLER_INCOMPLETE)
                     .with_message("throughput poller stream ended without yielding a response")
                     .build()
             })

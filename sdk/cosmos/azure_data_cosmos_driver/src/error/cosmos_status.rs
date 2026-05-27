@@ -512,6 +512,7 @@ impl SubStatusCode {
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
             20303 => Some("ServiceReturnedOfferWithoutId"),
+            20304 => Some("ClientThroughputPollerIncomplete"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1430,6 +1431,15 @@ impl SubStatusCode {
     /// (20303). A broken server invariant — the SDK cannot issue a
     /// follow-up replace without the offer id. Paired with HTTP 500.
     pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: SubStatusCode = SubStatusCode(20303);
+
+    /// The async throughput-replace poller's underlying stream ended
+    /// without yielding any response (20304). Paired with HTTP 408
+    /// because the throughput-replace operation has no service SLA on
+    /// completion time — the most informative thing the SDK can
+    /// surface is "the operation didn't complete in the time you were
+    /// willing to wait", which `408 RequestTimeout` already conveys to
+    /// callers.
+    pub const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: SubStatusCode = SubStatusCode(20304);
 }
 
 impl Default for SubStatusCode {
@@ -2121,6 +2131,15 @@ impl CosmosStatus {
     pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::SERVICE_RETURNED_OFFER_WITHOUT_ID),
+    };
+
+    /// 408 / 20304 — the async throughput-replace poller's underlying
+    /// stream ended without yielding any response. Throughput replace
+    /// has no service SLA on completion time, so the SDK surfaces this
+    /// as a timeout-like condition rather than a transport failure.
+    pub const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::RequestTimeout,
+        sub_status: Some(SubStatusCode::CLIENT_THROUGHPUT_POLLER_INCOMPLETE),
     };
 }
 
