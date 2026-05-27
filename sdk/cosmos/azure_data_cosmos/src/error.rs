@@ -61,26 +61,8 @@ impl CosmosError {
     /// Returns the diagnostics context for the failed operation. For
     /// wire-response errors this is `Some(response.diagnostics())`; for
     /// synthetic errors it is whatever the pipeline attached, or `None`.
-    pub fn diagnostics(&self) -> Option<&Arc<DiagnosticsContext>> {
-        self.0.diagnostics()
-    }
-
-    /// Returns the stack backtrace captured at error construction time,
-    /// rendered as a human-readable string, when capture was enabled and
-    /// the production-safety gates allowed it.
-    ///
-    /// Backtrace capture is **opt-in**: by default it is off and this
-    /// method returns `None` for every error. Operators enable it either
-    /// by setting the stdlib `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE`
-    /// environment variable (safe defaults: 10 000 captures / second,
-    /// 5 fresh symbol resolutions / second) or by setting the
-    /// Cosmos-specific `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` /
-    /// `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` environment
-    /// variables (which override the stdlib defaults; `0` force-disables).
-    /// For programmatic control, see
-    /// [`azure_data_cosmos_driver::error::set_backtrace_options`].
-    pub fn backtrace(&self) -> Option<&Arc<str>> {
-        self.0.backtrace()
+    pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>> {
+        self.0.diagnostics().cloned()
     }
 }
 

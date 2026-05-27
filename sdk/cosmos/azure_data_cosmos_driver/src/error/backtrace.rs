@@ -118,7 +118,7 @@ impl Default for BacktraceOptions {
     }
 }
 
-/// Sets the process-wide backtrace options programmatically, **trumping**
+/// Sets the process-wide backtrace options programmatically, **overriding**
 /// the `AZURE_COSMOS_BACKTRACE_*` environment variables and the
 /// `RUST_BACKTRACE` / `RUST_LIB_BACKTRACE`-keyed default.
 ///
