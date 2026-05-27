@@ -216,18 +216,5 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 | PPAF | Yes (single-master) | Yes | Yes | **Yes** |
 | PPCB | Yes | Yes | Yes | **Yes** |
 
-The Rust driver is intentionally more aggressive about retrying writes. This is a deliberate design choice for maximum availability, leveraging Cosmos DB's conflict detection as the safety net for the rare case of duplicate processing.
+The Rust driver is intentionally more aggressive about retrying writes. This is a deliberate design choice for maximum availability, leveraging Cosmos DB's conflict detection and the use of Etags as the safety net for duplicates and idempotency concerns.
 
-## Implementation Status
-
-> **Note**: The current implementation does not fully match this specification. The following gaps exist and should be addressed:
-
-| Gap | Current Behavior | Target Behavior |
-|-----|-----------------|-----------------|
-| 503 non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
-| 500 non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
-| 408 non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
-| 502/504 non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
-| Transport sent + non-idempotent writes (no PPAF) | Abort | Retry (cross-region failover) |
-
-All of these gaps share the same root cause: the retry evaluation currently checks `is_idempotent() || ppaf_write_retry_allowed` before allowing write retries. The fix is to remove the idempotency gate entirely for retryable status codes, making the retry unconditional for all writes.
