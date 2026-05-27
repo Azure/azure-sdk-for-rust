@@ -576,18 +576,17 @@ impl LocationStateStore {
     /// the primary in
     /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
     ///
-    /// Per `docs/HEDGING_SPEC.md` §9.5: increments a per-`(partition,
-    /// primary_region)` counter atomically via [`Self::apply_partition`]. When
-    /// the counter reaches
+    /// Increments a per-`(partition, primary_region)` counter atomically
+    /// via [`Self::apply_partition`]. When the counter reaches
     /// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`] the
     /// partition is tripped by installing an `Unhealthy` entry in
-    /// `circuit_breaker_overrides` (same shape PPCB uses for hard failures),
-    /// so subsequent requests route away from the degraded primary region.
-    /// The trip is recovered by the existing PPCB failback sweep.
+    /// `circuit_breaker_overrides` (the same shape PPCB uses for hard
+    /// failures), so subsequent requests route away from the degraded
+    /// primary region. The trip is recovered by the existing PPCB
+    /// failback sweep.
     ///
-    /// `primary_region` is `None` for default-endpoint accounts whose snapshot
-    /// does not carry a named region (matches the spec invariant that the
-    /// counter key is `(partition, primary_region)`).
+    /// `primary_region` is `None` for default-endpoint accounts whose
+    /// snapshot does not carry a named region.
     pub fn record_consecutive_hedge_win(
         &self,
         partition: &PartitionKeyRangeId,
@@ -596,7 +595,7 @@ impl LocationStateStore {
         tracing::debug!(
             partition = %partition,
             primary_region = ?primary_region.map(Region::as_str),
-            "cosmos.hedge.recorded_alternate_win",
+            "recorded alternate-region hedge win",
         );
         let account = self.account_snapshot();
         self.apply_partition(|current| {
@@ -607,12 +606,12 @@ impl LocationStateStore {
     /// Records that the primary attempt won in
     /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
     ///
-    /// Per `docs/HEDGING_SPEC.md` §9.5 invariant #2: clears the
-    /// per-`(partition, primary_region)` consecutive-hedge-win counter
-    /// atomically via [`Self::apply_partition`] so transient cross-region
-    /// latency spikes do not accumulate into a trip over arbitrarily long
-    /// timescales. Does not touch `circuit_breaker_overrides` — an existing
-    /// trip recovers via the failback sweep, not via primary wins.
+    /// Clears the per-`(partition, primary_region)` consecutive-hedge-win
+    /// counter atomically via [`Self::apply_partition`] so transient
+    /// cross-region latency spikes do not accumulate into a trip over
+    /// arbitrarily long timescales. Does not touch
+    /// `circuit_breaker_overrides` — an existing trip recovers via the
+    /// failback sweep, not via primary wins.
     pub fn record_primary_win(
         &self,
         partition: &PartitionKeyRangeId,
@@ -621,7 +620,7 @@ impl LocationStateStore {
         tracing::debug!(
             partition = %partition,
             primary_region = ?primary_region.map(Region::as_str),
-            "cosmos.hedge.recorded_primary_win",
+            "recorded primary-region hedge win",
         );
         self.apply_partition(|current| {
             record_hedge_primary_win(current, partition, primary_region)

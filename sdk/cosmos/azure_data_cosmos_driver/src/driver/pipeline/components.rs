@@ -141,20 +141,15 @@ pub(crate) struct OperationRetryState {
     /// Cross-hedge shared hub-region-processing-only latch.
     ///
     /// `Some(_)` only when this `OperationRetryState` is running inside
-    /// the [`execute_hedged`] cross-region race past the threshold
-    /// (spec `docs/HEDGING_SPEC.md` §9.6). `None` on the non-hedged
-    /// pipeline and on the zero-overhead happy path where the primary
-    /// returns before the threshold elapses, so the §6.5 #3
-    /// no-Arc-allocation invariant and PR #4389's allocator footprint
-    /// are both preserved.
+    /// the [`execute_hedged`] cross-region race past the threshold.
+    /// `None` on the non-hedged pipeline and on the zero-overhead happy
+    /// path where the primary returns before the threshold elapses, so
+    /// the no-Arc-allocation invariant is preserved.
     ///
-    /// Set with `Release` ordering by `build_session_retry_state` at
-    /// the same point where it flips the per-state `hub_region_processing_only`
+    /// Set with `Release` ordering by `build_session_retry_state` at the
+    /// same point where it flips the per-state `hub_region_processing_only`
     /// latch; read with `Acquire` ordering by `apply_hub_region_header`
-    /// (OR'd against the per-state latch). Mirrors .NET v3's
-    /// `CrossRegionAvailabilityContext` injected into
-    /// `RequestMessage.Properties` before the hedge fan-out
-    /// ([azure-cosmos-dotnet-v3#5815](https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5815)).
+    /// (OR'd against the per-state latch).
     pub shared_hub_region_latch: Option<Arc<AtomicBool>>,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
@@ -599,37 +594,22 @@ pub(crate) enum OperationAction {
     SessionRetry { new_state: OperationRetryState },
     /// Race the primary attempt against a single secondary cross-region hedge.
     ///
-    /// Emitted by `evaluate_transport_result` per `docs/HEDGING_SPEC.md`
-    /// §6.1 when:
+    /// Emitted in two places:
     ///
-    /// 1. The per-attempt result was *transient* (would otherwise produce
-    ///    `FailoverRetry`/`SessionRetry`).
-    /// 2. `should_hedge` (§5.1) is `true` and an alternate read endpoint
-    ///    can be pinned.
-    /// 3. A `HedgingStrategy` resolved via §11.3.1.
+    /// * On the **first** transport attempt, when the eligibility check
+    ///   (`should_hedge` + threshold strategy + ≥ 2 preferred read
+    ///   endpoints) holds. The primary is launched immediately and races
+    ///   the threshold timer; if it elapses, the secondary is spawned.
+    /// * On a **retry upgrade**, when `evaluate_transport_result` would
+    ///   otherwise return `FailoverRetry` / `SessionRetry` and the
+    ///   operation is still hedge-eligible.
     ///
-    /// STAGE 7 of the operation pipeline dispatches this to
-    /// `execute_hedged()`, which races a fresh primary attempt against the
-    /// `secondary_routing` after `threshold` elapses. Both
-    /// `secondary_excluded_regions` (the per-hedge `ExcludeRegions` set
-    /// computed by `build_secondary_excluded_regions`) and
-    /// `strategy_config` (snapshot for the winning response's
-    /// `HedgeDiagnostics`, §10.1) ride along.
-    ///
-    /// **Wired in Part 4b** — the evaluator and `execute_hedged()` now
-    /// produce and consume this variant. The fields are read by the
-    /// STAGE 7 hedge arm in `operation_pipeline.rs::execute_operation_pipeline`
-    /// to construct the race; `secondary_excluded_regions` is reserved for
-    /// future in-hedge retry layers (spec §8.4) and is not consumed yet.
+    /// The pipeline dispatches this variant to `execute_hedged()`, which
+    /// races the primary against the `secondary_routing` after
+    /// `threshold` elapses. `strategy_config` rides along as the snapshot
+    /// for the winning response's `HedgeDiagnostics`.
     Hedge {
         secondary_routing: RoutingDecision,
-        /// Reserved for the in-hedge retry layer (spec §8.4) that will
-        /// pin the alternate-region attempt against any region drift.
-        /// Not consumed yet — Part 4b uses `secondary_routing` directly
-        /// because each hedge fires a single transport attempt with no
-        /// operation-level retry on top.
-        #[allow(dead_code)]
-        secondary_excluded_regions: Vec<Region>,
         threshold: HedgeThreshold,
         strategy_config: HedgingStrategyConfig,
     },

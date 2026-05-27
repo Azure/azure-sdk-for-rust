@@ -3,22 +3,9 @@
 
 //! Pure, side-effect-free helpers that govern cross-region hedging.
 //!
-//! See [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md):
-//!
-//! - §5.1 — [`should_hedge`] decision matrix.
-//! - §5.2 — default-on activation and the
-//!   `min(1000ms, request_timeout / 2)` driver default threshold.
-//! - §6.3 — [`build_secondary_excluded_regions`] alternate-region pinning.
-//! - §7.1 — [`is_final_result`] response-classification predicate.
-//! - §11.3.1 — [`resolve_availability_strategy`] precedence chain.
-//!
-//! These functions are consumed by `evaluate_transport_result`
-//! (Transport Pipeline Spec §3.4) when it produces
-//! `OperationAction::Hedge { secondary_routing }` and by the
-//! `execute_hedged()` race loop. Both call sites land in Part 4 of
-//! `docs/HEDGING_IMPLEMENTATION_PLAN.md`; once Part 4b wired the
-//! evaluator + STAGE 7 dispatch the module-level `dead_code` allow
-//! was removed.
+//! These helpers are consumed by `evaluate_transport_result` when it
+//! produces `OperationAction::Hedge { secondary_routing }` and by the
+//! `execute_hedged()` race loop.
 
 use std::time::Duration;
 
@@ -40,27 +27,27 @@ use crate::{
 /// Default hedge threshold cap used by [`resolve_availability_strategy`]
 /// when no operation- / account- / env-level strategy is configured.
 ///
-/// Per spec §5.2 the driver-default threshold is
-/// `min(1000ms, request_timeout / 2)`; this constant is the upper bound.
+/// The driver-default threshold is `min(1000ms, request_timeout / 2)`;
+/// this constant is the upper bound.
 const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
 
-/// Phase 1 allowed `ResourceType` set per spec §5.1 footnote.
+/// Resource types eligible for cross-region hedging in the current phase.
 ///
 /// Subsequent phases widen this single constant — no other change to
 /// [`should_hedge`] is required.
-const PHASE_ONE_RESOURCE_TYPES: &[ResourceType] = &[ResourceType::Document];
+const HEDGEABLE_RESOURCE_TYPES: &[ResourceType] = &[ResourceType::Document];
 
-/// Phase 1 allowed `OperationType` set per spec §5.1 footnote.
+/// Operation types eligible for cross-region hedging in the current phase.
 ///
-/// Phase 2 will append feed-style operations
+/// Future phases will append feed-style operations
 /// (`Query` / `ReadFeed` / `QueryPlan`) and metadata reads.
-const PHASE_ONE_OPERATION_TYPES: &[OperationType] = &[OperationType::Read];
+const HEDGEABLE_OPERATION_TYPES: &[OperationType] = &[OperationType::Read];
 
-/// Returns `true` when the status is a **final** (non-transient) outcome
-/// per spec §7.1: any 1xx/2xx/3xx, the explicitly non-transient client
-/// errors (`400`, `401`, `405`, `409`, `412`, `413`), or `404` with no
+/// Returns `true` when the status is a **final** (non-retriable) outcome:
+/// any 1xx/2xx/3xx, the explicitly non-retriable client errors
+/// (`400`, `401`, `405`, `409`, `412`, `413`), or `404` with no
 /// sub-status. Everything else — including `404/1002`, `408`, `429`,
-/// `503`, and `403` regardless of sub-status — is treated as transient
+/// `503`, and `403` regardless of sub-status — is treated as retriable
 /// so that the racing hedge gets a chance to win.
 pub(crate) fn is_final_result(status: &CosmosStatus) -> bool {
     let code: u16 = status.status_code().into();
@@ -72,55 +59,48 @@ pub(crate) fn is_final_result(status: &CosmosStatus) -> bool {
     matches!(code, 400 | 401 | 405 | 409 | 412 | 413) || (code == 404 && sub == 0)
 }
 
-/// Returns `true` when the operation is eligible for cross-region
-/// hedging per spec §5.1.
+/// Returns `true` when the operation is eligible for cross-region hedging.
 ///
 /// `strategy` is the resolved strategy from
-/// [`resolve_availability_strategy`]. `None` represents either an
-/// explicit `AvailabilityStrategy::Disabled` at any layer or the
+/// [`resolve_availability_strategy`]. `None` represents either an explicit
+/// `AvailabilityStrategy::Disabled` at any layer or the
 /// `AZURE_COSMOS_HEDGING_DISABLED=true` env-var kill switch — both
-/// short-circuit to `false` (Row 1).
+/// short-circuit to `false`.
 ///
-/// `excluded_regions` is the post-resolution `ExcludeRegions` set from
-/// the operation's options view; the applicable preferred-region count
-/// is computed against the post-filter list (Row 5).
+/// `excluded_regions` is the post-resolution `ExcludeRegions` set from the
+/// operation's options view; the applicable preferred-region count is
+/// computed against the post-filter list.
 pub(crate) fn should_hedge(
     strategy: Option<&HedgingStrategy>,
     operation: &CosmosOperation,
     account_state: &AccountEndpointState,
     excluded_regions: &[Region],
 ) -> bool {
-    // Row 1 — strategy resolved?
     if strategy.is_none() {
         return false;
     }
 
-    // Row 2 — non-empty preferred-region list?
     if account_state.preferred_read_endpoints.is_empty() {
         return false;
     }
 
-    // Row 3 — phase-allowed ResourceType?
-    if !PHASE_ONE_RESOURCE_TYPES.contains(&operation.resource_type()) {
+    if !HEDGEABLE_RESOURCE_TYPES.contains(&operation.resource_type()) {
         return false;
     }
 
-    // Row 4 — writes are never hedged. Phase 1 also restricts
-    // OperationType to `Read`, which is a superset of "not a write",
-    // but keeping the explicit `is_read_only()` guard documents the
-    // intent and protects against future phase widenings that add
-    // non-read OperationTypes (e.g. feed reads) without revisiting
-    // this predicate.
+    // Writes are never hedged. The phase also restricts OperationType to
+    // `Read`, which is a superset of "not a write", but the explicit
+    // `is_read_only()` guard documents the intent and protects against
+    // future phase widenings that add non-read OperationTypes (e.g. feed
+    // reads) without revisiting this predicate.
     let op = operation.operation_type();
     if !op.is_read_only() {
         return false;
     }
-    if !PHASE_ONE_OPERATION_TYPES.contains(&op) {
+    if !HEDGEABLE_OPERATION_TYPES.contains(&op) {
         return false;
     }
 
-    // Row 5 — ≥ 2 applicable preferred read endpoints after
-    // ExcludeRegions filtering.
     let applicable = account_state
         .preferred_read_endpoints
         .iter()
@@ -133,8 +113,7 @@ pub(crate) fn should_hedge(
     applicable >= 2
 }
 
-/// Resolves the effective [`HedgingStrategy`] for a single operation per
-/// spec §11.3.1.
+/// Resolves the effective [`HedgingStrategy`] for a single operation.
 ///
 /// Priority order (highest first):
 ///
@@ -144,12 +123,12 @@ pub(crate) fn should_hedge(
 ///    (short-circuits to `None`).
 /// 3. `AZURE_COSMOS_HEDGING_THRESHOLD_MS` env var (threshold override,
 ///    still wrapped in the driver-default `HedgingStrategy`).
-/// 4. Driver default — `min(1000ms, request_timeout / 2)` per §5.2.
+/// 4. Driver default — `min(1000ms, request_timeout / 2)`.
 ///
 /// Returns `None` only when an explicit `AvailabilityStrategy::Disabled`
 /// at layers 1–2 turns hedging off; otherwise always returns `Some(_)`.
-/// The "single-region account / insufficient regions" case (priority 5)
-/// is enforced separately in [`should_hedge`].
+/// The "single-region account / insufficient regions" case is enforced
+/// separately in [`should_hedge`].
 pub(crate) fn resolve_availability_strategy(
     view: &OperationOptionsView<'_>,
     request_timeout: Option<Duration>,
@@ -183,13 +162,12 @@ pub(crate) fn resolve_availability_strategy_with(
         }
     }
 
-    // Priority 4 — driver default per §5.2.
+    // Priority 4 — driver default.
     Some(HedgingStrategy::new(default_threshold(request_timeout)))
 }
 
-/// Computes the §5.2 driver-default threshold:
-/// `min(1000ms, request_timeout / 2)`, falling back to `1000ms` when
-/// `request_timeout` is `None` or zero.
+/// Computes the driver-default threshold: `min(1000ms, request_timeout / 2)`,
+/// falling back to `1000ms` when `request_timeout` is `None` or zero.
 fn default_threshold(request_timeout: Option<Duration>) -> HedgeThreshold {
     let candidate = match request_timeout {
         Some(t) if !t.is_zero() => (t / 2).min(DEFAULT_THRESHOLD_CAP),
@@ -206,55 +184,8 @@ fn default_threshold(request_timeout: Option<Duration>) -> HedgeThreshold {
     })
 }
 
-/// Computes the `ExcludeRegions` set for the alternate hedge per spec §6.3.
-///
-/// The returned vector is `user_excluded ∪ (all_regions \ {all_regions[secondary_index]})` —
-/// i.e. the alternate hedge is pinned to `all_regions[secondary_index]` by
-/// excluding *every other* region (the primary and any tertiary
-/// fallbacks) on top of the user's own exclusions. Order matches insertion
-/// order, with `user_excluded` first.
-///
-/// `secondary_index` defaults to `1` in normal flow (second preferred
-/// region), but is parameterized so callers can pin to any specific
-/// index. If `secondary_index` is out of range, no region matches the
-/// pin and every region in `all_regions` is added on top of
-/// `user_excluded`, producing an unroutable hedge that the caller
-/// surfaces as a transient "all eligible regions excluded" result per
-/// spec §14.1.
-pub(crate) fn build_secondary_excluded_regions(
-    user_excluded: &[Region],
-    all_regions: &[Region],
-    secondary_index: usize,
-) -> Vec<Region> {
-    let mut excluded: Vec<Region> = user_excluded.to_vec();
-    for (i, r) in all_regions.iter().enumerate() {
-        if i == secondary_index {
-            continue;
-        }
-        if !excluded.contains(r) {
-            excluded.push(r.clone());
-        }
-    }
-    excluded
-}
-
 /// Outcome of [`evaluate_hedge_eligibility`] — everything the pipeline
 /// needs to dispatch [`OperationAction::Hedge`] for a single attempt.
-///
-/// Returned only when all five gates from spec §6.1 hold:
-///
-/// 1. A [`HedgingStrategy`] resolved via §11.3.1.
-/// 2. [`should_hedge`] is `true` for the operation + post-exclusion
-///    applicable-region count.
-/// 3. The post-filter applicable list has ≥ 2 entries (i.e. an
-///    alternate region exists at all).
-/// 4. The alternate endpoint at index 1 of the applicable list resolves
-///    to a concrete [`CosmosEndpoint`] in `account_state`.
-///
-/// `secondary_excluded_regions` is the per-hedge `ExcludeRegions` set
-/// computed by [`build_secondary_excluded_regions`] (spec §6.3); the
-/// secondary attempt is pinned to the alternate region by excluding
-/// *every other* applicable region on top of the user's own exclusions.
 ///
 /// [`OperationAction::Hedge`]:
 /// crate::driver::pipeline::components::OperationAction::Hedge
@@ -262,27 +193,25 @@ pub(crate) fn build_secondary_excluded_regions(
 pub(crate) struct HedgeUpgrade {
     /// Routing decision for the alternate-region hedge.
     pub(crate) secondary_routing: RoutingDecision,
-    /// `ExcludeRegions` set to pin the hedge to its alternate region.
-    pub(crate) secondary_excluded_regions: Vec<Region>,
     /// The resolved hedge threshold (used to schedule the timer).
     pub(crate) threshold: HedgeThreshold,
-    /// Snapshot of the strategy config for `HedgeDiagnostics` (§10.1).
+    /// Snapshot of the strategy config for `HedgeDiagnostics`.
     pub(crate) strategy_config: HedgingStrategyConfig,
 }
 
 /// Evaluates whether the per-attempt transient outcome should be upgraded
-/// to a cross-region hedge per spec §6.1, returning the materialized
-/// [`HedgeUpgrade`] when all gates hold.
+/// to a cross-region hedge, returning the materialized [`HedgeUpgrade`]
+/// when all eligibility gates hold.
 ///
 /// `primary` is the routing decision for the just-completed attempt; it is
 /// used to honor the same gateway-version preference when constructing the
 /// secondary [`RoutingDecision`]. `request_timeout` is plumbed through to
-/// [`resolve_availability_strategy`] so the §5.2 driver default
+/// [`resolve_availability_strategy`] so the driver default
 /// (`min(1000ms, request_timeout / 2)`) can be computed.
 ///
 /// Returns `None` when hedging is disabled, the operation is ineligible,
-/// or no alternate region can be selected — in all cases the caller
-/// falls back to its non-hedged decision (typically `FailoverRetry`).
+/// or no alternate region can be selected — in all cases the caller falls
+/// back to its non-hedged decision (typically `FailoverRetry`).
 pub(crate) fn evaluate_hedge_eligibility(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
@@ -290,16 +219,13 @@ pub(crate) fn evaluate_hedge_eligibility(
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
 ) -> Option<HedgeUpgrade> {
-    // Gate 1 — strategy resolution (§11.3.1).
     let strategy = resolve_availability_strategy(options, request_timeout)?;
 
-    // Per-operation user `ExcludeRegions` (post-resolution view).
     let user_excluded: Vec<Region> = options
         .excluded_regions()
         .map(|r| r.0.clone())
         .unwrap_or_default();
 
-    // Gate 2 — should_hedge against post-exclusion applicable count.
     if !should_hedge(Some(&strategy), operation, account_state, &user_excluded) {
         return None;
     }
@@ -313,17 +239,12 @@ pub(crate) fn evaluate_hedge_eligibility(
         .filter(|r| !user_excluded.contains(r))
         .collect();
 
-    // Gate 3 — we need an alternate. `should_hedge` already enforced
-    // `applicable >= 2`, but re-check defensively to keep this function
-    // independently sound (the test seam may bypass `should_hedge`).
+    // Defensive re-check: `should_hedge` already enforced `applicable >= 2`,
+    // but the test seam may bypass `should_hedge`.
     if applicable_regions.len() < 2 {
         return None;
     }
 
-    // Gate 4 — resolve the alternate region back to its `CosmosEndpoint`.
-    // The applicable list is built from regional endpoints; the lookup
-    // must succeed unless the account_state mutated between filter and
-    // find (impossible — we hold `&AccountEndpointState`).
     let secondary_region = applicable_regions[1].clone();
     let secondary_ep = account_state
         .preferred_read_endpoints
@@ -346,12 +267,8 @@ pub(crate) fn evaluate_hedge_eligibility(
         endpoint: secondary_ep,
     };
 
-    let secondary_excluded_regions =
-        build_secondary_excluded_regions(&user_excluded, &applicable_regions, 1);
-
     Some(HedgeUpgrade {
         secondary_routing,
-        secondary_excluded_regions,
         threshold: strategy.threshold(),
         strategy_config: HedgingStrategyConfig::new(strategy.threshold()),
     })
@@ -588,52 +505,6 @@ mod tests {
         }
     }
 
-    // ───────────────────────── build_secondary_excluded_regions ─────────────────────────
-
-    #[test]
-    fn alternate_region_pin_excludes_primary() {
-        let regions = [Region::EAST_US, Region::WEST_US_2];
-        let excluded = build_secondary_excluded_regions(&[], &regions, 1);
-        assert_eq!(excluded, vec![Region::EAST_US]);
-    }
-
-    #[test]
-    fn alternate_region_pin_unions_user_excludes() {
-        // user_excluded = {X}, regions = [A, B, C], secondary = B → result = {X, A, C}.
-        let user_excluded = [Region::CENTRAL_US];
-        let regions = [Region::EAST_US, Region::WEST_US_2, Region::NORTH_EUROPE];
-        let excluded = build_secondary_excluded_regions(&user_excluded, &regions, 1);
-        assert_eq!(
-            excluded,
-            vec![Region::CENTRAL_US, Region::EAST_US, Region::NORTH_EUROPE]
-        );
-    }
-
-    #[test]
-    fn alternate_region_pin_deduplicates_user_overlap() {
-        // If a user-excluded region also appears in the all-regions list
-        // it is not added a second time.
-        let user_excluded = [Region::EAST_US];
-        let regions = [Region::EAST_US, Region::WEST_US_2, Region::CENTRAL_US];
-        let excluded = build_secondary_excluded_regions(&user_excluded, &regions, 1);
-        assert_eq!(excluded, vec![Region::EAST_US, Region::CENTRAL_US]);
-    }
-
-    #[test]
-    fn alternate_region_pin_out_of_range_excludes_all_regions() {
-        let user_excluded = [Region::WEST_EUROPE];
-        let regions = [Region::EAST_US, Region::WEST_US_2];
-        let excluded = build_secondary_excluded_regions(&user_excluded, &regions, 99);
-        // No `secondary_index` matches → every region is excluded on top
-        // of the user set. (Documents the degenerate fall-through; the
-        // hedge would be unroutable, which the caller surfaces as a
-        // transient "all eligible regions excluded" result per §14.1.)
-        assert_eq!(
-            excluded,
-            vec![Region::WEST_EUROPE, Region::EAST_US, Region::WEST_US_2]
-        );
-    }
-
     // ───────────────────────── resolve_availability_strategy ─────────────────────────
 
     fn empty_view<'a>(op: &'a OperationOptions) -> OperationOptionsView<'a> {
@@ -804,9 +675,6 @@ mod tests {
             upgrade.strategy_config,
             HedgingStrategyConfig::new(upgrade.threshold)
         );
-        // Per §6.3, the alternate is pinned by excluding every *other*
-        // applicable region (here, just the primary EAST_US).
-        assert_eq!(upgrade.secondary_excluded_regions, vec![Region::EAST_US]);
     }
 
     #[test]
@@ -886,11 +754,6 @@ mod tests {
         assert_eq!(
             upgrade.secondary_routing.transport_mode,
             TransportMode::Gateway
-        );
-        // Alternate region pinned: exclude primary + tertiary.
-        assert_eq!(
-            upgrade.secondary_excluded_regions,
-            vec![Region::EAST_US, Region::CENTRAL_US]
         );
     }
 

@@ -3,18 +3,15 @@
 
 //! Diagnostic types for cross-region hedging executions.
 //!
-//! See [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md) §10.1 for the
-//! full attachment contract. Briefly: when a hedging strategy was
-//! **resolved and active** for an operation (i.e. `should_hedge()` returned
-//! `true` and `execute_hedged()` was entered), the winning response carries
-//! a populated [`HedgeDiagnostics`]; otherwise it is `None`.
+//! When a hedging strategy is resolved and active for an operation, the
+//! winning response carries a populated [`HedgeDiagnostics`]; otherwise
+//! it is `None`.
 //!
-//! These types are pure data — they are constructed by `execute_hedged()`
-//! (in `operation_pipeline.rs`) and surfaced through
-//! `DiagnosticsContext::hedge_diagnostics` (§10.2). They contain no behavior
-//! and have no dependencies on the pipeline internals, which keeps them
-//! cheap to construct on the happy path and trivial to assert against in
-//! tests.
+//! These types are pure data — constructed by `execute_hedged()` (in
+//! `operation_pipeline.rs`) and surfaced through
+//! `DiagnosticsContext::hedge_diagnostics`. They contain no behavior and
+//! have no dependencies on the pipeline internals, which keeps them cheap
+//! to construct on the happy path and trivial to assert against in tests.
 
 use crate::options::{HedgeThreshold, Region};
 
@@ -23,8 +20,8 @@ use crate::options::{HedgeThreshold, Region};
 ///
 /// Captured once at the start of `execute_hedged()` and attached to the
 /// winning response's [`HedgeDiagnostics::strategy_config`]. Currently the
-/// only field is the threshold (per spec §4.1); future strategy fields
-/// (e.g. retry caps, fan-out limits) will be added here.
+/// only field is the threshold; future strategy fields (e.g. retry caps,
+/// fan-out limits) will be added here.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct HedgingStrategyConfig {
@@ -41,10 +38,10 @@ impl HedgingStrategyConfig {
 
 /// Final outcome classification of a hedging race.
 ///
-/// Disambiguates the six terminal states `execute_hedged` can reach so that
-/// downstream observability consumers (per spec §10.1) can compute accurate
-/// metrics — most importantly hedge win-rate, which **must not** count
-/// terminal-error states as alternate wins.
+/// Disambiguates the six terminal states `execute_hedged` can reach so
+/// downstream observability consumers can compute accurate metrics —
+/// most importantly hedge win-rate, which **must not** count terminal-
+/// error states as alternate wins.
 ///
 /// Always consult this field instead of inferring intent from
 /// [`HedgeDiagnostics::was_hedge`] alone: `was_hedge` is `true` only when
@@ -54,27 +51,28 @@ impl HedgingStrategyConfig {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum HedgeTerminalState {
-    /// The primary returned a `Final` outcome before the threshold timer
+    /// The primary returned a final response before the threshold timer
     /// fired; no alternate was ever spawned (zero-overhead happy path).
     PrimaryWonPreThreshold,
 
-    /// The deadline fired pre-threshold before any alternate was spawned.
-    /// The primary was harvested within `HARVEST_WINDOW` for diagnostics
-    /// but the operation surfaced `application_cancelled_error`.
+    /// The deadline fired before the threshold elapsed; no alternate was
+    /// spawned. The primary was harvested within `HARVEST_WINDOW` for
+    /// diagnostics but the operation surfaced a cancellation error.
     DeadlineExceededPreThreshold,
 
-    /// The primary returned a `Final` outcome after the threshold elapsed,
+    /// The primary returned a final response after the threshold elapsed,
     /// winning the race against the spawned alternate. The alternate's
     /// in-flight request was structurally cancelled.
     PrimaryWonAfterHedge,
 
-    /// The alternate returned a `Final` outcome and won the race against
+    /// The alternate returned a final response and won the race against
     /// the still-pending primary.
     AlternateWon,
 
-    /// Both legs returned a transient outcome. The race produced no winner;
-    /// the operation surfaced either `application_cancelled_error` (if the
-    /// deadline drove termination) or `transient_outcome_error`.
+    /// Both legs returned retriable failures (5xx / 429 / 408 / 410 /
+    /// 404-1002 / transport error / deadline). The race produced no winner;
+    /// the operation surfaced either a cancellation error (if the deadline
+    /// drove termination) or a synthetic both-transient error.
     #[non_exhaustive]
     BothTransient {
         /// `true` iff the operation-level deadline had elapsed when the
@@ -82,18 +80,17 @@ pub enum HedgeTerminalState {
         deadline_elapsed: bool,
     },
 
-    /// One leg returned a transient outcome and the operation-level
+    /// One leg returned a retriable failure and the operation-level
     /// deadline fired while waiting for the partner leg to complete.
-    /// The operation surfaced `application_cancelled_error`.
+    /// The operation surfaced a cancellation error.
     CancelledAwaitingPartner,
 }
 
 /// Diagnostic information about a hedging execution, attached to the
 /// winning response when a hedging strategy was active for the operation.
 ///
-/// See [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md) §10.1 for the
-/// full field semantics. The [`terminal_state`](Self::terminal_state) field
-/// is the authoritative classification of how the race ended; use it (not
+/// The [`terminal_state`](Self::terminal_state) field is the authoritative
+/// classification of how the race ended; use it (not
 /// [`was_hedge`](Self::was_hedge) alone) when computing observability
 /// metrics, especially hedge win-rate.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -105,10 +102,10 @@ pub struct HedgeDiagnostics {
     /// Regions that had requests launched (up to and including the winner
     /// or, for terminal-error states, both contacted legs).
     ///
-    /// With the single-alternate model (§6) this is either
-    /// `vec![primary]` (primary won before the threshold timer fired, or
-    /// the deadline fired pre-threshold) or `vec![primary, alternate]`
-    /// (the alternate hedge was spawned, regardless of outcome).
+    /// With the single-alternate model this is either `vec![primary]`
+    /// (primary won before the threshold timer fired, or the deadline
+    /// fired pre-threshold) or `vec![primary, alternate]` (the alternate
+    /// hedge was spawned, regardless of outcome).
     pub regions_contacted: Vec<Region>,
 
     /// The region whose response was returned to the caller.
@@ -142,9 +139,14 @@ pub struct HedgeDiagnostics {
 }
 
 impl HedgeDiagnostics {
+    /// Sentinel `Region` value used when a hedge leg ran against a
+    /// global-endpoint account whose routed endpoint surfaces no named
+    /// region. Downstream consumers can use this to distinguish "no
+    /// named region" from a real Azure region.
+    pub const UNKNOWN_REGION_SENTINEL: &'static str = "(unknown)";
+
     /// Constructs a [`HedgeDiagnostics`] for the *"primary won before the
-    /// threshold fired"* case (spec §10.1 attachment contract — zero-overhead
-    /// happy path).
+    /// threshold fired"* case — the zero-overhead happy path.
     ///
     /// Terminal state: [`HedgeTerminalState::PrimaryWonPreThreshold`].
     /// `regions_contacted = vec![primary_region]`,
@@ -163,13 +165,12 @@ impl HedgeDiagnostics {
     }
 
     /// Constructs a [`HedgeDiagnostics`] for the *"deadline fired pre-
-    /// threshold; primary harvested but no final response"* case (spec
-    /// §6.5 #7 / §14.2).
+    /// threshold; primary harvested but no final response"* case.
     ///
     /// Terminal state: [`HedgeTerminalState::DeadlineExceededPreThreshold`].
     /// `was_hedge = false`. `response_region` is set to the primary region
-    /// as a sentinel — the operation surfaces `application_cancelled_error`
-    /// so no response is actually returned to the caller.
+    /// as a sentinel — the operation surfaces a cancellation error so no
+    /// response is actually returned to the caller.
     pub fn primary_only_deadline_exceeded(
         strategy_config: HedgingStrategyConfig,
         primary_region: Region,
@@ -208,7 +209,7 @@ impl HedgeDiagnostics {
     }
 
     /// Constructs a [`HedgeDiagnostics`] for the *"alternate hedge won the
-    /// race"* case (spec §10.1).
+    /// race"* case.
     ///
     /// Terminal state: [`HedgeTerminalState::AlternateWon`]. This is the
     /// **only** terminal state for which `was_hedge = true`. Hedge win-rate
@@ -233,14 +234,13 @@ impl HedgeDiagnostics {
     }
 
     /// Constructs a [`HedgeDiagnostics`] for the *"both legs returned a
-    /// transient outcome"* case.
+    /// retriable failure"* case.
     ///
     /// Terminal state: [`HedgeTerminalState::BothTransient`] with
     /// `deadline_elapsed` carried through. `was_hedge = false` — no leg
     /// produced a final response. `response_region` is the primary region
-    /// as a sentinel; the operation surfaces either
-    /// `application_cancelled_error` (when `deadline_elapsed = true`) or
-    /// `transient_outcome_error`.
+    /// as a sentinel; the operation surfaces either a cancellation error
+    /// (when `deadline_elapsed = true`) or a synthetic both-transient error.
     pub fn both_transient(
         strategy_config: HedgingStrategyConfig,
         primary_region: Region,
@@ -258,13 +258,13 @@ impl HedgeDiagnostics {
     }
 
     /// Constructs a [`HedgeDiagnostics`] for the *"deadline fired while
-    /// awaiting the partner leg after the first leg returned transient"*
-    /// case (spec §6.5 #7).
+    /// awaiting the partner leg after the first leg returned a retriable
+    /// failure"* case.
     ///
     /// Terminal state: [`HedgeTerminalState::CancelledAwaitingPartner`].
     /// `was_hedge = false` — no leg produced a final response.
     /// `response_region` is the primary region as a sentinel; the operation
-    /// surfaces `application_cancelled_error`.
+    /// surfaces a cancellation error.
     pub fn cancelled_awaiting_partner(
         strategy_config: HedgingStrategyConfig,
         primary_region: Region,
@@ -423,8 +423,8 @@ mod tests {
 
     #[test]
     fn only_alternate_won_records_was_hedge_true() {
-        // Invariant per spec §10.1: was_hedge=true iff terminal_state ==
-        // AlternateWon. Hedge win-rate metrics depend on this.
+        // Invariant: was_hedge=true iff terminal_state == AlternateWon.
+        // Hedge win-rate metrics depend on this.
         let east = Region::EAST_US;
         let west = Region::WEST_US_2;
         assert!(HedgeDiagnostics::hedge_won(config(), east.clone(), west.clone()).was_hedge);
@@ -459,7 +459,7 @@ mod tests {
         );
     }
 
-    /// Spec D6 regression — §10.1 attachment contract.
+    /// Regression test for the global-endpoint attachment contract.
     ///
     /// `HedgeDiagnostics` is `Some(_)` iff `execute_hedged()` ran, even
     /// for global-endpoint accounts whose routed endpoint surfaces no

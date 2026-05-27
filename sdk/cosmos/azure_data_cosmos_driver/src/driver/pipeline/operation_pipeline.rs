@@ -231,13 +231,12 @@ pub(crate) async fn execute_operation_pipeline(
     // current variant that is out of spec scope).
     retry_state.is_dataplane = pipeline_type.is_data_plane();
 
-    // §5.2 — the hedge threshold is `min(1000ms, request_timeout / 2)`
-    // where `request_timeout` is the **configured** end-to-end latency
-    // budget, not the time remaining until the deadline. We compute the
+    // The hedge threshold is `min(1000ms, request_timeout / 2)` where
+    // `request_timeout` is the **configured** end-to-end latency budget,
+    // not the time remaining until the deadline. We compute the
     // configured timeout once here and pass it (not the remaining
     // duration) into `evaluate_hedge_eligibility` / `maybe_upgrade_to_hedge`
-    // below so the threshold stays stable across STAGE 5b retry-driven
-    // upgrades — spec D1.
+    // below so the threshold stays stable across retry-driven upgrades.
     let configured_request_timeout = options.end_to_end_latency_policy().map(|p| p.timeout());
     let deadline = configured_request_timeout.map(|t| Instant::now() + t);
 
@@ -263,14 +262,12 @@ pub(crate) async fn execute_operation_pipeline(
         tracing::debug!(routing_decision = %routing, "routing decision made");
 
         // ── STAGE 2b: Pre-attempt hedging dispatch ─────────────────────
-        // HEDGING_SPEC.md §6.1 — on the **first** attempt of a
-        // hedge-eligible operation, race the primary against the threshold
-        // timer from t=0 rather than running it to completion and
-        // post-classifying. This is the spec's timer-driven
-        // speculative-read model: a slow-but-eventually-successful primary
-        // still loses to a fast alternate, and a successful primary that
-        // finishes pre-threshold still gets `HedgeDiagnostics::primary_only`
-        // attached (§10.1 attachment contract).
+        // On the **first** attempt of a hedge-eligible operation, race
+        // the primary against the threshold timer from t=0 rather than
+        // running it to completion and post-classifying. A slow-but-
+        // eventually-successful primary still loses to a fast alternate,
+        // and a successful primary that finishes pre-threshold still gets
+        // `HedgeDiagnostics::primary_only` attached.
         //
         // Falls through to STAGE 3 (sequential execute-then-classify) on:
         //
@@ -315,7 +312,7 @@ pub(crate) async fn execute_operation_pipeline(
                     // per-state latch is `false`. The shared
                     // `Arc<AtomicBool>` is constructed inside
                     // `execute_hedged` only if the threshold elapses and a
-                    // secondary spawns, preserving the §6.5 #3
+                    // secondary spawns, preserving the zero-overhead
                     // zero-overhead happy path.
                     hub_region_processing_only_initial: retry_state.hub_region_processing_only,
                     // First attempt: no response has been captured yet, so
@@ -324,7 +321,7 @@ pub(crate) async fn execute_operation_pipeline(
                     partition_key_range_id: retry_state.partition_key_range_id.clone(),
                     hedge_outcome_recorder: location_state_store,
                 };
-                return execute_hedged(
+                match execute_hedged(
                     &attempt_ctx,
                     &routing,
                     &upgrade.secondary_routing,
@@ -332,7 +329,40 @@ pub(crate) async fn execute_operation_pipeline(
                     upgrade.strategy_config,
                     diagnostics,
                 )
-                .await;
+                .await
+                {
+                    HedgedRaceResult::Terminal(result) => return result,
+                    HedgedRaceResult::BothTransient {
+                        primary_region,
+                        secondary_region,
+                        last_error,
+                        diagnostics: returned_diagnostics,
+                    } => {
+                        // Both legs returned a retriable failure with
+                        // budget remaining — fall back into the failover
+                        // loop against the regions we have not yet tried.
+                        // `try_advance_after_both_transient` charges two
+                        // failover-retry slots and advances the
+                        // LocationIndex by two; if the budget is
+                        // exhausted, it returns the last error which we
+                        // surface verbatim.
+                        tracing::warn!(
+                            activity_id = %activity_id,
+                            primary_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
+                            secondary_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
+                            "hedge race: both transient on STAGE 2b; attempting failover fallback",
+                        );
+                        diagnostics = returned_diagnostics;
+                        try_advance_after_both_transient(
+                            &mut retry_state,
+                            &location,
+                            operation.is_read_only(),
+                            last_error,
+                        )?;
+                        enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                        continue;
+                    }
+                }
             }
         }
 
@@ -433,15 +463,15 @@ pub(crate) async fn execute_operation_pipeline(
             evaluate_transport_result(operation, &routing.endpoint, result, &retry_state);
 
         // ── STAGE 5b: Optional hedging upgrade ─────────────────────────
-        // HEDGING_SPEC.md §6.1: when the just-classified action would have
-        // advanced to a different region anyway (FailoverRetry / SessionRetry)
-        // and the operation is eligible for cross-region hedging (§5.1) with
-        // a strategy resolved (§11.3.1), replace it with `OperationAction::Hedge`
-        // so STAGE 7 races primary and secondary in parallel via
-        // `execute_hedged()`. If no upgrade applies the original action passes
-        // through unchanged — preserving today's sequential-failover semantics
-        // for non-hedgeable operations, single-region accounts, env-disabled
-        // hedging, and explicit `AvailabilityStrategy::Disabled`.
+        // When the just-classified action would have advanced to a
+        // different region anyway (FailoverRetry / SessionRetry) and the
+        // operation is eligible for cross-region hedging with a strategy
+        // resolved, replace it with `OperationAction::Hedge` so STAGE 7
+        // races primary and secondary in parallel via `execute_hedged()`.
+        // If no upgrade applies the original action passes through
+        // unchanged — preserving today's sequential-failover semantics
+        // for non-hedgeable operations, single-region accounts,
+        // env-disabled hedging, and explicit `AvailabilityStrategy::Disabled`.
         let action = maybe_upgrade_to_hedge(
             action,
             operation,
@@ -558,18 +588,14 @@ pub(crate) async fn execute_operation_pipeline(
             }
             OperationAction::Hedge {
                 secondary_routing,
-                secondary_excluded_regions: _,
                 threshold,
                 strategy_config,
             } => {
-                // HEDGING_SPEC.md §6.1 / §6.4 — race the primary attempt
-                // against a single cross-region secondary via
-                // `execute_hedged`. Terminal per the Part 4 design: the
-                // result of the race is the final operation result and
-                // we do not re-enter the operation loop, even when both
-                // sides fail transient (their errors are surfaced as the
-                // operation error). Per spec §6.5 #9 the `Hedge` variant
-                // is the only entry point to `execute_hedged`.
+                // Race the primary attempt against a single cross-region
+                // secondary via `execute_hedged`. Returns either a
+                // terminal result (return it directly) or a
+                // both-transient outcome that we fold back into the
+                // failover loop with the next region.
                 //
                 // We move `diagnostics` into `execute_hedged` because the
                 // function takes ownership of the parent builder to merge
@@ -597,7 +623,7 @@ pub(crate) async fn execute_operation_pipeline(
                     partition_key_range_id: retry_state.partition_key_range_id.clone(),
                     hedge_outcome_recorder: location_state_store,
                 };
-                return execute_hedged(
+                match execute_hedged(
                     &attempt_ctx,
                     &routing,
                     &secondary_routing,
@@ -605,7 +631,36 @@ pub(crate) async fn execute_operation_pipeline(
                     strategy_config,
                     diagnostics,
                 )
-                .await;
+                .await
+                {
+                    HedgedRaceResult::Terminal(result) => return result,
+                    HedgedRaceResult::BothTransient {
+                        primary_region,
+                        secondary_region,
+                        last_error,
+                        diagnostics: returned_diagnostics,
+                    } => {
+                        // Both legs returned a retriable failure with
+                        // budget remaining — fall back into the failover
+                        // loop (same shape as the STAGE 2b post-race
+                        // fallback earlier in this function).
+                        tracing::warn!(
+                            activity_id = %activity_id,
+                            primary_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
+                            secondary_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
+                            "hedge race: both transient on STAGE 7; attempting failover fallback",
+                        );
+                        diagnostics = returned_diagnostics;
+                        try_advance_after_both_transient(
+                            &mut retry_state,
+                            &location,
+                            operation.is_read_only(),
+                            last_error,
+                        )?;
+                        enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                        continue;
+                    }
+                }
             }
         }
     }
@@ -1205,18 +1260,10 @@ fn compute_execution_context(retry_state: &OperationRetryState) -> ExecutionCont
 /// production call site is the loop iteration after `build_transport_request`
 /// and before `apply_optional_request_headers`.
 ///
-/// HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §3.4. See
-/// `try_handle_read_session_not_available` for the latch trigger.
-///
-/// **Hedging coordination (future).** Per HEDGING_SPEC.md §9.5, the
-/// emission decision MUST OR in a `shared_hub_region_latch:
-/// Option<Arc<AtomicBool>>` field added to `OperationRetryState`, read
-/// with `Acquire` ordering. That field is set from `build_session_retry_state`
-/// the first time any hedge in the same `execute_with_hedging()`
-/// fan-out observes 1002 and is what makes the other (still-latch-clean)
-/// hedges immediately emit the header — the Rust counterpart of .NET v3's
-/// `CrossRegionAvailabilityContext.ShouldAddHubRegionProcessingOnlyHeader`
-/// from azure-cosmos-dotnet-v3#5815.
+/// See `try_handle_read_session_not_available` for the latch trigger.
+/// When a hedge race is in flight, the per-state latch is OR'd against
+/// the cross-hedge `shared_hub_region_latch` so all hedge legs emit the
+/// header once any one of them has observed a 1002.
 fn apply_hub_region_header(
     transport_request: &mut TransportRequest,
     retry_state: &OperationRetryState,
@@ -1233,8 +1280,7 @@ fn apply_hub_region_header(
 }
 
 /// Returns `true` when the `x-ms-cosmos-hub-region-processing-only`
-/// header should be emitted on a transport request, per spec
-/// HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / HEDGING_SPEC.md §9.6.
+/// header should be emitted on a transport request.
 ///
 /// Emission is the OR of the per-state latch (set by
 /// `build_session_retry_state` on the first 1002 of a single-master
@@ -1243,7 +1289,7 @@ fn apply_hub_region_header(
 /// is read with `Acquire` ordering, pairing with the `Release` store
 /// in `build_session_retry_state`. When the shared latch is absent
 /// (`None` — the non-hedged pipeline and the zero-overhead happy
-/// path), the rule collapses to the pre-PR-#5815 per-state behavior.
+/// path), the rule collapses to the per-state behavior.
 fn should_emit_hub_region_header(
     per_state_latched: bool,
     shared_latch: Option<&Arc<AtomicBool>>,
@@ -1253,23 +1299,20 @@ fn should_emit_hub_region_header(
 
 /// Returns `true` when [`execute_hedged`] should construct an
 /// `Arc<AtomicBool>` shared hub-region-processing-only latch for the
-/// hedge fan-out, per spec
-/// [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md) §9.6.3.
+/// hedge fan-out.
 ///
 /// The latch only matters when both:
 ///
-/// 1. **Data-plane scope** — metadata operations are scoped out per
-///    `HUB_REGION_PROCESSING_HEADER_SPEC.md` §1.5 / AC-8, mirroring the
-///    per-state latch's `is_dataplane` trigger gate.
+/// 1. **Data-plane scope** — metadata operations are scoped out,
+///    mirroring the per-state latch's `is_dataplane` trigger gate.
 /// 2. **Single-master account** — multi-master accounts never emit the
-///    `x-ms-cosmos-hub-region-processing-only` header
-///    (`HUB_REGION_PROCESSING_HEADER_SPEC.md` AC-4); a latch on a
+///    `x-ms-cosmos-hub-region-processing-only` header; a latch on a
 ///    multi-master hedge would be inert and would waste an `Arc`
 ///    allocation.
 ///
 /// Construction at the call site is further gated on the threshold
-/// having elapsed, so the §6.5 #3 zero-overhead happy path (primary
-/// wins pre-threshold) is preserved.
+/// having elapsed, so the zero-overhead happy path (primary wins
+/// pre-threshold) is preserved.
 fn should_build_shared_hub_region_latch(
     pipeline_type: PipelineType,
     can_use_multiple_write_locations: bool,
@@ -1442,60 +1485,34 @@ fn try_cleanup_probe_candidate(
 // ── Hedging dispatch (Part 4b) ────────────────────────────────────────
 //
 // `maybe_upgrade_to_hedge` + `AttemptContext` + `perform_single_attempt`
-// + `execute_hedged` together implement the cross-region hedging race
-// described in [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md)
-// §6.1–§6.5. They sit between the main `execute_operation_pipeline`
-// loop's STAGE 5 (evaluator) and STAGE 7 (dispatch):
+// + `execute_hedged` together implement the cross-region hedging race:
 //
 //  1. After `evaluate_transport_result` returns a per-attempt action,
-//     `maybe_upgrade_to_hedge` checks whether the action is a
-//     same-pipeline retry (`FailoverRetry` / `SessionRetry`) and the
-//     operation is hedge-eligible per `hedging_eligibility`. If so the
-//     action is rewritten to `OperationAction::Hedge`.
+//     `maybe_upgrade_to_hedge` rewrites a same-pipeline retry into
+//     `OperationAction::Hedge` when the operation is hedge-eligible.
 //  2. The STAGE 7 `Hedge` arm bundles the per-operation shared state
 //     into `AttemptContext` and calls `execute_hedged`.
 //  3. `execute_hedged` fires the primary attempt immediately, races it
 //     against the threshold timer (zero-overhead happy path when the
 //     primary completes first), then spawns the secondary and races
-//     primary vs secondary. The first **final** result wins (`§7.1`
-//     `is_final_result`); a transient on either side keeps the other
-//     side racing.
+//     primary vs secondary. The first final result wins; a retriable
+//     failure on either side keeps the other side racing.
 //
-// Diagnostics flow: each hedge attempt records into its own
-// sub-builder cloned from the parent via
-// `DiagnosticsContextBuilder::clone_for_hedge_attempt`. After the race
+// Diagnostics: each hedge attempt records into its own sub-builder
+// cloned from the parent via `clone_for_hedge_attempt`. After the race
 // resolves the surviving sub-builders are merged back into the parent
-// via `merge_hedge_attempt`, and the winning side's
-// [`HedgeDiagnostics`] is attached via `set_hedge_diagnostics`. Loser
-// futures dropped by the race never merge — their request_diagnostics
-// are intentionally discarded (matches spec §6.5 #6 "single writer to
-// diagnostics" for the per-operation summary).
+// via `merge_hedge_attempt`, and the winning side's `HedgeDiagnostics`
+// is attached via `set_hedge_diagnostics`. Loser futures dropped by the
+// race never merge — their request diagnostics are intentionally
+// discarded.
 
-/// Per-operation context shared across hedge attempts.
-///
-/// Bundles the read-only references that every per-attempt transport
-/// invocation needs so [`execute_hedged`] and [`perform_single_attempt`]
-/// can be called without 14-argument call sites. The `'a` lifetime is
-/// the outer `execute_operation_pipeline` invocation's lifetime — every
-/// field is borrowed from there.
 /// Sink for hedge-outcome feedback used by [`execute_hedged`].
 ///
-/// Per spec `docs/HEDGING_SPEC.md` §9.5 the outcome of every hedge
-/// race feeds back into PPCB so that repeated alternate-region wins on
-/// the same `(partition, primary_region)` pair eventually trip the
-/// primary partition to `Unhealthy`. The trait exists so that:
-///
-/// 1. The hedge race in [`execute_hedged`] depends on a minimal sink
-///    interface rather than on the full
-///    [`LocationStateStore`] surface, and
-/// 2. Unit tests can substitute a record-into-`Vec` fake recorder
-///    without needing the heavyweight
-///    [`LocationStateStore::new`] dependencies.
-///
-/// Production uses the [`LocationStateStore`] impl which today tracing-
-/// logs the events; the real counter / state-transition wiring is
-/// deferred to PPCB-owner co-design
-/// (`HEDGING_IMPLEMENTATION_PLAN.md` sub-plan 6c).
+/// The outcome of every hedge race feeds back into PPCB so that repeated
+/// alternate-region wins on the same `(partition, primary_region)` pair
+/// eventually trip the primary partition to `Unhealthy`. The trait exists
+/// so unit tests can substitute a record-into-`Vec` fake recorder without
+/// standing up a full [`LocationStateStore`].
 pub(crate) trait HedgeOutcomeRecorder: Send + Sync {
     /// Record an alternate-region win.
     fn record_consecutive_hedge_win(
@@ -1505,7 +1522,7 @@ pub(crate) trait HedgeOutcomeRecorder: Send + Sync {
     );
 
     /// Record a primary-region win (resets the consecutive-hedge-win
-    /// counter — spec §9.5 invariant #2).
+    /// counter).
     fn record_primary_win(&self, partition: &PartitionKeyRangeId, primary_region: Option<&Region>);
 }
 
@@ -1525,13 +1542,12 @@ impl HedgeOutcomeRecorder for LocationStateStore {
 
 /// Dispatches a hedge-race outcome to the [`HedgeOutcomeRecorder`].
 ///
-/// Spec §9.5 keys feedback by `(partition, primary_region)`. When the
+/// Feedback is keyed by `(partition, primary_region)`. When the
 /// operation never resolved a partition key range ID (first attempt
-/// against an unresolved item — see [`AttemptContext::partition_key_range_id`])
-/// the call is a no-op: there is no key to attribute feedback against.
-/// The same gating applies to both alternate-wins and primary-wins so
-/// the reset (invariant #2) only fires on pairs that could ever
-/// accumulate a count in the first place.
+/// against an unresolved item) the call is a no-op: there is no key to
+/// attribute feedback against. The same gating applies to both
+/// alternate-wins and primary-wins so the reset only fires on pairs
+/// that could ever accumulate a count in the first place.
 fn record_hedge_outcome(
     recorder: &dyn HedgeOutcomeRecorder,
     outcome: HedgeOutcome,
@@ -1563,10 +1579,7 @@ pub(crate) enum HedgeOutcome {
 /// Per-operation context shared across hedge attempts.
 ///
 /// Bundles the read-only references that every per-attempt transport
-/// invocation needs so [`execute_hedged`] and [`perform_single_attempt`]
-/// can be called without 14-argument call sites. The `'a` lifetime is
-/// the outer `execute_operation_pipeline` invocation's lifetime — every
-/// field is borrowed from there.
+/// invocation needs.
 struct AttemptContext<'a> {
     operation: &'a CosmosOperation,
     /// Per-operation header/body overrides applied by
@@ -1594,30 +1607,28 @@ struct AttemptContext<'a> {
     deadline: Option<Instant>,
     /// Whether this operation runs against a multi-master account.
     /// Used by [`execute_hedged`] to gate construction of the shared
-    /// hub-region-processing-only latch (spec `docs/HEDGING_SPEC.md`
-    /// §9.6.3 — the latch is only meaningful on single-master
-    /// data-plane operations).
+    /// hub-region-processing-only latch (the latch is only meaningful
+    /// on single-master data-plane operations).
     can_use_multiple_write_locations: bool,
     /// Current value of the per-state `hub_region_processing_only`
     /// latch at the moment hedging upgraded from `FailoverRetry` /
     /// `SessionRetry`. Used by [`execute_hedged`] to seed the shared
     /// `Arc<AtomicBool>` so a 1002 already discovered by the main
     /// pipeline before hedging fired carries forward into both hedge
-    /// attempts (spec `docs/HEDGING_SPEC.md` §9.6.2).
+    /// attempts.
     hub_region_processing_only_initial: bool,
     /// Identifies the physical partition serving this operation. Used by
     /// [`execute_hedged`] to attribute hedge-win signals back to the
-    /// `(partition, primary_region)` pair consumed by PPCB feedback
-    /// (spec `docs/HEDGING_SPEC.md` §9.5). `None` for operations
-    /// dispatched before any response captured the partition key range
-    /// ID (first attempt of an unresolved item) — in that case no
-    /// feedback can be attributed and the recorder calls become no-ops.
+    /// `(partition, primary_region)` pair consumed by PPCB feedback.
+    /// `None` for operations dispatched before any response captured the
+    /// partition key range ID (first attempt of an unresolved item) —
+    /// in that case no feedback can be attributed and the recorder calls
+    /// become no-ops.
     partition_key_range_id: Option<PartitionKeyRangeId>,
     /// Sink for hedge-outcome feedback. Always backed by the real
     /// `LocationStateStore` in production; the indirection is via the
     /// [`HedgeOutcomeRecorder`] trait so unit tests can substitute a
-    /// fake without standing up a full store (spec
-    /// `docs/HEDGING_SPEC.md` §9.5).
+    /// fake without standing up a full store.
     hedge_outcome_recorder: &'a dyn HedgeOutcomeRecorder,
 }
 
@@ -1626,11 +1637,11 @@ struct AttemptContext<'a> {
 /// running.
 ///
 /// `Final` carries the [`TransportResult`] that becomes the operation's
-/// outcome (success or final-classified HTTP error per spec §7.1).
-/// `Transient` indicates the attempt should be ignored in favor of the
-/// other side (5xx / 429 / 408 / 410 / 404-1002 / 403-with-sub / transport
-/// error / deadline) — when both sides land transient, the most recent
-/// transient is surfaced as the operation error.
+/// outcome (success or final-classified HTTP error). `Transient`
+/// indicates the attempt should be ignored in favor of the other side
+/// (5xx / 429 / 408 / 410 / 404-1002 / 403-with-sub / transport error /
+/// deadline) — when both sides land retriable, the most recent error
+/// is surfaced as the operation error.
 enum HedgeClass {
     Final(Box<TransportResult>),
     Transient,
@@ -1639,9 +1650,9 @@ enum HedgeClass {
 /// Pure classifier for a per-attempt result.
 ///
 /// `Err` (e.g. failure constructing the request) and any non-final
-/// TransportOutcome map to `Transient`. Per spec §7.1 a `Success` is
-/// always final; an `HttpError` is final iff `is_final_result` returns
-/// `true` for its status.
+/// TransportOutcome map to `Transient`. A `Success` is always final; an
+/// `HttpError` is final iff `is_final_result` returns `true` for its
+/// status.
 fn classify_hedge_result(result: azure_core::Result<TransportResult>) -> HedgeClass {
     match result {
         Ok(tr) => match &tr.outcome {
@@ -1694,6 +1705,17 @@ fn result_is_final(tr: &TransportResult) -> bool {
 /// error in `execute_hedged` (the race loop only calls this on `Final`
 /// classifications and on the "both transient" fallback where the diff
 /// between calling and not is one branch).
+///
+/// # Diagnostics-on-error
+///
+/// Operation-level errors don't propagate the diagnostics chain to the
+/// caller today — same pre-existing limitation as the non-hedged
+/// `Abort` arm. Before dropping the builder on each `Err`-producing
+/// path, emit a `tracing::warn!` event carrying `activity_id`,
+/// `request_count`, and (where available) the HTTP status so operators
+/// investigating "why didn't hedging save me?" have *something* to
+/// grep for. Hedged ops bite harder than non-hedged ops here because
+/// the operator paid for two regions of requests on a final error.
 fn finalize_hedge_attempt(
     result: Box<TransportResult>,
     diagnostics: DiagnosticsContextBuilder,
@@ -1708,18 +1730,33 @@ fn finalize_hedge_attempt(
             body,
             ..
         } => {
-            // Operation-level errors don't carry diagnostics today (the
-            // builder is dropped here); that's a pre-existing limitation
-            // of the driver shared with the non-hedged Abort path.
-            let _ = diagnostics;
+            tracing::warn!(
+                activity_id = %diagnostics.activity_id(),
+                request_count = diagnostics.request_count(),
+                http_status = u16::from(status.status_code()),
+                sub_status = ?status.sub_status(),
+                "cosmos.hedge.terminal_http_error",
+            );
+            drop(diagnostics);
             Err(build_http_error(&status, &headers, &body))
         }
         TransportOutcome::TransportError { error, .. } => {
-            let _ = diagnostics;
+            tracing::warn!(
+                activity_id = %diagnostics.activity_id(),
+                request_count = diagnostics.request_count(),
+                error = %error,
+                "cosmos.hedge.terminal_transport_error",
+            );
+            drop(diagnostics);
             Err(error)
         }
         TransportOutcome::DeadlineExceeded { .. } => {
-            let _ = diagnostics;
+            tracing::warn!(
+                activity_id = %diagnostics.activity_id(),
+                request_count = diagnostics.request_count(),
+                "cosmos.hedge.terminal_deadline_exceeded",
+            );
+            drop(diagnostics);
             Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "deadline exceeded during hedged attempt",
@@ -1735,8 +1772,8 @@ fn finalize_hedge_attempt(
 /// Only `FailoverRetry` and `SessionRetry` are eligible for upgrade —
 /// `Complete` is the operation's terminal success path, and `Abort`
 /// already signals a non-retryable error. `request_timeout` is passed to
-/// [`evaluate_hedge_eligibility`] so it can compute the §5.2 driver
-/// default threshold (`min(1000ms, request_timeout / 2)`).
+/// [`evaluate_hedge_eligibility`] so it can compute the driver default
+/// threshold (`min(1000ms, request_timeout / 2)`).
 fn maybe_upgrade_to_hedge(
     action: OperationAction,
     operation: &CosmosOperation,
@@ -1754,11 +1791,10 @@ fn maybe_upgrade_to_hedge(
 
     match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
         Some(upgrade) => {
-            // Spec §10.4 reserved tracing surface: emit a structured event
-            // when an operation is upgraded into the hedge race. Fields
-            // mirror the inputs that drove the eligibility decision so
-            // operators can correlate threshold tuning with observed
-            // upgrades.
+            // Emit a structured event when an operation is upgraded
+            // into the hedge race. Fields mirror the inputs that drove
+            // the eligibility decision so operators can correlate
+            // threshold tuning with observed upgrades.
             tracing::debug!(
                 threshold_ms = upgrade.threshold.get().as_millis() as u64,
                 primary_region = ?primary.endpoint.region().map(crate::options::Region::as_str),
@@ -1767,7 +1803,6 @@ fn maybe_upgrade_to_hedge(
             );
             OperationAction::Hedge {
                 secondary_routing: upgrade.secondary_routing,
-                secondary_excluded_regions: upgrade.secondary_excluded_regions,
                 threshold: upgrade.threshold,
                 strategy_config: upgrade.strategy_config,
             }
@@ -1783,16 +1818,16 @@ fn maybe_upgrade_to_hedge(
 /// secondary hedge attempts.
 ///
 /// Not invoked by the main pipeline loop today — the loop body inlines
-/// the same STAGE 3/4/4b code for compatibility and to keep the diff
-/// for Part 4b focused on hedging. A follow-up refactor may collapse
-/// the duplication.
+/// the same STAGE 3/4/4b code for compatibility and to keep the
+/// hedging diff focused. A follow-up refactor may collapse the
+/// duplication.
 ///
 /// Differences from the inline loop body:
 ///
 /// - **No per-state `hub_region_processing_only` latch.** Each hedge
 ///   today runs a single transport attempt with no retry loop, so the
-///   per-state latch has nothing to drive. The shared latch (spec
-///   §9.6) is plumbed through `shared_hub_region_latch` instead — the
+///   per-state latch has nothing to drive. The cross-hedge shared
+///   latch is plumbed through `shared_hub_region_latch` instead — the
 ///   secondary reads it on its first request so a 1002 latched by the
 ///   main pipeline (before hedging upgraded) immediately gets the
 ///   `x-ms-cosmos-hub-region-processing-only` header.
@@ -1833,7 +1868,7 @@ async fn perform_single_attempt(
         &request_ctx,
     )?;
     // Hedging attempts have no per-state latch to consult — the only
-    // signal is the cross-hedge shared latch (§9.6).
+    // signal is the cross-hedge shared latch.
     if should_emit_hub_region_header(false, shared_hub_region_latch) {
         transport_request.headers.insert(
             HeaderName::from_static(request_header_names::HUB_REGION_PROCESSING_ONLY),
@@ -1883,11 +1918,11 @@ async fn perform_single_attempt(
 
 /// Upper bound on how long [`execute_hedged`] waits for in-flight hedge
 /// attempts to land their diagnostics after the application-cancel
-/// deadline fires. Per spec §6.5 #7 / §14.2 the Rust hedge path
-/// deliberately bounds this — .NET v3 awaits the most-recently-completed
-/// task with no timeout, but the Rust path trades slightly less-rich
-/// diagnostics-on-cancel for predictable user-visible cancel latency
-/// when a transport future is stuck.
+/// deadline fires. The Rust hedge path deliberately bounds this — .NET
+/// v3 awaits the most-recently-completed task with no timeout, but the
+/// Rust path trades slightly less-rich diagnostics-on-cancel for
+/// predictable user-visible cancel latency when a transport future is
+/// stuck.
 const HARVEST_WINDOW: Duration = Duration::from_millis(50);
 
 /// Discriminator returned by the Stage-2 threshold-vs-deadline nested
@@ -1921,10 +1956,10 @@ fn deadline_signal(deadline: Option<Instant>) -> Pin<Box<dyn Future<Output = ()>
 /// Races `attempt` against [`HARVEST_WINDOW`] and, if `attempt` completes
 /// within the window, merges its diagnostics into `parent` so the
 /// returned [`application_cancelled_error`] carries the most-advanced
-/// attempt's request trail (spec §6.5 #7 / §14.2). The result itself is
-/// discarded — once the application cancellation has fired the operation
-/// outcome is the cancellation error regardless of whether the in-flight
-/// pipeline would have produced a final response.
+/// attempt's request trail. The result itself is discarded — once the
+/// application cancellation has fired the operation outcome is the
+/// cancellation error regardless of whether the in-flight pipeline
+/// would have produced a final response.
 async fn harvest_remaining_attempt<F>(attempt: F, parent: &mut DiagnosticsContextBuilder)
 where
     F: Future<
@@ -1944,18 +1979,17 @@ where
         parent.merge_hedge_attempt(diag);
     }
     // Timer arm: harvest window exceeded; loser future is dropped and its
-    // Drop chain cancels the in-flight transport (spec §6.5 #5).
+    // Drop chain cancels the in-flight transport.
 }
 
 /// Synthetic operation error returned by [`execute_hedged`] when the
 /// application-cancellation deadline fires while one or both hedge
-/// attempts are still racing. Mirrors the .NET v3 cancellation behavior
-/// described in spec §6.5 #7 / §14.2. The actual diagnostics from the
-/// most-advanced in-flight pipeline (when harvested within
-/// [`HARVEST_WINDOW`]) are attached to the operation's
-/// [`DiagnosticsContextBuilder`] before this error is returned — they
-/// are not carried inside the error itself, matching the rest of the
-/// operation pipeline's diagnostics model.
+/// attempts are still racing. Mirrors the .NET v3 cancellation behavior.
+/// The actual diagnostics from the most-advanced in-flight pipeline
+/// (when harvested within [`HARVEST_WINDOW`]) are attached to the
+/// operation's [`DiagnosticsContextBuilder`] before this error is
+/// returned — they are not carried inside the error itself, matching
+/// the rest of the operation pipeline's diagnostics model.
 fn application_cancelled_error() -> azure_core::Error {
     azure_core::Error::with_message(
         azure_core::error::ErrorKind::Other,
@@ -1966,7 +2000,7 @@ fn application_cancelled_error() -> azure_core::Error {
 /// Races a still-pending hedge attempt against the end-to-end deadline.
 /// Returns `Some(result)` when the attempt completes first (normal
 /// path); returns `None` after harvesting the attempt's diagnostics
-/// within [`HARVEST_WINDOW`] when the deadline wins (spec §6.5 #7 / §14.2).
+/// within [`HARVEST_WINDOW`] when the deadline wins.
 ///
 /// Used by [`execute_hedged`] in Stage 4's transient-fallthrough
 /// branches where one side has already classified as transient and the
@@ -2009,11 +2043,80 @@ fn deadline_elapsed(deadline: Option<Instant>) -> bool {
     deadline.is_some_and(|d| Instant::now() >= d)
 }
 
+/// Outcome of [`execute_hedged`] as observed by the surrounding
+/// [`execute_operation_pipeline`] loop.
+///
+/// The race is structured around two qualitatively different outcomes:
+///
+/// - [`HedgedRaceResult::Terminal`] — the race produced a final result
+///   (success, final HTTP error, or application-cancellation). The
+///   operation pipeline must surface this directly to the caller. The
+///   inner `Result` mirrors what the non-hedged
+///   [`OperationAction::Complete`] / [`OperationAction::Abort`] arms
+///   produce so STAGE 7 remains the canonical translation point.
+/// - [`HedgedRaceResult::BothTransient`] — both legs returned transient
+///   outcomes **and** the deadline has not elapsed. The operation
+///   pipeline must consume the two regions used in the race against
+///   [`OperationRetryState::failover_retry_count`] (incrementing by 2)
+///   and re-enter the loop against the remaining regions. If the budget
+///   is exhausted, `last_error` is surfaced as the operation's terminal
+///   error.
+///
+/// Without this loop-fallback the hedge-eligible code path would be
+/// strictly *less* resilient than the non-hedged path in multi-region
+/// brown-outs: a 503 burst across the first two preferred regions of a
+/// 3-region account would cause a non-hedged read to consume one
+/// failover-retry slot per region and reach region 3 on the third
+/// attempt, while a hedge-eligible read would burn both regions in a
+/// single race and give up immediately.
+#[derive(Debug)]
+#[allow(
+    clippy::large_enum_variant,
+    reason = "single return value from an async function on a hot path; \
+              boxing either variant would add a heap allocation per race \
+              without enabling reuse — at most one `HedgedRaceResult` \
+              exists at a time per operation."
+)]
+pub(crate) enum HedgedRaceResult {
+    /// The race ended in a state the operation pipeline must surface
+    /// directly to the caller.
+    Terminal(azure_core::Result<CosmosResponse>),
+
+    /// Both legs returned `Transient` outcomes without the deadline
+    /// firing. The caller must:
+    ///
+    /// 1. Increment `failover_retry_count` by 2 (the race consumed two
+    ///    regions).
+    /// 2. If the budget is exhausted, return `last_error` as the
+    ///    operation's terminal error.
+    /// 3. Otherwise advance the [`LocationIndex`] past the two consumed
+    ///    regions and `continue` the operation loop.
+    ///
+    /// The race has already attached `HedgeDiagnostics::both_transient`
+    /// to `diagnostics`; the caller threads it back into the loop so the
+    /// next attempt's request trail merges into the same diagnostics
+    /// context (one operation-scoped diagnostics chain regardless of how
+    /// many race-and-retry cycles it takes to terminate).
+    ///
+    /// The `primary_region` / `secondary_region` fields are reported
+    /// for telemetry (so operators can see which two regions burnt RU
+    /// in the failed race) and to drive a future per-region skip-set
+    /// the loop will consult when in-hedge retry lands. Today they are
+    /// surfaced only via tracing.
+    BothTransient {
+        primary_region: Option<Region>,
+        secondary_region: Option<Region>,
+        last_error: azure_core::Error,
+        diagnostics: DiagnosticsContextBuilder,
+    },
+}
+
 /// Races a primary attempt against a single cross-region secondary
-/// attempt per [`docs/HEDGING_SPEC.md`](../../../docs/HEDGING_SPEC.md)
-/// §6.4. Returns the first **final** result; surfaces the most recent
-/// transient as the operation error when both sides exhaust transient
-/// outcomes.
+/// attempt. Returns the first **final** result via
+/// [`HedgedRaceResult::Terminal`]; surfaces a both-transient outcome via
+/// [`HedgedRaceResult::BothTransient`] so the surrounding
+/// [`execute_operation_pipeline`] loop can re-enter against the
+/// remaining regions.
 ///
 /// The implementation is structured as two `futures::future::select`
 /// calls so the borrow checker can reclaim each sub-builder cleanly
@@ -2021,16 +2124,18 @@ fn deadline_elapsed(deadline: Option<Instant>) -> bool {
 ///
 /// 1. **Threshold race.** The primary future is launched immediately
 ///    against an `azure_core::sleep(threshold)` timer. If the primary
-///    completes first this is the zero-overhead happy path
-///    (spec §6.5 #3) — no secondary future is constructed, no extra
-///    diagnostics sub-builder is cloned, no `Arc` allocations occur
-///    beyond what the single primary attempt already needs.
+///    completes first this is the zero-overhead happy path — no
+///    secondary future is constructed, no extra diagnostics sub-builder
+///    is cloned, no `Arc` allocations occur beyond what the single
+///    primary attempt already needs.
 /// 2. **Primary vs secondary race.** Once the timer fires we clone a
 ///    sub-builder for the secondary, launch it with
 ///    `ExecutionContext::Hedging`, and `select` against the still-pending
 ///    primary. The first side to land a `HedgeClass::Final` wins; a
 ///    transient on the first-to-complete side simply `.await`s the
-///    other side. Both transient → most recent error.
+///    other side. **Both legs transient** with the deadline still in
+///    budget → returns [`HedgedRaceResult::BothTransient`] so the
+///    caller loop can fall back against the remaining regions.
 ///
 /// Application-cancellation (observed via [`AttemptContext::deadline`])
 /// is layered onto both races: the deadline future is wrapped into a
@@ -2038,23 +2143,21 @@ fn deadline_elapsed(deadline: Option<Instant>) -> bool {
 /// primary/secondary pair (Stage 4). When the deadline wins,
 /// [`harvest_remaining_attempt`] gives the most-advanced in-flight
 /// pipeline up to `HARVEST_WINDOW` to complete so its diagnostics can
-/// be attached to the returned [`application_cancelled_error`] (spec
-/// §6.5 #7 / §14.2). Loser futures are dropped — structural
-/// cancellation propagates through the transport pipeline (spec §6.5
-/// #5).
+/// be attached to the returned [`application_cancelled_error`]. Loser
+/// futures are dropped — structural cancellation propagates through
+/// the transport pipeline.
 ///
-/// PPCB feedback (spec §6.5 #8 / §9.5) is wired here via
-/// [`record_hedge_outcome`]: every Final outcome routed to either side
-/// is reported to the [`HedgeOutcomeRecorder`] so the PPCB side can
-/// count consecutive alternate-wins and reset on primary-wins. The
-/// real counter / state-transition machinery is a no-op stub today
-/// (sub-plan 6a); the load-bearing callsites are these branches.
+/// PPCB feedback is wired here via [`record_hedge_outcome`]: every
+/// Final outcome routed to either side is reported to the
+/// [`HedgeOutcomeRecorder`] so the PPCB side can count consecutive
+/// alternate-wins and reset on primary-wins. The real counter /
+/// state-transition machinery is a no-op stub today; the load-bearing
+/// call sites are these branches.
 ///
-/// Spec items NOT yet implemented (tracked for follow-up commits per
-/// [`docs/HEDGING_IMPLEMENTATION_PLAN.md`]):
+/// Items NOT yet implemented:
 ///
-/// - Operation-level retry inside each hedge (§8.4); we rely on
-///   per-attempt transport-pipeline retry only.
+/// - Operation-level retry inside each hedge; we rely on per-attempt
+///   transport-pipeline retry only.
 async fn execute_hedged(
     ctx: &AttemptContext<'_>,
     primary_routing: &RoutingDecision,
@@ -2062,23 +2165,24 @@ async fn execute_hedged(
     threshold: HedgeThreshold,
     strategy_config: HedgingStrategyConfig,
     mut parent_diagnostics: DiagnosticsContextBuilder,
-) -> azure_core::Result<CosmosResponse> {
+) -> HedgedRaceResult {
     let primary_region = primary_routing.endpoint.region().cloned();
     let secondary_region = secondary_routing.endpoint.region().cloned();
-    // §10.1 — `HedgeDiagnostics` is attached iff `execute_hedged` ran,
+    // `HedgeDiagnostics` is attached iff `execute_hedged` ran,
     // regardless of whether the routed endpoints carry a named region
     // (global-endpoint accounts do not). For diagnostics-construction
-    // sites we substitute a `(unknown)` sentinel `Region` so the
+    // sites we substitute the public
+    // [`HedgeDiagnostics::UNKNOWN_REGION_SENTINEL`] `Region` so the
     // attachment contract holds; PPCB recording paths below still use
     // the original `Option<Region>` so a `None` correctly attributes to
     // "no region" rather than collapsing all global-endpoint hedges
-    // under a sentinel key — spec D6.
+    // under a sentinel key.
     let primary_region_for_diag = primary_region
         .clone()
-        .unwrap_or_else(|| Region::new("(unknown)"));
+        .unwrap_or_else(|| Region::new(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL));
     let secondary_region_for_diag = secondary_region
         .clone()
-        .unwrap_or_else(|| Region::new("(unknown)"));
+        .unwrap_or_else(|| Region::new(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL));
 
     tracing::debug!(
         activity_id = %ctx.activity_id,
@@ -2096,8 +2200,8 @@ async fn execute_hedged(
         let mut diag = primary_diag;
         // Primary is launched before Stage 2 elapses, so no shared
         // hub-region latch can possibly exist yet — a `None` here
-        // preserves the spec §6.5 #3 zero-overhead happy path (no
-        // `Arc` allocation when the primary wins pre-threshold).
+        // preserves the zero-overhead happy path (no `Arc` allocation
+        // when the primary wins pre-threshold).
         let result = perform_single_attempt(
             ctx,
             primary_routing,
@@ -2111,16 +2215,18 @@ async fn execute_hedged(
 
     // ── Stage 2: Threshold race (zero-overhead happy path) ────────────
     // 3-way race: primary attempt vs threshold timer vs deadline. The
-    // deadline arm enables the §6.5 #7 application-cancel path; when
-    // the deadline has no value the deadline future never resolves and
-    // the race collapses to the 2-way primary-vs-threshold semantics.
-    let threshold_duration =
-        azure_core::time::Duration::try_from(threshold.get()).map_err(|_| {
-            azure_core::Error::with_message(
+    // deadline arm enables the application-cancel path; when the
+    // deadline has no value the deadline future never resolves and the
+    // race collapses to the 2-way primary-vs-threshold semantics.
+    let threshold_duration = match azure_core::time::Duration::try_from(threshold.get()) {
+        Ok(d) => d,
+        Err(_) => {
+            return HedgedRaceResult::Terminal(Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 "hedge threshold exceeds azure_core::time::Duration range",
-            )
-        })?;
+            )));
+        }
+    };
     let threshold_timer = Box::pin(azure_core::sleep(threshold_duration));
     let deadline_timer = deadline_signal(ctx.deadline);
 
@@ -2151,23 +2257,23 @@ async fn execute_hedged(
     let primary_attempt: PrimaryAttemptFuture<'_> = match select(primary_attempt, timer_event).await
     {
         Either::Left(((result, diag), _timer)) => {
-            // Primary resolved before either timer. Spec §6.5 #3 only
-            // short-circuits the secondary launch when the primary's
+            // Primary resolved before either timer. Short-circuiting
+            // the secondary launch is only safe when the primary's
             // outcome is **final** (HTTP success or application-classified
-            // error per `is_final_result`). A *transient* outcome
-            // (5xx / 429 / 408 / 410 / 404-1002 / 403-with-sub / transport
-            // error / deadline) must still race against the secondary so
-            // a healthy alternate region can win — otherwise hedging
-            // would actively suppress the cross-region failover the
-            // operation pipeline would have performed without hedging
-            // upgrade (drift D7 / review #3).
+            // error per `is_final_result`). A *retriable* outcome
+            // (5xx / 429 / 408 / 410 / 404-1002 / 403-with-sub /
+            // transport error / deadline) must still race against the
+            // secondary so a healthy alternate region can win —
+            // otherwise hedging would actively suppress the
+            // cross-region failover the operation pipeline would have
+            // performed without the hedge upgrade.
             let primary_was_final = matches!(
                 &result,
                 Ok(tr) if result_is_final(tr),
             );
             if primary_was_final {
-                // Spec §6.5 #3 zero-overhead happy path — no secondary
-                // attempt is ever constructed.
+                // Zero-overhead happy path — no secondary attempt is
+                // ever constructed.
                 parent_diagnostics.merge_hedge_attempt(diag);
                 parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::primary_only(
                     strategy_config,
@@ -2177,8 +2283,8 @@ async fn execute_hedged(
                     activity_id = %ctx.activity_id,
                     "execute_hedged: primary won pre-threshold (zero-overhead happy path)",
                 );
-                // Spec §10.4 reserved: structured win event. `was_hedge=false`
-                // distinguishes the zero-overhead happy path from a post-threshold
+                // Structured win event. `was_hedge=false` distinguishes
+                // the zero-overhead happy path from a post-threshold
                 // primary win.
                 tracing::info!(
                     activity_id = %ctx.activity_id,
@@ -2186,13 +2292,13 @@ async fn execute_hedged(
                     was_hedge = false,
                     "cosmos.hedge.won",
                 );
-                // Spec §9.5: only a `Final` primary outcome resets the
+                // Only a `Final` primary outcome resets the
                 // consecutive-hedge-win counter on this
                 // `(partition, primary_region)` pair. Recording for a
                 // `Transient` outcome (a fast 503/449/transport-reset
                 // that completes before the threshold) would silently
-                // neutralize the §9.5 PPCB signal for exactly the
-                // failure mode it is designed to detect.
+                // neutralize the PPCB signal for exactly the failure
+                // mode it is designed to detect.
                 record_hedge_outcome(
                     ctx.hedge_outcome_recorder,
                     HedgeOutcome::PrimaryWin,
@@ -2201,7 +2307,10 @@ async fn execute_hedged(
                 );
                 // result is Ok by the `primary_was_final` guard above.
                 let tr = result.expect("Ok by primary_was_final guard");
-                return finalize_hedge_attempt(Box::new(tr), parent_diagnostics);
+                return HedgedRaceResult::Terminal(finalize_hedge_attempt(
+                    Box::new(tr),
+                    parent_diagnostics,
+                ));
             }
             // Primary resolved pre-threshold but transient (or `Err`). Do
             // not merge diagnostics yet — fall through to Stage 3, wrap
@@ -2216,14 +2325,14 @@ async fn execute_hedged(
         }
         Either::Right((TimerEvent::ThresholdElapsed, remaining_primary)) => remaining_primary,
         Either::Right((TimerEvent::DeadlineFired, remaining_primary)) => {
-            // §6.5 #7 / §14.2: app-cancel observed at Stage 2 — only the
-            // primary is in-flight (no secondary was ever built). Harvest
-            // it within HARVEST_WINDOW for diagnostics, then re-raise.
+            // App-cancel observed at Stage 2 — only the primary is
+            // in-flight (no secondary was ever built). Harvest it
+            // within HARVEST_WINDOW for diagnostics, then re-raise.
             // No leg produced a final response, so attach the
-            // DeadlineExceededPreThreshold terminal state (was_hedge=false)
-            // rather than primary_only — the operation surfaces
-            // application_cancelled_error and hedge win-rate metrics must
-            // not count this as a primary win (review #1, spec §10.1).
+            // DeadlineExceededPreThreshold terminal state
+            // (was_hedge=false) rather than primary_only — the
+            // operation surfaces application_cancelled_error and hedge
+            // win-rate metrics must not count this as a primary win.
             tracing::debug!(
                 activity_id = %ctx.activity_id,
                 "execute_hedged: deadline fired pre-threshold; harvesting primary",
@@ -2235,15 +2344,15 @@ async fn execute_hedged(
                     primary_region_for_diag.clone(),
                 ),
             );
-            return Err(application_cancelled_error());
+            return HedgedRaceResult::Terminal(Err(application_cancelled_error()));
         }
     };
 
     // ── Stage 3: Launch secondary ─────────────────────────────────────
-    // The cross-hedge shared hub-region-processing-only latch (spec §9.6)
-    // is constructed here — *after* the threshold elapses, so the
-    // zero-overhead happy path (§6.5 #3) never allocates the `Arc`.
-    // Gated on the same predicates as the per-state latch trigger:
+    // The cross-hedge shared hub-region-processing-only latch is
+    // constructed here — *after* the threshold elapses, so the
+    // zero-overhead happy path never allocates the `Arc`. Gated on
+    // the same predicates as the per-state latch trigger:
     // data-plane scope + single-master account. Seeded from whatever
     // value the main pipeline's per-state latch held at the moment
     // hedging upgraded, so a 1002 already discovered before hedging
@@ -2273,10 +2382,10 @@ async fn execute_hedged(
         shared_hub_region_latch = shared_hub_region_latch.is_some(),
         "execute_hedged: threshold elapsed; secondary launched",
     );
-    // Spec §10.4 reserved tracing surface: structured "alternate spawned"
-    // event distinct from the freeform message above. Fields carry the
-    // race timing (threshold) and the target region so operators can
-    // correlate spawn rate with observed tail-latency improvements.
+    // Structured "alternate spawned" event distinct from the freeform
+    // message above. Fields carry the race timing (threshold) and the
+    // target region so operators can correlate spawn rate with observed
+    // tail-latency improvements.
     tracing::debug!(
         activity_id = %ctx.activity_id,
         threshold_ms = threshold.get().as_millis() as u64,
@@ -2286,13 +2395,13 @@ async fn execute_hedged(
 
     // ── Stage 4: Primary vs secondary race ────────────────────────────
     // Per-attempt deadline observation lives inside the transport
-    // pipeline (TPS §5.1) — when the end-to-end deadline fires while an
+    // pipeline — when the end-to-end deadline fires while an
     // attempt is in flight, the transport returns `DeadlineExceeded`
     // which classifies as transient. The two `.await` calls in the
     // transient-fallthrough branches below are wrapped with
     // [`await_attempt_or_deadline_harvest`] so a deadline that fires
     // while we're waiting on the still-pending side triggers the
-    // §6.5 #7 harvest path instead of blocking. The both-transient
+    // harvest path instead of blocking. The both-transient
     // terminal branches inspect the deadline to choose between
     // [`application_cancelled_error`] and [`transient_outcome_error`].
     match select(primary_attempt, secondary_attempt).await {
@@ -2312,8 +2421,8 @@ async fn execute_hedged(
                         activity_id = %ctx.activity_id,
                         "execute_hedged: primary won after threshold",
                     );
-                    // Spec §10.4 reserved: secondary attempt was dropped
-                    // structurally when this branch was taken.
+                    // Secondary attempt was dropped structurally when
+                    // this branch was taken.
                     tracing::debug!(
                         activity_id = %ctx.activity_id,
                         which = "secondary",
@@ -2333,7 +2442,7 @@ async fn execute_hedged(
                         ctx.partition_key_range_id.as_ref(),
                         primary_region.as_ref(),
                     );
-                    finalize_hedge_attempt(tr, parent_diagnostics)
+                    HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
                 }
                 HedgeClass::Transient => {
                     // Primary transient — wait for secondary (observing deadline).
@@ -2351,9 +2460,8 @@ async fn execute_hedged(
                         );
                         // No leg produced a final response — attach
                         // CancelledAwaitingPartner terminal state
-                        // (was_hedge=false) so hedge win-rate metrics do
-                        // not count this as an alternate win
-                        // (review #1, spec §10.1).
+                        // (was_hedge=false) so hedge win-rate metrics
+                        // do not count this as an alternate win.
                         parent_diagnostics.set_hedge_diagnostics(
                             HedgeDiagnostics::cancelled_awaiting_partner(
                                 strategy_config,
@@ -2361,7 +2469,7 @@ async fn execute_hedged(
                                 secondary_region_for_diag.clone(),
                             ),
                         );
-                        return Err(application_cancelled_error());
+                        return HedgedRaceResult::Terminal(Err(application_cancelled_error()));
                     };
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
                     match classify_hedge_result(secondary_result) {
@@ -2387,49 +2495,29 @@ async fn execute_hedged(
                                 ctx.partition_key_range_id.as_ref(),
                                 primary_region.as_ref(),
                             );
-                            finalize_hedge_attempt(tr, parent_diagnostics)
+                            HedgedRaceResult::Terminal(finalize_hedge_attempt(
+                                tr,
+                                parent_diagnostics,
+                            ))
                         }
                         HedgeClass::Transient => {
-                            // Both transient — attach BothTransient terminal
-                            // state (was_hedge=false, no leg won) for
-                            // observability and surface either the app-cancel
-                            // error (§6.5 #7) or the synthetic
-                            // both-transient error depending on whether the
-                            // deadline drove the outcome. Capture
-                            // deadline_elapsed once before the if-let-Some
-                            // pattern moves the regions (review #1, spec §10.1).
-                            let deadline_was_elapsed = deadline_elapsed(ctx.deadline);
-                            parent_diagnostics.set_hedge_diagnostics(
-                                HedgeDiagnostics::both_transient(
-                                    strategy_config,
-                                    primary_region_for_diag.clone(),
-                                    secondary_region_for_diag.clone(),
-                                    deadline_was_elapsed,
-                                ),
-                            );
-                            if deadline_was_elapsed {
-                                tracing::debug!(
-                                    activity_id = %ctx.activity_id,
-                                    "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
-                                );
-                                tracing::warn!(
-                                    activity_id = %ctx.activity_id,
-                                    deadline_elapsed = true,
-                                    "cosmos.hedge.both_transient",
-                                );
-                                Err(application_cancelled_error())
-                            } else {
-                                tracing::warn!(
-                                    activity_id = %ctx.activity_id,
-                                    "execute_hedged: both primary and secondary transient; surfacing secondary error",
-                                );
-                                tracing::warn!(
-                                    activity_id = %ctx.activity_id,
-                                    deadline_elapsed = false,
-                                    "cosmos.hedge.both_transient",
-                                );
-                                Err(transient_outcome_error())
-                            }
+                            // Both legs transient. Delegate to the helper
+                            // so the diagnostics-attachment + tracing +
+                            // outcome classification stay in one place.
+                            // When the deadline has NOT elapsed this
+                            // returns `BothTransient` so the operation
+                            // pipeline can re-enter the failover loop
+                            // against the remaining regions.
+                            finalize_both_transient(
+                                ctx.activity_id,
+                                ctx.deadline,
+                                strategy_config,
+                                primary_region,
+                                secondary_region,
+                                primary_region_for_diag.clone(),
+                                secondary_region_for_diag.clone(),
+                                parent_diagnostics,
+                            )
                         }
                     }
                 }
@@ -2448,8 +2536,8 @@ async fn execute_hedged(
                         activity_id = %ctx.activity_id,
                         "execute_hedged: secondary won race",
                     );
-                    // Spec §10.4 reserved: primary attempt was dropped
-                    // structurally when secondary won the race.
+                    // Primary attempt was dropped structurally when
+                    // secondary won the race.
                     tracing::debug!(
                         activity_id = %ctx.activity_id,
                         which = "primary",
@@ -2469,7 +2557,7 @@ async fn execute_hedged(
                         ctx.partition_key_range_id.as_ref(),
                         primary_region.as_ref(),
                     );
-                    finalize_hedge_attempt(tr, parent_diagnostics)
+                    HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
                 }
                 HedgeClass::Transient => {
                     // Secondary transient — wait for primary (observing deadline).
@@ -2486,9 +2574,8 @@ async fn execute_hedged(
                         );
                         // No leg produced a final response — attach
                         // CancelledAwaitingPartner terminal state
-                        // (was_hedge=false) so hedge win-rate metrics do
-                        // not count this as an alternate win
-                        // (review #1, spec §10.1).
+                        // (was_hedge=false) so hedge win-rate metrics
+                        // do not count this as an alternate win.
                         parent_diagnostics.set_hedge_diagnostics(
                             HedgeDiagnostics::cancelled_awaiting_partner(
                                 strategy_config,
@@ -2496,7 +2583,7 @@ async fn execute_hedged(
                                 secondary_region_for_diag.clone(),
                             ),
                         );
-                        return Err(application_cancelled_error());
+                        return HedgedRaceResult::Terminal(Err(application_cancelled_error()));
                     };
                     parent_diagnostics.merge_hedge_attempt(primary_diag);
                     match classify_hedge_result(primary_result) {
@@ -2524,44 +2611,25 @@ async fn execute_hedged(
                                 ctx.partition_key_range_id.as_ref(),
                                 primary_region.as_ref(),
                             );
-                            finalize_hedge_attempt(tr, parent_diagnostics)
+                            HedgedRaceResult::Terminal(finalize_hedge_attempt(
+                                tr,
+                                parent_diagnostics,
+                            ))
                         }
                         HedgeClass::Transient => {
-                            // Both transient — attach BothTransient terminal
-                            // state (was_hedge=false, no leg won) for
-                            // observability (review #1, spec §10.1).
-                            let deadline_was_elapsed = deadline_elapsed(ctx.deadline);
-                            parent_diagnostics.set_hedge_diagnostics(
-                                HedgeDiagnostics::both_transient(
-                                    strategy_config,
-                                    primary_region_for_diag.clone(),
-                                    secondary_region_for_diag.clone(),
-                                    deadline_was_elapsed,
-                                ),
-                            );
-                            if deadline_was_elapsed {
-                                tracing::debug!(
-                                    activity_id = %ctx.activity_id,
-                                    "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
-                                );
-                                tracing::warn!(
-                                    activity_id = %ctx.activity_id,
-                                    deadline_elapsed = true,
-                                    "cosmos.hedge.both_transient",
-                                );
-                                Err(application_cancelled_error())
-                            } else {
-                                tracing::warn!(
-                                    activity_id = %ctx.activity_id,
-                                    "execute_hedged: both secondary and primary transient; surfacing primary error",
-                                );
-                                tracing::warn!(
-                                    activity_id = %ctx.activity_id,
-                                    deadline_elapsed = false,
-                                    "cosmos.hedge.both_transient",
-                                );
-                                Err(transient_outcome_error())
-                            }
+                            // Both legs transient. Same loop-fallback
+                            // semantics as the symmetric Either::Left arm
+                            // — see [`finalize_both_transient`].
+                            finalize_both_transient(
+                                ctx.activity_id,
+                                ctx.deadline,
+                                strategy_config,
+                                primary_region,
+                                secondary_region,
+                                primary_region_for_diag.clone(),
+                                secondary_region_for_diag.clone(),
+                                parent_diagnostics,
+                            )
                         }
                     }
                 }
@@ -2570,17 +2638,181 @@ async fn execute_hedged(
     }
 }
 
-/// Generic "both sides transient" error returned by [`execute_hedged`]
-/// when neither the primary nor the secondary produced a final result.
-/// Mirrors the .NET v3 hedging behavior of producing a synthetic
-/// operation-level error in this case rather than re-entering the
-/// per-pipeline retry loop (Terminal semantics per
-/// [`docs/HEDGING_IMPLEMENTATION_PLAN.md`] Part 4).
-fn transient_outcome_error() -> azure_core::Error {
+/// Generic "both sides transient" error carried inside
+/// [`HedgedRaceResult::BothTransient`] when neither leg produced a
+/// final response and the deadline has not elapsed. The surrounding
+/// operation pipeline will only surface this error to the caller if
+/// the failover-retry budget has also been exhausted by the race —
+/// otherwise the loop re-enters against the remaining regions.
+///
+/// The two raced regions are included in the message so operators
+/// investigating "why didn't hedging save me?" can see at a glance
+/// which two regions burnt RU on the failed race. `None` is rendered
+/// as the [`HedgeDiagnostics::UNKNOWN_REGION_SENTINEL`] string for
+/// consistency with the diagnostics-attachment surface.
+fn transient_outcome_error(
+    primary_region: Option<&Region>,
+    secondary_region: Option<&Region>,
+) -> azure_core::Error {
+    let p = primary_region
+        .map(Region::as_str)
+        .unwrap_or(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL);
+    let s = secondary_region
+        .map(Region::as_str)
+        .unwrap_or(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL);
     azure_core::Error::with_message(
         azure_core::error::ErrorKind::Other,
-        "hedging completed without producing a final response",
+        format!(
+            "hedging completed without producing a final response \
+             (primary={p}, secondary={s})"
+        ),
     )
+}
+
+/// Centralizes the diagnostics attachment, structured tracing, and
+/// outcome classification for the **both-legs-transient** terminal
+/// state of [`execute_hedged`]'s Stage 4 race.
+///
+/// Returns:
+///
+/// - [`HedgedRaceResult::Terminal`] with [`application_cancelled_error`]
+///   when the application deadline has elapsed (no remaining time
+///   budget to spend on the failover-loop fallback).
+/// - [`HedgedRaceResult::BothTransient`] otherwise, threading
+///   `parent_diagnostics` back so the surrounding failover loop can
+///   keep accumulating per-attempt request traces into the same
+///   operation-scoped diagnostics chain.
+///
+/// `primary_region` / `secondary_region` are the original (potentially
+/// `None`-for-global-endpoint) regions surfaced inside
+/// `BothTransient` for telemetry; `primary_region_for_diag` /
+/// `secondary_region_for_diag` are the
+/// [`HedgeDiagnostics::UNKNOWN_REGION_SENTINEL`] sentinels used at the
+/// `HedgeDiagnostics` attachment site so the attachment contract
+/// holds even on global-endpoint accounts.
+#[allow(
+    clippy::too_many_arguments,
+    reason = "All eight values come from `execute_hedged`'s state and \
+              are passed through to a single helper call site. Bundling \
+              them into a struct would add an indirection without \
+              improving readability — the two-region pairing (raw / \
+              for-diag) is intentional and explicit at the call site."
+)]
+fn finalize_both_transient(
+    activity_id: &ActivityId,
+    deadline: Option<Instant>,
+    strategy_config: HedgingStrategyConfig,
+    primary_region: Option<Region>,
+    secondary_region: Option<Region>,
+    primary_region_for_diag: Region,
+    secondary_region_for_diag: Region,
+    mut parent_diagnostics: DiagnosticsContextBuilder,
+) -> HedgedRaceResult {
+    let deadline_was_elapsed = deadline_elapsed(deadline);
+    parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
+        strategy_config,
+        primary_region_for_diag,
+        secondary_region_for_diag,
+        deadline_was_elapsed,
+    ));
+    tracing::warn!(
+        activity_id = %activity_id,
+        deadline_elapsed = deadline_was_elapsed,
+        primary_region = ?primary_region.as_ref().map(Region::as_str),
+        secondary_region = ?secondary_region.as_ref().map(Region::as_str),
+        "cosmos.hedge.both_transient",
+    );
+    if deadline_was_elapsed {
+        tracing::debug!(
+            activity_id = %activity_id,
+            "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
+        );
+        HedgedRaceResult::Terminal(Err(application_cancelled_error()))
+    } else {
+        tracing::debug!(
+            activity_id = %activity_id,
+            primary_region = ?primary_region.as_ref().map(Region::as_str),
+            secondary_region = ?secondary_region.as_ref().map(Region::as_str),
+            "execute_hedged: both legs transient; bubbling up for failover-loop fallback",
+        );
+        HedgedRaceResult::BothTransient {
+            last_error: transient_outcome_error(primary_region.as_ref(), secondary_region.as_ref()),
+            primary_region,
+            secondary_region,
+            diagnostics: parent_diagnostics,
+        }
+    }
+}
+
+/// Handles the [`HedgedRaceResult::BothTransient`] outcome of
+/// [`execute_hedged`] by advancing `retry_state` so the surrounding
+/// failover loop can re-enter against the remaining regions.
+///
+/// Returns:
+///
+/// - `Ok(())` when the budget allowed advancing (caller `continue`s
+///   the loop).
+/// - `Err(last_error)` when `failover_retry_count + 2 >
+///   max_failover_retries` (no remaining budget; caller surfaces
+///   `last_error` as the operation's terminal error).
+///
+/// # Region accounting
+///
+/// The race consumed exactly two regions (the primary at the
+/// snapshot's current `LocationIndex` and the secondary at the next
+/// preferred read endpoint). We charge two slots against
+/// `failover_retry_count` and advance the `LocationIndex` by two
+/// positions so the next iteration's `resolve_endpoint` selects a
+/// region not yet tried in this operation.
+///
+/// # Why two slots, not one?
+///
+/// A non-hedged operation that hit transients on the same two regions
+/// would have consumed two failover-retry slots — one per region.
+/// Charging the same amount here keeps the hedge-eligible path's
+/// worst-case region coverage identical to the non-hedged path's.
+/// Charging only one would let pathologically slow regions occupy
+/// both slots of every race indefinitely; charging two converges on
+/// the third region in bounded time exactly as the non-hedged loop
+/// does.
+fn try_advance_after_both_transient(
+    retry_state: &mut OperationRetryState,
+    location: &LocationSnapshot,
+    is_read_only: bool,
+    last_error: azure_core::Error,
+) -> Result<(), azure_core::Error> {
+    let consumed: u32 = 2;
+    let next_count = retry_state.failover_retry_count.saturating_add(consumed);
+    if next_count > retry_state.max_failover_retries {
+        tracing::debug!(
+            failover_retry_count = retry_state.failover_retry_count,
+            max_failover_retries = retry_state.max_failover_retries,
+            "hedge both-transient: failover budget exhausted; surfacing terminal error",
+        );
+        return Err(last_error);
+    }
+
+    retry_state.failover_retry_count = next_count;
+    let endpoints_len =
+        preferred_endpoints_for_attempt(location.account.as_ref(), retry_state, is_read_only).len();
+    if endpoints_len > 0 {
+        // Advance the LocationIndex twice — past both regions the race
+        // already consumed. `next_for_generation` rebases stale indices
+        // on the first call when the snapshot generation changed, so
+        // the second call lands on the third preferred endpoint in the
+        // new ordering.
+        let advanced = retry_state
+            .location
+            .next_for_generation(endpoints_len, location.account.generation);
+        retry_state.location =
+            advanced.next_for_generation(endpoints_len, location.account.generation);
+    }
+    tracing::debug!(
+        failover_retry_count = retry_state.failover_retry_count,
+        max_failover_retries = retry_state.max_failover_retries,
+        "hedge both-transient: failover loop will continue against remaining regions",
+    );
+    Ok(())
 }
 
 #[cfg(test)]
@@ -4479,7 +4711,7 @@ mod tests {
 
     #[test]
     fn classify_hedge_result_409_conflict_is_final() {
-        // 409 is a final HTTP error per spec §7.1 — terminates hedging.
+        // 409 is a final HTTP error — terminates hedging.
         let tr = http_result(409, None);
         assert!(matches!(
             super::classify_hedge_result(Ok(tr)),
@@ -4499,7 +4731,7 @@ mod tests {
 
     #[test]
     fn classify_hedge_result_404_1002_is_transient() {
-        // 404/1002 ReadSessionNotAvailable is transient (§7.2).
+        // 404/1002 ReadSessionNotAvailable is retriable.
         let tr = http_result(404, Some(1002));
         assert!(matches!(
             super::classify_hedge_result(Ok(tr)),
@@ -4534,7 +4766,7 @@ mod tests {
     // Regression tests for the pre-threshold primary-completion branch
     // in `execute_hedged`. Before the fix the branch recorded
     // `PrimaryWin` unconditionally — including for `Transient` primary
-    // outcomes — which would perpetually reset the §9.5
+    // outcomes — which would perpetually reset the
     // consecutive-hedge-win counter under sticky-fast-transient
     // traffic, neutralizing the very PPCB signal the counter was
     // designed to detect. `result_is_final` is the non-consuming
@@ -4562,7 +4794,7 @@ mod tests {
     #[test]
     fn result_is_final_404_1002_is_false() {
         // 404/1002 ReadSessionNotAvailable is transient — the
-        // pre-threshold branch must NOT record PrimaryWin (review #2,
+        // pre-threshold branch must NOT record PrimaryWin (per the
         // c328cf50 over-correction).
         let tr = http_result(404, Some(1002));
         assert!(!super::result_is_final(&tr));
@@ -4709,7 +4941,7 @@ mod tests {
     #[test]
     fn harvest_window_is_50ms() {
         // Load-bearing spec constant — surfaced as a test so the
-        // hedging_spec.md §6.5 #7 / §14.2 contract is enforced.
+        // HARVEST_WINDOW contract is enforced.
         assert_eq!(super::HARVEST_WINDOW, Duration::from_millis(50));
     }
 
@@ -4823,7 +5055,7 @@ mod tests {
         assert_eq!(parent.request_count(), parent_before);
     }
 
-    // ── Shared hub-region latch (Part 5 / HEDGING_SPEC.md §9.6) ───────
+    // ── Shared hub-region latch (Part 5) ──────────────────────────
 
     /// T-S5 — Eligibility predicate: data-plane + single-master → build.
     #[test]
@@ -4844,7 +5076,7 @@ mod tests {
     }
 
     /// T-S7 — Eligibility predicate: metadata pipeline → skip. Mirrors
-    /// AC-8 and the §1.5 data-plane scope gate of
+    /// AC-8 and the data-plane scope gate of
     /// `HUB_REGION_PROCESSING_HEADER_SPEC.md`.
     #[test]
     fn shared_hub_region_latch_eligibility_skip_metadata() {
@@ -4881,7 +5113,7 @@ mod tests {
 
     /// T-S10 — Emission helper: neither latch set → no header. Mirrors
     /// AC-5 / `shared_hub_region_latch_no_1002_emits_no_header` from
-    /// spec §15.1.
+    /// integration tests.
     #[test]
     fn should_emit_hub_region_header_neither_latched() {
         use std::sync::{atomic::AtomicBool, Arc};
@@ -4935,13 +5167,12 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Part 6 — PPCB hedge-win feedback (spec §9.5).
+    // Part 6 — PPCB hedge-win feedback.
     // Tests the `HedgeOutcomeRecorder` dispatch performed by
     // `record_hedge_outcome` using a Vec-backed fake recorder. The
     // real `LocationStateStore` impl is tracing-only today; once the
-    // PPCB-side counter lands (sub-plan 6c), spec §15.2/§15.3
-    // integration tests replace these unit tests as the authoritative
-    // PPCB-feedback verification.
+    // PPCB-side counter lands, integration tests replace these unit
+    // tests as the authoritative PPCB-feedback verification.
     // -----------------------------------------------------------------
 
     #[derive(Debug, Default)]
@@ -4981,7 +5212,7 @@ mod tests {
         }
     }
 
-    /// T-P1 (spec §15.1: record_hedge_win_increments_ppcb_counter).
+    /// T-P1: record_hedge_win_increments_ppcb_counter.
     /// An alternate-region win dispatches exactly one
     /// `record_consecutive_hedge_win` call against the primary partition.
     #[test]
@@ -5008,10 +5239,10 @@ mod tests {
         );
     }
 
-    /// T-P2 (spec §15.1: primary_win_resets_hedge_win_counter).
+    /// T-P2: primary_win_resets_hedge_win_counter.
     /// A primary-region win dispatches exactly one `record_primary_win`
     /// call (which, on the real recorder, would reset the
-    /// consecutive-hedge-win counter per §9.5 invariant #2).
+    /// consecutive-hedge-win counter).
     #[test]
     fn primary_win_dispatches_record_primary_win() {
         let recorder = FakeHedgeRecorder::default();
@@ -5038,8 +5269,8 @@ mod tests {
 
     /// T-P3. Without a partition key range ID (first attempt against an
     /// unresolved item — `retry_state.partition_key_range_id == None`),
-    /// the helper is a no-op for both outcomes. Spec §9.5 keys feedback
-    /// by `(partition, primary_region)`; without a partition there is
+    /// the helper is a no-op for both outcomes. Feedback is keyed by
+    /// `(partition, primary_region)`; without a partition there is
     /// nothing to attribute to.
     #[test]
     fn record_hedge_outcome_noop_when_partition_missing() {
@@ -5065,9 +5296,8 @@ mod tests {
     /// T-P4. Default-endpoint accounts whose snapshot carries no named
     /// region still attribute feedback to the partition — the
     /// `primary_region` argument is `Option` precisely to handle that
-    /// case (spec §9.5: the counter key is
-    /// `(partition, primary_region)` with `primary_region` allowed to
-    /// be `None`).
+    /// case (the counter key is `(partition, primary_region)` with
+    /// `primary_region` allowed to be `None`).
     #[test]
     fn record_hedge_outcome_dispatches_when_primary_region_missing() {
         let recorder = FakeHedgeRecorder::default();
