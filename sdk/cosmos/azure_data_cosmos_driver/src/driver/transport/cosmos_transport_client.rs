@@ -91,9 +91,8 @@ pub struct TransportError {
 }
 
 impl TransportError {
-    /// Creates a new [`TransportError`]. Accepts anything convertible into
-    /// the typed Cosmos [`crate::error::Error`] \u2014 in particular,
-    /// `azure_core::Error` values converted via the boundary mapper.
+    /// Creates a new [`TransportError`] from anything convertible into the
+    /// typed Cosmos [`crate::error::Error`].
     pub fn new(error: impl Into<crate::error::Error>, request_sent: RequestSentStatus) -> Self {
         Self {
             error: error.into(),

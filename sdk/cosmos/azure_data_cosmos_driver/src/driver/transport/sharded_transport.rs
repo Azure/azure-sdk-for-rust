@@ -235,19 +235,19 @@ impl fmt::Debug for ShardedHttpTransport {
 pub(crate) struct EndpointKey(Arc<str>);
 
 impl TryFrom<&Url> for EndpointKey {
-    type Error = azure_core::Error;
+    type Error = crate::error::Error;
 
-    fn try_from(url: &Url) -> azure_core::Result<Self> {
+    fn try_from(url: &Url) -> crate::error::Result<Self> {
         let host = url.host_str().ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            crate::error::Error::client(
                 format!("request URL is missing a host: {url}"),
+                None,
             )
         })?;
         let port = url.port_or_known_default().ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            crate::error::Error::client(
                 format!("request URL is missing a known port: {url}"),
+                None,
             )
         })?;
         Ok(Self(Arc::from(format!("{host}:{port}").as_str())))
@@ -933,7 +933,13 @@ mod tests {
         HttpRequest, HttpResponse, TransportError,
     };
     use async_trait::async_trait;
-    use azure_core::error::ErrorKind;
+
+    fn synthetic_transport_error() -> TransportError {
+        TransportError::new(
+            crate::error::Error::client("synthetic", None),
+            crate::diagnostics::RequestSentStatus::NotSent,
+        )
+    }
 
     #[derive(Debug, Default)]
     struct TrackingFactory {
@@ -970,9 +976,9 @@ mod tests {
     impl TransportClient for NoopTransportClient {
         async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             Err(TransportError::new(
-                azure_core::Error::with_message(
-                    ErrorKind::Other,
+                crate::error::Error::client(
                     "noop client should not execute requests in shard unit tests",
+                    None,
                 ),
                 crate::diagnostics::RequestSentStatus::NotSent,
             ))
@@ -1035,21 +1041,12 @@ mod tests {
         first.record_request_start();
         let overflow = pool.select_shard(None, None).unwrap();
         overflow.record_request_start();
-        overflow.record_request_finish(&Err(TransportError::new(
-            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-            crate::diagnostics::RequestSentStatus::NotSent,
-        )));
+        overflow.record_request_finish(&Err(synthetic_transport_error()));
 
         overflow.set_last_request_at(Instant::now() - Duration::from_secs(5));
 
-        first.record_request_finish(&Err(TransportError::new(
-            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-            crate::diagnostics::RequestSentStatus::NotSent,
-        )));
-        first.record_request_finish(&Err(TransportError::new(
-            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-            crate::diagnostics::RequestSentStatus::NotSent,
-        )));
+        first.record_request_finish(&Err(synthetic_transport_error()));
+        first.record_request_finish(&Err(synthetic_transport_error()));
 
         first.set_consecutive_failures(0);
         first.set_last_success_at(Some(Instant::now()));
@@ -1102,25 +1099,13 @@ mod tests {
         first.record_request_start();
         let second = pool.select_shard(None, None).unwrap();
 
-        first.record_request_finish(&Err(TransportError::new(
-            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-            crate::diagnostics::RequestSentStatus::NotSent,
-        )));
-        first.record_request_finish(&Err(TransportError::new(
-            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-            crate::diagnostics::RequestSentStatus::NotSent,
-        )));
+        first.record_request_finish(&Err(synthetic_transport_error()));
+        first.record_request_finish(&Err(synthetic_transport_error()));
 
         second.record_request_start();
-        second.record_request_finish(&Err(TransportError::new(
-            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-            crate::diagnostics::RequestSentStatus::NotSent,
-        )));
+        second.record_request_finish(&Err(synthetic_transport_error()));
         second.record_request_start();
-        second.record_request_finish(&Err(TransportError::new(
-            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-            crate::diagnostics::RequestSentStatus::NotSent,
-        )));
+        second.record_request_finish(&Err(synthetic_transport_error()));
 
         {
             first.set_consecutive_failures(0);
@@ -1160,14 +1145,8 @@ mod tests {
         first.record_request_start();
         let second = pool.select_shard(None, None).unwrap();
 
-        first.record_request_finish(&Err(TransportError::new(
-            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-            crate::diagnostics::RequestSentStatus::NotSent,
-        )));
-        first.record_request_finish(&Err(TransportError::new(
-            azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-            crate::diagnostics::RequestSentStatus::NotSent,
-        )));
+        first.record_request_finish(&Err(synthetic_transport_error()));
+        first.record_request_finish(&Err(synthetic_transport_error()));
 
         for shard in [&first, &second] {
             shard.set_last_success_at(None);
@@ -1230,10 +1209,7 @@ mod tests {
         // Mark the second shard with consecutive failures above threshold.
         for _ in 0..3 {
             second.record_request_start();
-            second.record_request_finish(&Err(TransportError::new(
-                azure_core::Error::with_message(ErrorKind::Other, "synthetic"),
-                crate::diagnostics::RequestSentStatus::NotSent,
-            )));
+            second.record_request_finish(&Err(synthetic_transport_error()));
         }
 
         // Make second's last success old enough that it passes the grace period.

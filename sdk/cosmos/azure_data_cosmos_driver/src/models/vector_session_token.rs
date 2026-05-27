@@ -10,7 +10,7 @@
 
 use std::{collections::HashMap, fmt};
 
-use azure_core::{error::ErrorKind, fmt::SafeDebug};
+use azure_core::fmt::SafeDebug;
 
 /// A parsed session-token version vector (the part after the `:`).
 ///
@@ -26,31 +26,31 @@ impl VectorSessionToken {
     /// Parses the version-vector portion of a session token string.
     ///
     /// Returns an error if the string is malformed.
-    pub(crate) fn parse(s: &str) -> azure_core::Result<Self> {
+    pub(crate) fn parse(s: &str) -> crate::error::Result<Self> {
         // Expected: version#globalLSN#region=lsn#region=lsn#...
         let mut parts = s.split('#');
 
-        let version_str = parts.next().ok_or_else(|| {
-            azure_core::Error::with_message(
-                ErrorKind::DataConversion,
-                "invalid session token: empty input",
-            )
-        })?;
+        let version_str = parts
+            .next()
+            .ok_or_else(|| crate::error::Error::client("invalid session token: empty input", None))?;
         let version: u64 = version_str.parse().map_err(|_| {
-            azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
-                format!("invalid session token: bad version '{version_str}'")
-            })
+            crate::error::Error::client(
+                format!("invalid session token: bad version '{version_str}'"),
+                None,
+            )
         })?;
 
         let global_str = parts.next().ok_or_else(|| {
-            azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
-                format!("invalid session token: missing global LSN in '{s}'")
-            })
+            crate::error::Error::client(
+                format!("invalid session token: missing global LSN in '{s}'"),
+                None,
+            )
         })?;
         let global_lsn: u64 = global_str.parse().map_err(|_| {
-            azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
-                format!("invalid session token: bad global LSN '{global_str}'")
-            })
+            crate::error::Error::client(
+                format!("invalid session token: bad global LSN '{global_str}'"),
+                None,
+            )
         })?;
 
         let mut region_progress = HashMap::new();
@@ -59,19 +59,22 @@ impl VectorSessionToken {
                 continue;
             }
             let (region_str, lsn_str) = segment.split_once('=').ok_or_else(|| {
-                azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
-                    format!("invalid session token: malformed region segment '{segment}'")
-                })
+                crate::error::Error::client(
+                    format!("invalid session token: malformed region segment '{segment}'"),
+                    None,
+                )
             })?;
             let region_id: u64 = region_str.parse().map_err(|_| {
-                azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
-                    format!("invalid session token: bad region id '{region_str}'")
-                })
+                crate::error::Error::client(
+                    format!("invalid session token: bad region id '{region_str}'"),
+                    None,
+                )
             })?;
             let lsn: u64 = lsn_str.parse().map_err(|_| {
-                azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
-                    format!("invalid session token: bad region LSN '{lsn_str}'")
-                })
+                crate::error::Error::client(
+                    format!("invalid session token: bad region LSN '{lsn_str}'"),
+                    None,
+                )
             })?;
             region_progress.insert(region_id, lsn);
         }
@@ -224,15 +227,18 @@ impl SessionTokenValue {
     }
 
     /// Parses a session token value string, trying V2 (vector) first, then V1 (simple).
-    pub(crate) fn parse(s: &str) -> azure_core::Result<Self> {
+    pub(crate) fn parse(s: &str) -> crate::error::Result<Self> {
         if let Ok(vector) = VectorSessionToken::parse(s) {
             return Ok(Self::Vector(vector));
         }
         // V1 fallback: bare integer
         let lsn: u64 = s.parse().map_err(|_| {
-            azure_core::Error::with_message_fn(ErrorKind::DataConversion, || {
-                format!("invalid session token value: '{s}' is not a valid V2 vector or V1 integer")
-            })
+            crate::error::Error::client(
+                format!(
+                    "invalid session token value: '{s}' is not a valid V2 vector or V1 integer"
+                ),
+                None,
+            )
         })?;
         Ok(Self::Simple(lsn))
     }

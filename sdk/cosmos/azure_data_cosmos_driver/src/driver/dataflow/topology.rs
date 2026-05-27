@@ -71,11 +71,12 @@ where
             let pk_ranges = match pk_ranges {
                 Some(ranges) if !ranges.is_empty() => ranges,
                 _ => {
-                    return Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
+                    return Err(crate::error::Error::transport(
+                        crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED,
                         "failed to resolve partition key ranges from topology cache",
-                    )
-                    .into());
+                        None,
+                        None,
+                    ));
                 }
             };
 

@@ -778,12 +778,11 @@ impl ConnectionPoolOptionsBuilder {
                 Some(addr) => Some(addr),
                 None => match std::env::var("AZURE_COSMOS_LOCAL_ADDRESS") {
                     Ok(v) => Some(v.parse().map_err(|e| {
-                        azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::DataConversion,
+                        crate::error::Error::configuration(
                             format!(
-                                "Failed to parse AZURE_COSMOS_LOCAL_ADDRESS as IP address: {} ({})",
-                                v, e
+                                "Failed to parse AZURE_COSMOS_LOCAL_ADDRESS as IP address: {v} ({e})"
                             ),
+                            None,
                         )
                     })?),
                     Err(_) => None,

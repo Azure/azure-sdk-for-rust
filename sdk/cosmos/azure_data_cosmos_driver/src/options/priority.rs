@@ -38,15 +38,15 @@ impl Display for PriorityLevel {
 }
 
 impl std::str::FromStr for PriorityLevel {
-    type Err = azure_core::Error;
+    type Err = crate::error::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "High" => Ok(Self::High),
             "Low" => Ok(Self::Low),
-            _ => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
+            _ => Err(crate::error::Error::client(
                 format!("Unknown priority level: {s}"),
+                None,
             )),
         }
     }
@@ -55,7 +55,7 @@ impl std::str::FromStr for PriorityLevel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::error::ErrorKind;
+    use crate::error::Kind;
 
     #[test]
     fn parses_valid_priority_levels() {
@@ -66,11 +66,11 @@ mod tests {
     }
 
     #[test]
-    fn parsing_invalid_priority_returns_data_conversion_error() {
+    fn parsing_invalid_priority_returns_client_error() {
         let err = "Medium"
             .parse::<PriorityLevel>()
             .expect_err("expected error for invalid priority");
-        assert_eq!(*err.kind(), ErrorKind::DataConversion);
+        assert_eq!(err.kind(), Kind::Client);
         assert!(
             err.to_string().contains("Unknown priority level: Medium"),
             "unexpected error message: {err}"

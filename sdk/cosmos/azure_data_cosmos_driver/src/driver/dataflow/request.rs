@@ -6,9 +6,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use azure_core::http::StatusCode;
 
-use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey, SubStatusCode};
+use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey};
 
 use super::{
     PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, PipelineNodeState,
@@ -308,33 +307,6 @@ impl Request {
     }
 }
 
-// Partition topology changes are a specific subset of `Gone` substatus codes.
-// Other substatus mappings live in `pipeline::retry_evaluation`; this one stays
-// here because it drives pipeline-level repair (splitting a node into
-// replacements) rather than per-attempt retry.
-#[allow(dead_code)]
-fn is_partition_topology_change(error: &azure_core::Error) -> bool {
-    match error.kind() {
-        azure_core::error::ErrorKind::HttpResponse {
-            status, error_code, ..
-        } if *status == StatusCode::Gone => error_code
-            .as_deref()
-            .and_then(|code| code.parse::<u32>().ok())
-            .is_some_and(is_partition_topology_change_substatus),
-        _ => false,
-    }
-}
-
-#[allow(dead_code)]
-fn is_partition_topology_change_substatus(substatus: u32) -> bool {
-    matches!(
-        SubStatusCode::new(substatus),
-        SubStatusCode::PARTITION_KEY_RANGE_GONE
-            | SubStatusCode::COMPLETING_SPLIT
-            | SubStatusCode::COMPLETING_PARTITION_MIGRATION
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -389,11 +361,10 @@ mod tests {
 
             Box::pin(async move {
                 if resolved.is_empty() {
-                    Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
+                    Err(crate::error::Error::client(
                         "scenario topology produced no overlapping ranges",
-                    )
-                    .into())
+                        None,
+                    ))
                 } else {
                     Ok(resolved)
                 }
@@ -754,11 +725,10 @@ mod tests {
     async fn topology_provider_error_propagates() {
         let mut request = Request::new(Arc::new(operation()), epk_range_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
-        let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
+        let mut topology = MockTopologyProvider::new(vec![Err(crate::error::Error::client(
             "topology fetch failed",
-        )
-        .into())]);
+            None,
+        ))]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();

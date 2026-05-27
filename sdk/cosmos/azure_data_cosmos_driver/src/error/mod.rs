@@ -10,20 +10,13 @@
 //! codes such as `408 / 20008` for end-to-end timeout), the parsed
 //! [`CosmosResponseHeaders`], and the operation [`DiagnosticsContext`].
 //!
-//! ## Boundary with `azure_core`
-//!
-//! Driver-internal code produces and propagates [`Error`] directly via
-//! [`crate::error::Result<T>`]. At the lowest layer that interacts with
-//! `azure_core` machinery (HTTP client, credential provider, response
-//! deserialization), `classify_azure_core_error` inspects the
-//! `azure_core::ErrorKind` plus the source chain
-//! (`reqwest`/`hyper`/`h2`/`io`) and mints the most specific [`CosmosStatus`]
-//! available, preserving the original `azure_core::Error` as
-//! [`StdError::source`] so callers can still downcast through it.
-//!
-//! The conversion is one-way: nothing in the driver wraps a Cosmos
-//! [`Error`] back inside an `azure_core::Error`. The transport layer
-//! carries typed Cosmos errors end-to-end.
+//! Underlying third-party errors (credential failures, HMAC failures, HTTP
+//! transport errors, …) are wrapped at the call site that invokes the
+//! third-party API — each such site picks the most specific typed
+//! constructor ([`Error::client`], [`Error::authentication`],
+//! [`Error::transport`], [`Error::serialization`], …) and attaches the
+//! original error as [`StdError::source`] so callers can still downcast
+//! through it.
 
 use std::{error::Error as StdError, fmt, sync::Arc};
 
@@ -55,19 +48,20 @@ pub use crate::models::Kind;
 /// Cosmos DB error returned from every public API in the driver (and, by
 /// re-export, every public API in the SDK).
 ///
-/// Unlike `azure_core::Error`, `Error` always exposes Cosmos-typed
-/// status and parsed response headers when they are available — for both real
-/// service errors and synthetic client-side conditions (e.g. an end-to-end
-/// operation timeout surfaces as `408 / 20008` even though no HTTP response
-/// was received).
+/// Always exposes Cosmos-typed status and parsed response headers when they
+/// are available — for both real service errors and synthetic client-side
+/// conditions (e.g. an end-to-end operation timeout surfaces as
+/// `408 / 20008` even though no HTTP response was received).
 ///
-/// `azure_core::Error` (and any other underlying error) is reachable via
-/// [`std::error::Error::source`].
+/// Underlying errors (transport, credential, deserialization, …) are
+/// reachable via [`std::error::Error::source`].
 ///
-/// `Error` is `Clone` (a cheap `Arc` refcount bump) so that it can be
-/// extracted from an `azure_core::Error`'s `source()` chain by reference and
-/// returned by value. All fields are wrapped behind a single `Arc` so the
-/// outer struct is one pointer wide, keeping `Result<T, Error>` small.
+/// `Error` is `Clone` (a cheap `Arc` refcount bump) so callers can pass it
+/// by value through `Result` chains without re-allocating, and so the
+/// pipeline can patch single fields (e.g. attaching diagnostics via
+/// [`Error::with_diagnostics`]) cheaply. All fields are wrapped behind a
+/// single `Arc` so the outer struct is one pointer wide, keeping
+/// `Result<T, Error>` small.
 #[derive(Clone)]
 pub struct Error {
     inner: Arc<ErrorInner>,
@@ -279,6 +273,27 @@ impl Error {
         })
     }
 
+    /// Builds an `Authentication` error (token acquisition failure, missing
+    /// credential, etc.), optionally wrapping an underlying source error.
+    ///
+    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
+    /// (`azure_data_cosmos`) and other in-tree consumers can construct
+    /// typed errors; not part of the public surface.
+    #[doc(hidden)]
+    pub fn authentication(
+        message: impl Into<Arc<str>>,
+        source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
+    ) -> Self {
+        Self::from_inner(ErrorInner {
+            status: CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
+            payload: None,
+            diagnostics: None,
+            message: message.into(),
+            source,
+            backtrace: None,
+        })
+    }
+
     /// Builds a `Configuration` error (bad endpoint URL, malformed connection
     /// string, etc.), optionally wrapping an underlying source error.
     ///
@@ -449,16 +464,14 @@ impl Error {
     ///   promoting a service error to a transport error) **inherit** the
     ///   inner error's backtrace, so the originating site is still
     ///   visible.
-    /// * **Errors produced by the `From<azure_core::Error>` boundary
-    ///   mapper** (transport / credential / serialization failures
-    ///   arriving from `azure_core` without an embedded Cosmos error)
-    ///   point at the boundary mapper itself, not at the original failure
-    ///   site. `azure_core::Error` does not carry its own backtrace, so
-    ///   the originating call stack is unrecoverable at this layer. The
-    ///   typed [`Kind`], status, and `std::error::Error::source()` chain
-    ///   (which preserves the underlying `azure_core::Error`,
-    ///   `reqwest::Error`, `h2::Error`, `io::Error`, …) remain the
-    ///   primary diagnostic signal in that case.
+    /// * **Errors wrapping a third-party error** (e.g. credential or HMAC
+    ///   failures lifted into [`Error::authentication`]) point at the
+    ///   explicit construction site in driver code, not the originating
+    ///   failure site inside the third-party crate. The typed [`Kind`],
+    ///   status, and `std::error::Error::source()` chain (which preserves
+    ///   the underlying error — `reqwest::Error`, `h2::Error`,
+    ///   `io::Error`, …) remain the primary diagnostic signal in that
+    ///   case.
     ///
     /// ## Async caveat
     ///
@@ -557,10 +570,10 @@ fn write_header(f: &mut fmt::Formatter<'_>, inner: &ErrorInner) -> fmt::Result {
 
 /// Writes the `source()` chain. When `debug` is true, each entry is
 /// rendered with `{:?}` so that wrapped errors carrying structured state
-/// (e.g. another Cosmos [`Error`], an `azure_core::Error`, `io::Error`,
-/// `h2::Error`) surface their full debug representation rather than a
-/// one-line `Display` summary. Display mode (`alternate Display` on
-/// [`Error`]) keeps the human-readable single-line form per entry.
+/// (e.g. another Cosmos [`Error`], `io::Error`, `h2::Error`) surface their
+/// full debug representation rather than a one-line `Display` summary.
+/// Display mode (`alternate Display` on [`Error`]) keeps the
+/// human-readable single-line form per entry.
 ///
 /// `alternate` is propagated so that `{e:#?}` cascades to `{src:#?}` on
 /// each entry (and `{e:#}` to `{src:#}`), giving callers a way to opt
@@ -577,11 +590,10 @@ fn write_source_chain(
         if depth == 0 {
             f.write_str("\n\nCaused by:")?;
         }
-        // Bound the walk by the same cap as `refine_status_from_source_chain`
-        // so a pathological or cyclic `source()` chain cannot pin a thread
-        // formatting an error. This runs on every `tracing::error!`,
-        // `format!`, and panic message, so the protection matters even more
-        // here than at the boundary mapper.
+        // Bound the walk by `MAX_SOURCE_CHAIN_DEPTH` so a pathological
+        // or cyclic `source()` chain cannot pin a thread formatting an
+        // error. This runs on every `tracing::error!`, `format!`, and
+        // panic message.
         if depth >= MAX_SOURCE_CHAIN_DEPTH {
             write!(
                 f,
@@ -650,154 +662,10 @@ impl StdError for Error {
     }
 }
 
-impl From<azure_core::Error> for Error {
-    /// Boundary mapper from `azure_core::Error`. The driver no longer
-    /// embeds typed Cosmos errors inside `azure_core::Error` containers,
-    /// so this is a one-way classification — no embedded-payload
-    /// recovery is needed.
-    fn from(error: azure_core::Error) -> Self {
-        classify_azure_core_error(error)
-    }
-}
-
-/// Boundary mapper: converts an `azure_core::Error` (typically produced by
-/// the HTTP pipeline, credential provider, or response deserialization) into
-/// a typed [`Error`] carrying the most specific [`CosmosStatus`] the source
-/// chain allows.
-///
-/// The original `azure_core::Error` is always preserved as the
-/// [`StdError::source`] of the returned Cosmos error so callers can still
-/// downcast through the underlying `reqwest`/`hyper`/`h2`/`io` chain when
-/// needed; the typed status is the preferred discriminator.
-fn classify_azure_core_error(error: azure_core::Error) -> Error {
-    let message = error.to_string();
-    let status = derive_status_from_azure_core_error(&error);
-    // When the underlying failure is an HTTP response that already arrived
-    // and was buffered by `azure_core`, lift the wire body + parsed Cosmos
-    // headers onto the typed error so callers can reach them via
-    // `Error::response_body()` / `Error::cosmos_headers()` without having to
-    // downcast `source()` back to `azure_core::Error` and re-extract.
-    //
-    // `RawResponse: Clone` here is cheap: `Headers` is a small map, the body
-    // is `Bytes` (refcount bump), and this path only runs at error
-    // construction time — well off the steady-state hot path.
-    let payload = match error.kind() {
-        azure_core::error::ErrorKind::HttpResponse {
-            raw_response: Some(raw),
-            ..
-        } => {
-            let raw = (**raw).clone();
-            let (_status, headers, body) = raw.deconstruct();
-            let cosmos_headers = CosmosResponseHeaders::from_headers(&headers);
-            let body_bytes = azure_core::Bytes::from(body);
-            Some(Box::new(CosmosResponsePayload::new(
-                ResponseBody::Bytes(body_bytes),
-                cosmos_headers,
-            )))
-        }
-        _ => None,
-    };
-    Error::from_inner(ErrorInner {
-        status,
-        payload,
-        diagnostics: None,
-        message: Arc::<str>::from(message),
-        source: Some(Arc::new(error)),
-        backtrace: None,
-    })
-}
-
-fn derive_status_from_azure_core_error(error: &azure_core::Error) -> CosmosStatus {
-    use azure_core::error::ErrorKind as AzKind;
-
-    // HttpResponse is the only kind that already carries a real wire status,
-    // so it wins over any source-chain refinement.
-    if let AzKind::HttpResponse {
-        status, error_code, ..
-    } = error.kind()
-    {
-        let mut cs = CosmosStatus::new(*status).with_kind(Kind::Service);
-        if let Some(sub) = error_code.as_deref().and_then(|c| c.parse::<u32>().ok()) {
-            cs = cs.with_sub_status(sub);
-        }
-        return cs;
-    }
-
-    // Otherwise inspect the source chain for a more specific cause than
-    // azure_core's coarse `ErrorKind` exposes (h2 protocol errors, io DNS
-    // errors, etc.).
-    if let Some(refined) = refine_status_from_source_chain(error.source()) {
-        return refined;
-    }
-
-    match error.kind() {
-        AzKind::Credential => CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
-        AzKind::DataConversion => CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-        AzKind::Connection => CosmosStatus::TRANSPORT_CONNECTION_FAILED,
-        AzKind::Io => CosmosStatus::TRANSPORT_IO_FAILED,
-        // Unknown `azure_core` kinds at this boundary are most likely
-        // transport-layer surprises; treat as transient transport failures.
-        // `azure_core::ErrorKind` is `#[non_exhaustive]`, so any future
-        // variant lands here too.
-        _ => CosmosStatus::TRANSPORT_IO_FAILED,
-    }
-}
-
-/// Walks the `.source()` chain looking for downcasts that map to a more
-/// specific [`CosmosStatus`] than the top-level `azure_core::ErrorKind`
-/// provides. Returns `None` if nothing more specific is found.
-///
-/// The walk is bounded by [`MAX_SOURCE_CHAIN_DEPTH`] frames. Real Cosmos
-/// transport chains are never deeper than ~5; the cap exists so this
-/// function — which sits on the hot path of every
-/// `azure_core::Error → driver::Error` conversion — cannot be pinned to a
-/// CPU core by a pathological or cyclic source chain. `Error::source`
-/// is not required to be acyclic, and arbitrary `azure_core::Error`
-/// chains can originate from any transport / credential / wrapper layer
-/// outside the driver.
-fn refine_status_from_source_chain(
-    start: Option<&(dyn StdError + 'static)>,
-) -> Option<CosmosStatus> {
-    let mut cur = start;
-    for _ in 0..MAX_SOURCE_CHAIN_DEPTH {
-        let Some(e) = cur else { return None };
-        #[cfg(feature = "reqwest")]
-        {
-            if let Some(h2_err) = e.downcast_ref::<h2::Error>() {
-                if matches!(
-                    h2_err.reason(),
-                    Some(
-                        h2::Reason::HTTP_1_1_REQUIRED
-                            | h2::Reason::PROTOCOL_ERROR
-                            | h2::Reason::FRAME_SIZE_ERROR
-                    )
-                ) {
-                    return Some(CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE);
-                }
-            }
-        }
-        if let Some(io_err) = e.downcast_ref::<std::io::Error>() {
-            // Best-effort DNS detection. `reqwest`/`hyper` typically surface
-            // resolver failures as `io::ErrorKind::NotFound` /
-            // `AddrNotAvailable`. TLS / generic socket I/O falls through to
-            // the caller's base classification.
-            if matches!(
-                io_err.kind(),
-                std::io::ErrorKind::NotFound | std::io::ErrorKind::AddrNotAvailable
-            ) {
-                return Some(CosmosStatus::TRANSPORT_DNS_FAILED);
-            }
-        }
-        cur = e.source();
-    }
-    None
-}
-
-/// Maximum number of `.source()` frames inspected by
-/// [`refine_status_from_source_chain`]. Generous relative to real Cosmos
-/// transport chains (~5 frames) so we never miss a meaningful inner cause,
-/// but bounded so a pathological or cyclic chain cannot pin the boundary
-/// mapper on a hot path.
+/// Maximum number of `.source()` frames walked when rendering an
+/// [`Error`] via [`fmt::Display`] / [`fmt::Debug`]. Generous relative to
+/// real Cosmos transport chains (~5 frames) but bounded so a pathological
+/// or cyclic chain cannot pin a thread formatting an error.
 const MAX_SOURCE_CHAIN_DEPTH: usize = 64;
 
 /// Driver-wide `Result` alias.
@@ -806,8 +674,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::error::ErrorKind as AzKind;
-    use azure_core::http::headers::Headers;
 
     #[test]
     fn service_from_parts_populates_status_and_headers() {
@@ -835,164 +701,6 @@ mod tests {
         );
         assert!(err.status().is_timeout());
         assert!(err.status().is_transient());
-    }
-
-    #[test]
-    fn from_azure_core_error_classifies_when_no_embedded_payload() {
-        let raw = azure_core::Error::new(
-            AzKind::HttpResponse {
-                status: StatusCode::Conflict,
-                error_code: None,
-                raw_response: Some(Box::new(azure_core::http::RawResponse::from_bytes(
-                    StatusCode::Conflict,
-                    Headers::new(),
-                    Vec::new(),
-                ))),
-            },
-            "conflict",
-        );
-        let cosmos: Error = raw.into();
-        assert_eq!(cosmos.kind(), Kind::Service);
-        assert_eq!(cosmos.status_code(), StatusCode::Conflict);
-        assert!(cosmos.status().is_conflict());
-    }
-
-    #[test]
-    fn from_azure_core_http_response_lifts_body_and_headers_onto_error() {
-        // Regression guard: when the boundary mapper sees an
-        // `AzKind::HttpResponse { raw_response: Some(..), .. }` it must
-        // surface the wire body + parsed Cosmos headers on the resulting
-        // `Error` so callers can read them via `response_body()` /
-        // `cosmos_headers()` without downcasting `source()` back to
-        // `azure_core::Error`.
-        use azure_core::http::headers::HeaderName;
-        let mut headers = Headers::new();
-        // Two representative Cosmos headers: one numeric, one ETag-shaped,
-        // so we can verify both wire-level shape and Cosmos parsing.
-        headers.insert(HeaderName::from_static("x-ms-request-charge"), "12.34");
-        headers.insert(HeaderName::from_static("etag"), "\"abc\"");
-
-        let body = br#"{"code":"BadRequest","message":"missing partition key"}"#.to_vec();
-        let raw = azure_core::Error::new(
-            AzKind::HttpResponse {
-                status: StatusCode::BadRequest,
-                error_code: Some("BadRequest".to_string()),
-                raw_response: Some(Box::new(azure_core::http::RawResponse::from_bytes(
-                    StatusCode::BadRequest,
-                    headers,
-                    body.clone(),
-                ))),
-            },
-            "bad request",
-        );
-
-        let cosmos: Error = raw.into();
-        assert_eq!(cosmos.kind(), Kind::Service);
-        assert_eq!(cosmos.status_code(), StatusCode::BadRequest);
-
-        // Body lifted verbatim.
-        assert_eq!(
-            cosmos.response_body(),
-            Some(body.as_slice()),
-            "response body must be reachable from the typed error"
-        );
-
-        // Cosmos headers parsed from the wire headers.
-        let ch = cosmos
-            .cosmos_headers()
-            .expect("parsed Cosmos headers must be reachable from the typed error");
-        assert_eq!(
-            ch.request_charge.map(|r| r.value()),
-            Some(12.34),
-            "x-ms-request-charge must round-trip into CosmosResponseHeaders"
-        );
-        assert!(
-            ch.etag.is_some(),
-            "etag must round-trip into CosmosResponseHeaders"
-        );
-    }
-
-    #[test]
-    fn classify_preserves_azure_core_error_as_source() {
-        // No embedded Cosmos payload — must classify and keep the original
-        // `azure_core::Error` in the source chain so callers can downcast
-        // through it for transport-level checks (e.g. reqwest connection
-        // errors).
-        let original = azure_core::Error::with_message(AzKind::Io, "connection reset");
-        let cosmos: Error = original.into();
-        assert_eq!(cosmos.kind(), Kind::Transport);
-
-        let source = StdError::source(&cosmos).expect("source preserved");
-        let recovered = source
-            .downcast_ref::<azure_core::Error>()
-            .expect("downcast back to azure_core::Error");
-        assert!(matches!(recovered.kind(), AzKind::Io));
-        assert!(recovered.to_string().contains("connection reset"));
-    }
-
-    #[test]
-    fn classify_io_kind_maps_to_transport_io_failed() {
-        let raw = azure_core::Error::with_message(AzKind::Io, "io");
-        let cosmos: Error = raw.into();
-        assert_eq!(
-            cosmos.sub_status(),
-            Some(SubStatusCode::TRANSPORT_IO_FAILED)
-        );
-    }
-
-    #[test]
-    fn classify_connection_kind_maps_to_transport_connection_failed() {
-        let raw = azure_core::Error::with_message(AzKind::Connection, "refused");
-        let cosmos: Error = raw.into();
-        assert_eq!(
-            cosmos.sub_status(),
-            Some(SubStatusCode::TRANSPORT_CONNECTION_FAILED)
-        );
-    }
-
-    #[test]
-    fn classify_credential_kind_maps_to_token_acquisition_failed() {
-        let raw = azure_core::Error::with_message(AzKind::Credential, "no token");
-        let cosmos: Error = raw.into();
-        assert_eq!(cosmos.kind(), Kind::Authentication);
-        assert_eq!(
-            cosmos.sub_status(),
-            Some(SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
-        );
-    }
-
-    #[test]
-    fn classify_data_conversion_kind_maps_to_response_body_invalid() {
-        let raw = azure_core::Error::with_message(AzKind::DataConversion, "bad json");
-        let cosmos: Error = raw.into();
-        assert_eq!(cosmos.kind(), Kind::Serialization);
-        assert_eq!(
-            cosmos.sub_status(),
-            Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID)
-        );
-    }
-
-    #[test]
-    fn classify_refines_io_dns_via_source_chain() {
-        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "dns lookup failed");
-        let raw = azure_core::Error::new(AzKind::Io, io_err);
-        let cosmos: Error = raw.into();
-        assert_eq!(
-            cosmos.sub_status(),
-            Some(SubStatusCode::TRANSPORT_DNS_FAILED)
-        );
-    }
-
-    #[cfg(feature = "reqwest")]
-    #[test]
-    fn classify_refines_h2_protocol_via_source_chain() {
-        let h2_err: h2::Error = h2::Reason::HTTP_1_1_REQUIRED.into();
-        let raw = azure_core::Error::new(AzKind::Io, h2_err);
-        let cosmos: Error = raw.into();
-        assert_eq!(
-            cosmos.sub_status(),
-            Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE)
-        );
     }
 
     #[test]

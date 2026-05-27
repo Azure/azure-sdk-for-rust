@@ -1664,8 +1664,7 @@ impl CosmosDriver {
     ///   previous pipeline's state and can resume any operation.
     /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
-    ///   returns a [`DataConversion`](azure_core::error::ErrorKind::DataConversion)
-    ///   error.
+    ///   returns a [`Client`](crate::error::Kind::Client) error.
     pub async fn plan_operation(
         &self,
         operation: CosmosOperation,
@@ -1870,8 +1869,6 @@ mod tests {
 
     use url::Url;
 
-    use azure_core::error::ErrorKind;
-
     use crate::{
         driver::CosmosDriverRuntimeBuilder,
         models::AccountReference,
@@ -1939,17 +1936,20 @@ mod tests {
                     body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
                 }),
                 ResponsePlan::Http2Incompatible => Err(TransportError::new(
-                    azure_core::Error::with_error(
-                        ErrorKind::Io,
-                        h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
+                    crate::error::Error::transport(
+                        crate::models::CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE,
                         "http2 not supported",
+                        None,
+                        Some(Arc::new(h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED))),
                     ),
                     crate::diagnostics::RequestSentStatus::NotSent,
                 )),
                 ResponsePlan::ConnectionError => Err(TransportError::new(
-                    azure_core::Error::with_message(
-                        ErrorKind::Connection,
+                    crate::error::Error::transport(
+                        crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED,
                         "simulated connection refused",
+                        None,
+                        None,
                     ),
                     crate::diagnostics::RequestSentStatus::NotSent,
                 )),
@@ -2349,59 +2349,80 @@ mod tests {
     #[test]
     #[cfg(feature = "reqwest")]
     fn http2_reason_http11_required_triggers_http11_downgrade() {
-        let error = azure_core::Error::with_error(
-            ErrorKind::Io,
-            h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED),
+        let error = crate::error::Error::transport(
+            crate::models::CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE,
             "http2 not supported",
+            None,
+            Some(Arc::new(h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED))),
         );
 
         assert!(CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
-            &crate::error::Error::from(error),
+            &error,
             true,
         ));
     }
 
     #[test]
     fn connection_error_without_http2_signal_does_not_trigger_downgrade() {
-        let error = azure_core::Error::with_message(ErrorKind::Connection, "connect failed");
+        let error = crate::error::Error::transport(
+            crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED,
+            "connect failed",
+            None,
+            None,
+        );
 
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
-            &crate::error::Error::from(error),
+            &error,
             true,
         ));
     }
 
     #[test]
     fn io_error_without_http2_signal_does_not_trigger_downgrade() {
-        let error = azure_core::Error::with_message(ErrorKind::Io, "socket reset");
+        let error = crate::error::Error::transport(
+            crate::models::CosmosStatus::TRANSPORT_IO_FAILED,
+            "socket reset",
+            None,
+            None,
+        );
 
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
-            &crate::error::Error::from(error),
+            &error,
             true,
         ));
     }
 
     #[test]
     fn http11_errors_do_not_trigger_probe_back_to_http2() {
-        let error = azure_core::Error::with_message(ErrorKind::Connection, "connect failed");
+        let error = crate::error::Error::transport(
+            crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED,
+            "connect failed",
+            None,
+            None,
+        );
 
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http11,
-            &crate::error::Error::from(error),
+            &error,
             true,
         ));
     }
 
     #[test]
     fn downgrade_requires_http2_to_be_enabled() {
-        let error = azure_core::Error::with_message(ErrorKind::Connection, "connect failed");
+        let error = crate::error::Error::transport(
+            crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED,
+            "connect failed",
+            None,
+            None,
+        );
 
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
-            &crate::error::Error::from(error),
+            &error,
             false,
         ));
     }

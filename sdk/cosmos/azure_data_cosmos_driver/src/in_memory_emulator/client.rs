@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! `InMemoryEmulatorHttpClient` — implements `azure_core::http::HttpClient`.
+//! `InMemoryEmulatorHttpClient` — dispatches requests against an in-memory
+//! Cosmos DB store. Used as a [`TransportClient`] implementation by the
+//! driver and called directly by integration tests.
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use azure_core::http::{AsyncRawResponse, HttpClient, Request};
+use azure_core::http::{AsyncRawResponse, Request};
 use azure_core::Bytes;
 
 use super::config::VirtualAccountConfig;
@@ -19,6 +21,7 @@ use crate::driver::transport::cosmos_transport_client::{
     TransportError,
 };
 use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
+use crate::models::CosmosStatus;
 use crate::options::ConnectionPoolOptions;
 
 /// An HTTP client that intercepts all requests and serves them from an in-memory store.
@@ -114,9 +117,16 @@ impl std::fmt::Debug for InMemoryEmulatorHttpClient {
     }
 }
 
-#[async_trait]
-impl HttpClient for InMemoryEmulatorHttpClient {
-    async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
+impl InMemoryEmulatorHttpClient {
+    /// Dispatches a request against the in-memory store and returns the
+    /// emulated response. Inherent method (no longer implements
+    /// `azure_core::HttpClient`) so the entire emulator pipeline can
+    /// surface typed [`crate::error::Error`] values directly — no
+    /// `azure_core::Error` round-trip.
+    pub async fn execute_request(
+        &self,
+        request: &Request,
+    ) -> crate::error::Result<AsyncRawResponse> {
         // Notify any attached observer first so tests can assert on the
         // outgoing request shape (headers, URL, method) before the emulator
         // mutates state. The fast path when no observer is attached is a
@@ -131,12 +141,12 @@ impl HttpClient for InMemoryEmulatorHttpClient {
         let region_name = match resolve_region(request.url(), self.store.config()) {
             Some(r) => r,
             None => {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
+                return Err(crate::error::Error::client(
                     format!(
                         "in-memory emulator: request URL host '{}' does not match any configured region",
                         request.url().host_str().unwrap_or("<none>"),
                     ),
+                    None,
                 ));
             }
         };
@@ -203,14 +213,19 @@ impl TransportClient for EmulatorTransportClient {
             .emulator
             .execute_request(&core_request)
             .await
-            .map_err(|e| TransportError::new(e, crate::diagnostics::RequestSentStatus::Unknown))?;
+            .map_err(|e| {
+                TransportError::new(e, crate::diagnostics::RequestSentStatus::Unknown)
+            })?;
 
         // Collect the buffered response
         let raw = async_response.try_into_raw_response().await.map_err(|e| {
-            TransportError::new(
-                azure_core::Error::new(azure_core::error::ErrorKind::Io, e),
-                crate::diagnostics::RequestSentStatus::Sent,
-            )
+            let cosmos_err = crate::error::Error::transport(
+                CosmosStatus::TRANSPORT_BODY_READ_FAILED,
+                e.to_string(),
+                None,
+                Some(std::sync::Arc::new(e)),
+            );
+            TransportError::new(cosmos_err, crate::diagnostics::RequestSentStatus::Sent)
         })?;
 
         let status = u16::from(raw.status());

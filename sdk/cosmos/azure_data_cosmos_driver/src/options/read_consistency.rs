@@ -105,14 +105,11 @@ impl std::fmt::Display for ReadConsistencyStrategy {
 }
 
 impl std::str::FromStr for ReadConsistencyStrategy {
-    type Err = azure_core::Error;
+    type Err = crate::error::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s).ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!("Unknown read consistency strategy: {}", s),
-            )
+            crate::error::Error::client(format!("Unknown read consistency strategy: {s}"), None)
         })
     }
 }

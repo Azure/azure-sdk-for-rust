@@ -361,7 +361,7 @@ impl PartitionKey {
 }
 
 impl AsHeaders for PartitionKey {
-    type Error = azure_core::Error;
+    type Error = crate::error::Error;
     type Iter = std::iter::Once<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
@@ -425,9 +425,9 @@ impl AsHeaders for PartitionKey {
                 }
                 InnerPartitionKeyValue::Infinity => {
                     // Internal sentinel — should never appear in a user-facing partition key.
-                    return Err(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Other,
+                    return Err(crate::error::Error::client(
                         "Infinity is not a valid partition key value for serialization",
+                        None,
                     ));
                 }
                 InnerPartitionKeyValue::Undefined => {

@@ -198,12 +198,9 @@ impl DiagnosticsOptionsBuilder {
             Some(v) => v,
             None => match std::env::var("AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY") {
                 Ok(v) => v.parse().map_err(|e: String| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        format!(
-                            "Failed to parse AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY: {}",
-                            e
-                        ),
+                    crate::error::Error::configuration(
+                        format!("Failed to parse AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY: {e}"),
+                        None,
                     )
                 })?,
                 Err(_) => DiagnosticsVerbosity::Detailed,

@@ -28,8 +28,9 @@ pub use runtime::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 /// single colon-separated string. Duplicate consecutive messages (common when
 /// error wrappers repeat the inner message) are collapsed.
 ///
-/// Accepts any `std::error::Error` so callers can pass either an
-/// `azure_core::Error` or a typed `crate::error::Error` without conversion.
+/// Accepts any `std::error::Error` so callers can pass any error type
+/// (typed `crate::error::Error`, transport-layer errors, etc.) without
+/// conversion.
 pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> String {
     let mut parts = vec![error.to_string()];
     let mut source = error.source();
@@ -46,44 +47,48 @@ pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> 
 #[cfg(test)]
 mod tests {
     use super::error_chain_summary;
+    use crate::error::Error;
+    use crate::models::CosmosStatus;
+    use std::error::Error as StdError;
+    use std::sync::Arc;
 
     #[test]
-    fn error_chain_summary_single_error() {
-        let error = azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "top-level failure",
+    fn returns_top_level_display_when_no_source() {
+        // No source chain → the summary is exactly the error's own
+        // `Display` string (`[Kind] status: message`).
+        let error = Error::client("top-level failure", None);
+        assert_eq!(
+            error_chain_summary(&error),
+            "[Client] 400: top-level failure"
         );
-        assert_eq!(error_chain_summary(&error), "top-level failure");
     }
 
     #[test]
-    fn error_chain_summary_with_source_chain() {
-        let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
-        let error = azure_core::Error::with_error(
-            azure_core::error::ErrorKind::Io,
-            inner,
-            "reqwest transport failed",
+    fn joins_chain_with_colon_separator() {
+        // Outer transport error wrapping a stdlib `io::Error` as source.
+        // The summary is the outer `Display` joined with each subsequent
+        // source's `Display` by `": "`.
+        let inner_io = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
+        let error = Error::transport(
+            CosmosStatus::TRANSPORT_IO_FAILED,
+            "outer transport failure",
+            None,
+            Some(Arc::new(inner_io)),
         );
-        let summary = error_chain_summary(&error);
-        assert!(summary.contains("reqwest transport failed"));
-        assert!(summary.contains("socket reset"));
+        assert_eq!(
+            error_chain_summary(&error),
+            "[Transport] 503/20011: outer transport failure: socket reset"
+        );
     }
 
     #[test]
-    fn error_chain_summary_deduplicates_consecutive_messages() {
-        // When a wrapper repeats the inner message, only one copy should appear.
-        let inner = azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "connection refused",
-        );
-        // Wrap with the same message text.
-        let outer = azure_core::Error::with_error(
-            azure_core::error::ErrorKind::Connection,
-            inner,
-            "connection refused",
-        );
-        let summary = error_chain_summary(&outer);
-        // "connection refused" should appear only once, not "connection refused: connection refused".
-        assert_eq!(summary, "connection refused");
+    fn collapses_consecutive_duplicate_messages() {
+        // Two `Error::client` instances with the same message render to
+        // byte-identical `Display` strings — the dedup collapses them so
+        // the summary is the single `Display` string, not duplicated.
+        let inner: Arc<dyn StdError + Send + Sync + 'static> =
+            Arc::new(Error::client("duplicate", None));
+        let outer = Error::client("duplicate", Some(Arc::clone(&inner)));
+        assert_eq!(error_chain_summary(&outer), "[Client] 400: duplicate");
     }
 }

@@ -664,7 +664,6 @@ mod tests {
     };
 
     use async_trait::async_trait;
-    use azure_core::error::ErrorKind;
 
     use crate::{
         diagnostics::DiagnosticsContextBuilder,
@@ -696,9 +695,11 @@ mod tests {
             )
             .await;
             Err(TransportError::new(
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Io,
+                crate::error::Error::transport(
+                    CosmosStatus::TRANSPORT_IO_FAILED,
                     "request should have timed out before completion",
+                    None,
+                    None,
                 ),
                 crate::diagnostics::RequestSentStatus::Unknown,
             ))
@@ -934,21 +935,15 @@ mod tests {
 
     #[derive(Debug)]
     struct ScriptedTransportClient {
-        error_kind: azure_core::error::ErrorKind,
+        status: CosmosStatus,
         message: &'static str,
     }
 
     #[async_trait]
     impl TransportClient for ScriptedTransportClient {
         async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
-            let error_kind = match &self.error_kind {
-                ErrorKind::Connection => ErrorKind::Connection,
-                ErrorKind::Io => ErrorKind::Io,
-                ErrorKind::Other => ErrorKind::Other,
-                _ => ErrorKind::Other,
-            };
             Err(TransportError::new(
-                azure_core::Error::with_message(error_kind, self.message),
+                crate::error::Error::transport(self.status, self.message, None, None),
                 crate::diagnostics::RequestSentStatus::Unknown,
             ))
         }
@@ -982,9 +977,9 @@ mod tests {
     }
 
     fn scripted_transport(
-        error_kind_a: azure_core::error::ErrorKind,
+        status_a: CosmosStatus,
         message_a: &'static str,
-        error_kind_b: azure_core::error::ErrorKind,
+        status_b: CosmosStatus,
         message_b: &'static str,
     ) -> AdaptiveTransport {
         let pool = crate::options::ConnectionPoolOptions::builder()
@@ -995,11 +990,11 @@ mod tests {
             .unwrap();
         let factory = Arc::new(ScriptedFactory::new(vec![
             Arc::new(ScriptedTransportClient {
-                error_kind: error_kind_a,
+                status: status_a,
                 message: message_a,
             }),
             Arc::new(ScriptedTransportClient {
-                error_kind: error_kind_b,
+                status: status_b,
                 message: message_b,
             }),
         ]));
@@ -1043,9 +1038,9 @@ mod tests {
     #[tokio::test]
     async fn execute_transport_pipeline_retries_not_sent_connectivity_error_on_different_shard() {
         let client = scripted_transport(
-            ErrorKind::Connection,
+            CosmosStatus::TRANSPORT_CONNECTION_FAILED,
             "first shard failed",
-            ErrorKind::Connection,
+            CosmosStatus::TRANSPORT_CONNECTION_FAILED,
             "second shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1093,9 +1088,9 @@ mod tests {
         let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
 
         let client_without_retry = scripted_transport(
-            ErrorKind::Io,
+            CosmosStatus::TRANSPORT_IO_FAILED,
             "first io shard failed",
-            ErrorKind::Io,
+            CosmosStatus::TRANSPORT_IO_FAILED,
             "second io shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1130,9 +1125,9 @@ mod tests {
         }
 
         let client_with_retry = scripted_transport(
-            ErrorKind::Io,
+            CosmosStatus::TRANSPORT_IO_FAILED,
             "first io shard failed",
-            ErrorKind::Io,
+            CosmosStatus::TRANSPORT_IO_FAILED,
             "second io shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1211,12 +1206,12 @@ mod tests {
     #[test]
     fn format_transport_error_details_includes_error_chain() {
         let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
-        let error = azure_core::Error::with_error(
-            ErrorKind::Io,
-            inner,
+        let cosmos = crate::error::Error::transport(
+            CosmosStatus::TRANSPORT_IO_FAILED,
             "failed to execute `reqwest` request",
+            None,
+            Some(Arc::new(inner)),
         );
-        let cosmos = crate::error::Error::from(error);
 
         let details = format_transport_error_details_cosmos(&cosmos);
         assert!(details.contains("failed to execute `reqwest` request"));

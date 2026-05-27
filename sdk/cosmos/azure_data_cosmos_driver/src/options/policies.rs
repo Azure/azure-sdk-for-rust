@@ -38,18 +38,17 @@ impl From<ContentResponseOnWrite> for bool {
 }
 
 impl std::str::FromStr for ContentResponseOnWrite {
-    type Err = azure_core::Error;
+    type Err = crate::error::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "true" | "enabled" => Ok(Self::Enabled),
             "false" | "disabled" => Ok(Self::Disabled),
-            _ => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
+            _ => Err(crate::error::Error::client(
                 format!(
-                    "Unknown content response on write value: '{}'. Expected 'true'/'false' or 'enabled'/'disabled'",
-                    s
+                    "Unknown content response on write value: '{s}'. Expected 'true'/'false' or 'enabled'/'disabled'"
                 ),
+                None,
             )),
         }
     }

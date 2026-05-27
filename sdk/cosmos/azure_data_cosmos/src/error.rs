@@ -28,7 +28,7 @@ use crate::models::{DiagnosticsContext, ResponseHeaders};
 /// response was received, and the operation diagnostics — for both
 /// service-side and client-side failures.
 ///
-/// `azure_core::Error` (and any other underlying source) is reachable via
+/// Any underlying source error is reachable via
 /// [`std::error::Error::source`].
 #[repr(transparent)]
 #[derive(Clone)]
@@ -99,14 +99,13 @@ impl Error {
     /// call returns the same answer regardless of later changes in
     /// limiter or throttle state.
     ///
-    /// **Errors arriving from `azure_core::Error`** (transport,
-    /// credential, serialization failures bubbling up from below the
-    /// Cosmos layer) carry a backtrace pointing at the Cosmos boundary
-    /// mapper, not at the original failure site — `azure_core::Error`
-    /// does not carry its own backtrace, so the originating call stack is
-    /// unrecoverable. The typed [`Kind`], status, and
-    /// [`std::error::Error::source`] chain remain the primary diagnostic
-    /// signal in that case.
+    /// **Errors wrapping a foreign source** (e.g. transport, credential, or
+    /// serialization failures from lower layers) carry a backtrace pointing
+    /// at the construction site inside the Cosmos layer, not at the original
+    /// failure site — foreign error types generally do not carry their own
+    /// backtrace, so the originating call stack is unrecoverable. The typed
+    /// [`Kind`], status, and [`std::error::Error::source`] chain remain the
+    /// primary diagnostic signal in that case.
     ///
     /// **Async caveat:** stack capture records the synchronous call
     /// stack at the construction site, which in an `async` context is
@@ -167,12 +166,6 @@ impl StdError for Error {
 impl From<DriverError> for Error {
     fn from(inner: DriverError) -> Self {
         Self(inner)
-    }
-}
-
-impl From<azure_core::Error> for Error {
-    fn from(error: azure_core::Error) -> Self {
-        Self(DriverError::from(error))
     }
 }
 

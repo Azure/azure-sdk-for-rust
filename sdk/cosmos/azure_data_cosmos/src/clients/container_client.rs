@@ -987,7 +987,7 @@ impl ContainerClient {
         ranges
             .iter()
             .map(FeedRange::try_from)
-            .collect::<Result<Vec<_>, azure_core::Error>>()
+            .collect::<Result<Vec<_>, azure_data_cosmos_driver::error::Error>>()
             .map_err(Into::into)
     }
 
@@ -1067,13 +1067,13 @@ impl ContainerClient {
             ranges
                 .iter()
                 .map(FeedRange::try_from)
-                .collect::<Result<Vec<_>, azure_core::Error>>()
+                .collect::<Result<Vec<_>, azure_data_cosmos_driver::error::Error>>()
                 .map_err(Into::into)
         } else {
             ranges
                 .iter()
                 .map(FeedRange::try_from)
-                .collect::<Result<Vec<_>, azure_core::Error>>()
+                .collect::<Result<Vec<_>, azure_data_cosmos_driver::error::Error>>()
                 .map_err(Into::into)
         }
     }

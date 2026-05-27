@@ -59,11 +59,10 @@ impl Pipeline {
             // or `DrainedLeaf`, none of which can bubble `SplitRequired` up past
             // their parent. If a future node type ever does, surfacing it as an
             // explicit error is preferable to silently dropping the page.
-            PageResult::SplitRequired { .. } => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            PageResult::SplitRequired { .. } => Err(crate::error::Error::client(
                 "root node cannot request a split; splits must be handled by a parent node",
-            )
-            .into()),
+                None,
+            )),
         }
     }
 

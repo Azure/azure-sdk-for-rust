@@ -85,14 +85,13 @@ impl PipelineNode for SequentialDrain {
                     if split_retries > MAX_SPLIT_RETRIES {
                         // This should be ridiculously rare.
                         // The topology provider already waits for splits to converge before returning.
-                        return Err(azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::Other,
+                        return Err(crate::error::Error::client(
                             format!(
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"
                             ),
-                        )
-                        .into());
+                            None,
+                        ));
                     }
 
                     // Remove the split child and splice in replacements at the front.
@@ -237,11 +236,10 @@ mod tests {
 
     #[tokio::test]
     async fn propagates_child_error() {
-        let child = MockLeaf::with_pages(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
+        let child = MockLeaf::with_pages(vec![Err(crate::error::Error::client(
             "test error",
-        )
-        .into())]);
+            None,
+        ))]);
         let mut drain = SequentialDrain::new(vec![Box::new(child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
@@ -528,11 +526,7 @@ mod tests {
             }),
             Ok(PageResult::Drained),
         ]);
-        let child2 = MockLeaf::with_pages(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "boom",
-        )
-        .into())]);
+        let child2 = MockLeaf::with_pages(vec![Err(crate::error::Error::client("boom", None))]);
 
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;

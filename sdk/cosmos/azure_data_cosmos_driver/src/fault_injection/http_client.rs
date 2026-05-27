@@ -16,11 +16,10 @@ use crate::driver::transport::cosmos_transport_client::{
 };
 use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
 use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
-use crate::models::SubStatusCode;
+use crate::models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode};
 use async_trait::async_trait;
-use azure_core::error::ErrorKind;
 use azure_core::http::headers::{HeaderName, Headers};
-use azure_core::http::{RawResponse, StatusCode};
+use azure_core::http::StatusCode;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -205,20 +204,26 @@ impl FaultClient {
         // Evaluations are propagated via the evaluation collector attached to the request for all paths.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
+                let cosmos_err = crate::error::Error::transport(
+                    CosmosStatus::TRANSPORT_CONNECTION_FAILED,
+                    "Injected fault: connection error",
+                    None,
+                    None,
+                );
                 return ApplyResult::Injected(Err(TransportError::new(
-                    azure_core::Error::with_message(
-                        ErrorKind::Connection,
-                        "Injected fault: connection error",
-                    ),
+                    cosmos_err,
                     RequestSentStatus::NotSent,
                 )));
             }
             FaultInjectionErrorType::ResponseTimeout => {
+                let cosmos_err = crate::error::Error::transport(
+                    CosmosStatus::TRANSPORT_IO_FAILED,
+                    "Injected fault: response timeout",
+                    None,
+                    None,
+                );
                 return ApplyResult::Injected(Err(TransportError::new(
-                    azure_core::Error::with_message(
-                        ErrorKind::Io,
-                        "Injected fault: response timeout",
-                    ),
+                    cosmos_err,
                     RequestSentStatus::Unknown,
                 )));
             }
@@ -264,26 +269,20 @@ impl FaultClient {
             ),
         };
 
-        let mut headers = Headers::new();
-        if let Some(ss) = sub_status {
-            headers.insert(SUBSTATUS, ss.value().to_string());
-        }
-        let raw_response = Box::new(RawResponse::from_bytes(
-            status_code,
-            headers.clone(),
-            vec![],
-        ));
+        let mut cosmos_headers = CosmosResponseHeaders::new();
+        cosmos_headers.substatus = sub_status;
 
-        let error = azure_core::Error::with_message(
-            ErrorKind::HttpResponse {
-                status: status_code,
-                error_code: Some("Injected Fault".to_string()),
-                raw_response: Some(raw_response),
-            },
-            message,
-        );
+        let status = match sub_status {
+            Some(sub) => CosmosStatus::from_parts(status_code, Some(sub)),
+            None => CosmosStatus::new(status_code),
+        };
 
-        ApplyResult::Injected(Err(TransportError::new(error, RequestSentStatus::Sent)))
+        let cosmos_err = crate::error::Error::service_from_parts(status, cosmos_headers, &[], message);
+
+        ApplyResult::Injected(Err(TransportError::new(
+            cosmos_err,
+            RequestSentStatus::Sent,
+        )))
     }
 }
 
@@ -732,49 +731,43 @@ mod tests {
             assert!(result.is_err(), "{:?} should produce an error", error_type);
 
             let err = result.unwrap_err();
-            // The injected fault constructs an `azure_core::Error` with
-            // `ErrorKind::HttpResponse { raw_response: Some(...), .. }`;
-            // the boundary mapper preserves it as the typed Error's
-            // `source`. Walk the source chain to recover the original
-            // `azure_core::Error` and inspect its raw_response headers.
-            let az_err = std::error::Error::source(&err.error)
-                .and_then(|s| s.downcast_ref::<azure_core::Error>())
-                .unwrap_or_else(|| panic!("{:?} should preserve azure_core source", error_type));
-            if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } = az_err.kind() {
-                let response = raw_response
-                    .as_ref()
-                    .unwrap_or_else(|| panic!("{:?} should have a raw_response", error_type));
-
-                match expected_substatus {
-                    Some(expected) => {
-                        let actual: u32 = response
-                            .headers()
-                            .get_as::<u32, std::num::ParseIntError>(&HeaderName::from_static(
-                                SUBSTATUS,
-                            ))
-                            .unwrap_or_else(|_| {
-                                panic!("{:?} should have x-ms-substatus header", error_type)
-                            });
-                        assert_eq!(
-                            SubStatusCode::new(actual),
-                            expected,
-                            "{:?}: substatus mismatch",
-                            error_type
-                        );
-                    }
-                    None => {
-                        let substatus_header = response
-                            .headers()
-                            .get_optional_str(&HeaderName::from_static(SUBSTATUS));
+            // Faults now construct typed Cosmos errors directly via
+            // `Error::service_from_parts`. Inspect the typed sub_status
+            // and the parsed `CosmosResponseHeaders::substatus` field
+            // instead of walking the source chain back to a synthetic
+            // `azure_core::Error::HttpResponse`.
+            match expected_substatus {
+                Some(expected) => {
+                    assert_eq!(
+                        err.error.sub_status(),
+                        Some(expected),
+                        "{:?}: typed sub_status mismatch",
+                        error_type
+                    );
+                    let cosmos_headers = err.error.cosmos_headers().unwrap_or_else(|| {
+                        panic!("{:?} should expose parsed Cosmos headers", error_type)
+                    });
+                    assert_eq!(
+                        cosmos_headers.substatus,
+                        Some(expected),
+                        "{:?}: CosmosResponseHeaders.substatus mismatch",
+                        error_type
+                    );
+                }
+                None => {
+                    assert!(
+                        err.error.sub_status().is_none(),
+                        "{:?} should not have a sub-status",
+                        error_type
+                    );
+                    if let Some(cosmos_headers) = err.error.cosmos_headers() {
                         assert!(
-                            substatus_header.is_none(),
-                            "{:?} should not have x-ms-substatus header",
+                            cosmos_headers.substatus.is_none(),
+                            "{:?} should not carry a parsed substatus header",
                             error_type
                         );
                     }
                 }
-            } else {
-                panic!("{:?} should produce an HttpResponse error kind", error_type);
             }
         }
     }

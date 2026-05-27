@@ -8,7 +8,7 @@
 //!
 //! Feed ranges can also be serialized to base64-encoded JSON for cross-SDK storage and transport.
 
-use azure_core::{error::ErrorKind, fmt::SafeDebug};
+use azure_core::fmt::SafeDebug;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use std::{cmp, fmt, str::FromStr};
@@ -71,11 +71,11 @@ impl FeedRange {
     pub fn new(
         min_inclusive: EffectivePartitionKey,
         max_exclusive: EffectivePartitionKey,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         if min_inclusive > max_exclusive {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
+            return Err(crate::error::Error::client(
                 "feed range min_inclusive must be less than or equal to max_exclusive",
+                None,
             ));
         }
 
@@ -209,11 +209,11 @@ impl FeedRange {
         }
     }
 
-    fn from_json(json: FeedRangeJson) -> azure_core::Result<Self> {
+    fn from_json(json: FeedRangeJson) -> crate::error::Result<Self> {
         if !json.range.is_min_inclusive || json.range.is_max_inclusive {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
+            return Err(crate::error::Error::client(
                 "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
+                None,
             ));
         }
 
@@ -221,9 +221,9 @@ impl FeedRange {
         let max = EffectivePartitionKey::from(json.range.max);
 
         if min > max {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
+            return Err(crate::error::Error::client(
                 "feed range min must be less than or equal to max",
+                None,
             ));
         }
 
@@ -235,7 +235,7 @@ impl FeedRange {
 }
 
 impl TryFrom<&PartitionKeyRange> for FeedRange {
-    type Error = azure_core::Error;
+    type Error = crate::error::Error;
 
     /// Creates a `FeedRange` from a driver `PartitionKeyRange`.
     ///
@@ -243,9 +243,9 @@ impl TryFrom<&PartitionKeyRange> for FeedRange {
     /// (min inclusive, max exclusive). Returns an error if the range is inverted.
     fn try_from(pkr: &PartitionKeyRange) -> Result<Self, Self::Error> {
         if pkr.min_inclusive > pkr.max_exclusive {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
+            return Err(crate::error::Error::client(
                 "partition key range min_inclusive must be <= max_exclusive",
+                None,
             ));
         }
 
@@ -266,16 +266,27 @@ impl fmt::Display for FeedRange {
 }
 
 impl FromStr for FeedRange {
-    type Err = azure_core::Error;
+    type Err = crate::error::Error;
 
     /// Parses a feed range from a base64-encoded JSON string.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let decoded_bytes = base64::engine::general_purpose::STANDARD
             .decode(s)
-            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
+            .map_err(|e| {
+                crate::error::Error::client(
+                    format!("feed range is not valid base64: {e}"),
+                    Some(std::sync::Arc::new(e)),
+                )
+            })?;
 
-        let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes)
-            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
+        let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes).map_err(|e| {
+            crate::error::Error::serialization(
+                format!("feed range JSON is invalid: {e}"),
+                None,
+                None,
+                e,
+            )
+        })?;
 
         Self::from_json(json)
     }

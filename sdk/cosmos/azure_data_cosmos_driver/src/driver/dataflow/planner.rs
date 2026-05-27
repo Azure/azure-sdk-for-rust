@@ -64,14 +64,13 @@ pub(crate) fn build_trivial_pipeline(
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         Some(other) => {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
+            return Err(crate::error::Error::client(
                 format!(
                     "continuation token shape {} does not match a trivial operation",
                     snapshot_kind(&other)
                 ),
-            )
-            .into());
+                None,
+            ));
         }
     };
 
@@ -84,12 +83,11 @@ pub(crate) fn build_trivial_pipeline(
             if let Some(pk) = f.partition_key() {
                 RequestTarget::LogicalPartitionKey(pk.clone())
             } else {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
+                return Err(crate::error::Error::client(
                     "FeedRange targeting requires a fan-out pipeline; \
                  use plan_operation for cross-partition queries",
-                )
-                .into());
+                    None,
+                ));
             }
         }
     };
@@ -150,23 +148,22 @@ pub(crate) async fn build_sequential_drain(
                 } => server_continuation,
                 PipelineNodeState::Drained => None,
                 other => {
-                    return Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
+                    return Err(crate::error::Error::client(
                         format!(
                             "continuation token has unsupported nested shape inside SequentialDrain: {}",
                             snapshot_kind(&other)
                         ),
-                    ).into());
+                        None,
+                    ));
                 }
             };
             let current_min_epk = EffectivePartitionKey::from(current_min_epk);
             let current_max_epk = EffectivePartitionKey::from(current_max_epk);
             if current_min_epk > current_max_epk {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
+                return Err(crate::error::Error::client(
                     "continuation token has invalid SequentialDrain range (min > max)",
-                )
-                .into());
+                    None,
+                ));
             }
             Some(ResumeCursor {
                 current_min_epk,
@@ -267,11 +264,10 @@ pub(crate) async fn build_sequential_drain(
         if resume.is_some() {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
+        return Err(crate::error::Error::client(
             "query plan produced no partition ranges to query",
-        )
-        .into());
+            None,
+        ));
     }
 
     // Even when there's only one request node, we still need to wrap it in a SequentialDrain
@@ -334,11 +330,7 @@ fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
 }
 
 fn unsupported_feature(feature: &str) -> crate::error::Error {
-    azure_core::Error::with_message(
-        azure_core::error::ErrorKind::Other,
-        format!("unsupported query feature: {feature}"),
-    )
-    .into()
+    crate::error::Error::client(format!("unsupported query feature: {feature}"), None)
 }
 
 #[cfg(test)]
@@ -854,11 +846,10 @@ mod tests {
     async fn propagates_topology_resolution_error() {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
+        let mut topology = MockTopologyProvider::new(vec![Err(crate::error::Error::client(
             "topology resolution failed",
-        )
-        .into())]);
+            None,
+        ))]);
 
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await

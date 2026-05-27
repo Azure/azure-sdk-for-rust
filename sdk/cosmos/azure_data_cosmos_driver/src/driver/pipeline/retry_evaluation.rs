@@ -623,13 +623,10 @@ fn service_error_message(status: &CosmosStatus) -> String {
 /// Captures the parsed response headers and the raw response body bytes
 /// (e.g. the JSON error payload returned by the service for a 400 /
 /// BadRequest) on the resulting `Error`. The error propagates through the
-/// pipeline as `crate::error::Error` end-to-end — there is no
-/// `From<crate::error::Error> for azure_core::Error` impl. SDK-boundary
-/// callers that still need an `azure_core::Error` shape can read the wire
+/// pipeline as `crate::error::Error` end-to-end. Callers inspect the wire
 /// payload directly via [`Error::status`](crate::error::Error::status),
 /// [`Error::cosmos_headers`](crate::error::Error::cosmos_headers), and
-/// [`Error::response_body`](crate::error::Error::response_body) without
-/// going through a generic round-trip.
+/// [`Error::response_body`](crate::error::Error::response_body).
 ///
 /// The returned error carries **no** `DiagnosticsContext`. The operation
 /// pipeline's abort branch (the only production caller of this helper, via
@@ -728,11 +725,12 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
-                error: azure_core::Error::new(
-                    azure_core::error::ErrorKind::Connection,
+                error: crate::error::Error::transport(
+                    CosmosStatus::TRANSPORT_GENERATED_503,
                     "connection refused",
-                )
-                .into(),
+                    None,
+                    None,
+                ),
                 request_sent: sent,
             },
         }
@@ -867,12 +865,15 @@ mod tests {
         let result = TransportResult {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
-                error: azure_core::Error::with_error(
-                    azure_core::error::ErrorKind::Io,
-                    std::io::Error::new(std::io::ErrorKind::BrokenPipe, "socket reset"),
+                error: crate::error::Error::transport(
+                    CosmosStatus::TRANSPORT_GENERATED_503,
                     "failed to execute `reqwest` request",
-                )
-                .into(),
+                    None,
+                    Some(std::sync::Arc::new(std::io::Error::new(
+                        std::io::ErrorKind::BrokenPipe,
+                        "socket reset",
+                    ))),
+                ),
                 request_sent: RequestSentStatus::Unknown,
             },
         };
@@ -885,12 +886,11 @@ mod tests {
 
         match action {
             OperationAction::Abort { error } => {
-                // `error` is the typed Cosmos error directly — no
-                // round-trip through `azure_core::Error` is required.
-                // The fact that `.status()` resolves at all is itself the
-                // proof: that accessor only exists on `crate::error::Error`,
-                // so if the abort site had returned an `azure_core::Error`
-                // (the pre-refactor shape) this line would not compile.
+                // `error` is the typed Cosmos error directly. The fact
+                // that `.status()` resolves at all is itself the proof:
+                // that accessor only exists on `crate::error::Error`, so
+                // any regression that downgraded the abort site to a
+                // foreign error type would fail to compile.
                 assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
                 let text = error.to_string();
                 assert!(text.contains("HTTP 503/20003"));

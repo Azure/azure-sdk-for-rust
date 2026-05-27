@@ -46,7 +46,6 @@ use crate::models::{
 };
 use crate::options::OperationOptions;
 use async_trait::async_trait;
-use azure_core::error::ErrorKind;
 use azure_core::http::StatusCode;
 use std::num::NonZeroU8;
 use std::sync::Arc;
@@ -125,12 +124,11 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // `CosmosOperation::patch_item(..).with_precondition(..)` directly,
     // instead of silently ignoring it.
     if operation.precondition().is_some() {
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
+        return Err(crate::error::Error::client(
             "PATCH does not support caller-set preconditions; \
              the handler manages If-Match internally",
-        )
-        .into());
+            None,
+        ));
     }
 
     // -- 2. Parse and validate the patch spec --
@@ -138,18 +136,19 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchSpec body"))?;
     let spec: PatchSpec = serde_json::from_slice(body).map_err(|err| {
-        crate::error::Error::from(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
+        crate::error::Error::serialization(
             format!("failed to parse PATCH body as PatchSpec: {err}"),
-        ))
+            None,
+            None,
+            err,
+        )
     })?;
 
     if spec.operations.is_empty() {
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
+        return Err(crate::error::Error::client(
             "PATCH operation must include at least one PatchOp",
-        )
-        .into());
+            None,
+        ));
     }
 
     let item_ref = operation
@@ -157,10 +156,10 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .cloned()
         .and_then(|pk| operation.resource_reference().try_into_item_reference(pk))
         .ok_or_else(|| {
-            crate::error::Error::from(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
+            crate::error::Error::client(
                 "PATCH dispatch requires an item-level operation with a partition key",
-            ))
+                None,
+            )
         })?;
 
     validate_partition_key_paths(&spec.operations, &item_ref)?;
@@ -229,24 +228,30 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 
         // Locally apply the patch ops.
         let read_body_bytes = read_resp.into_body().single().map_err(|err| {
-            crate::error::Error::from(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
+            crate::error::Error::serialization(
                 format!("PATCH could not extract Read response body: {err}"),
-            ))
+                None,
+                None,
+                err,
+            )
         })?;
         let mut value: serde_json::Value =
             serde_json::from_slice(&read_body_bytes).map_err(|err| {
-                crate::error::Error::from(azure_core::Error::with_message(
-                    ErrorKind::DataConversion,
+                crate::error::Error::serialization(
                     format!("PATCH could not deserialize current item body: {err}"),
-                ))
+                    None,
+                    None,
+                    err,
+                )
             })?;
         apply_patch_ops(&mut value, &spec.operations)?;
         let merged_bytes = serde_json::to_vec(&value).map_err(|err| {
-            crate::error::Error::from(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
+            crate::error::Error::serialization(
                 format!("PATCH could not serialize merged item: {err}"),
-            ))
+                None,
+                None,
+                err,
+            )
         })?;
 
         // Issue the ETag-guarded Replace, forwarding the Read response's
@@ -337,9 +342,8 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                 // attempt's Read can't regress to an older session view.
                 // Falls back to the carry-forward from the Read response
                 // we already advanced above when the 412 carries no
-                // session token header (e.g. unit-test errors built via
-                // `azure_core::Error::with_message` without a raw
-                // response).
+                // session token header (e.g. unit-test errors built
+                // without a populated response).
                 if let Some(token_412) = session_token_from_error(&err) {
                     effective_session_token = Some(
                         effective_session_token
@@ -372,7 +376,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 }
 
 fn missing_body_error(msg: &'static str) -> crate::error::Error {
-    azure_core::Error::with_message(ErrorKind::Other, msg).into()
+    crate::error::Error::client(msg, None)
 }
 
 /// Returns `true` if `err` is the driver pipeline's representation of a
@@ -380,8 +384,8 @@ fn missing_body_error(msg: &'static str) -> crate::error::Error {
 /// lost the race against a concurrent writer).
 ///
 /// The driver pipeline maps every non-2xx response — 412 included — into
-/// `Err(azure_core::Error { kind: ErrorKind::HttpResponse { status, .. }, .. })`
-/// via `retry_evaluation::build_http_error`, and 412 specifically resolves
+/// an `Err(crate::error::Error)` with `Kind::Service` via
+/// `retry_evaluation::build_http_error`, and 412 specifically resolves
 /// to `OperationAction::Abort` (it is never retried at the pipeline layer).
 /// The patch handler's RMW loop is the *one* place where 412 needs to be
 /// recovered into a retry, so we narrow on the kind here instead of relying
@@ -396,9 +400,9 @@ fn is_precondition_failed(err: &crate::error::Error) -> bool {
 /// Extracts the `x-ms-session-token` from a service-built cosmos error's
 /// parsed response headers, if present.
 ///
-/// The driver pipeline mints every non-2xx response into
-/// [`Error::service`] with the wire-level [`CosmosResponsePayload`] (body
-/// + parsed [`CosmosResponseHeaders`]) attached, so the session-token
+/// The driver pipeline mints every non-2xx response into a typed
+/// service error with the wire-level [`CosmosResponsePayload`] (body +
+/// parsed [`CosmosResponseHeaders`]) attached, so the session-token
 /// header on a 412 is already accessible via [`Error::cosmos_headers`].
 /// Returns `None` for non-service errors or service errors whose response
 /// carried no session-token header (e.g. accounts not configured for
@@ -577,14 +581,13 @@ fn validate_partition_key_paths(
         for path in std::iter::once(dest).chain(from) {
             for pk_path in &pk_paths {
                 if path_overlaps_partition_key(path, pk_path) {
-                    return Err(azure_core::Error::with_message(
-                        ErrorKind::Other,
+                    return Err(crate::error::Error::client(
                         format!(
                             "PATCH op '{path}' overlaps partition key path '{pk_path}'; \
                              cannot mutate partition key with a client-side Read-Modify-Write"
                         ),
-                    )
-                    .into());
+                        None,
+                    ));
                 }
             }
         }
@@ -1153,14 +1156,12 @@ mod tests {
         }
     }
 
-    /// Builds a real cosmos `Error::service` for a non-2xx HTTP status, just
-    /// like the production driver pipeline would (see
-    /// `retry_evaluation::build_service_error`). Tests that previously
-    /// minted a raw `azure_core::Error::with_message(HttpResponse{...})`
-    /// bypass the typed-payload wiring; using the same constructor as
-    /// production exercises the same accessors (`err.cosmos_headers()`,
-    /// `err.response_body()`, `err.sub_status()`) that callers see at
-    /// runtime.
+    /// Builds a real cosmos `Error::service_from_parts` for a non-2xx HTTP
+    /// status, just like the production driver pipeline would (see
+    /// `retry_evaluation::build_service_error`). Using the same
+    /// constructor as production exercises the same accessors
+    /// (`err.cosmos_headers()`, `err.response_body()`,
+    /// `err.sub_status()`) that callers see at runtime.
     fn http_error(status: StatusCode, msg: &'static str) -> crate::error::Error {
         cosmos_service_error(status, msg, None, &[])
     }

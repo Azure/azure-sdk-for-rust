@@ -88,9 +88,10 @@ impl AuthorizationContext {
 
 /// Generates the Cosmos DB authorization header value.
 ///
-/// Returns a Cosmos-typed [`crate::error::Error`]; `azure_core::Error` values
-/// from the credential provider / HMAC routine flow through the boundary
-/// mapper in [`crate::error`] via `?`.
+/// Returns a Cosmos-typed [`crate::error::Error`]. Failures from the
+/// credential provider or HMAC routine are wrapped directly into an
+/// `Authentication`-kind error here, with the underlying `azure_core::Error`
+/// preserved as the `source()`.
 pub(crate) async fn generate_authorization(
     credential: &Credential,
     auth_ctx: &AuthorizationContext,
@@ -100,7 +101,13 @@ pub(crate) async fn generate_authorization(
         Credential::TokenCredential(cred) => {
             let token = cred
                 .get_token(&[COSMOS_AAD_SCOPE], None)
-                .await?
+                .await
+                .map_err(|err| {
+                    crate::error::Error::authentication(
+                        "failed to acquire AAD token for Cosmos DB",
+                        Some(std::sync::Arc::new(err)),
+                    )
+                })?
                 .token
                 .secret()
                 .to_string();
@@ -112,7 +119,13 @@ pub(crate) async fn generate_authorization(
         Credential::MasterKey(key) => {
             let string_to_sign = build_string_to_sign(auth_ctx, date_string);
             trace!(signature_payload = ?string_to_sign, "generating Cosmos auth signature");
-            let signature = azure_core::hmac::hmac_sha256(&string_to_sign, key)?;
+            let signature =
+                azure_core::hmac::hmac_sha256(&string_to_sign, key).map_err(|err| {
+                    crate::error::Error::authentication(
+                        "failed to compute HMAC-SHA256 signature for master-key authentication",
+                        Some(std::sync::Arc::new(err)),
+                    )
+                })?;
             // HMAC-SHA256 base64 is always 44 bytes; fixed prefix is 24 bytes.
             let mut s = String::with_capacity(24 + signature.len());
             s.push_str("type=master&ver=1.0&sig=");
