@@ -36,41 +36,41 @@ This crate follows **strict semantic versioning** but can move to new major vers
 
 ### Error Backtraces
 
-Every `Error` carries a stack backtrace captured at construction. Unlike `RUST_BACKTRACE=1` (process-wide, unconditional, all-or-nothing), the driver is designed to keep backtraces *on* in production without paying the cost on every error.
+`CosmosError` can carry a stack backtrace captured at construction. Capture is **opt-in** (matching idiomatic Rust): off by default, on whenever the stdlib `RUST_BACKTRACE` environment variable is set, and always overridable via the runtime builder. When enabled, two independent rolling-1-second limiters keep the cost predictable under error storms — so unlike `RUST_BACKTRACE=1` (process-wide, unconditional, all-or-nothing) the driver can be left with backtraces *on* in production without paying the cost on every error.
 
 **Two-tier cost model.**
 
-- **Capture** runs on every `Error` (subject to the safety guards below) and is microseconds — only the call-stack instruction pointers are recorded. Symbols are not resolved at this point.
+- **Capture** runs on every `CosmosError` constructed while the capture throttle has budget, and is microseconds — only the call-stack instruction pointers are recorded. Symbols are not resolved at this point. When capture is disabled (`RUST_BACKTRACE` unset and no explicit capacity), the stack is never walked and no IP vector is allocated.
 - **Symbol resolution** (turning an IP into `module::function (file:line)`) is deferred until the first call to `error.backtrace()` → `Display`. Resolved frames are cached process-wide by IP, so repeat captures of the same call site only pay the resolution cost once per process lifetime.
 
 **Two production-safety knobs (independent rolling-1-second limiters).**
 
-| Knob              | Builder method                                    | Env var                                         | Default | What it bounds                                                                                              |
-| ----------------- | ------------------------------------------------- | ----------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| Resolution budget | `with_max_error_backtrace_resolutions_per_second` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` | `5`     | How many backtraces may perform *fresh* symbol resolution per second. Cache hits do **not** consume budget. |
-| Capture throttle  | `with_max_error_backtrace_captures_per_second`    | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND`    | `1000`  | Hard ceiling on stack walks per second, regardless of cache state.                                          |
+| Knob              | Builder method                                    | Env var                                         | Default when `RUST_BACKTRACE` set | Default when unset | What it bounds                                                                                              |
+| ----------------- | ------------------------------------------------- | ----------------------------------------------- | --------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| Resolution budget | `with_max_error_backtrace_resolutions_per_second` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` | `5`                               | `0` (disabled)     | How many backtraces may perform *fresh* symbol resolution per second. Cache hits do **not** consume budget. |
+| Capture throttle  | `with_max_error_backtrace_captures_per_second`    | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND`    | `10_000`                          | `0` (disabled)     | Hard ceiling on stack walks per second, regardless of cache state.                                          |
 
-Both knobs take `NonZeroU32`; backtrace capture cannot be disabled. `build()` rejects `0` from the env-var fallback with a validation error.
+Both knobs take `u32`. Pass `0` (or set the env var to `0`) to fully disable that limiter regardless of `RUST_BACKTRACE`. Explicit builder values and `AZURE_COSMOS_BACKTRACE_*` env vars always win over `RUST_BACKTRACE`.
 
 **When to adjust which.**
 
-- **Resolution budget** — raise when you want richer backtraces in development or when investigating a specific recurring failure (resolved frames are cached forever, so a one-time spike costs nothing long-term). Lower when symbol resolution is dominating CPU during incident debugging.
-- **Capture throttle** — lower when profiling shows raw stack-walk cost is dominating during a same-call-site error storm (e.g. a sustained 429 storm where every backtrace is a cache hit and the resolution limiter is never consulted). Raise (or leave at the generous default) when you want maximum diagnostic coverage and capture cost is not a concern.
+- **Resolution budget** — raise when you want richer backtraces in development or when investigating a specific recurring failure (resolved frames are cached forever, so a one-time spike costs nothing long-term). Lower (or set to `0`) when symbol resolution is dominating CPU during incident debugging; backtraces will still capture and can be resolved later once the budget is restored.
+- **Capture throttle** — lower (or set to `0`) when profiling shows raw stack-walk cost is dominating during a same-call-site error storm (e.g. a sustained 429 storm where every backtrace is a cache hit and the resolution limiter is never consulted). Raise (or leave at the generous default) when you want maximum diagnostic coverage and capture cost is not a concern.
 
 When the resolution budget is exhausted but the cache covers every frame, backtraces render at full fidelity for free. When the budget is exhausted *and* there is a cache-missed frame, the render returns `None` — partial / `<unresolved> @ 0xIP` renders are never produced.
 
 **Tuning.**
 
 ```rust,ignore
-use std::num::NonZeroU32;
-
 let runtime = CosmosDriverRuntimeBuilder::new()
-    // Raise the per-second resolution budget. Backtrace capture cannot
-    // be disabled; the API takes `NonZeroU32` and `build()` rejects `0`
-    // from the env-var fallback with a validation error.
-    .with_max_error_backtrace_resolutions_per_second(NonZeroU32::new(50).unwrap())
+    // Enable a generous resolution budget for richer backtraces.
+    // Pass `0` to fully disable resolution (capture still happens
+    // if the capture throttle below is non-zero).
+    .with_max_error_backtrace_resolutions_per_second(50)
     // Cap raw captures to avoid CPU pressure on same-call-site storms.
-    .with_max_error_backtrace_captures_per_second(NonZeroU32::new(500).unwrap())
+    // Pass `0` here to disable backtrace capture entirely regardless
+    // of `RUST_BACKTRACE`.
+    .with_max_error_backtrace_captures_per_second(500)
     .build();
 ```
 

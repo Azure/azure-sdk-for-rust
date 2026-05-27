@@ -5,18 +5,21 @@
 //! [`Backtrace`](azure_data_cosmos_driver::error::backtrace_bench) machinery
 //! against [`std::backtrace::Backtrace`].
 //!
-//! The driver's [`Error`](azure_data_cosmos_driver::error::Error) captures a
-//! backtrace on every construction. Two production-safety gates bound the
-//! cost during an error storm:
+//! The driver's [`CosmosError`](azure_data_cosmos_driver::error::CosmosError)
+//! can capture a backtrace on every construction (opt-in via
+//! `RUST_BACKTRACE` or the runtime builder). Two production-safety gates
+//! bound the cost during an error storm:
 //!
-//! * **Capture throttle** — per-second cap on raw stack walks (default
-//!   `1000`); once exhausted, capture returns `None` for the rest of the
-//!   1-second window.
+//! * **Capture throttle** — per-second cap on raw stack walks
+//!   (`RUST_BACKTRACE`-enabled default `10_000`, `0` to disable); once
+//!   exhausted, capture returns `None` for the rest of the 1-second
+//!   window.
 //! * **Resolution limiter** — per-second cap on *fresh* symbol resolution
-//!   work (default `5`). Cache hits do **not** consume budget — repeat
-//!   captures of the same call site render at full fidelity for free.
-//! * **Per-instance render cache** — `Error::backtrace()` resolves once
-//!   per `Error` and caches via `OnceLock`; later calls are a load.
+//!   work (`RUST_BACKTRACE`-enabled default `5`, `0` to disable). Cache
+//!   hits do **not** consume budget — repeat captures of the same call
+//!   site render at full fidelity for free.
+//! * **Per-instance render cache** — `CosmosError::backtrace()` resolves
+//!   once per error and caches via `OnceLock`; later calls are a load.
 //!
 //! ## Bench groups
 //!
@@ -39,16 +42,12 @@
 use azure_data_cosmos_driver::error::backtrace_bench;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::hint::black_box;
-use std::num::NonZeroU32;
+
 
 /// Sufficient headroom for the unbounded capture group — set well above the
 /// expected per-iteration count so the throttle stays open through the whole
 /// measurement window.
 const UNBOUNDED_CAPACITY: u32 = 1_000_000;
-
-fn nonzero(n: u32) -> NonZeroU32 {
-    NonZeroU32::new(n).expect("non-zero")
-}
 
 fn prime_resolution_cache() {
     // Walk once and force a full render so every frame on this call stack
@@ -67,9 +66,9 @@ fn bench_capture(c: &mut Criterion) {
     group.throughput(Throughput::Elements(1));
 
     // --- cosmos_unbounded: throttle wide open, capture pays full cost.
-    throttle.set_capacity(nonzero(UNBOUNDED_CAPACITY));
+    throttle.set_capacity(UNBOUNDED_CAPACITY);
     backtrace_bench::reset_limiter(throttle);
-    resolution.set_capacity(nonzero(UNBOUNDED_CAPACITY));
+    resolution.set_capacity(UNBOUNDED_CAPACITY);
     backtrace_bench::reset_limiter(resolution);
     group.bench_function(BenchmarkId::new("cosmos", "unbounded"), |b| {
         b.iter(|| {
@@ -88,7 +87,7 @@ fn bench_capture(c: &mut Criterion) {
         });
     });
     // Restore throttle so later groups are not affected.
-    throttle.set_capacity(nonzero(UNBOUNDED_CAPACITY));
+    throttle.set_capacity(UNBOUNDED_CAPACITY);
     backtrace_bench::reset_limiter(throttle);
 
     // --- std baseline: force_capture always walks the stack and produces an
@@ -111,9 +110,9 @@ fn bench_render(c: &mut Criterion) {
     group.throughput(Throughput::Elements(1));
 
     // Make sure the throttle is open for the setup captures below.
-    throttle.set_capacity(nonzero(UNBOUNDED_CAPACITY));
+    throttle.set_capacity(UNBOUNDED_CAPACITY);
     backtrace_bench::reset_limiter(throttle);
-    resolution.set_capacity(nonzero(UNBOUNDED_CAPACITY));
+    resolution.set_capacity(UNBOUNDED_CAPACITY);
     backtrace_bench::reset_limiter(resolution);
 
     // Prime the process-global frame cache for all subsequent groups so the
@@ -160,7 +159,7 @@ fn bench_render(c: &mut Criterion) {
         },
     );
     // Restore the limiter so later or repeated runs are not affected.
-    resolution.set_capacity(nonzero(UNBOUNDED_CAPACITY));
+    resolution.set_capacity(UNBOUNDED_CAPACITY);
     backtrace_bench::reset_limiter(resolution);
 
     // --- std baseline: capture once, render via Display on every iteration.

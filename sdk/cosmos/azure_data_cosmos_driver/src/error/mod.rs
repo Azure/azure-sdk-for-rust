@@ -101,8 +101,10 @@ struct CosmosErrorInner {
     context: ErrorContext,
     message: Arc<str>,
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
-    /// Captured stack backtrace, present when the global rate-limited
-    /// backtrace capture budget allowed it. See [`backtrace`] module.
+    /// Captured stack backtrace, present when capture is enabled (opt-in
+    /// via `RUST_BACKTRACE` or the runtime builder) and the global
+    /// rate-limited backtrace capture budget allowed it. See the
+    /// [`backtrace`] module for the cost model and tuning knobs.
     backtrace: Option<Backtrace>,
 }
 
@@ -228,14 +230,19 @@ impl CosmosError {
     /// Returns the stack backtrace captured at error construction time,
     /// rendered as a human-readable string.
     ///
-    /// Capture is bounded by two production-safety gates (resolution-rate
-    /// limiter + per-second capture throttle, both rolling 1-second
-    /// windows). Cache hits do **not** consume budget, so backtraces whose
-    /// frames are already known render at full fidelity regardless of
-    /// limiter state.
+    /// Backtrace capture is **opt-in** (matching idiomatic Rust): off by
+    /// default, on whenever the stdlib `RUST_BACKTRACE` environment
+    /// variable is set, and always overridable via the runtime builder.
+    /// When enabled, capture is bounded by two production-safety gates
+    /// (resolution-rate limiter + per-second capture throttle, both
+    /// rolling 1-second windows). Cache hits do **not** consume budget,
+    /// so backtraces whose frames are already known render at full
+    /// fidelity regardless of limiter state.
     ///
     /// Returns `None` when:
-    /// * The capture throttle was exhausted at construction time, or
+    /// * Capture was disabled at construction time (`RUST_BACKTRACE`
+    ///   unset and no explicit capacity, or either limiter set to `0`),
+    /// * the capture throttle was exhausted at construction time, or
     /// * the resolution limiter denied fresh resolution for at least one
     ///   cache-missed frame.
     ///

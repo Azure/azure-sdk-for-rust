@@ -195,13 +195,17 @@ impl Backtrace {
     /// Captures a backtrace, subject to a single production-safety gate:
     /// the **per-second capture throttle** ([`global_capture_throttle`]).
     ///
-    /// Each successful capture consumes one token from a process-global
-    /// rolling 1-second budget (default `1000`, configurable via
+    /// Capture is opt-in: by default the throttle starts at capacity `0`
+    /// (disabled) and only becomes non-zero when the runtime builder
+    /// applies an explicit value, the `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND`
+    /// env var sets one, or `RUST_BACKTRACE` enables the safe default.
+    /// When enabled, each successful capture consumes one token from a
+    /// process-global rolling 1-second budget (configurable via
     /// [`CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second`](crate::driver::CosmosDriverRuntimeBuilder::with_max_error_backtrace_captures_per_second)
     /// or the [`BACKTRACE_CAPTURES_PER_SECOND_ENV`] environment variable).
-    /// When the budget is exhausted, capture returns `None` for the rest
-    /// of the window, bounding the worst-case stack-walk cost during an
-    /// error storm.
+    /// When the budget is exhausted (or capacity is `0`), capture returns
+    /// `None` before walking the stack or allocating the IP vector,
+    /// bounding the worst-case stack-walk cost during an error storm.
     ///
     /// Capture and symbol resolution are deliberately decoupled: the
     /// resolution limiter (charged later by [`Self::rendered`]) gates
