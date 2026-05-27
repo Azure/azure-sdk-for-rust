@@ -306,7 +306,6 @@ fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
         for (idx, ip) in &missing {
             resolved.push((*idx, Arc::new(resolve_single(*ip))));
         }
-        let mut cache = frame_cache().write().unwrap();
         // Bound the cache to keep long-lived hosts that load/unload
         // modules (JNI / P/Invoke / dlopen) from accumulating frames
         // indefinitely. Swap the full map out for a fresh empty one and
@@ -314,19 +313,25 @@ fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
         // refcount decrements on every `Arc<ResolvedFrame>` plus String
         // frees — runs *off* the calling thread (see below). Keeps the
         // critical section `O(1)` even at the cap.
-        let evicted = if cache.len() >= FRAME_CACHE_SOFT_CAP.load(Ordering::Relaxed) {
-            Some(std::mem::take(&mut *cache))
-        } else {
-            None
+        //
+        // Scope the write guard explicitly so it drops at the end of the
+        // block (before we spawn the eviction-drop thread).
+        let evicted = {
+            let mut cache = frame_cache().write().unwrap();
+            let evicted = if cache.len() >= FRAME_CACHE_SOFT_CAP.load(Ordering::Relaxed) {
+                Some(std::mem::take(&mut *cache))
+            } else {
+                None
+            };
+            for (idx, frame) in resolved {
+                let cached = cache
+                    .entry(frame.ip)
+                    .or_insert_with(|| frame.clone())
+                    .clone();
+                out[idx] = Some((*cached).clone());
+            }
+            evicted
         };
-        for (idx, frame) in resolved {
-            let cached = cache
-                .entry(frame.ip)
-                .or_insert_with(|| frame.clone())
-                .clone();
-            out[idx] = Some((*cached).clone());
-        }
-        drop(cache);
         // Offload the eviction drop (~100k `Arc<ResolvedFrame>` decrements +
         // ~100k `String` frees, ~10 MB of memory work) to a detached OS
         // thread so the unlucky thread that triggered the cap hit returns
