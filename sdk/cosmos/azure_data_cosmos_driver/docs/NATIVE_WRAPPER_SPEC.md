@@ -252,7 +252,7 @@ Rationale:
 | `cosmos_account_ref_t*` | `cosmos_account_ref_with_*` | `cosmos_account_ref_free` | Yes, via `cosmos_account_ref_clone` (cheap; new strong handle to the same `Arc`) |
 | `cosmos_database_ref_t*` / `cosmos_container_ref_t*` | `cosmos_*_ref_create` from parent | matching `_free` | Yes, via `cosmos_*_ref_clone` (cheap) |
 | `cosmos_partition_key_t*` | `cosmos_partition_key_builder_build` / `cosmos_partition_key_from_string` | `cosmos_partition_key_free` | Yes, via `cosmos_partition_key_clone` (cheap) |
-| `cosmos_feed_range_t*` | `cosmos_feed_range_full` / `cosmos_feed_range_for_*` | `cosmos_feed_range_free` | Yes, via `cosmos_feed_range_clone` (cheap; small `enum FeedRange` copy) |
+| `cosmos_feed_range_t*` | `cosmos_feed_range_full` / `cosmos_feed_range_for_partition_key` | `cosmos_feed_range_free` | Yes, via `cosmos_feed_range_clone` (cheap; small `enum FeedRange` copy) |
 | `cosmos_operation_t*` | `cosmos_operation_*` factory | `cosmos_operation_free` (always safe — see §4.6 "Execute consumption" subsection) | No (move semantics on `execute`) |
 | `cosmos_response_t*` | `cosmos_driver_execute` | `cosmos_response_free` | No |
 | `cosmos_bytes_t*` | `cosmos_response_into_body` / `cosmos_diagnostics_to_json` | `cosmos_bytes_free(bytes)` (single-owner heap allocation; see §3.3) | No (the underlying `bytes::Bytes` is internally refcounted but the FFI handle is single-owner) |
@@ -572,7 +572,9 @@ These behaviors are **not** new in this wrapper — they are the contract of the
 
 ### 4.5 Partition keys (`src/handles/partition_key.rs`)
 
-`PartitionKey` is a `Vec<PartitionKeyValue>` (`models/partition_key.rs:303`), supporting hierarchical keys and six logical value kinds: `String`, `Number`, `Bool`, `Null`, `Undefined`, and `Infinity`. The wrapper exposes a tiny builder:
+`PartitionKey` is a `Vec<PartitionKeyValue>` (`models/partition_key.rs:303`). The driver supports six logical value kinds — `String`, `Number`, `Bool`, `Null`, `Undefined`, and `Infinity` — but only the first five are reachable through the driver's **public** API. `Infinity` is documented as "used only internally for EPK boundary calculations" (`models/partition_key.rs:44`) and is `pub(crate)`; its predicate `is_infinity()` is also `pub(crate)`. The wrapper therefore exposes the five public variants and **does not** ship a `cosmos_partition_key_builder_append_infinity` in v1.
+
+If a host SDK needs to construct EPK upper-bound sentinels for cross-partition range queries — the only scenario where `Infinity` matters externally — that should arrive through `cosmos_feed_range_t` (§4.6.4) rather than through a partition-key builder, because EPK boundary construction is a feed-range concern, not a partition-key one. See §9 Q10 for the open question on whether to promote `Infinity` to `pub` in the driver vs. routing EPK boundaries entirely through the feed-range surface.
 
 ```c
 typedef struct cosmos_partition_key_builder cosmos_partition_key_builder_t;
@@ -588,19 +590,20 @@ cosmos_error_code_t cosmos_partition_key_builder_append_bool(
     cosmos_partition_key_builder_t *b, bool value);
 cosmos_error_code_t cosmos_partition_key_builder_append_null(
     cosmos_partition_key_builder_t *b);
-/* Appends a JSON-undefined component (driver variant InnerPartitionKeyValue::Undefined).
- * This is the variant used for "no partition key value" components in
- * hierarchical keys — NOT the JSON literal `null`, which has its own
- * dedicated _append_null. */
+/* Appends an Undefined component (driver variant InnerPartitionKeyValue::Undefined,
+ * exposed publicly as PartitionKeyValue::UNDEFINED).
+ *
+ * This represents an item with **no value** at the partition-key path —
+ * the JSON-undefined semantics Cosmos uses for sparse partition keys in
+ * hierarchical layouts. It is NOT the JSON literal `null`, which has its
+ * own dedicated _append_null above. */
 cosmos_error_code_t cosmos_partition_key_builder_append_undefined(
     cosmos_partition_key_builder_t *b);
-/* Appends the driver's InnerPartitionKeyValue::Infinity sentinel, used as the
- * upper-bound boundary key in cross-partition range queries (FeedRange MAX).
- * Most language SDKs never need this directly — it is part of the driver's
- * query-engine surface — but it must be reachable from C for parity with the
- * Rust driver. */
-cosmos_error_code_t cosmos_partition_key_builder_append_infinity(
-    cosmos_partition_key_builder_t *b);
+
+/* NOTE: No `_append_infinity` is exposed in v1 — the driver's
+ * `InnerPartitionKeyValue::Infinity` is `pub(crate)` and has no public
+ * constructor. EPK upper-bound sentinels (the only use case) are
+ * expressed through `cosmos_feed_range_t` (§4.6.4) instead. */
 
 cosmos_error_code_t cosmos_partition_key_builder_build(
     cosmos_partition_key_builder_t *b,     // consumed on success
@@ -682,27 +685,45 @@ cosmos_error_code_t cosmos_operation_read_all_items_cross_partition(
     const cosmos_container_ref_t *c, cosmos_operation_t **out_op);
 
 /* Query — mirrors CosmosOperation::query_items(container, Option<FeedRange>)
- * at src/models/cosmos_operation.rs:625. The driver's query_items DOES NOT
- * take a SQL string — it takes an optional FeedRange that targets a specific
- * physical partition (NULL = entire container). SQL text + parameters are
- * attached separately via cosmos_operation_query_plan below (which mirrors
- * CosmosOperation::query_plan at src/models/cosmos_operation.rs:639) once
- * the driver lands a unified SQL+FeedRange constructor. Phase 5 / Phase 8
- * ship the FeedRange-targeted form first; the SQL-string form on top of
- * query_items is deferred until the driver-side API exists (tracked in §9). */
+ * at src/models/cosmos_operation.rs:625.
+ *
+ * The driver's query_items takes an optional FeedRange that targets a
+ * specific physical partition (NULL = entire container, i.e. cross-partition);
+ * it does NOT take a SQL string directly. The SQL query text and
+ * parameters live in the operation's request body as JSON of shape
+ *
+ *     { "query": "SELECT * FROM c WHERE c.foo = @p", "parameters": [...] }
+ *
+ * and are attached via cosmos_operation_with_body() per the
+ * schema-agnostic data-plane contract (G2). The wrapper does NOT JSON-encode
+ * the query body — host SDKs build the bytes in their native serializer
+ * exactly as they do for create / replace / upsert item bodies.
+ *
+ * Phase 5 ships this factory + body-attach pattern; Phase 8 wires the
+ * resulting operation through the pager. */
 cosmos_error_code_t cosmos_operation_query_items(
     const cosmos_container_ref_t *c,
     const cosmos_feed_range_t *feed_range,    /* nullable — entire container */
     cosmos_operation_t **out_op);
 
-/* Build a SQL query as a standalone query-plan operation (driver
- * CosmosOperation::query_plan). Parameters are added via
- * cosmos_operation_with_query_parameter. */
-cosmos_error_code_t cosmos_operation_query_plan(
-    const cosmos_container_ref_t *c, const char *query_text,
+/* Query plan — mirrors CosmosOperation::query_plan(container,
+ * supported_query_features) at src/models/cosmos_operation.rs:639.
+ *
+ * NOTE: query_plan is NOT a SQL-execution entry point. It is a metadata
+ * fetch that asks the gateway "given that the client can execute the
+ * following query features, return a compatible query plan for this
+ * container." The `supported_features_mask` is the comma-separated string
+ * the driver sends as the `x-ms-cosmos-supported-query-features` header
+ * (e.g. "OrderBy,TopAndLimit,Aggregate"). Most language SDKs never call
+ * this directly — they execute queries via cosmos_operation_query_items
+ * above and let the driver's pipeline decide whether a query plan is
+ * needed. We expose it for parity with the driver's public surface;
+ * cross-language SDKs that implement their own query-plan caching can
+ * consume it. */
+cosmos_error_code_t cosmos_operation_query_plan_for_features(
+    const cosmos_container_ref_t *c,
+    const char *supported_features_mask,
     cosmos_operation_t **out_op);
-cosmos_error_code_t cosmos_operation_with_query_parameter(
-    cosmos_operation_t *op, const char *name, cosmos_bytes_view_t json_value);
 
 /* Item-scope — partition key is baked into the underlying ItemReference at
  * construction (src/models/resource_reference.rs:268). */
@@ -821,26 +842,25 @@ The full contract is:
 
 #### 4.6.4 FeedRange handle
 
-`cosmos_operation_query_items` and the (forthcoming) pager-side range-targeted reads accept a `cosmos_feed_range_t *`. The handle mirrors the driver's `FeedRange` type and is exposed through a minimal builder:
+`cosmos_operation_query_items` (and the Phase 8 pager-side query / read-feed surface that consumes the same operation) accept a `cosmos_feed_range_t *`. The handle mirrors the driver's `FeedRange` type (`src/models/feed_range.rs`) and is exposed through a minimal builder. The v1 surface matches the driver's **current public constructors** exactly; additional variants will be added as the driver's `FeedRange` grows.
 
 ```c
 typedef struct cosmos_feed_range cosmos_feed_range_t;
 
-/* Entire container — equivalent to passing NULL to query_items. */
+/* Entire EPK key space ("" .. FF) — mirrors FeedRange::full() at
+ * src/models/feed_range.rs:89. Equivalent to passing NULL to
+ * cosmos_operation_query_items. */
 cosmos_error_code_t cosmos_feed_range_full(cosmos_feed_range_t **out_fr);
 
-/* Physical-partition range identified by a PartitionKeyRangeId string
- * (driver FeedRange::PartitionKeyRangeId). */
-cosmos_error_code_t cosmos_feed_range_for_partition_key_range(
-    const char *pkrange_id, cosmos_feed_range_t **out_fr);
-
-/* Single logical partition key — convenience for "all items in this PK". */
+/* FeedRange for a single logical partition key — mirrors
+ * FeedRange::for_partition(pk, &PartitionKeyDefinition) at
+ * src/models/feed_range.rs:108. The driver requires the container's
+ * partition-key definition to compute the effective-partition-key bounds;
+ * the wrapper obtains it from `container.partition_key_definition()` so
+ * callers do not have to plumb it manually. */
 cosmos_error_code_t cosmos_feed_range_for_partition_key(
-    const cosmos_partition_key_t *pk, cosmos_feed_range_t **out_fr);
-
-/* Opaque epk range from continuation tokens / split metadata. */
-cosmos_error_code_t cosmos_feed_range_for_epk_range(
-    const char *min_inclusive, const char *max_exclusive,
+    const cosmos_container_ref_t *container,
+    const cosmos_partition_key_t *pk,
     cosmos_feed_range_t **out_fr);
 
 cosmos_error_code_t cosmos_feed_range_clone(
@@ -848,7 +868,12 @@ cosmos_error_code_t cosmos_feed_range_clone(
 void                cosmos_feed_range_free(cosmos_feed_range_t *fr);
 ```
 
-The set of constructors above is the v1 surface; additional variants will be added as the driver's `FeedRange` grows.
+**Deferred to a future revision** (no driver-side public constructor today — tracked in §9 Q11):
+
+- A `FeedRange::new(min: EffectivePartitionKey, max: EffectivePartitionKey)` constructor exists on the driver (`feed_range.rs:71`) but takes a strongly-typed `EffectivePartitionKey`, not strings. The wrapper would need either a `cosmos_effective_partition_key_t` opaque type with `_from_hex` / `_min` / `_max` constructors, or a string-parsing helper on the driver side. Neither exists today, so `cosmos_feed_range_for_epk_range(min_hex, max_hex, ...)` is **not** part of v1.
+- The driver's internal `FeedRangeRepr` does **not** have a `PartitionKeyRangeId` variant — physical-partition routing happens at a different layer (PPAF/PPCB routing maps), not through `FeedRange`. The earlier draft's `cosmos_feed_range_for_partition_key_range(pkrange_id, ...)` is therefore **dropped** from v1.
+
+If a host SDK needs to resume a query from a continuation token (the typical EPK-range use case), Phase 8's `cosmos_pager_*` surface already covers that via the continuation-token round-trip on the pager handle — no `FeedRange` construction from the C side is required.
 
 ### 4.7 Execution + response (`src/handles/response.rs`)
 
@@ -1176,7 +1201,7 @@ Each phase is independently shippable, has explicit acceptance criteria, and end
 
 ### Phase 5 — Operation construction *(Goal: every `CosmosOperation::*` factory has a C entry point, no execution yet)*
 
-- All factories in §4.6.1 (including `read_all_items_cross_partition`, `query_items`, `query_plan`, `batch`, `query_offers`, `read_offer`, `replace_offer`).
+- All factories in §4.6.1 (including `read_all_items_cross_partition`, `query_items`, `query_plan_for_features`, `batch`, `query_offers`, `read_offer`, `replace_offer`).
 - All `with_*` mutators from §4.6.2 — including `with_max_item_count`, which lives on `CosmosOperation` itself (NOT on `OperationOptions`; see §4.6.2). Note: **no** `cosmos_operation_with_partition_key` (PK lives on the factory; see §4.6.1).
 - `cosmos_operation_free` per the normative semantics in §4.6.3.
 - `cosmos_feed_range_*` builder surface per §4.6.4.
@@ -1252,6 +1277,10 @@ Each item below is independent; ship as feature-gated when ready.
 7. **ConnectionString parser ownership.** The driver's `ConnectionString` parser currently lives in `azure_data_cosmos`. If the wrapper wants to expose `cosmos_account_ref_from_connection_string(const char *cs, ...)`, do we mirror the parser in the wrapper (extra surface to maintain) or depend on the driver re-exporting the parser publicly?
 8. **Symbol stripping on release builds.** The old crate used `Box::into_raw` and friends. We may want `-Cstrip=symbols` on release builds; verify that doesn't trip up corrosion's debug-symbol discovery on Windows, or interact badly with backtrace capture (§6.4).
 9. **`cosmos_pager_t` continuation-token re-entry contract.** When a pager is freed mid-iteration, the caller may want to recreate it from a continuation token. Decide whether `cosmos_driver_execute_pager` takes an optional starting continuation token, or whether resumption is always operation-level via `cosmos_operation_with_continuation_token`. Resolve before Phase 8.
+10. **`PartitionKeyValue::Infinity` visibility.** The driver's `Infinity` variant is `pub(crate)` (`models/partition_key.rs:44`) and documented as "used only internally for EPK boundary calculations." §4.5 of this spec therefore does **not** ship `cosmos_partition_key_builder_append_infinity` in v1; EPK upper-bound construction is deferred to the feed-range surface (§4.6.4). Decide whether to (a) promote `Infinity` to `pub` in the driver with appropriate use-case documentation, or (b) keep it private and route every EPK-boundary use case through `cosmos_feed_range_*` constructors going forward. The choice affects whether language SDKs ever need a direct partition-key sentinel for boundary semantics; if (b), §4.5 stays as-is permanently.
+11. **`FeedRange` v1 constructor gaps.** §4.6.4 ships only the two driver-public constructors today (`FeedRange::full()` and `FeedRange::for_partition(...)`). Two construction shapes that callers may want are deferred because the driver does not expose them in a string-parseable form:
+    - **EPK-range construction.** `FeedRange::new(min: EffectivePartitionKey, max: EffectivePartitionKey)` exists on the driver (`feed_range.rs:71`) but takes strongly-typed EPK values, not strings. Decide whether to (a) wait for a driver-side `FeedRange::from_hex_range(min_hex, max_hex)` parser, or (b) add a `cosmos_effective_partition_key_t` opaque type to the wrapper with its own `_from_hex` / `_min` / `_max` constructors. Phase 8 (pager) is the natural forcing function — if continuation-token resumption is operation-level (Q9 option B), this gap may never bite.
+    - **Physical-partition-range targeting.** The driver's `FeedRangeRepr` has no `PartitionKeyRangeId` variant; PKRangeId-keyed routing happens elsewhere (PPAF/PPCB). Decide whether host SDKs that want explicit physical-partition pinning should drive that through some other surface, or whether the driver should grow a `FeedRange::for_partition_key_range_id(pkrange_id)` constructor that the wrapper can mirror.
 
 ---
 
