@@ -576,16 +576,30 @@ pub(crate) fn record_hedge_alternate_win(
         return new_state;
     }
 
-    // Threshold reached. Skip the trip if PPCB already has an entry for this
-    // partition (a real PPCB failure beat hedge feedback to it; do not clobber
-    // its richer state). Also clear our counter so we do not re-trip on every
-    // subsequent hedge win until that entry recovers.
-    if new_state
+    // Threshold reached. Decide whether to skip or proceed based on the
+    // existing override entry's health status:
+    //
+    // * `Unhealthy` — an active PPCB trip is in place and routing already
+    //   goes to the alternate region. Hedge feedback shouldn't clobber the
+    //   richer state recorded by the real PPCB failure path; clear the
+    //   counter and return.
+    //
+    // * `ProbeCandidate` — failback is in progress: routing is sending
+    //   probes back to the original primary. Repeated hedge alternate-wins
+    //   prove the primary is *still* unhealthy (the probe lost the race),
+    //   so we must re-trip with a fresh `Unhealthy` entry. Mirrors
+    //   `mark_partition_unavailable`'s behavior when failures continue
+    //   against a probe candidate. Falling through replaces the stale
+    //   entry via the `insert` at the end of this function.
+    if let Some(existing) = new_state
         .circuit_breaker_overrides
-        .contains_key(partition_key_range_id.as_str())
+        .get(partition_key_range_id.as_str())
     {
-        new_state.consecutive_hedge_wins.remove(&key);
-        return new_state;
+        if existing.health_status == HealthStatus::Unhealthy {
+            new_state.consecutive_hedge_wins.remove(&key);
+            return new_state;
+        }
+        // ProbeCandidate — fall through to install a fresh trip.
     }
 
     // Locate the endpoint matching the primary region. Without an endpoint
@@ -1922,6 +1936,69 @@ mod tests {
         assert!(
             after.consecutive_hedge_wins.is_empty(),
             "counter must be cleared even when the trip is skipped, so we don't loop on every subsequent hedge win",
+        );
+    }
+
+    #[test]
+    fn hedge_alternate_win_re_trips_when_existing_entry_is_probe_candidate() {
+        // Regression for PPCB-vs-hedging interaction:
+        //
+        // After the first hedge-driven trip, the failback sweep transitions
+        // the entry from Unhealthy to ProbeCandidate. While the primary is
+        // STILL unhealthy, routing sends probes back to it, the probes lose
+        // the hedge race to the alternate, and `record_hedge_alternate_win`
+        // is invoked again. We must re-trip with a fresh `Unhealthy` entry
+        // — not silently clear the counter and leave the stale ProbeCandidate
+        // entry in place — otherwise the partition never fails back over
+        // and routing keeps probing a degraded primary indefinitely.
+        let mut state = partition_state_with_hedge_threshold(1);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let primary = Region::new("eastus".to_string());
+
+        let stale_probe_candidate = PartitionFailoverEntry {
+            current_endpoint: regional_endpoint("westus"),
+            first_failed_endpoint: regional_endpoint("eastus"),
+            failed_endpoints: HashSet::new(),
+            read_failure_count: 0,
+            write_failure_count: 0,
+            first_failure_time: Instant::now(),
+            last_failure_time: Instant::now(),
+            health_status: HealthStatus::ProbeCandidate,
+            failback_jitter: Duration::ZERO,
+        };
+        state
+            .circuit_breaker_overrides
+            .insert(pk_range.clone(), stale_probe_candidate);
+
+        let after = record_hedge_alternate_win(&state, &account, &pk_range, Some(&primary));
+
+        let entry = &after.circuit_breaker_overrides[pk_range.as_str()];
+        assert_eq!(
+            entry.health_status,
+            HealthStatus::Unhealthy,
+            "stale ProbeCandidate must be replaced with a fresh Unhealthy entry"
+        );
+        assert_eq!(
+            entry.read_failure_count, state.config.read_failure_threshold,
+            "re-trip must seed read_failure_count to the threshold so \
+             can_circuit_breaker_trigger_failover accepts the entry on the \
+             very next routing decision"
+        );
+        assert_eq!(
+            entry.first_failed_endpoint,
+            regional_endpoint("eastus"),
+            "re-trip must record the still-unhealthy primary as the first \
+             failed endpoint"
+        );
+        assert_eq!(
+            entry.current_endpoint,
+            regional_endpoint("westus"),
+            "re-trip must point routing at the alternate region"
+        );
+        assert!(
+            after.consecutive_hedge_wins.is_empty(),
+            "counter must be cleared after the re-trip is installed"
         );
     }
 
