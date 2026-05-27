@@ -647,17 +647,49 @@ fn build_service_error(
     cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
 ) -> crate::error::CosmosError {
+    // Some gateway versions return HTTP 400 for cross-partition queries with
+    // unsupported features (ORDER BY, aggregates, GROUP BY, ...) without
+    // emitting the `x-ms-substatus: 1004` header that the .NET / Java SDKs
+    // rely on. Detect that case from the response body and synthesize the
+    // canonical [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] so
+    // callers get a consistent typed status regardless of gateway version.
+    let effective_status = synthesize_cross_partition_query_status(*status, body);
     crate::error::CosmosError::builder()
         .with_status(crate::error::CosmosStatus::new(
             azure_core::http::StatusCode::InternalServerError,
         ))
-        .with_status(*status)
-        .with_message(service_error_message(status))
+        .with_status(effective_status)
+        .with_message(service_error_message(&effective_status))
         .with_response_parts(crate::models::CosmosResponsePayload::new(
             body.to_vec(),
             cosmos_headers.clone(),
         ))
         .build()
+}
+
+/// Returns [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] when `status`
+/// is a bare HTTP 400 (no sub-status) and `body` is the gateway's
+/// "unsupported query features" rejection. Otherwise returns `status`
+/// unchanged.
+fn synthesize_cross_partition_query_status(status: CosmosStatus, body: &[u8]) -> CosmosStatus {
+    use azure_core::http::StatusCode;
+    if status.status_code() != StatusCode::BadRequest || status.sub_status().is_some() {
+        return status;
+    }
+    let Ok(text) = std::str::from_utf8(body) else {
+        return status;
+    };
+
+    // Match the gateway's well-known message rather than parsing JSON to
+    // avoid a serde dependency on the hot error path. The fragment is
+    // stable across .NET / Java / Python emulator gateways.
+    if text.contains("unsupported features")
+        && text.contains("Upgrade your SDK")
+    {
+        crate::error::CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE
+    } else {
+        status
+    }
 }
 
 fn build_transport_error(
