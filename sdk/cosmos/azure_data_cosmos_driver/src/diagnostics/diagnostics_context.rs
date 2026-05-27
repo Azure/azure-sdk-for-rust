@@ -1211,10 +1211,7 @@ pub(crate) struct DiagnosticsContextBuilder {
     fault_injection_enabled: bool,
 
     /// Diagnostics from a cross-region hedging execution, if one occurred.
-    ///
-    /// Populated by `execute_hedged()` whenever a hedging strategy was
-    /// resolved and active for the operation (spec §10.1 attachment
-    /// contract). `None` when hedging was not selected.
+    /// `None` when hedging was not selected for this operation.
     hedge_diagnostics: Option<HedgeDiagnostics>,
 
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
@@ -1252,34 +1249,21 @@ impl DiagnosticsContextBuilder {
     }
 
     /// Sets the hedging diagnostics for this operation.
-    ///
-    /// Called by `execute_hedged()` (Part 4) when a hedging strategy was
-    /// resolved and active for the operation. Per the spec §10.1
-    /// attachment contract, this is `Some(_)` only when hedging actually
-    /// ran; the `None` case (default) means hedging was not selected.
     pub(crate) fn set_hedge_diagnostics(&mut self, diagnostics: HedgeDiagnostics) {
         self.hedge_diagnostics = Some(diagnostics);
     }
 
-    /// Creates a fresh builder for a single hedge-attempt within
-    /// [`execute_hedged()`](crate::driver::pipeline::operation_pipeline).
+    /// Creates a fresh builder for a single hedge attempt.
     ///
-    /// The returned builder shares the parent's `activity_id`, `options`,
-    /// `cpu_monitor`, `machine_id`, and (when compiled with the feature)
-    /// `fault_injection_enabled` flag — i.e. every piece of
-    /// operation-level context that the per-attempt transport pipeline
-    /// needs in order to record diagnostics correctly. It does **not**
-    /// share the request list, status, or accumulated hedge diagnostics:
-    /// each hedge attempt records into its own `requests` buffer, and the
-    /// winner's entries are merged back into the parent via
-    /// [`merge_hedge_attempt`](Self::merge_hedge_attempt).
+    /// Shares operation-level context (`activity_id`, `options`,
+    /// `cpu_monitor`, `machine_id`, fault-injection flag) with the parent
+    /// but starts with an empty request list and a fresh `started_at`, so
+    /// per-attempt durations measure from launch rather than from
+    /// operation start. The winning attempt's requests are merged back
+    /// via [`merge_hedge_attempt`](Self::merge_hedge_attempt).
     pub(crate) fn clone_for_hedge_attempt(&self) -> Self {
         Self {
             activity_id: self.activity_id.clone(),
-            // Use a fresh `started_at` per attempt so each one's
-            // sub-duration is measured from launch, not from operation
-            // start. The operation-level duration on the parent is
-            // unaffected because we only merge the request list back.
             started_at: Instant::now(),
             requests: Vec::with_capacity(2),
             status: None,
@@ -1294,20 +1278,13 @@ impl DiagnosticsContextBuilder {
         }
     }
 
-    /// Absorbs the per-request diagnostics recorded by a hedge attempt's
-    /// sub-builder back into the parent operation builder.
+    /// Absorbs a hedge attempt's per-request diagnostics back into the
+    /// parent builder.
     ///
-    /// Called by `execute_hedged()` after the race resolves. Only the
-    /// request list is moved — the sub-builder's `status` and
-    /// `hedge_diagnostics` are intentionally discarded because the
-    /// operation-level fields belong to the parent (the winning response
-    /// drives `set_operation_status` via the normal
-    /// [`build_cosmos_response`](crate::driver::pipeline::operation_pipeline)
-    /// path, and `set_hedge_diagnostics` is invoked directly by
-    /// `execute_hedged()` on the parent with a synthesized
-    /// [`HedgeDiagnostics`]).
+    /// Only the request list is moved; the attempt's `status` and
+    /// `hedge_diagnostics` are discarded because those operation-level
+    /// fields are written directly on the parent.
     pub(crate) fn merge_hedge_attempt(&mut self, attempt: Self) {
-        // Move attempt.requests into self.requests in launch order.
         if self.requests.is_empty() {
             self.requests = attempt.requests;
         } else {

@@ -110,46 +110,16 @@ pub(crate) struct OperationRetryState {
     /// Hub-region-processing-only latch.
     ///
     /// Sticky within a single operation. Set on the retry triggered by the
-    /// FIRST `404 / 1002 (READ_SESSION_NOT_AVAILABLE)` on a single-master
+    /// first `404 / 1002 (READ_SESSION_NOT_AVAILABLE)` on a single-master
     /// data-plane account; once set, every subsequent transport attempt
     /// for this operation emits the
     /// `x-ms-cosmos-hub-region-processing-only: True` header.
-    ///
-    /// Bounded by operation lifetime — `OperationRetryState` is
-    /// constructed fresh per call to `execute_operation_pipeline` (single
-    /// production call site), so the latch never leaks across operations.
-    ///
-    /// LOAD-BEARING for SE-003 mitigation — see
-    /// HUB_REGION_PROCESSING_HEADER_SPEC.md AG-1..AG-4. If a future
-    /// refactor adds a second production construction site for
-    /// `OperationRetryState`, the SE-003 mitigation argument needs to be
-    /// re-validated.
-    ///
-    /// **Cross-region hedging coordination.** The orchestrator added in
-    /// `azure_data_cosmos_driver/docs/HEDGING_SPEC.md` §9.5 constructs an
-    /// `OperationRetryState` *per hedge*, so this per-state latch is
-    /// per-hedge by default. The hedging spec requires augmenting this
-    /// state with a `shared_hub_region_latch: Option<Arc<AtomicBool>>`
-    /// that is `Some` only when running inside `execute_with_hedging()`,
-    /// is CAS-set alongside this field in `build_session_retry_state`,
-    /// and is OR'd into the emission decision in `apply_hub_region_header`.
-    /// This mirrors .NET v3's `CrossRegionAvailabilityContext` shared
-    /// object introduced by azure-cosmos-dotnet-v3#5815. Any change to
-    /// the latch trigger or emission rule here MUST update both call
-    /// sites and §9.5 of the hedging spec.
     pub hub_region_processing_only: bool,
     /// Cross-hedge shared hub-region-processing-only latch.
     ///
     /// `Some(_)` only when this `OperationRetryState` is running inside
-    /// the [`execute_hedged`] cross-region race past the threshold.
-    /// `None` on the non-hedged pipeline and on the zero-overhead happy
-    /// path where the primary returns before the threshold elapses, so
-    /// the no-Arc-allocation invariant is preserved.
-    ///
-    /// Set with `Release` ordering by `build_session_retry_state` at the
-    /// same point where it flips the per-state `hub_region_processing_only`
-    /// latch; read with `Acquire` ordering by `apply_hub_region_header`
-    /// (OR'd against the per-state latch).
+    /// the cross-region hedging race past the threshold; `None` otherwise
+    /// (non-hedged pipeline, and the pre-threshold zero-overhead path).
     pub shared_hub_region_latch: Option<Arc<AtomicBool>>,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
