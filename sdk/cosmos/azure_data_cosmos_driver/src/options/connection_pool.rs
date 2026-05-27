@@ -538,12 +538,9 @@ impl ConnectionPoolOptionsBuilder {
             match std::env::var("AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED") {
                 Ok(v) => {
                     let gateway20: bool = v.parse().map_err(|e| {
-                        crate::error::Error::configuration(
-                            format!(
+                        crate::error::Error::builder(crate::error::Kind::Configuration).with_message(format!(
                                 "Failed to parse AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED as boolean: {v} ({e})"
-                            ),
-                            None,
-                        )
+                            )).build()
                     })?;
                     gateway20 && effective_is_http2_allowed
                 }
@@ -651,14 +648,11 @@ impl ConnectionPoolOptionsBuilder {
         )?;
 
         if min_http2_connections_per_endpoint > max_http2_connections_per_endpoint {
-            return Err(crate::error::Error::configuration(
-                format!(
+            return Err(crate::error::Error::builder(crate::error::Kind::Configuration).with_message(format!(
                     "min_http2_connections_per_endpoint must be less than or equal to max_http2_connections_per_endpoint, got {} > {}",
                     min_http2_connections_per_endpoint,
                     max_http2_connections_per_endpoint
-                ),
-                None,
-            ));
+                )).build());
         }
 
         let idle_http2_client_timeout = parse_duration_millis_from_env(
@@ -778,12 +772,9 @@ impl ConnectionPoolOptionsBuilder {
                 Some(addr) => Some(addr),
                 None => match std::env::var("AZURE_COSMOS_LOCAL_ADDRESS") {
                     Ok(v) => Some(v.parse().map_err(|e| {
-                        crate::error::Error::configuration(
-                            format!(
+                        crate::error::Error::builder(crate::error::Kind::Configuration).with_message(format!(
                                 "Failed to parse AZURE_COSMOS_LOCAL_ADDRESS as IP address: {v} ({e})"
-                            ),
-                            None,
-                        )
+                            )).build()
                     })?),
                     Err(_) => None,
                 },

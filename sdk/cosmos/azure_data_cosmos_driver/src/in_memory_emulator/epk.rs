@@ -59,11 +59,11 @@ pub(crate) fn parse_partition_key_header(
     }
 
     let value: serde_json::Value = serde_json::from_str(trimmed).map_err(|e| {
-        crate::error::Error::client(format!("invalid partition key header: {e}"), None)
+        crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("invalid partition key header: {e}")).build()
     })?;
 
     let arr = value.as_array().ok_or_else(|| {
-        crate::error::Error::client("partition key header must be a JSON array", None)
+        crate::error::Error::builder(crate::error::Kind::Client).with_message("partition key header must be a JSON array").build()
     })?;
 
     arr.iter().map(json_to_pk_component).collect()
@@ -83,10 +83,7 @@ pub(crate) fn extract_pk_from_body(
     pk_paths: &[impl AsRef<str>],
 ) -> crate::error::Result<Vec<PartitionKeyValue>> {
     if !body.is_object() {
-        return Err(crate::error::Error::client(
-            "document body must be a JSON object to extract a partition key",
-            None,
-        ));
+        return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("document body must be a JSON object to extract a partition key").build());
     }
     pk_paths
         .iter()
@@ -111,12 +108,9 @@ fn extract_pk_at_path(
     let mut current = body;
     for (i, segment) in segments.iter().enumerate() {
         let obj = current.as_object().ok_or_else(|| {
-            crate::error::Error::client(
-                format!(
+            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
                     "partition key path component '{segment}' encountered a non-object intermediate"
-                ),
-                None,
-            )
+                )).build()
         })?;
         match obj.get(*segment) {
             Some(next) if i == last_idx => return json_to_pk_component(next),
@@ -137,24 +131,15 @@ fn json_to_pk_component(value: &serde_json::Value) -> crate::error::Result<Parti
         serde_json::Value::String(s) => Ok(PartitionKeyValue::from(s.clone())),
         serde_json::Value::Number(n) => {
             let f = n.as_f64().ok_or_else(|| {
-                crate::error::Error::client(
-                    "partition key number is not representable as f64",
-                    None,
-                )
+                crate::error::Error::builder(crate::error::Kind::Client).with_message("partition key number is not representable as f64").build()
             })?;
             if !f.is_finite() {
-                return Err(crate::error::Error::client(
-                    "partition key numbers must be finite (NaN and Infinity are not allowed)",
-                    None,
-                ));
+                return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("partition key numbers must be finite (NaN and Infinity are not allowed)").build());
             }
             Ok(PartitionKeyValue::from(f))
         }
         serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
-            Err(crate::error::Error::client(
-                "partition key components must be scalar (null, bool, number, or string)",
-                None,
-            ))
+            Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("partition key components must be scalar (null, bool, number, or string)").build())
         }
     }
 }

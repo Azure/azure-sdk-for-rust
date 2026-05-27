@@ -134,12 +134,10 @@ async fn fetch_gateway_plan(
         serde_json::json!({"query": sql, "parameters": params_json})
     };
     let body = serde_json::to_vec(&query_body).map_err(|e| {
-        azure_data_cosmos_driver::Error::serialization(
-            "failed to serialize query-plan request body",
-            None,
-            None,
-            e,
-        )
+        azure_data_cosmos_driver::Error::builder(azure_data_cosmos_driver::error::Kind::Serialization)
+            .with_message("failed to serialize query-plan request body")
+            .with_source(e)
+            .build()
     })?;
 
     let operation = CosmosOperation::query_plan(
@@ -151,10 +149,9 @@ async fn fetch_gateway_plan(
         .execute_operation(operation, OperationOptions::default())
         .await?
         .ok_or_else(|| {
-            azure_data_cosmos_driver::Error::client(
-                "gateway query-plan request returned no response body",
-                None,
-            )
+            azure_data_cosmos_driver::Error::builder(azure_data_cosmos_driver::error::Kind::Client)
+                .with_message("gateway query-plan request returned no response body")
+                .build()
         })?
         .into_body()
         .into_single()

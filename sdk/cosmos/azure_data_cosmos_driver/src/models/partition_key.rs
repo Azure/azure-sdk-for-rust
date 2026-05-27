@@ -425,10 +425,7 @@ impl AsHeaders for PartitionKey {
                 }
                 InnerPartitionKeyValue::Infinity => {
                     // Internal sentinel — should never appear in a user-facing partition key.
-                    return Err(crate::error::Error::client(
-                        "Infinity is not a valid partition key value for serialization",
-                        None,
-                    ));
+                    return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("Infinity is not a valid partition key value for serialization").build());
                 }
                 InnerPartitionKeyValue::Undefined => {
                     // Items with no partition key property.

@@ -361,10 +361,7 @@ mod tests {
 
             Box::pin(async move {
                 if resolved.is_empty() {
-                    Err(crate::error::Error::client(
-                        "scenario topology produced no overlapping ranges",
-                        None,
-                    ))
+                    Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("scenario topology produced no overlapping ranges").build())
                 } else {
                     Ok(resolved)
                 }
@@ -725,10 +722,7 @@ mod tests {
     async fn topology_provider_error_propagates() {
         let mut request = Request::new(Arc::new(operation()), epk_range_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
-        let mut topology = MockTopologyProvider::new(vec![Err(crate::error::Error::client(
-            "topology fetch failed",
-            None,
-        ))]);
+        let mut topology = MockTopologyProvider::new(vec![Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("topology fetch failed").build())]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();

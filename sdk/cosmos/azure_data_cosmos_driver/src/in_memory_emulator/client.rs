@@ -140,13 +140,12 @@ impl InMemoryEmulatorHttpClient {
         let region_name = match resolve_region(request.url(), self.store.config()) {
             Some(r) => r,
             None => {
-                return Err(crate::error::Error::client(
-                    format!(
+                return Err(crate::error::Error::builder(crate::error::Kind::Client)
+                    .with_message(format!(
                         "in-memory emulator: request URL host '{}' does not match any configured region",
                         request.url().host_str().unwrap_or("<none>"),
-                    ),
-                    None,
-                ));
+                    ))
+                    .build());
             }
         };
 
@@ -218,12 +217,11 @@ impl TransportClient for EmulatorTransportClient {
 
         // Collect the buffered response
         let raw = async_response.try_into_raw_response().await.map_err(|e| {
-            let cosmos_err = crate::error::Error::transport(
-                CosmosStatus::TRANSPORT_BODY_READ_FAILED,
-                e.to_string(),
-                None,
-                Some(std::sync::Arc::new(e)),
-            );
+            let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
+                .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                .with_message(e.to_string())
+                .with_source(e)
+                .build();
             TransportError::new(cosmos_err, crate::diagnostics::RequestSentStatus::Sent)
         })?;
 

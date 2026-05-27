@@ -47,7 +47,7 @@ pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> 
 #[cfg(test)]
 mod tests {
     use super::error_chain_summary;
-    use crate::error::Error;
+    use crate::error::{Error, Kind};
     use crate::models::CosmosStatus;
     use std::error::Error as StdError;
     use std::sync::Arc;
@@ -56,7 +56,9 @@ mod tests {
     fn returns_top_level_display_when_no_source() {
         // No source chain → the summary is exactly the error's own
         // `Display` string (`[Kind] status: message`).
-        let error = Error::client("top-level failure", None);
+        let error = Error::builder(Kind::Client)
+            .with_message("top-level failure")
+            .build();
         assert_eq!(
             error_chain_summary(&error),
             "[Client] 400: top-level failure"
@@ -69,12 +71,11 @@ mod tests {
         // The summary is the outer `Display` joined with each subsequent
         // source's `Display` by `": "`.
         let inner_io = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
-        let error = Error::transport(
-            CosmosStatus::TRANSPORT_IO_FAILED,
-            "outer transport failure",
-            None,
-            Some(Arc::new(inner_io)),
-        );
+        let error = Error::builder(Kind::Transport)
+            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+            .with_message("outer transport failure")
+            .with_source(inner_io)
+            .build();
         assert_eq!(
             error_chain_summary(&error),
             "[Transport] 503/20011: outer transport failure: socket reset"
@@ -83,12 +84,18 @@ mod tests {
 
     #[test]
     fn collapses_consecutive_duplicate_messages() {
-        // Two `Error::client` instances with the same message render to
-        // byte-identical `Display` strings — the dedup collapses them so
-        // the summary is the single `Display` string, not duplicated.
-        let inner: Arc<dyn StdError + Send + Sync + 'static> =
-            Arc::new(Error::client("duplicate", None));
-        let outer = Error::client("duplicate", Some(Arc::clone(&inner)));
+        // Two equivalent client errors render to byte-identical `Display`
+        // strings — the dedup collapses them so the summary is the single
+        // `Display` string, not duplicated.
+        let inner: Arc<dyn StdError + Send + Sync + 'static> = Arc::new(
+            Error::builder(Kind::Client)
+                .with_message("duplicate")
+                .build(),
+        );
+        let outer = Error::builder(Kind::Client)
+            .with_message("duplicate")
+            .with_arc_source(Arc::clone(&inner))
+            .build();
         assert_eq!(error_chain_summary(&outer), "[Client] 400: duplicate");
     }
 }

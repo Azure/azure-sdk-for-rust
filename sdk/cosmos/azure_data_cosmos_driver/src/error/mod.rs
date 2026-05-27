@@ -114,80 +114,8 @@ impl Error {
     }
 
     // -----------------------------------------------------------------
-    // Constructors
+    // Mutators (internal only — public callers go through ErrorBuilder).
     // -----------------------------------------------------------------
-
-    /// Builds a `Service` error from raw wire parts (status, headers, body,
-    /// message) **without** any [`DiagnosticsContext`].
-    ///
-    /// Intended for retry/evaluation layers that classify HTTP error
-    /// responses but do not own the operation-level
-    /// [`DiagnosticsContextBuilder`](crate::diagnostics::DiagnosticsContextBuilder).
-    /// The caller (typically the operation pipeline's abort branch) is
-    /// responsible for grafting the completed diagnostics onto the returned
-    /// error via [`Error::with_diagnostics`] before it crosses the SDK
-    /// boundary. Decoupling this constructor from diagnostics keeps the
-    /// retry-evaluation module free of any throw-away placeholder context
-    /// that would immediately be overwritten downstream.
-    pub(crate) fn service_from_parts(
-        status: CosmosStatus,
-        headers: CosmosResponseHeaders,
-        body: &[u8],
-        message: impl Into<Arc<str>>,
-    ) -> Self {
-        let payload = CosmosResponsePayload::new(
-            ResponseBody::from_bytes(bytes::Bytes::copy_from_slice(body)),
-            headers,
-        );
-        Self::from_inner(ErrorInner {
-            status,
-            payload: Some(Box::new(payload)),
-            diagnostics: None,
-            message: message.into(),
-            source: None,
-            backtrace: None,
-        })
-    }
-
-    /// Builds a `Transport` error with an explicit synthetic Cosmos status
-    /// (typically `503 / 21008` for transport-generated 503, or
-    /// `408 / 20008` for end-to-end operation timeout).
-    pub(crate) fn transport(
-        status: CosmosStatus,
-        message: impl Into<Arc<str>>,
-        diagnostics: Option<Arc<DiagnosticsContext>>,
-        source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
-    ) -> Self {
-        // Force `Kind::Transport` onto the status so the categorical kind on
-        // `CosmosStatus` matches the construction intent regardless of the
-        // default the caller built `status` with.
-        let status = status.with_kind(Kind::Transport);
-        Self::from_inner(ErrorInner {
-            status,
-            payload: None,
-            diagnostics,
-            message: message.into(),
-            source,
-            backtrace: None,
-        })
-    }
-
-    /// Convenience constructor for an end-to-end operation timeout
-    /// (`408 / 20008`).
-    pub(crate) fn end_to_end_timeout(
-        message: impl Into<Arc<str>>,
-        diagnostics: Option<Arc<DiagnosticsContext>>,
-    ) -> Self {
-        Self::transport(
-            CosmosStatus::from_parts(
-                StatusCode::RequestTimeout,
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-            ),
-            message,
-            diagnostics,
-            None,
-        )
-    }
 
     /// Returns a copy of `self` with `diagnostics` attached (or replaced).
     ///
@@ -196,7 +124,7 @@ impl Error {
     /// per-request events) onto an error that was built deep in the
     /// pipeline before that context was available. Without this, the
     /// operation diagnostics would be silently dropped on every aborted
-    /// operation \u2014 callers reading [`Error::diagnostics`] would see `None`
+    /// operation — callers reading [`Error::diagnostics`] would see `None`
     /// even though the operation pipeline was still tracking everything.
     ///
     /// Cheap: clones the inner [`Arc`]'s contents (one allocation) and
@@ -209,164 +137,6 @@ impl Error {
         Self {
             inner: Arc::new(next),
         }
-    }
-
-    /// Builds a `Client` error (caller misuse / precondition), optionally
-    /// wrapping an underlying source error.
-    ///
-    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
-    /// (`azure_data_cosmos`) and other in-tree consumers can construct
-    /// typed errors; not part of the public surface.
-    #[doc(hidden)]
-    pub fn client(
-        message: impl Into<Arc<str>>,
-        source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
-    ) -> Self {
-        Self::from_inner(ErrorInner {
-            status: CosmosStatus::new(StatusCode::BadRequest).with_kind(Kind::Client),
-            payload: None,
-            diagnostics: None,
-            message: message.into(),
-            source,
-            backtrace: None,
-        })
-    }
-
-    /// Builds a `Serialization` error wrapping the underlying serde / JSON
-    /// failure.
-    ///
-    /// `cosmos_headers` and `diagnostics` are best-effort: populate them
-    /// when the failure occurs at a call site that already has access to
-    /// the originating operation's headers and diagnostics context (e.g.
-    /// custom response-body deserialization inside the driver pipeline),
-    /// so the resulting error carries the request charge, activity id,
-    /// and timeline needed to diagnose the failure.
-    ///
-    /// In practice the most common construction path is the SDK
-    /// wrapper's blanket `impl From<serde_json::Error> for Error`, which
-    /// is invoked by `?` at the SDK boundary and passes `None, None` —
-    /// at that boundary the originating operation context is not
-    /// reachable. Tolerating `None` here is therefore the rule, not the
-    /// exception; the call sites that *can* enrich the error should
-    /// pass it through, the rest should pass `None`.
-    ///
-    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
-    /// (`azure_data_cosmos`) and other in-tree consumers can construct
-    /// typed errors; not part of the public surface.
-    #[doc(hidden)]
-    pub fn serialization(
-        message: impl Into<Arc<str>>,
-        cosmos_headers: Option<CosmosResponseHeaders>,
-        diagnostics: Option<Arc<DiagnosticsContext>>,
-        source: impl StdError + Send + Sync + 'static,
-    ) -> Self {
-        let payload = cosmos_headers
-            .map(|headers| Box::new(CosmosResponsePayload::new(ResponseBody::NoPayload, headers)));
-        Self::from_inner(ErrorInner {
-            status: CosmosStatus::new(StatusCode::InternalServerError)
-                .with_kind(Kind::Serialization),
-            payload,
-            diagnostics,
-            message: message.into(),
-            source: Some(Arc::new(source)),
-            backtrace: None,
-        })
-    }
-
-    /// Builds an `Authentication` error (token acquisition failure, missing
-    /// credential, etc.), optionally wrapping an underlying source error.
-    ///
-    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
-    /// (`azure_data_cosmos`) and other in-tree consumers can construct
-    /// typed errors; not part of the public surface.
-    #[doc(hidden)]
-    pub fn authentication(
-        message: impl Into<Arc<str>>,
-        source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
-    ) -> Self {
-        Self::from_inner(ErrorInner {
-            status: CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
-            payload: None,
-            diagnostics: None,
-            message: message.into(),
-            source,
-            backtrace: None,
-        })
-    }
-
-    /// Builds a `Configuration` error (bad endpoint URL, malformed connection
-    /// string, etc.), optionally wrapping an underlying source error.
-    ///
-    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
-    /// (`azure_data_cosmos`) and other in-tree consumers can construct
-    /// typed errors; not part of the public surface.
-    #[doc(hidden)]
-    pub fn configuration(
-        message: impl Into<Arc<str>>,
-        source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
-    ) -> Self {
-        Self::from_inner(ErrorInner {
-            status: CosmosStatus::new(StatusCode::BadRequest).with_kind(Kind::Configuration),
-            payload: None,
-            diagnostics: None,
-            message: message.into(),
-            source,
-            backtrace: None,
-        })
-    }
-
-    // -----------------------------------------------------------------
-    // Builders
-    // -----------------------------------------------------------------
-
-    /// Returns a mutable handle to the inner state, cloning the `Arc` payload
-    /// if it is shared.
-    fn inner_mut(&mut self) -> &mut ErrorInner {
-        Arc::make_mut(&mut self.inner)
-    }
-
-    /// Attaches parsed Cosmos response headers (replacing any existing value
-    /// while preserving the body, when one is already attached).
-    #[must_use]
-    pub(crate) fn with_cosmos_headers(mut self, headers: CosmosResponseHeaders) -> Self {
-        let inner = self.inner_mut();
-        let body = inner
-            .payload
-            .as_deref()
-            .map(|p| p.body().clone())
-            .unwrap_or(ResponseBody::NoPayload);
-        inner.payload = Some(Box::new(CosmosResponsePayload::new(body, headers)));
-        self
-    }
-
-    /// Prepends operational context to the error message, preserving all
-    /// other typed fields (status, sub-status, headers, diagnostics, source,
-    /// backtrace).
-    ///
-    /// Use this at sites that have request-specific context the boundary
-    /// mapper cannot see (operation name, container/database, endpoint,
-    /// partition-key range, activity id) to enrich an otherwise generic
-    /// mapper-classified error before propagating it further.
-    ///
-    /// The resulting message has the shape `"{context}: {original}"`.
-    ///
-    /// **Internal use only.** Reachable cross-crate so the SDK wrapper
-    /// (`azure_data_cosmos`) and other in-tree consumers can enrich
-    /// errors with request context; not part of the public surface.
-    #[doc(hidden)]
-    #[must_use]
-    pub fn with_context(mut self, context: impl Into<Arc<str>>) -> Self {
-        let inner = self.inner_mut();
-        let context: Arc<str> = context.into();
-        // Single-allocation concatenation: pre-size a String to the exact
-        // final length so `format!`-style growth doublings are avoided, then
-        // hand it off to `Arc::<str>::from` for the final shared buffer.
-        let mut buf = String::with_capacity(context.len() + 2 + inner.message.len());
-        buf.push_str(&context);
-        buf.push_str(": ");
-        buf.push_str(&inner.message);
-        inner.message = Arc::<str>::from(buf);
-        self
     }
 
     // -----------------------------------------------------------------
@@ -671,15 +441,445 @@ const MAX_SOURCE_CHAIN_DEPTH: usize = 64;
 /// Driver-wide `Result` alias.
 pub type Result<T> = std::result::Result<T, Error>;
 
+// =========================================================================
+// ErrorBuilder
+// =========================================================================
+
+impl Error {
+    /// Returns a fluent [`ErrorBuilder`] seeded with sensible defaults for
+    /// the given categorical [`Kind`]. This is the only public way to
+    /// construct an [`Error`] from outside the crate.
+    ///
+    /// ```
+    /// use azure_data_cosmos_driver::error::{Error, Kind};
+    ///
+    /// let err = Error::builder(Kind::Client)
+    ///     .with_message("missing partition key")
+    ///     .build();
+    /// assert_eq!(err.kind(), Kind::Client);
+    /// ```
+    pub fn builder(kind: Kind) -> ErrorBuilder {
+        ErrorBuilder::new(kind)
+    }
+}
+
+/// Fluent builder for [`Error`]. The only public way to construct or
+/// re-decorate a Cosmos [`Error`] from outside the driver crate.
+///
+/// Obtain one via [`Error::builder(kind)`](Error::builder) to start fresh,
+/// or [`ErrorBuilder::from_error`] to patch an existing error (add
+/// context, attach headers, swap status, etc.). Finalize with
+/// [`build()`](Self::build).
+///
+/// ```
+/// use std::sync::Arc;
+/// use azure_data_cosmos_driver::error::{Error, ErrorBuilder, Kind};
+///
+/// let inner = Error::builder(Kind::Client)
+///     .with_message("bad payload")
+///     .build();
+/// let outer = ErrorBuilder::from_error(inner)
+///     .with_context("uploadItem(id=42)")
+///     .build();
+/// assert!(format!("{outer}").contains("uploadItem(id=42): bad payload"));
+/// ```
+#[must_use = "ErrorBuilder is inert until `.build()` is called"]
+pub struct ErrorBuilder {
+    /// When `Some`, build clones this error's inner state and patches the
+    /// overridden fields. When `None`, build constructs a fresh error from
+    /// `kind` defaults.
+    base: Option<Error>,
+    /// Categorical kind (sets default status when `status` is `None`).
+    kind: Kind,
+    /// Override status. When `None`, falls back to the kind default (or
+    /// the base error's status when `base` is set).
+    status: Option<CosmosStatus>,
+    message: Option<Arc<str>>,
+    source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
+    diagnostics: Option<Arc<DiagnosticsContext>>,
+    cosmos_headers: Option<CosmosResponseHeaders>,
+    response_body: Option<bytes::Bytes>,
+    /// Prepended to the final message as `"{context}: {message}"` when set.
+    context_prefix: Option<Arc<str>>,
+}
+
+impl ErrorBuilder {
+    fn new(kind: Kind) -> Self {
+        Self {
+            base: None,
+            kind,
+            status: None,
+            message: None,
+            source: None,
+            diagnostics: None,
+            cosmos_headers: None,
+            response_body: None,
+            context_prefix: None,
+        }
+    }
+
+    /// Starts a builder pre-populated from an existing [`Error`]. Any
+    /// subsequent setter overrides the corresponding field; unset fields
+    /// are carried forward from `err`. Useful for re-decorating an error
+    /// returned from a deeper layer (attaching operation context, swapping
+    /// the categorical status, attaching diagnostics, etc.).
+    pub fn from_error(err: Error) -> Self {
+        let kind = err.kind();
+        Self {
+            base: Some(err),
+            kind,
+            status: None,
+            message: None,
+            source: None,
+            diagnostics: None,
+            cosmos_headers: None,
+            response_body: None,
+            context_prefix: None,
+        }
+    }
+
+    /// Overrides the [`CosmosStatus`]. The builder's [`Kind`] is forced
+    /// onto the status so the categorical kind stays consistent.
+    pub fn with_status(mut self, status: CosmosStatus) -> Self {
+        self.status = Some(status.with_kind(self.kind));
+        self
+    }
+
+    /// Sets the human-readable error message.
+    pub fn with_message(mut self, message: impl Into<Arc<str>>) -> Self {
+        self.message = Some(message.into());
+        self
+    }
+
+    /// Attaches an underlying source error reachable via
+    /// [`std::error::Error::source`].
+    pub fn with_source<E>(mut self, source: E) -> Self
+    where
+        E: StdError + Send + Sync + 'static,
+    {
+        self.source = Some(Arc::new(source));
+        self
+    }
+
+    /// Attaches an already-shared `Arc`-wrapped source. Use this when the
+    /// caller already owns an `Arc` (e.g. propagating a wrapped Cosmos
+    /// [`Error`] as the source). For plain `StdError` values prefer
+    /// [`with_source`](Self::with_source).
+    pub fn with_arc_source(mut self, source: Arc<dyn StdError + Send + Sync + 'static>) -> Self {
+        self.source = Some(source);
+        self
+    }
+
+    /// Attaches the operation [`DiagnosticsContext`].
+    pub fn with_diagnostics(mut self, diagnostics: Arc<DiagnosticsContext>) -> Self {
+        self.diagnostics = Some(diagnostics);
+        self
+    }
+
+    /// Attaches parsed Cosmos response headers.
+    pub fn with_cosmos_headers(mut self, headers: CosmosResponseHeaders) -> Self {
+        self.cosmos_headers = Some(headers);
+        self
+    }
+
+    /// Attaches the raw service response body bytes (typically a Cosmos
+    /// JSON error payload). Stored cheaply as [`bytes::Bytes`].
+    pub fn with_response_body(mut self, body: impl Into<bytes::Bytes>) -> Self {
+        self.response_body = Some(body.into());
+        self
+    }
+
+    /// Prepends operational context to the final message as
+    /// `"{context}: {message}"`. Repeated calls override (the most recent
+    /// context wins); chain multiple `with_context` calls into one combined
+    /// string at the call site if multiple layers of context are needed.
+    pub fn with_context(mut self, context: impl Into<Arc<str>>) -> Self {
+        self.context_prefix = Some(context.into());
+        self
+    }
+
+    /// Finalizes the builder into an [`Error`]. Allocation-cheap (single
+    /// `Arc<ErrorInner>` regardless of which fields were set).
+    pub fn build(self) -> Error {
+        // Start from either the base error's inner state or a fresh
+        // ErrorInner seeded from the kind's default status.
+        let mut inner = match &self.base {
+            Some(base) => (*base.inner).clone(),
+            None => ErrorInner {
+                status: default_status_for(self.kind),
+                payload: None,
+                diagnostics: None,
+                message: Arc::<str>::from(""),
+                source: None,
+                backtrace: None,
+            },
+        };
+
+        // Apply overrides. We force the builder's kind onto whatever status
+        // the caller (or the base error) provides so the categorical kind
+        // matches the construction intent.
+        if let Some(status) = self.status {
+            inner.status = status.with_kind(self.kind);
+        } else {
+            inner.status = inner.status.with_kind(self.kind);
+        }
+        if let Some(message) = self.message {
+            inner.message = message;
+        }
+        if self.source.is_some() {
+            inner.source = self.source;
+        }
+        if self.diagnostics.is_some() {
+            inner.diagnostics = self.diagnostics;
+        }
+        // Body/headers updates rebuild the optional payload; either can be
+        // set independently (e.g. headers without a body for a non-service
+        // error that still carries parsed Cosmos response headers).
+        if self.cosmos_headers.is_some() || self.response_body.is_some() {
+            let existing_body = inner
+                .payload
+                .as_deref()
+                .map(|p| p.body().clone())
+                .unwrap_or(ResponseBody::NoPayload);
+            let existing_headers = inner
+                .payload
+                .as_deref()
+                .map(|p| p.headers().clone())
+                .unwrap_or_default();
+            let headers = self.cosmos_headers.unwrap_or(existing_headers);
+            let body = match self.response_body {
+                Some(bytes) => ResponseBody::Bytes(bytes),
+                None => existing_body,
+            };
+            inner.payload = Some(Box::new(CosmosResponsePayload::new(body, headers)));
+        }
+        if let Some(prefix) = self.context_prefix {
+            let mut buf =
+                String::with_capacity(prefix.len() + 2 + inner.message.len());
+            buf.push_str(&prefix);
+            buf.push_str(": ");
+            buf.push_str(&inner.message);
+            inner.message = Arc::<str>::from(buf);
+        }
+
+        Error::from_inner(inner)
+    }
+}
+
+fn default_status_for(kind: Kind) -> CosmosStatus {
+    match kind {
+        Kind::Service => CosmosStatus::new(StatusCode::InternalServerError).with_kind(kind),
+        Kind::Transport => CosmosStatus::TRANSPORT_GENERATED_503,
+        Kind::Client => CosmosStatus::new(StatusCode::BadRequest).with_kind(kind),
+        Kind::Authentication => CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
+        Kind::Serialization => CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+        Kind::Configuration => CosmosStatus::new(StatusCode::BadRequest).with_kind(kind),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    // -----------------------------------------------------------------
+    // Public ErrorBuilder surface
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn builder_kind_defaults_pick_sensible_status() {
+        // Each kind seeds a default status whose Kind matches the builder
+        // so callers that only set a message still produce a coherent
+        // error.
+        for kind in [
+            Kind::Client,
+            Kind::Configuration,
+            Kind::Authentication,
+            Kind::Serialization,
+            Kind::Transport,
+            Kind::Service,
+        ] {
+            let err = Error::builder(kind).with_message("m").build();
+            assert_eq!(err.kind(), kind, "kind mismatch for {kind:?}");
+            assert_eq!(err.status().kind(), kind, "status kind mismatch for {kind:?}");
+            assert_eq!(&*format!("{err}").split(": ").last().unwrap(), "m");
+        }
+    }
+
+    #[test]
+    fn builder_with_status_overrides_default_but_forces_kind() {
+        let err = Error::builder(Kind::Transport)
+            .with_status(CosmosStatus::new(StatusCode::ServiceUnavailable))
+            .with_message("nope")
+            .build();
+        assert_eq!(err.kind(), Kind::Transport);
+        assert_eq!(err.status_code(), StatusCode::ServiceUnavailable);
+        // Status's own kind was Service by default; builder forces Transport.
+        assert_eq!(err.status().kind(), Kind::Transport);
+    }
+
+    #[test]
+    fn builder_with_source_preserves_via_std_error_source() {
+        let io = std::io::Error::new(std::io::ErrorKind::Other, "underlying");
+        let err = Error::builder(Kind::Transport)
+            .with_message("wrapped")
+            .with_source(io)
+            .build();
+        let src = StdError::source(&err).expect("source preserved");
+        assert!(src.to_string().contains("underlying"));
+    }
+
+    #[test]
+    fn builder_with_arc_source_accepts_shared_handle() {
+        let inner = Arc::new(Error::builder(Kind::Client).with_message("inner").build())
+            as Arc<dyn StdError + Send + Sync + 'static>;
+        let outer = Error::builder(Kind::Transport)
+            .with_arc_source(inner)
+            .with_message("outer")
+            .build();
+        let src = StdError::source(&outer).expect("source preserved");
+        assert!(src.to_string().contains("inner"));
+    }
+
+    #[test]
+    fn builder_with_diagnostics_attaches() {
+        let diag = make_test_diagnostics();
+        let err = Error::builder(Kind::Client)
+            .with_message("m")
+            .with_diagnostics(Arc::clone(&diag))
+            .build();
+        assert!(Arc::ptr_eq(err.diagnostics().unwrap(), &diag));
+    }
+
+    #[test]
+    fn builder_with_cosmos_headers_and_body_round_trip() {
+        let mut headers = CosmosResponseHeaders::default();
+        headers.substatus = Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE);
+        let body = b"{\"code\":\"X\"}".to_vec();
+        let err = Error::builder(Kind::Service)
+            .with_status(CosmosStatus::new(StatusCode::NotFound).with_sub_status(1002))
+            .with_message("session miss")
+            .with_cosmos_headers(headers)
+            .with_response_body(body.clone())
+            .build();
+        assert_eq!(err.status_code(), StatusCode::NotFound);
+        assert_eq!(err.response_body(), Some(body.as_slice()));
+        assert_eq!(
+            err.cosmos_headers().and_then(|h| h.substatus),
+            Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+        );
+    }
+
+    #[test]
+    fn builder_with_context_prepends_to_message() {
+        let err = Error::builder(Kind::Client)
+            .with_message("bad payload")
+            .with_context("op=createItem")
+            .build();
+        let rendered = format!("{err}");
+        assert!(
+            rendered.ends_with(": op=createItem: bad payload"),
+            "got: {rendered}"
+        );
+    }
+
+    #[test]
+    fn builder_from_error_carries_forward_unset_fields() {
+        let diag = make_test_diagnostics();
+        let original = Error::builder(Kind::Client)
+            .with_message("first")
+            .with_diagnostics(Arc::clone(&diag))
+            .build();
+
+        // No setters \u2014 build should clone original unchanged (modulo a
+        // re-captured backtrace at the construction site, since
+        // from_error doesn't preserve the inner Arc).
+        let cloned = ErrorBuilder::from_error(original.clone()).build();
+        assert_eq!(cloned.kind(), Kind::Client);
+        assert_eq!(cloned.status(), original.status());
+        assert_eq!(format!("{cloned}"), format!("{original}"));
+        assert!(Arc::ptr_eq(cloned.diagnostics().unwrap(), &diag));
+    }
+
+    #[test]
+    fn builder_from_error_with_context_preserves_status_and_source() {
+        let inner_io = std::io::Error::new(std::io::ErrorKind::Other, "io fail");
+        let original = Error::builder(Kind::Transport)
+            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+            .with_message("base")
+            .with_source(inner_io)
+            .build();
+
+        let decorated = ErrorBuilder::from_error(original.clone())
+            .with_context("op=read")
+            .build();
+
+        assert_eq!(decorated.status(), original.status());
+        // Source chain preserved.
+        let src = StdError::source(&decorated).expect("source carried forward");
+        assert!(src.to_string().contains("io fail"));
+        // Context prepended.
+        assert!(format!("{decorated}").contains("op=read: base"));
+    }
+
+    #[test]
+    fn builder_from_error_swap_status_keeps_other_fields() {
+        let diag = make_test_diagnostics();
+        let original = Error::builder(Kind::Service)
+            .with_status(CosmosStatus::new(StatusCode::TooManyRequests))
+            .with_message("throttled")
+            .with_diagnostics(Arc::clone(&diag))
+            .build();
+
+        // Re-decorate as a Transport error (e.g. retry-budget exhausted
+        // synthesizes a synthetic 503 wrapping the original Service error
+        // \u2014 the abort path in the operation pipeline).
+        let promoted = ErrorBuilder::from_error(original)
+            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .build();
+        // Builder's Kind is still Service (inherited from base); status's
+        // Kind is forced to match. Demonstrates that callers wanting a
+        // kind switch should re-issue Error::builder(new_kind) and chain
+        // .with_source() / .with_diagnostics(); from_error preserves the
+        // original Kind so context-only patches stay consistent.
+        assert_eq!(promoted.kind(), Kind::Service);
+        assert_eq!(promoted.status_code(), StatusCode::ServiceUnavailable);
+        assert!(Arc::ptr_eq(promoted.diagnostics().unwrap(), &diag));
+    }
+
+    #[test]
+    fn builder_message_setter_overrides_base_message() {
+        let original = Error::builder(Kind::Client).with_message("orig").build();
+        let patched = ErrorBuilder::from_error(original)
+            .with_message("replaced")
+            .build();
+        assert!(format!("{patched}").ends_with(": replaced"));
+    }
+
+    #[test]
+    fn builder_repeated_setters_last_write_wins() {
+        let err = Error::builder(Kind::Client)
+            .with_message("first")
+            .with_message("second")
+            .with_context("ctx-a")
+            .with_context("ctx-b")
+            .build();
+        let rendered = format!("{err}");
+        assert!(rendered.ends_with(": ctx-b: second"), "got: {rendered}");
+    }
+
+    // -----------------------------------------------------------------
+    // Existing internal-surface tests
+    // -----------------------------------------------------------------
+
     #[test]
     fn service_from_parts_populates_status_and_headers() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
-        let err =
-            Error::service_from_parts(status, CosmosResponseHeaders::default(), b"{}", "throttled");
+        let err = Error::builder(Kind::Service)
+            .with_status(status)
+            .with_message("throttled")
+            .with_cosmos_headers(CosmosResponseHeaders::default())
+            .with_response_body(b"{}".to_vec())
+            .build();
         assert_eq!(err.kind(), Kind::Service);
         assert!(err.status().is_throttled());
         assert!(err.status().is_transient());
@@ -692,7 +892,13 @@ mod tests {
 
     #[test]
     fn end_to_end_timeout_uses_synthetic_status() {
-        let err = Error::end_to_end_timeout("e2e timeout", None);
+        let err = Error::builder(Kind::Transport)
+            .with_status(CosmosStatus::from_parts(
+                StatusCode::RequestTimeout,
+                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            ))
+            .with_message("e2e timeout")
+            .build();
         assert_eq!(err.kind(), Kind::Transport);
         assert_eq!(err.status_code(), StatusCode::RequestTimeout);
         assert_eq!(
@@ -703,10 +909,20 @@ mod tests {
         assert!(err.status().is_transient());
     }
 
+    fn end_to_end_timeout_error(message: &'static str) -> Error {
+        Error::builder(Kind::Transport)
+            .with_status(CosmosStatus::from_parts(
+                StatusCode::RequestTimeout,
+                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            ))
+            .with_message(message)
+            .build()
+    }
+
     #[test]
     fn wrap_inherits_backtrace_from_cosmos_source() {
         // Build an inner Cosmos error so it carries a captured backtrace.
-        let inner = Error::end_to_end_timeout("inner", None);
+        let inner = end_to_end_timeout_error("inner");
         let inner_bt_id = inner
             .inner
             .backtrace
@@ -720,12 +936,11 @@ mod tests {
         // Wrap the inner error as the source of an outer transport error.
         // The outer constructor must inherit the inner's backtrace rather
         // than capturing a fresh one at the wrap site.
-        let outer = Error::transport(
-            CosmosStatus::TRANSPORT_GENERATED_503,
-            "outer",
-            None,
-            Some(Arc::new(inner)),
-        );
+        let outer = Error::builder(Kind::Transport)
+            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_message("outer")
+            .with_arc_source(Arc::new(inner))
+            .build();
         let outer_bt_id = outer
             .inner
             .backtrace
@@ -741,13 +956,13 @@ mod tests {
     /// nested Cosmos `Error` as its source, so format tests can exercise
     /// the source-chain + diagnostics propagation paths together.
     fn make_error_with_diagnostics_and_source() -> Error {
-        let inner = Error::end_to_end_timeout("inner timeout", None);
-        Error::transport(
-            CosmosStatus::TRANSPORT_GENERATED_503,
-            "outer transport failure",
-            Some(make_test_diagnostics()),
-            Some(Arc::new(inner)),
-        )
+        let inner = end_to_end_timeout_error("inner timeout");
+        Error::builder(Kind::Transport)
+            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_message("outer transport failure")
+            .with_diagnostics(make_test_diagnostics())
+            .with_arc_source(Arc::new(inner))
+            .build()
     }
 
     /// Fabricates a fresh `Arc<DiagnosticsContext>` for tests that need
@@ -772,7 +987,7 @@ mod tests {
         // returns a new error carrying the supplied context. The original
         // error is left untouched (Clone-on-Arc semantics) and all other
         // fields survive the clone-and-patch path.
-        let original = Error::end_to_end_timeout("no diags", None);
+        let original = end_to_end_timeout_error("no diags");
         assert!(original.diagnostics().is_none());
 
         let diag = make_test_diagnostics();
@@ -923,12 +1138,11 @@ mod tests {
             }
         }
 
-        let err = Error::transport(
-            CosmosStatus::TRANSPORT_GENERATED_503,
-            "outer",
-            None,
-            Some(Arc::new(CyclicError)),
-        );
+        let err = Error::builder(Kind::Transport)
+            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_message("outer")
+            .with_arc_source(Arc::new(CyclicError))
+            .build();
 
         // Debug must terminate and emit the truncation marker. We only
         // exercise the Debug path (`{err:?}`) here: it emits the source

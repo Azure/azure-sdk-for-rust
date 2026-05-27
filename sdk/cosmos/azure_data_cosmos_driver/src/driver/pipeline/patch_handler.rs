@@ -124,11 +124,12 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // `CosmosOperation::patch_item(..).with_precondition(..)` directly,
     // instead of silently ignoring it.
     if operation.precondition().is_some() {
-        return Err(crate::error::Error::client(
-            "PATCH does not support caller-set preconditions; \
+        return Err(crate::error::Error::builder(crate::error::Kind::Client)
+            .with_message(
+                "PATCH does not support caller-set preconditions; \
              the handler manages If-Match internally",
-            None,
-        ));
+            )
+            .build());
     }
 
     // -- 2. Parse and validate the patch spec --
@@ -136,19 +137,16 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchSpec body"))?;
     let spec: PatchSpec = serde_json::from_slice(body).map_err(|err| {
-        crate::error::Error::serialization(
-            format!("failed to parse PATCH body as PatchSpec: {err}"),
-            None,
-            None,
-            err,
-        )
+        crate::error::Error::builder(crate::error::Kind::Serialization)
+            .with_message(format!("failed to parse PATCH body as PatchSpec: {err}"))
+            .with_source(err)
+            .build()
     })?;
 
     if spec.operations.is_empty() {
-        return Err(crate::error::Error::client(
-            "PATCH operation must include at least one PatchOp",
-            None,
-        ));
+        return Err(crate::error::Error::builder(crate::error::Kind::Client)
+            .with_message("PATCH operation must include at least one PatchOp")
+            .build());
     }
 
     let item_ref = operation
@@ -156,10 +154,11 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .cloned()
         .and_then(|pk| operation.resource_reference().try_into_item_reference(pk))
         .ok_or_else(|| {
-            crate::error::Error::client(
-                "PATCH dispatch requires an item-level operation with a partition key",
-                None,
-            )
+            crate::error::Error::builder(crate::error::Kind::Client)
+                .with_message(
+                    "PATCH dispatch requires an item-level operation with a partition key",
+                )
+                .build()
         })?;
 
     validate_partition_key_paths(&spec.operations, &item_ref)?;
@@ -209,10 +208,11 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             .await?;
         sub_op_diagnostics.push(read_resp.diagnostics());
         let etag = read_resp.headers().etag.clone().ok_or_else(|| {
-            crate::error::Error::client(
-                "PATCH cannot proceed: the Read response did not include an ETag",
-                None,
-            )
+            crate::error::Error::builder(crate::error::Kind::Client)
+                .with_message(
+                    "PATCH cannot proceed: the Read response did not include an ETag",
+                )
+                .build()
         })?;
         // R3-DRIVER: forward the session token returned by the Read on the
         // Replace, so the write commits against the same replica view we
@@ -228,30 +228,30 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 
         // Locally apply the patch ops.
         let read_body_bytes = read_resp.into_body().single().map_err(|err| {
-            crate::error::Error::serialization(
-                format!("PATCH could not extract Read response body: {err}"),
-                None,
-                None,
-                err,
-            )
+            crate::error::Error::builder(crate::error::Kind::Serialization)
+                .with_message(format!(
+                    "PATCH could not extract Read response body: {err}"
+                ))
+                .with_source(err)
+                .build()
         })?;
         let mut value: serde_json::Value =
             serde_json::from_slice(&read_body_bytes).map_err(|err| {
-                crate::error::Error::serialization(
-                    format!("PATCH could not deserialize current item body: {err}"),
-                    None,
-                    None,
-                    err,
-                )
+                crate::error::Error::builder(crate::error::Kind::Serialization)
+                    .with_message(format!(
+                        "PATCH could not deserialize current item body: {err}"
+                    ))
+                    .with_source(err)
+                    .build()
             })?;
         apply_patch_ops(&mut value, &spec.operations)?;
         let merged_bytes = serde_json::to_vec(&value).map_err(|err| {
-            crate::error::Error::serialization(
-                format!("PATCH could not serialize merged item: {err}"),
-                None,
-                None,
-                err,
-            )
+            crate::error::Error::builder(crate::error::Kind::Serialization)
+                .with_message(format!(
+                    "PATCH could not serialize merged item: {err}"
+                ))
+                .with_source(err)
+                .build()
         })?;
 
         // Issue the ETag-guarded Replace, forwarding the Read response's
@@ -376,7 +376,9 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 }
 
 fn missing_body_error(msg: &'static str) -> crate::error::Error {
-    crate::error::Error::client(msg, None)
+    crate::error::Error::builder(crate::error::Kind::Client)
+        .with_message(msg)
+        .build()
 }
 
 /// Returns `true` if `err` is the driver pipeline's representation of a
@@ -516,7 +518,9 @@ fn exhaustion_error(
     let aggregated = DiagnosticsContext::aggregate_sub_operations(sub_op_diagnostics).map(Arc::new);
     match last_412 {
         Some(source) => {
-            let outer = source.with_context(message);
+            let outer = crate::error::ErrorBuilder::from_error(source)
+                .with_context(message)
+                .build();
             match aggregated {
                 Some(diag) => outer.with_diagnostics(diag),
                 None => outer,
@@ -525,18 +529,18 @@ fn exhaustion_error(
         None => {
             // No prior Replace attempted (e.g. `attempts == 0` short-circuit
             // path) → there genuinely are no per-op diagnostics to aggregate.
-            // Build the synthetic 412 directly from raw parts; the caller
+            // Build the synthetic 412 directly via the builder; the caller
             // (operation pipeline abort branch) will graft real diagnostics
             // via `Error::with_diagnostics` if any exist by the time the
             // error leaves the pipeline. Attach `aggregated` here too in
             // case a future caller seeds `sub_op_diagnostics` without a
             // `last_412` source.
-            let outer = crate::error::Error::service_from_parts(
-                crate::models::CosmosStatus::new(StatusCode::PreconditionFailed),
-                crate::models::CosmosResponseHeaders::new(),
-                &[],
-                message,
-            );
+            let outer = crate::error::Error::builder(crate::error::Kind::Service)
+                .with_status(crate::models::CosmosStatus::new(
+                    StatusCode::PreconditionFailed,
+                ))
+                .with_message(message)
+                .build();
             match aggregated {
                 Some(diag) => outer.with_diagnostics(diag),
                 None => outer,
@@ -581,13 +585,12 @@ fn validate_partition_key_paths(
         for path in std::iter::once(dest).chain(from) {
             for pk_path in &pk_paths {
                 if path_overlaps_partition_key(path, pk_path) {
-                    return Err(crate::error::Error::client(
-                        format!(
+                    return Err(crate::error::Error::builder(crate::error::Kind::Client)
+                        .with_message(format!(
                             "PATCH op '{path}' overlaps partition key path '{pk_path}'; \
                              cannot mutate partition key with a client-side Read-Modify-Write"
-                        ),
-                        None,
-                    ));
+                        ))
+                        .build());
                 }
             }
         }
@@ -797,15 +800,18 @@ mod tests {
 
     #[test]
     fn is_precondition_failed_rejects_non_http_error_kinds() {
-        use crate::error::Error;
+        use crate::error::{Error, Kind};
         let errs = [
-            Error::client("synthetic", None),
-            Error::serialization(
-                "bad json",
-                None,
-                None,
-                std::io::Error::new(std::io::ErrorKind::InvalidData, "stub"),
-            ),
+            Error::builder(Kind::Client)
+                .with_message("synthetic")
+                .build(),
+            Error::builder(Kind::Serialization)
+                .with_message("bad json")
+                .with_source(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    "stub",
+                ))
+                .build(),
         ];
         for err in &errs {
             assert!(
@@ -1187,7 +1193,12 @@ mod tests {
         if let Some(token) = session_token {
             headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
         }
-        crate::error::Error::service_from_parts(CosmosStatus::new(status), headers, body, msg)
+        crate::error::Error::builder(crate::error::Kind::Service)
+            .with_status(CosmosStatus::new(status))
+            .with_message(msg)
+            .with_cosmos_headers(headers)
+            .with_response_body(body.to_vec())
+            .build()
     }
 
     fn patch_op_for(item_ref: ItemReference, ops: Vec<PatchOp>) -> CosmosOperation {

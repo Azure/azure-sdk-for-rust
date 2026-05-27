@@ -213,11 +213,11 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         let client = builder.build().map_err(|error| {
             // HTTP client construction is caller-controlled configuration
             // (TLS / pool sizing / version pinning), so surface it as a typed
-            // configuration error. 
-            crate::error::Error::configuration(
-                format!("Failed to create HTTP client: {error}"),
-                Some(std::sync::Arc::new(error)),
-            )
+            // configuration error.
+            crate::error::Error::builder(crate::error::Kind::Configuration)
+                .with_message(format!("Failed to create HTTP client: {error}"))
+                .with_source(error)
+                .build()
         })?;
         Ok(Arc::new(
             super::reqwest_transport_client::ReqwestTransportClient::new(client),
@@ -232,10 +232,11 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
     ) -> crate::error::Result<Arc<dyn TransportClient>> {
-        Err(crate::error::Error::configuration(
-            "azure_data_cosmos_driver requires the `reqwest` feature to construct the default transport",
-            None,
-        )
-        .into())
+        Err(crate::error::Error::builder(crate::error::Kind::Configuration)
+            .with_message(
+                "azure_data_cosmos_driver requires the `reqwest` feature to construct the default transport",
+            )
+            .build()
+            .into())
     }
 }

@@ -101,20 +101,14 @@ impl EffectivePartitionKey {
         pk_definition: &PartitionKeyDefinition,
     ) -> crate::error::Result<std::ops::Range<Self>> {
         if pk_values.is_empty() {
-            return Err(crate::error::Error::client(
-                "compute_range called with empty pk_values",
-                None,
-            ));
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("compute_range called with empty pk_values").build());
         }
         if pk_values.len() > pk_definition.paths().len() {
-            return Err(crate::error::Error::client(
-                format!(
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
                     "more partition key components ({}) than definition paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()
-                ),
-                None,
-            ));
+                )).build());
         }
 
         let kind = pk_definition.kind();
@@ -125,14 +119,11 @@ impl EffectivePartitionKey {
             kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
 
         if kind != PartitionKeyKind::MultiHash && pk_values.len() != pk_definition.paths().len() {
-            return Err(crate::error::Error::client(
-                format!(
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
                     "non-MultiHash containers require exactly as many components ({}) as paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()
-                ),
-                None,
-            ));
+                )).build());
         }
 
         if is_prefix {

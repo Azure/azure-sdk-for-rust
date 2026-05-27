@@ -91,10 +91,9 @@ impl RequestExecutor for NoopRequestExecutor {
         _continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         Box::pin(async {
-            Err(crate::error::Error::client(
-                "noop executor should not be called",
-                None,
-            ))
+            Err(crate::error::Error::builder(crate::error::Kind::Client)
+                .with_message("noop executor should not be called")
+                .build())
         })
     }
 }
@@ -143,10 +142,9 @@ impl TopologyProvider for NoopTopologyProvider {
         _refresh: PartitionRoutingRefresh,
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         Box::pin(async {
-            Err(crate::error::Error::client(
-                "noop topology provider should not be called",
-                None,
-            ))
+            Err(crate::error::Error::builder(crate::error::Kind::Client)
+                .with_message("noop topology provider should not be called")
+                .build())
         })
     }
 }
@@ -252,20 +250,26 @@ pub(crate) fn response_with_continuation(
 
 /// Creates a 410 Gone error with a partition topology change substatus.
 pub(crate) fn gone_error() -> crate::error::Error {
-    crate::error::Error::service_from_parts(
-        CosmosStatus::from_parts(StatusCode::Gone, Some(SubStatusCode::PARTITION_KEY_RANGE_GONE)),
-        CosmosResponseHeaders::default(),
-        b"",
-        "partition topology changed",
-    )
+    crate::error::Error::builder(crate::error::Kind::Service)
+        .with_status(CosmosStatus::from_parts(
+            StatusCode::Gone,
+            Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+        ))
+        .with_message("partition topology changed")
+        .with_cosmos_headers(CosmosResponseHeaders::default())
+        .with_response_body(Vec::new())
+        .build()
 }
 
 /// Creates a 410 Gone error with a non-topology substatus.
 pub(crate) fn non_topology_gone_error() -> crate::error::Error {
-    crate::error::Error::service_from_parts(
-        CosmosStatus::from_parts(StatusCode::Gone, Some(SubStatusCode::NAME_CACHE_STALE)),
-        CosmosResponseHeaders::default(),
-        b"",
-        "name cache is stale",
-    )
+    crate::error::Error::builder(crate::error::Kind::Service)
+        .with_status(CosmosStatus::from_parts(
+            StatusCode::Gone,
+            Some(SubStatusCode::NAME_CACHE_STALE),
+        ))
+        .with_message("name cache is stale")
+        .with_cosmos_headers(CosmosResponseHeaders::default())
+        .with_response_body(Vec::new())
+        .build()
 }

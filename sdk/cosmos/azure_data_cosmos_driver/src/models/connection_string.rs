@@ -61,7 +61,7 @@ impl FromStr for ConnectionString {
 
     fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
-            return Err(Error::client("connection string cannot be empty", None));
+            return Err(Error::builder(crate::error::Kind::Client).with_message("connection string cannot be empty").build());
         }
 
         let splat = connection_string.split(';');
@@ -76,7 +76,7 @@ impl FromStr for ConnectionString {
 
             let (key, value) = part
                 .split_once('=')
-                .ok_or_else(|| Error::client("invalid connection string", None))?;
+                .ok_or_else(|| Error::builder(crate::error::Kind::Client).with_message("invalid connection string").build())?;
 
             if key.eq_ignore_ascii_case("AccountEndpoint") {
                 account_endpoint = Some(value.to_string())
@@ -88,17 +88,11 @@ impl FromStr for ConnectionString {
         }
 
         let Some(endpoint) = account_endpoint else {
-            return Err(Error::client(
-                "invalid connection string, missing 'AccountEndpoint'",
-                None,
-            ));
+            return Err(Error::builder(crate::error::Kind::Client).with_message("invalid connection string, missing 'AccountEndpoint'").build());
         };
 
         let Some(key) = account_key else {
-            return Err(Error::client(
-                "invalid connection string, missing 'AccountKey'",
-                None,
-            ));
+            return Err(Error::builder(crate::error::Kind::Client).with_message("invalid connection string, missing 'AccountKey'").build());
         };
 
         Ok(Self {

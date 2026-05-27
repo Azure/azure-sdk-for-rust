@@ -653,7 +653,11 @@ impl CosmosDriverRuntimeBuilder {
     ) -> crate::error::Result<Self> {
         self.throughput_control_groups
             .register(group)
-            .map_err(|e| crate::error::Error::client(e.to_string(), None))?;
+            .map_err(|e| {
+                crate::error::Error::builder(crate::error::Kind::Client)
+                    .with_message(e.to_string())
+                    .build()
+            })?;
         Ok(self)
     }
 
@@ -700,10 +704,12 @@ impl CosmosDriverRuntimeBuilder {
 
         for rule in &rules {
             if !seen.insert(rule.id().to_string()) {
-                return Err(crate::error::Error::client(
-                    format!("duplicate fault injection rule id: {}", rule.id()),
-                    None,
-                ));
+                return Err(crate::error::Error::builder(crate::error::Kind::Client)
+                    .with_message(format!(
+                        "duplicate fault injection rule id: {}",
+                        rule.id()
+                    ))
+                    .build());
             }
         }
 

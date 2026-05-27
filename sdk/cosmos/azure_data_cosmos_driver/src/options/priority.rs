@@ -44,10 +44,9 @@ impl std::str::FromStr for PriorityLevel {
         match s {
             "High" => Ok(Self::High),
             "Low" => Ok(Self::Low),
-            _ => Err(crate::error::Error::client(
-                format!("Unknown priority level: {s}"),
-                None,
-            )),
+            _ => Err(crate::error::Error::builder(crate::error::Kind::Client)
+                .with_message(format!("Unknown priority level: {s}"))
+                .build()),
         }
     }
 }

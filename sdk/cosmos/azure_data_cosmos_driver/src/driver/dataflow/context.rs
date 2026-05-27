@@ -101,10 +101,7 @@ impl<'a> PipelineContext<'a> {
         refresh: PartitionRoutingRefresh,
     ) -> crate::error::Result<Vec<ResolvedRange>> {
         let provider = self.topology_provider.as_deref_mut().ok_or_else(|| {
-            crate::error::Error::client(
-                "topology resolution requested for a plan that was not given a topology provider",
-                None,
-            )
+            crate::error::Error::builder(crate::error::Kind::Client).with_message("topology resolution requested for a plan that was not given a topology provider").build()
         })?;
         provider.resolve_ranges(range, refresh).await
     }

@@ -204,24 +204,20 @@ impl FaultClient {
         // Evaluations are propagated via the evaluation collector attached to the request for all paths.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
-                let cosmos_err = crate::error::Error::transport(
-                    CosmosStatus::TRANSPORT_CONNECTION_FAILED,
-                    "Injected fault: connection error",
-                    None,
-                    None,
-                );
+                let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
+                    .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                    .with_message("Injected fault: connection error")
+                    .build();
                 return ApplyResult::Injected(Err(TransportError::new(
                     cosmos_err,
                     RequestSentStatus::NotSent,
                 )));
             }
             FaultInjectionErrorType::ResponseTimeout => {
-                let cosmos_err = crate::error::Error::transport(
-                    CosmosStatus::TRANSPORT_IO_FAILED,
-                    "Injected fault: response timeout",
-                    None,
-                    None,
-                );
+                let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
+                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_message("Injected fault: response timeout")
+                    .build();
                 return ApplyResult::Injected(Err(TransportError::new(
                     cosmos_err,
                     RequestSentStatus::Unknown,
@@ -277,7 +273,11 @@ impl FaultClient {
             None => CosmosStatus::new(status_code),
         };
 
-        let cosmos_err = crate::error::Error::service_from_parts(status, cosmos_headers, &[], message);
+        let cosmos_err = crate::error::Error::builder(crate::error::Kind::Service)
+            .with_status(status)
+            .with_message(message)
+            .with_cosmos_headers(cosmos_headers)
+            .build();
 
         ApplyResult::Injected(Err(TransportError::new(
             cosmos_err,

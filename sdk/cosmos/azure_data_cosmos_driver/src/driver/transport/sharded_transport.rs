@@ -239,16 +239,14 @@ impl TryFrom<&Url> for EndpointKey {
 
     fn try_from(url: &Url) -> crate::error::Result<Self> {
         let host = url.host_str().ok_or_else(|| {
-            crate::error::Error::client(
-                format!("request URL is missing a host: {url}"),
-                None,
-            )
+            crate::error::Error::builder(crate::error::Kind::Client)
+                .with_message(format!("request URL is missing a host: {url}"))
+                .build()
         })?;
         let port = url.port_or_known_default().ok_or_else(|| {
-            crate::error::Error::client(
-                format!("request URL is missing a known port: {url}"),
-                None,
-            )
+            crate::error::Error::builder(crate::error::Kind::Client)
+                .with_message(format!("request URL is missing a known port: {url}"))
+                .build()
         })?;
         Ok(Self(Arc::from(format!("{host}:{port}").as_str())))
     }
@@ -349,15 +347,13 @@ impl EndpointShardPool {
             .min_by_key(|s| s.inflight())
             .cloned()
             .ok_or_else(|| {
-                crate::error::Error::transport(
-                    crate::models::CosmosStatus::TRANSPORT_GENERATED_503,
-                    format!(
+                crate::error::Error::builder(crate::error::Kind::Transport)
+                    .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_message(format!(
                         "endpoint shard pool {} has no available shards",
                         self.endpoint.0
-                    ),
-                    None,
-                    None,
-                )
+                    ))
+                    .build()
             })
     }
 
@@ -936,7 +932,9 @@ mod tests {
 
     fn synthetic_transport_error() -> TransportError {
         TransportError::new(
-            crate::error::Error::client("synthetic", None),
+            crate::error::Error::builder(crate::error::Kind::Client)
+                .with_message("synthetic")
+                .build(),
             crate::diagnostics::RequestSentStatus::NotSent,
         )
     }
@@ -976,10 +974,9 @@ mod tests {
     impl TransportClient for NoopTransportClient {
         async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             Err(TransportError::new(
-                crate::error::Error::client(
-                    "noop client should not execute requests in shard unit tests",
-                    None,
-                ),
+                crate::error::Error::builder(crate::error::Kind::Client)
+                    .with_message("noop client should not execute requests in shard unit tests")
+                    .build(),
                 crate::diagnostics::RequestSentStatus::NotSent,
             ))
         }

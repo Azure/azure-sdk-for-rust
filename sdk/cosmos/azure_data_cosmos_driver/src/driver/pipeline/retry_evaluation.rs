@@ -599,7 +599,13 @@ fn evaluate_deadline_exceeded_outcome(
     // `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` on `error.status()`)
     // and abort. The operation pipeline propagates
     // `crate::error::Error` directly via `OperationAction::Abort.error`.
-    let cosmos_err = crate::error::Error::end_to_end_timeout(message, None);
+    let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
+        .with_status(CosmosStatus::from_parts(
+            azure_core::http::StatusCode::RequestTimeout,
+            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        ))
+        .with_message(message)
+        .build();
 
     (OperationAction::Abort { error: cosmos_err }, Vec::new())
 }
@@ -641,12 +647,12 @@ fn build_service_error(
     cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
 ) -> crate::error::Error {
-    crate::error::Error::service_from_parts(
-        *status,
-        cosmos_headers.clone(),
-        body,
-        service_error_message(status),
-    )
+    crate::error::Error::builder(crate::error::Kind::Service)
+        .with_status(*status)
+        .with_message(service_error_message(status))
+        .with_cosmos_headers(cosmos_headers.clone())
+        .with_response_body(body.to_vec())
+        .build()
 }
 
 fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> crate::error::Error {
@@ -667,18 +673,19 @@ fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> c
         detail_summary,
     );
 
-    // Wrap into a fresh `Error::transport` carrying the enriched message and
-    // the original Cosmos error as source. Forward the inner error's
+    // Wrap into a fresh transport-kind error carrying the enriched message
+    // and the original Cosmos error as source. Forward the inner error's
     // diagnostics so `outer.diagnostics()` is not silently `None` — callers
     // should not have to walk `source()` to recover the operation's
     // diagnostic context.
-    let diagnostics = error.diagnostics().cloned();
-    crate::error::Error::transport(
-        *status,
-        message,
-        diagnostics,
-        Some(std::sync::Arc::new(error)),
-    )
+    let mut b = crate::error::Error::builder(crate::error::Kind::Transport)
+        .with_status(*status)
+        .with_message(message)
+        .with_arc_source(std::sync::Arc::new(error.clone()));
+    if let Some(diag) = error.diagnostics().cloned() {
+        b = b.with_diagnostics(diag);
+    }
+    b.build()
 }
 
 #[cfg(test)]
@@ -725,12 +732,10 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
-                error: crate::error::Error::transport(
-                    CosmosStatus::TRANSPORT_GENERATED_503,
-                    "connection refused",
-                    None,
-                    None,
-                ),
+                error: crate::error::Error::builder(crate::error::Kind::Transport)
+                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_message("connection refused")
+                    .build(),
                 request_sent: sent,
             },
         }
@@ -841,12 +846,11 @@ mod tests {
             )
             .complete(),
         );
-        let inner = crate::error::Error::transport(
-            CosmosStatus::TRANSPORT_GENERATED_503,
-            "inner transport failure",
-            Some(std::sync::Arc::clone(&diag)),
-            None,
-        );
+        let inner = crate::error::Error::builder(crate::error::Kind::Transport)
+            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_message("inner transport failure")
+            .with_diagnostics(std::sync::Arc::clone(&diag))
+            .build();
 
         let outer = build_transport_error(&CosmosStatus::TRANSPORT_GENERATED_503, inner);
 
@@ -865,15 +869,14 @@ mod tests {
         let result = TransportResult {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
-                error: crate::error::Error::transport(
-                    CosmosStatus::TRANSPORT_GENERATED_503,
-                    "failed to execute `reqwest` request",
-                    None,
-                    Some(std::sync::Arc::new(std::io::Error::new(
+                error: crate::error::Error::builder(crate::error::Kind::Transport)
+                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_message("failed to execute `reqwest` request")
+                    .with_source(std::io::Error::new(
                         std::io::ErrorKind::BrokenPipe,
                         "socket reset",
-                    ))),
-                ),
+                    ))
+                    .build(),
                 request_sent: RequestSentStatus::Unknown,
             },
         };

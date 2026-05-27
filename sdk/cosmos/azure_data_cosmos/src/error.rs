@@ -132,7 +132,11 @@ impl Error {
         message: impl Into<std::sync::Arc<str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
-        Self(DriverError::client(message, source))
+        let mut b = DriverError::builder(Kind::Client).with_message(message);
+        if let Some(s) = source {
+            b = b.with_arc_source(s);
+        }
+        Self(b.build())
     }
 
     /// Builds a `Configuration` error (bad endpoint URL, malformed connection
@@ -141,7 +145,11 @@ impl Error {
         message: impl Into<std::sync::Arc<str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
-        Self(DriverError::configuration(message, source))
+        let mut b = DriverError::builder(Kind::Configuration).with_message(message);
+        if let Some(s) = source {
+            b = b.with_arc_source(s);
+        }
+        Self(b.build())
     }
 }
 
@@ -171,21 +179,23 @@ impl From<DriverError> for Error {
 
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
-        Self(DriverError::serialization(
-            "JSON serialization or deserialization failed",
-            None,
-            None,
-            error,
-        ))
+        Self(
+            DriverError::builder(Kind::Serialization)
+                .with_message("JSON serialization or deserialization failed")
+                .with_source(error)
+                .build(),
+        )
     }
 }
 
 impl From<url::ParseError> for Error {
     fn from(error: url::ParseError) -> Self {
-        Self(DriverError::configuration(
-            "invalid URL",
-            Some(Arc::new(error)),
-        ))
+        Self(
+            DriverError::builder(Kind::Configuration)
+                .with_message("invalid URL")
+                .with_source(error)
+                .build(),
+        )
     }
 }
 

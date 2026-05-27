@@ -85,13 +85,12 @@ impl PipelineNode for SequentialDrain {
                     if split_retries > MAX_SPLIT_RETRIES {
                         // This should be ridiculously rare.
                         // The topology provider already waits for splits to converge before returning.
-                        return Err(crate::error::Error::client(
-                            format!(
+                        return Err(crate::error::Error::builder(crate::error::Kind::Client)
+                            .with_message(format!(
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"
-                            ),
-                            None,
-                        ));
+                            ))
+                            .build());
                     }
 
                     // Remove the split child and splice in replacements at the front.
@@ -236,10 +235,11 @@ mod tests {
 
     #[tokio::test]
     async fn propagates_child_error() {
-        let child = MockLeaf::with_pages(vec![Err(crate::error::Error::client(
-            "test error",
-            None,
-        ))]);
+        let child = MockLeaf::with_pages(vec![Err(crate::error::Error::builder(
+            crate::error::Kind::Client,
+        )
+        .with_message("test error")
+        .build())]);
         let mut drain = SequentialDrain::new(vec![Box::new(child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
@@ -526,7 +526,11 @@ mod tests {
             }),
             Ok(PageResult::Drained),
         ]);
-        let child2 = MockLeaf::with_pages(vec![Err(crate::error::Error::client("boom", None))]);
+        let child2 = MockLeaf::with_pages(vec![Err(crate::error::Error::builder(
+            crate::error::Kind::Client,
+        )
+        .with_message("boom")
+        .build())]);
 
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;

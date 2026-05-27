@@ -109,7 +109,7 @@ impl std::str::FromStr for ReadConsistencyStrategy {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s).ok_or_else(|| {
-            crate::error::Error::client(format!("Unknown read consistency strategy: {s}"), None)
+            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("Unknown read consistency strategy: {s}")).build()
         })
     }
 }

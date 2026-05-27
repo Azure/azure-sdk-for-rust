@@ -74,10 +74,7 @@ impl std::str::FromStr for DefaultConsistencyLevel {
                 } else if s.eq_ignore_ascii_case("Eventual") {
                     Ok(Self::Eventual)
                 } else {
-                    Err(crate::error::Error::client(
-                        format!("Unknown consistency level: {s}"),
-                        None,
-                    ))
+                    Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("Unknown consistency level: {s}")).build())
                 }
             }
         }

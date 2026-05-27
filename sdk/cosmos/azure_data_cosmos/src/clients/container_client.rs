@@ -45,9 +45,11 @@ impl ContainerClient {
             .resolve_container(database_id, container_id)
             .await
             .map_err(|e| {
-                e.with_context(format!(
-                    "failed to resolve container metadata for '{database_id}/{container_id}'"
-                ))
+                azure_data_cosmos_driver::ErrorBuilder::from_error(e)
+                    .with_context(format!(
+                        "failed to resolve container metadata for '{database_id}/{container_id}'"
+                    ))
+                    .build()
             })?;
 
         Ok(Self {

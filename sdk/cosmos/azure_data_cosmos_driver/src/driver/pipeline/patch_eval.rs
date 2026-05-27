@@ -112,7 +112,7 @@ impl std::error::Error for PatchEvalError {}
 
 impl From<PatchEvalError> for crate::error::Error {
     fn from(err: PatchEvalError) -> Self {
-        crate::error::Error::client(err.to_string(), None)
+        crate::error::Error::builder(crate::error::Kind::Client).with_message(err.to_string()).build()
     }
 }
 

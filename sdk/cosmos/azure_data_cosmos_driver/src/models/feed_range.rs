@@ -73,10 +73,7 @@ impl FeedRange {
         max_exclusive: EffectivePartitionKey,
     ) -> crate::error::Result<Self> {
         if min_inclusive > max_exclusive {
-            return Err(crate::error::Error::client(
-                "feed range min_inclusive must be less than or equal to max_exclusive",
-                None,
-            ));
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("feed range min_inclusive must be less than or equal to max_exclusive").build());
         }
 
         Ok(Self(FeedRangeRepr::Range {
@@ -211,20 +208,14 @@ impl FeedRange {
 
     fn from_json(json: FeedRangeJson) -> crate::error::Result<Self> {
         if !json.range.is_min_inclusive || json.range.is_max_inclusive {
-            return Err(crate::error::Error::client(
-                "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
-                None,
-            ));
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)").build());
         }
 
         let min = EffectivePartitionKey::from(json.range.min);
         let max = EffectivePartitionKey::from(json.range.max);
 
         if min > max {
-            return Err(crate::error::Error::client(
-                "feed range min must be less than or equal to max",
-                None,
-            ));
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("feed range min must be less than or equal to max").build());
         }
 
         Ok(Self(FeedRangeRepr::Range {
@@ -243,10 +234,7 @@ impl TryFrom<&PartitionKeyRange> for FeedRange {
     /// (min inclusive, max exclusive). Returns an error if the range is inverted.
     fn try_from(pkr: &PartitionKeyRange) -> Result<Self, Self::Error> {
         if pkr.min_inclusive > pkr.max_exclusive {
-            return Err(crate::error::Error::client(
-                "partition key range min_inclusive must be <= max_exclusive",
-                None,
-            ));
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("partition key range min_inclusive must be <= max_exclusive").build());
         }
 
         Ok(Self(FeedRangeRepr::Range {
@@ -273,19 +261,14 @@ impl FromStr for FeedRange {
         let decoded_bytes = base64::engine::general_purpose::STANDARD
             .decode(s)
             .map_err(|e| {
-                crate::error::Error::client(
-                    format!("feed range is not valid base64: {e}"),
-                    Some(std::sync::Arc::new(e)),
-                )
+                crate::error::Error::builder(crate::error::Kind::Client)
+                    .with_message(format!("feed range is not valid base64: {e}"))
+                    .with_source(e)
+                    .build()
             })?;
 
         let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes).map_err(|e| {
-            crate::error::Error::serialization(
-                format!("feed range JSON is invalid: {e}"),
-                None,
-                None,
-                e,
-            )
+            crate::error::Error::builder(crate::error::Kind::Serialization).with_message(format!("feed range JSON is invalid: {e}")).with_source(e).build()
         })?;
 
         Self::from_json(json)

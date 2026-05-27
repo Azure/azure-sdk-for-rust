@@ -26,7 +26,7 @@ impl FromStr for SessionTokenSegment {
 
     fn from_str(s: &str) -> crate::error::Result<Self> {
         let (pk_range_id, value_str) = s.trim().split_once(':').ok_or_else(|| {
-            crate::error::Error::client("invalid session token segment: missing ':'", None)
+            crate::error::Error::builder(crate::error::Kind::Client).with_message("invalid session token segment: missing ':'").build()
         })?;
         let value = SessionTokenValue::parse(value_str)?;
         Ok(Self {

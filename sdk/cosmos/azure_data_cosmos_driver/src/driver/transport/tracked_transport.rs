@@ -58,7 +58,10 @@ mod tests {
     use crate::models::CosmosStatus;
 
     fn transport_err(status: CosmosStatus) -> Error {
-        Error::transport(status, "synthetic", None, None)
+        Error::builder(Kind::Transport)
+            .with_status(status)
+            .with_message("synthetic")
+            .build()
     }
 
     #[test]
@@ -87,24 +90,26 @@ mod tests {
 
     #[test]
     fn client_error_is_unknown() {
-        let err = Error::client("bad input", None);
+        let err = Error::builder(Kind::Client)
+            .with_message("bad input")
+            .build();
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
     }
 
     #[test]
     fn serialization_error_is_unknown() {
-        let err = Error::serialization(
-            "bad json",
-            None,
-            None,
-            std::io::Error::other("stub"),
-        );
+        let err = Error::builder(Kind::Serialization)
+            .with_message("bad json")
+            .with_source(std::io::Error::other("stub"))
+            .build();
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
     }
 
     #[test]
     fn authentication_error_not_sent() {
-        let err = Error::authentication("invalid token", None);
+        let err = Error::builder(Kind::Authentication)
+            .with_message("invalid token")
+            .build();
         assert_eq!(err.kind(), Kind::Authentication);
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }

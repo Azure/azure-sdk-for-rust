@@ -266,10 +266,10 @@ impl VmMetadataServiceInner {
             .timeout(IMDS_REQUEST_TIMEOUT)
             .build()
             .map_err(|e| {
-                crate::error::Error::configuration(
-                    format!("failed to build IMDS HTTP client: {e}"),
-                    Some(std::sync::Arc::new(e)),
-                )
+                crate::error::Error::builder(crate::error::Kind::Configuration)
+                    .with_message(format!("failed to build IMDS HTTP client: {e}"))
+                    .with_source(e)
+                    .build()
             })?;
 
         let response = http_client
@@ -278,35 +278,35 @@ impl VmMetadataServiceInner {
             .send()
             .await
             .map_err(|e| {
-                crate::error::Error::transport(
-                    crate::models::CosmosStatus::TRANSPORT_IO_FAILED,
-                    format!("IMDS request failed: {e}"),
-                    None,
-                    Some(std::sync::Arc::new(e)),
-                )
+                crate::error::Error::builder(crate::error::Kind::Transport)
+                    .with_status(crate::models::CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_message(format!("IMDS request failed: {e}"))
+                    .with_source(e)
+                    .build()
             })?;
 
         let body = response.text().await.map_err(|e| {
-            crate::error::Error::transport(
-                crate::models::CosmosStatus::TRANSPORT_BODY_READ_FAILED,
-                format!("failed to read IMDS response body: {e}"),
-                None,
-                Some(std::sync::Arc::new(e)),
-            )
+            crate::error::Error::builder(crate::error::Kind::Transport)
+                .with_status(crate::models::CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                .with_message(format!("failed to read IMDS response body: {e}"))
+                .with_source(e)
+                .build()
         })?;
 
         let metadata: AzureVmMetadata = serde_json::from_str(&body).map_err(|e| {
-            crate::error::Error::serialization("failed to parse IMDS response", None, None, e)
+            crate::error::Error::builder(crate::error::Kind::Serialization)
+                .with_message("failed to parse IMDS response")
+                .with_source(e)
+                .build()
         })?;
         Ok(metadata)
     }
 
     #[cfg(not(feature = "reqwest"))]
     async fn do_fetch() -> crate::error::Result<AzureVmMetadata> {
-        Err(crate::error::Error::configuration(
-            "IMDS fetch requires the `reqwest` feature",
-            None,
-        ))
+        Err(crate::error::Error::builder(crate::error::Kind::Configuration)
+            .with_message("IMDS fetch requires the `reqwest` feature")
+            .build())
     }
 }
 

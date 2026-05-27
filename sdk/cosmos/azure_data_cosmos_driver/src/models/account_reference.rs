@@ -324,10 +324,7 @@ impl AccountReferenceBuilder {
     /// Returns an error if authentication has not been configured.
     pub fn build(self) -> crate::error::Result<AccountReference> {
         let credential = self.credential.ok_or_else(|| {
-            crate::error::Error::configuration(
-                "Authentication is required. Use master_key() or credential() to set credentials.",
-                None,
-            )
+            crate::error::Error::builder(crate::error::Kind::Configuration).with_message("Authentication is required. Use master_key() or credential() to set credentials.").build()
         })?;
 
         Ok(AccountReference {

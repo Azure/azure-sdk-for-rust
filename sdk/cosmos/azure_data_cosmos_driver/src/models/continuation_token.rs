@@ -61,16 +61,10 @@ impl ContinuationToken {
         root_state: &PipelineNodeState,
     ) -> crate::error::Result<Self> {
         if operation.operation_type() != OperationType::Query {
-            return Err(crate::error::Error::client(
-                "client-side continuation tokens are only supported for query operations",
-                None,
-            ));
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("client-side continuation tokens are only supported for query operations").build());
         }
         let container = operation.container().ok_or_else(|| {
-            crate::error::Error::client(
-                "client-side continuation tokens require a query operation targeting a container",
-                None,
-            )
+            crate::error::Error::builder(crate::error::Kind::Client).with_message("client-side continuation tokens require a query operation targeting a container").build()
         })?;
         let state = TokenState {
             operation: TokenOperation::Query,
@@ -79,12 +73,7 @@ impl ContinuationToken {
         };
 
         let json = serde_json::to_vec(&state).map_err(|e| {
-            crate::error::Error::serialization(
-                format!("failed to serialize continuation token state: {e}"),
-                None,
-                None,
-                e,
-            )
+            crate::error::Error::builder(crate::error::Kind::Serialization).with_message(format!("failed to serialize continuation token state: {e}")).with_source(e).build()
         })?;
         let body = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(json);
         let mut out = String::with_capacity(SDK_V1_PREFIX.len() + body.len());
@@ -99,30 +88,19 @@ impl ContinuationToken {
             let json = base64::engine::general_purpose::URL_SAFE_NO_PAD
                 .decode(rest)
                 .map_err(|e| {
-                    crate::error::Error::client(
-                        format!("continuation token has invalid base64 payload: {e}"),
-                        None,
-                    )
+                    crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("continuation token has invalid base64 payload: {e}")).build()
                 })?;
             let state: TokenState = serde_json::from_slice(&json).map_err(|e| {
-                crate::error::Error::serialization(
-                    format!("continuation token has invalid JSON payload: {e}"),
-                    None,
-                    None,
-                    e,
-                )
+                crate::error::Error::builder(crate::error::Kind::Serialization).with_message(format!("continuation token has invalid JSON payload: {e}")).with_source(e).build()
             })?;
             return Ok(ResolvedToken::ClientV1(state));
         }
 
         if let Some(version) = parse_client_version_prefix(&self.0) {
-            return Err(crate::error::Error::client(
-                format!(
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
                     "continuation token uses unsupported version 'c{version}.'; \
                      this SDK only understands 'c1.' tokens — upgrade to a newer SDK"
-                ),
-                None,
-            ));
+                )).build());
         }
 
         // No client-version prefix: treat as an opaque server-issued token.
@@ -154,42 +132,30 @@ impl TokenState {
     /// Validates that this token state is compatible with the provided query
     pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> crate::error::Result<()> {
         if operation.operation_type() != OperationType::Query {
-            return Err(crate::error::Error::client(
-                format!(
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
                     "operation type {op:?} is not compatible with client-side continuation tokens",
                     op = self.operation
-                ),
-                None,
-            ));
+                )).build());
         }
 
         if self.operation != TokenOperation::Query {
-            return Err(crate::error::Error::client(
-                format!(
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
                     "token operation type {op:?} is not compatible with a query operation; \
                      expected {expected_op:?}",
                     op = self.operation,
                     expected_op = TokenOperation::Query,
-                ),
-                None,
-            ));
+                )).build());
         }
         let container = operation.container().ok_or_else(|| {
-            crate::error::Error::client(
-                "client-side continuation tokens require a query operation targeting a container",
-                None,
-            )
+            crate::error::Error::builder(crate::error::Kind::Client).with_message("client-side continuation tokens require a query operation targeting a container").build()
         })?;
         if self.rid != container.rid() {
-            return Err(crate::error::Error::client(
-                format!(
+            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
                     "token container rid {token_rid:?} does not match the operation's container rid {op_rid:?}; \
                      this token was generated against a different container and cannot be used to resume this one",
                     token_rid = self.rid,
                     op_rid = container.rid(),
-                ),
-                None,
-            ));
+                )).build());
         }
         Ok(())
     }

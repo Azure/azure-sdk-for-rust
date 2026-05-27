@@ -44,12 +44,9 @@ impl std::str::FromStr for ContentResponseOnWrite {
         match s.to_lowercase().as_str() {
             "true" | "enabled" => Ok(Self::Enabled),
             "false" | "disabled" => Ok(Self::Disabled),
-            _ => Err(crate::error::Error::client(
-                format!(
+            _ => Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
                     "Unknown content response on write value: '{s}'. Expected 'true'/'false' or 'enabled'/'disabled'"
-                ),
-                None,
-            )),
+                )).build()),
         }
     }
 }
