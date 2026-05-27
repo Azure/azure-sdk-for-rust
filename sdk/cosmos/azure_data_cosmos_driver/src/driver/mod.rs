@@ -55,7 +55,7 @@ mod tests {
     #[test]
     fn returns_top_level_display_when_no_source() {
         // No source chain → the summary is exactly the error's own
-        // `Display` string (`[Kind] status: message`).
+        // `Display` string (`status: message`).
         let error = CosmosError::builder()
             .with_status(crate::error::CosmosStatus::new(
                 azure_core::http::StatusCode::BadRequest,

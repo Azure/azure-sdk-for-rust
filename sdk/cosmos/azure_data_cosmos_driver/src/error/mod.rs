@@ -307,8 +307,9 @@ impl CosmosError {
 // -----------------------------------------------------------------
 
 impl fmt::Display for CosmosError {
-    /// Default (`{e}`): a single-line `[Kind] status/sub (name): message`
-    /// header. This intentionally diverges from the `anyhow` / `azure_core`
+    /// Default (`{e}`): a single-line `status/sub (name): message` header
+    /// (the status portion is rendered by [`CosmosStatus`]'s `Display`).
+    /// This intentionally diverges from the `anyhow` / `azure_core`
     /// / `io::Error` "bare message" convention so that every existing log
     /// site (`tracing::error!("{e}")`, `format!("op failed: {e}")`, panic
     /// messages) automatically surfaces the typed Cosmos status that this
@@ -335,7 +336,7 @@ impl fmt::Display for CosmosError {
 }
 
 impl fmt::Debug for CosmosError {
-    /// Default (`{e:?}`): structured header (kind + message + status) plus
+    /// Default (`{e:?}`): structured header (status + message) plus
     /// the source chain. The captured backtrace is **omitted** so that
     /// high-volume `tracing::error!(err = ?e)` / `Result::unwrap` /
     /// `assert_eq!` call sites do not emit multi-line stack frame blocks
@@ -359,9 +360,10 @@ impl fmt::Debug for CosmosError {
 }
 
 fn write_header(f: &mut fmt::Formatter<'_>, inner: &CosmosErrorInner) -> fmt::Result {
-    // `CosmosStatus::Display` already renders the categorical `[Kind]`
-    // plus `<status>/<sub> (<name>)` (or `<status>` when no sub-status),
-    // so reuse it for a single, consistent representation.
+    // `CosmosStatus::Display` renders `<status>/<sub> (<name>)` (or
+    // `<status>/<sub>` when the sub-status has no canonical name, or
+    // just `<status>` when there is no sub-status), so reuse it for a
+    // single, consistent representation.
     write!(f, "{}: {}", inner.status, inner.message)
 }
 
@@ -1086,7 +1088,10 @@ mod tests {
         assert!(decorated.response().is_none(), "WirePending preserved");
         assert!(decorated.diagnostics().is_none());
         assert!(decorated.wire_payload().is_some());
-        assert!(format!("{decorated}").contains("op=createItem"));
+        assert_eq!(
+            format!("{decorated}"),
+            "503: op=createItem: attempt-failed",
+        );
     }
 
     #[test]
@@ -1114,11 +1119,9 @@ mod tests {
             .with_message("bad payload")
             .with_context("op=createItem")
             .build();
-        let rendered = format!("{err}");
-        assert!(
-            rendered.ends_with(": op=createItem: bad payload"),
-            "got: {rendered}"
-        );
+        // No status set → synthetic 500 default; no sub-status → just `500`.
+        // `with_context` prepends `"op=createItem: "` to the message.
+        assert_eq!(format!("{err}"), "500: op=createItem: bad payload");
     }
 
     #[test]
@@ -1144,7 +1147,7 @@ mod tests {
         let patched = CosmosErrorBuilder::from_error(original)
             .with_message("replaced")
             .build();
-        assert!(format!("{patched}").ends_with(": replaced"));
+        assert_eq!(format!("{patched}"), "500: replaced");
     }
 
     #[test]
@@ -1155,8 +1158,9 @@ mod tests {
             .with_context("ctx-a")
             .with_context("ctx-b")
             .build();
-        let rendered = format!("{err}");
-        assert!(rendered.ends_with(": ctx-b: second"), "got: {rendered}");
+        // Last `with_message` wins; last `with_context` wins; the context
+        // prepends to the resolved message with `": "`.
+        assert_eq!(format!("{err}"), "500: ctx-b: second");
     }
 
     #[test]
@@ -1220,6 +1224,203 @@ mod tests {
         );
     }
 
+    /// Documents — by way of full-string equality on the deterministic
+    /// prefix plus a hand-rolled structural parse on the backtrace
+    /// tail — how a captured backtrace shows up in each of
+    /// `CosmosError`'s four formatting flags.
+    ///
+    /// The header / source-chain / diagnostics / separator portions are
+    /// fully reproducible across machines and builds, so they are
+    /// asserted byte-for-byte. The backtrace tail itself embeds
+    /// absolute file paths, line numbers, and a frame count that all
+    /// depend on the local source tree / OS / toolchain version, so we
+    /// instead validate its *shape*:
+    ///
+    /// ```text
+    /// {N:>4}: <symbol>\n                       // every frame
+    ///           at <prefix>[.rs[:<line>]]\n    // optional per frame
+    /// ```
+    ///
+    /// Example of the first few frames on a Windows developer
+    /// workstation (re-recorded as a documentation aid, NOT asserted):
+    ///
+    /// ```text
+    ///    0: backtrace::backtrace::win64::trace
+    ///           at C:\Users\…\.cargo\registry\…\backtrace-0.3.76\src\backtrace\win64.rs:85
+    ///    1: backtrace::backtrace::trace<azure_data_cosmos_driver::error::backtrace::impl$0::capture::closure_env$0>
+    ///           at C:\Users\…\.cargo\registry\…\backtrace-0.3.76\src\backtrace\mod.rs:53
+    ///    2: azure_data_cosmos_driver::error::backtrace::Backtrace::capture
+    ///           at E:\…\sdk\cosmos\azure_data_cosmos_driver\src\error\backtrace.rs:234
+    ///    3: azure_data_cosmos_driver::error::CosmosError::from_inner
+    ///           at E:\…\sdk\cosmos\azure_data_cosmos_driver\src\error\mod.rs:159
+    ///    …
+    /// ```
+    ///
+    /// In addition to the shape, we require **at least one** frame to
+    /// carry the test function's fully-qualified symbol — proof that the
+    /// captured stack actually originates from the call site under
+    /// test rather than (say) an empty / broken backtrace.
+    #[test]
+    fn backtrace_emission_paths_render_as_documented() {
+        // Snapshot + restore the process-global throttle / limiter so
+        // this test does not leak capture-on state into sibling tests
+        // that depend on the default-off behaviour.
+        let throttle = crate::error::backtrace::global_capture_throttle();
+        let resolution = crate::error::backtrace::global_resolution_limiter();
+        let prev_capture = throttle.capacity();
+        let prev_resolution = resolution.capacity();
+
+        let result = std::panic::catch_unwind(|| {
+            // Generous capacities so capture is allowed AND fresh symbol
+            // resolution is allowed (otherwise the rendered backtrace
+            // would be `<unresolved> @ 0xIP` placeholders).
+            throttle.set_capacity(1_000_000);
+            resolution.set_capacity(1_000_000);
+
+            let err = CosmosError::builder().with_message("bt-test").build();
+
+            // Capture each of the four formatted forms into its own
+            // string so the assertion failures below print the exact
+            // current rendering for easy reviewer inspection.
+            let display = format!("{err}");
+            let display_alt = format!("{err:#}");
+            let debug = format!("{err:?}");
+            let debug_alt = format!("{err:#?}");
+
+            // (1) Header-only forms are fully reproducible.
+            assert_eq!(display, "500: bt-test");
+            assert_eq!(debug, "500: bt-test");
+
+            // (2) Alternate Display / Debug both prepend the same
+            //     deterministic prefix to the backtrace tail.
+            const ALT_PREFIX: &str = "500: bt-test\n\nStack backtrace:\n";
+            let display_alt_tail = display_alt
+                .strip_prefix(ALT_PREFIX)
+                .unwrap_or_else(|| panic!("alternate Display must start with {ALT_PREFIX:?}, got:\n{display_alt}"));
+            let debug_alt_tail = debug_alt
+                .strip_prefix(ALT_PREFIX)
+                .unwrap_or_else(|| panic!("alternate Debug must start with {ALT_PREFIX:?}, got:\n{debug_alt}"));
+
+            // (3) Both alternate forms emit the same backtrace tail
+            //     (no per-instance re-rendering or re-resolution).
+            assert_eq!(display_alt_tail, debug_alt_tail);
+
+            // (4) Structural parse of the backtrace tail.
+            assert_backtrace_tail_shape(
+                display_alt_tail,
+                "azure_data_cosmos_driver::error::tests::backtrace_emission_paths_render_as_documented",
+            );
+        });
+
+        // Always restore, even on panic, so a failure here does not
+        // cascade into sibling tests that depend on the default-off
+        // throttle / limiter capacities.
+        throttle.set_capacity(prev_capture);
+        resolution.set_capacity(prev_resolution);
+        if let Err(payload) = result {
+            std::panic::resume_unwind(payload);
+        }
+    }
+
+    /// Parses the backtrace tail emitted by [`write_backtrace`] and
+    /// validates that:
+    ///
+    /// 1. At least one frame is present.
+    /// 2. Frame indices start at `0` and increment by `1` (no gaps,
+    ///    no reorderings).
+    /// 3. Each frame is a `   N: <symbol>\n` line, optionally followed
+    ///    by `          at <prefix>[:<line>]\n` (kernel / stripped
+    ///    frames legitimately have no source location).
+    /// 4. At least one frame's symbol contains `required_symbol_substring`
+    ///    — typically the fully-qualified path of the test under
+    ///    inspection, so callers can prove the captured stack actually
+    ///    walks through their call site rather than (say) an empty or
+    ///    broken backtrace. Pass `""` to skip this check.
+    fn assert_backtrace_tail_shape(tail: &str, required_symbol_substring: &str) {
+        const AT_INDENT: &str = "          at ";
+
+        let mut lines = tail.lines().peekable();
+        let mut frame_index: u32 = 0;
+        let mut saw_required_symbol = false;
+
+        while let Some(line) = lines.next() {
+            // Expect a `"%4d: <symbol>"` symbol line. `try_render`
+            // writes `{:>4}: ` so the index is right-aligned in 4
+            // columns followed by `": "`.
+            let after_colon = line
+                .split_once(": ")
+                .and_then(|(idx_part, sym)| {
+                    let idx: u32 = idx_part.trim_start().parse().ok()?;
+                    Some((idx, sym))
+                })
+                .unwrap_or_else(|| {
+                    panic!(
+                        "expected `{frame_index:>4}: <symbol>` symbol line, got: {line:?}\n\
+                         (full tail under inspection:\n{tail})",
+                    )
+                });
+            let (idx, symbol) = after_colon;
+            assert_eq!(
+                idx, frame_index,
+                "frame indices must increment by 1; got idx={idx} for expected index {frame_index}\nline: {line:?}",
+            );
+            assert!(
+                !symbol.is_empty(),
+                "frame {frame_index} has an empty symbol, line: {line:?}",
+            );
+            if !required_symbol_substring.is_empty()
+                && symbol.contains(required_symbol_substring)
+            {
+                saw_required_symbol = true;
+            }
+
+            // Optionally consume a `          at <path>[:<line>]` line.
+            if let Some(next) = lines.peek() {
+                if let Some(rest) = next.strip_prefix(AT_INDENT) {
+                    // `rest` is `<path>` or `<path>:<digits>` (the
+                    // `:<digits>` suffix is only present when the
+                    // resolver returned a line number; kernel paths
+                    // like `/rustc/<hash>/library\…` also reach this
+                    // branch and that is fine — we accept any
+                    // non-empty `<path>`).
+                    assert!(
+                        !rest.is_empty(),
+                        "`at` line is empty for frame {frame_index}: {next:?}",
+                    );
+                    // If a `:<line>` suffix is present, it must be all
+                    // digits. Split on the LAST `:` because Windows
+                    // paths begin with `C:\` and contain colons.
+                    if let Some((_path, line_no)) = rest.rsplit_once(':') {
+                        if line_no.chars().all(|c| c.is_ascii_digit()) && !line_no.is_empty() {
+                            // OK — `<path>:<line>` form.
+                        } else {
+                            // The last `:` was part of the path
+                            // (Windows drive letter, generic angle
+                            // brackets, etc.) — no `<line>` suffix,
+                            // still valid.
+                        }
+                    }
+                    lines.next();
+                }
+            }
+
+            frame_index += 1;
+        }
+
+        assert!(
+            frame_index > 0,
+            "backtrace tail must contain at least one frame, got:\n{tail}",
+        );
+        if !required_symbol_substring.is_empty() {
+            assert!(
+                saw_required_symbol,
+                "no frame symbol contained `{required_symbol_substring}` — the \
+                 captured stack does not appear to originate from the call \
+                 site under inspection. Tail under inspection:\n{tail}",
+            );
+        }
+    }
+
     /// Builds a [`CosmosError`] carrying both a `DiagnosticsContext` and
     /// a nested Cosmos `CosmosError` as its source, so format tests can
     /// exercise the source-chain + diagnostics propagation paths
@@ -1261,48 +1462,95 @@ mod tests {
     #[test]
     fn display_plain_includes_typed_header_and_message_on_one_line() {
         let err = make_error_with_diagnostics_and_source();
-        let rendered = format!("{err}");
-        assert!(
-            !rendered.contains('\n'),
-            "plain display must stay on one line, got:\n{rendered}"
+        // Plain `{e}` is the bare header — single line, no source chain,
+        // no diagnostics block, no backtrace. Fully deterministic.
+        assert_eq!(
+            format!("{err}"),
+            "503/20003 (TransportGenerated503): outer transport failure",
         );
-        assert!(
-            rendered.contains("503"),
-            "plain display must include the status, got:\n{rendered}"
-        );
-        assert!(
-            rendered.ends_with(": outer transport failure"),
-            "plain display must end with `: <message>`, got:\n{rendered}"
-        );
-        assert!(!rendered.contains("Caused by:"));
-        assert!(!rendered.contains("Diagnostics:"));
     }
 
     #[test]
     fn display_alternate_includes_header_source_chain_and_diagnostics() {
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err:#}");
-        assert!(rendered.contains("503"));
-        assert!(rendered.contains("outer transport failure"));
-        assert!(rendered.contains("Caused by:") && rendered.contains("inner timeout"));
-        assert!(rendered.contains("Diagnostics:"));
+        // The alternate form is `<header>\n\nCaused by:\n  0: <src>\n\nDiagnostics:\n<diag>`.
+        // The diagnostics block embeds a freshly-generated UUID
+        // (`activity={uuid}`) and a wall-clock duration, neither of which
+        // is reproducible, so we split at the diagnostics boundary and
+        // assert exactness on the deterministic prefix.
+        let (prefix, diag_section) = rendered
+            .split_once("\n\nDiagnostics:\n")
+            .expect("alternate Display must include a Diagnostics: block");
+        assert_eq!(
+            prefix,
+            "503/20003 (TransportGenerated503): outer transport failure\n\n\
+             Caused by:\n  \
+             0: 408/20008 (ClientOperationTimeout): inner timeout",
+        );
+        // Diagnostics block: bounded structural check — every line of the
+        // `DiagnosticsContext` `Display` impl begins with `activity=…`.
+        assert!(
+            diag_section.starts_with("activity="),
+            "Diagnostics section must start with `activity=…`, got: {diag_section}",
+        );
     }
 
     #[test]
     fn debug_omits_backtrace_block_in_plain_form() {
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err:?}");
-        assert!(!rendered.contains("Stack backtrace:"));
-        assert!(rendered.contains("outer transport failure"));
-        assert!(rendered.contains("Caused by:"));
+        // Plain `{e:?}` = header + source chain (with `{src:?}` per
+        // source) + diagnostics. The captured backtrace is intentionally
+        // omitted in non-alternate Debug. The inner source is itself a
+        // `CosmosError` with no further source / diagnostics, so its
+        // own `Debug` reduces to the bare header.
+        let (prefix, diag_section) = rendered
+            .split_once("\n\nDiagnostics:\n")
+            .expect("plain Debug must include a Diagnostics: block");
+        assert_eq!(
+            prefix,
+            "503/20003 (TransportGenerated503): outer transport failure\n\n\
+             Caused by:\n  \
+             0: 408/20008 (ClientOperationTimeout): inner timeout",
+        );
+        // The Debug variant renders diagnostics via `{diag:?}` (derived
+        // `Debug` on `DiagnosticsContext`), so the section is the
+        // struct-style dump starting with `DiagnosticsContext {`.
+        assert!(
+            diag_section.starts_with("DiagnosticsContext {"),
+            "Diagnostics section must start with `DiagnosticsContext {{`, got: {diag_section}",
+        );
+        assert!(
+            !rendered.contains("Stack backtrace:"),
+            "plain Debug must NOT include the backtrace block, got:\n{rendered}",
+        );
     }
 
     #[test]
     fn debug_alternate_propagates_to_source_and_diagnostics() {
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err:#?}");
-        assert!(rendered.contains("outer transport failure"));
-        assert!(rendered.contains("Caused by:"));
+        // Alternate `{e:#?}` matches plain `{e:?}` in this fixture
+        // because backtrace capture is opt-in (disabled by default in
+        // tests) so no `Stack backtrace:` block is appended. If capture
+        // were enabled, the alternate form would additionally include
+        // `\n\nStack backtrace:\n<…>`.
+        let (prefix, diag_section) = rendered
+            .split_once("\n\nDiagnostics:\n")
+            .expect("alternate Debug must include a Diagnostics: block");
+        assert_eq!(
+            prefix,
+            "503/20003 (TransportGenerated503): outer transport failure\n\n\
+             Caused by:\n  \
+             0: 408/20008 (ClientOperationTimeout): inner timeout",
+        );
+        // Alternate Debug renders diagnostics via `{diag:#?}` — the
+        // pretty-printed struct dump, still beginning with the type name.
+        assert!(
+            diag_section.starts_with("DiagnosticsContext {"),
+            "Diagnostics section must start with `DiagnosticsContext {{`, got: {diag_section}",
+        );
     }
 
     #[test]
