@@ -1597,4 +1597,64 @@ mod tests {
             rendered.len(),
         );
     }
+
+    /// Pins the surface the SDK's `From<CosmosError> for azure_core::Error`
+    /// mapping reads when classifying a wire-response error into
+    /// `azure_core::ErrorKind::HttpResponse { status, error_code, .. }`.
+    /// The SDK test cannot exercise this branch directly because the only
+    /// public way to attach a wire response (`CosmosResponse::new`) is
+    /// `pub(crate)` to the driver. Asserting the inputs here keeps the
+    /// driver-side contract honest.
+    #[test]
+    fn wire_response_error_exposes_status_and_substatus_for_sdk_classifier() {
+        let diag = make_test_diagnostics();
+        let response = make_test_response(
+            CosmosStatus::from_parts(
+                StatusCode::TooManyRequests,
+                Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT),
+            ),
+            Arc::clone(&diag),
+        );
+        let err = CosmosError::builder()
+            .with_response(response)
+            .with_message("throttled")
+            .build();
+
+        // These are the three driver-side reads the SDK classifier
+        // performs on the wire-response branch.
+        assert!(
+            err.is_from_wire(),
+            "is_from_wire must return true so the SDK classifier picks HttpResponse"
+        );
+        assert_eq!(err.status().status_code(), StatusCode::TooManyRequests);
+        assert_eq!(
+            err.status().sub_status(),
+            Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT),
+            "sub-status must round-trip to the SDK as `error_code` on the HttpResponse kind"
+        );
+        // And the response is reachable for further inspection.
+        let wire = err.response().expect("wire response present");
+        assert_eq!(wire.status().status_code(), StatusCode::TooManyRequests);
+    }
+
+    /// Companion of the wire-response test: synthetic errors (no
+    /// `with_response`) must report `is_from_wire() == false` and
+    /// `response() == None`, which is what drives the SDK classifier
+    /// into its sub-status-based bucket (`Connection` / `Io` /
+    /// `Credential` / `DataConversion` / `Other`) instead of
+    /// `HttpResponse`.
+    #[test]
+    fn synthetic_error_reports_not_from_wire_for_sdk_classifier() {
+        let err = CosmosError::builder()
+            .with_status(CosmosStatus::TRANSPORT_DNS_FAILED)
+            .with_message("dns failure")
+            .build();
+        assert!(!err.is_from_wire());
+        assert!(err.response().is_none());
+        // Sub-status is still readable so the SDK classifier can route on it.
+        assert_eq!(
+            err.status().sub_status(),
+            Some(SubStatusCode::TRANSPORT_DNS_FAILED)
+        );
+    }
 }

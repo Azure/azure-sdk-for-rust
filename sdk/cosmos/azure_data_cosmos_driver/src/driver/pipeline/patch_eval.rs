@@ -30,8 +30,9 @@
 //! * [`MoveOp`](PatchOp::MoveOp) — source must exist; source and destination
 //!   must be distinct; destination cannot be a descendant of the source.
 //!
-//! Failures return [`PatchEvalError`], which the PATCH handler converts into
-//! a [`crate::error::CosmosError`] (kind `Client`) before surfacing it to callers.
+//! Failures return [`PatchEvalError`], which converts into a
+//! [`crate::error::CosmosError`] with HTTP status `400 BadRequest` (via the
+//! `From<PatchEvalError>` impl below) before being surfaced to callers.
 
 use crate::models::{IncrValue, PatchOp};
 use serde_json::Value;

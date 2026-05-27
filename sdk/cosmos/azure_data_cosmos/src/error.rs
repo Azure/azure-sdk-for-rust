@@ -387,4 +387,74 @@ mod tests {
             "azure_core::Error source chain must let callers downcast back to CosmosError"
         );
     }
+
+    /// Asserts the sibling `Connection` mappings: alongside the
+    /// already-tested `TRANSPORT_DNS_FAILED`, `TRANSPORT_CONNECTION_FAILED`
+    /// and `TRANSPORT_HTTP2_INCOMPATIBLE` are the other two sub-statuses
+    /// that provably never put bytes on the wire and are therefore
+    /// safe-to-retry for non-idempotent writes per
+    /// `azure_core::ErrorKind::Connection`.
+    #[test]
+    fn from_cosmos_error_for_azure_core_error_connection_siblings_all_map_to_connection() {
+        for status in [
+            CosmosStatus::TRANSPORT_CONNECTION_FAILED,
+            CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE,
+        ] {
+            let cosmos = CosmosError::builder()
+                .with_status(status)
+                .with_message("never sent")
+                .build();
+            let core_err: azure_core::Error = cosmos.into();
+            assert!(
+                matches!(core_err.kind(), CoreErrorKind::Connection),
+                "{:?} must map to Connection, got {:?}",
+                status.sub_status(),
+                core_err.kind()
+            );
+        }
+    }
+
+    /// Asserts the sibling `Io` mappings: alongside the already-tested
+    /// `TRANSPORT_IO_FAILED`, both `TRANSPORT_BODY_READ_FAILED` and
+    /// `TRANSPORT_GENERATED_503` map to `Io` (retry safety is `Unknown`
+    /// — bytes may have left the socket mid-stream). `CLIENT_OPERATION_TIMEOUT`
+    /// is in the same Io bucket; it has no public `CosmosStatus` constant
+    /// yet so it is not covered here.
+    #[test]
+    fn from_cosmos_error_for_azure_core_error_io_siblings_all_map_to_io() {
+        for status in [
+            CosmosStatus::TRANSPORT_BODY_READ_FAILED,
+            CosmosStatus::TRANSPORT_GENERATED_503,
+        ] {
+            let cosmos = CosmosError::builder()
+                .with_status(status)
+                .with_message("mid-stream")
+                .build();
+            let core_err: azure_core::Error = cosmos.into();
+            assert!(
+                matches!(core_err.kind(), CoreErrorKind::Io),
+                "{:?} must map to Io, got {:?}",
+                status.sub_status(),
+                core_err.kind()
+            );
+        }
+    }
+
+    /// Sibling `Credential` mapping: alongside
+    /// `AUTHENTICATION_TOKEN_ACQUISITION_FAILED`, a client-generated 401
+    /// (signing / authorization failure prior to the wire) also maps to
+    /// `Credential`.
+    #[test]
+    fn from_cosmos_error_for_azure_core_error_client_generated_401_maps_to_credential() {
+        let cosmos = CosmosError::builder()
+            .with_status(CosmosStatus::CLIENT_GENERATED_401)
+            .with_message("client-side auth failure")
+            .build();
+        let core_err: azure_core::Error = cosmos.into();
+        assert!(
+            matches!(core_err.kind(), CoreErrorKind::Credential),
+            "CLIENT_GENERATED_401 must map to Credential, got {:?}",
+            core_err.kind()
+        );
+    }
 }
