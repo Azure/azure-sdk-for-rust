@@ -58,7 +58,6 @@ mod tests {
 
     fn transport_err(status: CosmosStatus) -> CosmosError {
         CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(status)
             .with_message("synthetic")
             .build()

@@ -513,6 +513,7 @@ impl SubStatusCode {
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
             20303 => Some("ServiceReturnedOfferWithoutId"),
             20304 => Some("ClientThroughputPollerIncomplete"),
+            20305 => Some("ClientTopologyResolutionFailed"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1440,6 +1441,13 @@ impl SubStatusCode {
     /// willing to wait", which `408 RequestTimeout` already conveys to
     /// callers.
     pub const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: SubStatusCode = SubStatusCode(20304);
+
+    /// The partition-key-range cache could not resolve any ranges for
+    /// the target feed range (20305). The underlying pk-range fetch
+    /// either returned no result or produced an empty set, so the SDK
+    /// has no routing information for the operation. Paired with HTTP
+    /// 503 — an internal client-side condition, not a transport failure.
+    pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
 }
 
 impl Default for SubStatusCode {
@@ -2140,6 +2148,15 @@ impl CosmosStatus {
     pub const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::RequestTimeout,
         sub_status: Some(SubStatusCode::CLIENT_THROUGHPUT_POLLER_INCOMPLETE),
+    };
+
+    /// 503 / 20305 — the partition-key-range cache could not resolve
+    /// any ranges for the target feed range. The pk-range fetch either
+    /// returned no result or produced an empty set, leaving the SDK
+    /// without routing information.
+    pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::ServiceUnavailable,
+        sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
     };
 }
 

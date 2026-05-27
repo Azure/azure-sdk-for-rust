@@ -711,7 +711,6 @@ mod tests {
             .await;
             Err(TransportError::new(
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
                     .with_message("request should have timed out before completion")
                     .build(),
@@ -958,7 +957,6 @@ mod tests {
         async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             Err(TransportError::new(
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(self.status)
                     .with_message(self.message)
                     .build(),
@@ -1228,7 +1226,6 @@ mod tests {
     fn format_transport_error_details_includes_error_chain() {
         let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
         let cosmos = crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
             .with_message("failed to execute `reqwest` request")
             .with_source(inner)

@@ -1974,7 +1974,6 @@ mod tests {
                 }),
                 ResponsePlan::Http2Incompatible => Err(TransportError::new(
                     crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                         .with_status(crate::models::CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE)
                         .with_message("http2 not supported")
                         .with_source(h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED))
@@ -1983,7 +1982,6 @@ mod tests {
                 )),
                 ResponsePlan::ConnectionError => Err(TransportError::new(
                     crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                         .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
                         .with_message("simulated connection refused")
                         .build(),
@@ -2386,7 +2384,6 @@ mod tests {
     #[cfg(feature = "reqwest")]
     fn http2_reason_http11_required_triggers_http11_downgrade() {
         let error = crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE)
             .with_message("http2 not supported")
             .with_source(h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED))
@@ -2402,7 +2399,6 @@ mod tests {
     #[test]
     fn connection_error_without_http2_signal_does_not_trigger_downgrade() {
         let error = crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
             .with_message("connect failed")
             .build();
@@ -2417,7 +2413,6 @@ mod tests {
     #[test]
     fn io_error_without_http2_signal_does_not_trigger_downgrade() {
         let error = crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_IO_FAILED)
             .with_message("socket reset")
             .build();
@@ -2432,7 +2427,6 @@ mod tests {
     #[test]
     fn http11_errors_do_not_trigger_probe_back_to_http2() {
         let error = crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
             .with_message("connect failed")
             .build();
@@ -2447,7 +2441,6 @@ mod tests {
     #[test]
     fn downgrade_requires_http2_to_be_enabled() {
         let error = crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
             .with_message("connect failed")
             .build();

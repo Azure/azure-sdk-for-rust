@@ -72,7 +72,6 @@ mod tests {
         // source's `Display` by `": "`.
         let inner_io = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
         let error = CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
             .with_message("outer transport failure")
             .with_source(inner_io)

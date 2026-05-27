@@ -350,7 +350,6 @@ impl EndpointShardPool {
             .cloned()
             .ok_or_else(|| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_message(format!(
                         "endpoint shard pool {} has no available shards",

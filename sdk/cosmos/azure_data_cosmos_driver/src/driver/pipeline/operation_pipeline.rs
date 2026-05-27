@@ -1192,7 +1192,6 @@ fn enforce_deadline_or_timeout(
         Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
     );
     Err(crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
         .with_status(crate::models::CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
             Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),

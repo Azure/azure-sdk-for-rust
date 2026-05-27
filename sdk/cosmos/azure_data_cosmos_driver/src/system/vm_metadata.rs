@@ -282,7 +282,6 @@ impl VmMetadataServiceInner {
             .await
             .map_err(|e| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(crate::models::CosmosStatus::TRANSPORT_IO_FAILED)
                     .with_message("IMDS request failed")
                     .with_source(e)
@@ -291,7 +290,6 @@ impl VmMetadataServiceInner {
 
         let body = response.text().await.map_err(|e| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                 .with_status(crate::models::CosmosStatus::TRANSPORT_BODY_READ_FAILED)
                 .with_message("failed to read IMDS response body")
                 .with_source(e)

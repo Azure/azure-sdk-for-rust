@@ -600,7 +600,6 @@ fn evaluate_deadline_exceeded_outcome(
     // and abort. The operation pipeline propagates
     // `crate::error::CosmosError` directly via `OperationAction::Abort.error`.
     let cosmos_err = crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
         .with_status(CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
             Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
@@ -687,7 +686,6 @@ fn build_transport_error(
     // should not have to walk `source()` to recover the operation's
     // diagnostic context.
     let mut b = crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
         .with_status(*status)
         .with_message(message)
         .with_arc_source(std::sync::Arc::new(error.clone()));
@@ -742,7 +740,6 @@ mod tests {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
                 error: crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_message("connection refused")
                     .build(),
@@ -857,7 +854,6 @@ mod tests {
             .complete(),
         );
         let inner = crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
             .with_message("inner transport failure")
             .with_diagnostics(std::sync::Arc::clone(&diag))
@@ -881,7 +877,6 @@ mod tests {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
                 error: crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_message("failed to execute `reqwest` request")
                     .with_source(std::io::Error::new(

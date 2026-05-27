@@ -73,7 +73,6 @@ impl TransportClient for ReqwestTransportClient {
                 .unwrap_or(base_status);
             let message = err.to_string();
             let cosmos_err = crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                 .with_status(status)
                 .with_message(message)
                 .with_source(err)
@@ -87,7 +86,6 @@ impl TransportClient for ReqwestTransportClient {
         let body = response.bytes().await.map_err(|err| {
             let message = err.to_string();
             let cosmos_err = crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                 .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
                 .with_message(message)
                 .with_source(err)

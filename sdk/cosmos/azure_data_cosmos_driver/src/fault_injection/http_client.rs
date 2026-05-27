@@ -204,7 +204,6 @@ impl FaultClient {
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
                 let cosmos_err = crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
                     .with_message("Injected fault: connection error")
                     .build();
@@ -215,7 +214,6 @@ impl FaultClient {
             }
             FaultInjectionErrorType::ResponseTimeout => {
                 let cosmos_err = crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
                     .with_message("Injected fault: response timeout")
                     .build();

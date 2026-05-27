@@ -216,7 +216,6 @@ impl TransportClient for EmulatorTransportClient {
         // Collect the buffered response
         let raw = async_response.try_into_raw_response().await.map_err(|e| {
             let cosmos_err = crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                 .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
                 .with_message(e.to_string())
                 .with_source(e)
