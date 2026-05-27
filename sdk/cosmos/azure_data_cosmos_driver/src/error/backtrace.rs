@@ -524,9 +524,7 @@ impl BacktraceCaptureLimiter {
 /// monotonic anchor. The anchor is initialized lazily on first use via
 /// [`OnceLock`] and never moves backwards regardless of wall-clock changes
 /// (NTP step, suspend/resume), so the rolling 1-second window in
-/// [`BacktraceCaptureLimiter`] is robust against clock skew. `SystemTime`
-/// was used previously and could trigger spurious window rollovers or
-/// stalls when the wall clock jumped.
+/// [`BacktraceCaptureLimiter`] is robust against clock skew.
 fn now_monotonic_secs() -> u64 {
     static ANCHOR: OnceLock<Instant> = OnceLock::new();
     let anchor = ANCHOR.get_or_init(Instant::now);
