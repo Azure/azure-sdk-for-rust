@@ -122,6 +122,15 @@ impl Default for BacktraceOptions {
 /// the `AZURE_COSMOS_BACKTRACE_*` environment variables and the
 /// `RUST_BACKTRACE` / `RUST_LIB_BACKTRACE`-keyed default.
 ///
+/// In particular this overrides **both directions**:
+///
+/// * If `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE` is set to `0` (off) and
+///   the operator wants backtraces on, supply non-zero capacities — the
+///   programmatic call wins.
+/// * If the env vars ask for backtraces but the operator wants them off
+///   in production, call with both fields `0` — the programmatic call
+///   still wins.
+///
 /// Backtrace tuning is process-scoped (the underlying limiters are
 /// process-global atomics — see the module docs for why per-runtime state
 /// isn't viable on the error-construction path). Repeated calls follow
@@ -1018,6 +1027,143 @@ pub(crate) mod tests {
             match prev {
                 Some(v) => std::env::set_var("RUST_BACKTRACE", v),
                 None => std::env::remove_var("RUST_BACKTRACE"),
+            }
+        }
+    }
+
+    /// End-to-end: the public `set_backtrace_options` API writes both
+    /// limiter capacities and the next `Backtrace::capture` observes the
+    /// applied values. This is the lowest-level "the public API actually
+    /// works" guarantee.
+    #[test]
+    fn set_backtrace_options_writes_both_limiter_capacities() {
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let prev_cap = global_capture_throttle().capacity();
+        let prev_res = global_resolution_limiter().capacity();
+
+        set_backtrace_options(BacktraceOptions {
+            max_captures_per_second: 42,
+            max_resolutions_per_second: 7,
+        });
+        assert_eq!(global_capture_throttle().capacity(), 42);
+        assert_eq!(global_resolution_limiter().capacity(), 7);
+
+        // Restore so this test does not leak state into sibling tests.
+        global_capture_throttle().set_capacity(prev_cap);
+        global_resolution_limiter().set_capacity(prev_res);
+        global_capture_throttle().reset_for_tests();
+        global_resolution_limiter().reset_for_tests();
+    }
+
+    /// Pin the override-after-disabled property: even when the
+    /// limiters are at capacity `0` (the "disabled" state that
+    /// `RUST_LIB_BACKTRACE=0` / `RUST_BACKTRACE=0` produces via
+    /// `BacktraceOptions::default()`), a subsequent
+    /// `set_backtrace_options` call with non-zero values raises the cap
+    /// and capture starts working again. This is the property that
+    /// matters for "set_backtrace_options trumps env-var-disabled".
+    #[test]
+    fn set_backtrace_options_overrides_disabled_baseline() {
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let prev_cap = global_capture_throttle().capacity();
+        let prev_res = global_resolution_limiter().capacity();
+
+        // Disabled baseline — matches what `BacktraceOptions::default()`
+        // produces when `rust_backtrace_enabled()` is `false`.
+        set_backtrace_options(BacktraceOptions {
+            max_captures_per_second: 0,
+            max_resolutions_per_second: 0,
+        });
+        global_capture_throttle().reset_for_tests();
+        assert!(
+            Backtrace::capture().is_none(),
+            "with both caps at 0 capture must be disabled"
+        );
+
+        // Programmatic override flips it back on regardless of prior state.
+        set_backtrace_options(BacktraceOptions {
+            max_captures_per_second: 100,
+            max_resolutions_per_second: 0,
+        });
+        global_capture_throttle().reset_for_tests();
+        assert!(
+            Backtrace::capture().is_some(),
+            "programmatic override of a disabled baseline must re-enable capture"
+        );
+
+        global_capture_throttle().set_capacity(prev_cap);
+        global_resolution_limiter().set_capacity(prev_res);
+        global_capture_throttle().reset_for_tests();
+        global_resolution_limiter().reset_for_tests();
+    }
+
+    /// Companion of the above: programmatic override **off** wins even
+    /// when the limiters were previously enabled (covers the "operator
+    /// wants backtraces off in production despite `RUST_BACKTRACE`
+    /// asking for them" case). Last-writer-wins semantics also implicitly
+    /// covered by this pair.
+    #[test]
+    fn set_backtrace_options_overrides_enabled_baseline() {
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let prev_cap = global_capture_throttle().capacity();
+        let prev_res = global_resolution_limiter().capacity();
+
+        set_backtrace_options(BacktraceOptions {
+            max_captures_per_second: 1_000,
+            max_resolutions_per_second: 5,
+        });
+        global_capture_throttle().reset_for_tests();
+        assert!(Backtrace::capture().is_some());
+
+        // Programmatic "off" override.
+        set_backtrace_options(BacktraceOptions {
+            max_captures_per_second: 0,
+            max_resolutions_per_second: 0,
+        });
+        global_capture_throttle().reset_for_tests();
+        assert!(
+            Backtrace::capture().is_none(),
+            "programmatic override to 0 must disable capture regardless of prior state"
+        );
+
+        global_capture_throttle().set_capacity(prev_cap);
+        global_resolution_limiter().set_capacity(prev_res);
+        global_capture_throttle().reset_for_tests();
+        global_resolution_limiter().reset_for_tests();
+    }
+
+    /// Pins the env-var parsing precedence: when a Cosmos-specific env
+    /// var is set to a valid integer it overrides the supplied default;
+    /// when missing or malformed the default wins. Uses a uniquely-named
+    /// env var so the test does not race with parallel tests reading the
+    /// real `AZURE_COSMOS_BACKTRACE_*` knobs.
+    #[test]
+    fn env_u32_overrides_default_when_set_and_parsable() {
+        const NAME: &str = "AZURE_COSMOS_BACKTRACE_TEST_PRECEDENCE";
+        let prev = std::env::var(NAME).ok();
+
+        // Missing -> default wins.
+        unsafe { std::env::remove_var(NAME) };
+        assert_eq!(env_u32(NAME, 99), 99);
+
+        // Set to a valid integer -> env wins.
+        unsafe { std::env::set_var(NAME, "7") };
+        assert_eq!(env_u32(NAME, 99), 7);
+
+        // Set to a malformed value -> default wins (best-effort
+        // robustness; a typo in operator config doesn't accidentally
+        // enable capture).
+        unsafe { std::env::set_var(NAME, "not-a-number") };
+        assert_eq!(env_u32(NAME, 99), 99);
+
+        // Zero is a valid override (operator explicitly disables).
+        unsafe { std::env::set_var(NAME, "0") };
+        assert_eq!(env_u32(NAME, 99), 0);
+
+        unsafe {
+            match prev {
+                Some(v) => std::env::set_var(NAME, v),
+                None => std::env::remove_var(NAME),
             }
         }
     }

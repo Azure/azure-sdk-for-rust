@@ -36,21 +36,31 @@ This crate follows **strict semantic versioning** but can move to new major vers
 
 ### Error Backtraces
 
-`CosmosError` can carry a stack backtrace captured at construction. Capture is **opt-in** (matching idiomatic Rust): off by default, on whenever the stdlib `RUST_BACKTRACE` environment variable is set, and always overridable via the runtime builder. When enabled, two independent rolling-1-second limiters keep the cost predictable under error storms — so unlike `RUST_BACKTRACE=1` (process-wide, unconditional, all-or-nothing) the driver can be left with backtraces *on* in production without paying the cost on every error.
+`CosmosError` can carry a stack backtrace captured at construction. Capture is **opt-in** (matching idiomatic Rust): off by default, on whenever the stdlib `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE` environment variables ask for it, and always overridable programmatically. When enabled, two independent rolling-1-second limiters keep the cost predictable under error storms — so unlike `RUST_BACKTRACE=1` (process-wide, unconditional, all-or-nothing) the driver can be left with backtraces *on* in production without paying the cost on every error.
 
 **Two-tier cost model.**
 
-- **Capture** runs on every `CosmosError` constructed while the capture throttle has budget, and is microseconds — only the call-stack instruction pointers are recorded. Symbols are not resolved at this point. When capture is disabled (`RUST_BACKTRACE` unset and no explicit capacity), the stack is never walked and no IP vector is allocated.
+- **Capture** runs on every `CosmosError` constructed while the capture throttle has budget, and is microseconds — only the call-stack instruction pointers are recorded. Symbols are not resolved at this point. When capture is disabled (no env var asking for it and no programmatic override), the stack is never walked and no IP vector is allocated.
 - **Symbol resolution** (turning an IP into `module::function (file:line)`) is deferred until the first call to `error.backtrace()` → `Display`. Resolved frames are cached process-wide by IP, so repeat captures of the same call site only pay the resolution cost once per process lifetime.
 
 **Two production-safety knobs (independent rolling-1-second limiters).**
 
-| Knob              | Builder method                                    | Env var                                         | Default when `RUST_BACKTRACE` set | Default when unset | What it bounds                                                                                              |
-| ----------------- | ------------------------------------------------- | ----------------------------------------------- | --------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------- |
-| Resolution budget | `with_max_error_backtrace_resolutions_per_second` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` | `5`                               | `0` (disabled)     | How many backtraces may perform *fresh* symbol resolution per second. Cache hits do **not** consume budget. |
-| Capture throttle  | `with_max_error_backtrace_captures_per_second`    | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND`    | `10_000`                          | `0` (disabled)     | Hard ceiling on stack walks per second, regardless of cache state.                                          |
+| Knob              | `BacktraceOptions` field     | Env var                                         | Default when backtraces enabled | Default when disabled | What it bounds                                                                                              |
+| ----------------- | ---------------------------- | ----------------------------------------------- | ------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Capture throttle  | `max_captures_per_second`    | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND`    | `10_000`                        | `0` (disabled)        | Hard ceiling on stack walks per second, regardless of cache state.                                          |
+| Resolution budget | `max_resolutions_per_second` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` | `5`                             | `0` (disabled)        | How many backtraces may perform *fresh* symbol resolution per second. Cache hits do **not** consume budget. |
 
-Both knobs take `u32`. Pass `0` (or set the env var to `0`) to fully disable that limiter regardless of `RUST_BACKTRACE`. Explicit builder values and `AZURE_COSMOS_BACKTRACE_*` env vars always win over `RUST_BACKTRACE`.
+Both fields take `u32`. Setting either to `0` fully disables that limiter; setting both to `0` fully disables backtrace capture.
+
+**Configuration precedence (highest priority first).**
+
+For each of the two knobs the active value is resolved from the first source below that provides a value:
+
+1. **Programmatic** — the most recent call to `azure_data_cosmos_driver::error::set_backtrace_options(BacktraceOptions { … })`. Last-writer-wins; later calls replace earlier ones. **This always wins, including over an env var that explicitly disables backtraces** — e.g. `RUST_BACKTRACE=0` plus a non-zero programmatic call gives you backtraces, and a non-zero `RUST_BACKTRACE` plus a programmatic call with `max_captures_per_second: 0` disables them.
+2. **Cosmos-specific env var** — `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` / `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND`. **Trumps `RUST_BACKTRACE` / `RUST_LIB_BACKTRACE` in both directions** — set them when the stdlib env vars do not match what you want for the Cosmos SDK specifically (e.g. `RUST_BACKTRACE=0` but `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND=1000` → you get Cosmos backtraces capped at 1000/s).
+3. **Stdlib `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE`-keyed default** — when neither of the above is supplied, the SDK consults the stdlib env vars using stdlib precedence (`RUST_LIB_BACKTRACE` takes priority over `RUST_BACKTRACE`; for each, anything other than unset / empty / `"0"` enables). When enabled, the defaults from the "enabled" column above apply; otherwise both caps are `0`.
+
+The env-var-derived default is computed lazily on the first error construction and is suppressed once any programmatic call to `set_backtrace_options` has run.
 
 **When to adjust which.**
 
@@ -59,19 +69,24 @@ Both knobs take `u32`. Pass `0` (or set the env var to `0`) to fully disable tha
 
 When the resolution budget is exhausted but the cache covers every frame, backtraces render at full fidelity for free. When the budget is exhausted *and* there is a cache-missed frame, the render returns `None` — partial / `<unresolved> @ 0xIP` renders are never produced.
 
-**Tuning.**
+**Tuning programmatically.**
 
 ```rust,ignore
-let runtime = CosmosDriverRuntimeBuilder::new()
-    // Enable a generous resolution budget for richer backtraces.
-    // Pass `0` to fully disable resolution (capture still happens
-    // if the capture throttle below is non-zero).
-    .with_max_error_backtrace_resolutions_per_second(50)
-    // Cap raw captures to avoid CPU pressure on same-call-site storms.
-    // Pass `0` here to disable backtrace capture entirely regardless
-    // of `RUST_BACKTRACE`.
-    .with_max_error_backtrace_captures_per_second(500)
-    .build();
+use azure_data_cosmos_driver::error::{set_backtrace_options, BacktraceOptions};
+
+// Start from the env-var-derived default (`RUST_LIB_BACKTRACE` /
+// `RUST_BACKTRACE`-keyed) and only override the fields you care about.
+let mut opts = BacktraceOptions::default();
+opts.max_captures_per_second = 500;     // cap raw captures
+opts.max_resolutions_per_second = 50;   // richer rendering budget
+set_backtrace_options(opts);
+
+// Or fully disable, overriding any env var that asked for backtraces:
+set_backtrace_options(BacktraceOptions {
+    max_captures_per_second: 0,
+    max_resolutions_per_second: 0,
+    ..BacktraceOptions::default()
+});
 ```
 
 **Reading a backtrace.**
