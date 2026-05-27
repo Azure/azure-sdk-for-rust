@@ -84,9 +84,10 @@ pub(crate) async fn begin_replace(
 
     if current_throughput.offer_id.is_empty() {
         // Service contract violation: an offer was returned but it has
-        // no id. Map to 503 with the transport-generated sub-status.
+        // no id. Map to 500 with a dedicated sub-status so callers can
+        // distinguish this from a transport-generated 503.
         return Err(crate::CosmosError::builder()
-            .with_status(crate::CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_status(crate::CosmosStatus::SERVICE_RETURNED_OFFER_WITHOUT_ID)
             .with_message("throughput offer has an empty id")
             .build());
     }

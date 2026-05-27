@@ -511,6 +511,7 @@ impl SubStatusCode {
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
+            20303 => Some("ServiceReturnedOfferWithoutId"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1424,6 +1425,11 @@ impl SubStatusCode {
     /// The query-plan / routing-map resolution produced an empty set of
     /// partition ranges to query (20302). Paired with HTTP 500.
     pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: SubStatusCode = SubStatusCode(20302);
+
+    /// The service returned a throughput offer with an empty `id` field
+    /// (20303). A broken server invariant — the SDK cannot issue a
+    /// follow-up replace without the offer id. Paired with HTTP 500.
+    pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: SubStatusCode = SubStatusCode(20303);
 }
 
 impl Default for SubStatusCode {
@@ -2108,6 +2114,13 @@ impl CosmosStatus {
     pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES),
+    };
+
+    /// 500 / 20303 — the service returned a throughput offer with an
+    /// empty `id` field, violating its own contract.
+    pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_RETURNED_OFFER_WITHOUT_ID),
     };
 }
 
