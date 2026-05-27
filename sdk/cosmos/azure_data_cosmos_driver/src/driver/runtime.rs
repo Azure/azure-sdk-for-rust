@@ -20,9 +20,9 @@ use crate::{
         ThroughputControlGroupName, UserAgent,
     },
     options::{
-        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId,
-        DriverOptions, OperationOptions, ThroughputControlGroupOptions,
-        ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
+        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
+        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
+        UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
