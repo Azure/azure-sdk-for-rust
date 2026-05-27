@@ -136,9 +136,8 @@ pub struct CosmosDriver {
     initialized: AtomicBool,
     /// Cached native query plan provider. Lazily initialized on first use.
     /// `None` if the native library is not available on this platform.
-    native_query_plan_provider: std::sync::OnceLock<
-        Option<crate::query_plan_native::provider::QueryPlanProvider>,
-    >,
+    native_query_plan_provider:
+        std::sync::OnceLock<Option<crate::query_plan_native::provider::QueryPlanProvider>>,
 }
 
 impl CosmosDriver {
@@ -1648,10 +1647,7 @@ impl CosmosDriver {
         if let Some(container) = operation.container() {
             if let Some(query_spec_bytes) = operation.body() {
                 if let Ok(query_spec_json) = std::str::from_utf8(query_spec_bytes) {
-                    if let Ok(query_plan) = self.try_native_query_plan(
-                        query_spec_json,
-                        container,
-                    ) {
+                    if let Ok(query_plan) = self.try_native_query_plan(query_spec_json, container) {
                         tracing::debug!("using native FFI query plan");
                         let container_ref = container.clone();
                         let mut topology = CachedTopologyProvider::new(

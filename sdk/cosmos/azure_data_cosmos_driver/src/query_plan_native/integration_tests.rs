@@ -22,8 +22,8 @@
 //! ```
 
 use super::native::PartitionKind;
-use super::{DistinctType, QueryInfo, QueryPlan, SortOrder};
 use super::provider::{QueryPlanOptions, QueryPlanProvider};
+use super::{DistinctType, QueryInfo, QueryPlan, SortOrder};
 
 // -------------------------------------------------------------------------
 // Configuration -- matches QueryPartitionProviderTestInstance in the .NET SDK
@@ -66,7 +66,7 @@ fn create_provider() -> Option<QueryPlanProvider> {
 /// Helper macro that skips the test if the native DLL is not available.
 macro_rules! require_native_dll {
     () => {
-        let Some(provider) = create_provider() else {
+        let Some(_provider) = create_provider() else {
             eprintln!("Skipping: native DLL not available");
             return;
         };
@@ -89,18 +89,18 @@ fn query_spec_with_params(query: &str, params: serde_json::Value) -> String {
 
 fn hash_options() -> QueryPlanOptions {
     QueryPlanOptions {
-    require_formattable_order_by_query: true,
-    is_continuation_expected: false,
-    allow_non_value_aggregate_query: true,
-    allow_dcount: true,
-    ..QueryPlanOptions::default()
+        require_formattable_order_by_query: true,
+        is_continuation_expected: false,
+        allow_non_value_aggregate_query: true,
+        allow_dcount: true,
+        ..QueryPlanOptions::default()
     }
 }
 
 fn multi_hash_options() -> QueryPlanOptions {
     QueryPlanOptions {
-    partition_kind: PartitionKind::MultiHash,
-    ..hash_options()
+        partition_kind: PartitionKind::MultiHash,
+        ..hash_options()
     }
 }
 
@@ -110,7 +110,10 @@ fn multi_hash_options() -> QueryPlanOptions {
 /// for `SELECT VALUE` queries; non-value aggregates go into the map.
 fn has_aggregates(qi: &QueryInfo) -> bool {
     !qi.aggregates.is_empty()
-    || qi.group_by_alias_to_aggregate_type.values().any(|v| !v.is_null() && v.as_str() != Some(""))
+        || qi
+            .group_by_alias_to_aggregate_type
+            .values()
+            .any(|v| !v.is_null() && v.as_str() != Some(""))
 }
 
 // =========================================================================
@@ -130,8 +133,8 @@ fn create_service_provider_succeeds() {
 fn basic_select_constant() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(&query_spec("SELECT 5"), &["/key"], &hash_options(), None)
-            .expect("SELECT 5 should succeed");
+        .get_partition_key_ranges(&query_spec("SELECT 5"), &["/key"], &hash_options(), None)
+        .expect("SELECT 5 should succeed");
     assert!(!info.query_ranges.is_empty());
 }
 
@@ -139,13 +142,13 @@ fn basic_select_constant() {
 fn basic_select_top_constant() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT TOP 2 5"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .expect("SELECT TOP 2 5 should succeed");
+        .get_partition_key_ranges(
+            &query_spec("SELECT TOP 2 5"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .expect("SELECT TOP 2 5 should succeed");
     // No FROM clause -- top may or may not be populated depending on version.
     assert!(!info.query_ranges.is_empty());
 }
@@ -154,13 +157,13 @@ fn basic_select_top_constant() {
 fn basic_select_star() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .expect("SELECT * FROM c should succeed");
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .expect("SELECT * FROM c should succeed");
     assert!(!info.query_ranges.is_empty());
 }
 
@@ -168,13 +171,13 @@ fn basic_select_star() {
 fn basic_where_true() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE true"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .expect("WHERE true should succeed");
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE true"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .expect("WHERE true should succeed");
     assert!(info.query_info.is_some());
 }
 
@@ -182,13 +185,13 @@ fn basic_where_true() {
 fn basic_where_false() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE false"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .expect("WHERE false should succeed");
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE false"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .expect("WHERE false should succeed");
     // The query should succeed; range semantics depend on engine version.
     assert!(!info.query_ranges.is_empty());
 }
@@ -201,13 +204,13 @@ fn basic_where_false() {
 fn top_just_top() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT TOP 5 * FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT TOP 5 * FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.top, Some(5));
     assert!(qi.order_by.is_empty());
@@ -218,12 +221,12 @@ fn top_just_top() {
 fn top_parameterized() {
     require_native_dll!(provider);
     let spec = query_spec_with_params(
-            "SELECT TOP @TOPCOUNT * FROM c",
-            serde_json::json!([{"name": "@TOPCOUNT", "value": 42}]),
+        "SELECT TOP @TOPCOUNT * FROM c",
+        serde_json::json!([{"name": "@TOPCOUNT", "value": 42}]),
     );
     let info = provider
-            .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
-            .unwrap();
+        .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.top, Some(42));
 }
@@ -232,13 +235,13 @@ fn top_parameterized() {
 fn top_with_non_partition_filter() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT TOP 5 * FROM c WHERE c.blah = 5"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT TOP 5 * FROM c WHERE c.blah = 5"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.top, Some(5));
 }
@@ -247,13 +250,13 @@ fn top_with_non_partition_filter() {
 fn top_with_partition_filter() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT TOP 5 * FROM c WHERE c.key = 5"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT TOP 5 * FROM c WHERE c.key = 5"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.top, Some(5));
 }
@@ -262,13 +265,13 @@ fn top_with_partition_filter() {
 fn top_with_order_by() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT TOP 5 * FROM c ORDER BY c.blah"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT TOP 5 * FROM c ORDER BY c.blah"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.top, Some(5));
     assert!(!qi.order_by.is_empty());
@@ -282,13 +285,13 @@ fn top_with_order_by() {
 fn offset_limit_basic() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c ORDER BY c.blah OFFSET 5 LIMIT 10"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c ORDER BY c.blah OFFSET 5 LIMIT 10"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.offset, Some(5));
     assert_eq!(qi.limit, Some(10));
@@ -299,15 +302,15 @@ fn offset_limit_basic() {
 fn offset_limit_parameterized() {
     require_native_dll!(provider);
     let spec = query_spec_with_params(
-            "SELECT * FROM c ORDER BY c.blah OFFSET @skip LIMIT @take",
-            serde_json::json!([
-                {"name": "@skip", "value": 10},
-                {"name": "@take", "value": 20}
-            ]),
+        "SELECT * FROM c ORDER BY c.blah OFFSET @skip LIMIT @take",
+        serde_json::json!([
+            {"name": "@skip", "value": 10},
+            {"name": "@take", "value": 20}
+        ]),
     );
     let info = provider
-            .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
-            .unwrap();
+        .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.offset, Some(10));
     assert_eq!(qi.limit, Some(20));
@@ -321,13 +324,13 @@ fn offset_limit_parameterized() {
 fn order_by_non_partition_key_asc() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c ORDER BY c.blah"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c ORDER BY c.blah"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(!qi.order_by.is_empty());
     assert_eq!(qi.order_by[0], SortOrder::Ascending);
@@ -338,13 +341,13 @@ fn order_by_non_partition_key_asc() {
 fn order_by_partition_key() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c ORDER BY c.key"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c ORDER BY c.key"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(!qi.order_by.is_empty());
 }
@@ -353,13 +356,13 @@ fn order_by_partition_key() {
 fn order_by_desc() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c ORDER BY c.blah DESC"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c ORDER BY c.blah DESC"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.order_by[0], SortOrder::Descending);
 }
@@ -368,13 +371,13 @@ fn order_by_desc() {
 fn multi_order_by() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c ORDER BY c.a ASC, c.b DESC"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c ORDER BY c.a ASC, c.b DESC"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.order_by.len(), 2);
     assert_eq!(qi.order_by[0], SortOrder::Ascending);
@@ -385,13 +388,13 @@ fn multi_order_by() {
 fn order_by_with_top_and_projection() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT TOP 5 c.blah FROM c ORDER BY c.blah"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT TOP 5 c.blah FROM c ORDER BY c.blah"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert_eq!(qi.top, Some(5));
     assert!(!qi.order_by.is_empty());
@@ -405,13 +408,13 @@ fn order_by_with_top_and_projection() {
 fn distinct_select_star() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT DISTINCT * FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT DISTINCT * FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(qi.distinct_type != DistinctType::None);
     assert_eq!(qi.distinct_type, DistinctType::Unordered);
@@ -421,13 +424,13 @@ fn distinct_select_star() {
 fn distinct_field() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT DISTINCT c.blah FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT DISTINCT c.blah FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(qi.distinct_type != DistinctType::None);
 }
@@ -436,13 +439,13 @@ fn distinct_field() {
 fn distinct_value_with_order_by() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT DISTINCT VALUE c.blah FROM c ORDER BY c.blah"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT DISTINCT VALUE c.blah FROM c ORDER BY c.blah"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(qi.distinct_type != DistinctType::None);
     assert_eq!(qi.distinct_type, DistinctType::Ordered);
@@ -457,13 +460,13 @@ fn distinct_value_with_order_by() {
 fn aggregate_avg() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE AVG(c.blah) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE AVG(c.blah) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(has_aggregates(&qi));
     assert!(qi.aggregates.contains(&"Average".to_string()));
@@ -473,13 +476,13 @@ fn aggregate_avg() {
 fn aggregate_min() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE MIN(c.blah) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE MIN(c.blah) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(qi.aggregates.contains(&"Min".to_string()));
 }
@@ -488,13 +491,13 @@ fn aggregate_min() {
 fn aggregate_max() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE MAX(c.blah) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE MAX(c.blah) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(qi.aggregates.contains(&"Max".to_string()));
 }
@@ -503,13 +506,13 @@ fn aggregate_max() {
 fn aggregate_sum() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE SUM(c.blah) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE SUM(c.blah) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(qi.aggregates.contains(&"Sum".to_string()));
 }
@@ -518,13 +521,13 @@ fn aggregate_sum() {
 fn aggregate_count() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE COUNT(1) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE COUNT(1) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(qi.aggregates.contains(&"Count".to_string()));
 }
@@ -533,13 +536,13 @@ fn aggregate_count() {
 fn aggregate_makelist() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE MAKELIST(c.blah) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE MAKELIST(c.blah) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(qi.aggregates.contains(&"MakeList".to_string()));
 }
@@ -548,13 +551,13 @@ fn aggregate_makelist() {
 fn aggregate_makeset() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE MAKESET(c.blah) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE MAKESET(c.blah) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(qi.aggregates.contains(&"MakeSet".to_string()));
 }
@@ -563,13 +566,13 @@ fn aggregate_makeset() {
 fn aggregate_no_partition_key() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE AVG(c.blah) FROM c"),
-                &[] as &[&str],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE AVG(c.blah) FROM c"),
+            &[] as &[&str],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(has_aggregates(&qi));
 }
@@ -578,13 +581,13 @@ fn aggregate_no_partition_key() {
 fn aggregate_with_filter() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE AVG(c.blah) FROM c WHERE c.key = 5"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE AVG(c.blah) FROM c WHERE c.key = 5"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(has_aggregates(&qi));
 }
@@ -593,13 +596,13 @@ fn aggregate_with_filter() {
 fn aggregate_with_join() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE AVG(j) FROM c JOIN j IN c.blah"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE AVG(j) FROM c JOIN j IN c.blah"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(has_aggregates(&qi));
 }
@@ -608,13 +611,13 @@ fn aggregate_with_join() {
 fn aggregate_with_top() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT TOP 5 VALUE AVG(c.blah) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT TOP 5 VALUE AVG(c.blah) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(has_aggregates(&qi));
     assert!(qi.top.is_some());
@@ -628,13 +631,13 @@ fn aggregate_with_top() {
 fn non_value_aggregate_min() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT MIN(c.blah) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT MIN(c.blah) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(has_aggregates(&qi));
 }
@@ -643,13 +646,13 @@ fn non_value_aggregate_min() {
 fn non_value_aggregate_multiple() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT MIN(c.blah), MAX(c.blah) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT MIN(c.blah), MAX(c.blah) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(has_aggregates(&qi));
 }
@@ -658,13 +661,13 @@ fn non_value_aggregate_multiple() {
 fn non_value_aggregate_with_alias() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT MIN(c.blah) AS minBlah FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT MIN(c.blah) AS minBlah FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(has_aggregates(&qi));
 }
@@ -673,13 +676,13 @@ fn non_value_aggregate_with_alias() {
 fn non_value_aggregate_with_partition_filter() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT MIN(c.blah) FROM c WHERE c.key = 1"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT MIN(c.blah) FROM c WHERE c.key = 1"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(has_aggregates(&qi));
 }
@@ -692,13 +695,13 @@ fn non_value_aggregate_with_partition_filter() {
 fn group_by_simple() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT c.age, c.name FROM c GROUP BY c.age, c.name"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT c.age, c.name FROM c GROUP BY c.age, c.name"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(!qi.group_by_expressions.is_empty());
 }
@@ -707,13 +710,15 @@ fn group_by_simple() {
 fn group_by_with_aggregates() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT c.team, COUNT(1) AS count, AVG(c.age) AS avg_age FROM c GROUP BY c.team"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec(
+                "SELECT c.team, COUNT(1) AS count, AVG(c.age) AS avg_age FROM c GROUP BY c.team",
+            ),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(!qi.group_by_expressions.is_empty());
     assert!(has_aggregates(&qi));
@@ -724,13 +729,13 @@ fn group_by_with_aggregates() {
 fn group_by_value_count() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT VALUE COUNT(1) FROM c GROUP BY c.age"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT VALUE COUNT(1) FROM c GROUP BY c.age"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(!qi.group_by_expressions.is_empty());
     assert!(has_aggregates(&qi));
@@ -761,13 +766,13 @@ fn group_by_arbitrary_scalar() {
 fn like_simple() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.name LIKE '%test%'"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.name LIKE '%test%'"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -775,12 +780,12 @@ fn like_simple() {
 fn like_parameterized() {
     require_native_dll!(provider);
     let spec = query_spec_with_params(
-            "SELECT * FROM c WHERE c.name LIKE @pattern",
-            serde_json::json!([{"name": "@pattern", "value": "%test%"}]),
+        "SELECT * FROM c WHERE c.name LIKE @pattern",
+        serde_json::json!([{"name": "@pattern", "value": "%test%"}]),
     );
     let info = provider
-            .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
-            .unwrap();
+        .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -788,13 +793,13 @@ fn like_parameterized() {
 fn like_with_partition_key_filter() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.key = 'abc' AND c.name LIKE '%test%'"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.key = 'abc' AND c.name LIKE '%test%'"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -806,13 +811,13 @@ fn like_with_partition_key_filter() {
 fn multi_key_is_defined() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM Root r WHERE r.a.b.c"),
-                &["/a/b/c", "/a/c"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM Root r WHERE r.a.b.c"),
+            &["/a/b/c", "/a/c"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(!info.query_ranges.is_empty());
 }
 
@@ -820,13 +825,13 @@ fn multi_key_is_defined() {
 fn multi_key_point_lookup() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM Root r WHERE r.a.b.c = null AND r.a.c = false"),
-                &["/a/b/c", "/a/c"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM Root r WHERE r.a.b.c = null AND r.a.c = false"),
+            &["/a/b/c", "/a/c"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(!info.query_ranges.is_empty());
 }
 
@@ -834,13 +839,13 @@ fn multi_key_point_lookup() {
 fn multi_hash_point_lookup() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.tenantId = 't1' AND c.userId = 'u1'"),
-                &["/tenantId", "/userId"],
-                &multi_hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.tenantId = 't1' AND c.userId = 'u1'"),
+            &["/tenantId", "/userId"],
+            &multi_hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(!info.query_ranges.is_empty());
 }
 
@@ -852,13 +857,13 @@ fn multi_hash_point_lookup() {
 fn in_list_produces_multiple_ranges() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.key IN (1, 2, 3)"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.key IN (1, 2, 3)"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let ranges = info.query_ranges;
     assert!(ranges.len() >= 3, "IN list should produce multiple ranges");
 }
@@ -867,13 +872,13 @@ fn in_list_produces_multiple_ranges() {
 fn or_filter_produces_ranges() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.key = 1 OR c.key = 2"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.key = 1 OR c.key = 2"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let ranges = info.query_ranges;
     assert!(ranges.len() >= 2);
 }
@@ -886,13 +891,13 @@ fn or_filter_produces_ranges() {
 fn subquery_basic() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT (SELECT * FROM c) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT (SELECT * FROM c) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -900,13 +905,13 @@ fn subquery_basic() {
 fn subquery_with_filter_in_outer_query() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT (SELECT * FROM c) FROM c WHERE c.key = 42"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT (SELECT * FROM c) FROM c WHERE c.key = 42"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -914,13 +919,13 @@ fn subquery_with_filter_in_outer_query() {
 fn subquery_with_filter_in_inner_query() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT (SELECT * FROM c WHERE c.key = 42) FROM c"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT (SELECT * FROM c WHERE c.key = 42) FROM c"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -946,13 +951,13 @@ fn subquery_as_filter() {
 fn point_range_string_equality() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.key = 'value'"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.key = 'value'"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let ranges = info.query_ranges;
     assert_eq!(ranges.len(), 1, "equality should produce a single range");
 }
@@ -961,13 +966,13 @@ fn point_range_string_equality() {
 fn point_range_number_equality() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.key = 5"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.key = 5"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let ranges = info.query_ranges;
     assert_eq!(ranges.len(), 1);
 }
@@ -976,13 +981,13 @@ fn point_range_number_equality() {
 fn point_range_null_equality() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.key = null"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.key = null"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let ranges = info.query_ranges;
     assert_eq!(ranges.len(), 1);
 }
@@ -991,13 +996,13 @@ fn point_range_null_equality() {
 fn point_range_bool_equality() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.key = true"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.key = true"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let ranges = info.query_ranges;
     assert_eq!(ranges.len(), 1);
 }
@@ -1010,13 +1015,13 @@ fn point_range_bool_equality() {
 fn system_function_abs() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE ABS(c.key) = 1"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE ABS(c.key) = 1"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -1024,13 +1029,13 @@ fn system_function_abs() {
 fn system_function_is_defined() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE IS_DEFINED(c.key)"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE IS_DEFINED(c.key)"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -1042,10 +1047,10 @@ fn system_function_is_defined() {
 fn negative_bad_function() {
     require_native_dll!(provider);
     let result = provider.get_partition_key_ranges(
-            &query_spec("SELECT BADFUNC(r.age) FROM Root r"),
-            &["/key"],
-            &hash_options(),
-            None,
+        &query_spec("SELECT BADFUNC(r.age) FROM Root r"),
+        &["/key"],
+        &hash_options(),
+        None,
     );
     assert!(result.is_err(), "unrecognized function should fail");
 }
@@ -1058,17 +1063,17 @@ fn negative_bad_function() {
 fn rewritten_query_for_order_by() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c ORDER BY c.name"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c ORDER BY c.name"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     let qi = info.query_info.unwrap();
     assert!(
-            qi.rewritten_query.as_ref().map_or(false, |q| !q.is_empty()),
-            "cross-partition ORDER BY should produce a rewritten query"
+        qi.rewritten_query.as_ref().map_or(false, |q| !q.is_empty()),
+        "cross-partition ORDER BY should produce a rewritten query"
     );
 }
 
@@ -1080,13 +1085,13 @@ fn rewritten_query_for_order_by() {
 fn query_plan_json_round_trip() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT TOP 5 c.name FROM c ORDER BY c.name"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT TOP 5 c.name FROM c ORDER BY c.name"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
 
     let json = serde_json::to_string(&info).unwrap();
     let roundtripped: QueryPlan = serde_json::from_str(&json).unwrap();
@@ -1102,13 +1107,13 @@ fn unicode_bmp_characters_in_query() {
     require_native_dll!(provider);
     // BMP characters: Chinese, Japanese, emoji (BMP range)
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.name = '\u{4e16}\u{754c}'"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.name = '\u{4e16}\u{754c}'"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -1117,13 +1122,13 @@ fn unicode_surrogate_pair_in_query() {
     require_native_dll!(provider);
     // U+1F600 (grinning face) requires a surrogate pair in UTF-16
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE c.name = '\u{1F600}'"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c WHERE c.name = '\u{1F600}'"),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(info.query_info.is_some());
 }
 
@@ -1132,12 +1137,12 @@ fn unicode_partition_key_path() {
     require_native_dll!(provider);
     // Partition key path with non-ASCII characters
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c"),
-                &["/\u{00fc}ser"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
+        .get_partition_key_ranges(
+            &query_spec("SELECT * FROM c"),
+            &["/\u{00fc}ser"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
     assert!(!info.query_ranges.is_empty());
 }

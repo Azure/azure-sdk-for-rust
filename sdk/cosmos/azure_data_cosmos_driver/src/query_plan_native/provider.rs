@@ -9,9 +9,11 @@
 
 use std::ffi::CString;
 
-use crate::query_plan_native::error::QueryPlanError;
-use crate::query_plan_native::native::{self as query_plan_native, GeospatialType, PartitionKeyRangesApiOptions, PartitionKind, WChar};
 use crate::driver::dataflow::query_plan::QueryPlan;
+use crate::query_plan_native::error::QueryPlanError;
+use crate::query_plan_native::native::{
+    self as query_plan_native, GeospatialType, PartitionKeyRangesApiOptions, PartitionKind, WChar,
+};
 
 /// Initial buffer size for the serialized query plan output (8 KiB).
 const INITIAL_BUFFER_SIZE: u32 = 8 * 1024;
@@ -52,9 +54,7 @@ impl QueryPlanProvider {
         // SAFETY: c_config is a valid null-terminated UTF-8 string, and
         // handle is a valid writable pointer. The function is resolved
         // from the native library with a matching ABI signature.
-        let hr = unsafe {
-            (lib.create_service_provider)(c_config.as_ptr().cast(), &mut handle)
-        };
+        let hr = unsafe { (lib.create_service_provider)(c_config.as_ptr().cast(), &mut handle) };
 
         if query_plan_native::failed(hr) {
             return Err(QueryPlanError::from_hresult(hr));
@@ -71,9 +71,7 @@ impl QueryPlanProvider {
             context: "config_json".to_string(),
         })?;
 
-        let hr = unsafe {
-            (lib.update_service_provider)(self.handle, c_config.as_ptr().cast())
-        };
+        let hr = unsafe { (lib.update_service_provider)(self.handle, c_config.as_ptr().cast()) };
 
         if query_plan_native::failed(hr) {
             return Err(QueryPlanError::from_hresult(hr));
@@ -99,8 +97,7 @@ impl QueryPlanProvider {
         let query_spec_native = to_native_string(query_spec_json);
 
         let (token_segments, token_counts) = tokenize_partition_key_paths(partition_key_paths);
-        let all_token_ptrs: Vec<*const WChar> =
-            token_segments.iter().map(|w| w.as_ptr()).collect();
+        let all_token_ptrs: Vec<*const WChar> = token_segments.iter().map(|w| w.as_ptr()).collect();
 
         let vector_policy = vector_embedding_policy_json.map(to_native_string);
         let (vec_policy_ptr, vec_policy_len) = match &vector_policy {
@@ -117,8 +114,7 @@ impl QueryPlanProvider {
             use_system_prefix: options.use_system_prefix as i32,
             partition_kind: options.partition_kind,
             geospatial_type: options.geospatial_type,
-            hybrid_search_skip_order_by_rewrite: options.hybrid_search_skip_order_by_rewrite
-                as i32,
+            hybrid_search_skip_order_by_rewrite: options.hybrid_search_skip_order_by_rewrite as i32,
             reserved: [0u8; 28],
         };
 
@@ -152,9 +148,11 @@ impl QueryPlanProvider {
             hr = call_native(&mut buffer, &mut result_length);
         }
 
-        let payload = String::from_utf8(buffer[..result_length as usize].to_vec())
-            .map_err(|e| QueryPlanError::InvalidArgument {
-                context: format!("native library returned invalid UTF-8: {e}"),
+        let payload =
+            String::from_utf8(buffer[..result_length as usize].to_vec()).map_err(|e| {
+                QueryPlanError::InvalidArgument {
+                    context: format!("native library returned invalid UTF-8: {e}"),
+                }
             })?;
 
         if query_plan_native::failed(hr) {
@@ -217,7 +215,10 @@ fn to_native_string(s: &str) -> Vec<WChar> {
 
 #[cfg(not(target_os = "windows"))]
 fn to_native_string(s: &str) -> Vec<WChar> {
-    s.chars().map(|c| c as WChar).chain(std::iter::once(0)).collect()
+    s.chars()
+        .map(|c| c as WChar)
+        .chain(std::iter::once(0))
+        .collect()
 }
 
 /// Splits partition key paths into individual segments (tokens) and encodes

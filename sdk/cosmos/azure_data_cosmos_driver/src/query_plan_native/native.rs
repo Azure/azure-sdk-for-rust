@@ -120,8 +120,7 @@ impl Default for PartitionKeyRangesApiOptions {
 type CreateServiceProviderFn =
     unsafe extern "C" fn(*const u8, *mut ServiceProviderHandle) -> HResult;
 
-type UpdateServiceProviderFn =
-    unsafe extern "C" fn(ServiceProviderHandle, *const u8) -> HResult;
+type UpdateServiceProviderFn = unsafe extern "C" fn(ServiceProviderHandle, *const u8) -> HResult;
 
 #[allow(clippy::type_complexity)]
 type GetPartitionKeyRangesFromQuery4Fn = unsafe extern "C" fn(
@@ -169,7 +168,9 @@ mod platform {
         if let Ok(dir) = std::env::var("QUERY_PLAN_INTEROP_LIB_DIR") {
             if let Ok(c_dir) = CString::new(dir) {
                 // SAFETY: c_dir is a valid null-terminated string.
-                unsafe { SetDllDirectoryA(c_dir.as_ptr().cast()); }
+                unsafe {
+                    SetDllDirectoryA(c_dir.as_ptr().cast());
+                }
             }
         }
 
@@ -177,7 +178,11 @@ mod platform {
         let c_name = CString::new(name).ok()?;
         // SAFETY: c_name is a valid null-terminated string.
         let h = unsafe { LoadLibraryA(c_name.as_ptr().cast()) };
-        if h.is_null() { None } else { Some(h) }
+        if h.is_null() {
+            None
+        } else {
+            Some(h)
+        }
     }
 
     /// # Safety
@@ -187,7 +192,11 @@ mod platform {
         let c_name = CString::new(name).ok()?;
         // SAFETY: lib is a valid module handle, c_name is null-terminated.
         let p = unsafe { GetProcAddress(lib, c_name.as_ptr().cast()) };
-        if p.is_null() { None } else { Some(p) }
+        if p.is_null() {
+            None
+        } else {
+            Some(p)
+        }
     }
 
     /// # Safety
@@ -196,7 +205,9 @@ mod platform {
     /// may be executing on any thread.
     pub unsafe fn free_library(lib: LibHandle) {
         // SAFETY: Caller guarantees lib is valid and no code is executing.
-        unsafe { FreeLibrary(lib); }
+        unsafe {
+            FreeLibrary(lib);
+        }
     }
 
     pub const LIB_NAME: &str = "Cosmos.QueryPlanInterop.dll";
@@ -240,7 +251,11 @@ mod platform {
         // Fall back to OS default search.
         let c_name = CString::new(name).ok()?;
         let h = unsafe { dlopen(c_name.as_ptr(), RTLD_NOW | RTLD_LOCAL) };
-        if h.is_null() { None } else { Some(h) }
+        if h.is_null() {
+            None
+        } else {
+            Some(h)
+        }
     }
 
     /// # Safety
@@ -250,7 +265,11 @@ mod platform {
         let c_name = CString::new(name).ok()?;
         // SAFETY: lib is a valid handle, c_name is null-terminated.
         let p = unsafe { dlsym(lib, c_name.as_ptr()) };
-        if p.is_null() { None } else { Some(p) }
+        if p.is_null() {
+            None
+        } else {
+            Some(p)
+        }
     }
 
     /// # Safety
@@ -259,7 +278,9 @@ mod platform {
     /// may be executing on any thread.
     pub unsafe fn free_library(lib: LibHandle) {
         // SAFETY: Caller guarantees lib is valid and no code is executing.
-        unsafe { dlclose(lib); }
+        unsafe {
+            dlclose(lib);
+        }
     }
 
     #[cfg(target_os = "linux")]
@@ -300,15 +321,11 @@ impl QueryPlanNativeLibrary {
             };
 
             Ok(Self {
-                create_service_provider: std::mem::transmute(
-                    resolve("CreateServiceProvider")?,
-                ),
-                update_service_provider: std::mem::transmute(
-                    resolve("UpdateServiceProvider")?,
-                ),
-                get_partition_key_ranges_from_query4: std::mem::transmute(
-                    resolve("GetPartitionKeyRangesFromQuery4")?,
-                ),
+                create_service_provider: std::mem::transmute(resolve("CreateServiceProvider")?),
+                update_service_provider: std::mem::transmute(resolve("UpdateServiceProvider")?),
+                get_partition_key_ranges_from_query4: std::mem::transmute(resolve(
+                    "GetPartitionKeyRangesFromQuery4",
+                )?),
             })
         }
     }
@@ -318,18 +335,18 @@ impl QueryPlanNativeLibrary {
 // Global singleton -- load once, no mutex around calls
 // -------------------------------------------------------------------------
 
-static QUERY_PLAN_NATIVE_LIB: std::sync::OnceLock<Result<QueryPlanNativeLibrary, String>> = std::sync::OnceLock::new();
+static QUERY_PLAN_NATIVE_LIB: std::sync::OnceLock<Result<QueryPlanNativeLibrary, String>> =
+    std::sync::OnceLock::new();
 
 /// Returns a reference to the loaded native library.
 /// Loads it on first call. Returns a `LibraryNotAvailable` error if loading fails.
-pub(crate) fn query_plan_native_lib() -> Result<&'static QueryPlanNativeLibrary, super::error::QueryPlanError> {
+pub(crate) fn query_plan_native_lib(
+) -> Result<&'static QueryPlanNativeLibrary, super::error::QueryPlanError> {
     use super::error::QueryPlanError;
     QUERY_PLAN_NATIVE_LIB
         .get_or_init(QueryPlanNativeLibrary::load)
         .as_ref()
-        .map_err(|e| QueryPlanError::LibraryNotAvailable {
-            message: e.clone(),
-        })
+        .map_err(|e| QueryPlanError::LibraryNotAvailable { message: e.clone() })
 }
 
 #[cfg(test)]
@@ -343,16 +360,55 @@ mod tests {
 
     #[test]
     fn abi_options_field_offsets() {
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, require_formattable_order_by_query), 0);
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, is_continuation_expected), 4);
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, allow_non_value_aggregate_query), 8);
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, has_logical_partition_key), 12);
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, allow_dcount), 16);
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, use_system_prefix), 20);
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, partition_kind), 24);
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, geospatial_type), 28);
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, hybrid_search_skip_order_by_rewrite), 32);
-        assert_eq!(std::mem::offset_of!(PartitionKeyRangesApiOptions, reserved), 36);
+        assert_eq!(
+            std::mem::offset_of!(
+                PartitionKeyRangesApiOptions,
+                require_formattable_order_by_query
+            ),
+            0
+        );
+        assert_eq!(
+            std::mem::offset_of!(PartitionKeyRangesApiOptions, is_continuation_expected),
+            4
+        );
+        assert_eq!(
+            std::mem::offset_of!(
+                PartitionKeyRangesApiOptions,
+                allow_non_value_aggregate_query
+            ),
+            8
+        );
+        assert_eq!(
+            std::mem::offset_of!(PartitionKeyRangesApiOptions, has_logical_partition_key),
+            12
+        );
+        assert_eq!(
+            std::mem::offset_of!(PartitionKeyRangesApiOptions, allow_dcount),
+            16
+        );
+        assert_eq!(
+            std::mem::offset_of!(PartitionKeyRangesApiOptions, use_system_prefix),
+            20
+        );
+        assert_eq!(
+            std::mem::offset_of!(PartitionKeyRangesApiOptions, partition_kind),
+            24
+        );
+        assert_eq!(
+            std::mem::offset_of!(PartitionKeyRangesApiOptions, geospatial_type),
+            28
+        );
+        assert_eq!(
+            std::mem::offset_of!(
+                PartitionKeyRangesApiOptions,
+                hybrid_search_skip_order_by_rewrite
+            ),
+            32
+        );
+        assert_eq!(
+            std::mem::offset_of!(PartitionKeyRangesApiOptions, reserved),
+            36
+        );
     }
 
     #[test]
@@ -424,25 +480,70 @@ mod tests {
     fn generated_field_offsets_match_handwritten() {
         use crate::query_plan_native::generated_bindings::QueryPlanInteropPartitionKeyRangesApiOptions as Gen;
         type Hw = PartitionKeyRangesApiOptions;
-        assert_eq!(std::mem::offset_of!(Gen, bRequireFormattableOrderByQuery), std::mem::offset_of!(Hw, require_formattable_order_by_query));
-        assert_eq!(std::mem::offset_of!(Gen, bIsContinuationExpected), std::mem::offset_of!(Hw, is_continuation_expected));
-        assert_eq!(std::mem::offset_of!(Gen, bAllowNonValueAggregateQuery), std::mem::offset_of!(Hw, allow_non_value_aggregate_query));
-        assert_eq!(std::mem::offset_of!(Gen, bHasLogicalPartitionKey), std::mem::offset_of!(Hw, has_logical_partition_key));
-        assert_eq!(std::mem::offset_of!(Gen, bAllowDCount), std::mem::offset_of!(Hw, allow_dcount));
-        assert_eq!(std::mem::offset_of!(Gen, bUseSystemPrefix), std::mem::offset_of!(Hw, use_system_prefix));
-        assert_eq!(std::mem::offset_of!(Gen, ePartitionKind), std::mem::offset_of!(Hw, partition_kind));
-        assert_eq!(std::mem::offset_of!(Gen, eGeospatialType), std::mem::offset_of!(Hw, geospatial_type));
-        assert_eq!(std::mem::offset_of!(Gen, bHybridSearchSkipOrderByRewrite), std::mem::offset_of!(Hw, hybrid_search_skip_order_by_rewrite));
-        assert_eq!(std::mem::offset_of!(Gen, rgbyReserved), std::mem::offset_of!(Hw, reserved));
+        assert_eq!(
+            std::mem::offset_of!(Gen, bRequireFormattableOrderByQuery),
+            std::mem::offset_of!(Hw, require_formattable_order_by_query)
+        );
+        assert_eq!(
+            std::mem::offset_of!(Gen, bIsContinuationExpected),
+            std::mem::offset_of!(Hw, is_continuation_expected)
+        );
+        assert_eq!(
+            std::mem::offset_of!(Gen, bAllowNonValueAggregateQuery),
+            std::mem::offset_of!(Hw, allow_non_value_aggregate_query)
+        );
+        assert_eq!(
+            std::mem::offset_of!(Gen, bHasLogicalPartitionKey),
+            std::mem::offset_of!(Hw, has_logical_partition_key)
+        );
+        assert_eq!(
+            std::mem::offset_of!(Gen, bAllowDCount),
+            std::mem::offset_of!(Hw, allow_dcount)
+        );
+        assert_eq!(
+            std::mem::offset_of!(Gen, bUseSystemPrefix),
+            std::mem::offset_of!(Hw, use_system_prefix)
+        );
+        assert_eq!(
+            std::mem::offset_of!(Gen, ePartitionKind),
+            std::mem::offset_of!(Hw, partition_kind)
+        );
+        assert_eq!(
+            std::mem::offset_of!(Gen, eGeospatialType),
+            std::mem::offset_of!(Hw, geospatial_type)
+        );
+        assert_eq!(
+            std::mem::offset_of!(Gen, bHybridSearchSkipOrderByRewrite),
+            std::mem::offset_of!(Hw, hybrid_search_skip_order_by_rewrite)
+        );
+        assert_eq!(
+            std::mem::offset_of!(Gen, rgbyReserved),
+            std::mem::offset_of!(Hw, reserved)
+        );
     }
 
     #[test]
     fn generated_enum_values_match_handwritten() {
         use crate::query_plan_native::generated_bindings::*;
-        assert_eq!(QueryPlanInteropPartitionKind_Hash, PartitionKind::Hash as i32);
-        assert_eq!(QueryPlanInteropPartitionKind_Range, PartitionKind::Range as i32);
-        assert_eq!(QueryPlanInteropPartitionKind_MultiHash, PartitionKind::MultiHash as i32);
-        assert_eq!(QueryPlanInteropGeospatialType_Geography, GeospatialType::Geography as i32);
-        assert_eq!(QueryPlanInteropGeospatialType_Geometry, GeospatialType::Geometry as i32);
+        assert_eq!(
+            QueryPlanInteropPartitionKind_Hash,
+            PartitionKind::Hash as i32
+        );
+        assert_eq!(
+            QueryPlanInteropPartitionKind_Range,
+            PartitionKind::Range as i32
+        );
+        assert_eq!(
+            QueryPlanInteropPartitionKind_MultiHash,
+            PartitionKind::MultiHash as i32
+        );
+        assert_eq!(
+            QueryPlanInteropGeospatialType_Geography,
+            GeospatialType::Geography as i32
+        );
+        assert_eq!(
+            QueryPlanInteropGeospatialType_Geometry,
+            GeospatialType::Geometry as i32
+        );
     }
 }

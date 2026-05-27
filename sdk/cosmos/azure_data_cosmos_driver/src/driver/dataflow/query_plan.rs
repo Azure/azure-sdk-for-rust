@@ -64,8 +64,7 @@ where
 }
 
 /// The response returned by the Gateway for a query plan request.
-#[derive(Debug, Default, Deserialize)]
-#[derive(Serialize, PartialEq)]
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Wire-format fields; not all are consumed today.
@@ -87,8 +86,7 @@ pub struct QueryPlan {
 }
 
 /// Information about a hybrid search query.
-#[derive(Debug, Deserialize)]
-#[derive(Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Wire-format fields; hybrid search isn't fully wired yet.
 pub struct HybridSearchQueryInfo {
@@ -114,8 +112,7 @@ pub struct HybridSearchQueryInfo {
 }
 
 /// The kind of DISTINCT tracking required by the query.
-#[derive(Debug, Deserialize, Default, PartialEq, Eq)]
-#[derive(Serialize)]
+#[derive(Debug, Deserialize, Default, PartialEq, Eq, Serialize)]
 pub enum DistinctType {
     /// No deduplication required.
     #[default]
@@ -129,8 +126,7 @@ pub enum DistinctType {
 }
 
 /// Detailed query plan information.
-#[derive(Debug, Deserialize, Default)]
-#[derive(Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Default, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 pub struct QueryInfo {
@@ -183,16 +179,14 @@ pub struct QueryInfo {
 }
 
 /// Sort order for an `ORDER BY` expression.
-#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq)]
-#[derive(Serialize)]
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum SortOrder {
     Ascending,
     Descending,
 }
 
 /// An EPK range covered by the query.
-#[derive(Debug, Deserialize)]
-#[derive(Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Inclusivity flags are wire-format; planner treats ranges uniformly.
 pub struct QueryRange {

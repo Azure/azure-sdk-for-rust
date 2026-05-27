@@ -26,9 +26,7 @@ pub enum QueryPlanError {
 
     /// The JSON returned by the native library could not be deserialized
     /// into the expected Rust model.
-    Deserialization {
-        source: serde_json::Error,
-    },
+    Deserialization { source: serde_json::Error },
 
     /// The native library could not be loaded (DLL/so not found on PATH).
     LibraryNotAvailable {
@@ -84,9 +82,7 @@ impl From<serde_json::Error> for QueryPlanError {
 impl QueryPlanError {
     /// Creates an [`Unexpected`](QueryPlanError::Unexpected) error from a raw HRESULT.
     pub(crate) fn from_hresult(hr: HResult) -> Self {
-        Self::Unexpected {
-            hresult: hr as u32,
-        }
+        Self::Unexpected { hresult: hr as u32 }
     }
 
     /// Creates an [`Expected`](QueryPlanError::Expected) error from a raw HRESULT
@@ -118,9 +114,10 @@ mod tests {
 
     #[test]
     fn deserialization_error_from_serde() {
-        let err: QueryPlanError = serde_json::from_str::<crate::driver::dataflow::query_plan::QueryPlan>("invalid")
-            .unwrap_err()
-            .into();
+        let err: QueryPlanError =
+            serde_json::from_str::<crate::driver::dataflow::query_plan::QueryPlan>("invalid")
+                .unwrap_err()
+                .into();
         assert!(matches!(err, QueryPlanError::Deserialization { .. }));
     }
 
