@@ -50,16 +50,35 @@ use std::{
     time::Instant,
 };
 
-/// Returns `true` when the stdlib `RUST_BACKTRACE` environment variable
-/// asks for backtraces, using stdlib semantics: anything other than unset
-/// / empty / `"0"` enables. Read **once** per process via [`OnceLock`]
-/// (matching stdlib); mid-process mutations of the environment variable
-/// have no effect.
+/// Returns `true` when the stdlib backtrace environment variables ask
+/// for library-generated backtraces, matching stdlib precedence:
+/// [`RUST_LIB_BACKTRACE`] takes priority over [`RUST_BACKTRACE`] (it's
+/// the library-scoped knob — `RUST_BACKTRACE` also controls panic-handler
+/// backtraces, so an operator may want library backtraces off while
+/// still keeping panic stacks). For each variable, anything other than
+/// unset / empty / `"0"` enables.
+///
+/// Read **once** per process via [`OnceLock`] (matching stdlib);
+/// mid-process mutations of either environment variable have no
+/// effect.
+///
+/// [`RUST_LIB_BACKTRACE`]: https://doc.rust-lang.org/std/backtrace/index.html#environment-variables
+/// [`RUST_BACKTRACE`]: https://doc.rust-lang.org/std/backtrace/index.html#environment-variables
 pub(crate) fn rust_backtrace_enabled() -> bool {
     static ENABLED: OnceLock<bool> = OnceLock::new();
-    *ENABLED.get_or_init(|| match std::env::var("RUST_BACKTRACE") {
-        Ok(value) => !value.is_empty() && value != "0",
-        Err(_) => false,
+    *ENABLED.get_or_init(|| {
+        // Mirror std's resolution order (library/std/src/backtrace.rs):
+        // RUST_LIB_BACKTRACE wins if set; otherwise fall back to
+        // RUST_BACKTRACE; otherwise off.
+        fn var_is_on(name: &str) -> Option<bool> {
+            match std::env::var(name) {
+                Ok(value) => Some(!value.is_empty() && value != "0"),
+                Err(_) => None,
+            }
+        }
+        var_is_on("RUST_LIB_BACKTRACE")
+            .or_else(|| var_is_on("RUST_BACKTRACE"))
+            .unwrap_or(false)
     })
 }
 
