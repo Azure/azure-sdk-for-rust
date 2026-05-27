@@ -32,7 +32,7 @@ pub use diagnostics_options::{
     DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,
 };
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
-pub(crate) use env_parsing::{parse_duration_millis_from_env, parse_u32_from_env};
+pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
 pub use operation_options::{OperationOptions, OperationOptionsBuilder, OperationOptionsView};
 pub use policies::{

@@ -17,7 +17,7 @@ use crate::{
     diagnostics::ProxyConfiguration,
     models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
     options::{
-        parse_duration_millis_from_env, parse_u32_from_env, ConnectionPoolOptions, CorrelationId,
+        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId,
         DriverOptions, OperationOptions, ThroughputControlGroupOptions,
         ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
     },
@@ -425,8 +425,6 @@ pub struct CosmosDriverRuntimeBuilder {
     user_agent_suffix: Option<UserAgentSuffix>,
     throughput_control_groups: ThroughputControlGroupRegistry,
     cpu_refresh_interval: Option<Duration>,
-    max_error_backtrace_resolutions_per_second: Option<u32>,
-    max_error_backtrace_captures_per_second: Option<u32>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
     #[cfg(any(
@@ -515,77 +513,6 @@ impl CosmosDriverRuntimeBuilder {
     /// Valid range: 1000–60000 ms (1–60 seconds).
     pub fn with_cpu_refresh_interval(mut self, interval: Duration) -> Self {
         self.cpu_refresh_interval = Some(interval);
-        self
-    }
-
-    /// Sets the maximum number of error backtraces that may perform fresh
-    /// symbol resolution per rolling 1-second window across the entire
-    /// process.
-    ///
-    /// Backtrace capture is invaluable for debugging the driver when it
-    /// is consumed as a black box by the Java / .NET SDKs. Capture itself
-    /// (walking the stack) is microseconds; the expensive part is resolving
-    /// instruction pointers to symbol names. This knob bounds the worst-case
-    /// resolution cost during an error storm — capture (when enabled by
-    /// the companion knob below) always happens, and backtraces whose
-    /// frames are already in the process-global resolution cache render at
-    /// full fidelity regardless of the budget. Only backtraces that need
-    /// *fresh* symbol resolution consume budget; on denial, those
-    /// backtraces render with `<unresolved> @ 0xIP` placeholders for the
-    /// cache-missed frames.
-    ///
-    /// # Opt-in default
-    ///
-    /// If neither this builder method nor the
-    /// `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` environment variable
-    /// is set, the default depends on the stdlib `RUST_BACKTRACE`
-    /// environment variable — matching idiomatic Rust opt-in semantics:
-    ///
-    /// * `RUST_BACKTRACE` set (and not `"0"`): default of `5` resolutions /
-    ///   second.
-    /// * `RUST_BACKTRACE` unset or `"0"`: default of `0` (no fresh symbol
-    ///   resolution).
-    ///
-    /// Passing `0` here — or setting the env var to `0` — explicitly
-    /// disables fresh symbol resolution regardless of `RUST_BACKTRACE`.
-    /// Explicit values always win over `RUST_BACKTRACE`.
-    pub fn with_max_error_backtrace_resolutions_per_second(mut self, max_per_second: u32) -> Self {
-        self.max_error_backtrace_resolutions_per_second = Some(max_per_second);
-        self
-    }
-
-    /// Sets the maximum number of error backtrace **captures** (stack
-    /// walks) that may execute per rolling 1-second window across the
-    /// entire process — an independent cap from
-    /// [`with_max_error_backtrace_resolutions_per_second`](Self::with_max_error_backtrace_resolutions_per_second),
-    /// which only bounds *symbol-resolution* work.
-    ///
-    /// Plain stack capture still costs a few microseconds and a small
-    /// allocation per error, so under a sustained error storm whose
-    /// failures all originate at the same call site — cache-hit-only
-    /// territory where the resolution limiter is never even asked —
-    /// unbounded capture could still dominate CPU. This throttle puts a
-    /// hard ceiling on captures so the worst-case capture cost is
-    /// `O(cap)` microseconds per second regardless of error rate.
-    ///
-    /// # Opt-in default
-    ///
-    /// If neither this builder method nor the
-    /// `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` environment variable
-    /// is set, the default depends on the stdlib `RUST_BACKTRACE`
-    /// environment variable:
-    ///
-    /// * `RUST_BACKTRACE` set (and not `"0"`): default of `10_000`
-    ///   captures / second.
-    /// * `RUST_BACKTRACE` unset or `"0"`: default of `0` — capture is
-    ///   fully off and `Backtrace::capture()` returns `None` before
-    ///   allocating the IP vector.
-    ///
-    /// Passing `0` here — or setting the env var to `0` — explicitly
-    /// disables backtrace capture regardless of `RUST_BACKTRACE`.
-    /// Explicit values always win over `RUST_BACKTRACE`.
-    pub fn with_max_error_backtrace_captures_per_second(mut self, max_per_second: u32) -> Self {
-        self.max_error_backtrace_captures_per_second = Some(max_per_second);
         self
     }
 
@@ -823,52 +750,6 @@ impl CosmosDriverRuntimeBuilder {
         )?;
         let cpu_monitor = CpuMemoryMonitor::get_or_init(refresh_interval);
         let vm_metadata = VmMetadataService::get_or_init().await;
-
-        // Apply backtrace capture configuration. Capture is opt-in:
-        // explicit builder value > AZURE_COSMOS_BACKTRACE_* env var >
-        // `RUST_BACKTRACE`-keyed default (off when unset, safe defaults
-        // when set). Explicit values (including `0`) always win and may
-        // be used to fully disable capture.
-        //
-        // Defaults live here next to the env-var names and the parse
-        // call sites (matching the connection-pool / cosmos-driver
-        // convention); the limiter implementation lives in
-        // `crate::error::backtrace` and is intentionally agnostic to
-        // these specific numbers.
-        const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED: u32 = 5;
-        const DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_DISABLED: u32 = 0;
-        const DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_WHEN_ENABLED: u32 = 10_000;
-        const DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_DISABLED: u32 = 0;
-
-        let rust_backtrace_on = crate::error::backtrace::rust_backtrace_enabled();
-
-        let resolutions_default = if rust_backtrace_on {
-            DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_WHEN_ENABLED
-        } else {
-            DEFAULT_BACKTRACE_RESOLUTIONS_PER_SECOND_DISABLED
-        };
-        let backtrace_capacity = parse_u32_from_env(
-            self.max_error_backtrace_resolutions_per_second,
-            "AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND",
-            resolutions_default,
-            0,
-            u32::MAX,
-        )?;
-        crate::error::backtrace::global_resolution_limiter().set_capacity(backtrace_capacity);
-
-        let captures_default = if rust_backtrace_on {
-            DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_WHEN_ENABLED
-        } else {
-            DEFAULT_BACKTRACE_CAPTURES_PER_SECOND_DISABLED
-        };
-        let backtrace_capture_capacity = parse_u32_from_env(
-            self.max_error_backtrace_captures_per_second,
-            "AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND",
-            captures_default,
-            0,
-            u32::MAX,
-        )?;
-        crate::error::backtrace::global_capture_throttle().set_capacity(backtrace_capture_capacity);
 
         Ok(Arc::new(CosmosDriverRuntime {
             id: NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed),

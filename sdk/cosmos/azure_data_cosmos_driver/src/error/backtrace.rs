@@ -44,11 +44,146 @@ use std::{
     collections::HashMap,
     fmt,
     sync::{
-        atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering},
         Arc, OnceLock, RwLock,
     },
     time::Instant,
 };
+
+// =================================================================
+// Public configuration API
+// =================================================================
+
+/// Process-wide backtrace tuning knobs. Programmatic counterpart to the
+/// `AZURE_COSMOS_BACKTRACE_*` environment variables, applied via
+/// [`set_backtrace_options`].
+///
+/// Both fields are per-second caps on a rolling 1-second window:
+///
+/// * `max_captures_per_second` bounds stack-walk + IP-vector allocation
+///   work. `0` disables capture entirely — `Backtrace::capture` returns
+///   `None` before allocating.
+/// * `max_resolutions_per_second` bounds *fresh* symbol-resolution work.
+///   Cache hits do not consume budget; only render attempts that hit at
+///   least one unseen instruction pointer charge it. `0` disables fresh
+///   resolution — already-captured backtraces still render to
+///   `<unresolved> @ 0xIP` placeholders for cache-missed frames.
+///
+/// Construct via [`BacktraceOptions::default`], which consults the
+/// stdlib `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE` environment variables
+/// to pick between fully-off (both fields `0`) and the safe per-second
+/// defaults (`10_000` captures, `5` resolutions). Then mutate the
+/// individual fields as needed before passing to
+/// [`set_backtrace_options`]. The struct is `#[non_exhaustive]` to
+/// reserve room for future knobs without breaking external construction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct BacktraceOptions {
+    /// Per-second cap on stack-walk captures. `0` disables capture.
+    pub max_captures_per_second: u32,
+    /// Per-second cap on fresh symbol resolution. `0` disables resolution.
+    pub max_resolutions_per_second: u32,
+}
+
+impl BacktraceOptions {
+    /// Safe default capture cap applied when `RUST_LIB_BACKTRACE` /
+    /// `RUST_BACKTRACE` enables backtraces.
+    const SAFE_CAPTURES_PER_SECOND: u32 = 10_000;
+    /// Safe default fresh-resolution cap applied when `RUST_LIB_BACKTRACE`
+    /// / `RUST_BACKTRACE` enables backtraces.
+    const SAFE_RESOLUTIONS_PER_SECOND: u32 = 5;
+}
+
+impl Default for BacktraceOptions {
+    /// Returns the env-derived default options.
+    ///
+    /// Consults the stdlib `RUST_LIB_BACKTRACE` (library-scoped) and
+    /// `RUST_BACKTRACE` (process-wide) environment variables, matching
+    /// stdlib precedence (library-scoped wins). When either asks for
+    /// backtraces, returns the safe per-second defaults (`10_000`
+    /// captures, `5` fresh resolutions); otherwise returns both fields
+    /// set to `0` (fully disabled).
+    fn default() -> Self {
+        if rust_backtrace_enabled() {
+            Self {
+                max_captures_per_second: Self::SAFE_CAPTURES_PER_SECOND,
+                max_resolutions_per_second: Self::SAFE_RESOLUTIONS_PER_SECOND,
+            }
+        } else {
+            Self {
+                max_captures_per_second: 0,
+                max_resolutions_per_second: 0,
+            }
+        }
+    }
+}
+
+/// Sets the process-wide backtrace options programmatically, **trumping**
+/// the `AZURE_COSMOS_BACKTRACE_*` environment variables and the
+/// `RUST_BACKTRACE` / `RUST_LIB_BACKTRACE`-keyed default.
+///
+/// Backtrace tuning is process-scoped (the underlying limiters are
+/// process-global atomics — see the module docs for why per-runtime state
+/// isn't viable on the error-construction path). Repeated calls follow
+/// last-writer-wins semantics: the most recent call's options become the
+/// active configuration. Calling this function also suppresses the
+/// otherwise-lazy env-var read that would happen on first
+/// `Backtrace::capture` / `Backtrace::rendered`.
+///
+/// Typical use is once at process / runtime startup. Tests that mutate
+/// the limiters mid-run can still do so via the internal test helpers;
+/// concurrent calls between threads race in the standard last-writer-wins
+/// way.
+pub fn set_backtrace_options(options: BacktraceOptions) {
+    apply_options(options);
+}
+
+/// Idempotent lazy initializer that applies the env-var-derived defaults
+/// the first time backtrace machinery is exercised, unless a programmatic
+/// call to [`set_backtrace_options`] already ran. Cheap fast-path: a
+/// relaxed-load of an `AtomicBool` after the first call.
+pub(crate) fn ensure_initialized() {
+    if INITIALIZED.load(Ordering::Relaxed) {
+        return;
+    }
+    let options = resolve_from_env();
+    apply_options(options);
+}
+
+fn apply_options(options: BacktraceOptions) {
+    global_capture_throttle().set_capacity(options.max_captures_per_second);
+    global_resolution_limiter().set_capacity(options.max_resolutions_per_second);
+    INITIALIZED.store(true, Ordering::Relaxed);
+}
+
+fn resolve_from_env() -> BacktraceOptions {
+    // Start from the `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE`-keyed
+    // default, then let the Cosmos-specific env vars override either
+    // knob individually.
+    let defaults = BacktraceOptions::default();
+    BacktraceOptions {
+        max_captures_per_second: env_u32(
+            "AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND",
+            defaults.max_captures_per_second,
+        ),
+        max_resolutions_per_second: env_u32(
+            "AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND",
+            defaults.max_resolutions_per_second,
+        ),
+    }
+}
+
+fn env_u32(name: &str, default: u32) -> u32 {
+    std::env::var(name)
+        .ok()
+        .and_then(|s| s.trim().parse::<u32>().ok())
+        .unwrap_or(default)
+}
+
+/// `true` once either [`set_backtrace_options`] or [`ensure_initialized`]
+/// has applied a configuration. Suppresses the env-var-derived lazy init
+/// on the hot capture/render path after the first observation.
+static INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 /// Returns `true` when the stdlib backtrace environment variables ask
 /// for library-generated backtraces, matching stdlib precedence:
@@ -175,6 +310,9 @@ impl Backtrace {
     /// Returns `None` when the throttle denies, or when the platform's
     /// `backtrace` crate refuses to produce any frames.
     pub(crate) fn capture() -> Option<Self> {
+        // Lazy env-var read on first capture (no-op once any prior
+        // capture or programmatic `set_backtrace_options` ran).
+        ensure_initialized();
         if !global_capture_throttle().try_acquire() {
             return None;
         }
@@ -278,6 +416,10 @@ fn try_render(ips: &[usize]) -> Option<String> {
 /// `Some` is returned; if denied, returns `None` so the caller can drop the
 /// render entirely (no partial backtraces).
 fn try_resolve_frames(ips: &[usize]) -> Option<Vec<ResolvedFrame>> {
+    // Defensive: a `Backtrace` value may have been captured under a prior
+    // (programmatic) configuration but rendered before any env-var read
+    // happened. Idempotent on the hot path.
+    ensure_initialized();
     let mut out: Vec<Option<ResolvedFrame>> = Vec::with_capacity(ips.len());
     let mut missing: Vec<(usize, usize)> = Vec::new();
     {
@@ -547,7 +689,7 @@ pub(crate) fn global_resolution_limiter() -> &'static BacktraceCaptureLimiter {
 /// Returns a reference to the process-global per-second cap on stack
 /// captures (a second, independent limiter from the resolution one).
 ///
-/// Each successful [`Backtrace::capture`] consumes one token; when the
+/// Each successful `Backtrace::capture` consumes one token; when the
 /// budget is exhausted, capture returns `None` for the rest of the 1-second
 /// window. The runtime builder uses this to apply caller-supplied
 /// configuration.

@@ -31,6 +31,7 @@ pub use cosmos_status::{CosmosStatus, SubStatusCode};
 
 pub(crate) mod backtrace;
 pub(crate) use backtrace::Backtrace;
+pub use backtrace::{set_backtrace_options, BacktraceOptions};
 
 /// Internal bench-only surface (gated by the `__internal_backtrace_bench`
 /// feature) used by `azure_data_cosmos_benchmarks` to measure the
