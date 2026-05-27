@@ -1,19 +1,16 @@
 {
   "displayNames": {
-    "vnext_emulator": "vnext_emulator"
+    "vnext": "vnext_emulator"
   },
-  "matrix": {},
-  "include": [
-    {
-      "Agent": {
-        "vnext_emulator": {
-          "OSVmImage": "env:LINUXVMIMAGE",
-          "Pool": "env:LINUXPOOL"
-        }
-      },
-      "RustToolchainName": ["stable"],
-      "AZURE_COSMOS_EMULATOR_FLAVOR": "vnext",
-      "ContinueOnError": "true"
-    }
-  ]
+  "matrix": {
+    "Agent": {
+      "vnext": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": ["vnext"],
+    "ContinueOnError": ["true"]
+  }
 }
