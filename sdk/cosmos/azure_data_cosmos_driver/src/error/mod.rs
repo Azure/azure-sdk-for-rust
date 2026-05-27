@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cSpell:ignore peekable
+// cSpell:ignore peekable disambiguator
 
 //! Cosmos DB-specific error type carrying typed Cosmos status, the optional
 //! wire-level [`CosmosResponse`], and operation diagnostics — for both

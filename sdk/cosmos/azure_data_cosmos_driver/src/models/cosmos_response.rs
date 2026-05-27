@@ -37,7 +37,6 @@ impl CosmosResponsePayload {
     }
 
     /// Consumes the payload and returns the body.
-    #[allow(dead_code)]
     pub(crate) fn into_body(self) -> ResponseBody {
         self.body
     }
@@ -107,7 +106,6 @@ impl CosmosResponse {
     }
 
     /// Returns a reference to the wire-level payload (body + headers).
-    #[allow(dead_code)]
     pub(crate) fn payload(&self) -> &CosmosResponsePayload {
         &self.payload
     }

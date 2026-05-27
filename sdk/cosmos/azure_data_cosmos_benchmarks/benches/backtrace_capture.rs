@@ -40,7 +40,9 @@
 //! cargo bench -p azure_data_cosmos_benchmarks --bench backtrace_capture
 //! ```
 
-use azure_data_cosmos_driver::error::{backtrace_bench, CosmosError, CosmosErrorBuilder, CosmosStatus};
+use azure_data_cosmos_driver::error::{
+    backtrace_bench, CosmosError, CosmosErrorBuilder, CosmosStatus,
+};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::{hint::black_box, sync::Arc};
 
