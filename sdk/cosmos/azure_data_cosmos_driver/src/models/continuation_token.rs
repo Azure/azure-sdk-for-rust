@@ -62,9 +62,7 @@ impl ContinuationToken {
     ) -> crate::error::Result<Self> {
         if operation.operation_type() != OperationType::Query {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION)
                 .with_message(
                     "client-side continuation tokens are only supported for query operations",
                 )
@@ -160,9 +158,7 @@ impl TokenState {
     pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> crate::error::Result<()> {
         if operation.operation_type() != OperationType::Query {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION)
                 .with_message(format!(
                     "operation type {op:?} is not compatible with client-side continuation tokens",
                     op = self.operation

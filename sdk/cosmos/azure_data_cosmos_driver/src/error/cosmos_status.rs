@@ -487,6 +487,7 @@ impl SubStatusCode {
             20114 => Some("ClientQueryPlanInvalidTopOffsetLimit"),
             20115 => Some("ClientQueryPlanComplexProjectionUnsupported"),
             20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
+            20117 => Some("ClientContinuationTokenNonQueryOperation"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1316,6 +1317,12 @@ impl SubStatusCode {
     pub const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: SubStatusCode =
         SubStatusCode(20116);
 
+    /// A continuation token was supplied for a non-query operation (or
+    /// the token itself targets a non-query operation) (20117).
+    /// Client-side continuation tokens are only valid for query
+    /// operations.
+    pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
+
     // ----- 20150-20199: SDK configuration / setup errors -----
 
     /// Two fault-injection rules registered with the same id (20150).
@@ -1972,6 +1979,14 @@ impl CosmosStatus {
     pub const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY),
+    };
+
+    /// 400 / 20117 — continuation token supplied for a non-query
+    /// operation. Client-side continuation tokens are only valid for
+    /// query operations.
+    pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
     };
 
     // Configuration / setup (HTTP 400, sub-status 20150-20199)
