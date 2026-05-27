@@ -103,7 +103,7 @@ use azure_identity::DeveloperToolsCredential;
 use url::Url;
 
 #[tokio::main]
-async fn main() -> azure_data_cosmos_driver::error::Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Use logged-in developer credentials (Azure CLI, azd, etc.)
     let credential = DeveloperToolsCredential::new(None)?;
 
