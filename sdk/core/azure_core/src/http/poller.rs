@@ -298,7 +298,7 @@ use types::{BoxedCallback, BoxedFuture, BoxedStream};
 ///
 /// ```no_run
 /// # use azure_core::credentials::TokenCredential;
-/// # use azure_security_keyvault_certificates::{CertificateClient, models::CreateCertificateParameters};
+/// # use azure_core_examples::certificates::{CertificateClient, models::CreateCertificateParameters};
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();
 /// let client = CertificateClient::new(
@@ -321,7 +321,7 @@ use types::{BoxedCallback, BoxedFuture, BoxedStream};
 ///
 /// ```no_run
 /// # use azure_core::credentials::TokenCredential;
-/// # use azure_security_keyvault_certificates::{CertificateClient, models::CreateCertificateParameters};
+/// # use azure_core_examples::certificates::{CertificateClient, models::CreateCertificateParameters};
 /// # use futures::TryStreamExt;
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// # let credential: std::sync::Arc<dyn TokenCredential> = unimplemented!();

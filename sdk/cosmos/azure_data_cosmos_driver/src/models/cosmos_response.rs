@@ -3,18 +3,22 @@
 
 //! Cosmos DB operation result types.
 
-use crate::models::{CosmosResponseHeaders, CosmosStatus};
+use crate::diagnostics::DiagnosticsContext;
+use crate::models::{CosmosResponseHeaders, CosmosStatus, ResponseBody};
+use std::sync::Arc;
 
 /// Result of a Cosmos DB operation.
 ///
-/// Contains the response body (as raw bytes), relevant headers, and comprehensive
-/// status information for the operation.
+/// Contains the response body (as a [`ResponseBody`] of one or more
+/// reference-counted byte slices), relevant headers, and comprehensive status
+/// information for the operation.
 ///
 /// # Schema-Agnostic Design
 ///
-/// The driver returns response bodies as raw bytes (`Vec<u8>`). The higher-level
-/// SDK (e.g., `azure_data_cosmos`) handles deserialization into typed structures.
-/// This allows the driver to be reused across different serialization strategies.
+/// The driver returns response bodies as raw bytes via [`ResponseBody`].
+/// The higher-level SDK (e.g., `azure_data_cosmos`) handles deserialization into
+/// typed structures. This allows the driver to be reused across different
+/// serialization strategies.
 ///
 /// # Example
 ///
@@ -32,38 +36,56 @@ use crate::models::{CosmosResponseHeaders, CosmosStatus};
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct CosmosResponse {
-    /// Raw response body (UTF-8 JSON or Cosmos binary encoding).
-    body: Vec<u8>,
+    /// Response body, possibly composed of multiple byte slices.
+    body: ResponseBody,
 
     /// Extracted Cosmos-specific headers.
     headers: CosmosResponseHeaders,
 
     /// Operation status including HTTP status code and optional sub-status.
     status: CosmosStatus,
+
+    /// Full diagnostics context for this operation.
+    diagnostics: Arc<DiagnosticsContext>,
 }
 
 impl CosmosResponse {
     /// Creates a new `CosmosResponse`.
     ///
     /// This is typically called by the driver after completing an operation.
-    pub(crate) fn new(body: Vec<u8>, headers: CosmosResponseHeaders, status: CosmosStatus) -> Self {
+    /// The `body` may be supplied as raw bytes (e.g., `Vec<u8>`, `Bytes`) and
+    /// will be wrapped as a single-part [`ResponseBody`].
+    pub(crate) fn new(
+        body: impl Into<ResponseBody>,
+        headers: CosmosResponseHeaders,
+        status: CosmosStatus,
+        diagnostics: Arc<DiagnosticsContext>,
+    ) -> Self {
         Self {
-            body,
+            body: body.into(),
             headers,
             status,
+            diagnostics,
         }
     }
 
-    /// Returns a reference to the response body.
-    ///
-    /// The body is raw bytes - typically UTF-8 JSON but may be Cosmos binary
-    /// encoding for certain operations. The higher-level SDK handles parsing.
-    pub fn body(&self) -> &[u8] {
+    /// Returns a reference to the typed response body.
+    pub fn body(&self) -> &ResponseBody {
         &self.body
     }
 
-    /// Consumes the result and returns the body.
-    pub fn into_body(self) -> Vec<u8> {
+    /// Test-only helper: returns the body as raw bytes, panicking if the body is
+    /// not a [`ResponseBody::Bytes`] variant.
+    #[cfg(test)]
+    pub(crate) fn body_bytes(&self) -> &[u8] {
+        match &self.body {
+            ResponseBody::Bytes(b) => b.as_ref(),
+            _ => panic!("expected ResponseBody::Bytes"),
+        }
+    }
+
+    /// Consumes the response and returns the body.
+    pub fn into_body(self) -> ResponseBody {
         self.body
     }
 
@@ -76,19 +98,47 @@ impl CosmosResponse {
     pub fn status(&self) -> CosmosStatus {
         self.status
     }
+
+    /// Returns a cloned [`Arc`] handle to the diagnostics captured for this operation.
+    ///
+    /// Cloning the [`Arc`] is a cheap atomic increment, allowing the diagnostics
+    /// to be retained alongside the response data when the [`CosmosResponse`] is
+    /// consumed (for example, by [`into_body`](Self::into_body)). For read-only
+    /// inspection, the returned handle derefs transparently to
+    /// [`DiagnosticsContext`].
+    pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
+        Arc::clone(&self.diagnostics)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::diagnostics::DiagnosticsContextBuilder;
     use crate::models::{ActivityId, CosmosResponseHeaders, RequestCharge, SubStatusCode};
+    use crate::options::DiagnosticsOptions;
     use azure_core::http::StatusCode;
+    use std::sync::Arc;
 
     fn make_status(
         status_code: Option<StatusCode>,
         sub_status_code: Option<SubStatusCode>,
     ) -> CosmosStatus {
         CosmosStatus::from_parts(status_code.unwrap_or(StatusCode::Ok), sub_status_code)
+    }
+
+    fn make_diagnostics(
+        status_code: Option<StatusCode>,
+        sub_status_code: Option<SubStatusCode>,
+    ) -> Arc<DiagnosticsContext> {
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::new_uuid(),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+        if let Some(status) = status_code {
+            builder.set_operation_status(status, sub_status_code);
+        }
+        Arc::new(builder.complete())
     }
 
     #[test]
@@ -103,13 +153,17 @@ mod tests {
             b"{\"id\": \"test\"}".to_vec(),
             headers,
             make_status(Some(StatusCode::Ok), None),
+            make_diagnostics(Some(StatusCode::Ok), None),
         );
 
         let status = result.status();
         assert_eq!(status.status_code(), StatusCode::Ok);
         assert!(status.is_success());
         assert!(status.sub_status().is_none());
-        assert_eq!(result.body(), b"{\"id\": \"test\"}");
+        match result.body() {
+            ResponseBody::Bytes(b) => assert_eq!(b.as_ref(), b"{\"id\": \"test\"}"),
+            _ => panic!("expected Bytes variant"),
+        }
         assert_eq!(
             result.headers().request_charge,
             Some(RequestCharge::new(5.5))
@@ -122,6 +176,10 @@ mod tests {
             b"{}".to_vec(),
             CosmosResponseHeaders::new(),
             make_status(
+                Some(StatusCode::TooManyRequests),
+                Some(SubStatusCode::new(3200)),
+            ),
+            make_diagnostics(
                 Some(StatusCode::TooManyRequests),
                 Some(SubStatusCode::new(3200)),
             ),
@@ -143,9 +201,13 @@ mod tests {
             b"body".to_vec(),
             headers,
             make_status(Some(StatusCode::Created), None),
+            make_diagnostics(Some(StatusCode::Created), None),
         );
 
-        assert_eq!(result.body(), b"body");
+        match result.body() {
+            ResponseBody::Bytes(b) => assert_eq!(b.as_ref(), b"body"),
+            _ => panic!("expected Bytes variant"),
+        }
         assert_eq!(result.status().status_code(), StatusCode::Created);
         assert!(result.status().sub_status().is_none());
         assert_eq!(
@@ -154,7 +216,8 @@ mod tests {
         );
 
         let body = result.into_body();
-        assert_eq!(body, b"body");
+        let bytes = body.single().unwrap();
+        assert_eq!(&bytes[..], b"body");
     }
 
     #[test]
@@ -163,10 +226,21 @@ mod tests {
             Some(StatusCode::NotFound),
             Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
         );
-        let result = CosmosResponse::new(b"{}".to_vec(), CosmosResponseHeaders::new(), status);
+        let result = CosmosResponse::new(
+            b"{}".to_vec(),
+            CosmosResponseHeaders::new(),
+            status,
+            make_diagnostics(
+                Some(StatusCode::NotFound),
+                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+            ),
+        );
 
         let result_status = result.status();
         assert_eq!(result_status.status_code(), StatusCode::NotFound);
         assert!(result_status.is_read_session_not_available());
+        let diagnostics = result.diagnostics();
+        let diagnostics_status = diagnostics.status().unwrap();
+        assert_eq!(diagnostics_status.status_code(), StatusCode::NotFound);
     }
 }

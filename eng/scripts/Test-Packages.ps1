@@ -13,6 +13,7 @@ Set-StrictMode -Version 2.0
 function Invoke-CargoTestWithJsonOutput (
   [string]$TestParams,
   [string]$PackageName,
+  [string]$ManifestPath,
   [string]$OutputFile
 ) {
   Write-Host "Running tests for $PackageName"
@@ -20,7 +21,7 @@ function Invoke-CargoTestWithJsonOutput (
   # and uploaded to DevOps for display in the Tests tab
   # (requires -Z unstable-options)
   $result = Invoke-LoggedCommand `
-    "cargo +nightly test $TestParams --package $PackageName --all-features --no-fail-fast -- --format json -Z unstable-options" `
+    "cargo +nightly test $TestParams --manifest-path $ManifestPath --all-features --no-fail-fast -- --format json -Z unstable-options" `
     -GroupOutput `
     -DoNotExitOnFailedExitCode
 
@@ -88,22 +89,25 @@ foreach ($package in $packagesToTest) {
   Invoke-LoggedCommand "cargo build --all-features --keep-going" -GroupOutput
   Write-Host "`n`n"
 
+  $manifestPath = [System.IO.Path]::Combine($packageDirectory, 'Cargo.toml')
   $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 
   $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-doctest-$timestamp.json"))
   Invoke-CargoTestWithJsonOutput `
     -TestParams "--doc" `
     -PackageName $package.Name `
+    -ManifestPath $manifestPath `
     -OutputFile $docTestOutput
 
   $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-alltargets-$timestamp.json"))
   Invoke-CargoTestWithJsonOutput `
     -TestParams "--lib --bins --tests --examples" `
     -PackageName $package.Name `
+    -ManifestPath $manifestPath `
     -OutputFile $allTargetsOutput
 
   Invoke-LoggedCommand `
-    "cargo test --benches --package $($package.Name) --all-features --no-fail-fast" `
+    "cargo test --benches --manifest-path $manifestPath --all-features --no-fail-fast" `
     -GroupOutput
 
   $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))

@@ -12,40 +12,68 @@
 mod account_reference;
 mod activity_id;
 mod connection_string;
-mod cosmos_headers;
+mod consistency_level;
+mod continuation_token;
+pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
 mod cosmos_status;
 mod etag;
 mod finite_f64;
-mod partition_key;
+pub(crate) mod partition_key;
+mod patch;
 mod request_charge;
-mod resource_id;
+pub(crate) mod resource_id;
 mod resource_reference;
+mod response_body;
+mod session_token_segment;
 mod user_agent;
+pub(crate) mod vector_session_token;
+pub(crate) use cosmos_headers::request_header_names;
+pub(crate) use finite_f64::FiniteF64;
+#[allow(dead_code)]
+pub mod effective_partition_key;
+mod feed_range;
+#[allow(dead_code)]
+mod murmur_hash;
+#[allow(dead_code)]
+pub mod partition_key_range;
+#[allow(dead_code)]
+pub(crate) mod range;
 
 pub use account_reference::{AccountReference, AccountReferenceBuilder, Credential};
 pub use activity_id::ActivityId;
 pub use connection_string::ConnectionString;
-pub use cosmos_headers::{CosmosRequestHeaders, CosmosResponseHeaders};
+pub(crate) use consistency_level::DefaultConsistencyLevel;
+pub use continuation_token::ContinuationToken;
+pub(crate) use continuation_token::ResolvedToken;
+pub use cosmos_headers::{
+    AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
+    CosmosResponseHeaders, MaxItemCount, OfferAutoscaleSettings,
+};
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
+pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub use cosmos_status::CosmosStatus;
 pub use cosmos_status::SubStatusCode;
+pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
-pub use partition_key::PartitionKey;
+pub use feed_range::FeedRange;
+pub use partition_key::{PartitionKey, PartitionKeyValue};
+pub use patch::{IncrValue, PatchOp, PatchSpec};
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
 pub use resource_reference::{DatabaseReference, ItemReference};
 pub use resource_reference::{
     PartitionKeyRangeReference, StoredProcedureReference, TriggerReference, UdfReference,
 };
+pub use response_body::ResponseBody;
+pub use session_token_segment::SessionTokenSegment;
 pub use user_agent::UserAgent;
 
 pub(crate) use account_reference::AccountEndpoint;
-pub(crate) use finite_f64::FiniteF64;
 
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -55,6 +83,7 @@ use std::borrow::Cow;
 /// Returned by database read/query operations and used when creating databases.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct DatabaseProperties {
     /// Unique identifier for the database within the account.
     pub id: Cow<'static, str>,
@@ -71,6 +100,7 @@ impl DatabaseProperties {}
 /// Returned by container read/query operations and used when creating/updating containers.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct ContainerProperties {
     /// Unique identifier for the container within the database.
     pub id: Cow<'static, str>,
@@ -83,43 +113,46 @@ pub(crate) struct ContainerProperties {
     pub system_properties: SystemProperties,
 }
 
-impl ContainerProperties {
-    /// Creates new container properties with the given identifier and partition key.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `id` is empty.
-    #[cfg(test)]
-    pub fn new(id: impl Into<Cow<'static, str>>, partition_key: PartitionKeyDefinition) -> Self {
-        let id = id.into();
-        assert!(!id.is_empty(), "container id must not be empty");
-        Self {
-            id,
-            partition_key,
-            system_properties: SystemProperties::default(),
-        }
-    }
-}
-
 /// Partition key definition for a container.
 ///
 /// Specifies the JSON path(s) used for partitioning data across physical partitions.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
+#[serde(rename_all = "camelCase")]
 pub struct PartitionKeyDefinition {
     /// List of partition key paths (e.g., `["/tenantId"]` for single partition key).
     paths: Vec<Cow<'static, str>>,
 
-    /// Partition key version (1 for single, 2 for hierarchical).
-    #[serde(default = "default_pk_version")]
-    version: PartitionKeyVersion,
-
     /// Partition key kind (Hash is the standard).
     #[serde(default)]
     kind: PartitionKeyKind,
+
+    /// Partition key version (1 for single, 2 for hierarchical).
+    #[serde(default = "default_pk_version")]
+    version: PartitionKeyVersion,
 }
 
 impl PartitionKeyDefinition {
+    /// Creates a new [`PartitionKeyDefinition`] from the provided partition key paths.
+    ///
+    /// The [`PartitionKeyKind`] is inferred automatically:
+    /// - [`PartitionKeyKind::Hash`] for a single path
+    /// - [`PartitionKeyKind::MultiHash`] for multiple paths (hierarchical partition keys)
+    ///
+    /// The version defaults to [`PartitionKeyVersion::V2`].
+    pub fn new(paths: Vec<Cow<'static, str>>) -> Self {
+        let kind = if paths.len() > 1 {
+            PartitionKeyKind::MultiHash
+        } else {
+            PartitionKeyKind::Hash
+        };
+        Self {
+            paths,
+            kind,
+            version: PartitionKeyVersion::V2,
+        }
+    }
+
     /// Returns the partition key paths.
     pub fn paths(&self) -> &[Cow<'static, str>] {
         &self.paths
@@ -135,16 +168,62 @@ impl PartitionKeyDefinition {
         self.kind
     }
 
-    /// Creates a new partition key definition with the given paths.
-    ///
-    /// Uses version 2 and `Hash` kind by default.
-    #[cfg(test)]
-    pub(crate) fn new(paths: impl IntoIterator<Item = impl Into<Cow<'static, str>>>) -> Self {
-        Self {
-            paths: paths.into_iter().map(Into::into).collect(),
-            version: PartitionKeyVersion::V2,
-            kind: PartitionKeyKind::Hash,
-        }
+    /// Returns true if the given partition key value is complete for this definition (i.e. has values for all paths).
+    pub fn is_complete(&self, pk: &PartitionKey) -> bool {
+        pk.len() == self.paths.len()
+    }
+}
+
+/// Creates a single-path [`PartitionKeyDefinition`] from a string slice.
+///
+/// # Examples
+///
+/// ```
+/// use azure_data_cosmos_driver::models::PartitionKeyDefinition;
+///
+/// let pk_def: PartitionKeyDefinition = "/tenantId".into();
+/// assert_eq!(pk_def.paths()[0].as_ref(), "/tenantId");
+/// ```
+impl From<&str> for PartitionKeyDefinition {
+    fn from(value: &str) -> Self {
+        Self::new(vec![Cow::from(value.to_string())])
+    }
+}
+
+/// Creates a single-path [`PartitionKeyDefinition`] from a [`String`].
+impl From<String> for PartitionKeyDefinition {
+    fn from(value: String) -> Self {
+        Self::new(vec![Cow::from(value)])
+    }
+}
+
+/// Creates a two-path (hierarchical) [`PartitionKeyDefinition`] from a tuple.
+///
+/// # Examples
+///
+/// ```
+/// use azure_data_cosmos_driver::models::{PartitionKeyDefinition, PartitionKeyKind};
+///
+/// let pk_def: PartitionKeyDefinition = ("/tenantId", "/userId").into();
+/// assert_eq!(pk_def.paths().len(), 2);
+/// assert_eq!(pk_def.kind(), PartitionKeyKind::MultiHash);
+/// ```
+impl<S1: Into<String>, S2: Into<String>> From<(S1, S2)> for PartitionKeyDefinition {
+    fn from(value: (S1, S2)) -> Self {
+        Self::new(vec![Cow::from(value.0.into()), Cow::from(value.1.into())])
+    }
+}
+
+/// Creates a three-path (hierarchical) [`PartitionKeyDefinition`] from a tuple.
+impl<S1: Into<String>, S2: Into<String>, S3: Into<String>> From<(S1, S2, S3)>
+    for PartitionKeyDefinition
+{
+    fn from(value: (S1, S2, S3)) -> Self {
+        Self::new(vec![
+            Cow::from(value.0.into()),
+            Cow::from(value.1.into()),
+            Cow::from(value.2.into()),
+        ])
     }
 }
 
@@ -198,9 +277,11 @@ impl From<PartitionKeyVersion> for u32 {
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum PartitionKeyKind {
-    /// Hash partitioning (standard).
+    /// Hash partitioning (standard, single partition key path).
     #[default]
     Hash,
+    /// Multi-path (hierarchical) partition keys.
+    MultiHash,
     /// Range partitioning (legacy).
     Range,
 }
@@ -249,6 +330,21 @@ pub enum ResourceType {
 }
 
 impl ResourceType {
+    /// Returns the string representation of this resource type.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ResourceType::DatabaseAccount => "database_account",
+            ResourceType::Database => "database",
+            ResourceType::DocumentCollection => "document_collection",
+            ResourceType::Document => "document",
+            ResourceType::StoredProcedure => "stored_procedure",
+            ResourceType::Trigger => "trigger",
+            ResourceType::UserDefinedFunction => "user_defined_function",
+            ResourceType::PartitionKeyRange => "partition_key_range",
+            ResourceType::Offer => "offer",
+        }
+    }
+
     /// Returns the URL path segment for this resource type.
     pub fn path_segment(self) -> &'static str {
         match self {
@@ -289,6 +385,21 @@ impl ResourceType {
         )
     }
 
+    /// Returns true if this resource type supports partition-level failover.
+    ///
+    /// Documents are partitioned for all operations except [`OperationType::QueryPlan`],
+    /// which is a gateway-only metadata operation that is not scoped to a specific
+    /// physical partition. Stored procedures are only partitioned when the operation
+    /// is [`OperationType::Execute`] (i.e. executing the sproc against a specific
+    /// partition). CRUD operations on stored procedure metadata are not partition-scoped.
+    pub fn is_partitioned(self, operation_type: OperationType) -> bool {
+        match self {
+            ResourceType::Document => operation_type != OperationType::QueryPlan,
+            ResourceType::StoredProcedure => operation_type == OperationType::Execute,
+            _ => false,
+        }
+    }
+
     /// Returns true if this resource type requires a database reference.
     pub fn requires_database(self) -> bool {
         matches!(
@@ -301,6 +412,44 @@ impl ResourceType {
                 | ResourceType::UserDefinedFunction
                 | ResourceType::PartitionKeyRange
         )
+    }
+}
+
+impl std::fmt::Display for ResourceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for ResourceType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl std::str::FromStr for ResourceType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().replace(' ', "_").as_str() {
+            "database_account" | "account" => Ok(ResourceType::DatabaseAccount),
+            "database" | "db" => Ok(ResourceType::Database),
+            "document_collection" | "collection" | "container" => {
+                Ok(ResourceType::DocumentCollection)
+            }
+            "document" | "item" => Ok(ResourceType::Document),
+            "stored_procedure" | "sproc" => Ok(ResourceType::StoredProcedure),
+            "trigger" => Ok(ResourceType::Trigger),
+            "user_defined_function" | "udf" => Ok(ResourceType::UserDefinedFunction),
+            "partition_key_range" | "pkrange" => Ok(ResourceType::PartitionKeyRange),
+            "offer" => Ok(ResourceType::Offer),
+            _ => Err(format!(
+                "Unknown resource type: '{}'. Expected one of: database_account, database, \
+                 document_collection, document, stored_procedure, trigger, \
+                 user_defined_function, partition_key_range, offer",
+                s
+            )),
+        }
     }
 }
 
@@ -327,6 +476,14 @@ pub enum OperationType {
     /// Execute a SQL query.
     SqlQuery,
     /// Get a query plan.
+    ///
+    /// The only constructor for an operation of this kind is the private
+    /// `CosmosOperation::query_plan`
+    /// (test-only, gated on the `__internal_testing` cargo feature). It pre-populates the four mandatory headers the Gateway
+    /// requires (`x-ms-cosmos-is-query-plan-request`,
+    /// `x-ms-cosmos-supported-query-features`, `x-ms-documentdb-isquery`,
+    /// `Content-Type: application/query+json`); other code paths cannot
+    /// produce this variant.
     QueryPlan,
     /// Execute a batch operation.
     Batch,
@@ -336,9 +493,29 @@ pub enum OperationType {
     HeadFeed,
     /// Execute a stored procedure.
     Execute,
+    /// Patch an item using a server-style operation list.
+    ///
+    /// The driver implements `Patch` as a client-side Read-Modify-Write loop:
+    /// it issues a [`OperationType::Read`] for the target item, applies the
+    /// requested patch operations to the local document, and then issues an
+    /// ETag-guarded [`OperationType::Replace`]. PATCH itself is therefore
+    /// never sent on the wire; the variant is a virtual operation type the
+    /// driver dispatches to a dedicated handler.
+    Patch,
 }
 
 impl OperationType {
+    /// Returns true if this operation type is a feed operation that returns multiple results.
+    pub fn is_feed(self) -> bool {
+        matches!(
+            self,
+            OperationType::ReadFeed
+                | OperationType::HeadFeed
+                | OperationType::Query
+                | OperationType::SqlQuery
+        )
+    }
+
     /// Returns the HTTP method for this operation type.
     pub fn http_method(self) -> azure_core::http::Method {
         use azure_core::http::Method;
@@ -355,6 +532,11 @@ impl OperationType {
             OperationType::ReadFeed => Method::Get,
             OperationType::Replace => Method::Put,
             OperationType::Head | OperationType::HeadFeed => Method::Head,
+            // `Patch` is a virtual operation; the driver decomposes it into a
+            // Read followed by a Replace, so it never produces wire requests
+            // of its own. Reporting `Patch` keeps `http_method` total for
+            // diagnostics/logging without affecting the transport layer.
+            OperationType::Patch => Method::Patch,
         }
     }
 
@@ -387,6 +569,38 @@ impl OperationType {
                 | OperationType::Delete
         )
     }
+
+    /// Returns the string representation of this operation type.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            OperationType::Create => "create",
+            OperationType::Read => "read",
+            OperationType::ReadFeed => "read_feed",
+            OperationType::Replace => "replace",
+            OperationType::Delete => "delete",
+            OperationType::Upsert => "upsert",
+            OperationType::Query => "query",
+            OperationType::SqlQuery => "sql_query",
+            OperationType::QueryPlan => "query_plan",
+            OperationType::Batch => "batch",
+            OperationType::Head => "head",
+            OperationType::HeadFeed => "head_feed",
+            OperationType::Execute => "execute",
+            OperationType::Patch => "patch",
+        }
+    }
+}
+
+impl std::fmt::Display for OperationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl AsRef<str> for OperationType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 
 /// A session token for maintaining session consistency.
@@ -406,6 +620,47 @@ impl SessionToken {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    /// Merges this session token with another, returning the combined result.
+    ///
+    /// Both tokens may be compound (comma-separated segments). Segments with
+    /// the same partition key range ID are merged using version-aware logic
+    /// (higher version wins, then per-region LSN max). Segments with distinct
+    /// IDs are kept as separate entries in the resulting compound token.
+    ///
+    /// This is the primary API for combining session tokens without exposing
+    /// internal token format details.
+    pub fn merge(&self, other: &Self) -> azure_core::Result<Self> {
+        use std::collections::HashMap;
+
+        let mut pk_order: Vec<String> = Vec::new();
+        let mut pk_map: HashMap<String, SessionTokenSegment> = HashMap::new();
+
+        for raw in self.as_str().split(',').chain(other.as_str().split(',')) {
+            let trimmed = raw.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            let seg: SessionTokenSegment = trimmed.parse()?;
+            let pk_id = seg.pk_range_id().to_owned();
+            match pk_map.get_mut(&pk_id) {
+                Some(existing) => {
+                    existing.merge_value(&seg);
+                }
+                None => {
+                    pk_order.push(pk_id.clone());
+                    pk_map.insert(pk_id, seg);
+                }
+            }
+        }
+
+        let merged: Vec<String> = pk_order
+            .iter()
+            .filter_map(|id| pk_map.get(id).map(|seg| seg.to_string()))
+            .collect();
+
+        Ok(Self::new(merged.join(",")))
+    }
 }
 
 impl<T: Into<Cow<'static, str>>> From<T> for SessionToken {
@@ -414,42 +669,15 @@ impl<T: Into<Cow<'static, str>>> From<T> for SessionToken {
     }
 }
 
+impl AsRef<str> for SessionToken {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
 impl std::fmt::Display for SessionToken {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
-    }
-}
-
-/// Represents a trigger to be invoked before or after an operation.
-///
-/// Triggers are server-side scripts that can be automatically invoked
-/// during create, update, and delete operations on items.
-///
-/// This type is serialized into request headers to specify which trigger to invoke.
-/// For resource references to trigger definitions, see the resource reference types.
-#[non_exhaustive]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct TriggerInvocation {
-    /// The name/id of the trigger to invoke.
-    pub name: Cow<'static, str>,
-}
-
-impl TriggerInvocation {
-    /// Creates a new trigger invocation with the given name.
-    pub fn new(name: impl Into<Cow<'static, str>>) -> Self {
-        Self { name: name.into() }
-    }
-}
-
-impl From<&'static str> for TriggerInvocation {
-    fn from(name: &'static str) -> Self {
-        Self::new(name)
-    }
-}
-
-impl From<String> for TriggerInvocation {
-    fn from(name: String) -> Self {
-        Self::new(name)
     }
 }
 
@@ -487,6 +715,12 @@ impl From<String> for ThroughputControlGroupName {
 impl From<Cow<'static, str>> for ThroughputControlGroupName {
     fn from(name: Cow<'static, str>) -> Self {
         Self::new(name)
+    }
+}
+
+impl AsRef<str> for ThroughputControlGroupName {
+    fn as_ref(&self) -> &str {
+        self.as_str()
     }
 }
 
@@ -544,5 +778,108 @@ mod tests {
         assert_eq!(parsed.paths()[0].as_ref(), "/pk");
         assert_eq!(parsed.version(), PartitionKeyVersion::V2);
         assert_eq!(parsed.kind(), PartitionKeyKind::Hash);
+    }
+
+    #[test]
+    fn partition_key_definition_new_single_path() {
+        let pk_def = PartitionKeyDefinition::new(vec![Cow::from("/tenantId")]);
+        assert_eq!(pk_def.paths().len(), 1);
+        assert_eq!(pk_def.paths()[0].as_ref(), "/tenantId");
+        assert_eq!(pk_def.kind(), PartitionKeyKind::Hash);
+        assert_eq!(pk_def.version(), PartitionKeyVersion::V2);
+    }
+
+    #[test]
+    fn partition_key_definition_new_multi_path() {
+        let pk_def =
+            PartitionKeyDefinition::new(vec![Cow::from("/tenantId"), Cow::from("/userId")]);
+        assert_eq!(pk_def.paths().len(), 2);
+        assert_eq!(pk_def.kind(), PartitionKeyKind::MultiHash);
+    }
+
+    #[test]
+    fn partition_key_definition_from_str() {
+        let pk_def: PartitionKeyDefinition = "/pk".into();
+        assert_eq!(pk_def.paths().len(), 1);
+        assert_eq!(pk_def.paths()[0].as_ref(), "/pk");
+        assert_eq!(pk_def.kind(), PartitionKeyKind::Hash);
+    }
+
+    #[test]
+    fn partition_key_definition_from_string() {
+        let pk_def: PartitionKeyDefinition = String::from("/pk").into();
+        assert_eq!(pk_def.paths().len(), 1);
+        assert_eq!(pk_def.kind(), PartitionKeyKind::Hash);
+    }
+
+    #[test]
+    fn partition_key_definition_from_pair() {
+        let pk_def: PartitionKeyDefinition = ("/a", "/b").into();
+        assert_eq!(pk_def.paths().len(), 2);
+        assert_eq!(pk_def.kind(), PartitionKeyKind::MultiHash);
+    }
+
+    #[test]
+    fn partition_key_definition_from_triple() {
+        let pk_def: PartitionKeyDefinition = ("/a", "/b", "/c").into();
+        assert_eq!(pk_def.paths().len(), 3);
+        assert_eq!(pk_def.kind(), PartitionKeyKind::MultiHash);
+    }
+
+    #[test]
+    fn partition_key_kind_multihash_serde() {
+        let json = r#"{"paths":["/a","/b"],"kind":"MultiHash","version":2}"#;
+        let parsed: PartitionKeyDefinition = serde_json::from_str(json).unwrap();
+        assert_eq!(parsed.kind(), PartitionKeyKind::MultiHash);
+        assert_eq!(parsed.paths().len(), 2);
+
+        let serialized = serde_json::to_string(&parsed).unwrap();
+        assert_eq!(serialized, json);
+    }
+
+    #[test]
+    fn partition_key_definition_round_trip_serde() {
+        let pk_def: PartitionKeyDefinition = "/partitionKey".into();
+        let json = serde_json::to_string(&pk_def).unwrap();
+        assert_eq!(
+            json,
+            r#"{"paths":["/partitionKey"],"kind":"Hash","version":2}"#
+        );
+        let parsed: PartitionKeyDefinition = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, pk_def);
+    }
+
+    #[test]
+    fn session_token_merge_same_pk_range() {
+        let a = SessionToken::new("0:1#100#3=50");
+        let b = SessionToken::new("0:1#200#3=60");
+        let merged = a.merge(&b).unwrap();
+        assert_eq!(merged.as_str(), "0:1#200#3=60");
+    }
+
+    #[test]
+    fn session_token_merge_different_pk_ranges() {
+        let a = SessionToken::new("0:1#100#3=50");
+        let b = SessionToken::new("1:1#200#3=60");
+        let merged = a.merge(&b).unwrap();
+        assert_eq!(merged.as_str(), "0:1#100#3=50,1:1#200#3=60");
+    }
+
+    #[test]
+    fn session_token_merge_compound() {
+        let a = SessionToken::new("0:1#100#3=50,1:1#200#3=60");
+        let b = SessionToken::new("0:1#150#3=55,2:1#300#3=70");
+        let merged = a.merge(&b).unwrap();
+        // pk 0: merged (max), pk 1: kept, pk 2: kept
+        assert_eq!(merged.as_str(), "0:1#150#3=55,1:1#200#3=60,2:1#300#3=70");
+    }
+
+    #[test]
+    fn session_token_merge_cross_version() {
+        let a = SessionToken::new("0:1#500#1=100");
+        let b = SessionToken::new("0:2#200#1=50");
+        let merged = a.merge(&b).unwrap();
+        // Higher version (2) wins for globalLSN; region 1: max(100, 50) = 100
+        assert_eq!(merged.as_str(), "0:2#200#1=100");
     }
 }

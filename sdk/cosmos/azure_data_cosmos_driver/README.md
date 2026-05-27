@@ -12,9 +12,11 @@ Core implementation layer for Azure Cosmos DB, providing transport, routing, and
 
 ## Support Model
 
-**Community/GitHub Support Only** - This crate has a public API and accepts contributions, but does **not** receive 24x7 Microsoft Support.
+**Applications which use an SDK built on the driver** (e.g., `azure_data_cosmos`) are **fully covered** by Microsoft Support SLAs,
+even when issues are ultimately traced to the driver layer. The driver is an implementation detail of the SDK and is supported as part of the overall SDK support.
 
-For production Rust applications requiring full Microsoft support, use [`azure_data_cosmos`](https://docs.rs/azure_data_cosmos) instead.
+The Cosmos DB Driver is an internal component shared across several SDKs and is not intended for direct use by most developers.
+Applications which use the driver **directly** are **not covered by Microsoft Support SLAs** and receive only community support through GitHub issues and pull requests.
 
 ## Key Features
 
@@ -34,27 +36,12 @@ This crate follows **strict semantic versioning** but can move to new major vers
 
 ## Architecture
 
-```text
-┌─────────────────────────────────────┐
-│  Language-Specific SDKs             │
-│  (azure_data_cosmos, Java, .NET)    │
-│  - Type-safe APIs                   │
-│  - Native serialization             │
-└───────────────┬─────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────┐
-│  azure_data_cosmos_driver           │
-│  - Transport & routing              │
-│  - Protocol handling                │
-│  - Retry logic                      │
-│  - Schema-agnostic (raw bytes)      │
-└───────────────┬─────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────┐
-│  Azure Cosmos DB Service            │
-└─────────────────────────────────────┘
+```mermaid
+flowchart TD
+    SDK["Language-Specific SDKs<br/>(azure_data_cosmos, Java, .NET)<br/>• Type-safe APIs<br/>• Native serialization"]
+    Driver["azure_data_cosmos_driver<br/>• Transport &amp; routing<br/>• Protocol handling<br/>• Retry logic<br/>• Schema-agnostic (raw bytes)"]
+    Service["Azure Cosmos DB Service"]
+    SDK --> Driver --> Service
 ```
 
 ## Usage

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::http::Transport;
-use azure_security_keyvault_certificates::{
+use azure_core_examples::certificates::{
     models::CreateCertificateParameters, CertificateClient, CertificateClientOptions,
 };
 use example::setup;
@@ -112,7 +112,8 @@ mod example {
             AsyncRawResponse, HttpClient, Method, StatusCode,
         },
     };
-    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use azure_core_examples::identity::MockCredential;
+    use azure_core_test::http::MockHttpClient;
     use futures::FutureExt as _;
     use std::sync::{
         atomic::{AtomicUsize, Ordering},

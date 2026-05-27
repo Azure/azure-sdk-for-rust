@@ -6,6 +6,8 @@
 use crate::options::Region;
 use std::time::Duration;
 
+const MIN_END_TO_END_OPERATION_TIMEOUT: Duration = Duration::from_secs(1);
+
 /// Controls whether the response body is returned for write operations.
 ///
 /// When disabled, reduces networking and CPU load by not sending the payload
@@ -35,6 +37,33 @@ impl From<ContentResponseOnWrite> for bool {
     }
 }
 
+impl std::str::FromStr for ContentResponseOnWrite {
+    type Err = azure_core::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "true" | "enabled" => Ok(Self::Enabled),
+            "false" | "disabled" => Ok(Self::Disabled),
+            _ => Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                format!(
+                    "Unknown content response on write value: '{}'. Expected 'true'/'false' or 'enabled'/'disabled'",
+                    s
+                ),
+            )),
+        }
+    }
+}
+
+impl std::fmt::Display for ContentResponseOnWrite {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Enabled => f.write_str("Enabled"),
+            Self::Disabled => f.write_str("Disabled"),
+        }
+    }
+}
+
 /// Configuration for end-to-end operation latency policy.
 ///
 /// Specifies the maximum time an operation can take, including all retries.
@@ -47,8 +76,13 @@ pub struct EndToEndOperationLatencyPolicy {
 
 impl EndToEndOperationLatencyPolicy {
     /// Creates a new end-to-end operation latency policy with the given timeout.
+    ///
+    /// Timeouts below 1 second are clamped to 1 second at the public API boundary
+    /// to avoid unrealistic operation-level timeout settings.
     pub fn new(timeout: Duration) -> Self {
-        Self { timeout }
+        Self {
+            timeout: timeout.max(MIN_END_TO_END_OPERATION_TIMEOUT),
+        }
     }
 
     /// Returns the maximum end-to-end timeout for the operation.
@@ -101,62 +135,6 @@ impl<T: Into<Region>> FromIterator<T> for ExcludedRegions {
     }
 }
 
-/// Controls whether JavaScript stored procedure logging is enabled.
-///
-/// When enabled, script logs from stored procedures are included in the response.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum ScriptLoggingEnabled {
-    /// Script logging is enabled.
-    Enabled,
-    /// Script logging is disabled.
-    #[default]
-    Disabled,
-}
-
-impl From<bool> for ScriptLoggingEnabled {
-    fn from(value: bool) -> Self {
-        if value {
-            Self::Enabled
-        } else {
-            Self::Disabled
-        }
-    }
-}
-
-impl From<ScriptLoggingEnabled> for bool {
-    fn from(value: ScriptLoggingEnabled) -> Self {
-        matches!(value, ScriptLoggingEnabled::Enabled)
-    }
-}
-
-/// Controls whether quota information is included in responses.
-///
-/// When enabled, container quota stats are returned in the response headers.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum QuotaInfoEnabled {
-    /// Quota info is enabled.
-    Enabled,
-    /// Quota info is disabled.
-    #[default]
-    Disabled,
-}
-
-impl From<bool> for QuotaInfoEnabled {
-    fn from(value: bool) -> Self {
-        if value {
-            Self::Enabled
-        } else {
-            Self::Disabled
-        }
-    }
-}
-
-impl From<QuotaInfoEnabled> for bool {
-    fn from(value: QuotaInfoEnabled) -> Self {
-        matches!(value, QuotaInfoEnabled::Enabled)
-    }
-}
-
 /// Controls whether TLS server certificate validation is performed for Cosmos DB emulator connections.
 ///
 /// By default, certificate validation is enabled. Disabling it is **dangerous** and should only be
@@ -196,5 +174,24 @@ impl From<bool> for EmulatorServerCertValidation {
 impl From<EmulatorServerCertValidation> for bool {
     fn from(value: EmulatorServerCertValidation) -> Self {
         matches!(value, EmulatorServerCertValidation::DangerousDisabled)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use super::EndToEndOperationLatencyPolicy;
+
+    #[test]
+    fn end_to_end_latency_policy_clamps_timeout_below_one_second() {
+        let policy = EndToEndOperationLatencyPolicy::new(Duration::from_millis(250));
+        assert_eq!(policy.timeout(), Duration::from_secs(1));
+    }
+
+    #[test]
+    fn end_to_end_latency_policy_keeps_timeout_at_or_above_one_second() {
+        let policy = EndToEndOperationLatencyPolicy::new(Duration::from_secs(2));
+        assert_eq!(policy.timeout(), Duration::from_secs(2));
     }
 }

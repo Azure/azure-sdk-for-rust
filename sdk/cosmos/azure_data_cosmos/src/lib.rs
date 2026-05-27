@@ -12,11 +12,8 @@ pub mod constants;
 mod credential;
 mod feed;
 pub mod options;
-mod partition_key;
-pub(crate) mod pipeline;
 pub mod query;
-pub(crate) mod resource_context;
-pub(crate) mod utils;
+mod session_helpers;
 
 pub mod models;
 pub mod transactional_batch;
@@ -28,29 +25,31 @@ pub use clients::CosmosClientBuilder;
 
 pub use account_endpoint::CosmosAccountEndpoint;
 pub use account_reference::CosmosAccountReference;
+pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
-pub use models::CosmosResponse;
+pub use models::{
+    BatchResponse, CosmosStatus, DiagnosticsContext, IncrValue, ItemResponse, PatchOp, PatchSpec,
+    ResourceResponse, ResponseBody, ResponseHeaders,
+};
 pub use options::*;
-pub use partition_key::*;
 pub use query::Query;
+pub use routing_strategy::RoutingStrategy;
 pub use transactional_batch::{
     BatchDeleteOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
     TransactionalBatch, TransactionalBatchOperationResult, TransactionalBatchResponse,
 };
 
-pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator};
-mod background_task_manager;
-mod cosmos_request;
+// Driver re-exports
+#[doc(inline)]
+pub use azure_data_cosmos_driver::models::{
+    ContinuationToken, EffectivePartitionKey, FeedRange, PartitionKey, PartitionKeyValue,
+};
+
+pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
+mod driver_bridge;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
-mod handler;
-mod hash;
-mod murmur_hash;
-mod operation_context;
 mod region_proximity;
 pub mod regions;
-mod request_context;
-mod retry_policies;
-mod routing;
-mod serde;
+mod routing_strategy;
