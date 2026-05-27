@@ -62,8 +62,8 @@ pub use backtrace::__bench as backtrace_bench;
 /// All construction goes through [`CosmosErrorBuilder`], which guarantees
 /// the following relationships at `build()` time:
 ///
-/// * [`status()`](Self::status) and [`kind()`](Self::kind) always reflect
-///   the current [`CosmosStatus`].
+/// * [`status()`](Self::status) always reflects the current
+///   [`CosmosStatus`].
 /// * When [`response()`](Self::response) is `Some` (wire-response errors),
 ///   the builder enforces *"CosmosResponse wins"*:
 ///   - `status() == response().status()`
@@ -77,11 +77,10 @@ pub use backtrace::__bench as backtrace_bench;
 ///   attached via [`CosmosErrorBuilder::with_diagnostics`], or `None` if
 ///   none was attached.
 ///
-/// These invariants imply the chain
-/// `kind() == status().kind() == response().status().kind() ==
-/// diagnostics().status().kind()` whenever each side is defined, since
-/// [`CosmosResponse`] itself guarantees
-/// `response.status() == response.diagnostics().status()`.
+/// These invariants imply
+/// `status() == response().status() == diagnostics().status()`
+/// whenever each side is defined, since [`CosmosResponse`] itself
+/// guarantees `response.status() == response.diagnostics().status()`.
 #[derive(Clone)]
 pub struct CosmosError {
     inner: Arc<CosmosErrorInner>,
@@ -89,15 +88,15 @@ pub struct CosmosError {
 
 #[derive(Clone)]
 struct CosmosErrorInner {
-    /// Cosmos status (HTTP status + sub-status + categorical
-    /// Always present, shared across all
+    /// Cosmos status (HTTP status + sub-status). Always present, shared
+    /// across all
     /// [`ErrorContext`] variants — for the `Wire` variant this is
     /// reconciled to match `response.status()` at `build()` time.
     status: CosmosStatus,
     /// Discriminates wire-response errors (carrying a full
     /// [`CosmosResponse`]) from synthetic errors (carrying at most a
     /// standalone [`DiagnosticsContext`]) and the internal
-    /// pre-diagnostics-finalization [`ErrorContext::WirePending`] state.
+    /// pre-diagnostics-finalization `ErrorContext::WirePending` state.
     /// Modelled as an enum so the storage rules are enforced by the type
     /// system rather than by runtime convention.
     context: ErrorContext,
@@ -207,8 +206,8 @@ impl CosmosError {
     }
 
     /// Returns `true` if this error originated from a wire response from
-    /// the service (either fully finalized [`Wire`](ErrorContext::Wire) or
-    /// the pre-finalization [`WirePending`](ErrorContext::WirePending)
+    /// the service (either fully finalized `Wire` or
+    /// the pre-finalization `WirePending`
     /// staging state). Returns `false` for purely synthetic errors
     /// (transport failures, client validation, configuration, …) which
     /// have no associated server response.
@@ -297,7 +296,7 @@ impl CosmosError {
 
     /// `pub(crate)`: returns the staged wire payload (body + parsed
     /// headers) for a `WirePending` error, or the wire payload of an
-    /// already-assembled [`Wire`](ErrorContext::Wire) error. Returns
+    /// already-assembled `Wire` error. Returns
     /// `None` for `Synthetic` errors. Used by internal pipeline code
     /// that needs to inspect the wire body / headers regardless of
     /// whether diagnostics finalization has happened yet.
@@ -496,7 +495,7 @@ impl CosmosError {
 /// Fluent builder for [`CosmosError`]. The only way to construct or
 /// re-decorate a Cosmos [`CosmosError`].
 ///
-/// Obtain one via [`CosmosError::builder(kind)`](CosmosError::builder) to
+/// Obtain one via [`CosmosError::builder()`](CosmosError::builder) to
 /// start fresh, or [`CosmosErrorBuilder::from_error`] to patch an existing
 /// error (add context, swap status, attach diagnostics, etc.). Finalize
 /// with [`build()`](Self::build).
@@ -514,13 +513,13 @@ impl CosmosError {
 ///   [`with_diagnostics`](Self::with_diagnostics) in the same chain is
 ///   silently discarded.
 ///
-/// When the builder carries [`WirePending`](ErrorContext::WirePending)
-/// staging (via [`with_response_parts`](Self::with_response_parts), an
+/// When the builder carries `WirePending`
+/// staging (via `with_response_parts`, an
 /// internal-only setter) and a [`with_diagnostics`](Self::with_diagnostics)
 /// is supplied — typically via the operation pipeline's
 /// `from_error(err).with_diagnostics(d).build()` finalization — the
 /// builder **promotes** the error to a fully assembled
-/// [`Wire`](ErrorContext::Wire) variant by constructing a
+/// `Wire` variant by constructing a
 /// [`CosmosResponse`] from the staged body + headers + status + the
 /// supplied diagnostics.
 ///
@@ -554,13 +553,13 @@ pub struct CosmosErrorBuilder {
     status: Option<CosmosStatus>,
     /// Wire-level response captured by the pipeline. When set, its status
     /// and diagnostics become authoritative; the builder produces
-    /// [`ErrorContext::Wire`].
+    /// `ErrorContext::Wire`.
     response: Option<CosmosResponse>,
     /// Internal-only: staged wire payload captured before the operation's
     /// diagnostics builder was finalized. When set without `response`
     /// **and without** `diagnostics`, the builder produces
-    /// [`ErrorContext::WirePending`]. When set together with
-    /// `diagnostics`, the builder **promotes** to [`ErrorContext::Wire`]
+    /// `ErrorContext::WirePending`. When set together with
+    /// `diagnostics`, the builder **promotes** to `ErrorContext::Wire`
     /// by assembling a [`CosmosResponse`] from the staged parts + the
     /// supplied diagnostics + the resolved status.
     response_parts: Option<Box<CosmosResponsePayload>>,
@@ -593,7 +592,7 @@ impl CosmosErrorBuilder {
     /// are carried forward from `err`. Useful for re-decorating an error
     /// returned from a deeper layer — attaching operation context,
     /// swapping status, or — most importantly — finalizing a
-    /// [`WirePending`](ErrorContext::WirePending) error into a `Wire` one
+    /// `WirePending` error into a `Wire` one
     /// via [`with_diagnostics`](Self::with_diagnostics).
     pub fn from_error(err: CosmosError) -> Self {
         Self {
@@ -665,10 +664,9 @@ impl CosmosErrorBuilder {
     ///
     /// * **Ignored if [`with_response`](Self::with_response) was also
     ///   called** — diagnostics then flow through `response.diagnostics()`.
-    /// * **Promotes a [`WirePending`](ErrorContext::WirePending) base
-    ///   error to a [`Wire`](ErrorContext::Wire) one** when chained via
-    ///   [`from_error`](Self::from_error): the staged body + headers
-    ///   carried by the base error are assembled with the supplied
+    /// * **Promotes a `WirePending` base error to a `Wire` one** when
+    ///   chained via [`from_error`](Self::from_error): the staged body +
+    ///   headers carried by the base error are assembled with the supplied
     ///   diagnostics and the resolved status into a [`CosmosResponse`].
     ///   This is the operation pipeline's per-operation finalization
     ///   path.
@@ -692,11 +690,11 @@ impl CosmosErrorBuilder {
     /// operation's `DiagnosticsContextBuilder` was finalized. At
     /// [`build()`](Self::build) the resulting error becomes either:
     ///
-    /// * [`WirePending`](ErrorContext::WirePending) when no
+    /// * `WirePending` when no
     ///   [`with_diagnostics`](Self::with_diagnostics) was supplied — the
     ///   per-attempt state the operation pipeline carries between
     ///   retries; or
-    /// * [`Wire`](ErrorContext::Wire) when diagnostics is supplied — the
+    /// * `Wire` when diagnostics is supplied — the
     ///   per-attempt staging is promoted by assembling a
     ///   [`CosmosResponse`] from the staged parts + the resolved status +
     ///   the supplied diagnostics. This is the finalization performed by
