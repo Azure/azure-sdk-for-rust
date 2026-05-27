@@ -20,7 +20,7 @@ normal pipeline stages run.
 | Field                                       | Source                                       | Notes                                                            |
 | ------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------- |
 | `CosmosOperation` with `OperationType::Patch` | `CosmosOperation::patch_item(ItemReference)` | Required.                                                        |
-| Body                                        | `with_body(serde_json::to_vec(&PatchDocument))`  | Required. The handler re-parses it as `PatchDocument`.               |
+| Body                                        | `with_body(serde_json::to_vec(&PatchInstructions))`  | Required. The handler re-parses it as `PatchInstructions`.               |
 | Partition key                               | `with_partition_key(...)`                    | Required. Used to issue the internal Read.                       |
 | `patch_max_attempts`                        | `with_patch_max_attempts(NonZeroU8)`         | Optional. Defaults to `DEFAULT_PATCH_MAX_ATTEMPTS` (currently 5). |
 
@@ -224,7 +224,7 @@ as a JSON number without precision loss.
 - The handler owns the `If-Match` precondition on the internal Replace.
   A caller-set `Precondition` on the outer PATCH `CosmosOperation` is
   rejected by the pre-flight guard before any sub-operation is dispatched.
-  Likewise, the PATCH wire format (`PatchDocument`) has no `condition` field,
+  Likewise, the PATCH wire format (`PatchInstructions`) has no `condition` field,
   so a SQL filter predicate (peer SDKs' `FilterPredicate`) cannot be
   attached to a PATCH request in this preview.
 - 412 stays non-retryable in the global retry-evaluation policy. PATCH's

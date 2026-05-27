@@ -42,7 +42,7 @@ use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::driver::CosmosDriver;
 use crate::models::{
     cosmos_headers::response_header_names, CosmosOperation, CosmosResponse, PartitionKeyKind,
-    PatchDocument, PatchOperation, Precondition, SessionToken,
+    PatchInstructions, PatchOperation, Precondition, SessionToken,
 };
 use crate::options::OperationOptions;
 use async_trait::async_trait;
@@ -136,11 +136,11 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // -- 2. Parse and validate the patch spec --
     let body = operation
         .body()
-        .ok_or_else(|| missing_body_error("PATCH operation requires a PatchDocument body"))?;
-    let spec: PatchDocument = serde_json::from_slice(body).map_err(|err| {
+        .ok_or_else(|| missing_body_error("PATCH operation requires a PatchInstructions body"))?;
+    let spec: PatchInstructions = serde_json::from_slice(body).map_err(|err| {
         azure_core::Error::with_message(
             azure_core::error::ErrorKind::DataConversion,
-            format!("failed to parse PATCH body as PatchDocument: {err}"),
+            format!("failed to parse PATCH body as PatchInstructions: {err}"),
         )
     })?;
 
@@ -558,7 +558,7 @@ fn validate_partition_key_paths(
         // would silently delete the partition key field.
         let dest = op.path();
         let from = match op {
-            PatchOperation::MoveOp { from, .. } => Some(from.as_str()),
+            PatchOperation::Move { from, .. } => Some(from.as_str()),
             _ => None,
         };
         for path in std::iter::once(dest).chain(from) {
@@ -821,7 +821,7 @@ mod tests {
         // preflight guard must reject it just like a move TO a PK path.
         // Reuses the `/pk` flat PK fixture.
         let item_ref = test_item_ref();
-        let ops = vec![PatchOperation::move_op("/pk", "/somewhere_else")];
+        let ops = vec![PatchOperation::move_value("/pk", "/somewhere_else")];
 
         let err = validate_partition_key_paths(&ops, &item_ref)
             .expect_err("MoveOp from /pk on a /pk PK must be rejected");
@@ -857,7 +857,7 @@ mod tests {
         let item_ref =
             ItemReference::from_name(&container, PartitionKey::from(("t1", "r1", "u1")), "doc1");
 
-        let ops = vec![PatchOperation::move_op("/tenant", "/somewhere_else")];
+        let ops = vec![PatchOperation::move_value("/tenant", "/somewhere_else")];
 
         let err = validate_partition_key_paths(&ops, &item_ref)
             .expect_err("MoveOp from /tenant on a hierarchical PK must be rejected");
@@ -1158,7 +1158,7 @@ mod tests {
     }
 
     fn patch_op_for(item_ref: ItemReference, ops: Vec<PatchOperation>) -> CosmosOperation {
-        let body = serde_json::to_vec(&PatchDocument::new(ops)).unwrap();
+        let body = serde_json::to_vec(&PatchInstructions::from(ops)).unwrap();
         CosmosOperation::patch_item(item_ref).with_body(body)
     }
 

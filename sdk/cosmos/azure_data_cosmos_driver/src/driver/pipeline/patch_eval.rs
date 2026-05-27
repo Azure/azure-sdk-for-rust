@@ -138,7 +138,7 @@ fn apply_one(doc: &mut Value, op: &PatchOperation) -> Result<(), PatchEvalError>
         PatchOperation::Replace { path, value } => replace(doc, path, value.clone()),
         PatchOperation::Remove { path } => remove(doc, path).map(|_| ()),
         PatchOperation::Increment { path, value } => increment(doc, path, *value),
-        PatchOperation::MoveOp { from, path } => move_op(doc, from, path),
+        PatchOperation::Move { from, path } => move_value(doc, from, path),
     }
 }
 
@@ -504,7 +504,7 @@ fn increment(doc: &mut Value, path: &str, delta: CosmosNumber) -> Result<(), Pat
     Ok(())
 }
 
-fn move_op(doc: &mut Value, from: &str, to: &str) -> Result<(), PatchEvalError> {
+fn move_value(doc: &mut Value, from: &str, to: &str) -> Result<(), PatchEvalError> {
     if from == to {
         return Ok(());
     }
@@ -683,21 +683,21 @@ mod tests {
     #[test]
     fn move_renames_field() {
         let doc = json!({"a": 1});
-        let out = apply(doc, &[PatchOperation::move_op("/a", "/b")]).unwrap();
+        let out = apply(doc, &[PatchOperation::move_value("/a", "/b")]).unwrap();
         assert_eq!(out, json!({"b": 1}));
     }
 
     #[test]
     fn move_to_same_path_is_noop() {
         let doc = json!({"a": 1});
-        let out = apply(doc, &[PatchOperation::move_op("/a", "/a")]).unwrap();
+        let out = apply(doc, &[PatchOperation::move_value("/a", "/a")]).unwrap();
         assert_eq!(out, json!({"a": 1}));
     }
 
     #[test]
     fn move_into_own_descendant_fails() {
         let doc = json!({"a": {"x": 1}});
-        let err = apply(doc, &[PatchOperation::move_op("/a", "/a/inner")]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::move_value("/a", "/a/inner")]).unwrap_err();
         assert!(matches!(err, PatchEvalError::InvalidMove(_)), "{err}");
     }
 
@@ -709,7 +709,7 @@ mod tests {
         // `/a~1b` even though the byte-prefix check is also correct in this
         // specific case.
         let doc = json!({"a/b": {"x": 1}});
-        let err = apply(doc, &[PatchOperation::move_op("/a~1b", "/a~1b/c")]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::move_value("/a~1b", "/a~1b/c")]).unwrap_err();
         assert!(matches!(err, PatchEvalError::InvalidMove(_)), "{err}");
     }
 
@@ -719,7 +719,7 @@ mod tests {
         // without a `/` guard; token-level compare says no). The move must
         // proceed.
         let doc = json!({"a": 1, "ab": {"x": 2}});
-        let out = apply(doc, &[PatchOperation::move_op("/a", "/ab/y")]).unwrap();
+        let out = apply(doc, &[PatchOperation::move_value("/a", "/ab/y")]).unwrap();
         assert_eq!(out, json!({"ab": {"x": 2, "y": 1}}));
     }
 
@@ -733,13 +733,13 @@ mod tests {
         let mut d = doc;
         let err = apply_patch_ops(
             &mut d,
-            &[PatchOperation::move_op("/a", "/missing/parent/x")],
+            &[PatchOperation::move_value("/a", "/missing/parent/x")],
         )
         .unwrap_err();
         assert!(matches!(err, PatchEvalError::MissingParent(_)), "{err}");
         assert_eq!(
             d, original,
-            "move_op must be atomic: a failed move must leave the document unchanged"
+            "move_value must be atomic: a failed move must leave the document unchanged"
         );
     }
 
@@ -817,7 +817,7 @@ mod tests {
             doc,
             &[
                 PatchOperation::increment("/a", 1i64),
-                PatchOperation::move_op("/a", "/b"),
+                PatchOperation::move_value("/a", "/b"),
                 PatchOperation::increment("/b", 1i64),
             ],
         )

@@ -13,7 +13,7 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
-use azure_data_cosmos::{PatchDocument, PatchItemOptions, PatchOperation};
+use azure_data_cosmos::{PatchInstructions, PatchItemOptions, PatchOperation};
 use framework::TestClient;
 #[cfg(feature = "fault_injection")]
 use framework::TestOptions;
@@ -49,7 +49,7 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
 /// SDK-level happy path through [`ContainerClient::patch_item`].
 ///
 /// Exercises the public `azure_data_cosmos` API end-to-end: it creates an
-/// item, issues a [`PatchDocument`] mixing `Set`, `Increment`, and `Replace`,
+/// item, issues a [`PatchInstructions`] mixing `Set`, `Increment`, and `Replace`,
 /// then verifies that:
 ///
 /// * the response is HTTP 200 with diagnostics populated,
@@ -85,7 +85,7 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
                 .create_item(&pk, &item_id, &initial, None)
                 .await?;
 
-            let patch = PatchDocument::new(vec![
+            let patch = PatchInstructions::from(vec![
                 PatchOperation::set("/deleted", serde_json::json!(true)),
                 PatchOperation::increment("/visits", 3i64),
                 PatchOperation::replace("/display_name", serde_json::json!("after")),
@@ -151,7 +151,7 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
             let missing_id = format!("missing-{unique_id}");
             let pk = format!("pk-{unique_id}");
 
-            let patch = PatchDocument::new(vec![PatchOperation::set(
+            let patch = PatchInstructions::from(vec![PatchOperation::set(
                 "/deleted",
                 serde_json::json!(true),
             )]);
@@ -212,7 +212,7 @@ pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error
 
             let options =
                 PatchItemOptions::default().with_max_attempts(std::num::NonZeroU8::new(1).unwrap());
-            let patch = PatchDocument::new(vec![PatchOperation::increment("/visits", 1i64)]);
+            let patch = PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]);
             let response: ItemResponse = container_client
                 .patch_item(&pk, &item_id, patch, Some(options))
                 .await?;
@@ -328,7 +328,7 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
             let (regular, fault_container, item_id, pk) =
                 setup_fault_injected_container(run_context, db_client, &initial).await?;
 
-            let patch = PatchDocument::new(vec![PatchOperation::increment("/visits", 1i64)]);
+            let patch = PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]);
             let response: ItemResponse = fault_container
                 .patch_item(&pk, &item_id, patch, None)
                 .await?;
@@ -397,7 +397,7 @@ pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<
 
             let max_attempts = std::num::NonZeroU8::new(2).unwrap();
             let patch_options = PatchItemOptions::default().with_max_attempts(max_attempts);
-            let patch = PatchDocument::new(vec![PatchOperation::increment("/visits", 1i64)]);
+            let patch = PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]);
 
             let err = fault_container
                 .patch_item(&pk, &item_id, patch, Some(patch_options))

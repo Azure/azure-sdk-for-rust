@@ -62,7 +62,7 @@ pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
 pub use feed_range::FeedRange;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
-pub use patch::{CosmosNumber, PatchDocument, PatchOperation};
+pub use patch::{CosmosNumber, PatchInstructions, PatchOperation};
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
 pub use resource_reference::{DatabaseReference, ItemReference};

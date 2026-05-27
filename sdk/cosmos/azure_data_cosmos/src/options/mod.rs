@@ -255,7 +255,7 @@ impl ItemWriteOptions {
 /// Options for [`ContainerClient::patch_item()`](crate::clients::ContainerClient::patch_item()).
 ///
 /// PATCH is implemented driver-side as a Read-Modify-Write (RMW) loop:
-/// the driver reads the current item, applies your [`PatchDocument`](crate::PatchDocument)
+/// the driver reads the current item, applies your [`PatchInstructions`](crate::PatchInstructions)
 /// locally, and issues an ETag-guarded Replace. If the Replace returns
 /// 412 PreconditionFailed (another writer raced), the loop restarts.
 ///
@@ -278,7 +278,7 @@ impl ItemWriteOptions {
 ///   evaluation requires either native wire-level PATCH (so the server
 ///   evaluates the predicate inside the same transaction) or a client-side
 ///   SQL subset evaluator; neither is in scope for this preview. The
-///   driver's [`PatchDocument`](crate::PatchDocument) has no `condition` field, so
+///   driver's [`PatchInstructions`](crate::PatchInstructions) has no `condition` field, so
 ///   there is no way to attach a predicate to a PATCH request.
 ///
 /// The session token lives on the dedicated

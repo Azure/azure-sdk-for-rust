@@ -15,9 +15,9 @@
 //! # Example
 //!
 //! ```
-//! use azure_data_cosmos_driver::models::{PatchOperation, PatchDocument};
+//! use azure_data_cosmos_driver::models::{PatchOperation, PatchInstructions};
 //!
-//! let spec = PatchDocument::new(vec![
+//! let spec = PatchInstructions::from(vec![
 //!     PatchOperation::set("/age", serde_json::json!(31)),
 //!     PatchOperation::increment("/visits", 1i64),
 //!     PatchOperation::add("/tags/-", serde_json::json!("new-tag")),
@@ -139,11 +139,7 @@ pub enum PatchOperation {
         value: CosmosNumber,
     },
     /// Move (rename) the JSON value from `from` to `path`.
-    ///
-    /// Renamed `move_op` in Rust because `move` is a keyword. Serialized as
-    /// `"op": "move"` to remain compatible with the on-the-wire format.
-    #[serde(rename = "move")]
-    MoveOp {
+    Move {
         /// Source JSON Pointer path.
         from: String,
         /// Destination JSON Pointer path.
@@ -161,7 +157,7 @@ impl PatchOperation {
             | PatchOperation::Replace { path, .. }
             | PatchOperation::Remove { path }
             | PatchOperation::Increment { path, .. }
-            | PatchOperation::MoveOp { path, .. } => path,
+            | PatchOperation::Move { path, .. } => path,
         }
     }
 
@@ -204,47 +200,46 @@ impl PatchOperation {
         }
     }
 
-    /// Builds a [`MoveOp`](Self::MoveOp) operation.
-    pub fn move_op(from: impl Into<String>, path: impl Into<String>) -> Self {
-        PatchOperation::MoveOp {
+    /// Builds a [`Move`](Self::Move) operation.
+    pub fn move_value(from: impl Into<String>, path: impl Into<String>) -> Self {
+        // 'move' is a keyword in Rust, so we can't use it as the function name.
+        PatchOperation::Move {
             from: from.into(),
             path: path.into(),
         }
     }
 }
 
-/// A PATCH document — the body of a `Patch` [`CosmosOperation`].
+/// A set of instructions for a Cosmos DB PATCH operation, consisting of an ordered list of
+/// [`PatchOperation`] values representing the individual operations to apply to an item.
 ///
-/// Wraps the ordered list of [`PatchOperation`]s to apply. PATCH is implemented
-/// driver-side as a Read-Modify-Write loop guarded by an ETag precondition
-/// (`If-Match`), which is managed entirely by the PATCH handler — callers do
-/// not (and cannot) configure a precondition on this type.
-///
-/// A SQL filter predicate (peer SDKs' `FilterPredicate`) is **not** supported
-/// in this preview. The peer SDKs place that knob on `PatchItemRequestOptions`,
-/// not on the operation list, and implementing it correctly requires either
-/// native wire-level PATCH (so the server evaluates the predicate inside the
-/// same transaction) or a client-side SQL subset evaluator. Both are tracked
-/// as follow-up work.
-///
-/// [`CosmosOperation`]: crate::models::CosmosOperation
+/// [`PatchOperation`]: crate::models::PatchOperation
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[non_exhaustive]
-pub struct PatchDocument {
+pub struct PatchInstructions {
     /// Ordered list of operations.
     pub operations: Vec<PatchOperation>,
 }
 
-impl PatchDocument {
-    /// Builds a [`PatchDocument`] from a list of operations.
-    pub fn new(operations: Vec<PatchOperation>) -> Self {
-        Self { operations }
+impl PatchInstructions {
+    /// Builds a [`PatchInstructions`] from a list of operations.
+    pub fn new() -> Self {
+        Self {
+            operations: Vec::new(),
+        }
     }
 
-    /// Appends `operation` to the document's list of operations.
+    /// Appends `operation` to the instruction set's list of operations.
     pub fn with_operation(mut self, operation: PatchOperation) -> Self {
         self.operations.push(operation);
         self
+    }
+}
+
+impl From<Vec<PatchOperation>> for PatchInstructions {
+    /// Builds a [`PatchInstructions`] from an existing list of operations.
+    fn from(operations: Vec<PatchOperation>) -> Self {
+        PatchInstructions { operations }
     }
 }
 
@@ -261,8 +256,8 @@ mod tests {
     }
 
     #[test]
-    fn move_op_serializes_as_move() {
-        let op = PatchOperation::move_op("/a", "/b");
+    fn move_value_serializes_as_move() {
+        let op = PatchOperation::move_value("/a", "/b");
         let s = serde_json::to_string(&op).unwrap();
         assert_eq!(s, r#"{"op":"move","from":"/a","path":"/b"}"#);
     }
@@ -277,7 +272,7 @@ mod tests {
         assert!(!s.contains("E+"), "actual: {s}");
     }
 
-    /// Canonical wire JSON for the `PatchDocument` exercised by the
+    /// Canonical wire JSON for the `PatchInstructions` exercised by the
     /// serialize/deserialize tests below. Kept as a single source of
     /// truth so the two halves of the (former) round-trip test cannot
     /// drift apart silently. Matches `PATCH_HANDLER_SPEC.md` §"Wire
@@ -292,19 +287,19 @@ mod tests {
         r#"]}"#,
     );
 
-    fn canonical_patch_spec() -> PatchDocument {
-        PatchDocument::new(vec![
+    fn canonical_patch_spec() -> PatchInstructions {
+        PatchInstructions::from(vec![
             PatchOperation::set("/age", json!(31)),
             PatchOperation::increment("/visits", 1i64),
             PatchOperation::add("/tags/-", json!("rust")),
             PatchOperation::remove("/legacy"),
-            PatchOperation::move_op("/from", "/to"),
+            PatchOperation::move_value("/from", "/to"),
         ])
     }
 
     #[test]
     fn patch_spec_serializes_to_expected_json() {
-        // Builds the PatchDocument, serializes it, and compares to a known
+        // Builds the PatchInstructions, serializes it, and compares to a known
         // JSON string. This pins the wire format (key names, op tags,
         // field ordering for each PatchOperation variant) independently of the
         // Deserialize impl, so a regression in only one direction is
@@ -315,10 +310,10 @@ mod tests {
 
     #[test]
     fn patch_spec_deserializes_from_known_json() {
-        // Parses a known JSON string and asserts the resulting PatchDocument
+        // Parses a known JSON string and asserts the resulting PatchInstructions
         // matches the canonical value. This pins the wire-format -> model
         // direction independently of the Serialize impl.
-        let parsed: PatchDocument = serde_json::from_str(PATCH_SPEC_WIRE_JSON).unwrap();
+        let parsed: PatchInstructions = serde_json::from_str(PATCH_SPEC_WIRE_JSON).unwrap();
         assert_eq!(parsed, canonical_patch_spec());
     }
 
@@ -330,11 +325,11 @@ mod tests {
         // struct is `#[non_exhaustive]` plus there is no `condition` field,
         // serde's default `deny_unknown_fields = false` would silently drop
         // an unknown field — verify the round-trip is condition-free).
-        let spec = PatchDocument::new(vec![PatchOperation::set("/x", json!(1))]);
+        let spec = PatchInstructions::from(vec![PatchOperation::set("/x", json!(1))]);
         let s = serde_json::to_string(&spec).unwrap();
         assert!(
             !s.contains("condition"),
-            "PatchDocument serialization must not include a `condition` field: {s}"
+            "PatchInstructions serialization must not include a `condition` field: {s}"
         );
     }
 

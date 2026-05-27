@@ -580,7 +580,7 @@ impl CosmosOperation {
     /// it reads the current item, applies the requested patch operations to
     /// the local JSON document, and issues an ETag-guarded
     /// [`OperationType::Replace`]. The PATCH operation itself is never sent on
-    /// the wire; callers build a [`crate::models::PatchDocument`] and pass it as
+    /// the wire; callers build a [`crate::models::PatchInstructions`] and pass it as
     /// the operation body (via [`with_body`](Self::with_body)) — the patch
     /// handler deserializes it before issuing the underlying transport
     /// operations.

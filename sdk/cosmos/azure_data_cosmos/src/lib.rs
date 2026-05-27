@@ -27,7 +27,7 @@ pub use account_reference::AccountReference;
 pub use clients::ThroughputPoller;
 pub use credential::CosmosCredential;
 pub use models::{
-    BatchResponse, CosmosNumber, CosmosStatus, DiagnosticsContext, ItemResponse, PatchDocument,
+    BatchResponse, CosmosNumber, CosmosStatus, DiagnosticsContext, ItemResponse, PatchInstructions,
     PatchOperation, ResourceResponse, ResponseBody, ResponseHeaders,
 };
 pub use options::*;

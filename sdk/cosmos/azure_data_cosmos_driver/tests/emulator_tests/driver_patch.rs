@@ -27,7 +27,9 @@
 //! unit-tested in `driver/pipeline/patch_handler.rs`.
 
 use crate::framework::DriverTestClient;
-use azure_data_cosmos_driver::models::{CosmosNumber, PartitionKey, PatchDocument, PatchOperation};
+use azure_data_cosmos_driver::models::{
+    CosmosNumber, PartitionKey, PatchInstructions, PatchOperation,
+};
 use serde_json::{json, Value};
 use std::error::Error;
 
@@ -65,7 +67,7 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
                 .create_item(&container, item_id, pk, &initial_bytes)
                 .await?;
 
-            let spec = PatchDocument::new(vec![PatchOperation::set("/deleted", json!(true))]);
+            let spec = PatchInstructions::from(vec![PatchOperation::set("/deleted", json!(true))]);
             let patch_response = context
                 .patch_item(&container, item_id, pk, &spec, None)
                 .await?;
@@ -120,33 +122,36 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             // Each op below targets the PK path directly.
-            let guard_cases: Vec<(&'static str, PatchDocument)> = vec![
+            let guard_cases: Vec<(&'static str, PatchInstructions)> = vec![
                 (
                     "Set /pk",
-                    PatchDocument::new(vec![PatchOperation::set("/pk", json!("other"))]),
+                    PatchInstructions::from(vec![PatchOperation::set("/pk", json!("other"))]),
                 ),
                 (
                     "Replace /pk",
-                    PatchDocument::new(vec![PatchOperation::replace("/pk", json!("other"))]),
+                    PatchInstructions::from(vec![PatchOperation::replace("/pk", json!("other"))]),
                 ),
                 (
                     "Remove /pk",
-                    PatchDocument::new(vec![PatchOperation::remove("/pk")]),
+                    PatchInstructions::from(vec![PatchOperation::remove("/pk")]),
                 ),
                 (
                     "Add /pk",
-                    PatchDocument::new(vec![PatchOperation::add("/pk", json!("other"))]),
+                    PatchInstructions::from(vec![PatchOperation::add("/pk", json!("other"))]),
                 ),
                 (
                     "Move to /pk",
-                    PatchDocument::new(vec![PatchOperation::move_op("/name", "/pk")]),
+                    PatchInstructions::from(vec![PatchOperation::move_value("/name", "/pk")]),
                 ),
                 // moving FROM a PK path also mutates the partition key
                 // (the field is removed at the source after being copied to
                 // the destination). The guard must reject this too.
                 (
                     "Move from /pk",
-                    PatchDocument::new(vec![PatchOperation::move_op("/pk", "/somewhere_else")]),
+                    PatchInstructions::from(vec![PatchOperation::move_value(
+                        "/pk",
+                        "/somewhere_else",
+                    )]),
                 ),
             ];
 
@@ -208,28 +213,31 @@ pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> 
                 .await?;
 
             // Each row targets one of the two PK paths.
-            let guard_cases: Vec<(&'static str, PatchDocument)> = vec![
+            let guard_cases: Vec<(&'static str, PatchInstructions)> = vec![
                 (
                     "Set /tenantId",
-                    PatchDocument::new(vec![PatchOperation::set("/tenantId", json!("t2"))]),
+                    PatchInstructions::from(vec![PatchOperation::set("/tenantId", json!("t2"))]),
                 ),
                 (
                     "Set /userId",
-                    PatchDocument::new(vec![PatchOperation::set("/userId", json!("u2"))]),
+                    PatchInstructions::from(vec![PatchOperation::set("/userId", json!("u2"))]),
                 ),
                 (
                     "Replace /tenantId",
-                    PatchDocument::new(vec![PatchOperation::replace("/tenantId", json!("t2"))]),
+                    PatchInstructions::from(vec![PatchOperation::replace(
+                        "/tenantId",
+                        json!("t2"),
+                    )]),
                 ),
                 (
                     "Remove /userId",
-                    PatchDocument::new(vec![PatchOperation::remove("/userId")]),
+                    PatchInstructions::from(vec![PatchOperation::remove("/userId")]),
                 ),
                 // moving FROM one of the hierarchical PK paths also
                 // mutates that PK component. Reject pre-flight.
                 (
                     "Move from /tenantId",
-                    PatchDocument::new(vec![PatchOperation::move_op(
+                    PatchInstructions::from(vec![PatchOperation::move_value(
                         "/tenantId",
                         "/somewhere_else",
                     )]),
@@ -462,8 +470,8 @@ fn fixtures() -> Vec<PatchCompareCase> {
             }),
             ops: vec![
                 PatchOperation::add("/children/1/description", json!("Child#1")),
-                PatchOperation::move_op("/children/0/description", "/description"),
-                PatchOperation::move_op("/children/1/description", "/children/0/description"),
+                PatchOperation::move_value("/children/0/description", "/description"),
+                PatchOperation::move_value("/children/1/description", "/children/0/description"),
             ],
             expected: Expected::PostImageProps(json!({
                 "description": "Child#0",
@@ -511,7 +519,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Move",
             scenario_category: "missing_path",
             initial_props: json!({ "description": "orig" }),
-            ops: vec![PatchOperation::move_op("/missing", "/dest")],
+            ops: vec![PatchOperation::move_value("/missing", "/dest")],
             expected: Expected::ErrorContains("missing"),
             notes: "Move with absent source path must fail",
         },
@@ -721,7 +729,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Move",
             scenario_category: "happy_path",
             initial_props: json!({ "src": "value", "dst": null }),
-            ops: vec![PatchOperation::move_op("/src", "/dst")],
+            ops: vec![PatchOperation::move_value("/src", "/dst")],
             expected: Expected::PostImageProps(json!({ "dst": "value" })),
             notes: "Single Move between two scalar fields",
         },
@@ -832,7 +840,7 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
                     .await
                     .unwrap_or_else(|e| panic!("[{}] seed failed: {e}", case.id));
 
-                let spec = PatchDocument::new(case.ops.clone());
+                let spec = PatchInstructions::from(case.ops.clone());
                 let result = context
                     .patch_item(&container, &item_id, pk.clone(), &spec, None)
                     .await;
@@ -898,7 +906,7 @@ pub async fn cosmos_patch_read_missing_item_returns_not_found() -> Result<(), Bo
             // Patch a freshly-named item that was never created.
             let missing_id = "patch-missing-item-001";
             let pk = "tenant-a";
-            let spec = PatchDocument::new(vec![PatchOperation::set("/deleted", json!(true))]);
+            let spec = PatchInstructions::from(vec![PatchOperation::set("/deleted", json!(true))]);
             let err = context
                 .patch_item(&container, missing_id, pk, &spec, None)
                 .await
@@ -977,7 +985,7 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
                 .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
                 .await?;
 
-            let spec = PatchDocument::new(vec![PatchOperation::increment("/value", 1i64)]);
+            let spec = PatchInstructions::from(vec![PatchOperation::increment("/value", 1i64)]);
             let response = context
                 .patch_item(&container, item_id, pk, &spec, None)
                 .await?;
@@ -1050,7 +1058,7 @@ pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             let max_attempts = std::num::NonZeroU8::new(2).unwrap();
-            let spec = PatchDocument::new(vec![PatchOperation::increment("/value", 1i64)]);
+            let spec = PatchInstructions::from(vec![PatchOperation::increment("/value", 1i64)]);
             let err = context
                 .patch_item(&container, item_id, pk, &spec, Some(max_attempts))
                 .await
