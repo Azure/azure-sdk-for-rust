@@ -203,22 +203,22 @@ impl FaultClient {
         // Evaluations are propagated via the evaluation collector attached to the request for all paths.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
-                let cosmos_err =
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
-                        .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
-                        .with_message("Injected fault: connection error")
-                        .build();
+                let cosmos_err = crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                    .with_message("Injected fault: connection error")
+                    .build();
                 return ApplyResult::Injected(Err(TransportError::new(
                     cosmos_err,
                     RequestSentStatus::NotSent,
                 )));
             }
             FaultInjectionErrorType::ResponseTimeout => {
-                let cosmos_err =
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
-                        .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
-                        .with_message("Injected fault: response timeout")
-                        .build();
+                let cosmos_err = crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_message("Injected fault: response timeout")
+                    .build();
                 return ApplyResult::Injected(Err(TransportError::new(
                     cosmos_err,
                     RequestSentStatus::Unknown,
@@ -274,15 +274,17 @@ impl FaultClient {
             None => CosmosStatus::new(status_code),
         };
 
-        let cosmos_err =
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Service)
-                .with_status(status)
-                .with_message(message)
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    cosmos_headers,
-                ))
-                .build();
+        let cosmos_err = crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::InternalServerError,
+            ))
+            .with_status(status)
+            .with_message(message)
+            .with_response_parts(crate::models::CosmosResponsePayload::new(
+                crate::models::ResponseBody::NoPayload,
+                cosmos_headers,
+            ))
+            .build();
 
         ApplyResult::Injected(Err(TransportError::new(
             cosmos_err,
@@ -792,7 +794,6 @@ mod tests {
         let err = result.unwrap_err();
         // Connection-error faults are constructed as transport errors
         // with `TRANSPORT_CONNECTION_FAILED` sub-status.
-        assert_eq!(err.error.kind(), crate::error::CosmosStatusKind::Transport);
         assert_eq!(
             err.error.status().sub_status(),
             Some(crate::models::SubStatusCode::TRANSPORT_CONNECTION_FAILED),
@@ -819,7 +820,6 @@ mod tests {
         let err = result.unwrap_err();
         // Response-timeout faults are constructed as transport errors
         // with `TRANSPORT_IO_FAILED` sub-status.
-        assert_eq!(err.error.kind(), crate::error::CosmosStatusKind::Transport);
         assert_eq!(
             err.error.status().sub_status(),
             Some(crate::models::SubStatusCode::TRANSPORT_IO_FAILED),

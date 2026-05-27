@@ -44,7 +44,7 @@ impl std::str::FromStr for ContentResponseOnWrite {
         match s.to_lowercase().as_str() {
             "true" | "enabled" => Ok(Self::Enabled),
             "false" | "disabled" => Ok(Self::Disabled),
-            _ => Err(crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client).with_message(format!(
+            _ => Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message(format!(
                     "Unknown content response on write value: '{s}'. Expected 'true'/'false' or 'enabled'/'disabled'"
                 )).build()),
         }

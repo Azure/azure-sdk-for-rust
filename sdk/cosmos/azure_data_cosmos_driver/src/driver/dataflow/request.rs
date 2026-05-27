@@ -361,11 +361,12 @@ mod tests {
 
             Box::pin(async move {
                 if resolved.is_empty() {
-                    Err(
-                        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                            .with_message("scenario topology produced no overlapping ranges")
-                            .build(),
-                    )
+                    Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message("scenario topology produced no overlapping ranges")
+                        .build())
                 } else {
                     Ok(resolved)
                 }
@@ -726,11 +727,13 @@ mod tests {
     async fn topology_provider_error_propagates() {
         let mut request = Request::new(Arc::new(operation()), epk_range_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
-        let mut topology = MockTopologyProvider::new(vec![Err(
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+        let mut topology =
+            MockTopologyProvider::new(vec![Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("topology fetch failed")
-                .build(),
-        )]);
+                .build())]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();

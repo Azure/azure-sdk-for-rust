@@ -73,13 +73,14 @@ impl FeedRange {
         max_exclusive: EffectivePartitionKey,
     ) -> crate::error::Result<Self> {
         if min_inclusive > max_exclusive {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message(
-                        "feed range min_inclusive must be less than or equal to max_exclusive",
-                    )
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(
+                    "feed range min_inclusive must be less than or equal to max_exclusive",
+                )
+                .build());
         }
 
         Ok(Self(FeedRangeRepr::Range {
@@ -214,18 +215,19 @@ impl FeedRange {
 
     fn from_json(json: FeedRangeJson) -> crate::error::Result<Self> {
         if !json.range.is_min_inclusive || json.range.is_max_inclusive {
-            return Err(crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client).with_message("feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)").build());
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)").build());
         }
 
         let min = EffectivePartitionKey::from(json.range.min);
         let max = EffectivePartitionKey::from(json.range.max);
 
         if min > max {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message("feed range min must be less than or equal to max")
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("feed range min must be less than or equal to max")
+                .build());
         }
 
         Ok(Self(FeedRangeRepr::Range {
@@ -244,11 +246,12 @@ impl TryFrom<&PartitionKeyRange> for FeedRange {
     /// (min inclusive, max exclusive). Returns an error if the range is inverted.
     fn try_from(pkr: &PartitionKeyRange) -> Result<Self, Self::Error> {
         if pkr.min_inclusive > pkr.max_exclusive {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message("partition key range min_inclusive must be <= max_exclusive")
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("partition key range min_inclusive must be <= max_exclusive")
+                .build());
         }
 
         Ok(Self(FeedRangeRepr::Range {
@@ -275,14 +278,18 @@ impl FromStr for FeedRange {
         let decoded_bytes = base64::engine::general_purpose::STANDARD
             .decode(s)
             .map_err(|e| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(format!("feed range is not valid base64: {e}"))
                     .with_source(e)
                     .build()
             })?;
 
         let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes).map_err(|e| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message(format!("feed range JSON is invalid: {e}"))
                 .with_source(e)
                 .build()

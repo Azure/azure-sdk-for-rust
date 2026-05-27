@@ -29,9 +29,7 @@ pub use account_reference::CosmosAccountReference;
 pub use clients::ThroughputPoller;
 pub use connection_string::*;
 pub use credential::CosmosCredential;
-pub use error::{
-    CosmosError, CosmosErrorBuilder, CosmosStatus, CosmosStatusKind, Result, SubStatusCode,
-};
+pub use error::{CosmosError, CosmosErrorBuilder, CosmosStatus, Result, SubStatusCode};
 pub use models::{
     BatchResponse, DiagnosticsContext, IncrValue, ItemResponse, PatchOp, PatchSpec,
     ResourceResponse, ResponseBody, ResponseHeaders,

@@ -101,7 +101,7 @@ impl<'a> PipelineContext<'a> {
         refresh: PartitionRoutingRefresh,
     ) -> crate::error::Result<Vec<ResolvedRange>> {
         let provider = self.topology_provider.as_deref_mut().ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client).with_message("topology resolution requested for a plan that was not given a topology provider").build()
+            crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("topology resolution requested for a plan that was not given a topology provider").build()
         })?;
         provider.resolve_ranges(range, refresh).await
     }

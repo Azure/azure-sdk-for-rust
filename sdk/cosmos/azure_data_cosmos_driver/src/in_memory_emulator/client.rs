@@ -140,7 +140,7 @@ impl InMemoryEmulatorHttpClient {
         let region_name = match resolve_region(request.url(), self.store.config()) {
             Some(r) => r,
             None => {
-                return Err(crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
                     .with_message(format!(
                         "in-memory emulator: request URL host '{}' does not match any configured region",
                         request.url().host_str().unwrap_or("<none>"),
@@ -215,12 +215,12 @@ impl TransportClient for EmulatorTransportClient {
 
         // Collect the buffered response
         let raw = async_response.try_into_raw_response().await.map_err(|e| {
-            let cosmos_err =
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
-                    .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
-                    .with_message(e.to_string())
-                    .with_source(e)
-                    .build();
+            let cosmos_err = crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                .with_message(e.to_string())
+                .with_source(e)
+                .build();
             TransportError::new(cosmos_err, crate::diagnostics::RequestSentStatus::Sent)
         })?;
 

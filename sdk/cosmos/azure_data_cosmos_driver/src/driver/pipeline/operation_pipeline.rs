@@ -979,11 +979,12 @@ fn build_cosmos_response(
         _ => {
             // This should only be called with a Complete(Success) result.
             // Treat as a programmer-error invariant violation.
-            Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message("build_cosmos_response called with non-success result")
-                    .build(),
-            )
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("build_cosmos_response called with non-success result")
+                .build())
         }
     }
 }
@@ -1192,17 +1193,16 @@ fn enforce_deadline_or_timeout(
         azure_core::http::StatusCode::RequestTimeout,
         Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
     );
-    Err(
-        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
-            .with_status(crate::models::CosmosStatus::from_parts(
-                azure_core::http::StatusCode::RequestTimeout,
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-            ))
-            .with_message(format!(
-                "end-to-end operation timeout exceeded ({timeout_duration:?})"
-            ))
-            .build(),
-    )
+    Err(crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
+        .with_status(crate::models::CosmosStatus::from_parts(
+            azure_core::http::StatusCode::RequestTimeout,
+            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        ))
+        .with_message(format!(
+            "end-to-end operation timeout exceeded ({timeout_duration:?})"
+        ))
+        .build())
 }
 
 /// On a successful PPCB probe request, removes the `ProbeCandidate` entry
@@ -3105,7 +3105,6 @@ mod tests {
         let deadline = std::time::Instant::now() - Duration::from_millis(1);
         let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
         let err = result.expect_err("past deadline should produce an error");
-        assert_eq!(err.kind(), crate::error::CosmosStatusKind::Transport);
         let msg = err.to_string();
         assert!(
             msg.contains("end-to-end operation timeout exceeded"),

@@ -55,7 +55,10 @@ where
         Some(v) => v,
         None => match std::env::var(env_var_name) {
             Ok(v) => v.parse().map_err(|e| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Configuration)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(format!(
                         "Failed to parse {} as {}: {} ({})",
                         env_var_name,
@@ -88,17 +91,18 @@ where
             Ok(raw) => raw
                 .parse()
                 .map_err(|e| {
-                    crate::error::CosmosError::builder(
-                        crate::error::CosmosStatusKind::Configuration,
-                    )
-                    .with_message(format!(
-                        "Failed to parse {} as {}: {} ({})",
-                        env_var_name,
-                        std::any::type_name::<T>(),
-                        raw,
-                        e
-                    ))
-                    .build()
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(format!(
+                            "Failed to parse {} as {}: {} ({})",
+                            env_var_name,
+                            std::any::type_name::<T>(),
+                            raw,
+                            e
+                        ))
+                        .build()
                 })
                 .and_then(|value| validate_bounds(value, env_var_name, bounds).map(Some)),
             Err(_) => Ok(None),
@@ -117,37 +121,39 @@ where
 {
     if let Some(min) = bounds.min {
         if value < min {
-            return Err(crate::error::CosmosError::builder(
-                crate::error::CosmosStatusKind::Configuration,
-            )
-            .with_message(format!(
-                "{} must be at least {:?}, got {:?}",
-                env_var_name
-                    .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
-                    .unwrap_or(env_var_name)
-                    .to_lowercase(),
-                min,
-                value
-            ))
-            .build());
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
+                    "{} must be at least {:?}, got {:?}",
+                    env_var_name
+                        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
+                        .unwrap_or(env_var_name)
+                        .to_lowercase(),
+                    min,
+                    value
+                ))
+                .build());
         }
     }
 
     if let Some(max) = bounds.max {
         if value > max {
-            return Err(crate::error::CosmosError::builder(
-                crate::error::CosmosStatusKind::Configuration,
-            )
-            .with_message(format!(
-                "{} must be at most {:?}, got {:?}",
-                env_var_name
-                    .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
-                    .unwrap_or(env_var_name)
-                    .to_lowercase(),
-                max,
-                value
-            ))
-            .build());
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
+                    "{} must be at most {:?}, got {:?}",
+                    env_var_name
+                        .strip_prefix("AZURE_COSMOS_CONNECTION_POOL_")
+                        .unwrap_or(env_var_name)
+                        .to_lowercase(),
+                    max,
+                    value
+                ))
+                .build());
         }
     }
 
@@ -167,14 +173,15 @@ pub(crate) fn parse_duration_millis_from_env(
         None => match std::env::var(env_var_name) {
             Ok(v) => {
                 let millis = v.parse::<u64>().map_err(|e| {
-                    crate::error::CosmosError::builder(
-                        crate::error::CosmosStatusKind::Configuration,
-                    )
-                    .with_message(format!(
-                        "Failed to parse {} as u64 milliseconds: {} ({})",
-                        env_var_name, v, e
-                    ))
-                    .build()
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(format!(
+                            "Failed to parse {} as u64 milliseconds: {} ({})",
+                            env_var_name, v, e
+                        ))
+                        .build()
                 })?;
                 Duration::from_millis(millis)
             }
@@ -222,25 +229,27 @@ fn validate_duration_bounds(
         .to_lowercase();
 
     if value_millis < min {
-        return Err(crate::error::CosmosError::builder(
-            crate::error::CosmosStatusKind::Configuration,
-        )
-        .with_message(format!(
-            "{} must be at least {}ms, got {}ms",
-            field_name, min_millis, value_millis
-        ))
-        .build());
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message(format!(
+                "{} must be at least {}ms, got {}ms",
+                field_name, min_millis, value_millis
+            ))
+            .build());
     }
 
     if value_millis > max {
-        return Err(crate::error::CosmosError::builder(
-            crate::error::CosmosStatusKind::Configuration,
-        )
-        .with_message(format!(
-            "{} must be at most {}ms, got {}ms",
-            field_name, max_millis, value_millis
-        ))
-        .build());
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message(format!(
+                "{} must be at most {}ms, got {}ms",
+                field_name, max_millis, value_millis
+            ))
+            .build());
     }
 
     Ok(())
@@ -261,14 +270,15 @@ pub(super) fn parse_optional_duration_millis_from_env(
         None => match std::env::var(env_var_name) {
             Ok(v) => {
                 let timeout = v.parse::<u64>().map(Duration::from_millis).map_err(|e| {
-                    crate::error::CosmosError::builder(
-                        crate::error::CosmosStatusKind::Configuration,
-                    )
-                    .with_message(format!(
-                        "Failed to parse {} as milliseconds: {} ({})",
-                        env_var_name, v, e
-                    ))
-                    .build()
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(format!(
+                            "Failed to parse {} as milliseconds: {} ({})",
+                            env_var_name, v, e
+                        ))
+                        .build()
                 })?;
                 validate_duration_bounds(timeout, env_var_name, min_millis, max_millis)?;
                 Ok(Some(timeout))

@@ -27,11 +27,12 @@ impl VirtualAccountConfig {
     /// The first region is the hub/primary write region in single-write mode.
     pub fn new(mut regions: Vec<VirtualRegion>) -> crate::error::Result<Self> {
         if regions.is_empty() {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message("at least one region is required")
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("at least one region is required")
+                .build());
         }
         // Auto-assign monotonically increasing region IDs by position for any
         // region that did not have one set explicitly via `with_region_id`.
@@ -86,33 +87,34 @@ impl VirtualAccountConfig {
     ) -> crate::error::Result<Self> {
         let known: Vec<&str> = self.regions.iter().map(|r| r.name.as_str()).collect();
         if !known.contains(&source) {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message(format!(
-                        "replication override source region '{}' is not configured (known: {:?})",
-                        source, known
-                    ))
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
+                    "replication override source region '{}' is not configured (known: {:?})",
+                    source, known
+                ))
+                .build());
         }
         if !known.contains(&target) {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message(format!(
-                        "replication override target region '{}' is not configured (known: {:?})",
-                        target, known
-                    ))
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
+                    "replication override target region '{}' is not configured (known: {:?})",
+                    target, known
+                ))
+                .build());
         }
         if source == target {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message(
-                        "replication override source and target must be different regions",
-                    )
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("replication override source and target must be different regions")
+                .build());
         }
         self.replication_overrides
             .insert((source.to_string(), target.to_string()), config);
@@ -359,11 +361,12 @@ impl ReplicationConfig {
     /// Random delay within a range.
     pub fn range(min: Duration, max: Duration) -> crate::error::Result<Self> {
         if min > max {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message("min delay must be <= max delay")
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("min delay must be <= max delay")
+                .build());
         }
         Ok(Self {
             min_delay: min,
@@ -541,26 +544,29 @@ impl ContainerConfig {
     /// Returns a `Client` error on the first violation.
     pub fn build(self) -> crate::error::Result<Self> {
         if self.partition_count == 0 {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message("partition count must be > 0")
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("partition count must be > 0")
+                .build());
         }
         if self.partition_count > MAX_PARTITION_COUNT {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message(format!("partition count must be <= {MAX_PARTITION_COUNT}"))
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!("partition count must be <= {MAX_PARTITION_COUNT}"))
+                .build());
         }
         if let Some(ru) = self.provisioned_throughput_ru {
             if ru < 400 {
-                return Err(crate::error::CosmosError::builder(
-                    crate::error::CosmosStatusKind::Client,
-                )
-                .with_message("provisioned throughput must be >= 400 RU/s")
-                .build());
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message("provisioned throughput must be >= 400 RU/s")
+                    .build());
             }
         }
         Ok(self)

@@ -59,13 +59,14 @@ impl Pipeline {
             // or `DrainedLeaf`, none of which can bubble `SplitRequired` up past
             // their parent. If a future node type ever does, surfacing it as an
             // explicit error is preferable to silently dropping the page.
-            PageResult::SplitRequired { .. } => Err(crate::error::CosmosError::builder(
-                crate::error::CosmosStatusKind::Client,
-            )
-            .with_message(
-                "root node cannot request a split; splits must be handled by a parent node",
-            )
-            .build()),
+            PageResult::SplitRequired { .. } => Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(
+                    "root node cannot request a split; splits must be handled by a parent node",
+                )
+                .build()),
         }
     }
 

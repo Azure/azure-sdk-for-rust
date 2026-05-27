@@ -239,12 +239,18 @@ impl TryFrom<&Url> for EndpointKey {
 
     fn try_from(url: &Url) -> crate::error::Result<Self> {
         let host = url.host_str().ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message(format!("request URL is missing a host: {url}"))
                 .build()
         })?;
         let port = url.port_or_known_default().ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message(format!("request URL is missing a known port: {url}"))
                 .build()
         })?;
@@ -347,7 +353,8 @@ impl EndpointShardPool {
             .min_by_key(|s| s.inflight())
             .cloned()
             .ok_or_else(|| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_message(format!(
                         "endpoint shard pool {} has no available shards",
@@ -932,7 +939,10 @@ mod tests {
 
     fn synthetic_transport_error() -> TransportError {
         TransportError::new(
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("synthetic")
                 .build(),
             crate::diagnostics::RequestSentStatus::NotSent,
@@ -974,7 +984,10 @@ mod tests {
     impl TransportClient for NoopTransportClient {
         async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             Err(TransportError::new(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message("noop client should not execute requests in shard unit tests")
                     .build(),
                 crate::diagnostics::RequestSentStatus::NotSent,

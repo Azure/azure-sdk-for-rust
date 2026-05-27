@@ -61,7 +61,10 @@ impl FromStr for ConnectionString {
 
     fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
-            return Err(CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            return Err(CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("connection string cannot be empty")
                 .build());
         }
@@ -77,7 +80,10 @@ impl FromStr for ConnectionString {
             }
 
             let (key, value) = part.split_once('=').ok_or_else(|| {
-                CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message("invalid connection string")
                     .build()
             })?;
@@ -92,13 +98,19 @@ impl FromStr for ConnectionString {
         }
 
         let Some(endpoint) = account_endpoint else {
-            return Err(CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            return Err(CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("invalid connection string, missing 'AccountEndpoint'")
                 .build());
         };
 
         let Some(key) = account_key else {
-            return Err(CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            return Err(CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("invalid connection string, missing 'AccountKey'")
                 .build());
         };

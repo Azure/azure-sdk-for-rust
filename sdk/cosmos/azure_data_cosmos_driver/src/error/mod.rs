@@ -25,7 +25,7 @@ use crate::{
 };
 
 pub mod cosmos_status;
-pub use cosmos_status::{CosmosStatus, CosmosStatusKind, SubStatusCode};
+pub use cosmos_status::{CosmosStatus, SubStatusCode};
 
 pub(crate) mod backtrace;
 pub(crate) use backtrace::Backtrace;
@@ -61,7 +61,7 @@ pub use backtrace::__bench as backtrace_bench;
 /// the following relationships at `build()` time:
 ///
 /// * [`status()`](Self::status) and [`kind()`](Self::kind) always reflect
-///   the current categorical [`CosmosStatusKind`].
+///   the current [`CosmosStatus`].
 /// * When [`response()`](Self::response) is `Some` (wire-response errors),
 ///   the builder enforces *"CosmosResponse wins"*:
 ///   - `status() == response().status()`
@@ -88,7 +88,7 @@ pub struct CosmosError {
 #[derive(Clone)]
 struct CosmosErrorInner {
     /// Cosmos status (HTTP status + sub-status + categorical
-    /// [`CosmosStatusKind`]). Always present, shared across all
+    /// Always present, shared across all
     /// [`ErrorContext`] variants — for the `Wire` variant this is
     /// reconciled to match `response.status()` at `build()` time.
     status: CosmosStatus,
@@ -167,23 +167,16 @@ impl CosmosError {
     // -----------------------------------------------------------------
 
     /// Returns the typed Cosmos status (HTTP status code + optional
-    /// sub-status + categorical [`CosmosStatusKind`]) associated with this
-    /// error. Always present — non-service errors carry a synthetic
-    /// status with a placeholder HTTP code and the correct
-    /// [`CosmosStatusKind`].
+    /// sub-status) associated with this error. Always present — non-service
+    /// errors carry a synthetic status with a placeholder HTTP code (e.g.
+    /// [`CosmosStatus::TRANSPORT_GENERATED_503`] for transport failures,
+    /// [`CosmosStatus::CLIENT_GENERATED_401`] for authorization failures).
     ///
     /// When [`response()`](Self::response) is `Some`, this is guaranteed
     /// to equal `response().status()` (the builder reconciles them at
     /// `build()` time).
     pub fn status(&self) -> CosmosStatus {
         self.inner.status
-    }
-
-    /// Returns the categorical [`CosmosStatusKind`] of this error.
-    /// Equivalent to `self.status().kind()` — provided as a convenience
-    /// for the very common classification check.
-    pub fn kind(&self) -> CosmosStatusKind {
-        self.inner.status.kind()
     }
 
     /// Returns the originating [`CosmosResponse`] when a wire response was
@@ -201,6 +194,19 @@ impl CosmosError {
             ErrorContext::Wire { response } => Some(response),
             ErrorContext::WirePending { .. } | ErrorContext::Synthetic { .. } => None,
         }
+    }
+
+    /// Returns `true` if this error originated from a wire response from
+    /// the service (either fully finalized [`Wire`](ErrorContext::Wire) or
+    /// the pre-finalization [`WirePending`](ErrorContext::WirePending)
+    /// staging state). Returns `false` for purely synthetic errors
+    /// (transport failures, client validation, configuration, …) which
+    /// have no associated server response.
+    pub fn is_from_wire(&self) -> bool {
+        matches!(
+            &self.inner.context,
+            ErrorContext::Wire { .. } | ErrorContext::WirePending { .. }
+        )
     }
 
     /// Returns the diagnostics context for the failed operation.
@@ -250,7 +256,7 @@ impl CosmosError {
     /// * **Errors wrapping a third-party error** (e.g. credential or HMAC
     ///   failures) point at the explicit construction site in driver code,
     ///   not the originating failure site inside the third-party crate.
-    ///   The typed [`CosmosStatusKind`], status, and
+    ///   The typed [`CosmosStatus`] and
     ///   [`std::error::Error::source`] chain remain the primary diagnostic
     ///   signal in that case.
     ///
@@ -444,20 +450,29 @@ pub type Result<T> = std::result::Result<T, CosmosError>;
 // =========================================================================
 
 impl CosmosError {
-    /// Returns a fluent [`CosmosErrorBuilder`] seeded with sensible defaults
-    /// for the given categorical [`CosmosStatusKind`]. This is the only
-    /// public way to construct a [`CosmosError`] from outside the crate.
+    /// Returns a fluent [`CosmosErrorBuilder`] seeded with sensible
+    /// defaults (a synthetic `500 InternalServerError` status). Callers
+    /// typically follow with [`.with_status(...)`](CosmosErrorBuilder::with_status)
+    /// to set the appropriate typed status — the well-known
+    /// [`CosmosStatus`] constants ([`TRANSPORT_GENERATED_503`](CosmosStatus::TRANSPORT_GENERATED_503),
+    /// [`AUTHENTICATION_TOKEN_ACQUISITION_FAILED`](CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED),
+    /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID),
+    /// [`CLIENT_GENERATED_401`](CosmosStatus::CLIENT_GENERATED_401), etc.)
+    /// cover the common synthetic cases; for service errors received from
+    /// the wire, use [`.with_response(...)`](CosmosErrorBuilder::with_response).
     ///
     /// ```
-    /// use azure_data_cosmos_driver::error::{CosmosError, CosmosStatusKind};
+    /// use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus};
+    /// use azure_core::http::StatusCode;
     ///
-    /// let err = CosmosError::builder(CosmosStatusKind::Client)
+    /// let err = CosmosError::builder()
+    ///     .with_status(CosmosStatus::new(StatusCode::BadRequest))
     ///     .with_message("missing partition key")
     ///     .build();
-    /// assert_eq!(err.kind(), CosmosStatusKind::Client);
+    /// assert_eq!(err.status().status_code(), StatusCode::BadRequest);
     /// ```
-    pub fn builder(kind: CosmosStatusKind) -> CosmosErrorBuilder {
-        CosmosErrorBuilder::new(kind)
+    pub fn builder() -> CosmosErrorBuilder {
+        CosmosErrorBuilder::new()
     }
 }
 
@@ -498,9 +513,11 @@ impl CosmosError {
 ///
 /// ```
 /// use std::sync::Arc;
-/// use azure_data_cosmos_driver::error::{CosmosError, CosmosErrorBuilder, CosmosStatusKind};
+/// use azure_data_cosmos_driver::error::{CosmosError, CosmosErrorBuilder, CosmosStatus};
+/// use azure_core::http::StatusCode;
 ///
-/// let inner = CosmosError::builder(CosmosStatusKind::Client)
+/// let inner = CosmosError::builder()
+///     .with_status(CosmosStatus::new(StatusCode::BadRequest))
 ///     .with_message("bad payload")
 ///     .build();
 /// let outer = CosmosErrorBuilder::from_error(inner)
@@ -512,13 +529,11 @@ impl CosmosError {
 pub struct CosmosErrorBuilder {
     /// When `Some`, build clones this error's inner state and patches the
     /// overridden fields. When `None`, build constructs a fresh error
-    /// from `kind` defaults.
+    /// with a synthetic `500 InternalServerError` status.
     base: Option<CosmosError>,
-    /// Categorical kind (sets default status when nothing else applies).
-    kind: CosmosStatusKind,
     /// Override status. Ignored if `response` is set ("CosmosResponse
     /// wins"); otherwise falls back to the base error's status or the
-    /// per-kind default.
+    /// synthetic 500 default.
     status: Option<CosmosStatus>,
     /// Wire-level response captured by the pipeline. When set, its status
     /// and diagnostics become authoritative; the builder produces
@@ -543,10 +558,9 @@ pub struct CosmosErrorBuilder {
 }
 
 impl CosmosErrorBuilder {
-    fn new(kind: CosmosStatusKind) -> Self {
+    fn new() -> Self {
         Self {
             base: None,
-            kind,
             status: None,
             response: None,
             response_parts: None,
@@ -561,14 +575,12 @@ impl CosmosErrorBuilder {
     /// subsequent setter overrides the corresponding field; unset fields
     /// are carried forward from `err`. Useful for re-decorating an error
     /// returned from a deeper layer — attaching operation context,
-    /// swapping the categorical status, or — most importantly — finalizing
-    /// a [`WirePending`](ErrorContext::WirePending) error into a `Wire`
-    /// one via [`with_diagnostics`](Self::with_diagnostics).
+    /// swapping status, or — most importantly — finalizing a
+    /// [`WirePending`](ErrorContext::WirePending) error into a `Wire` one
+    /// via [`with_diagnostics`](Self::with_diagnostics).
     pub fn from_error(err: CosmosError) -> Self {
-        let kind = err.kind();
         Self {
             base: Some(err),
-            kind,
             status: None,
             response: None,
             response_parts: None,
@@ -579,14 +591,12 @@ impl CosmosErrorBuilder {
         }
     }
 
-    /// Overrides the [`CosmosStatus`]. The builder's
-    /// [`CosmosStatusKind`] is forced onto the status so the categorical
-    /// kind stays consistent.
+    /// Overrides the [`CosmosStatus`].
     ///
     /// **Ignored if [`with_response`](Self::with_response) was also
     /// called** — the [`CosmosResponse`]'s status wins.
     pub fn with_status(mut self, status: CosmosStatus) -> Self {
-        self.status = Some(status.with_kind(self.kind));
+        self.status = Some(status);
         self
     }
 
@@ -683,17 +693,13 @@ impl CosmosErrorBuilder {
     /// (single `Arc<CosmosErrorInner>` regardless of which fields were
     /// set). See the type-level docs for the reconciliation rules.
     pub fn build(self) -> CosmosError {
-        let kind = self.kind;
-
         // Resolve the effective status before deciding the context, since
         // `WirePending` and `Synthetic` both need it stored on the outer
         // inner and `Wire` overrides it from the response.
         let base_status = self.base.as_ref().map(|b| b.inner.status);
-        let resolved_status = self
-            .status
-            .map(|s| s.with_kind(kind))
-            .or(base_status.map(|s| s.with_kind(kind)))
-            .unwrap_or_else(|| default_status_for(kind));
+        let resolved_status = self.status.or(base_status).unwrap_or_else(|| {
+            CosmosStatus::new(azure_core::http::StatusCode::InternalServerError)
+        });
 
         // Pull base context (if any) to support carry-forward of
         // WirePending staging through `from_error(...).build()` without
@@ -708,7 +714,7 @@ impl CosmosErrorBuilder {
         //  5. else                                                  -> Synthetic
         let (status, context) = if let Some(response) = self.response {
             // (1) Full response supplied; it wins.
-            let status = response.status().with_kind(kind);
+            let status = response.status();
             (
                 status,
                 ErrorContext::Wire {
@@ -721,9 +727,8 @@ impl CosmosErrorBuilder {
                 Some(diag) => {
                     // Promotion: assemble a CosmosResponse and become Wire.
                     let payload = *parts;
-                    let response =
-                        finalize_response(payload, resolved_status.with_kind(kind), diag);
-                    let status = response.status().with_kind(kind);
+                    let response = finalize_response(payload, resolved_status, diag);
+                    let status = response.status();
                     (
                         status,
                         ErrorContext::Wire {
@@ -744,9 +749,8 @@ impl CosmosErrorBuilder {
                     Some(diag) => {
                         // (3) Promote: assemble a CosmosResponse and become Wire.
                         let payload = (**payload).clone();
-                        let response =
-                            finalize_response(payload, resolved_status.with_kind(kind), diag);
-                        let status = response.status().with_kind(kind);
+                        let response = finalize_response(payload, resolved_status, diag);
+                        let status = response.status();
                         (
                             status,
                             ErrorContext::Wire {
@@ -771,7 +775,7 @@ impl CosmosErrorBuilder {
                     // `with_diagnostics` on this builder is discarded by
                     // the "CosmosResponse wins" rule.
                     let response = (**response).clone();
-                    let status = response.status().with_kind(kind);
+                    let status = response.status();
                     (
                         status,
                         ErrorContext::Wire {
@@ -845,22 +849,6 @@ fn finalize_response(
     CosmosResponse::new(body, headers, status, diagnostics)
 }
 
-fn default_status_for(kind: CosmosStatusKind) -> CosmosStatus {
-    use azure_core::http::StatusCode;
-    match kind {
-        CosmosStatusKind::Service => {
-            CosmosStatus::new(StatusCode::InternalServerError).with_kind(kind)
-        }
-        CosmosStatusKind::Transport => CosmosStatus::TRANSPORT_GENERATED_503,
-        CosmosStatusKind::Client => CosmosStatus::new(StatusCode::BadRequest).with_kind(kind),
-        CosmosStatusKind::Authentication => CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
-        CosmosStatusKind::Serialization => CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-        CosmosStatusKind::Configuration => {
-            CosmosStatus::new(StatusCode::BadRequest).with_kind(kind)
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -905,42 +893,26 @@ mod tests {
     // -----------------------------------------------------------------
 
     #[test]
-    fn builder_kind_defaults_pick_sensible_status() {
-        for kind in [
-            CosmosStatusKind::Client,
-            CosmosStatusKind::Configuration,
-            CosmosStatusKind::Authentication,
-            CosmosStatusKind::Serialization,
-            CosmosStatusKind::Transport,
-            CosmosStatusKind::Service,
-        ] {
-            let err = CosmosError::builder(kind).with_message("m").build();
-            assert_eq!(err.kind(), kind, "kind mismatch for {kind:?}");
-            assert_eq!(
-                err.status().kind(),
-                kind,
-                "status kind mismatch for {kind:?}"
-            );
-            assert_eq!(format!("{err}").split(": ").last().unwrap(), "m");
-            assert!(err.response().is_none());
-        }
+    fn builder_default_status_is_internal_server_error() {
+        let err = CosmosError::builder().with_message("m").build();
+        assert_eq!(err.status().status_code(), StatusCode::InternalServerError);
+        assert_eq!(format!("{err}").split(": ").last().unwrap(), "m");
+        assert!(err.response().is_none());
     }
 
     #[test]
-    fn builder_with_status_overrides_default_but_forces_kind() {
-        let err = CosmosError::builder(CosmosStatusKind::Transport)
+    fn builder_with_status_is_preserved_verbatim() {
+        let err = CosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::ServiceUnavailable))
             .with_message("nope")
             .build();
-        assert_eq!(err.kind(), CosmosStatusKind::Transport);
         assert_eq!(err.status().status_code(), StatusCode::ServiceUnavailable);
-        assert_eq!(err.status().kind(), CosmosStatusKind::Transport);
     }
 
     #[test]
     fn builder_with_source_preserves_via_std_error_source() {
         let io = std::io::Error::new(std::io::ErrorKind::Other, "underlying");
-        let err = CosmosError::builder(CosmosStatusKind::Transport)
+        let err = CosmosError::builder()
             .with_message("wrapped")
             .with_source(io)
             .build();
@@ -950,12 +922,9 @@ mod tests {
 
     #[test]
     fn builder_with_arc_source_accepts_shared_handle() {
-        let inner = Arc::new(
-            CosmosError::builder(CosmosStatusKind::Client)
-                .with_message("inner")
-                .build(),
-        ) as Arc<dyn StdError + Send + Sync + 'static>;
-        let outer = CosmosError::builder(CosmosStatusKind::Transport)
+        let inner = Arc::new(CosmosError::builder().with_message("inner").build())
+            as Arc<dyn StdError + Send + Sync + 'static>;
+        let outer = CosmosError::builder()
             .with_arc_source(inner)
             .with_message("outer")
             .build();
@@ -966,7 +935,7 @@ mod tests {
     #[test]
     fn builder_with_diagnostics_attaches_to_synthetic_error() {
         let diag = make_test_diagnostics();
-        let err = CosmosError::builder(CosmosStatusKind::Client)
+        let err = CosmosError::builder()
             .with_message("m")
             .with_diagnostics(Arc::clone(&diag))
             .build();
@@ -983,7 +952,7 @@ mod tests {
         );
         let unrelated_diag = make_test_diagnostics();
 
-        let err = CosmosError::builder(CosmosStatusKind::Service)
+        let err = CosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::TooManyRequests)) // discarded
             .with_diagnostics(Arc::clone(&unrelated_diag)) // discarded
             .with_response(response)
@@ -1003,7 +972,7 @@ mod tests {
             CosmosStatus::new(StatusCode::Conflict),
             make_test_diagnostics(),
         );
-        let err = CosmosError::builder(CosmosStatusKind::Service)
+        let err = CosmosError::builder()
             .with_response(response)
             .with_message("conflict")
             .build();
@@ -1028,7 +997,7 @@ mod tests {
 
     #[test]
     fn builder_with_response_parts_no_diagnostics_yields_wire_pending() {
-        let err = CosmosError::builder(CosmosStatusKind::Service)
+        let err = CosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::TooManyRequests))
             .with_message("staged")
             .with_response_parts(make_test_payload())
@@ -1055,7 +1024,7 @@ mod tests {
     #[test]
     fn builder_with_response_parts_and_diagnostics_promotes_to_wire() {
         let diag = make_test_diagnostics();
-        let err = CosmosError::builder(CosmosStatusKind::Service)
+        let err = CosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::NotFound))
             .with_message("not found")
             .with_response_parts(make_test_payload())
@@ -1074,7 +1043,7 @@ mod tests {
         // Simulate the operation pipeline finalization path:
         //   1. per-attempt: build WirePending error (no diagnostics yet)
         //   2. abort: from_error(err).with_diagnostics(real_diag).build()
-        let staged = CosmosError::builder(CosmosStatusKind::Service)
+        let staged = CosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::ServiceUnavailable))
             .with_message("attempt-failed")
             .with_response_parts(make_test_payload())
@@ -1097,7 +1066,7 @@ mod tests {
         // from_error(WirePending) with only a context decoration must
         // preserve the WirePending state — promotion only happens when
         // diagnostics is supplied.
-        let staged = CosmosError::builder(CosmosStatusKind::Service)
+        let staged = CosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::ServiceUnavailable))
             .with_message("attempt-failed")
             .with_response_parts(make_test_payload())
@@ -1118,7 +1087,7 @@ mod tests {
         let diag = make_test_diagnostics();
         let response =
             make_test_response(CosmosStatus::new(StatusCode::Conflict), Arc::clone(&diag));
-        let original = CosmosError::builder(CosmosStatusKind::Service)
+        let original = CosmosError::builder()
             .with_response(response)
             .with_message("conflict")
             .build();
@@ -1134,7 +1103,7 @@ mod tests {
 
     #[test]
     fn builder_with_context_prepends_to_message() {
-        let err = CosmosError::builder(CosmosStatusKind::Client)
+        let err = CosmosError::builder()
             .with_message("bad payload")
             .with_context("op=createItem")
             .build();
@@ -1148,13 +1117,12 @@ mod tests {
     #[test]
     fn builder_from_error_carries_forward_unset_fields() {
         let diag = make_test_diagnostics();
-        let original = CosmosError::builder(CosmosStatusKind::Client)
+        let original = CosmosError::builder()
             .with_message("first")
             .with_diagnostics(Arc::clone(&diag))
             .build();
 
         let cloned = CosmosErrorBuilder::from_error(original.clone()).build();
-        assert_eq!(cloned.kind(), CosmosStatusKind::Client);
         assert_eq!(
             cloned.status().status_code(),
             original.status().status_code()
@@ -1165,9 +1133,7 @@ mod tests {
 
     #[test]
     fn builder_message_setter_overrides_base_message() {
-        let original = CosmosError::builder(CosmosStatusKind::Client)
-            .with_message("orig")
-            .build();
+        let original = CosmosError::builder().with_message("orig").build();
         let patched = CosmosErrorBuilder::from_error(original)
             .with_message("replaced")
             .build();
@@ -1176,7 +1142,7 @@ mod tests {
 
     #[test]
     fn builder_repeated_setters_last_write_wins() {
-        let err = CosmosError::builder(CosmosStatusKind::Client)
+        let err = CosmosError::builder()
             .with_message("first")
             .with_message("second")
             .with_context("ctx-a")
@@ -1188,14 +1154,13 @@ mod tests {
 
     #[test]
     fn end_to_end_timeout_uses_synthetic_status() {
-        let err = CosmosError::builder(CosmosStatusKind::Transport)
+        let err = CosmosError::builder()
             .with_status(CosmosStatus::from_parts(
                 StatusCode::RequestTimeout,
                 Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
             ))
             .with_message("e2e timeout")
             .build();
-        assert_eq!(err.kind(), CosmosStatusKind::Transport);
         assert_eq!(err.status().status_code(), StatusCode::RequestTimeout);
         assert_eq!(
             err.status().sub_status(),
@@ -1207,7 +1172,7 @@ mod tests {
     }
 
     fn end_to_end_timeout_error(message: &'static str) -> CosmosError {
-        CosmosError::builder(CosmosStatusKind::Transport)
+        CosmosError::builder()
             .with_status(CosmosStatus::from_parts(
                 StatusCode::RequestTimeout,
                 Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
@@ -1229,7 +1194,7 @@ mod tests {
             "inner must have a captured backtrace for this test to be meaningful"
         );
 
-        let outer = CosmosError::builder(CosmosStatusKind::Transport)
+        let outer = CosmosError::builder()
             .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
             .with_message("outer")
             .with_arc_source(Arc::new(inner))
@@ -1251,7 +1216,7 @@ mod tests {
     /// together.
     fn make_error_with_diagnostics_and_source() -> CosmosError {
         let inner = end_to_end_timeout_error("inner timeout");
-        CosmosError::builder(CosmosStatusKind::Transport)
+        CosmosError::builder()
             .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
             .with_message("outer transport failure")
             .with_diagnostics(make_test_diagnostics())
@@ -1292,8 +1257,8 @@ mod tests {
             "plain display must stay on one line, got:\n{rendered}"
         );
         assert!(
-            rendered.contains("[Transport]"),
-            "plain display must include the categorical kind, got:\n{rendered}"
+            rendered.contains("503"),
+            "plain display must include the status, got:\n{rendered}"
         );
         assert!(
             rendered.ends_with(": outer transport failure"),
@@ -1307,7 +1272,7 @@ mod tests {
     fn display_alternate_includes_header_source_chain_and_diagnostics() {
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err:#}");
-        assert!(rendered.contains("[Transport]"));
+        assert!(rendered.contains("503"));
         assert!(rendered.contains("outer transport failure"));
         assert!(rendered.contains("Caused by:") && rendered.contains("inner timeout"));
         assert!(rendered.contains("Diagnostics:"));
@@ -1346,7 +1311,7 @@ mod tests {
             }
         }
 
-        let err = CosmosError::builder(CosmosStatusKind::Transport)
+        let err = CosmosError::builder()
             .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
             .with_message("outer")
             .with_arc_source(Arc::new(CyclicError))

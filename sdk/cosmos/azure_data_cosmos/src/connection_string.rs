@@ -152,7 +152,7 @@ mod tests {
         let actual_error_message = err.to_string();
         assert_eq!(
             actual_error_message,
-            format!("[Configuration] 400: {expected_error_message}")
+            format!("400: {expected_error_message}")
         )
     }
 }

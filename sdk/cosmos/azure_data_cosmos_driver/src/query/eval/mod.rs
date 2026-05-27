@@ -730,7 +730,8 @@ pub fn query_documents(
     documents: &[serde_json::Value],
 ) -> crate::error::Result<Vec<serde_json::Value>> {
     let program = crate::query::parse(sql).map_err(|e| {
-        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(format!("failed to parse query: {e}"))
             .with_source(e)
             .build()
@@ -759,14 +760,20 @@ pub fn query_documents(
         if use_binding_context {
             let from = &query.from.as_ref().unwrap().collection;
             let bindings_list = expand_from(doc, from, &serde_json::Map::new()).map_err(|e| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(e.to_string())
                     .build()
             })?;
             for bindings in bindings_list {
                 let ctx = serde_json::Value::Object(bindings);
                 if eval_where(&ctx, &query.where_clause, None, parameters).map_err(|e| {
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
                         .with_message(e.to_string())
                         .build()
                 })? {
@@ -774,7 +781,10 @@ pub fn query_documents(
                 }
             }
         } else if eval_where(doc, &query.where_clause, eval_alias, parameters).map_err(|e| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message(e.to_string())
                 .build()
         })? {
@@ -802,7 +812,10 @@ pub fn query_documents(
                     .map(|e| eval_scalar(e, row, eval_alias, parameters).map(|v| v.to_json()))
                     .collect();
                 let key = serde_json::to_string(&key_parts.map_err(|e| {
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
                         .with_message(e.to_string())
                         .build()
                 })?)
@@ -821,7 +834,10 @@ pub fn query_documents(
             for group in &groups {
                 projected.push(project_group(group, query, eval_alias, parameters).map_err(
                     |e| {
-                        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                        crate::error::CosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest,
+                            ))
                             .with_message(e.to_string())
                             .build()
                     },
@@ -833,7 +849,10 @@ pub fn query_documents(
             // Aggregates without GROUP BY → implicit single group over all rows.
             let projected =
                 project_group(&filtered_rows, query, eval_alias, parameters).map_err(|e| {
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
                         .with_message(e.to_string())
                         .build()
                 })?;
@@ -854,7 +873,10 @@ pub fn query_documents(
         for row in &filtered_rows {
             projected.push(
                 project_row(row, query, eval_alias, parameters).map_err(|e| {
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
                         .with_message(e.to_string())
                         .build()
                 })?,
@@ -886,18 +908,22 @@ pub fn query_documents(
                         parameters,
                     )
                     .map_err(|e| {
-                        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                        crate::error::CosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest,
+                            ))
                             .with_message(e.to_string())
                             .build()
                     })?
                 } else {
                     eval_scalar(&item.expression, &originals[i], eval_alias, parameters).map_err(
                         |e| {
-                            crate::error::CosmosError::builder(
-                                crate::error::CosmosStatusKind::Client,
-                            )
-                            .with_message(e.to_string())
-                            .build()
+                            crate::error::CosmosError::builder()
+                                .with_status(crate::error::CosmosStatus::new(
+                                    azure_core::http::StatusCode::BadRequest,
+                                ))
+                                .with_message(e.to_string())
+                                .build()
                         },
                     )?
                 };
@@ -927,12 +953,18 @@ pub fn query_documents(
     if let Some(top) = &query.select.top {
         let n = match top {
             SqlTopSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(format!("TOP literal must be non-negative; got {n}"))
                     .build()
             })?,
             SqlTopSpec::Parameter(name) => resolve_integer_param(parameters, name).map_err(|e| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(e.to_string())
                     .build()
             })? as usize,
@@ -944,13 +976,19 @@ pub fn query_documents(
     if let Some(ol) = &query.offset_limit {
         let offset = match &ol.offset {
             SqlOffsetSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(format!("OFFSET literal must be non-negative; got {n}"))
                     .build()
             })?,
             SqlOffsetSpec::Parameter(name) => {
                 resolve_integer_param(parameters, name).map_err(|e| {
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
                         .with_message(e.to_string())
                         .build()
                 })? as usize
@@ -958,13 +996,19 @@ pub fn query_documents(
         };
         let limit = match &ol.limit {
             SqlLimitSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(format!("LIMIT literal must be non-negative; got {n}"))
                     .build()
             })?,
             SqlLimitSpec::Parameter(name) => {
                 resolve_integer_param(parameters, name).map_err(|e| {
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
                         .with_message(e.to_string())
                         .build()
                 })? as usize

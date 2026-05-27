@@ -428,7 +428,8 @@ impl CosmosDriver {
         payload: &[u8],
     ) -> crate::error::Result<super::cache::AccountProperties> {
         serde_json::from_slice(payload).map_err(|e| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message(format!("failed to parse AccountProperties: {e}"))
                 .with_source(e)
                 .build()
@@ -722,7 +723,8 @@ impl CosmosDriver {
         let db_headers = db_result.headers().clone();
         let db_diagnostics = db_result.diagnostics();
         let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message(format!("failed to deserialize database response: {e}"))
                 .with_response_parts(crate::models::CosmosResponsePayload::new(
                     crate::models::ResponseBody::NoPayload,
@@ -733,7 +735,8 @@ impl CosmosDriver {
                 .build()
         })?;
         let db_rid = db_props.system_properties.rid.ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("database response missing _rid")
                 .with_response_parts(crate::models::CosmosResponsePayload::new(
                     crate::models::ResponseBody::NoPayload,
@@ -754,7 +757,8 @@ impl CosmosDriver {
         let container_diagnostics = container_result.diagnostics();
         let container_props: ContainerProperties =
             container_result.into_body().into_single().map_err(|e| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!("failed to deserialize container response: {e}"))
                     .with_response_parts(crate::models::CosmosResponsePayload::new(
                         crate::models::ResponseBody::NoPayload,
@@ -769,7 +773,8 @@ impl CosmosDriver {
             .rid
             .clone()
             .ok_or_else(|| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("container response missing _rid")
                     .with_response_parts(crate::models::CosmosResponsePayload::new(
                         crate::models::ResponseBody::NoPayload,
@@ -807,7 +812,8 @@ impl CosmosDriver {
         let db_headers = db_result.headers().clone();
         let db_diagnostics = db_result.diagnostics();
         let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message(format!(
                     "failed to deserialize database response (db_rid='{db_rid}'): {e}"
                 ))
@@ -837,7 +843,7 @@ impl CosmosDriver {
             .into_body()
             .into_single()
             .map_err(|e| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+                crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
                         "failed to deserialize container response (db_rid='{db_rid}', container_rid='{container_rid}'): {e}"
                     ))
@@ -1080,7 +1086,7 @@ impl CosmosDriver {
                 .runtime
                 .get_throughput_control_group(container, name)
                 .ok_or_else(|| {
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
                         .with_message(format!(
                             "throughput control group '{}' not found in registry for container '{}'",
                             name,
@@ -1190,7 +1196,7 @@ impl CosmosDriver {
             Err(e) => {
                 // The error is already a typed Cosmos error; just consult
                 // its status when classifying terminal vs. transient.
-                let http_status = if e.status().is_service_error() {
+                let http_status = if e.is_from_wire() {
                     Some(e.status().status_code())
                 } else {
                     None
@@ -1389,11 +1395,12 @@ impl CosmosDriver {
                 if cfg!(debug_assertions) {
                     panic!("singleton operation returned an empty page")
                 }
-                Err(
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                        .with_message("internal error: singleton operation returned an empty page")
-                        .build(),
-                )
+                Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message("internal error: singleton operation returned an empty page")
+                    .build())
             }
             Err(e) => Err(e),
         }
@@ -1413,7 +1420,7 @@ impl CosmosDriver {
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
                 .with_message(format!(
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
                      use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
@@ -1692,7 +1699,7 @@ impl CosmosDriver {
     ///   previous pipeline's state and can resume any operation.
     /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
-    ///   returns a [`Client`](crate::error::CosmosStatusKind::Client) error.
+    ///   returns a `Client`-shaped error.
     pub async fn plan_operation(
         &self,
         operation: CosmosOperation,
@@ -1701,7 +1708,7 @@ impl CosmosDriver {
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
                 .with_message(format!(
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
                      use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
@@ -1720,29 +1727,29 @@ impl CosmosDriver {
         // state. Server-issued tokens are only valid for trivial operations.
         let resume_state = match continuation {
             None => None,
-            Some(token) => match token.resolve()? {
-                ResolvedToken::ClientV1(state) => {
-                    // Validate the state is valid for this operation.
-                    state.is_valid_for_operation(&operation)?;
-                    Some(state.into_root_node_state())
-                }
-                ResolvedToken::ServerOpaque(server_token) => {
-                    if !operation.is_trivial() {
-                        return Err(crate::error::CosmosError::builder(
-                            crate::error::CosmosStatusKind::Client,
-                        )
+            Some(token) => {
+                match token.resolve()? {
+                    ResolvedToken::ClientV1(state) => {
+                        // Validate the state is valid for this operation.
+                        state.is_valid_for_operation(&operation)?;
+                        Some(state.into_root_node_state())
+                    }
+                    ResolvedToken::ServerOpaque(server_token) => {
+                        if !operation.is_trivial() {
+                            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
                         .with_message(
                             "an opaque server continuation token cannot be used to resume a \
                              cross-partition query; use the SDK-issued continuation token from \
                              FeedPageIterator::to_continuation_token()",
                         )
                         .build());
+                        }
+                        Some(PipelineNodeState::Request {
+                            server_continuation: Some(server_token),
+                        })
                     }
-                    Some(PipelineNodeState::Request {
-                        server_continuation: Some(server_token),
-                    })
                 }
-            },
+            }
         };
 
         // Trivial plan: anything that isn't a cross-partition query.
@@ -1753,7 +1760,10 @@ impl CosmosDriver {
 
         // Cross-partition query: fetch query plan from backend.
         let container = operation.container().ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("cross-partition query requires a container reference")
                 .build()
         })?;
@@ -1773,16 +1783,16 @@ impl CosmosDriver {
         let query_plan_body = match response.body() {
             crate::models::ResponseBody::Bytes(b) => b.clone(),
             _ => {
-                return Err(crate::error::CosmosError::builder(
-                    crate::error::CosmosStatusKind::Serialization,
-                )
-                .with_message("query plan response did not contain a body")
-                .with_source(std::io::Error::other("missing body"))
-                .build());
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("query plan response did not contain a body")
+                    .with_source(std::io::Error::other("missing body"))
+                    .build());
             }
         };
         let query_plan: QueryPlan = serde_json::from_slice(&query_plan_body).map_err(|e| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message(format!("failed to parse query plan response: {e}"))
                 .with_source(e)
                 .build()
@@ -1963,7 +1973,8 @@ mod tests {
                     body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
                 }),
                 ResponsePlan::Http2Incompatible => Err(TransportError::new(
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                         .with_status(crate::models::CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE)
                         .with_message("http2 not supported")
                         .with_source(h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED))
@@ -1971,7 +1982,8 @@ mod tests {
                     crate::diagnostics::RequestSentStatus::NotSent,
                 )),
                 ResponsePlan::ConnectionError => Err(TransportError::new(
-                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                         .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
                         .with_message("simulated connection refused")
                         .build(),
@@ -2373,7 +2385,8 @@ mod tests {
     #[test]
     #[cfg(feature = "reqwest")]
     fn http2_reason_http11_required_triggers_http11_downgrade() {
-        let error = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+        let error = crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE)
             .with_message("http2 not supported")
             .with_source(h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED))
@@ -2388,7 +2401,8 @@ mod tests {
 
     #[test]
     fn connection_error_without_http2_signal_does_not_trigger_downgrade() {
-        let error = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+        let error = crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
             .with_message("connect failed")
             .build();
@@ -2402,7 +2416,8 @@ mod tests {
 
     #[test]
     fn io_error_without_http2_signal_does_not_trigger_downgrade() {
-        let error = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+        let error = crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_IO_FAILED)
             .with_message("socket reset")
             .build();
@@ -2416,7 +2431,8 @@ mod tests {
 
     #[test]
     fn http11_errors_do_not_trigger_probe_back_to_http2() {
-        let error = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+        let error = crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
             .with_message("connect failed")
             .build();
@@ -2430,7 +2446,8 @@ mod tests {
 
     #[test]
     fn downgrade_requires_http2_to_be_enabled() {
-        let error = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+        let error = crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
             .with_message("connect failed")
             .build();

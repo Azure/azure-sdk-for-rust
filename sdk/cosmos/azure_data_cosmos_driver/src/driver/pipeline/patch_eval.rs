@@ -112,7 +112,10 @@ impl std::error::Error for PatchEvalError {}
 
 impl From<PatchEvalError> for crate::error::CosmosError {
     fn from(err: PatchEvalError) -> Self {
-        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
             .with_message(err.to_string())
             .build()
     }

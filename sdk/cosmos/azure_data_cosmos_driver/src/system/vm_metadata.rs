@@ -266,7 +266,10 @@ impl VmMetadataServiceInner {
             .timeout(IMDS_REQUEST_TIMEOUT)
             .build()
             .map_err(|e| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Configuration)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(format!("failed to build IMDS HTTP client: {e}"))
                     .with_source(e)
                     .build()
@@ -278,7 +281,8 @@ impl VmMetadataServiceInner {
             .send()
             .await
             .map_err(|e| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_status(crate::models::CosmosStatus::TRANSPORT_IO_FAILED)
                     .with_message(format!("IMDS request failed: {e}"))
                     .with_source(e)
@@ -286,7 +290,8 @@ impl VmMetadataServiceInner {
             })?;
 
         let body = response.text().await.map_err(|e| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                 .with_status(crate::models::CosmosStatus::TRANSPORT_BODY_READ_FAILED)
                 .with_message(format!("failed to read IMDS response body: {e}"))
                 .with_source(e)
@@ -294,7 +299,8 @@ impl VmMetadataServiceInner {
         })?;
 
         let metadata: AzureVmMetadata = serde_json::from_str(&body).map_err(|e| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("failed to parse IMDS response")
                 .with_source(e)
                 .build()
@@ -304,11 +310,12 @@ impl VmMetadataServiceInner {
 
     #[cfg(not(feature = "reqwest"))]
     async fn do_fetch() -> crate::error::Result<AzureVmMetadata> {
-        Err(
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Configuration)
-                .with_message("IMDS fetch requires the `reqwest` feature")
-                .build(),
-        )
+        Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("IMDS fetch requires the `reqwest` feature")
+            .build())
     }
 }
 

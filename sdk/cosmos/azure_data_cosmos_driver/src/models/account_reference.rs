@@ -324,7 +324,7 @@ impl AccountReferenceBuilder {
     /// Returns an error if authentication has not been configured.
     pub fn build(self) -> crate::error::Result<AccountReference> {
         let credential = self.credential.ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Configuration).with_message("Authentication is required. Use master_key() or credential() to set credentials.").build()
+            crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("Authentication is required. Use master_key() or credential() to set credentials.").build()
         })?;
 
         Ok(AccountReference {

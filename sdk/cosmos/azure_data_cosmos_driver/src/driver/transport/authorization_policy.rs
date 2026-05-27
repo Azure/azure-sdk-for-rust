@@ -103,12 +103,13 @@ pub(crate) async fn generate_authorization(
                 .get_token(&[COSMOS_AAD_SCOPE], None)
                 .await
                 .map_err(|err| {
-                    crate::error::CosmosError::builder(
-                        crate::error::CosmosStatusKind::Authentication,
-                    )
-                    .with_message("failed to acquire AAD token for Cosmos DB")
-                    .with_source(err)
-                    .build()
+                    crate::error::CosmosError::builder()
+                        .with_status(
+                            crate::error::CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
+                        )
+                        .with_message("failed to acquire AAD token for Cosmos DB")
+                        .with_source(err)
+                        .build()
                 })?
                 .token
                 .secret()
@@ -122,7 +123,10 @@ pub(crate) async fn generate_authorization(
             let string_to_sign = build_string_to_sign(auth_ctx, date_string);
             trace!(signature_payload = ?string_to_sign, "generating Cosmos auth signature");
             let signature = azure_core::hmac::hmac_sha256(&string_to_sign, key).map_err(|err| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Authentication)
+                crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
+                    )
                     .with_message(
                         "failed to compute HMAC-SHA256 signature for master-key authentication",
                     )

@@ -71,12 +71,11 @@ where
             let pk_ranges = match pk_ranges {
                 Some(ranges) if !ranges.is_empty() => ranges,
                 _ => {
-                    return Err(crate::error::CosmosError::builder(
-                        crate::error::CosmosStatusKind::Transport,
-                    )
-                    .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
-                    .with_message("failed to resolve partition key ranges from topology cache")
-                    .build());
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
+                        .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                        .with_message("failed to resolve partition key ranges from topology cache")
+                        .build());
                 }
             };
 

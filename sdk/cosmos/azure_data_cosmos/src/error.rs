@@ -4,8 +4,8 @@
 //! SDK-owned newtype wrapper around the driver's [`CosmosError`].
 //!
 //! The wrapper is `#[repr(transparent)]` so converting between the SDK and
-//! driver representations is a zero-cost move. All construction, classification,
-//! status-code constants, and predicates live in the driver crate
+//! driver representations is a zero-cost move. All construction, status-code
+//! constants, and predicates live in the driver crate
 //! (`azure_data_cosmos_driver::error`); the SDK layer adds only thin
 //! delegating accessors, the [`From<CosmosError>`] bridge into
 //! [`azure_core::Error`] required by the Azure SDK for Rust guidelines, and the
@@ -20,15 +20,9 @@ use azure_data_cosmos_driver::models::CosmosResponse;
 
 use crate::models::DiagnosticsContext;
 
-/// Categorical kind for a [`CosmosError`] — owned by
-/// [`CosmosStatus`](crate::CosmosStatus) and re-exported here for ergonomic
-/// access alongside the SDK error surface. See the driver crate for the
-/// canonical definition.
-pub type CosmosStatusKind = azure_data_cosmos_driver::error::CosmosStatusKind;
-
-/// Typed Cosmos status (HTTP status code + optional sub-status + categorical
-/// [`CosmosStatusKind`]) — type alias re-exporting the driver definition so
-/// SDK-only callers can stay on a single crate import.
+/// Typed Cosmos status (HTTP status code + optional sub-status) — type
+/// alias re-exporting the driver definition so SDK-only callers can stay
+/// on a single crate import.
 pub type CosmosStatus = azure_data_cosmos_driver::error::CosmosStatus;
 
 /// Sub-status code — type alias re-exporting the driver definition.
@@ -49,23 +43,25 @@ pub type SubStatusCode = azure_data_cosmos_driver::error::SubStatusCode;
 pub struct CosmosError(DriverCosmosError);
 
 impl CosmosError {
-    /// Returns a fluent [`CosmosErrorBuilder`] seeded with sensible defaults
-    /// for the given categorical [`CosmosStatusKind`].
-    pub fn builder(kind: CosmosStatusKind) -> CosmosErrorBuilder {
-        CosmosErrorBuilder(azure_data_cosmos_driver::error::CosmosError::builder(kind))
+    /// Returns a fluent [`CosmosErrorBuilder`] seeded with a synthetic
+    /// `500 InternalServerError` default status. Callers typically follow
+    /// with [`.with_status(...)`](CosmosErrorBuilder::with_status) using
+    /// one of the well-known [`CosmosStatus`] constants
+    /// ([`TRANSPORT_GENERATED_503`](CosmosStatus::TRANSPORT_GENERATED_503),
+    /// [`AUTHENTICATION_TOKEN_ACQUISITION_FAILED`](CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED),
+    /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID),
+    /// …), or with [`.with_response(...)`](CosmosErrorBuilder::with_response)
+    /// for service errors received from the wire.
+    pub fn builder() -> CosmosErrorBuilder {
+        CosmosErrorBuilder(azure_data_cosmos_driver::error::CosmosError::builder())
     }
 
-    /// Returns the typed Cosmos status. Always present — non-service errors
-    /// carry a synthetic status with a placeholder HTTP code and the correct
-    /// [`CosmosStatusKind`].
+    /// Returns the typed Cosmos status (HTTP status code + optional
+    /// sub-status). Always present — non-service errors carry a synthetic
+    /// status with a placeholder HTTP code (e.g.
+    /// [`CosmosStatus::TRANSPORT_GENERATED_503`] for transport failures).
     pub fn status(&self) -> CosmosStatus {
         self.0.status()
-    }
-
-    /// Returns the categorical [`CosmosStatusKind`]. Convenience for
-    /// `self.status().kind()`.
-    pub fn kind(&self) -> CosmosStatusKind {
-        self.0.kind()
     }
 
     /// Returns the originating [`CosmosResponse`] when a wire response was
@@ -94,36 +90,38 @@ impl CosmosError {
     /// builder methods or the corresponding
     /// `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` /
     /// `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` environment variables.
-    /// Cache hits do not consume budget. Returns `None` when capture was
-    /// throttled or when the resolution limiter denied a cache-missed frame;
-    /// partial backtraces are never produced.
     pub fn backtrace(&self) -> Option<&Arc<str>> {
         self.0.backtrace()
     }
 
     // -- construction helpers (pub(crate)) --
 
-    /// Builds a `Client` error (caller misuse / precondition), optionally
-    /// wrapping an underlying source error.
+    /// Builds a client-side error (caller misuse / precondition),
+    /// optionally wrapping an underlying source error. Synthesizes a
+    /// `400 BadRequest` status.
     pub(crate) fn client(
         message: impl Into<Arc<str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
-        let mut b = DriverCosmosError::builder(CosmosStatusKind::Client).with_message(message);
+        let mut b = DriverCosmosError::builder()
+            .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+            .with_message(message);
         if let Some(s) = source {
             b = b.with_arc_source(s);
         }
         Self(b.build())
     }
 
-    /// Builds a `Configuration` error (bad endpoint URL, malformed connection
+    /// Builds a configuration error (bad endpoint URL, malformed connection
     /// string, etc.), optionally wrapping an underlying source error.
+    /// Synthesizes a `400 BadRequest` status.
     pub(crate) fn configuration(
         message: impl Into<Arc<str>>,
         source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     ) -> Self {
-        let mut b =
-            DriverCosmosError::builder(CosmosStatusKind::Configuration).with_message(message);
+        let mut b = DriverCosmosError::builder()
+            .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+            .with_message(message);
         if let Some(s) = source {
             b = b.with_arc_source(s);
         }
@@ -158,7 +156,8 @@ impl From<DriverCosmosError> for CosmosError {
 impl From<serde_json::Error> for CosmosError {
     fn from(error: serde_json::Error) -> Self {
         Self(
-            DriverCosmosError::builder(CosmosStatusKind::Serialization)
+            DriverCosmosError::builder()
+                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("JSON serialization or deserialization failed")
                 .with_source(error)
                 .build(),
@@ -169,7 +168,8 @@ impl From<serde_json::Error> for CosmosError {
 impl From<url::ParseError> for CosmosError {
     fn from(error: url::ParseError) -> Self {
         Self(
-            DriverCosmosError::builder(CosmosStatusKind::Configuration)
+            DriverCosmosError::builder()
+                .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
                 .with_message("invalid URL")
                 .with_source(error)
                 .build(),
@@ -179,33 +179,80 @@ impl From<url::ParseError> for CosmosError {
 
 /// Per Azure SDK for Rust guideline: every service-crate error type provides a
 /// [`From`] impl into [`azure_core::Error`] so callers using the foundation
-/// error type via `?`/`From` continue to compose. The conversion maps the
-/// categorical [`CosmosStatusKind`] to the closest
-/// [`azure_core::error::ErrorKind`] and preserves the original [`CosmosError`]
-/// as the source so callers can `downcast_ref::<CosmosError>()` for the typed
-/// Cosmos surface.
+/// error type via `?`/`From` continue to compose.
+///
+/// The conversion uses two discriminators that don't require an
+/// architectural categorical enum on the Cosmos side:
+///
+/// 1. [`CosmosError::response`] is the primary signal for "did we get a
+///    wire response from Cosmos" — when present, the error maps to
+///    [`azure_core::error::ErrorKind::HttpResponse`].
+/// 2. Synthetic errors (no wire response) are categorized by their
+///    Cosmos sub-status code, which the SDK boundary mapper assigns from
+///    a well-known set (`TRANSPORT_*`, `AUTHENTICATION_*`,
+///    `SERIALIZATION_*`, `CLIENT_OPERATION_TIMEOUT`). The mapping is
+///    intentionally finer than the prior architectural-kind version
+///    could express — notably, `TRANSPORT_DNS_FAILED`,
+///    `TRANSPORT_CONNECTION_FAILED`, and `TRANSPORT_HTTP2_INCOMPATIBLE`
+///    map to [`azure_core::error::ErrorKind::Connection`] because those
+///    failure modes provably never sent request bytes (safe to retry
+///    non-idempotent writes per `azure_core`'s `Connection` semantics),
+///    while generic `TRANSPORT_IO_FAILED` maps to
+///    [`azure_core::error::ErrorKind::Io`].
+///
+/// The original [`CosmosError`] is preserved as the
+/// [`azure_core::Error`] source so callers can `downcast_ref::<CosmosError>()`
+/// for the typed Cosmos surface.
 impl From<CosmosError> for azure_core::Error {
     fn from(err: CosmosError) -> Self {
-        use azure_core::error::ErrorKind as CoreKind;
-        let core_kind = match err.kind() {
-            CosmosStatusKind::Service => CoreKind::HttpResponse {
-                status: err.status().status_code(),
-                error_code: err.status().sub_status().map(|s| s.value().to_string()),
-                raw_response: None,
-            },
-            CosmosStatusKind::Transport => CoreKind::Io,
-            CosmosStatusKind::Authentication => CoreKind::Credential,
-            CosmosStatusKind::Serialization
-            | CosmosStatusKind::Client
-            | CosmosStatusKind::Configuration => CoreKind::DataConversion,
-            // `CosmosStatusKind` is `#[non_exhaustive]`. New variants added to
-            // the driver should be reviewed and explicitly mapped here; fall
-            // back to `Other` so unknown future kinds don't silently mask the
-            // typed Cosmos error (still recoverable via downcast on the source
-            // chain).
-            _ => CoreKind::Other,
-        };
+        let core_kind = classify_for_azure_core(&err);
         azure_core::Error::new(core_kind, err)
+    }
+}
+
+fn classify_for_azure_core(err: &CosmosError) -> azure_core::error::ErrorKind {
+    use azure_core::error::ErrorKind as CoreKind;
+    let status = err.status();
+    let sub = status.sub_status();
+
+    // Primary discriminator: did we get a wire response from Cosmos?
+    if err.0.is_from_wire() {
+        return CoreKind::HttpResponse {
+            status: status.status_code(),
+            error_code: sub.map(|s| s.value().to_string()),
+            raw_response: None,
+        };
+    }
+
+    // Synthetic error — categorize by well-known SDK boundary-mapping
+    // sub-status codes.
+    match sub {
+        // Credential / auth boundary
+        Some(SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+        | Some(SubStatusCode::CLIENT_GENERATED_401) => CoreKind::Credential,
+
+        // Serialization boundary
+        Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID) => CoreKind::DataConversion,
+
+        // Request provably NEVER reached the wire — safe to retry non-idempotent writes
+        // (matches `azure_core::ErrorKind::Connection` semantics).
+        Some(SubStatusCode::TRANSPORT_CONNECTION_FAILED)
+        | Some(SubStatusCode::TRANSPORT_DNS_FAILED)
+        | Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE) => CoreKind::Connection,
+
+        // Generic transport I/O — might have fired mid-stream after request
+        // bytes left the socket, so retry safety is `Unknown` (callers should
+        // not blindly retry non-idempotent writes).
+        Some(SubStatusCode::TRANSPORT_IO_FAILED)
+        | Some(SubStatusCode::TRANSPORT_BODY_READ_FAILED)
+        | Some(SubStatusCode::TRANSPORT_GENERATED_503)
+        | Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT) => CoreKind::Io,
+
+        // Synthetic error with no specific sub_status discriminator —
+        // generic client/configuration validation, etc. There's no real
+        // HTTP response, so `Other` is more honest than fabricating an
+        // `HttpResponse` from a placeholder status code.
+        _ => CoreKind::Other,
     }
 }
 
@@ -280,12 +327,13 @@ mod tests {
     #[test]
     fn from_cosmos_error_for_azure_core_error_preserves_chain_and_kind() {
         let inner_io = std::io::Error::new(std::io::ErrorKind::Other, "io fail");
-        let cosmos = CosmosError::builder(CosmosStatusKind::Transport)
+        let cosmos = CosmosError::builder()
+            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
             .with_message("transport blew up")
             .with_source(inner_io)
             .build();
         let core_err: azure_core::Error = cosmos.into();
-        // Kind maps Transport → Io.
+        // TRANSPORT_IO_FAILED maps to Io.
         assert!(matches!(core_err.kind(), CoreErrorKind::Io));
         // Message + source chain preserved (the `CosmosError` becomes the
         // azure_core::Error's source so callers can downcast).
@@ -297,23 +345,59 @@ mod tests {
     }
 
     #[test]
-    fn from_cosmos_error_for_azure_core_error_maps_service_kind() {
-        let cosmos = CosmosError::builder(CosmosStatusKind::Service)
-            .with_status(CosmosStatus::new(azure_core::http::StatusCode::NotFound))
-            .with_message("missing")
+    fn from_cosmos_error_for_azure_core_error_maps_dns_failure_to_connection() {
+        // DNS / connect-refused / H2-incompatibility never sent any bytes
+        // on the wire — these map to `Connection`, which `azure_core`
+        // documents as safe-to-retry for non-idempotent writes.
+        let cosmos = CosmosError::builder()
+            .with_status(CosmosStatus::TRANSPORT_DNS_FAILED)
+            .with_message("dns lookup failed")
             .build();
         let core_err: azure_core::Error = cosmos.into();
-        match core_err.kind() {
-            CoreErrorKind::HttpResponse { status, .. } => {
-                assert_eq!(*status, azure_core::http::StatusCode::NotFound);
-            }
-            other => panic!("expected HttpResponse, got {other:?}"),
-        }
+        assert!(
+            matches!(core_err.kind(), CoreErrorKind::Connection),
+            "TRANSPORT_DNS_FAILED must map to Connection, got {:?}",
+            core_err.kind()
+        );
+    }
+
+    #[test]
+    fn from_cosmos_error_for_azure_core_error_maps_auth_to_credential() {
+        let cosmos = CosmosError::builder()
+            .with_status(CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+            .with_message("token acquisition failed")
+            .build();
+        let core_err: azure_core::Error = cosmos.into();
+        assert!(matches!(core_err.kind(), CoreErrorKind::Credential));
+    }
+
+    #[test]
+    fn from_cosmos_error_for_azure_core_error_maps_serialization_to_data_conversion() {
+        let cosmos = CosmosError::builder()
+            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("bad json")
+            .build();
+        let core_err: azure_core::Error = cosmos.into();
+        assert!(matches!(core_err.kind(), CoreErrorKind::DataConversion));
+    }
+
+    #[test]
+    fn from_cosmos_error_for_azure_core_error_synthetic_without_substatus_is_other() {
+        // Pure client-validation error: status BadRequest, no sub_status,
+        // no wire response. Maps to `Other` — more honest than fabricating
+        // an `HttpResponse` from a placeholder status code.
+        let cosmos = CosmosError::builder()
+            .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+            .with_message("bad arg")
+            .build();
+        let core_err: azure_core::Error = cosmos.into();
+        assert!(matches!(core_err.kind(), CoreErrorKind::Other));
     }
 
     #[test]
     fn from_cosmos_error_for_azure_core_error_downcast_recovers_cosmos_error() {
-        let cosmos = CosmosError::builder(CosmosStatusKind::Client)
+        let cosmos = CosmosError::builder()
+            .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
             .with_message("bad arg")
             .build();
         let core_err: azure_core::Error = cosmos.into();

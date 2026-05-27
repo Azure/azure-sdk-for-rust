@@ -47,7 +47,7 @@ pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> 
 #[cfg(test)]
 mod tests {
     use super::error_chain_summary;
-    use crate::error::{CosmosError, CosmosStatusKind};
+    use crate::error::CosmosError;
     use crate::models::CosmosStatus;
     use std::error::Error as StdError;
     use std::sync::Arc;
@@ -56,13 +56,13 @@ mod tests {
     fn returns_top_level_display_when_no_source() {
         // No source chain → the summary is exactly the error's own
         // `Display` string (`[Kind] status: message`).
-        let error = CosmosError::builder(CosmosStatusKind::Client)
+        let error = CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
             .with_message("top-level failure")
             .build();
-        assert_eq!(
-            error_chain_summary(&error),
-            "[Client] 400: top-level failure"
-        );
+        assert_eq!(error_chain_summary(&error), "400: top-level failure");
     }
 
     #[test]
@@ -71,14 +71,15 @@ mod tests {
         // The summary is the outer `Display` joined with each subsequent
         // source's `Display` by `": "`.
         let inner_io = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
-        let error = CosmosError::builder(CosmosStatusKind::Transport)
+        let error = CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
             .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
             .with_message("outer transport failure")
             .with_source(inner_io)
             .build();
         assert_eq!(
             error_chain_summary(&error),
-            "[Transport] 503/20011: outer transport failure: socket reset"
+            "503/20011: outer transport failure: socket reset"
         );
     }
 
@@ -88,14 +89,20 @@ mod tests {
         // strings — the dedup collapses them so the summary is the single
         // `Display` string, not duplicated.
         let inner: Arc<dyn StdError + Send + Sync + 'static> = Arc::new(
-            CosmosError::builder(CosmosStatusKind::Client)
+            CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("duplicate")
                 .build(),
         );
-        let outer = CosmosError::builder(CosmosStatusKind::Client)
+        let outer = CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
             .with_message("duplicate")
             .with_arc_source(Arc::clone(&inner))
             .build();
-        assert_eq!(error_chain_summary(&outer), "[Client] 400: duplicate");
+        assert_eq!(error_chain_summary(&outer), "400: duplicate");
     }
 }

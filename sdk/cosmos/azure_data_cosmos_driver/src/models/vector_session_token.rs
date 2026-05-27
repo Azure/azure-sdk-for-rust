@@ -31,12 +31,18 @@ impl VectorSessionToken {
         let mut parts = s.split('#');
 
         let version_str = parts.next().ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("invalid session token: empty input")
                 .build()
         })?;
         let version: u64 = version_str.parse().map_err(|_| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message(format!(
                     "invalid session token: bad version '{version_str}'"
                 ))
@@ -44,14 +50,20 @@ impl VectorSessionToken {
         })?;
 
         let global_str = parts.next().ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message(format!(
                     "invalid session token: missing global LSN in '{s}'"
                 ))
                 .build()
         })?;
         let global_lsn: u64 = global_str.parse().map_err(|_| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message(format!(
                     "invalid session token: bad global LSN '{global_str}'"
                 ))
@@ -64,21 +76,30 @@ impl VectorSessionToken {
                 continue;
             }
             let (region_str, lsn_str) = segment.split_once('=').ok_or_else(|| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(format!(
                         "invalid session token: malformed region segment '{segment}'"
                     ))
                     .build()
             })?;
             let region_id: u64 = region_str.parse().map_err(|_| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(format!(
                         "invalid session token: bad region id '{region_str}'"
                     ))
                     .build()
             })?;
             let lsn: u64 = lsn_str.parse().map_err(|_| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
                     .with_message(format!("invalid session token: bad region LSN '{lsn_str}'"))
                     .build()
             })?;
@@ -239,7 +260,10 @@ impl SessionTokenValue {
         }
         // V1 fallback: bare integer
         let lsn: u64 = s.parse().map_err(|_| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message(format!(
                     "invalid session token value: '{s}' is not a valid V2 vector or V1 integer"
                 ))

@@ -74,11 +74,12 @@ impl std::str::FromStr for DefaultConsistencyLevel {
                 } else if s.eq_ignore_ascii_case("Eventual") {
                     Ok(Self::Eventual)
                 } else {
-                    Err(
-                        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                            .with_message(format!("Unknown consistency level: {s}"))
-                            .build(),
-                    )
+                    Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(format!("Unknown consistency level: {s}"))
+                        .build())
                 }
             }
         }

@@ -109,7 +109,10 @@ impl std::str::FromStr for ReadConsistencyStrategy {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s).ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message(format!("Unknown read consistency strategy: {s}"))
                 .build()
         })

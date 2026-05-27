@@ -91,11 +91,12 @@ impl RequestExecutor for NoopRequestExecutor {
         _continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         Box::pin(async {
-            Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message("noop executor should not be called")
-                    .build(),
-            )
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("noop executor should not be called")
+                .build())
         })
     }
 }
@@ -144,11 +145,12 @@ impl TopologyProvider for NoopTopologyProvider {
         _refresh: PartitionRoutingRefresh,
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         Box::pin(async {
-            Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message("noop topology provider should not be called")
-                    .build(),
-            )
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("noop topology provider should not be called")
+                .build())
         })
     }
 }
@@ -254,7 +256,10 @@ pub(crate) fn response_with_continuation(
 
 /// Creates a 410 Gone error with a partition topology change substatus.
 pub(crate) fn gone_error() -> crate::error::CosmosError {
-    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Service)
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::InternalServerError,
+        ))
         .with_status(CosmosStatus::from_parts(
             StatusCode::Gone,
             Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
@@ -269,7 +274,10 @@ pub(crate) fn gone_error() -> crate::error::CosmosError {
 
 /// Creates a 410 Gone error with a non-topology substatus.
 pub(crate) fn non_topology_gone_error() -> crate::error::CosmosError {
-    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Service)
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::InternalServerError,
+        ))
         .with_status(CosmosStatus::from_parts(
             StatusCode::Gone,
             Some(SubStatusCode::NAME_CACHE_STALE),

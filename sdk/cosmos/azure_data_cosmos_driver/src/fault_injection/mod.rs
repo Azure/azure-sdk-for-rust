@@ -223,11 +223,12 @@ impl FromStr for FaultOperationType {
             "MetadataReadDatabaseAccount" => Ok(FaultOperationType::MetadataReadDatabaseAccount),
             "MetadataQueryPlan" => Ok(FaultOperationType::MetadataQueryPlan),
             "MetadataPartitionKeyRanges" => Ok(FaultOperationType::MetadataPartitionKeyRanges),
-            _ => Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message(format!("unknown fault operation type: {s}"))
-                    .build(),
-            ),
+            _ => Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!("unknown fault operation type: {s}"))
+                .build()),
         }
     }
 }
@@ -264,11 +265,12 @@ impl FromStr for FaultInjectionErrorType {
             "DatabaseAccountNotFound" => Ok(Self::DatabaseAccountNotFound),
             "ConnectionError" => Ok(Self::ConnectionError),
             "ResponseTimeout" => Ok(Self::ResponseTimeout),
-            _ => Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message(format!("unknown fault injection error type: {s}"))
-                    .build(),
-            ),
+            _ => Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!("unknown fault injection error type: {s}"))
+                .build()),
         }
     }
 }

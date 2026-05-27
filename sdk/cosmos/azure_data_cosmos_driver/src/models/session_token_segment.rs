@@ -26,7 +26,10 @@ impl FromStr for SessionTokenSegment {
 
     fn from_str(s: &str) -> crate::error::Result<Self> {
         let (pk_range_id, value_str) = s.trim().split_once(':').ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("invalid session token segment: missing ':'")
                 .build()
         })?;

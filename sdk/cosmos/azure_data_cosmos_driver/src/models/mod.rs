@@ -60,7 +60,7 @@ pub(crate) use cosmos_response::CosmosResponsePayload;
 // tightly coupled to the typed Cosmos error). Re-exported here for ergonomic access
 // via the historic `crate::models::CosmosStatus` path used throughout the driver
 // internals.
-pub use crate::error::cosmos_status::{CosmosStatus, CosmosStatusKind, SubStatusCode};
+pub use crate::error::cosmos_status::{CosmosStatus, SubStatusCode};
 pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
 pub use feed_range::FeedRange;

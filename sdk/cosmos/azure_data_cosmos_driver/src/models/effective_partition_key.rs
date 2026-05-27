@@ -101,22 +101,24 @@ impl EffectivePartitionKey {
         pk_definition: &PartitionKeyDefinition,
     ) -> crate::error::Result<std::ops::Range<Self>> {
         if pk_values.is_empty() {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message("compute_range called with empty pk_values")
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("compute_range called with empty pk_values")
+                .build());
         }
         if pk_values.len() > pk_definition.paths().len() {
-            return Err(
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                    .with_message(format!(
-                        "more partition key components ({}) than definition paths ({})",
-                        pk_values.len(),
-                        pk_definition.paths().len()
-                    ))
-                    .build(),
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
+                    "more partition key components ({}) than definition paths ({})",
+                    pk_values.len(),
+                    pk_definition.paths().len()
+                ))
+                .build());
         }
 
         let kind = pk_definition.kind();
@@ -127,7 +129,7 @@ impl EffectivePartitionKey {
             kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
 
         if kind != PartitionKeyKind::MultiHash && pk_values.len() != pk_definition.paths().len() {
-            return Err(crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client).with_message(format!(
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message(format!(
                     "non-MultiHash containers require exactly as many components ({}) as paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()

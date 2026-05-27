@@ -425,11 +425,14 @@ impl AsHeaders for PartitionKey {
                 }
                 InnerPartitionKeyValue::Infinity => {
                     // Internal sentinel — should never appear in a user-facing partition key.
-                    return Err(crate::error::CosmosError::builder(
-                        crate::error::CosmosStatusKind::Client,
-                    )
-                    .with_message("Infinity is not a valid partition key value for serialization")
-                    .build());
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(
+                            "Infinity is not a valid partition key value for serialization",
+                        )
+                        .build());
                 }
                 InnerPartitionKeyValue::Undefined => {
                     // Items with no partition key property.

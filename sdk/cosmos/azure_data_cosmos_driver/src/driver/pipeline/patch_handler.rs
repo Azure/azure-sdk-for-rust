@@ -124,14 +124,15 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     // `CosmosOperation::patch_item(..).with_precondition(..)` directly,
     // instead of silently ignoring it.
     if operation.precondition().is_some() {
-        return Err(
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                .with_message(
-                    "PATCH does not support caller-set preconditions; \
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message(
+                "PATCH does not support caller-set preconditions; \
              the handler manages If-Match internally",
-                )
-                .build(),
-        );
+            )
+            .build());
     }
 
     // -- 2. Parse and validate the patch spec --
@@ -139,18 +140,20 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchSpec body"))?;
     let spec: PatchSpec = serde_json::from_slice(body).map_err(|err| {
-        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(format!("failed to parse PATCH body as PatchSpec: {err}"))
             .with_source(err)
             .build()
     })?;
 
     if spec.operations.is_empty() {
-        return Err(
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
-                .with_message("PATCH operation must include at least one PatchOp")
-                .build(),
-        );
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("PATCH operation must include at least one PatchOp")
+            .build());
     }
 
     let item_ref = operation
@@ -158,7 +161,10 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         .cloned()
         .and_then(|pk| operation.resource_reference().try_into_item_reference(pk))
         .ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message(
                     "PATCH dispatch requires an item-level operation with a partition key",
                 )
@@ -212,7 +218,10 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             .await?;
         sub_op_diagnostics.push(read_resp.diagnostics());
         let etag = read_resp.headers().etag.clone().ok_or_else(|| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("PATCH cannot proceed: the Read response did not include an ETag")
                 .build()
         })?;
@@ -230,14 +239,16 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 
         // Locally apply the patch ops.
         let read_body_bytes = read_resp.into_body().single().map_err(|err| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message(format!("PATCH could not extract Read response body: {err}"))
                 .with_source(err)
                 .build()
         })?;
         let mut value: serde_json::Value =
             serde_json::from_slice(&read_body_bytes).map_err(|err| {
-                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
                         "PATCH could not deserialize current item body: {err}"
                     ))
@@ -246,7 +257,8 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
             })?;
         apply_patch_ops(&mut value, &spec.operations)?;
         let merged_bytes = serde_json::to_vec(&value).map_err(|err| {
-            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message(format!("PATCH could not serialize merged item: {err}"))
                 .with_source(err)
                 .build()
@@ -374,7 +386,10 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
 }
 
 fn missing_body_error(msg: &'static str) -> crate::error::CosmosError {
-    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::BadRequest,
+        ))
         .with_message(msg)
         .build()
 }
@@ -384,17 +399,17 @@ fn missing_body_error(msg: &'static str) -> crate::error::CosmosError {
 /// lost the race against a concurrent writer).
 ///
 /// The driver pipeline maps every non-2xx response — 412 included — into
-/// an `Err(crate::error::CosmosError)` with `CosmosStatusKind::Service` via
+/// an `Err(crate::error::CosmosError)` with `CosmosStatus` via
 /// `retry_evaluation::build_http_error`, and 412 specifically resolves
 /// to `OperationAction::Abort` (it is never retried at the pipeline layer).
 /// The patch handler's RMW loop is the *one* place where 412 needs to be
-/// recovered into a retry, so we narrow on the kind here instead of relying
-/// on a status check that the `await?` above would never reach. Requires
-/// `CosmosStatusKind::Service` so a future internal constructor that happens to use
-/// `StatusCode::PreconditionFailed` cannot accidentally trigger the RMW
-/// retry path.
+/// recovered into a retry, so we narrow on the response-presence here
+/// instead of relying on a status check that the `await?` above would
+/// never reach. Requires a wire response so a future internal
+/// constructor that happens to use `StatusCode::PreconditionFailed` for a
+/// synthetic error cannot accidentally trigger the RMW retry path.
 fn is_precondition_failed(err: &crate::error::CosmosError) -> bool {
-    err.status().is_service_error() && err.status().is_precondition_failed()
+    err.is_from_wire() && err.status().is_precondition_failed()
 }
 
 /// Extracts the `x-ms-session-token` from a service-built cosmos error's
@@ -532,7 +547,10 @@ fn exhaustion_error(
             // onto the error if any exist by the time it leaves the
             // pipeline. Attach `aggregated` here too in case a future caller
             // seeds `sub_op_diagnostics` without a `last_412` source.
-            let mut b = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Service)
+            let mut b = crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::InternalServerError,
+                ))
                 .with_status(crate::models::CosmosStatus::new(
                     StatusCode::PreconditionFailed,
                 ))
@@ -581,14 +599,15 @@ fn validate_partition_key_paths(
         for path in std::iter::once(dest).chain(from) {
             for pk_path in &pk_paths {
                 if path_overlaps_partition_key(path, pk_path) {
-                    return Err(crate::error::CosmosError::builder(
-                        crate::error::CosmosStatusKind::Client,
-                    )
-                    .with_message(format!(
-                        "PATCH op '{path}' overlaps partition key path '{pk_path}'; \
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(format!(
+                            "PATCH op '{path}' overlaps partition key path '{pk_path}'; \
                              cannot mutate partition key with a client-side Read-Modify-Write"
-                    ))
-                    .build());
+                        ))
+                        .build());
                 }
             }
         }
@@ -798,12 +817,16 @@ mod tests {
 
     #[test]
     fn is_precondition_failed_rejects_non_http_error_kinds() {
-        use crate::error::{CosmosError, CosmosStatusKind};
+        use crate::error::CosmosError;
         let errs = [
-            CosmosError::builder(CosmosStatusKind::Client)
+            CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
                 .with_message("synthetic")
                 .build(),
-            CosmosError::builder(CosmosStatusKind::Serialization)
+            CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("bad json")
                 .with_source(std::io::Error::new(std::io::ErrorKind::InvalidData, "stub"))
                 .build(),
@@ -812,7 +835,7 @@ mod tests {
             assert!(
                 !is_precondition_failed(err),
                 "should not match {:?}",
-                err.kind()
+                err.status()
             );
         }
     }
@@ -894,7 +917,7 @@ mod tests {
             err.status().status_code(),
             StatusCode::PreconditionFailed,
             "exhaustion error must surface as a 412; got {:?}",
-            err.kind()
+            err.status()
         );
         // (b) Message carries the attempts count and the underlying detail
         //     (with_context prefixes the attempts message onto the source).
@@ -1198,7 +1221,10 @@ mod tests {
         if let Some(token) = session_token {
             headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
         }
-        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Service)
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::InternalServerError,
+            ))
             .with_status(CosmosStatus::new(status))
             .with_message(msg)
             .with_response_parts(crate::models::CosmosResponsePayload::new(
@@ -1318,7 +1344,7 @@ mod tests {
         assert!(
             is_precondition_failed(&err),
             "final error must be 412-shaped; got {:?}",
-            err.kind()
+            err.status()
         );
         assert!(
             format!("{err}").contains("3"),
@@ -1354,7 +1380,7 @@ mod tests {
         assert!(
             err.status().status_code() == StatusCode::InternalServerError,
             "non-412 must propagate verbatim; got {:?}",
-            err.kind()
+            err.status()
         );
         // Single Read + single Replace — no retry.
         assert_eq!(dispatcher.calls().len(), 2);
@@ -1383,7 +1409,7 @@ mod tests {
         assert!(
             err.status().status_code() == StatusCode::NotFound,
             "PATCH on missing item must surface the Read's 404 verbatim; got {:?}",
-            err.kind()
+            err.status()
         );
         // Exactly one sub-op was issued: the Read. No Replace.
         let calls = dispatcher.calls();
@@ -1402,7 +1428,7 @@ mod tests {
             StatusCode::Ok,
         )]);
 
-        let err = execute_with_dispatcher(
+        let _err = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
@@ -1410,8 +1436,6 @@ mod tests {
         )
         .await
         .expect_err("missing ETag on Read must fail PATCH");
-
-        assert!(err.kind() == crate::error::CosmosStatusKind::Client);
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 1, "no Replace must be issued without an ETag");
         assert_eq!(calls[0].op_type, OperationType::Read);
