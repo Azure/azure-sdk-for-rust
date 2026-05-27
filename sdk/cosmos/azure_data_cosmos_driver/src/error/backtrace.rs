@@ -183,9 +183,19 @@ fn resolve_from_env() -> BacktraceOptions {
 }
 
 fn env_u32(name: &str, default: u32) -> u32 {
-    std::env::var(name)
-        .ok()
-        .and_then(|s| s.trim().parse::<u32>().ok())
+    // Thin wrapper: the parsing/precedence logic lives in `parse_env_u32`
+    // so unit tests can exercise it without touching real env vars
+    // (`std::env::set_var` is not safe in a multi-threaded test
+    // harness on non-Windows platforms).
+    parse_env_u32(std::env::var(name).ok().as_deref(), default)
+}
+
+/// Pure parsing helper: returns `default` when `raw` is `None`, the raw
+/// string fails to parse as a `u32`, or contains only whitespace.
+/// Returns the parsed value otherwise (including `0`, which is a valid
+/// explicit "disable" override).
+fn parse_env_u32(raw: Option<&str>, default: u32) -> u32 {
+    raw.and_then(|s| s.trim().parse::<u32>().ok())
         .unwrap_or(default)
 }
 
@@ -1132,39 +1142,33 @@ pub(crate) mod tests {
         global_resolution_limiter().reset_for_tests();
     }
 
-    /// Pins the env-var parsing precedence: when a Cosmos-specific env
-    /// var is set to a valid integer it overrides the supplied default;
-    /// when missing or malformed the default wins. Uses a uniquely-named
-    /// env var so the test does not race with parallel tests reading the
-    /// real `AZURE_COSMOS_BACKTRACE_*` knobs.
+    /// Pins the env-var parsing precedence via the pure
+    /// [`parse_env_u32`] helper. Exercises the helper directly rather
+    /// than mutating real env vars — `std::env::set_var` /
+    /// `std::env::remove_var` are not safe in a multi-threaded test
+    /// harness on non-Windows platforms, and the production code path
+    /// (`env_u32`) is a thin wrapper that only delegates `std::env::var`
+    /// + this helper.
     #[test]
-    fn env_u32_overrides_default_when_set_and_parsable() {
-        const NAME: &str = "AZURE_COSMOS_BACKTRACE_TEST_PRECEDENCE";
-        let prev = std::env::var(NAME).ok();
-
+    fn parse_env_u32_precedence() {
         // Missing -> default wins.
-        unsafe { std::env::remove_var(NAME) };
-        assert_eq!(env_u32(NAME, 99), 99);
+        assert_eq!(parse_env_u32(None, 99), 99);
 
-        // Set to a valid integer -> env wins.
-        unsafe { std::env::set_var(NAME, "7") };
-        assert_eq!(env_u32(NAME, 99), 7);
+        // Valid integer -> override wins.
+        assert_eq!(parse_env_u32(Some("7"), 99), 7);
 
-        // Set to a malformed value -> default wins (best-effort
-        // robustness; a typo in operator config doesn't accidentally
-        // enable capture).
-        unsafe { std::env::set_var(NAME, "not-a-number") };
-        assert_eq!(env_u32(NAME, 99), 99);
+        // Surrounding whitespace is tolerated (operator config noise).
+        assert_eq!(parse_env_u32(Some("  7  "), 99), 7);
 
-        // Zero is a valid override (operator explicitly disables).
-        unsafe { std::env::set_var(NAME, "0") };
-        assert_eq!(env_u32(NAME, 99), 0);
+        // Malformed value -> default wins (best-effort robustness; a
+        // typo in operator config doesn't accidentally enable capture).
+        assert_eq!(parse_env_u32(Some("not-a-number"), 99), 99);
 
-        unsafe {
-            match prev {
-                Some(v) => std::env::set_var(NAME, v),
-                None => std::env::remove_var(NAME),
-            }
-        }
+        // Empty string -> default wins.
+        assert_eq!(parse_env_u32(Some(""), 99), 99);
+
+        // Zero is a valid override (operator explicitly disables) and
+        // beats the non-zero default.
+        assert_eq!(parse_env_u32(Some("0"), 99), 0);
     }
 }
