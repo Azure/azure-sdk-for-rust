@@ -12,7 +12,7 @@ rust-version.workspace = true
 [dependencies]
 async-trait.workspace = true
 azure_core = { workspace = true, features = ["reqwest"] }
-azure_data_cosmos = { workspace = true, features = ["key_auth"] }
+azure_data_cosmos = { path = "../azure_data_cosmos", features = ["key_auth"] }
 azure_identity.workspace = true
 clap = { workspace = true, features = ["derive", "env"] }
 futures.workspace = true
