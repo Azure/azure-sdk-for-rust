@@ -321,9 +321,16 @@ impl QueryPlanNativeLibrary {
             };
 
             Ok(Self {
-                create_service_provider: std::mem::transmute(resolve("CreateServiceProvider")?),
-                update_service_provider: std::mem::transmute(resolve("UpdateServiceProvider")?),
-                get_partition_key_ranges_from_query4: std::mem::transmute(resolve(
+                create_service_provider: std::mem::transmute::<*mut c_void, CreateServiceProviderFn>(
+                    resolve("CreateServiceProvider")?,
+                ),
+                update_service_provider: std::mem::transmute::<*mut c_void, UpdateServiceProviderFn>(
+                    resolve("UpdateServiceProvider")?,
+                ),
+                get_partition_key_ranges_from_query4: std::mem::transmute::<
+                    *mut c_void,
+                    GetPartitionKeyRangesFromQuery4Fn,
+                >(resolve(
                     "GetPartitionKeyRangesFromQuery4",
                 )?),
             })
