@@ -58,7 +58,7 @@ impl AccountReference {
         credential: Arc<dyn TokenCredential>,
     ) -> Self {
         Self {
-            endpoint: endpoint.into(),
+            endpoint,
             credential: CosmosCredential::from(credential),
         }
     }
@@ -72,7 +72,7 @@ impl AccountReference {
     #[cfg(feature = "key_auth")]
     pub fn with_authentication_key(endpoint: AccountEndpoint, key: impl Into<Secret>) -> Self {
         Self {
-            endpoint: endpoint.into(),
+            endpoint,
             credential: CosmosCredential::from(key.into()),
         }
     }
