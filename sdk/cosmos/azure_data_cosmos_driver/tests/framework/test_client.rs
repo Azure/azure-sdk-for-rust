@@ -133,7 +133,10 @@ fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, B
         GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR,
         GATEWAY20_MULTI_REGION_KEY_ENV_VAR,
     );
-    #[cfg(all(test_category = "gateway20", not(test_category = "gateway20_multi_region")))]
+    #[cfg(all(
+        test_category = "gateway20",
+        not(test_category = "gateway20_multi_region")
+    ))]
     let (endpoint_var, key_var) = (GATEWAY20_ENDPOINT_ENV_VAR, GATEWAY20_KEY_ENV_VAR);
 
     let endpoint = read(endpoint_var);

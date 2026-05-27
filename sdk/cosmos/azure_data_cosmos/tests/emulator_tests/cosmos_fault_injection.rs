@@ -1072,3 +1072,158 @@ pub async fn gateway20_connection_error_fails_fast_after_all_regions_attempted(
     )
     .await
 }
+
+// ── 449 RetryWith policy — live SDK coverage ─────────────────────────────────
+//
+// 449 RetryWith is the Cosmos backend's signal for transient concurrency
+// conflicts that the client must retry in the same region. The driver
+// implements the policy in `try_handle_retry_with` (matching .NET/Java's
+// `RetryWithRetryPolicy`). The tests below exercise the policy from the SDK
+// surface — `ContainerClient::read_item` — so a regression that disables the
+// driver-side retry would surface as a user-visible 449 here.
+
+/// Test that 449 RetryWith faults are transparently retried by the driver,
+/// and the SDK caller sees `Ok` once the rule's hit-limit is exhausted.
+///
+/// Mirrors `fault_injection_429_retry_with_hit_limit` in shape; the only
+/// material difference is the error type, since both 429 and 449 trigger a
+/// driver-side retry policy without reaching the caller. Asserts that
+/// `read_item` returns success after the rule fires `hit_limit` times.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn fault_injection_449_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::RetryWith)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("449-retry-with-limit", server_error)
+        .with_condition(condition)
+        .with_hit_limit(2)
+        .build();
+
+    let fault_builder = vec![Arc::new(rule)];
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            // The driver retries 449 in-region; with hit_limit=2 the rule
+            // fires twice and the third attempt succeeds because the rule
+            // is then disabled.
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
+            assert!(
+                result.is_ok(),
+                "read_item should succeed after the 449 hit_limit is exhausted; got error: {:?}",
+                result.err()
+            );
+            assert_eq!(result.unwrap().status(), StatusCode::Ok);
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+    )
+    .await
+}
+
+/// Gateway 2.0 449 RetryWith — like `fault_injection_449_retry_with_hit_limit`,
+/// but the fault is scoped to `TransportKind::Gateway20` so it only fires on
+/// Gateway 2.0 traffic. Verifies the RetryWith policy is exercised on the
+/// Gateway 2.0 transport (RNTBD-over-HTTP/2), not just the standard gateway.
+///
+/// **Live-account coverage**: gated on `test_category = "gateway20"` /
+/// `"gateway20_multi_region"`, so the test runs against the pre-provisioned
+/// Gateway 2.0 account from `sdk/cosmos/ci.yml`.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
+    ignore = "requires test_category 'gateway20'"
+)]
+pub async fn gateway20_449_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::RetryWith)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::Gateway20)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("gateway20-449-retry-with-limit", server_error)
+        .with_condition(condition)
+        .with_hit_limit(2)
+        .build();
+
+    let fault_builder = vec![Arc::new(rule)];
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            // The driver retries 449 in-region; with hit_limit=2 the rule
+            // fires twice on Gateway 2.0 traffic and the third attempt
+            // succeeds because the rule is then disabled.
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
+            assert!(
+                result.is_ok(),
+                "read_item should succeed after Gateway 2.0 449 hit_limit is exhausted; got error: {:?}",
+                result.err()
+            );
+            assert_eq!(result.unwrap().status(), StatusCode::Ok);
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+    )
+    .await
+}

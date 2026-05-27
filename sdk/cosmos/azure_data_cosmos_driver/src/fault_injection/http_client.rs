@@ -251,6 +251,11 @@ impl FaultClient {
                 None,
                 "Too Many Requests - Injected fault",
             ),
+            FaultInjectionErrorType::RetryWith => (
+                StatusCode::from(449u16),
+                None,
+                "Retry With - Injected fault",
+            ),
             FaultInjectionErrorType::ReadSessionNotAvailable => (
                 StatusCode::NotFound,
                 Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),

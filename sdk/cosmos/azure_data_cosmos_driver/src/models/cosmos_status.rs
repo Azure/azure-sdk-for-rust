@@ -1256,6 +1256,19 @@ impl CosmosStatus {
         u16::from(self.status_code) == 429
     }
 
+    /// Returns `true` if this is an HTTP 449 RetryWith response.
+    ///
+    /// 449 RetryWith is returned by Cosmos backends for transient
+    /// concurrency conflicts (e.g. concurrent writes racing through the
+    /// store, RBAC info momentarily unavailable). The client is expected
+    /// to retry in the same region after a short delay. See
+    /// `try_handle_retry_with` in
+    /// `driver::pipeline::retry_evaluation` and the Java/.NET parallels
+    /// (`RetryWithRetryPolicy`) for the policy.
+    pub fn is_retry_with(&self) -> bool {
+        u16::from(self.status_code) == 449
+    }
+
     /// Returns `true` if this is an HTTP 410 Gone response.
     pub fn is_gone(&self) -> bool {
         u16::from(self.status_code) == 410

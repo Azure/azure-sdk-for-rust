@@ -24,7 +24,9 @@ use crate::{
     models::{CosmosOperation, CosmosStatus, SubStatusCode},
 };
 
-use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
+use super::components::{
+    OperationAction, OperationRetryState, RetryWithRetryState, TransportOutcome, TransportResult,
+};
 
 /// Whether the current request is handled by the PPCB threshold mechanism.
 ///
@@ -78,13 +80,18 @@ fn make_partition_unavailable(
 /// treated as region-confirming **except** the explicit retry-trigger set
 /// and client-synthesized statuses. This means uncommon-but-deterministic
 /// service responses (202 Accepted, 207 MultiStatus, 404/0 NotFound, 413
-/// Payload Too Large, 449 RetryWith, 451 Unavailable For Legal Reasons,
-/// etc.) all flush deferred marks just like the more familiar 200/409/412.
+/// Payload Too Large, 451 Unavailable For Legal Reasons, etc.) all flush
+/// deferred marks just like the more familiar 200/409/412. **449 RetryWith
+/// is deliberately excluded** from the confirming set — see the note on
+/// `try_handle_retry_with`; the request hasn't completed yet and the next
+/// retry must hit the same region.
 ///
 /// Returns `false` for:
 /// - 503 ServiceUnavailable, 408 RequestTimeout, 410 Gone, 429/3092 (system
 ///   resource unavailable), 403/3 (write forbidden) — the retry-trigger set;
 ///   we have no proof any region accepted the request.
+/// - 449 RetryWith — the request never completed; the backend is asking for
+///   another attempt in the same region. Deferred effects must not flush.
 /// - Client-synthesized statuses (e.g. `CLIENT_OPERATION_TIMEOUT`) — these
 ///   never came from a server.
 ///
@@ -108,6 +115,11 @@ pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
         || code == azure_core::http::StatusCode::RequestTimeout
         || code == azure_core::http::StatusCode::Gone
     {
+        return false;
+    }
+
+    // 449 RetryWith — request never completed, same-region retry pending.
+    if status.is_retry_with() {
         return false;
     }
 
@@ -263,6 +275,10 @@ fn evaluate_http_outcome(
         &body,
         request_sent,
     ) {
+        return result;
+    }
+
+    if let Some(result) = try_handle_retry_with(retry_state, &status) {
         return result;
     }
 
@@ -487,6 +503,59 @@ fn try_handle_retry_trigger_group(
     ))
 }
 
+/// Handles HTTP 449 RetryWith — the Cosmos backend is signaling a
+/// transient concurrency conflict (concurrent writes racing through
+/// the store, RBAC info momentarily unavailable, etc.) and asking the
+/// client to retry in the same region after a short delay.
+///
+/// Mirrors the .NET / Java `RetryWithRetryPolicy` (nested in
+/// `GoneAndRetryWithRequestRetryPolicy`): the retry schedule starts at
+/// ~10ms + a small random salt, exponentially backs off up to ~1s per
+/// retry, and gives up once the cumulative delay budget is exhausted
+/// (~30s by default). The failover-retry budget is **not** consumed —
+/// failing over to another region is not the correct response to a
+/// concurrency conflict; the same record needs to be retried in the
+/// same region.
+///
+/// Returns `None` when:
+///
+/// * The status is not 449 (falls through to other handlers).
+/// * The cumulative-wait budget would be exceeded by the next retry
+///   delay (caller surfaces the 449 to the application).
+fn try_handle_retry_with(
+    retry_state: &OperationRetryState,
+    status: &CosmosStatus,
+) -> Option<(OperationAction, Vec<LocationEffect>)> {
+    if !status.is_retry_with() {
+        return None;
+    }
+
+    // Look at (or initialize) the per-operation retry-with state to
+    // compute the next delay, then check whether the cumulative budget
+    // can absorb it. The delay is computed **once** here and threaded
+    // through both the budget check and the cumulative-delay bookkeeping
+    // in `advance_retry_with_delay` so the salt's randomness never
+    // produces a drift between "budget-checked delay" and "actual sleep".
+    let current_state = retry_state
+        .retry_with_state
+        .clone()
+        .unwrap_or_else(RetryWithRetryState::new);
+    let delay = current_state.next_delay();
+    if !current_state.can_retry(delay) {
+        return None;
+    }
+
+    Some((
+        OperationAction::InRegionRetry {
+            new_state: retry_state.clone().advance_retry_with_delay(delay),
+            delay,
+        },
+        // No location effects — 449 is region-local, the next attempt
+        // must hit the same region.
+        Vec::new(),
+    ))
+}
+
 /// Handles generic 5xx server errors (and 408 RequestTimeout as a defensive
 /// fallback for the rare path where it didn't get classified by the
 /// retry-trigger-group helper).
@@ -680,6 +749,7 @@ mod tests {
         },
     };
     use azure_core::http::StatusCode;
+    use std::time::Duration;
 
     fn make_read_operation() -> CosmosOperation {
         let account = AccountReference::with_master_key(
@@ -860,6 +930,7 @@ mod tests {
             location: crate::driver::routing::LocationIndex::initial(0),
             failover_retry_count: 1,
             session_token_retry_count: 0,
+            retry_with_state: None,
             max_failover_retries: 1,
             max_session_retries: 1,
             can_use_multiple_write_locations: false,
@@ -1652,5 +1723,120 @@ mod tests {
             }
             other => panic!("unexpected action for 503 after latch: {other:?}"),
         }
+    }
+
+    // ── 449 RetryWith ─────────────────────────────────────────────────────
+    //
+    // The handler-level tests below lock in the behaviour described in
+    // `try_handle_retry_with` and the .NET/Java `RetryWithRetryPolicy`
+    // parallel:
+    //
+    //   1. 449 alone triggers an in-region FailoverRetry with a non-zero delay.
+    //   2. The retry-with state is initialized on first 449 and advanced on
+    //      every subsequent 449 hit.
+    //   3. Once the cumulative-wait budget is exhausted, the 449 propagates
+    //      to the caller (no further retries scheduled).
+    //   4. is_region_confirming_status excludes 449 so deferred location
+    //      effects don't flush on RetryWith.
+
+    fn make_449_error() -> TransportResult {
+        make_http_error_status(CosmosStatus::new(StatusCode::from(449u16)))
+    }
+
+    #[test]
+    fn retry_with_449_returns_in_region_retry_with_delay() {
+        let op = make_read_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, make_449_error(), &state);
+        match action {
+            OperationAction::InRegionRetry { new_state, delay } => {
+                // First retry: 10ms initial + [0,5)ms salt → strictly < 15ms.
+                assert!(delay >= Duration::from_millis(10));
+                assert!(delay < Duration::from_millis(15));
+                let rw = new_state
+                    .retry_with_state
+                    .expect("first 449 must initialize retry_with_state");
+                assert_eq!(rw.attempt_count, 1);
+                // The delay must be recorded in the cumulative bookkeeping
+                // verbatim — no drift between the budget-checked delay
+                // and the cumulative delta.
+                assert_eq!(rw.cumulative_delay, delay);
+            }
+            other => panic!("expected InRegionRetry, got {other:?}"),
+        }
+        // 449 is region-local — no MarkEndpointUnavailable / MarkPartitionUnavailable.
+        assert!(
+            effects.is_empty(),
+            "449 must not emit location effects (in-region retry only)",
+        );
+    }
+
+    #[test]
+    fn retry_with_449_advances_existing_retry_with_state() {
+        let op = make_read_operation();
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        // Pretend we've already retried 3 times.
+        state.retry_with_state = Some(RetryWithRetryState {
+            attempt_count: 3,
+            cumulative_delay: Duration::from_millis(100),
+            ..RetryWithRetryState::new()
+        });
+
+        let (action, _) = evaluate_transport_result(&op, &endpoint, make_449_error(), &state);
+        match action {
+            OperationAction::InRegionRetry { new_state, .. } => {
+                let rw = new_state.retry_with_state.expect("state must persist");
+                assert_eq!(rw.attempt_count, 4);
+            }
+            other => panic!("expected InRegionRetry, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn retry_with_449_aborts_when_cumulative_budget_exhausted() {
+        let op = make_read_operation();
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        // Budget already fully spent — next delay can't fit.
+        state.retry_with_state = Some(RetryWithRetryState {
+            attempt_count: 11,
+            cumulative_delay: Duration::from_secs(30),
+            ..RetryWithRetryState::new()
+        });
+
+        let (action, _) = evaluate_transport_result(&op, &endpoint, make_449_error(), &state);
+        // Falls through to Abort (no other handler claims 449).
+        assert!(
+            matches!(action, OperationAction::Abort { .. }),
+            "exhausted RetryWith budget must surface 449 to the caller, got {action:?}",
+        );
+    }
+
+    #[test]
+    fn is_region_confirming_status_excludes_449() {
+        // 449 RetryWith is a same-region retry trigger — the request never
+        // completed and deferred write-path effects must NOT flush.
+        let status_449 = CosmosStatus::new(StatusCode::from(449u16));
+        assert!(
+            !super::is_region_confirming_status(&status_449),
+            "449 RetryWith must not be region-confirming (else deferred effects would flush mid-retry)",
+        );
+
+        // Sanity: 200 still confirms, 503 still does not.
+        assert!(super::is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::Ok
+        )));
+        assert!(!super::is_region_confirming_status(&CosmosStatus::new(
+            StatusCode::ServiceUnavailable
+        )));
     }
 }

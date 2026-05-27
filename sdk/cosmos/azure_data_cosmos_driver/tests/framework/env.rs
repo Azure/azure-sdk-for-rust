@@ -34,8 +34,7 @@ pub const GATEWAY20_KEY_ENV_VAR: &str = "AZURE_COSMOS_GW20_KEY";
 /// regional-failover behaviors, so multi-region tests need a dedicated
 /// multi-region GW20 account.
 #[allow(dead_code)]
-pub const GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR: &str =
-    "AZURE_COSMOS_GW20_MULTI_REGION_ENDPOINT";
+pub const GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR: &str = "AZURE_COSMOS_GW20_MULTI_REGION_ENDPOINT";
 
 /// Environment variable name for the pre-provisioned multi-region Gateway 2.0
 /// account master key. See [`GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR`].

@@ -830,3 +830,189 @@ pub async fn gateway20_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>
     })
     .await
 }
+
+// ── 449 RetryWith policy — live-account fault-injection coverage ──────────────
+//
+// 449 RetryWith is the Cosmos backend's signal for transient concurrency
+// conflicts that the client must retry in the same region. The driver
+// implements the policy in `try_handle_retry_with` (in
+// `driver::pipeline::retry_evaluation`) matching .NET/Java's
+// `RetryWithRetryPolicy`: 10ms initial delay + a small random salt,
+// exponential backoff up to ~1s per retry, ~30s cumulative cap.
+//
+// These tests use the same fault-injection harness as the other live-account
+// tests in this file; the `RetryWith` variant on `FaultInjectionErrorType`
+// makes the backend response indistinguishable from a real 449 on the wire.
+
+/// Verifies that the driver transparently retries 449 RetryWith and the
+/// caller sees success once the rule's hit-limit is exhausted.
+///
+/// Hit-limit = 3 → the rule fires 3 times, the driver retries 3 times
+/// (well within its ~30s cumulative-wait budget), the 4th attempt finds the
+/// rule disabled and succeeds. The caller's `read_item` returns `Ok` even
+/// though three 449s were injected mid-operation. The rule's `hit_count` is
+/// asserted to land exactly at the limit, proving the retries happened.
+///
+/// **Live-account coverage**: this test is gated on `test_category =
+/// "emulator"` so it runs against a real Cosmos account in the live-test
+/// pipeline matrix (emulator-based runs use the same code path through
+/// `DriverTestClient`).
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn fault_injection_449_retry_with_succeeds_after_hit_limit() -> Result<(), Box<dyn Error>>
+{
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::RetryWith)
+        .with_probability(1.0)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("449-retry-with-succeeds", result)
+            .with_condition(condition)
+            .with_hit_limit(3)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async move |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
+
+        let item_json = br#"{"id": "item1", "pk": "pk1", "value": "retry-with"}"#;
+        context
+            .create_item(&container, "item1", "pk1", item_json)
+            .await?;
+
+        // The driver retries 449 in-region with exponential backoff. With
+        // hit_limit=3 the rule fires three times — well within the ~30s
+        // cumulative budget — and the next read succeeds because the rule
+        // is disabled.
+        let response = context
+            .read_item(&container, "item1", "pk1")
+            .await
+            .expect("449 RetryWith with hit_limit=3 must be retried until the rule is disabled");
+
+        assert_eq!(
+            rule.hit_count(),
+            3,
+            "driver must retry 449 exactly hit_limit times",
+        );
+
+        // Diagnostics should record the rule firing on the early attempts.
+        let diagnostics = response.diagnostics();
+        let saw_fault = diagnostics.requests().iter().any(|r| {
+            r.fault_injection_evaluations().iter().any(|e| {
+                matches!(
+                    e,
+                    FaultInjectionEvaluation::Applied { rule_id, .. } if rule_id == "449-retry-with-succeeds"
+                )
+            })
+        });
+        assert!(
+            saw_fault,
+            "diagnostics must record at least one Applied fault for the 449 rule",
+        );
+
+        Ok(())
+    })
+    .await
+}
+
+/// Verifies that 449 RetryWith retries are scoped to `TransportKind::Gateway20`
+/// when the rule is so-scoped — i.e. the same policy works on the Gateway 2.0
+/// transport, not just on the standard gateway.
+///
+/// The fault-injection condition adds `with_transport_kind(TransportKind::Gateway20)`,
+/// so the rule only fires on Gateway 2.0 traffic. With Gateway 2.0 enabled by
+/// default for eligible data-plane reads, a `read_item` against a Gateway 2.0
+/// account fires the rule for each in-region retry until the hit-limit is
+/// exhausted, after which the read succeeds.
+///
+/// **Live-account coverage**: gated on `test_category = "gateway20"` /
+/// `"gateway20_multi_region"`, so the test runs against the pre-provisioned
+/// Gateway 2.0 account from `sdk/cosmos/ci.yml`.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "gateway20", test_category = "gateway20_multi_region")),
+    ignore = "requires test_category 'gateway20'"
+)]
+pub async fn gateway20_449_retry_with_succeeds_after_hit_limit() -> Result<(), Box<dyn Error>> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_transport_kind(TransportKind::Gateway20)
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::RetryWith)
+        .with_probability(1.0)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("gateway20-449-retry-with-succeeds", result)
+            .with_condition(condition)
+            .with_hit_limit(3)
+            .build(),
+    );
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(
+        rules,
+        async move |context, database| {
+            let container_name = context.unique_container_name();
+            let container = context
+                .create_container(&database, &container_name, "/pk")
+                .await?;
+
+            let item_json = br#"{"id": "item1", "pk": "pk1", "value": "gw20-retry-with"}"#;
+            context
+                .create_item(&container, "item1", "pk1", item_json)
+                .await?;
+
+            // The driver retries 449 in-region with exponential backoff. With
+            // hit_limit=3 the rule fires three times — well within the ~30s
+            // cumulative budget — and the next read succeeds because the rule
+            // is disabled.
+            let start = Instant::now();
+            let response = context.read_item(&container, "item1", "pk1").await.expect(
+                "Gateway 2.0 449 with hit_limit=3 must be retried until the rule is disabled",
+            );
+            let elapsed = start.elapsed();
+
+            assert_eq!(
+                rule.hit_count(),
+                3,
+                "driver must retry 449 exactly hit_limit times on Gateway 2.0",
+            );
+            // Three retries with base delays ≈ 10 + 20 + 40 ms (+ salt) should
+            // each take well under a second; the total should be far below the
+            // 30s cumulative cap.
+            assert!(
+                elapsed < Duration::from_secs(10),
+                "Gateway 2.0 449 retry path should be quick (took {elapsed:?})",
+            );
+
+            let diagnostics = response.diagnostics();
+            let saw_fault = diagnostics.requests().iter().any(|r| {
+                r.fault_injection_evaluations().iter().any(|e| {
+                    matches!(
+                        e,
+                        FaultInjectionEvaluation::Applied { rule_id, .. }
+                            if rule_id == "gateway20-449-retry-with-succeeds"
+                    )
+                })
+            });
+            assert!(
+                saw_fault,
+                "diagnostics must record at least one Applied fault for the Gateway 2.0 449 rule",
+            );
+
+            Ok(())
+        },
+    )
+    .await
+}

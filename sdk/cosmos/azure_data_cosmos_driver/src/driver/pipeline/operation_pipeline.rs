@@ -407,6 +407,27 @@ pub(crate) async fn execute_operation_pipeline(
                 );
                 enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
             }
+            OperationAction::InRegionRetry { new_state, delay } => {
+                // Same-region retry path used by `try_handle_retry_with`
+                // (449 RetryWith). Deliberately does NOT call
+                // `advance_to_next_attempt` — we want the next attempt to
+                // hit the same endpoint/region. Deferred write-path effects
+                // also stay buffered: we haven't proven any region was
+                // healthy, so polluting routing state would be premature.
+                tracing::debug!(
+                    activity_id = %activity_id,
+                    retry_with_attempts = new_state
+                        .retry_with_state
+                        .as_ref()
+                        .map(|s| s.attempt_count)
+                        .unwrap_or(0),
+                    delay = ?delay,
+                    "in-region retry triggered",
+                );
+                apply_failover_delay(Some(delay)).await;
+                retry_state = new_state;
+                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+            }
             OperationAction::SessionRetry { new_state } => {
                 // Retry to a different region — the 404/1002 is likely a
                 // transient replica lag. Session tokens are intentionally
@@ -1544,6 +1565,7 @@ mod tests {
             location: LocationIndex::initial(0),
             failover_retry_count: 0,
             session_token_retry_count: 1,
+            retry_with_state: None,
             max_failover_retries: 3,
             max_session_retries: 2,
             can_use_multiple_write_locations: false,
@@ -1601,6 +1623,7 @@ mod tests {
             location: LocationIndex::initial(0),
             failover_retry_count: 0,
             session_token_retry_count: 0,
+            retry_with_state: None,
             max_failover_retries: 3,
             max_session_retries: 2,
             can_use_multiple_write_locations: false,
@@ -1658,6 +1681,7 @@ mod tests {
             location: LocationIndex::initial(0),
             failover_retry_count: 0,
             session_token_retry_count: 0,
+            retry_with_state: None,
             max_failover_retries: 3,
             max_session_retries: 2,
             can_use_multiple_write_locations: false,
@@ -1722,6 +1746,7 @@ mod tests {
             location: LocationIndex::initial(0).next(3),
             failover_retry_count: 0,
             session_token_retry_count: 0,
+            retry_with_state: None,
             max_failover_retries: 3,
             max_session_retries: 3,
             can_use_multiple_write_locations: true,
@@ -2120,6 +2145,7 @@ mod tests {
             location: LocationIndex::initial(0),
             failover_retry_count: 0,
             session_token_retry_count: 0,
+            retry_with_state: None,
             max_failover_retries: 3,
             max_session_retries: 2,
             can_use_multiple_write_locations: false,
