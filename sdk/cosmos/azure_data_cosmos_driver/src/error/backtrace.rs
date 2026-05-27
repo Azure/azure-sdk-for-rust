@@ -242,17 +242,6 @@ impl fmt::Debug for Backtrace {
     }
 }
 
-#[cfg(test)]
-impl Backtrace {
-    /// Returns a pointer-identity handle (as `usize`) to the inner Arc,
-    /// for tests that need to assert two `Backtrace` values refer to the
-    /// same captured stack (e.g. backtrace-inheritance from a wrapped
-    /// source).
-    pub(crate) fn inner_arc_identity_for_tests(&self) -> usize {
-        Arc::as_ptr(&self.inner) as usize
-    }
-}
-
 // -----------------------------------------------------------------
 // Rendering pipeline
 // -----------------------------------------------------------------
@@ -612,9 +601,19 @@ pub mod __bench {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::sync::Mutex;
+
+    /// Returns a pointer-identity handle (as `usize`) to the inner Arc,
+    /// for tests that need to assert two `Backtrace` values refer to the
+    /// same captured stack (e.g. backtrace-inheritance from a wrapped
+    /// source). Lives here rather than as an inherent `Backtrace` method
+    /// so the production type stays free of test-only surface; child
+    /// modules can still see the private `inner` field through `super`.
+    pub(crate) fn backtrace_inner_arc_identity(bt: &Backtrace) -> usize {
+        Arc::as_ptr(&bt.inner) as usize
+    }
 
     // Serializes backtrace tests that mutate the per-second limiter
     // capacity (also process-global). Tests in *other* modules that

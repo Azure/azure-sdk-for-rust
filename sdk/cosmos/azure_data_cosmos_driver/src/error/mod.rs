@@ -1211,7 +1211,7 @@ mod tests {
             .inner
             .backtrace
             .as_ref()
-            .map(|bt| bt.inner_arc_identity_for_tests());
+            .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
         assert!(
             inner_bt_id.is_some(),
             "inner must have a captured backtrace for this test to be meaningful"
@@ -1226,7 +1226,7 @@ mod tests {
             .inner
             .backtrace
             .as_ref()
-            .map(|bt| bt.inner_arc_identity_for_tests());
+            .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
         assert_eq!(
             outer_bt_id, inner_bt_id,
             "outer error must share the inner's backtrace Arc, not capture a new one"
