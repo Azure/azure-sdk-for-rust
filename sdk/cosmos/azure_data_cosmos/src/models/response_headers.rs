@@ -32,24 +32,6 @@ use azure_data_cosmos_driver::models::{
 pub struct ResponseHeaders(DriverCosmosResponseHeaders);
 
 impl ResponseHeaders {
-    /// Clones the supplied driver-owned `CosmosResponseHeaders` into a
-    /// fresh `ResponseHeaders` wrapper.
-    ///
-    /// Constructs the SDK [`ResponseHeaders`] wrapper from the driver's
-    /// canonical [`CosmosResponseHeaders`](DriverCosmosResponseHeaders).
-    /// The driver type is already part of the public surface (re-exported
-    /// from `crate::models`); this is the no-cost bridge for code that
-    /// already has a driver headers value in hand (e.g. via
-    /// [`CosmosError::response`](crate::error::CosmosError::response) →
-    /// `CosmosResponse::headers`).
-    ///
-    /// Cosmos response headers are a small bag of `Option<…>` primitives,
-    /// so the clone is a handful of `Option<String>` deep copies — cheap
-    /// relative to constructing the originating error or response.
-    pub fn from_driver(driver: &DriverCosmosResponseHeaders) -> Self {
-        Self(driver.clone())
-    }
-
     /// ETag for optimistic concurrency (`etag`).
     pub fn etag(&self) -> Option<&ETag> {
         self.0.etag.as_ref()
