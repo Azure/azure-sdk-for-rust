@@ -467,7 +467,7 @@ pub(crate) enum TransportOutcome {
     /// Transport/connection error (no HTTP response received).
     TransportError {
         status: CosmosStatus,
-        error: crate::error::Error,
+        error: crate::error::CosmosError,
         request_sent: RequestSentStatus,
     },
     /// End-to-end deadline exceeded while this transport attempt was pending.
@@ -550,7 +550,7 @@ pub(crate) enum OperationAction {
     /// The typed `CosmosStatus` is always available via `error.status()`;
     /// callers that need the status for routing decisions (e.g.
     /// flush-on-confirming-status) read it from there.
-    Abort { error: crate::error::Error },
+    Abort { error: crate::error::CosmosError },
 }
 
 /// What the transport pipeline should do after a 429.

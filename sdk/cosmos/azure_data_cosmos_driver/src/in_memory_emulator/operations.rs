@@ -647,7 +647,11 @@ fn resolve_partition_key(
         // extract a partition key from. Real Cosmos rejects point operations
         // that omit the partition key header in this case with 400 BadRequest;
         // mirror that so dual-backend tests stay consistent.
-        return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("missing 'x-ms-documentdb-partitionkey' header on point operation").build());
+        return Err(
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message("missing 'x-ms-documentdb-partitionkey' header on point operation")
+                .build(),
+        );
     } else {
         extract_pk_from_body(body, meta.partition_key.paths())?
     };
@@ -662,7 +666,7 @@ fn resolve_partition_key(
 }
 
 /// Builds a 400 BadRequest response from a partition-key resolution error.
-fn bad_partition_key_response(err: crate::error::Error, start: Instant) -> AsyncRawResponse {
+fn bad_partition_key_response(err: crate::error::CosmosError, start: Instant) -> AsyncRawResponse {
     error_response(
         StatusCode::BadRequest,
         None,

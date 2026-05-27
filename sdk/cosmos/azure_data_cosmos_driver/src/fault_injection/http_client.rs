@@ -15,10 +15,9 @@ use crate::driver::transport::cosmos_transport_client::{
     HttpRequest, HttpResponse, TransportClient, TransportError,
 };
 use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
 use crate::models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode};
 use async_trait::async_trait;
-use azure_core::http::headers::{HeaderName, Headers};
+use azure_core::http::headers::HeaderName;
 use azure_core::http::StatusCode;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -204,20 +203,22 @@ impl FaultClient {
         // Evaluations are propagated via the evaluation collector attached to the request for all paths.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
-                let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
-                    .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
-                    .with_message("Injected fault: connection error")
-                    .build();
+                let cosmos_err =
+                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+                        .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                        .with_message("Injected fault: connection error")
+                        .build();
                 return ApplyResult::Injected(Err(TransportError::new(
                     cosmos_err,
                     RequestSentStatus::NotSent,
                 )));
             }
             FaultInjectionErrorType::ResponseTimeout => {
-                let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
-                    .with_message("Injected fault: response timeout")
-                    .build();
+                let cosmos_err =
+                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+                        .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                        .with_message("Injected fault: response timeout")
+                        .build();
                 return ApplyResult::Injected(Err(TransportError::new(
                     cosmos_err,
                     RequestSentStatus::Unknown,
@@ -226,7 +227,7 @@ impl FaultClient {
             FaultInjectionErrorType::InternalServerError => (
                 StatusCode::InternalServerError,
                 None,
-                "Internal Server Error - Injected fault",
+                "Internal Server CosmosError - Injected fault",
             ),
             FaultInjectionErrorType::TooManyRequests => (
                 StatusCode::TooManyRequests,
@@ -273,11 +274,15 @@ impl FaultClient {
             None => CosmosStatus::new(status_code),
         };
 
-        let cosmos_err = crate::error::Error::builder(crate::error::Kind::Service)
-            .with_status(status)
-            .with_message(message)
-            .with_cosmos_headers(cosmos_headers)
-            .build();
+        let cosmos_err =
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Service)
+                .with_status(status)
+                .with_message(message)
+                .with_response_parts(crate::models::CosmosResponsePayload::new(
+                    crate::models::ResponseBody::NoPayload,
+                    cosmos_headers,
+                ))
+                .build();
 
         ApplyResult::Injected(Err(TransportError::new(
             cosmos_err,
@@ -385,14 +390,10 @@ mod tests {
         FaultInjectionRuleBuilder, FaultOperationType,
     };
     use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-    use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
     use crate::models::SubStatusCode;
     use crate::options::Region;
     use async_trait::async_trait;
-    use azure_core::http::{
-        headers::{HeaderName, Headers},
-        Method, Url,
-    };
+    use azure_core::http::{headers::Headers, Method, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
@@ -543,7 +544,7 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert_eq!(
-            err.error.status_code(),
+            err.error.status().status_code(),
             azure_core::http::StatusCode::InternalServerError,
             "expected InternalServerError status code"
         );
@@ -568,7 +569,7 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert_eq!(
-            err.error.status_code(),
+            err.error.status().status_code(),
             azure_core::http::StatusCode::TooManyRequests,
             "expected TooManyRequests status code"
         );
@@ -670,7 +671,7 @@ mod tests {
         let result1 = fault_client.send(&request).await;
         assert!(result1.is_err(), "first request should fail");
         assert_eq!(
-            result1.unwrap_err().error.status_code(),
+            result1.unwrap_err().error.status().status_code(),
             azure_core::http::StatusCode::ServiceUnavailable
         );
 
@@ -678,7 +679,7 @@ mod tests {
         let result2 = fault_client.send(&request).await;
         assert!(result2.is_err(), "second request should fail");
         assert_eq!(
-            result2.unwrap_err().error.status_code(),
+            result2.unwrap_err().error.status().status_code(),
             azure_core::http::StatusCode::ServiceUnavailable
         );
 
@@ -736,14 +737,18 @@ mod tests {
             match expected_substatus {
                 Some(expected) => {
                     assert_eq!(
-                        err.error.sub_status(),
+                        err.error.status().sub_status(),
                         Some(expected),
                         "{:?}: typed sub_status mismatch",
                         error_type
                     );
-                    let cosmos_headers = err.error.cosmos_headers().unwrap_or_else(|| {
-                        panic!("{:?} should expose parsed Cosmos headers", error_type)
-                    });
+                    let cosmos_headers = err
+                        .error
+                        .wire_payload()
+                        .map(|p| p.headers())
+                        .unwrap_or_else(|| {
+                            panic!("{:?} should expose parsed Cosmos headers", error_type)
+                        });
                     assert_eq!(
                         cosmos_headers.substatus,
                         Some(expected),
@@ -753,11 +758,11 @@ mod tests {
                 }
                 None => {
                     assert!(
-                        err.error.sub_status().is_none(),
+                        err.error.status().sub_status().is_none(),
                         "{:?} should not have a sub-status",
                         error_type
                     );
-                    if let Some(cosmos_headers) = err.error.cosmos_headers() {
+                    if let Some(cosmos_headers) = err.error.wire_payload().map(|p| p.headers()) {
                         assert!(
                             cosmos_headers.substatus.is_none(),
                             "{:?} should not carry a parsed substatus header",
@@ -787,9 +792,9 @@ mod tests {
         let err = result.unwrap_err();
         // Connection-error faults are constructed as transport errors
         // with `TRANSPORT_CONNECTION_FAILED` sub-status.
-        assert_eq!(err.error.kind(), crate::error::Kind::Transport);
+        assert_eq!(err.error.kind(), crate::error::CosmosStatusKind::Transport);
         assert_eq!(
-            err.error.sub_status(),
+            err.error.status().sub_status(),
             Some(crate::models::SubStatusCode::TRANSPORT_CONNECTION_FAILED),
             "connection error should map to TRANSPORT_CONNECTION_FAILED"
         );
@@ -814,9 +819,9 @@ mod tests {
         let err = result.unwrap_err();
         // Response-timeout faults are constructed as transport errors
         // with `TRANSPORT_IO_FAILED` sub-status.
-        assert_eq!(err.error.kind(), crate::error::Kind::Transport);
+        assert_eq!(err.error.kind(), crate::error::CosmosStatusKind::Transport);
         assert_eq!(
-            err.error.sub_status(),
+            err.error.status().sub_status(),
             Some(crate::models::SubStatusCode::TRANSPORT_IO_FAILED),
             "response timeout should map to TRANSPORT_IO_FAILED"
         );

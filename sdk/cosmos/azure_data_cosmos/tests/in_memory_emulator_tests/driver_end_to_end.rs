@@ -576,11 +576,11 @@ async fn read_with_stale_session_token_returns_404_1002() {
 
     let emu_err = emu_err.expect_err("Emulator should return an error for stale session read");
     assert_eq!(
-        Some(emu_err.status_code()),
+        Some(emu_err.status().status_code()),
         Some(azure_core::http::StatusCode::NotFound),
         "Emulator error should be HTTP 404",
     );
-    let error_code = emu_err.sub_status().map(|s| s.value().to_string());
+    let error_code = emu_err.status().sub_status().map(|s| s.value().to_string());
     assert_eq!(
         error_code.as_deref(),
         Some("1002"),
@@ -606,11 +606,14 @@ async fn read_with_stale_session_token_returns_404_1002() {
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
         assert_eq!(
-            Some(real_err.status_code()),
+            Some(real_err.status().status_code()),
             Some(azure_core::http::StatusCode::NotFound),
             "Real error should be HTTP 404",
         );
-        let error_code = real_err.sub_status().map(|s| s.value().to_string());
+        let error_code = real_err
+            .status()
+            .sub_status()
+            .map(|s| s.value().to_string());
         if error_code.as_deref() != Some("1002") {
             eprintln!(
                 "  [warning] Real service returned substatus {:?} instead of 1002 — \
@@ -901,7 +904,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .expect_err("paused satellite should not observe the hub write yet");
     assert_eq!(
-        Some(west_read_before_resume.status_code()),
+        Some(west_read_before_resume.status().status_code()),
         Some(azure_core::http::StatusCode::NotFound),
         "read should fail while West US replication is paused",
     );

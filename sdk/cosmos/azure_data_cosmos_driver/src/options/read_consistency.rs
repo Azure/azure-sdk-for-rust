@@ -105,11 +105,13 @@ impl std::fmt::Display for ReadConsistencyStrategy {
 }
 
 impl std::str::FromStr for ReadConsistencyStrategy {
-    type Err = crate::error::Error;
+    type Err = crate::error::CosmosError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s).ok_or_else(|| {
-            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("Unknown read consistency strategy: {s}")).build()
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message(format!("Unknown read consistency strategy: {s}"))
+                .build()
         })
     }
 }

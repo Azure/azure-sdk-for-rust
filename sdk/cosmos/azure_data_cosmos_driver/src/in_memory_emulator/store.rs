@@ -644,16 +644,26 @@ impl EmulatorStore {
     ) -> crate::error::Result<()> {
         let pk_components = super::epk::parse_partition_key_header(partition_key_json)?;
         if pk_components.is_empty() {
-            return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("force_session_not_available requires a non-empty partition key").build());
+            return Err(
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message("force_session_not_available requires a non-empty partition key")
+                    .build(),
+            );
         }
         let regions = self.regions.read().unwrap();
         let region_store = regions.get(region).ok_or_else(|| {
-            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("region '{region}' is not provisioned")).build()
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message(format!("region '{region}' is not provisioned"))
+                .build()
         })?;
         let containers = region_store.containers.read().unwrap();
         let key = (db_id.to_string(), coll_id.to_string());
         let state = containers.get(&key).ok_or_else(|| {
-            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("container '{db_id}/{coll_id}' is not provisioned in region '{region}'")).build()
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message(format!(
+                    "container '{db_id}/{coll_id}' is not provisioned in region '{region}'"
+                ))
+                .build()
         })?;
         let epk = super::epk::compute_epk(
             &pk_components,
@@ -661,12 +671,14 @@ impl EmulatorStore {
             state.metadata.partition_key.version(),
         );
         let partition = state.find_partition(&epk).ok_or_else(|| {
-            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message(format!(
                     "no physical partition found for EPK {} in container '{}/{}'",
                     epk.as_str(),
                     db_id,
                     coll_id
-                )).build()
+                ))
+                .build()
         })?;
         partition
             .session_state

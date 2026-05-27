@@ -221,7 +221,7 @@ impl Request {
     async fn handle_partition_topology_change(
         &mut self,
         context: &mut PipelineContext<'_>,
-        error: crate::error::Error,
+        error: crate::error::CosmosError,
         continuation: Option<String>,
     ) -> crate::error::Result<PageResult> {
         match &self.target {
@@ -361,7 +361,11 @@ mod tests {
 
             Box::pin(async move {
                 if resolved.is_empty() {
-                    Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("scenario topology produced no overlapping ranges").build())
+                    Err(
+                        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                            .with_message("scenario topology produced no overlapping ranges")
+                            .build(),
+                    )
                 } else {
                     Ok(resolved)
                 }
@@ -722,7 +726,11 @@ mod tests {
     async fn topology_provider_error_propagates() {
         let mut request = Request::new(Arc::new(operation()), epk_range_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
-        let mut topology = MockTopologyProvider::new(vec![Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("topology fetch failed").build())]);
+        let mut topology = MockTopologyProvider::new(vec![Err(
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message("topology fetch failed")
+                .build(),
+        )]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();

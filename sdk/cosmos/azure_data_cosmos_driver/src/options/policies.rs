@@ -38,13 +38,13 @@ impl From<ContentResponseOnWrite> for bool {
 }
 
 impl std::str::FromStr for ContentResponseOnWrite {
-    type Err = crate::error::Error;
+    type Err = crate::error::CosmosError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "true" | "enabled" => Ok(Self::Enabled),
             "false" | "disabled" => Ok(Self::Disabled),
-            _ => Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
+            _ => Err(crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client).with_message(format!(
                     "Unknown content response on write value: '{s}'. Expected 'true'/'false' or 'enabled'/'disabled'"
                 )).build()),
         }

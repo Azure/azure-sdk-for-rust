@@ -361,7 +361,7 @@ impl PartitionKey {
 }
 
 impl AsHeaders for PartitionKey {
-    type Error = crate::error::Error;
+    type Error = crate::error::CosmosError;
     type Iter = std::iter::Once<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
@@ -425,7 +425,11 @@ impl AsHeaders for PartitionKey {
                 }
                 InnerPartitionKeyValue::Infinity => {
                     // Internal sentinel — should never appear in a user-facing partition key.
-                    return Err(crate::error::Error::builder(crate::error::Kind::Client).with_message("Infinity is not a valid partition key value for serialization").build());
+                    return Err(crate::error::CosmosError::builder(
+                        crate::error::CosmosStatusKind::Client,
+                    )
+                    .with_message("Infinity is not a valid partition key value for serialization")
+                    .build());
                 }
                 InnerPartitionKeyValue::Undefined => {
                     // Items with no partition key property.

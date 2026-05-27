@@ -93,10 +93,14 @@ impl ResponseBody {
         match self {
             Self::NoPayload => Ok(Bytes::new()),
             Self::Bytes(b) => Ok(b),
-            Self::Items(items) => Err(crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
-                    "expected single response body, found feed response with {} item(s)",
-                    items.len()
-                )).build()),
+            Self::Items(items) => Err(crate::error::CosmosError::builder(
+                crate::error::CosmosStatusKind::Client,
+            )
+            .with_message(format!(
+                "expected single response body, found feed response with {} item(s)",
+                items.len()
+            ))
+            .build()),
         }
     }
 
@@ -122,7 +126,10 @@ impl ResponseBody {
     pub fn into_single<T: DeserializeOwned>(self) -> crate::error::Result<T> {
         let bytes = self.single()?;
         serde_json::from_slice(&bytes).map_err(|e| {
-            crate::error::Error::builder(crate::error::Kind::Serialization).with_message("failed to deserialize response body").with_source(e).build()
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+                .with_message("failed to deserialize response body")
+                .with_source(e)
+                .build()
         })
     }
 
@@ -134,7 +141,12 @@ impl ResponseBody {
             Self::NoPayload => Ok(Vec::new()),
             Self::Bytes(b) => {
                 let item = serde_json::from_slice(&b).map_err(|e| {
-                    crate::error::Error::builder(crate::error::Kind::Serialization).with_message("failed to deserialize response body").with_source(e).build()
+                    crate::error::CosmosError::builder(
+                        crate::error::CosmosStatusKind::Serialization,
+                    )
+                    .with_message("failed to deserialize response body")
+                    .with_source(e)
+                    .build()
                 })?;
                 Ok(vec![item])
             }
@@ -142,7 +154,12 @@ impl ResponseBody {
                 .into_iter()
                 .map(|b| {
                     serde_json::from_slice(&b).map_err(|e| {
-                        crate::error::Error::builder(crate::error::Kind::Serialization).with_message("failed to deserialize feed item").with_source(e).build()
+                        crate::error::CosmosError::builder(
+                            crate::error::CosmosStatusKind::Serialization,
+                        )
+                        .with_message("failed to deserialize feed item")
+                        .with_source(e)
+                        .build()
                     })
                 })
                 .collect(),

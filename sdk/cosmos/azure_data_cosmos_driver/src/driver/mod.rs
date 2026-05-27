@@ -29,7 +29,7 @@ pub use runtime::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 /// error wrappers repeat the inner message) are collapsed.
 ///
 /// Accepts any `std::error::Error` so callers can pass any error type
-/// (typed `crate::error::Error`, transport-layer errors, etc.) without
+/// (typed `crate::error::CosmosError`, transport-layer errors, etc.) without
 /// conversion.
 pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> String {
     let mut parts = vec![error.to_string()];
@@ -47,7 +47,7 @@ pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> 
 #[cfg(test)]
 mod tests {
     use super::error_chain_summary;
-    use crate::error::{Error, Kind};
+    use crate::error::{CosmosError, CosmosStatusKind};
     use crate::models::CosmosStatus;
     use std::error::Error as StdError;
     use std::sync::Arc;
@@ -56,7 +56,7 @@ mod tests {
     fn returns_top_level_display_when_no_source() {
         // No source chain → the summary is exactly the error's own
         // `Display` string (`[Kind] status: message`).
-        let error = Error::builder(Kind::Client)
+        let error = CosmosError::builder(CosmosStatusKind::Client)
             .with_message("top-level failure")
             .build();
         assert_eq!(
@@ -71,7 +71,7 @@ mod tests {
         // The summary is the outer `Display` joined with each subsequent
         // source's `Display` by `": "`.
         let inner_io = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
-        let error = Error::builder(Kind::Transport)
+        let error = CosmosError::builder(CosmosStatusKind::Transport)
             .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
             .with_message("outer transport failure")
             .with_source(inner_io)
@@ -88,11 +88,11 @@ mod tests {
         // strings — the dedup collapses them so the summary is the single
         // `Display` string, not duplicated.
         let inner: Arc<dyn StdError + Send + Sync + 'static> = Arc::new(
-            Error::builder(Kind::Client)
+            CosmosError::builder(CosmosStatusKind::Client)
                 .with_message("duplicate")
                 .build(),
         );
-        let outer = Error::builder(Kind::Client)
+        let outer = CosmosError::builder(CosmosStatusKind::Client)
             .with_message("duplicate")
             .with_arc_source(Arc::clone(&inner))
             .build();

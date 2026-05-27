@@ -22,11 +22,13 @@ pub struct SessionTokenSegment {
 }
 
 impl FromStr for SessionTokenSegment {
-    type Err = crate::error::Error;
+    type Err = crate::error::CosmosError;
 
     fn from_str(s: &str) -> crate::error::Result<Self> {
         let (pk_range_id, value_str) = s.trim().split_once(':').ok_or_else(|| {
-            crate::error::Error::builder(crate::error::Kind::Client).with_message("invalid session token segment: missing ':'").build()
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message("invalid session token segment: missing ':'")
+                .build()
         })?;
         let value = SessionTokenValue::parse(value_str)?;
         Ok(Self {

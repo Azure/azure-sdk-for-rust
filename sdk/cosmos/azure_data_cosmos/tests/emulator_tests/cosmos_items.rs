@@ -225,7 +225,10 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                     }
                     Err(err) => {
-                        assert_eq!(azure_core::http::StatusCode::NotFound, err.status_code());
+                        assert_eq!(
+                            azure_core::http::StatusCode::NotFound,
+                            err.status().status_code()
+                        );
                         break;
                     }
                 }
@@ -492,7 +495,10 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                     }
                     Err(err) => {
-                        assert_eq!(azure_core::http::StatusCode::NotFound, err.status_code());
+                        assert_eq!(
+                            azure_core::http::StatusCode::NotFound,
+                            err.status().status_code()
+                        );
                         break;
                     }
                 }
@@ -590,6 +596,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                 azure_core::http::StatusCode::PreconditionFailed,
                 response
                     .expect_err("expected the server to return an error")
+                    .status()
                     .status_code()
             );
 
@@ -685,6 +692,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 azure_core::http::StatusCode::PreconditionFailed,
                 response
                     .expect_err("expected the server to return an error")
+                    .status()
                     .status_code()
             );
 
@@ -783,6 +791,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 azure_core::http::StatusCode::PreconditionFailed,
                 response
                     .expect_err("expected the server to return an error")
+                    .status()
                     .status_code()
             );
 
@@ -903,6 +912,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
                 azure_core::http::StatusCode::NotFound,
                 result
                     .expect_err("expected a 404 for undefined-PK item read with NULL")
+                    .status()
                     .status_code()
             );
 
@@ -932,6 +942,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
                 azure_core::http::StatusCode::NotFound,
                 result
                     .expect_err("expected a 404 for null-PK item read with UNDEFINED")
+                    .status()
                     .status_code()
             );
 
@@ -1000,6 +1011,7 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
                 StatusCode::Conflict,
                 result
                     .expect_err("expected conflict on duplicate create")
+                    .status()
                     .status_code(),
             );
 

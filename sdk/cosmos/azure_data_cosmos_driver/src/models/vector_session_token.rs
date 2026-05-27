@@ -30,18 +30,32 @@ impl VectorSessionToken {
         // Expected: version#globalLSN#region=lsn#region=lsn#...
         let mut parts = s.split('#');
 
-        let version_str = parts
-            .next()
-            .ok_or_else(|| crate::error::Error::builder(crate::error::Kind::Client).with_message("invalid session token: empty input").build())?;
+        let version_str = parts.next().ok_or_else(|| {
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message("invalid session token: empty input")
+                .build()
+        })?;
         let version: u64 = version_str.parse().map_err(|_| {
-            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("invalid session token: bad version '{version_str}'")).build()
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message(format!(
+                    "invalid session token: bad version '{version_str}'"
+                ))
+                .build()
         })?;
 
         let global_str = parts.next().ok_or_else(|| {
-            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("invalid session token: missing global LSN in '{s}'")).build()
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message(format!(
+                    "invalid session token: missing global LSN in '{s}'"
+                ))
+                .build()
         })?;
         let global_lsn: u64 = global_str.parse().map_err(|_| {
-            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("invalid session token: bad global LSN '{global_str}'")).build()
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message(format!(
+                    "invalid session token: bad global LSN '{global_str}'"
+                ))
+                .build()
         })?;
 
         let mut region_progress = HashMap::new();
@@ -50,13 +64,23 @@ impl VectorSessionToken {
                 continue;
             }
             let (region_str, lsn_str) = segment.split_once('=').ok_or_else(|| {
-                crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("invalid session token: malformed region segment '{segment}'")).build()
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(format!(
+                        "invalid session token: malformed region segment '{segment}'"
+                    ))
+                    .build()
             })?;
             let region_id: u64 = region_str.parse().map_err(|_| {
-                crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("invalid session token: bad region id '{region_str}'")).build()
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(format!(
+                        "invalid session token: bad region id '{region_str}'"
+                    ))
+                    .build()
             })?;
             let lsn: u64 = lsn_str.parse().map_err(|_| {
-                crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("invalid session token: bad region LSN '{lsn_str}'")).build()
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(format!("invalid session token: bad region LSN '{lsn_str}'"))
+                    .build()
             })?;
             region_progress.insert(region_id, lsn);
         }
@@ -215,9 +239,11 @@ impl SessionTokenValue {
         }
         // V1 fallback: bare integer
         let lsn: u64 = s.parse().map_err(|_| {
-            crate::error::Error::builder(crate::error::Kind::Client).with_message(format!(
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message(format!(
                     "invalid session token value: '{s}' is not a valid V2 vector or V1 integer"
-                )).build()
+                ))
+                .build()
         })?;
         Ok(Self::Simple(lsn))
     }

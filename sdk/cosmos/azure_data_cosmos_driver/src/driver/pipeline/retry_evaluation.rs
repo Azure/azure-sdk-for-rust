@@ -532,7 +532,7 @@ fn evaluate_transport_layer_outcome(
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: CosmosStatus,
-    error: crate::error::Error,
+    error: crate::error::CosmosError,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
     if request_sent.definitely_not_sent() && retry_state.can_retry_failover() {
@@ -598,8 +598,8 @@ fn evaluate_deadline_exceeded_outcome(
     // Build the typed end-to-end timeout error (carries
     // `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` on `error.status()`)
     // and abort. The operation pipeline propagates
-    // `crate::error::Error` directly via `OperationAction::Abort.error`.
-    let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
+    // `crate::error::CosmosError` directly via `OperationAction::Abort.error`.
+    let cosmos_err = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
         .with_status(CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
             Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
@@ -624,20 +624,20 @@ fn service_error_message(status: &CosmosStatus) -> String {
     )
 }
 
-/// Builds a typed [`Error`] for a Cosmos HTTP error response.
+/// Builds a typed [`CosmosError`] for a Cosmos HTTP error response.
 ///
 /// Captures the parsed response headers and the raw response body bytes
 /// (e.g. the JSON error payload returned by the service for a 400 /
-/// BadRequest) on the resulting `Error`. The error propagates through the
-/// pipeline as `crate::error::Error` end-to-end. Callers inspect the wire
-/// payload directly via [`Error::status`](crate::error::Error::status),
-/// [`Error::cosmos_headers`](crate::error::Error::cosmos_headers), and
-/// [`Error::response_body`](crate::error::Error::response_body).
+/// BadRequest) on the resulting `CosmosError`. The error propagates through the
+/// pipeline as `crate::error::CosmosError` end-to-end. Callers inspect the wire
+/// payload directly via [`CosmosError::status`](crate::error::CosmosError::status),
+/// [`CosmosError::cosmos_headers`](crate::error::CosmosError::cosmos_headers), and
+/// [`CosmosError::response_body`](crate::error::CosmosError::response_body).
 ///
 /// The returned error carries **no** `DiagnosticsContext`. The operation
 /// pipeline's abort branch (the only production caller of this helper, via
 /// [`OperationAction::Abort`]) grafts the completed operation diagnostics
-/// onto the error via [`Error::with_diagnostics`] before it leaves the
+/// onto the error via [`CosmosError::with_diagnostics`] before it leaves the
 /// pipeline. Keeping this module free of any diagnostics plumbing preserves
 /// `evaluate_transport_result` as a pure function over its inputs and
 /// avoids constructing a throw-away diagnostics value that would
@@ -646,16 +646,21 @@ fn build_service_error(
     status: &CosmosStatus,
     cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
-) -> crate::error::Error {
-    crate::error::Error::builder(crate::error::Kind::Service)
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Service)
         .with_status(*status)
         .with_message(service_error_message(status))
-        .with_cosmos_headers(cosmos_headers.clone())
-        .with_response_body(body.to_vec())
+        .with_response_parts(crate::models::CosmosResponsePayload::new(
+            body.to_vec(),
+            cosmos_headers.clone(),
+        ))
         .build()
 }
 
-fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> crate::error::Error {
+fn build_transport_error(
+    status: &CosmosStatus,
+    error: crate::error::CosmosError,
+) -> crate::error::CosmosError {
     let status_code = status.status_code();
     let name = status.name().unwrap_or("Unknown");
     let sub_status_str = match status.sub_status() {
@@ -678,7 +683,7 @@ fn build_transport_error(status: &CosmosStatus, error: crate::error::Error) -> c
     // diagnostics so `outer.diagnostics()` is not silently `None` — callers
     // should not have to walk `source()` to recover the operation's
     // diagnostic context.
-    let mut b = crate::error::Error::builder(crate::error::Kind::Transport)
+    let mut b = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
         .with_status(*status)
         .with_message(message)
         .with_arc_source(std::sync::Arc::new(error.clone()));
@@ -732,10 +737,12 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
-                error: crate::error::Error::builder(crate::error::Kind::Transport)
-                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
-                    .with_message("connection refused")
-                    .build(),
+                error: crate::error::CosmosError::builder(
+                    crate::error::CosmosStatusKind::Transport,
+                )
+                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_message("connection refused")
+                .build(),
                 request_sent: sent,
             },
         }
@@ -846,7 +853,7 @@ mod tests {
             )
             .complete(),
         );
-        let inner = crate::error::Error::builder(crate::error::Kind::Transport)
+        let inner = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
             .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
             .with_message("inner transport failure")
             .with_diagnostics(std::sync::Arc::clone(&diag))
@@ -869,14 +876,16 @@ mod tests {
         let result = TransportResult {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
-                error: crate::error::Error::builder(crate::error::Kind::Transport)
-                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
-                    .with_message("failed to execute `reqwest` request")
-                    .with_source(std::io::Error::new(
-                        std::io::ErrorKind::BrokenPipe,
-                        "socket reset",
-                    ))
-                    .build(),
+                error: crate::error::CosmosError::builder(
+                    crate::error::CosmosStatusKind::Transport,
+                )
+                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_message("failed to execute `reqwest` request")
+                .with_source(std::io::Error::new(
+                    std::io::ErrorKind::BrokenPipe,
+                    "socket reset",
+                ))
+                .build(),
                 request_sent: RequestSentStatus::Unknown,
             },
         };
@@ -891,7 +900,7 @@ mod tests {
             OperationAction::Abort { error } => {
                 // `error` is the typed Cosmos error directly. The fact
                 // that `.status()` resolves at all is itself the proof:
-                // that accessor only exists on `crate::error::Error`, so
+                // that accessor only exists on `crate::error::CosmosError`, so
                 // any regression that downgraded the abort site to a
                 // foreign error type would fail to compile.
                 assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);

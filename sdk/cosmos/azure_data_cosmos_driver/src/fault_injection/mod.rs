@@ -7,7 +7,7 @@
 //! transport layer, below the retry policy. When a fault is injected, it triggers the same
 //! retry and failover behavior as a real service error. This enables testing of:
 //!
-//! - Error handling for various HTTP status codes (503, 500, 429, 408, etc.)
+//! - CosmosError handling for various HTTP status codes (503, 500, 429, 408, etc.)
 //! - Retry logic and backoff behavior
 //! - Regional failover scenarios
 //! - Operation-specific error handling
@@ -203,7 +203,7 @@ impl fmt::Display for FaultOperationType {
 }
 
 impl FromStr for FaultOperationType {
-    type Err = crate::error::Error;
+    type Err = crate::error::CosmosError;
 
     /// Parses a string into a `FaultOperationType`.
     ///
@@ -223,9 +223,11 @@ impl FromStr for FaultOperationType {
             "MetadataReadDatabaseAccount" => Ok(FaultOperationType::MetadataReadDatabaseAccount),
             "MetadataQueryPlan" => Ok(FaultOperationType::MetadataQueryPlan),
             "MetadataPartitionKeyRanges" => Ok(FaultOperationType::MetadataPartitionKeyRanges),
-            _ => Err(crate::error::Error::builder(crate::error::Kind::Client)
-                .with_message(format!("unknown fault operation type: {s}"))
-                .build()),
+            _ => Err(
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(format!("unknown fault operation type: {s}"))
+                    .build(),
+            ),
         }
     }
 }
@@ -248,7 +250,7 @@ impl fmt::Display for FaultInjectionErrorType {
 }
 
 impl FromStr for FaultInjectionErrorType {
-    type Err = crate::error::Error;
+    type Err = crate::error::CosmosError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -262,9 +264,11 @@ impl FromStr for FaultInjectionErrorType {
             "DatabaseAccountNotFound" => Ok(Self::DatabaseAccountNotFound),
             "ConnectionError" => Ok(Self::ConnectionError),
             "ResponseTimeout" => Ok(Self::ResponseTimeout),
-            _ => Err(crate::error::Error::builder(crate::error::Kind::Client)
-                .with_message(format!("unknown fault injection error type: {s}"))
-                .build()),
+            _ => Err(
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(format!("unknown fault injection error type: {s}"))
+                    .build(),
+            ),
         }
     }
 }

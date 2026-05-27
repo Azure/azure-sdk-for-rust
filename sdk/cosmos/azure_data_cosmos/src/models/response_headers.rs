@@ -35,12 +35,18 @@ impl ResponseHeaders {
     /// Clones the supplied driver-owned `CosmosResponseHeaders` into a
     /// fresh `ResponseHeaders` wrapper.
     ///
-    /// Used by the SDK error wrapper to surface per-response headers
-    /// attached to a service error. Cosmos response headers are a small
-    /// bag of `Option<…>` primitives, so the clone is a handful of
-    /// `Option<String>` deep copies — cheap relative to constructing an
-    /// error in the first place and well below any wire/parse cost.
-    pub(crate) fn from_driver(driver: &DriverCosmosResponseHeaders) -> Self {
+    /// Constructs the SDK [`ResponseHeaders`] wrapper from the driver's
+    /// canonical [`CosmosResponseHeaders`](DriverCosmosResponseHeaders).
+    /// The driver type is already part of the public surface (re-exported
+    /// from `crate::models`); this is the no-cost bridge for code that
+    /// already has a driver headers value in hand (e.g. via
+    /// [`CosmosError::response`](crate::error::CosmosError::response) →
+    /// `CosmosResponse::headers`).
+    ///
+    /// Cosmos response headers are a small bag of `Option<…>` primitives,
+    /// so the clone is a handful of `Option<String>` deep copies — cheap
+    /// relative to constructing the originating error or response.
+    pub fn from_driver(driver: &DriverCosmosResponseHeaders) -> Self {
         Self(driver.clone())
     }
 

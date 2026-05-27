@@ -23,7 +23,7 @@ use crate::query::value::CosmosValue;
 mod builtins;
 use builtins::eval_function;
 
-/// Error during query evaluation.
+/// CosmosError during query evaluation.
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub enum EvalError {
@@ -730,7 +730,10 @@ pub fn query_documents(
     documents: &[serde_json::Value],
 ) -> crate::error::Result<Vec<serde_json::Value>> {
     let program = crate::query::parse(sql).map_err(|e| {
-        crate::error::Error::builder(crate::error::Kind::Serialization).with_message(format!("failed to parse query: {e}")).with_source(e).build()
+        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
+            .with_message(format!("failed to parse query: {e}"))
+            .with_source(e)
+            .build()
     })?;
     let query = &program.query;
     let root_alias = get_root_alias(query);
@@ -755,19 +758,26 @@ pub fn query_documents(
     for doc in documents {
         if use_binding_context {
             let from = &query.from.as_ref().unwrap().collection;
-            let bindings_list = expand_from(doc, from, &serde_json::Map::new())
-                .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?;
+            let bindings_list = expand_from(doc, from, &serde_json::Map::new()).map_err(|e| {
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(e.to_string())
+                    .build()
+            })?;
             for bindings in bindings_list {
                 let ctx = serde_json::Value::Object(bindings);
-                if eval_where(&ctx, &query.where_clause, None, parameters)
-                    .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?
-                {
+                if eval_where(&ctx, &query.where_clause, None, parameters).map_err(|e| {
+                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                        .with_message(e.to_string())
+                        .build()
+                })? {
                     filtered_rows.push(ctx);
                 }
             }
-        } else if eval_where(doc, &query.where_clause, eval_alias, parameters)
-            .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?
-        {
+        } else if eval_where(doc, &query.where_clause, eval_alias, parameters).map_err(|e| {
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                .with_message(e.to_string())
+                .build()
+        })? {
             filtered_rows.push(doc.clone());
         }
     }
@@ -791,9 +801,11 @@ pub fn query_documents(
                     .iter()
                     .map(|e| eval_scalar(e, row, eval_alias, parameters).map(|v| v.to_json()))
                     .collect();
-                let key = serde_json::to_string(
-                    &key_parts.map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?,
-                )
+                let key = serde_json::to_string(&key_parts.map_err(|e| {
+                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                        .with_message(e.to_string())
+                        .build()
+                })?)
                 .unwrap_or_default();
 
                 if let Some(&idx) = key_map.get(&key) {
@@ -807,17 +819,24 @@ pub fn query_documents(
             let mut projected = Vec::new();
             let mut reps = Vec::new();
             for group in &groups {
-                projected.push(
-                    project_group(group, query, eval_alias, parameters)
-                        .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?,
-                );
+                projected.push(project_group(group, query, eval_alias, parameters).map_err(
+                    |e| {
+                        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                            .with_message(e.to_string())
+                            .build()
+                    },
+                )?);
                 reps.push(group[0].clone());
             }
             (projected, reps, Some(groups))
         } else {
             // Aggregates without GROUP BY → implicit single group over all rows.
-            let projected = project_group(&filtered_rows, query, eval_alias, parameters)
-                .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?;
+            let projected =
+                project_group(&filtered_rows, query, eval_alias, parameters).map_err(|e| {
+                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                        .with_message(e.to_string())
+                        .build()
+                })?;
             let rep = filtered_rows
                 .first()
                 .cloned()
@@ -834,8 +853,11 @@ pub fn query_documents(
         let originals = filtered_rows.clone();
         for row in &filtered_rows {
             projected.push(
-                project_row(row, query, eval_alias, parameters)
-                    .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?,
+                project_row(row, query, eval_alias, parameters).map_err(|e| {
+                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                        .with_message(e.to_string())
+                        .build()
+                })?,
             );
         }
         (projected, originals, None)
@@ -863,10 +885,21 @@ pub fn query_documents(
                         eval_alias,
                         parameters,
                     )
-                    .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?
+                    .map_err(|e| {
+                        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                            .with_message(e.to_string())
+                            .build()
+                    })?
                 } else {
-                    eval_scalar(&item.expression, &originals[i], eval_alias, parameters)
-                        .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?
+                    eval_scalar(&item.expression, &originals[i], eval_alias, parameters).map_err(
+                        |e| {
+                            crate::error::CosmosError::builder(
+                                crate::error::CosmosStatusKind::Client,
+                            )
+                            .with_message(e.to_string())
+                            .build()
+                        },
+                    )?
                 };
                 row_keys.push(v);
             }
@@ -894,11 +927,15 @@ pub fn query_documents(
     if let Some(top) = &query.select.top {
         let n = match top {
             SqlTopSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
-                crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("TOP literal must be non-negative; got {n}")).build()
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(format!("TOP literal must be non-negative; got {n}"))
+                    .build()
             })?,
-            SqlTopSpec::Parameter(name) => resolve_integer_param(parameters, name)
-                .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?
-                as usize,
+            SqlTopSpec::Parameter(name) => resolve_integer_param(parameters, name).map_err(|e| {
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(e.to_string())
+                    .build()
+            })? as usize,
         };
         results.truncate(n);
     }
@@ -907,19 +944,31 @@ pub fn query_documents(
     if let Some(ol) = &query.offset_limit {
         let offset = match &ol.offset {
             SqlOffsetSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
-                crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("OFFSET literal must be non-negative; got {n}")).build()
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(format!("OFFSET literal must be non-negative; got {n}"))
+                    .build()
             })?,
-            SqlOffsetSpec::Parameter(name) => resolve_integer_param(parameters, name)
-                .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?
-                as usize,
+            SqlOffsetSpec::Parameter(name) => {
+                resolve_integer_param(parameters, name).map_err(|e| {
+                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                        .with_message(e.to_string())
+                        .build()
+                })? as usize
+            }
         };
         let limit = match &ol.limit {
             SqlLimitSpec::Literal(n) => usize::try_from(*n).map_err(|_| {
-                crate::error::Error::builder(crate::error::Kind::Client).with_message(format!("LIMIT literal must be non-negative; got {n}")).build()
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(format!("LIMIT literal must be non-negative; got {n}"))
+                    .build()
             })?,
-            SqlLimitSpec::Parameter(name) => resolve_integer_param(parameters, name)
-                .map_err(|e| crate::error::Error::builder(crate::error::Kind::Client).with_message(e.to_string()).build())?
-                as usize,
+            SqlLimitSpec::Parameter(name) => {
+                resolve_integer_param(parameters, name).map_err(|e| {
+                    crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                        .with_message(e.to_string())
+                        .build()
+                })? as usize
+            }
         };
         if offset < results.len() {
             results = results[offset..].to_vec();

@@ -101,10 +101,10 @@ async fn verify_read_fails_with_injected_error(
             ));
             assert_eq!(
                 expected_status,
-                err.status_code(),
+                err.status().status_code(),
                 "expected {:?}, got {:?}",
                 expected_status,
-                err.status_code()
+                err.status().status_code()
             );
 
             Ok(())

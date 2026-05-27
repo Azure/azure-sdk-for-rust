@@ -536,12 +536,12 @@ fn should_retry_connectivity_failure(
     }
 }
 
-fn is_connectivity_error(error: &crate::error::Error) -> bool {
-    error.kind() == crate::error::Kind::Transport
+fn is_connectivity_error(error: &crate::error::CosmosError) -> bool {
+    error.kind() == crate::error::CosmosStatusKind::Transport
 }
 
 fn transport_error_result(
-    cosmos_error: crate::error::Error,
+    cosmos_error: crate::error::CosmosError,
     headers_received: bool,
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
@@ -576,7 +576,7 @@ fn transport_error_result(
     }
 }
 
-fn format_transport_error_details_cosmos(error: &crate::error::Error) -> String {
+fn format_transport_error_details_cosmos(error: &crate::error::CosmosError) -> String {
     crate::driver::error_chain_summary(error)
 }
 
@@ -589,7 +589,7 @@ enum HttpAttemptResult {
         shard_diagnostics: Option<TransportShardDiagnostics>,
     },
     Error {
-        error: crate::error::Error,
+        error: crate::error::CosmosError,
         headers_received: bool,
         shard_id: Option<u64>,
         shard_diagnostics: Option<TransportShardDiagnostics>,
@@ -695,7 +695,7 @@ mod tests {
             )
             .await;
             Err(TransportError::new(
-                crate::error::Error::builder(crate::error::Kind::Transport)
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
                     .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
                     .with_message("request should have timed out before completion")
                     .build(),
@@ -941,7 +941,7 @@ mod tests {
     impl TransportClient for ScriptedTransportClient {
         async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             Err(TransportError::new(
-                crate::error::Error::builder(crate::error::Kind::Transport)
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
                     .with_status(self.status)
                     .with_message(self.message)
                     .build(),
@@ -970,7 +970,7 @@ mod tests {
             _config: HttpClientConfig,
         ) -> crate::error::Result<Arc<dyn TransportClient>> {
             self.clients.lock().unwrap().pop().ok_or_else(|| {
-                crate::error::Error::builder(crate::error::Kind::Client)
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
                     .with_message("no scripted client available")
                     .build()
             })
@@ -1207,7 +1207,7 @@ mod tests {
     #[test]
     fn format_transport_error_details_includes_error_chain() {
         let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
-        let cosmos = crate::error::Error::builder(crate::error::Kind::Transport)
+        let cosmos = crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
             .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
             .with_message("failed to execute `reqwest` request")
             .with_source(inner)

@@ -185,7 +185,7 @@ impl ContainerCache {
             }
             Err(error) => {
                 cache.invalidate(&key).await;
-                // The cached `crate::error::Error` is `Clone` (cheap Arc
+                // The cached `crate::error::CosmosError` is `Clone` (cheap Arc
                 // refcount bump), so the typed payload propagates directly.
                 Err(error.clone())
             }

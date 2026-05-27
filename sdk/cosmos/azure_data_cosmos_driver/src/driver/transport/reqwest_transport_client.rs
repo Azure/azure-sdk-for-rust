@@ -72,11 +72,12 @@ impl TransportClient for ReqwestTransportClient {
             let status = refine_status_from_source_chain(std::error::Error::source(&err))
                 .unwrap_or(base_status);
             let message = err.to_string();
-            let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
-                .with_status(status)
-                .with_message(message)
-                .with_source(err)
-                .build();
+            let cosmos_err =
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+                    .with_status(status)
+                    .with_message(message)
+                    .with_source(err)
+                    .build();
             TransportError::new(cosmos_err, request_sent)
         })?;
 
@@ -85,11 +86,12 @@ impl TransportClient for ReqwestTransportClient {
 
         let body = response.bytes().await.map_err(|err| {
             let message = err.to_string();
-            let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
-                .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
-                .with_message(message)
-                .with_source(err)
-                .build();
+            let cosmos_err =
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+                    .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                    .with_message(message)
+                    .with_source(err)
+                    .build();
             TransportError::new(cosmos_err, RequestSentStatus::Sent)
         })?;
 

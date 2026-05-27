@@ -283,7 +283,11 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
             );
 
             let body = err
-                .response_body()
+                .response()
+                .and_then(|r| match r.body() {
+                    azure_data_cosmos_driver::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
+                    _ => None,
+                })
                 .expect("service error should carry a response body");
             #[derive(serde::Deserialize)]
             struct ErrorDetail {

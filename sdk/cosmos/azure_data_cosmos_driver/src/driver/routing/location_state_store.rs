@@ -753,9 +753,11 @@ mod tests {
                 Box::pin(async move {
                     let n = total.fetch_add(1, Ordering::SeqCst);
                     if n == 0 {
-                        Err(crate::error::Error::builder(crate::error::Kind::Client)
-                            .with_message("simulated network failure")
-                            .build())
+                        Err(crate::error::CosmosError::builder(
+                            crate::error::CosmosStatusKind::Client,
+                        )
+                        .with_message("simulated network failure")
+                        .build())
                     } else {
                         success.fetch_add(1, Ordering::SeqCst);
                         Ok(payload)

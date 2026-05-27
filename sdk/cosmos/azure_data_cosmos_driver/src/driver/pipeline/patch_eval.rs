@@ -31,7 +31,7 @@
 //!   must be distinct; destination cannot be a descendant of the source.
 //!
 //! Failures return [`PatchEvalError`], which the PATCH handler converts into
-//! a [`crate::error::Error`] (kind `Client`) before surfacing it to callers.
+//! a [`crate::error::CosmosError`] (kind `Client`) before surfacing it to callers.
 
 use crate::models::{IncrValue, PatchOp};
 use serde_json::Value;
@@ -110,9 +110,11 @@ impl fmt::Display for PatchEvalError {
 
 impl std::error::Error for PatchEvalError {}
 
-impl From<PatchEvalError> for crate::error::Error {
+impl From<PatchEvalError> for crate::error::CosmosError {
     fn from(err: PatchEvalError) -> Self {
-        crate::error::Error::builder(crate::error::Kind::Client).with_message(err.to_string()).build()
+        crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+            .with_message(err.to_string())
+            .build()
     }
 }
 

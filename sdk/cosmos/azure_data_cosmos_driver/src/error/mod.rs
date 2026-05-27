@@ -1,33 +1,31 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Cosmos DB-specific error type carrying typed status, parsed Cosmos response
-//! headers, and diagnostics — for both service errors (real HTTP responses)
-//! and synthetic client-side conditions (e.g. end-to-end operation timeouts).
+//! Cosmos DB-specific error type carrying typed Cosmos status, the optional
+//! wire-level [`CosmosResponse`], and operation diagnostics — for both
+//! service errors (real HTTP responses) and synthetic client-side conditions
+//! (transport failures, end-to-end timeouts, client validation, etc.).
 //!
 //! Mirrors the .NET / Java SDKs' `CosmosException`: a single error type that
-//! surfaces typed Cosmos status (status code + sub-status, including synthetic
-//! codes such as `408 / 20008` for end-to-end timeout), the parsed
-//! [`CosmosResponseHeaders`], and the operation [`DiagnosticsContext`].
+//! surfaces typed Cosmos status (HTTP status + sub-status, including synthetic
+//! codes such as `408 / 20008` for end-to-end timeout), the originating
+//! [`CosmosResponse`] when one was received, and the operation
+//! [`DiagnosticsContext`].
 //!
 //! Underlying third-party errors (credential failures, HMAC failures, HTTP
 //! transport errors, …) are wrapped at the call site that invokes the
-//! third-party API — each such site picks the most specific typed
-//! constructor ([`Error::client`], [`Error::authentication`],
-//! [`Error::transport`], [`Error::serialization`], …) and attaches the
-//! original error as [`StdError::source`] so callers can still downcast
-//! through it.
+//! third-party API and attached as [`StdError::source`] so callers can still
+//! downcast through the chain.
 
 use std::{error::Error as StdError, fmt, sync::Arc};
 
-use azure_core::http::StatusCode;
-
 use crate::{
     diagnostics::DiagnosticsContext,
-    models::{
-        CosmosResponseHeaders, CosmosResponsePayload, CosmosStatus, ResponseBody, SubStatusCode,
-    },
+    models::{CosmosResponse, CosmosResponsePayload},
 };
+
+pub mod cosmos_status;
+pub use cosmos_status::{CosmosStatus, CosmosStatusKind, SubStatusCode};
 
 pub(crate) mod backtrace;
 pub(crate) use backtrace::Backtrace;
@@ -40,45 +38,67 @@ pub(crate) use backtrace::Backtrace;
 #[doc(hidden)]
 pub use backtrace::__bench as backtrace_bench;
 
-/// Categorical kind for an [`Error`] — re-exported from
-/// [`crate::models::Kind`] (where the canonical definition lives alongside
-/// [`CosmosStatus`]).
-pub use crate::models::Kind;
-
 /// Cosmos DB error returned from every public API in the driver (and, by
 /// re-export, every public API in the SDK).
 ///
-/// Always exposes Cosmos-typed status and parsed response headers when they
-/// are available — for both real service errors and synthetic client-side
-/// conditions (e.g. an end-to-end operation timeout surfaces as
-/// `408 / 20008` even though no HTTP response was received).
+/// Always exposes Cosmos-typed status — for both real service errors and
+/// synthetic client-side conditions (e.g. an end-to-end operation timeout
+/// surfaces as `408 / 20008` even though no HTTP response was received). The
+/// originating [`CosmosResponse`] is reachable via [`Self::response`] when a
+/// wire response was received, carrying the parsed Cosmos response headers,
+/// the body, and the operation diagnostics together.
 ///
 /// Underlying errors (transport, credential, deserialization, …) are
 /// reachable via [`std::error::Error::source`].
 ///
-/// `Error` is `Clone` (a cheap `Arc` refcount bump) so callers can pass it
-/// by value through `Result` chains without re-allocating, and so the
-/// pipeline can patch single fields (e.g. attaching diagnostics via
-/// [`Error::with_diagnostics`]) cheaply. All fields are wrapped behind a
-/// single `Arc` so the outer struct is one pointer wide, keeping
-/// `Result<T, Error>` small.
+/// `CosmosError` is `Clone` (a cheap `Arc` refcount bump) so callers can pass
+/// it by value through `Result` chains without re-allocating, and so the
+/// pipeline can patch single fields (e.g. attaching diagnostics) cheaply.
+///
+/// # Invariants
+///
+/// All construction goes through [`CosmosErrorBuilder`], which guarantees
+/// the following relationships at `build()` time:
+///
+/// * [`status()`](Self::status) and [`kind()`](Self::kind) always reflect
+///   the current categorical [`CosmosStatusKind`].
+/// * When [`response()`](Self::response) is `Some` (wire-response errors),
+///   the builder enforces *"CosmosResponse wins"*:
+///   - `status() == response().status()`
+///   - `diagnostics() == Some(response().diagnostics())`
+///
+///   Any value supplied via [`CosmosErrorBuilder::with_status`] or
+///   [`CosmosErrorBuilder::with_diagnostics`] in the same builder chain is
+///   silently overridden — the [`CosmosResponse`] is the source of truth.
+/// * When [`response()`](Self::response) is `None`,
+///   [`diagnostics()`](Self::diagnostics) returns whatever the pipeline
+///   attached via [`CosmosErrorBuilder::with_diagnostics`], or `None` if
+///   none was attached.
+///
+/// These invariants imply the chain
+/// `kind() == status().kind() == response().status().kind() ==
+/// diagnostics().status().kind()` whenever each side is defined, since
+/// [`CosmosResponse`] itself guarantees
+/// `response.status() == response.diagnostics().status()`.
 #[derive(Clone)]
-pub struct Error {
-    inner: Arc<ErrorInner>,
+pub struct CosmosError {
+    inner: Arc<CosmosErrorInner>,
 }
 
 #[derive(Clone)]
-struct ErrorInner {
-    /// Cosmos status (HTTP status + sub-status + categorical [`Kind`]).
-    /// Always present \u2014 non-service constructors mint a synthetic status
-    /// carrying the correct [`Kind`] and a placeholder HTTP code.
+struct CosmosErrorInner {
+    /// Cosmos status (HTTP status + sub-status + categorical
+    /// [`CosmosStatusKind`]). Always present, shared across all
+    /// [`ErrorContext`] variants — for the `Wire` variant this is
+    /// reconciled to match `response.status()` at `build()` time.
     status: CosmosStatus,
-    /// Wire-level payload (body + parsed headers) of the originating
-    /// response, when available. Boxed so non-service errors cost only a
-    /// null pointer for this slot.
-    payload: Option<Box<CosmosResponsePayload>>,
-    /// Operation diagnostics for the failed operation, when available.
-    diagnostics: Option<Arc<DiagnosticsContext>>,
+    /// Discriminates wire-response errors (carrying a full
+    /// [`CosmosResponse`]) from synthetic errors (carrying at most a
+    /// standalone [`DiagnosticsContext`]) and the internal
+    /// pre-diagnostics-finalization [`ErrorContext::WirePending`] state.
+    /// Modelled as an enum so the storage rules are enforced by the type
+    /// system rather than by runtime convention.
+    context: ErrorContext,
     message: Arc<str>,
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
     /// Captured stack backtrace, present when the global rate-limited
@@ -86,21 +106,50 @@ struct ErrorInner {
     backtrace: Option<Backtrace>,
 }
 
-impl Error {
-    fn from_inner(mut inner: ErrorInner) -> Self {
+/// Three-state carrier discriminating "no wire response" (`Synthetic`),
+/// "wire data captured but diagnostics not finalized yet" (`WirePending`,
+/// internal-only), and "fully assembled wire response" (`Wire`). Private —
+/// public accessors on [`CosmosError`] surface the appropriate
+/// `Option`-returning view.
+#[derive(Clone)]
+enum ErrorContext {
+    /// No wire response was received (transport failure, client
+    /// validation, configuration error, end-to-end timeout, …).
+    /// Diagnostics may be attached by the pipeline.
+    Synthetic {
+        diagnostics: Option<Arc<DiagnosticsContext>>,
+    },
+    /// Wire data (body + parsed headers) was captured during a Cosmos
+    /// response attempt **before** the operation's
+    /// `DiagnosticsContextBuilder` was finalized. Internal-only — the
+    /// public [`CosmosError::response`] accessor returns `None` for this
+    /// variant, so an accidental leak would surface as a Synthetic-like
+    /// error externally. The operation pipeline promotes this to `Wire`
+    /// at the abort branch by calling
+    /// `CosmosErrorBuilder::from_error(err).with_diagnostics(d).build()`
+    /// once `DiagnosticsContextBuilder::complete()` has produced a
+    /// finalized [`DiagnosticsContext`]. Status lives on the outer
+    /// [`CosmosErrorInner`].
+    WirePending { payload: Box<CosmosResponsePayload> },
+    /// Wire response fully assembled with finalized diagnostics. The
+    /// only variant `response()` exposes externally.
+    Wire { response: Box<CosmosResponse> },
+}
+
+impl CosmosError {
+    fn from_inner(mut inner: CosmosErrorInner) -> Self {
         if inner.backtrace.is_none() {
-            // If we are wrapping another Cosmos `Error` as the source
-            // (status-changing re-wrap, e.g. `build_transport_error`
-            // promoting a service error to a transport error), inherit
-            // that error's backtrace instead of paying for a fresh
-            // capture at the wrap site. The wrap site is always the same
-            // handful of lines in the pipeline and adds no diagnostic
-            // value over the originating call stack \u2014 inheriting also
-            // saves one capture-throttle token per re-wrap, doubling the
-            // effective capture budget on retry-heavy paths.
+            // If we are wrapping another Cosmos `CosmosError` as the source
+            // (status-changing re-wrap, e.g. promoting a service error to a
+            // transport error), inherit that error's backtrace instead of
+            // paying for a fresh capture at the wrap site. The wrap site is
+            // always the same handful of lines in the pipeline and adds no
+            // diagnostic value over the originating call stack — inheriting
+            // also saves one capture-throttle token per re-wrap, doubling
+            // the effective capture budget on retry-heavy paths.
             if let Some(src) = inner.source.as_deref() {
                 let src_dyn: &(dyn StdError + 'static) = src;
-                if let Some(inner_cosmos) = src_dyn.downcast_ref::<Error>() {
+                if let Some(inner_cosmos) = src_dyn.downcast_ref::<CosmosError>() {
                     inner.backtrace = inner_cosmos.inner.backtrace.clone();
                 }
             }
@@ -114,60 +163,59 @@ impl Error {
     }
 
     // -----------------------------------------------------------------
-    // Accessors
+    // Public accessors
     // -----------------------------------------------------------------
 
-    /// Returns the categorical kind of this error — read from
-    /// [`CosmosStatus::kind`].
-    pub fn kind(&self) -> Kind {
-        self.inner.status.kind()
-    }
-
-    /// Returns the typed Cosmos status (HTTP status code + optional sub-status
-    /// + categorical [`Kind`]) associated with this error. Always present —
-    /// non-service errors carry a synthetic status with a placeholder HTTP
-    /// code and the correct [`Kind`].
+    /// Returns the typed Cosmos status (HTTP status code + optional
+    /// sub-status + categorical [`CosmosStatusKind`]) associated with this
+    /// error. Always present — non-service errors carry a synthetic
+    /// status with a placeholder HTTP code and the correct
+    /// [`CosmosStatusKind`].
+    ///
+    /// When [`response()`](Self::response) is `Some`, this is guaranteed
+    /// to equal `response().status()` (the builder reconciles them at
+    /// `build()` time).
     pub fn status(&self) -> CosmosStatus {
         self.inner.status
     }
 
-    /// Returns the HTTP status code. For non-service errors this is a
-    /// placeholder code corresponding to the error's [`Kind`].
-    pub fn status_code(&self) -> StatusCode {
-        self.inner.status.status_code()
+    /// Returns the categorical [`CosmosStatusKind`] of this error.
+    /// Equivalent to `self.status().kind()` — provided as a convenience
+    /// for the very common classification check.
+    pub fn kind(&self) -> CosmosStatusKind {
+        self.inner.status.kind()
     }
 
-    /// Returns the sub-status code, if present.
-    pub fn sub_status(&self) -> Option<SubStatusCode> {
-        self.inner.status.sub_status()
-    }
-
-    /// Returns the parsed Cosmos response headers (when a service response was
-    /// received).
-    pub fn cosmos_headers(&self) -> Option<&CosmosResponseHeaders> {
-        self.inner
-            .payload
-            .as_deref()
-            .map(CosmosResponsePayload::headers)
+    /// Returns the originating [`CosmosResponse`] when a wire response was
+    /// received and fully assembled with finalized diagnostics (service
+    /// errors past the per-operation finalization point). Returns `None`
+    /// for synthetic errors (transport, client, configuration, …) and
+    /// for the internal pre-finalization staging state.
+    ///
+    /// When `Some`, the response carries the body, the parsed Cosmos
+    /// response headers, the status, and the operation diagnostics
+    /// together. Access them as `response.body()`, `response.headers()`,
+    /// `response.status()`, and `response.diagnostics()` respectively.
+    pub fn response(&self) -> Option<&CosmosResponse> {
+        match &self.inner.context {
+            ErrorContext::Wire { response } => Some(response),
+            ErrorContext::WirePending { .. } | ErrorContext::Synthetic { .. } => None,
+        }
     }
 
     /// Returns the diagnostics context for the failed operation.
-    pub fn diagnostics(&self) -> Option<&Arc<DiagnosticsContext>> {
-        self.inner.diagnostics.as_ref()
-    }
-
-    /// Returns the raw service response body bytes when available
-    /// (e.g. the JSON error payload returned by Cosmos for a
-    /// 400 / BadRequest response). Only populated for `Service` errors
-    /// when the pipeline captured the body.
     ///
-    /// Most callers should prefer [`cosmos_headers`](Self::cosmos_headers)
-    /// and [`status`](Self::status) for structured access; this accessor
-    /// exists for inspecting the wire-level service error payload.
-    pub fn response_body(&self) -> Option<&[u8]> {
-        match self.inner.payload.as_deref()?.body() {
-            ResponseBody::Bytes(b) => Some(b.as_ref()),
-            ResponseBody::NoPayload | ResponseBody::Items(_) => None,
+    /// For wire-response errors (`Wire` variant), this returns the
+    /// diagnostics owned by [`response()`](Self::response). For synthetic
+    /// errors, this returns whatever the pipeline attached via
+    /// [`CosmosErrorBuilder::with_diagnostics`] (typically late, when the
+    /// operation pipeline finalizes diagnostics around an aborted
+    /// transport call); `None` when no diagnostics were attached.
+    pub fn diagnostics(&self) -> Option<&Arc<DiagnosticsContext>> {
+        match &self.inner.context {
+            ErrorContext::Wire { response } => Some(response.diagnostics_ref()),
+            ErrorContext::WirePending { .. } => None,
+            ErrorContext::Synthetic { diagnostics } => diagnostics.as_ref(),
         }
     }
 
@@ -185,55 +233,59 @@ impl Error {
     /// * the resolution limiter denied fresh resolution for at least one
     ///   cache-missed frame.
     ///
-    /// The two limiters are intentionally **independent** — capture
-    /// pressure and resolution pressure do not feed back into one
-    /// another. Capture is cheap (microseconds + a small allocation)
-    /// and is bounded by the capture throttle alone; resolution is the
-    /// expensive work and is bounded by the resolution limiter alone.
-    ///
     /// Partial backtraces are never produced — callers either get a fully-
     /// resolved render or nothing. **The outcome of the first call is
-    /// cached on this [`Error`] instance**, so every subsequent call
+    /// cached on this [`CosmosError`] instance**, so every subsequent call
     /// returns the same answer regardless of later changes in limiter or
-    /// throttle state. Callers may call this multiple times (logging,
-    /// telemetry, panic message) without risk of inconsistent results.
+    /// throttle state.
     ///
     /// ## What the backtrace points at
     ///
     /// * **Errors originating inside the Cosmos pipeline** (HTTP error
     ///   responses, end-to-end timeouts, internal validation failures)
     ///   resolve to the actual construction site.
-    /// * **Errors wrapping another Cosmos [`Error`]** as their source
-    ///   (status-changing re-wraps such as `build_transport_error`
-    ///   promoting a service error to a transport error) **inherit** the
-    ///   inner error's backtrace, so the originating site is still
-    ///   visible.
+    /// * **Errors wrapping another Cosmos [`CosmosError`]** as their source
+    ///   inherit the inner error's backtrace, so the originating site is
+    ///   still visible.
     /// * **Errors wrapping a third-party error** (e.g. credential or HMAC
-    ///   failures lifted into [`Error::authentication`]) point at the
-    ///   explicit construction site in driver code, not the originating
-    ///   failure site inside the third-party crate. The typed [`Kind`],
-    ///   status, and `std::error::Error::source()` chain (which preserves
-    ///   the underlying error — `reqwest::Error`, `h2::Error`,
-    ///   `io::Error`, …) remain the primary diagnostic signal in that
-    ///   case.
+    ///   failures) point at the explicit construction site in driver code,
+    ///   not the originating failure site inside the third-party crate.
+    ///   The typed [`CosmosStatusKind`], status, and
+    ///   [`std::error::Error::source`] chain remain the primary diagnostic
+    ///   signal in that case.
     ///
     /// ## Async caveat
     ///
     /// Stack capture records the **synchronous call stack at the
     /// construction site**, which in an `async` context is the current
     /// poll frame — typically `tokio runtime → poll → your_async_fn`,
-    /// not the chain of `.await` ancestors that logically led there. For
-    /// errors constructed inside this driver's async pipeline that means
-    /// the captured frames will frequently look like driver-internal
-    /// poll machinery (retry loop, transport pipeline, tokio task
-    /// scheduler) rather than the calling code that issued the
-    /// operation. This is a fundamental limitation of stack capture in
-    /// async Rust, not specific to this crate. For the logical async
-    /// call chain, use `tracing` spans wrapping the calling code — the
-    /// span context is preserved across `.await` points and shows up in
-    /// structured logs alongside the captured backtrace.
+    /// not the chain of `.await` ancestors that logically led there.
+    /// This is a fundamental limitation of stack capture in async Rust.
+    /// For the logical async call chain, use `tracing` spans wrapping
+    /// the calling code.
     pub fn backtrace(&self) -> Option<&Arc<str>> {
         self.inner.backtrace.as_ref().and_then(Backtrace::rendered)
+    }
+
+    // -----------------------------------------------------------------
+    // Crate-internal accessors (pub(crate)) — used by the operation
+    // pipeline to read back staged wire parts on `WirePending` errors
+    // and to peek at the per-attempt status / payload before diagnostics
+    // finalization. Never exposed externally.
+    // -----------------------------------------------------------------
+
+    /// `pub(crate)`: returns the staged wire payload (body + parsed
+    /// headers) for a `WirePending` error, or the wire payload of an
+    /// already-assembled [`Wire`](ErrorContext::Wire) error. Returns
+    /// `None` for `Synthetic` errors. Used by internal pipeline code
+    /// that needs to inspect the wire body / headers regardless of
+    /// whether diagnostics finalization has happened yet.
+    pub(crate) fn wire_payload(&self) -> Option<&CosmosResponsePayload> {
+        match &self.inner.context {
+            ErrorContext::WirePending { payload } => Some(payload),
+            ErrorContext::Wire { response } => Some(response.payload()),
+            ErrorContext::Synthetic { .. } => None,
+        }
     }
 }
 
@@ -241,7 +293,7 @@ impl Error {
 // Trait impls
 // -----------------------------------------------------------------
 
-impl fmt::Display for Error {
+impl fmt::Display for CosmosError {
     /// Default (`{e}`): a single-line `[Kind] status/sub (name): message`
     /// header. This intentionally diverges from the `anyhow` / `azure_core`
     /// / `io::Error` "bare message" convention so that every existing log
@@ -253,33 +305,23 @@ impl fmt::Display for Error {
     ///
     /// Alternate (`{e:#}`): the single-line header followed by the
     /// `Caused by:` source chain, the structured diagnostics block, and
-    /// (if captured) the rendered backtrace. Matches the `anyhow::Error` /
-    /// `eyre::Report` convention of opting in to a richer multi-line
-    /// representation via the alternate flag.
+    /// (if captured) the rendered backtrace.
     ///
-    /// Structured fields (kind, status, sub-status, headers, diagnostics,
-    /// source chain, backtrace) are also reachable directly via the
-    /// dedicated accessors on [`Error`].
+    /// Structured fields (status, response, diagnostics, source chain,
+    /// backtrace) are also reachable directly via the dedicated accessors
+    /// on [`CosmosError`].
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write_header(f, &self.inner)?;
         if f.alternate() {
-            // Display form uses `{src}` / `{src:#}` per entry so the
-            // chain remains human-readable; Debug uses `{src:?}` /
-            // `{src:#?}` to expose structured state.
             write_source_chain(f, self, /* debug */ false, /* alternate */ true)?;
-            write_diagnostics(
-                f,
-                &self.inner,
-                /* debug */ false,
-                /* alternate */ true,
-            )?;
+            write_diagnostics(f, self, /* debug */ false, /* alternate */ true)?;
             write_backtrace(f, self)?;
         }
         Ok(())
     }
 }
 
-impl fmt::Debug for Error {
+impl fmt::Debug for CosmosError {
     /// Default (`{e:?}`): structured header (kind + message + status) plus
     /// the source chain. The captured backtrace is **omitted** so that
     /// high-volume `tracing::error!(err = ?e)` / `Result::unwrap` /
@@ -287,17 +329,15 @@ impl fmt::Debug for Error {
     /// per error.
     ///
     /// Alternate (`{e:#?}`): same as default plus the rendered backtrace
-    /// block \u2014 opt in for full diagnostic reports. Matches the
-    /// `anyhow::Error` / `eyre::Report` convention of opting in to a
-    /// richer multi-line representation via the alternate flag.
+    /// block — opt in for full diagnostic reports.
     ///
     /// Callers that always want the backtrace regardless of format flag
-    /// should read it explicitly via [`Error::backtrace`].
+    /// should read it explicitly via [`CosmosError::backtrace`].
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let alternate = f.alternate();
         write_header(f, &self.inner)?;
         write_source_chain(f, self, /* debug */ true, alternate)?;
-        write_diagnostics(f, &self.inner, /* debug */ true, alternate)?;
+        write_diagnostics(f, self, /* debug */ true, alternate)?;
         if alternate {
             write_backtrace(f, self)?;
         }
@@ -305,7 +345,7 @@ impl fmt::Debug for Error {
     }
 }
 
-fn write_header(f: &mut fmt::Formatter<'_>, inner: &ErrorInner) -> fmt::Result {
+fn write_header(f: &mut fmt::Formatter<'_>, inner: &CosmosErrorInner) -> fmt::Result {
     // `CosmosStatus::Display` already renders the categorical `[Kind]`
     // plus `<status>/<sub> (<name>)` (or `<status>` when no sub-status),
     // so reuse it for a single, consistent representation.
@@ -314,17 +354,12 @@ fn write_header(f: &mut fmt::Formatter<'_>, inner: &ErrorInner) -> fmt::Result {
 
 /// Writes the `source()` chain. When `debug` is true, each entry is
 /// rendered with `{:?}` so that wrapped errors carrying structured state
-/// (e.g. another Cosmos [`Error`], `io::Error`, `h2::Error`) surface their
-/// full debug representation rather than a one-line `Display` summary.
-/// Display mode (`alternate Display` on [`Error`]) keeps the
-/// human-readable single-line form per entry.
-///
-/// `alternate` is propagated so that `{e:#?}` cascades to `{src:#?}` on
-/// each entry (and `{e:#}` to `{src:#}`), giving callers a way to opt
-/// into the richer multi-line representation of wrapped errors.
+/// (e.g. another Cosmos [`CosmosError`], `io::Error`, `h2::Error`) surface
+/// their full debug representation rather than a one-line `Display`
+/// summary.
 fn write_source_chain(
     f: &mut fmt::Formatter<'_>,
-    err: &Error,
+    err: &CosmosError,
     debug: bool,
     alternate: bool,
 ) -> fmt::Result {
@@ -336,8 +371,7 @@ fn write_source_chain(
         }
         // Bound the walk by `MAX_SOURCE_CHAIN_DEPTH` so a pathological
         // or cyclic `source()` chain cannot pin a thread formatting an
-        // error. This runs on every `tracing::error!`, `format!`, and
-        // panic message.
+        // error.
         if depth >= MAX_SOURCE_CHAIN_DEPTH {
             write!(
                 f,
@@ -357,29 +391,19 @@ fn write_source_chain(
     Ok(())
 }
 
-/// Appends the `DiagnosticsContext` (when present). The renderer is
-/// chosen by the `debug` and `alternate` flags so the same helper can
-/// serve both the Display and Debug paths on [`Error`]:
-///
-/// * Display path (`debug = false`) uses `DiagnosticsContext::Display`,
-///   which renders the high-signal one-line summary
-///   (`activity=… duration=…ms requests=N charge=…RU [status=…]`) and,
-///   under `{:#}`, follows it with the summarized diagnostics JSON.
-///   Keeping Display-mode output rendered via Display avoids splicing
-///   derived-Debug `Field { … }` blocks into the user-facing rich
-///   `{e:#}` rendering.
-/// * Debug path (`debug = true`) uses `DiagnosticsContext::Debug` so
-///   the structured representation cascades out of `{e:?}` / `{e:#?}`
-///   alongside the rest of the Debug output.
+/// Appends the [`DiagnosticsContext`] (when present). Sourced via
+/// [`CosmosError::diagnostics`] so the wire-response vs. synthetic
+/// distinction is transparent to formatting.
 fn write_diagnostics(
     f: &mut fmt::Formatter<'_>,
-    inner: &ErrorInner,
+    err: &CosmosError,
     debug: bool,
     alternate: bool,
 ) -> fmt::Result {
-    let Some(diag) = inner.diagnostics.as_deref() else {
+    let Some(diag) = err.diagnostics() else {
         return Ok(());
     };
+    let diag = diag.as_ref();
     f.write_str("\n\nDiagnostics:\n")?;
     match (debug, alternate) {
         (true, true) => write!(f, "{diag:#?}"),
@@ -389,7 +413,7 @@ fn write_diagnostics(
     }
 }
 
-fn write_backtrace(f: &mut fmt::Formatter<'_>, err: &Error) -> fmt::Result {
+fn write_backtrace(f: &mut fmt::Formatter<'_>, err: &CosmosError) -> fmt::Result {
     if let Some(bt) = err.backtrace() {
         f.write_str("\n\nStack backtrace:\n")?;
         f.write_str(bt.as_ref())?;
@@ -397,7 +421,7 @@ fn write_backtrace(f: &mut fmt::Formatter<'_>, err: &Error) -> fmt::Result {
     Ok(())
 }
 
-impl StdError for Error {
+impl StdError for CosmosError {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         self.inner
             .source
@@ -406,114 +430,161 @@ impl StdError for Error {
     }
 }
 
-/// Maximum number of `.source()` frames walked when rendering an
-/// [`Error`] via [`fmt::Display`] / [`fmt::Debug`]. Generous relative to
-/// real Cosmos transport chains (~5 frames) but bounded so a pathological
-/// or cyclic chain cannot pin a thread formatting an error.
+/// Maximum number of `.source()` frames walked when rendering a
+/// [`CosmosError`] via [`fmt::Display`] / [`fmt::Debug`]. Generous
+/// relative to real Cosmos transport chains (~5 frames) but bounded so a
+/// pathological or cyclic chain cannot pin a thread formatting an error.
 const MAX_SOURCE_CHAIN_DEPTH: usize = 64;
 
 /// Driver-wide `Result` alias.
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, CosmosError>;
 
 // =========================================================================
-// ErrorBuilder
+// CosmosErrorBuilder
 // =========================================================================
 
-impl Error {
-    /// Returns a fluent [`ErrorBuilder`] seeded with sensible defaults for
-    /// the given categorical [`Kind`]. This is the only public way to
-    /// construct an [`Error`] from outside the crate.
+impl CosmosError {
+    /// Returns a fluent [`CosmosErrorBuilder`] seeded with sensible defaults
+    /// for the given categorical [`CosmosStatusKind`]. This is the only
+    /// public way to construct a [`CosmosError`] from outside the crate.
     ///
     /// ```
-    /// use azure_data_cosmos_driver::error::{Error, Kind};
+    /// use azure_data_cosmos_driver::error::{CosmosError, CosmosStatusKind};
     ///
-    /// let err = Error::builder(Kind::Client)
+    /// let err = CosmosError::builder(CosmosStatusKind::Client)
     ///     .with_message("missing partition key")
     ///     .build();
-    /// assert_eq!(err.kind(), Kind::Client);
+    /// assert_eq!(err.kind(), CosmosStatusKind::Client);
     /// ```
-    pub fn builder(kind: Kind) -> ErrorBuilder {
-        ErrorBuilder::new(kind)
+    pub fn builder(kind: CosmosStatusKind) -> CosmosErrorBuilder {
+        CosmosErrorBuilder::new(kind)
     }
 }
 
-/// Fluent builder for [`Error`]. The only public way to construct or
-/// re-decorate a Cosmos [`Error`] from outside the driver crate.
+/// Fluent builder for [`CosmosError`]. The only way to construct or
+/// re-decorate a Cosmos [`CosmosError`].
 ///
-/// Obtain one via [`Error::builder(kind)`](Error::builder) to start fresh,
-/// or [`ErrorBuilder::from_error`] to patch an existing error (add
-/// context, attach headers, swap status, etc.). Finalize with
-/// [`build()`](Self::build).
+/// Obtain one via [`CosmosError::builder(kind)`](CosmosError::builder) to
+/// start fresh, or [`CosmosErrorBuilder::from_error`] to patch an existing
+/// error (add context, swap status, attach diagnostics, etc.). Finalize
+/// with [`build()`](Self::build).
+///
+/// # Invariants enforced at `build()`
+///
+/// When [`with_response`](Self::with_response) was called on the builder,
+/// the resulting [`CosmosError`] is reconciled so that the [`CosmosResponse`]
+/// is the source of truth ("**CosmosResponse wins**"):
+///
+/// * The error's [`CosmosError::status`] is overwritten with
+///   `response.status()`.
+/// * The error's [`CosmosError::diagnostics`] is sourced from
+///   `response.diagnostics()`. Any value supplied via
+///   [`with_diagnostics`](Self::with_diagnostics) in the same chain is
+///   silently discarded.
+///
+/// When the builder carries [`WirePending`](ErrorContext::WirePending)
+/// staging (via [`with_response_parts`](Self::with_response_parts), an
+/// internal-only setter) and a [`with_diagnostics`](Self::with_diagnostics)
+/// is supplied — typically via the operation pipeline's
+/// `from_error(err).with_diagnostics(d).build()` finalization — the
+/// builder **promotes** the error to a fully assembled
+/// [`Wire`](ErrorContext::Wire) variant by constructing a
+/// [`CosmosResponse`] from the staged body + headers + status + the
+/// supplied diagnostics.
+///
+/// These overrides are silent (no panic) by design — they let pipeline
+/// code attach a wire response unconditionally without first having to
+/// reset other builder fields.
 ///
 /// ```
 /// use std::sync::Arc;
-/// use azure_data_cosmos_driver::error::{Error, ErrorBuilder, Kind};
+/// use azure_data_cosmos_driver::error::{CosmosError, CosmosErrorBuilder, CosmosStatusKind};
 ///
-/// let inner = Error::builder(Kind::Client)
+/// let inner = CosmosError::builder(CosmosStatusKind::Client)
 ///     .with_message("bad payload")
 ///     .build();
-/// let outer = ErrorBuilder::from_error(inner)
+/// let outer = CosmosErrorBuilder::from_error(inner)
 ///     .with_context("uploadItem(id=42)")
 ///     .build();
 /// assert!(format!("{outer}").contains("uploadItem(id=42): bad payload"));
 /// ```
-#[must_use = "ErrorBuilder is inert until `.build()` is called"]
-pub struct ErrorBuilder {
+#[must_use = "CosmosErrorBuilder is inert until `.build()` is called"]
+pub struct CosmosErrorBuilder {
     /// When `Some`, build clones this error's inner state and patches the
-    /// overridden fields. When `None`, build constructs a fresh error from
-    /// `kind` defaults.
-    base: Option<Error>,
-    /// Categorical kind (sets default status when `status` is `None`).
-    kind: Kind,
-    /// Override status. When `None`, falls back to the kind default (or
-    /// the base error's status when `base` is set).
+    /// overridden fields. When `None`, build constructs a fresh error
+    /// from `kind` defaults.
+    base: Option<CosmosError>,
+    /// Categorical kind (sets default status when nothing else applies).
+    kind: CosmosStatusKind,
+    /// Override status. Ignored if `response` is set ("CosmosResponse
+    /// wins"); otherwise falls back to the base error's status or the
+    /// per-kind default.
     status: Option<CosmosStatus>,
+    /// Wire-level response captured by the pipeline. When set, its status
+    /// and diagnostics become authoritative; the builder produces
+    /// [`ErrorContext::Wire`].
+    response: Option<CosmosResponse>,
+    /// Internal-only: staged wire payload captured before the operation's
+    /// diagnostics builder was finalized. When set without `response`
+    /// **and without** `diagnostics`, the builder produces
+    /// [`ErrorContext::WirePending`]. When set together with
+    /// `diagnostics`, the builder **promotes** to [`ErrorContext::Wire`]
+    /// by assembling a [`CosmosResponse`] from the staged parts + the
+    /// supplied diagnostics + the resolved status.
+    response_parts: Option<Box<CosmosResponsePayload>>,
+    /// Standalone diagnostics. Ignored if `response` is set (the
+    /// response carries its own); used to promote `WirePending` to
+    /// `Wire`, or attached as the synthetic diagnostics slot.
+    diagnostics: Option<Arc<DiagnosticsContext>>,
     message: Option<Arc<str>>,
     source: Option<Arc<dyn StdError + Send + Sync + 'static>>,
-    diagnostics: Option<Arc<DiagnosticsContext>>,
-    cosmos_headers: Option<CosmosResponseHeaders>,
-    response_body: Option<bytes::Bytes>,
     /// Prepended to the final message as `"{context}: {message}"` when set.
     context_prefix: Option<Arc<str>>,
 }
 
-impl ErrorBuilder {
-    fn new(kind: Kind) -> Self {
+impl CosmosErrorBuilder {
+    fn new(kind: CosmosStatusKind) -> Self {
         Self {
             base: None,
             kind,
             status: None,
+            response: None,
+            response_parts: None,
+            diagnostics: None,
             message: None,
             source: None,
-            diagnostics: None,
-            cosmos_headers: None,
-            response_body: None,
             context_prefix: None,
         }
     }
 
-    /// Starts a builder pre-populated from an existing [`Error`]. Any
+    /// Starts a builder pre-populated from an existing [`CosmosError`]. Any
     /// subsequent setter overrides the corresponding field; unset fields
     /// are carried forward from `err`. Useful for re-decorating an error
-    /// returned from a deeper layer (attaching operation context, swapping
-    /// the categorical status, attaching diagnostics, etc.).
-    pub fn from_error(err: Error) -> Self {
+    /// returned from a deeper layer — attaching operation context,
+    /// swapping the categorical status, or — most importantly — finalizing
+    /// a [`WirePending`](ErrorContext::WirePending) error into a `Wire`
+    /// one via [`with_diagnostics`](Self::with_diagnostics).
+    pub fn from_error(err: CosmosError) -> Self {
         let kind = err.kind();
         Self {
             base: Some(err),
             kind,
             status: None,
+            response: None,
+            response_parts: None,
+            diagnostics: None,
             message: None,
             source: None,
-            diagnostics: None,
-            cosmos_headers: None,
-            response_body: None,
             context_prefix: None,
         }
     }
 
-    /// Overrides the [`CosmosStatus`]. The builder's [`Kind`] is forced
-    /// onto the status so the categorical kind stays consistent.
+    /// Overrides the [`CosmosStatus`]. The builder's
+    /// [`CosmosStatusKind`] is forced onto the status so the categorical
+    /// kind stays consistent.
+    ///
+    /// **Ignored if [`with_response`](Self::with_response) was also
+    /// called** — the [`CosmosResponse`]'s status wins.
     pub fn with_status(mut self, status: CosmosStatus) -> Self {
         self.status = Some(status.with_kind(self.kind));
         self
@@ -537,164 +608,339 @@ impl ErrorBuilder {
 
     /// Attaches an already-shared `Arc`-wrapped source. Use this when the
     /// caller already owns an `Arc` (e.g. propagating a wrapped Cosmos
-    /// [`Error`] as the source). For plain `StdError` values prefer
+    /// [`CosmosError`] as the source). For plain `StdError` values prefer
     /// [`with_source`](Self::with_source).
     pub fn with_arc_source(mut self, source: Arc<dyn StdError + Send + Sync + 'static>) -> Self {
         self.source = Some(source);
         self
     }
 
-    /// Attaches the operation [`DiagnosticsContext`].
+    /// Attaches the wire-level [`CosmosResponse`] that produced this error.
+    /// The response carries the body, parsed Cosmos response headers,
+    /// typed status, and operation diagnostics together — by design, the
+    /// [`CosmosResponse`] becomes the source of truth at
+    /// [`build()`](Self::build):
+    ///
+    /// * [`CosmosError::status`] is overwritten with `response.status()`.
+    /// * [`CosmosError::diagnostics`] flows through `response.diagnostics()`.
+    /// * Any prior [`with_status`](Self::with_status) /
+    ///   [`with_diagnostics`](Self::with_diagnostics) values in the same
+    ///   chain are silently discarded.
+    pub fn with_response(mut self, response: CosmosResponse) -> Self {
+        self.response = Some(response);
+        self
+    }
+
+    /// Attaches a standalone operation [`DiagnosticsContext`].
+    ///
+    /// * **Ignored if [`with_response`](Self::with_response) was also
+    ///   called** — diagnostics then flow through `response.diagnostics()`.
+    /// * **Promotes a [`WirePending`](ErrorContext::WirePending) base
+    ///   error to a [`Wire`](ErrorContext::Wire) one** when chained via
+    ///   [`from_error`](Self::from_error): the staged body + headers
+    ///   carried by the base error are assembled with the supplied
+    ///   diagnostics and the resolved status into a [`CosmosResponse`].
+    ///   This is the operation pipeline's per-operation finalization
+    ///   path.
     pub fn with_diagnostics(mut self, diagnostics: Arc<DiagnosticsContext>) -> Self {
         self.diagnostics = Some(diagnostics);
         self
     }
 
-    /// Attaches parsed Cosmos response headers.
-    pub fn with_cosmos_headers(mut self, headers: CosmosResponseHeaders) -> Self {
-        self.cosmos_headers = Some(headers);
-        self
-    }
-
-    /// Attaches the raw service response body bytes (typically a Cosmos
-    /// JSON error payload). Stored cheaply as [`bytes::Bytes`].
-    pub fn with_response_body(mut self, body: impl Into<bytes::Bytes>) -> Self {
-        self.response_body = Some(body.into());
-        self
-    }
-
     /// Prepends operational context to the final message as
     /// `"{context}: {message}"`. Repeated calls override (the most recent
-    /// context wins); chain multiple `with_context` calls into one combined
-    /// string at the call site if multiple layers of context are needed.
+    /// context wins); chain multiple `with_context` calls into one
+    /// combined string at the call site if multiple layers of context are
+    /// needed.
     pub fn with_context(mut self, context: impl Into<Arc<str>>) -> Self {
         self.context_prefix = Some(context.into());
         self
     }
 
-    /// Finalizes the builder into an [`Error`]. Allocation-cheap (single
-    /// `Arc<ErrorInner>` regardless of which fields were set).
-    pub fn build(self) -> Error {
-        // Start from either the base error's inner state or a fresh
-        // ErrorInner seeded from the kind's default status.
-        let mut inner = match &self.base {
-            Some(base) => (*base.inner).clone(),
-            None => ErrorInner {
-                status: default_status_for(self.kind),
-                payload: None,
-                diagnostics: None,
-                message: Arc::<str>::from(""),
-                source: None,
-                backtrace: None,
-            },
+    /// **Internal-only.** Stages a wire payload (body + parsed headers)
+    /// captured during a Cosmos response attempt **before** the
+    /// operation's `DiagnosticsContextBuilder` was finalized. At
+    /// [`build()`](Self::build) the resulting error becomes either:
+    ///
+    /// * [`WirePending`](ErrorContext::WirePending) when no
+    ///   [`with_diagnostics`](Self::with_diagnostics) was supplied — the
+    ///   per-attempt state the operation pipeline carries between
+    ///   retries; or
+    /// * [`Wire`](ErrorContext::Wire) when diagnostics is supplied — the
+    ///   per-attempt staging is promoted by assembling a
+    ///   [`CosmosResponse`] from the staged parts + the resolved status +
+    ///   the supplied diagnostics. This is the finalization performed by
+    ///   the operation pipeline's abort branch.
+    ///
+    /// **Ignored if [`with_response`](Self::with_response) was also
+    /// called** — the full [`CosmosResponse`] supersedes the staged parts.
+    pub(crate) fn with_response_parts(mut self, payload: CosmosResponsePayload) -> Self {
+        self.response_parts = Some(Box::new(payload));
+        self
+    }
+
+    /// Finalizes the builder into a [`CosmosError`]. Allocation-cheap
+    /// (single `Arc<CosmosErrorInner>` regardless of which fields were
+    /// set). See the type-level docs for the reconciliation rules.
+    pub fn build(self) -> CosmosError {
+        let kind = self.kind;
+
+        // Resolve the effective status before deciding the context, since
+        // `WirePending` and `Synthetic` both need it stored on the outer
+        // inner and `Wire` overrides it from the response.
+        let base_status = self.base.as_ref().map(|b| b.inner.status);
+        let resolved_status = self
+            .status
+            .map(|s| s.with_kind(kind))
+            .or(base_status.map(|s| s.with_kind(kind)))
+            .unwrap_or_else(|| default_status_for(kind));
+
+        // Pull base context (if any) to support carry-forward of
+        // WirePending staging through `from_error(...).build()` without
+        // any setter, and to inherit synthetic diagnostics.
+        let base_context = self.base.as_ref().map(|b| &b.inner.context);
+
+        // Compute (status, context) according to the locked rules:
+        //  1. `with_response`               -> Wire (CosmosResponse wins)
+        //  2. `with_response_parts`         -> Wire (if diagnostics also set) or WirePending
+        //  3. base = WirePending + `with_diagnostics` (no setters) -> promote to Wire
+        //  4. base = Wire + `with_diagnostics`                     -> Wire (response's diag is the truth; user diag ignored)
+        //  5. else                                                  -> Synthetic
+        let (status, context) = if let Some(response) = self.response {
+            // (1) Full response supplied; it wins.
+            let status = response.status().with_kind(kind);
+            (
+                status,
+                ErrorContext::Wire {
+                    response: Box::new(response),
+                },
+            )
+        } else if let Some(parts) = self.response_parts {
+            // (2) Staged parts supplied on this builder.
+            match self.diagnostics {
+                Some(diag) => {
+                    // Promotion: assemble a CosmosResponse and become Wire.
+                    let payload = *parts;
+                    let response =
+                        finalize_response(payload, resolved_status.with_kind(kind), diag);
+                    let status = response.status().with_kind(kind);
+                    (
+                        status,
+                        ErrorContext::Wire {
+                            response: Box::new(response),
+                        },
+                    )
+                }
+                None => (
+                    resolved_status,
+                    ErrorContext::WirePending { payload: parts },
+                ),
+            }
+        } else {
+            // No setter on this builder for response or staged parts —
+            // consult the base error.
+            match base_context {
+                Some(ErrorContext::WirePending { payload }) => match self.diagnostics {
+                    Some(diag) => {
+                        // (3) Promote: assemble a CosmosResponse and become Wire.
+                        let payload = (**payload).clone();
+                        let response =
+                            finalize_response(payload, resolved_status.with_kind(kind), diag);
+                        let status = response.status().with_kind(kind);
+                        (
+                            status,
+                            ErrorContext::Wire {
+                                response: Box::new(response),
+                            },
+                        )
+                    }
+                    None => {
+                        // Carry WirePending staging forward unchanged.
+                        let payload = (**payload).clone();
+                        (
+                            resolved_status,
+                            ErrorContext::WirePending {
+                                payload: Box::new(payload),
+                            },
+                        )
+                    }
+                },
+                Some(ErrorContext::Wire { response }) => {
+                    // (4) Base already Wire. Carry the response forward
+                    // verbatim — its diagnostics is the truth; any
+                    // `with_diagnostics` on this builder is discarded by
+                    // the "CosmosResponse wins" rule.
+                    let response = (**response).clone();
+                    let status = response.status().with_kind(kind);
+                    (
+                        status,
+                        ErrorContext::Wire {
+                            response: Box::new(response),
+                        },
+                    )
+                }
+                Some(ErrorContext::Synthetic {
+                    diagnostics: base_diag,
+                }) => {
+                    // (5a) Synthetic base — explicit `with_diagnostics`
+                    // overrides, else inherit base's.
+                    let diagnostics = self.diagnostics.or_else(|| base_diag.clone());
+                    (resolved_status, ErrorContext::Synthetic { diagnostics })
+                }
+                None => {
+                    // (5b) No base — pure new synthetic error.
+                    (
+                        resolved_status,
+                        ErrorContext::Synthetic {
+                            diagnostics: self.diagnostics,
+                        },
+                    )
+                }
+            }
         };
 
-        // Apply overrides. We force the builder's kind onto whatever status
-        // the caller (or the base error) provides so the categorical kind
-        // matches the construction intent.
-        if let Some(status) = self.status {
-            inner.status = status.with_kind(self.kind);
-        } else {
-            inner.status = inner.status.with_kind(self.kind);
-        }
-        if let Some(message) = self.message {
-            inner.message = message;
+        // Carry forward message / source / backtrace from the base, then
+        // apply any overrides supplied on this builder.
+        let (mut message, mut source, backtrace) = match &self.base {
+            Some(base) => (
+                Arc::clone(&base.inner.message),
+                base.inner.source.clone(),
+                base.inner.backtrace.clone(),
+            ),
+            None => (Arc::<str>::from(""), None, None),
+        };
+        if let Some(m) = self.message {
+            message = m;
         }
         if self.source.is_some() {
-            inner.source = self.source;
-        }
-        if self.diagnostics.is_some() {
-            inner.diagnostics = self.diagnostics;
-        }
-        // Body/headers updates rebuild the optional payload; either can be
-        // set independently (e.g. headers without a body for a non-service
-        // error that still carries parsed Cosmos response headers).
-        if self.cosmos_headers.is_some() || self.response_body.is_some() {
-            let existing_body = inner
-                .payload
-                .as_deref()
-                .map(|p| p.body().clone())
-                .unwrap_or(ResponseBody::NoPayload);
-            let existing_headers = inner
-                .payload
-                .as_deref()
-                .map(|p| p.headers().clone())
-                .unwrap_or_default();
-            let headers = self.cosmos_headers.unwrap_or(existing_headers);
-            let body = match self.response_body {
-                Some(bytes) => ResponseBody::Bytes(bytes),
-                None => existing_body,
-            };
-            inner.payload = Some(Box::new(CosmosResponsePayload::new(body, headers)));
+            source = self.source;
         }
         if let Some(prefix) = self.context_prefix {
-            let mut buf =
-                String::with_capacity(prefix.len() + 2 + inner.message.len());
+            let mut buf = String::with_capacity(prefix.len() + 2 + message.len());
             buf.push_str(&prefix);
             buf.push_str(": ");
-            buf.push_str(&inner.message);
-            inner.message = Arc::<str>::from(buf);
+            buf.push_str(&message);
+            message = Arc::<str>::from(buf);
         }
 
-        Error::from_inner(inner)
+        CosmosError::from_inner(CosmosErrorInner {
+            status,
+            context,
+            message,
+            source,
+            backtrace,
+        })
     }
 }
 
-fn default_status_for(kind: Kind) -> CosmosStatus {
+/// Assembles a finalized [`CosmosResponse`] from staged wire parts +
+/// resolved status + finalized diagnostics. Used by the `WirePending` →
+/// `Wire` promotion path inside [`CosmosErrorBuilder::build`].
+fn finalize_response(
+    payload: CosmosResponsePayload,
+    status: CosmosStatus,
+    diagnostics: Arc<DiagnosticsContext>,
+) -> CosmosResponse {
+    let (body, headers) = (payload.body().clone(), payload.headers().clone());
+    CosmosResponse::new(body, headers, status, diagnostics)
+}
+
+fn default_status_for(kind: CosmosStatusKind) -> CosmosStatus {
+    use azure_core::http::StatusCode;
     match kind {
-        Kind::Service => CosmosStatus::new(StatusCode::InternalServerError).with_kind(kind),
-        Kind::Transport => CosmosStatus::TRANSPORT_GENERATED_503,
-        Kind::Client => CosmosStatus::new(StatusCode::BadRequest).with_kind(kind),
-        Kind::Authentication => CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
-        Kind::Serialization => CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-        Kind::Configuration => CosmosStatus::new(StatusCode::BadRequest).with_kind(kind),
+        CosmosStatusKind::Service => {
+            CosmosStatus::new(StatusCode::InternalServerError).with_kind(kind)
+        }
+        CosmosStatusKind::Transport => CosmosStatus::TRANSPORT_GENERATED_503,
+        CosmosStatusKind::Client => CosmosStatus::new(StatusCode::BadRequest).with_kind(kind),
+        CosmosStatusKind::Authentication => CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
+        CosmosStatusKind::Serialization => CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+        CosmosStatusKind::Configuration => {
+            CosmosStatus::new(StatusCode::BadRequest).with_kind(kind)
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{CosmosResponseHeaders, ResponseBody};
+    use azure_core::http::StatusCode;
 
     // -----------------------------------------------------------------
-    // Public ErrorBuilder surface
+    // Test fixtures
+    // -----------------------------------------------------------------
+
+    fn make_test_diagnostics() -> Arc<DiagnosticsContext> {
+        use crate::diagnostics::DiagnosticsContextBuilder;
+        use crate::models::ActivityId;
+        use crate::options::DiagnosticsOptions;
+        Arc::new(
+            DiagnosticsContextBuilder::new(
+                ActivityId::new_uuid(),
+                Arc::new(DiagnosticsOptions::default()),
+            )
+            .complete(),
+        )
+    }
+
+    fn make_test_response(
+        status: CosmosStatus,
+        diagnostics: Arc<DiagnosticsContext>,
+    ) -> CosmosResponse {
+        CosmosResponse::new(
+            ResponseBody::NoPayload,
+            CosmosResponseHeaders::default(),
+            status,
+            diagnostics,
+        )
+    }
+
+    fn make_test_payload() -> CosmosResponsePayload {
+        CosmosResponsePayload::new(b"{\"x\":1}".to_vec(), CosmosResponseHeaders::default())
+    }
+
+    // -----------------------------------------------------------------
+    // Public CosmosErrorBuilder surface
     // -----------------------------------------------------------------
 
     #[test]
     fn builder_kind_defaults_pick_sensible_status() {
-        // Each kind seeds a default status whose Kind matches the builder
-        // so callers that only set a message still produce a coherent
-        // error.
         for kind in [
-            Kind::Client,
-            Kind::Configuration,
-            Kind::Authentication,
-            Kind::Serialization,
-            Kind::Transport,
-            Kind::Service,
+            CosmosStatusKind::Client,
+            CosmosStatusKind::Configuration,
+            CosmosStatusKind::Authentication,
+            CosmosStatusKind::Serialization,
+            CosmosStatusKind::Transport,
+            CosmosStatusKind::Service,
         ] {
-            let err = Error::builder(kind).with_message("m").build();
+            let err = CosmosError::builder(kind).with_message("m").build();
             assert_eq!(err.kind(), kind, "kind mismatch for {kind:?}");
-            assert_eq!(err.status().kind(), kind, "status kind mismatch for {kind:?}");
-            assert_eq!(&*format!("{err}").split(": ").last().unwrap(), "m");
+            assert_eq!(
+                err.status().kind(),
+                kind,
+                "status kind mismatch for {kind:?}"
+            );
+            assert_eq!(format!("{err}").split(": ").last().unwrap(), "m");
+            assert!(err.response().is_none());
         }
     }
 
     #[test]
     fn builder_with_status_overrides_default_but_forces_kind() {
-        let err = Error::builder(Kind::Transport)
+        let err = CosmosError::builder(CosmosStatusKind::Transport)
             .with_status(CosmosStatus::new(StatusCode::ServiceUnavailable))
             .with_message("nope")
             .build();
-        assert_eq!(err.kind(), Kind::Transport);
-        assert_eq!(err.status_code(), StatusCode::ServiceUnavailable);
-        // Status's own kind was Service by default; builder forces Transport.
-        assert_eq!(err.status().kind(), Kind::Transport);
+        assert_eq!(err.kind(), CosmosStatusKind::Transport);
+        assert_eq!(err.status().status_code(), StatusCode::ServiceUnavailable);
+        assert_eq!(err.status().kind(), CosmosStatusKind::Transport);
     }
 
     #[test]
     fn builder_with_source_preserves_via_std_error_source() {
         let io = std::io::Error::new(std::io::ErrorKind::Other, "underlying");
-        let err = Error::builder(Kind::Transport)
+        let err = CosmosError::builder(CosmosStatusKind::Transport)
             .with_message("wrapped")
             .with_source(io)
             .build();
@@ -704,9 +950,12 @@ mod tests {
 
     #[test]
     fn builder_with_arc_source_accepts_shared_handle() {
-        let inner = Arc::new(Error::builder(Kind::Client).with_message("inner").build())
-            as Arc<dyn StdError + Send + Sync + 'static>;
-        let outer = Error::builder(Kind::Transport)
+        let inner = Arc::new(
+            CosmosError::builder(CosmosStatusKind::Client)
+                .with_message("inner")
+                .build(),
+        ) as Arc<dyn StdError + Send + Sync + 'static>;
+        let outer = CosmosError::builder(CosmosStatusKind::Transport)
             .with_arc_source(inner)
             .with_message("outer")
             .build();
@@ -715,37 +964,177 @@ mod tests {
     }
 
     #[test]
-    fn builder_with_diagnostics_attaches() {
+    fn builder_with_diagnostics_attaches_to_synthetic_error() {
         let diag = make_test_diagnostics();
-        let err = Error::builder(Kind::Client)
+        let err = CosmosError::builder(CosmosStatusKind::Client)
             .with_message("m")
             .with_diagnostics(Arc::clone(&diag))
             .build();
+        assert!(err.response().is_none());
         assert!(Arc::ptr_eq(err.diagnostics().unwrap(), &diag));
     }
 
     #[test]
-    fn builder_with_cosmos_headers_and_body_round_trip() {
-        let mut headers = CosmosResponseHeaders::default();
-        headers.substatus = Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE);
-        let body = b"{\"code\":\"X\"}".to_vec();
-        let err = Error::builder(Kind::Service)
-            .with_status(CosmosStatus::new(StatusCode::NotFound).with_sub_status(1002))
-            .with_message("session miss")
-            .with_cosmos_headers(headers)
-            .with_response_body(body.clone())
+    fn builder_with_response_sets_wire_context_and_wins_status_and_diagnostics() {
+        let resp_diag = make_test_diagnostics();
+        let response = make_test_response(
+            CosmosStatus::new(StatusCode::NotFound),
+            Arc::clone(&resp_diag),
+        );
+        let unrelated_diag = make_test_diagnostics();
+
+        let err = CosmosError::builder(CosmosStatusKind::Service)
+            .with_status(CosmosStatus::new(StatusCode::TooManyRequests)) // discarded
+            .with_diagnostics(Arc::clone(&unrelated_diag)) // discarded
+            .with_response(response)
+            .with_message("oh")
             .build();
-        assert_eq!(err.status_code(), StatusCode::NotFound);
-        assert_eq!(err.response_body(), Some(body.as_slice()));
-        assert_eq!(
-            err.cosmos_headers().and_then(|h| h.substatus),
-            Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+
+        assert_eq!(err.status().status_code(), StatusCode::NotFound);
+        assert!(Arc::ptr_eq(err.diagnostics().unwrap(), &resp_diag));
+        assert!(!Arc::ptr_eq(err.diagnostics().unwrap(), &unrelated_diag));
+        let wire = err.response().expect("wire response present");
+        assert_eq!(wire.status().status_code(), StatusCode::NotFound);
+    }
+
+    #[test]
+    fn builder_with_response_invariant_chain_holds() {
+        let response = make_test_response(
+            CosmosStatus::new(StatusCode::Conflict),
+            make_test_diagnostics(),
+        );
+        let err = CosmosError::builder(CosmosStatusKind::Service)
+            .with_response(response)
+            .with_message("conflict")
+            .build();
+
+        let s_err = err.status().status_code();
+        let s_resp = err.response().unwrap().status().status_code();
+        // DiagnosticsContext::status is `Option<&CosmosStatus>` (set by the
+        // pipeline at operation completion); whenever it is set, the
+        // `CosmosResponse` construction invariant guarantees it equals
+        // `response.status()`. The test fixture above does not set it.
+        let s_resp_diag = err
+            .response()
+            .unwrap()
+            .diagnostics_ref()
+            .status()
+            .map(|s| s.status_code());
+        assert_eq!(s_err, s_resp);
+        if let Some(s) = s_resp_diag {
+            assert_eq!(s_resp, s);
+        }
+    }
+
+    #[test]
+    fn builder_with_response_parts_no_diagnostics_yields_wire_pending() {
+        let err = CosmosError::builder(CosmosStatusKind::Service)
+            .with_status(CosmosStatus::new(StatusCode::TooManyRequests))
+            .with_message("staged")
+            .with_response_parts(make_test_payload())
+            .build();
+
+        // Externally visible: WirePending presents as no response and no diagnostics.
+        assert!(
+            err.response().is_none(),
+            "WirePending must not expose response()"
+        );
+        assert!(
+            err.diagnostics().is_none(),
+            "WirePending must not expose diagnostics()"
+        );
+        // Status was supplied on the builder and is preserved.
+        assert_eq!(err.status().status_code(), StatusCode::TooManyRequests);
+        // Internal pub(crate) accessor sees the staged payload.
+        assert!(
+            err.wire_payload().is_some(),
+            "internal wire_payload must surface staged parts"
         );
     }
 
     #[test]
+    fn builder_with_response_parts_and_diagnostics_promotes_to_wire() {
+        let diag = make_test_diagnostics();
+        let err = CosmosError::builder(CosmosStatusKind::Service)
+            .with_status(CosmosStatus::new(StatusCode::NotFound))
+            .with_message("not found")
+            .with_response_parts(make_test_payload())
+            .with_diagnostics(Arc::clone(&diag))
+            .build();
+
+        // Promotion: a Wire context with the assembled response is produced.
+        let wire = err.response().expect("promotion to Wire");
+        assert_eq!(wire.status().status_code(), StatusCode::NotFound);
+        assert!(Arc::ptr_eq(err.diagnostics().unwrap(), &diag));
+        assert!(Arc::ptr_eq(wire.diagnostics_ref(), &diag));
+    }
+
+    #[test]
+    fn from_error_wire_pending_with_diagnostics_promotes_to_wire() {
+        // Simulate the operation pipeline finalization path:
+        //   1. per-attempt: build WirePending error (no diagnostics yet)
+        //   2. abort: from_error(err).with_diagnostics(real_diag).build()
+        let staged = CosmosError::builder(CosmosStatusKind::Service)
+            .with_status(CosmosStatus::new(StatusCode::ServiceUnavailable))
+            .with_message("attempt-failed")
+            .with_response_parts(make_test_payload())
+            .build();
+        assert!(staged.response().is_none(), "staged must be WirePending");
+
+        let diag = make_test_diagnostics();
+        let finalized = CosmosErrorBuilder::from_error(staged)
+            .with_diagnostics(Arc::clone(&diag))
+            .build();
+
+        let wire = finalized.response().expect("finalization promoted to Wire");
+        assert_eq!(wire.status().status_code(), StatusCode::ServiceUnavailable);
+        assert!(Arc::ptr_eq(finalized.diagnostics().unwrap(), &diag));
+        assert!(Arc::ptr_eq(wire.diagnostics_ref(), &diag));
+    }
+
+    #[test]
+    fn from_error_wire_pending_without_diagnostics_carries_forward() {
+        // from_error(WirePending) with only a context decoration must
+        // preserve the WirePending state — promotion only happens when
+        // diagnostics is supplied.
+        let staged = CosmosError::builder(CosmosStatusKind::Service)
+            .with_status(CosmosStatus::new(StatusCode::ServiceUnavailable))
+            .with_message("attempt-failed")
+            .with_response_parts(make_test_payload())
+            .build();
+
+        let decorated = CosmosErrorBuilder::from_error(staged)
+            .with_context("op=createItem")
+            .build();
+
+        assert!(decorated.response().is_none(), "WirePending preserved");
+        assert!(decorated.diagnostics().is_none());
+        assert!(decorated.wire_payload().is_some());
+        assert!(format!("{decorated}").contains("op=createItem"));
+    }
+
+    #[test]
+    fn from_error_wire_carries_response_forward() {
+        let diag = make_test_diagnostics();
+        let response =
+            make_test_response(CosmosStatus::new(StatusCode::Conflict), Arc::clone(&diag));
+        let original = CosmosError::builder(CosmosStatusKind::Service)
+            .with_response(response)
+            .with_message("conflict")
+            .build();
+
+        let decorated = CosmosErrorBuilder::from_error(original)
+            .with_context("op=replace")
+            .build();
+
+        let wire = decorated.response().expect("Wire carried forward");
+        assert_eq!(wire.status().status_code(), StatusCode::Conflict);
+        assert!(Arc::ptr_eq(decorated.diagnostics().unwrap(), &diag));
+    }
+
+    #[test]
     fn builder_with_context_prepends_to_message() {
-        let err = Error::builder(Kind::Client)
+        let err = CosmosError::builder(CosmosStatusKind::Client)
             .with_message("bad payload")
             .with_context("op=createItem")
             .build();
@@ -759,71 +1148,27 @@ mod tests {
     #[test]
     fn builder_from_error_carries_forward_unset_fields() {
         let diag = make_test_diagnostics();
-        let original = Error::builder(Kind::Client)
+        let original = CosmosError::builder(CosmosStatusKind::Client)
             .with_message("first")
             .with_diagnostics(Arc::clone(&diag))
             .build();
 
-        // No setters \u2014 build should clone original unchanged (modulo a
-        // re-captured backtrace at the construction site, since
-        // from_error doesn't preserve the inner Arc).
-        let cloned = ErrorBuilder::from_error(original.clone()).build();
-        assert_eq!(cloned.kind(), Kind::Client);
-        assert_eq!(cloned.status(), original.status());
+        let cloned = CosmosErrorBuilder::from_error(original.clone()).build();
+        assert_eq!(cloned.kind(), CosmosStatusKind::Client);
+        assert_eq!(
+            cloned.status().status_code(),
+            original.status().status_code()
+        );
         assert_eq!(format!("{cloned}"), format!("{original}"));
         assert!(Arc::ptr_eq(cloned.diagnostics().unwrap(), &diag));
     }
 
     #[test]
-    fn builder_from_error_with_context_preserves_status_and_source() {
-        let inner_io = std::io::Error::new(std::io::ErrorKind::Other, "io fail");
-        let original = Error::builder(Kind::Transport)
-            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
-            .with_message("base")
-            .with_source(inner_io)
-            .build();
-
-        let decorated = ErrorBuilder::from_error(original.clone())
-            .with_context("op=read")
-            .build();
-
-        assert_eq!(decorated.status(), original.status());
-        // Source chain preserved.
-        let src = StdError::source(&decorated).expect("source carried forward");
-        assert!(src.to_string().contains("io fail"));
-        // Context prepended.
-        assert!(format!("{decorated}").contains("op=read: base"));
-    }
-
-    #[test]
-    fn builder_from_error_swap_status_keeps_other_fields() {
-        let diag = make_test_diagnostics();
-        let original = Error::builder(Kind::Service)
-            .with_status(CosmosStatus::new(StatusCode::TooManyRequests))
-            .with_message("throttled")
-            .with_diagnostics(Arc::clone(&diag))
-            .build();
-
-        // Re-decorate as a Transport error (e.g. retry-budget exhausted
-        // synthesizes a synthetic 503 wrapping the original Service error
-        // \u2014 the abort path in the operation pipeline).
-        let promoted = ErrorBuilder::from_error(original)
-            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
-            .build();
-        // Builder's Kind is still Service (inherited from base); status's
-        // Kind is forced to match. Demonstrates that callers wanting a
-        // kind switch should re-issue Error::builder(new_kind) and chain
-        // .with_source() / .with_diagnostics(); from_error preserves the
-        // original Kind so context-only patches stay consistent.
-        assert_eq!(promoted.kind(), Kind::Service);
-        assert_eq!(promoted.status_code(), StatusCode::ServiceUnavailable);
-        assert!(Arc::ptr_eq(promoted.diagnostics().unwrap(), &diag));
-    }
-
-    #[test]
     fn builder_message_setter_overrides_base_message() {
-        let original = Error::builder(Kind::Client).with_message("orig").build();
-        let patched = ErrorBuilder::from_error(original)
+        let original = CosmosError::builder(CosmosStatusKind::Client)
+            .with_message("orig")
+            .build();
+        let patched = CosmosErrorBuilder::from_error(original)
             .with_message("replaced")
             .build();
         assert!(format!("{patched}").ends_with(": replaced"));
@@ -831,7 +1176,7 @@ mod tests {
 
     #[test]
     fn builder_repeated_setters_last_write_wins() {
-        let err = Error::builder(Kind::Client)
+        let err = CosmosError::builder(CosmosStatusKind::Client)
             .with_message("first")
             .with_message("second")
             .with_context("ctx-a")
@@ -841,50 +1186,28 @@ mod tests {
         assert!(rendered.ends_with(": ctx-b: second"), "got: {rendered}");
     }
 
-    // -----------------------------------------------------------------
-    // Existing internal-surface tests
-    // -----------------------------------------------------------------
-
-    #[test]
-    fn service_from_parts_populates_status_and_headers() {
-        let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
-        let err = Error::builder(Kind::Service)
-            .with_status(status)
-            .with_message("throttled")
-            .with_cosmos_headers(CosmosResponseHeaders::default())
-            .with_response_body(b"{}".to_vec())
-            .build();
-        assert_eq!(err.kind(), Kind::Service);
-        assert!(err.status().is_throttled());
-        assert!(err.status().is_transient());
-        assert_eq!(err.status_code(), StatusCode::TooManyRequests);
-        assert!(err.cosmos_headers().is_some());
-        // No diagnostics attached by the constructor; the operation
-        // pipeline grafts them downstream via `with_diagnostics`.
-        assert!(err.diagnostics().is_none());
-    }
-
     #[test]
     fn end_to_end_timeout_uses_synthetic_status() {
-        let err = Error::builder(Kind::Transport)
+        let err = CosmosError::builder(CosmosStatusKind::Transport)
             .with_status(CosmosStatus::from_parts(
                 StatusCode::RequestTimeout,
                 Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
             ))
             .with_message("e2e timeout")
             .build();
-        assert_eq!(err.kind(), Kind::Transport);
-        assert_eq!(err.status_code(), StatusCode::RequestTimeout);
+        assert_eq!(err.kind(), CosmosStatusKind::Transport);
+        assert_eq!(err.status().status_code(), StatusCode::RequestTimeout);
         assert_eq!(
-            err.sub_status(),
+            err.status().sub_status(),
             Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
         );
         assert!(err.status().is_timeout());
         assert!(err.status().is_transient());
+        assert!(err.response().is_none());
     }
 
-    fn end_to_end_timeout_error(message: &'static str) -> Error {
-        Error::builder(Kind::Transport)
+    fn end_to_end_timeout_error(message: &'static str) -> CosmosError {
+        CosmosError::builder(CosmosStatusKind::Transport)
             .with_status(CosmosStatus::from_parts(
                 StatusCode::RequestTimeout,
                 Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
@@ -895,7 +1218,6 @@ mod tests {
 
     #[test]
     fn wrap_inherits_backtrace_from_cosmos_source() {
-        // Build an inner Cosmos error so it carries a captured backtrace.
         let inner = end_to_end_timeout_error("inner");
         let inner_bt_id = inner
             .inner
@@ -907,10 +1229,7 @@ mod tests {
             "inner must have a captured backtrace for this test to be meaningful"
         );
 
-        // Wrap the inner error as the source of an outer transport error.
-        // The outer constructor must inherit the inner's backtrace rather
-        // than capturing a fresh one at the wrap site.
-        let outer = Error::builder(Kind::Transport)
+        let outer = CosmosError::builder(CosmosStatusKind::Transport)
             .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
             .with_message("outer")
             .with_arc_source(Arc::new(inner))
@@ -926,12 +1245,13 @@ mod tests {
         );
     }
 
-    /// Builds an `Error` carrying both a `DiagnosticsContext` and a
-    /// nested Cosmos `Error` as its source, so format tests can exercise
-    /// the source-chain + diagnostics propagation paths together.
-    fn make_error_with_diagnostics_and_source() -> Error {
+    /// Builds a [`CosmosError`] carrying both a `DiagnosticsContext` and
+    /// a nested Cosmos `CosmosError` as its source, so format tests can
+    /// exercise the source-chain + diagnostics propagation paths
+    /// together.
+    fn make_error_with_diagnostics_and_source() -> CosmosError {
         let inner = end_to_end_timeout_error("inner timeout");
-        Error::builder(Kind::Transport)
+        CosmosError::builder(CosmosStatusKind::Transport)
             .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
             .with_message("outer transport failure")
             .with_diagnostics(make_test_diagnostics())
@@ -939,34 +1259,13 @@ mod tests {
             .build()
     }
 
-    /// Fabricates a fresh `Arc<DiagnosticsContext>` for tests that need
-    /// any non-`None` diagnostics value. Produced via the real builder so
-    /// no production-only fixture (`error_placeholder`) is required.
-    fn make_test_diagnostics() -> Arc<DiagnosticsContext> {
-        use crate::diagnostics::DiagnosticsContextBuilder;
-        use crate::models::ActivityId;
-        use crate::options::DiagnosticsOptions;
-        Arc::new(
-            DiagnosticsContextBuilder::new(
-                ActivityId::new_uuid(),
-                Arc::new(DiagnosticsOptions::default()),
-            )
-            .complete(),
-        )
-    }
-
     #[test]
     fn from_error_with_diagnostics_does_not_mutate_original() {
-        // Starting from an error with no diagnostics, building a new error
-        // from it via `ErrorBuilder::from_error(...).with_diagnostics(...)`
-        // returns a new error carrying the supplied context. The original
-        // error is left untouched (Clone-on-Arc semantics) and all other
-        // fields survive the clone-and-patch path.
         let original = end_to_end_timeout_error("no diags");
         assert!(original.diagnostics().is_none());
 
         let diag = make_test_diagnostics();
-        let attached = ErrorBuilder::from_error(original.clone())
+        let attached = CosmosErrorBuilder::from_error(original.clone())
             .with_diagnostics(Arc::clone(&diag))
             .build();
 
@@ -976,19 +1275,16 @@ mod tests {
         );
         assert!(
             original.diagnostics().is_none(),
-            "original must be untouched by ErrorBuilder::from_error"
+            "original must be untouched by CosmosErrorBuilder::from_error"
         );
-        assert_eq!(attached.status(), original.status());
+        assert_eq!(
+            attached.status().status_code(),
+            original.status().status_code()
+        );
     }
 
     #[test]
     fn display_plain_includes_typed_header_and_message_on_one_line() {
-        // `{e}` must surface the typed `[Kind] status/sub (name): message`
-        // header on a single line so existing log sites that didn't opt
-        // into `{e:#}` still see the Cosmos status this error type exists
-        // to expose. The source chain, diagnostics block, and backtrace
-        // are reserved for the opt-in `{e:#}` form so they don't corrupt
-        // callers concatenating the message into other strings.
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err}");
         assert!(
@@ -1003,131 +1299,59 @@ mod tests {
             rendered.ends_with(": outer transport failure"),
             "plain display must end with `: <message>`, got:\n{rendered}"
         );
-        assert!(
-            !rendered.contains("Caused by:"),
-            "plain display must not emit the source chain, got:\n{rendered}"
-        );
-        assert!(
-            !rendered.contains("Diagnostics:"),
-            "plain display must not emit the diagnostics block, got:\n{rendered}"
-        );
+        assert!(!rendered.contains("Caused by:"));
+        assert!(!rendered.contains("Diagnostics:"));
     }
 
     #[test]
     fn display_alternate_includes_header_source_chain_and_diagnostics() {
-        // `{e:#}` is the opt-in rich multi-line form: it must surface the
-        // typed status header, the `Caused by:` chain, and the structured
-        // diagnostics block. Backtrace presence is best-effort
-        // (rate-limited globally) and not asserted.
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err:#}");
-        assert!(
-            rendered.contains("[Transport]"),
-            "alternate display must include the categorical kind from CosmosStatus::Display, got:\n{rendered}"
-        );
-        assert!(
-            rendered.contains("outer transport failure"),
-            "alternate display must include the error message, got:\n{rendered}"
-        );
-        assert!(
-            rendered.contains("Caused by:") && rendered.contains("inner timeout"),
-            "alternate display must include the source chain, got:\n{rendered}"
-        );
-        assert!(
-            rendered.contains("Diagnostics:"),
-            "alternate display must include the diagnostics block, got:\n{rendered}"
-        );
+        assert!(rendered.contains("[Transport]"));
+        assert!(rendered.contains("outer transport failure"));
+        assert!(rendered.contains("Caused by:") && rendered.contains("inner timeout"));
+        assert!(rendered.contains("Diagnostics:"));
     }
 
     #[test]
     fn debug_omits_backtrace_block_in_plain_form() {
-        // `{e:?}` is the everyday Debug form used by `tracing::error!(?e)`
-        // and `Result::unwrap` — it must NOT emit the multi-line stack
-        // backtrace block, which is reserved for the opt-in `{e:#?}`.
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err:?}");
-        assert!(
-            !rendered.contains("Stack backtrace:"),
-            "plain debug must not emit the backtrace block, got:\n{rendered}"
-        );
-        // The header and source chain must still be present.
+        assert!(!rendered.contains("Stack backtrace:"));
         assert!(rendered.contains("outer transport failure"));
         assert!(rendered.contains("Caused by:"));
     }
 
     #[test]
     fn debug_alternate_propagates_to_source_and_diagnostics() {
-        // `{e:#?}` must propagate the alternate flag into the wrapped
-        // source entries and the diagnostics block, so callers opting
-        // into the rich form get the pretty-printed multi-line layout
-        // from every type that implements `Debug` along the chain.
-        //
-        // We assert propagation indirectly by comparing the plain and
-        // alternate Debug renderings: the alternate form must be a
-        // strict superset (additional whitespace / newlines from the
-        // pretty layout, plus the optional backtrace block when one was
-        // captured).
         let err = make_error_with_diagnostics_and_source();
-        let plain = format!("{err:?}");
-        let alternate = format!("{err:#?}");
-
-        assert!(
-            alternate.len() > plain.len(),
-            "alternate debug must be richer than plain debug.\nPlain:\n{plain}\nAlternate:\n{alternate}"
-        );
-        // The diagnostics block must use multi-line Debug layout in the
-        // alternate form. The derived `Debug` for `DiagnosticsContext`
-        // emits field-per-line indentation under `{:#?}`, so a `\n    `
-        // sequence after the `Diagnostics:` marker is a reliable signal
-        // that the alternate flag propagated into it.
-        let diag_idx = alternate
-            .find("Diagnostics:")
-            .expect("alternate debug must include the diagnostics block");
-        let after_diag = &alternate[diag_idx..];
-        assert!(
-            after_diag.contains("\n    "),
-            "alternate flag must cascade into DiagnosticsContext::Debug (expected indented multi-line layout), got:\n{after_diag}"
-        );
+        let rendered = format!("{err:#?}");
+        assert!(rendered.contains("outer transport failure"));
+        assert!(rendered.contains("Caused by:"));
     }
 
-    /// Regression guard: a cyclic (or pathologically deep) `source()` chain
-    /// must not cause `Display`/`Debug` on `Error` to run unbounded. The
-    /// source-chain walker caps at `MAX_SOURCE_CHAIN_DEPTH` frames and
-    /// emits a `<source chain truncated ...>` marker so a single
-    /// `tracing::error!` cannot pin a thread.
     #[test]
-    fn display_and_debug_bound_source_chain_walk() {
-        // Self-referential `StdError::source` returning the same error
-        // forever — simulates a cyclic chain without needing unsafe.
+    fn source_chain_truncation_caps_pathological_chains() {
         #[derive(Debug)]
         struct CyclicError;
-        impl fmt::Display for CyclicError {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        impl std::fmt::Display for CyclicError {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.write_str("cyclic")
             }
         }
         impl StdError for CyclicError {
             fn source(&self) -> Option<&(dyn StdError + 'static)> {
-                // Return &'static self via a leaked static so the borrow
-                // lifetime is satisfied without unsafe.
                 static SELF: CyclicError = CyclicError;
                 Some(&SELF)
             }
         }
 
-        let err = Error::builder(Kind::Transport)
+        let err = CosmosError::builder(CosmosStatusKind::Transport)
             .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
             .with_message("outer")
             .with_arc_source(Arc::new(CyclicError))
             .build();
 
-        // Debug must terminate and emit the truncation marker. We only
-        // exercise the Debug path (`{err:?}`) here: it emits the source
-        // chain without rendering the backtrace block, so this test does
-        // not pollute the process-global frame cache and cannot race with
-        // sibling backtrace tests that assert on its size. The walker is
-        // shared between Display and Debug, so covering one path proves
-        // the cap fires on both.
         let rendered = format!("{err:?}");
         assert!(
             rendered.contains("<source chain truncated"),

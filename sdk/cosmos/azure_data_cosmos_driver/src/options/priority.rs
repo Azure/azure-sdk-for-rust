@@ -38,15 +38,17 @@ impl Display for PriorityLevel {
 }
 
 impl std::str::FromStr for PriorityLevel {
-    type Err = crate::error::Error;
+    type Err = crate::error::CosmosError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "High" => Ok(Self::High),
             "Low" => Ok(Self::Low),
-            _ => Err(crate::error::Error::builder(crate::error::Kind::Client)
-                .with_message(format!("Unknown priority level: {s}"))
-                .build()),
+            _ => Err(
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
+                    .with_message(format!("Unknown priority level: {s}"))
+                    .build(),
+            ),
         }
     }
 }
@@ -54,7 +56,7 @@ impl std::str::FromStr for PriorityLevel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::Kind;
+    use crate::error::CosmosStatusKind;
 
     #[test]
     fn parses_valid_priority_levels() {
@@ -69,7 +71,7 @@ mod tests {
         let err = "Medium"
             .parse::<PriorityLevel>()
             .expect_err("expected error for invalid priority");
-        assert_eq!(err.kind(), Kind::Client);
+        assert_eq!(err.kind(), CosmosStatusKind::Client);
         assert!(
             err.to_string().contains("Unknown priority level: Medium"),
             "unexpected error message: {err}"

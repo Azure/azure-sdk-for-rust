@@ -134,8 +134,8 @@ pub async fn seed_container(
                 // to retry the whole seed pass; we abort the remaining
                 // workers either way.
                 workers.abort_all();
-                return Err(azure_data_cosmos_driver::Error::builder(
-                    azure_data_cosmos_driver::error::Kind::Client,
+                return Err(azure_data_cosmos_driver::CosmosError::builder(
+                    azure_data_cosmos_driver::error::CosmosStatusKind::Client,
                 )
                 .with_message(format!("seed worker task failed: {e}"))
                 .build()

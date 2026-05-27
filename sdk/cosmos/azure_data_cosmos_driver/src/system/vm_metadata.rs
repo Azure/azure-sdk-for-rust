@@ -266,7 +266,7 @@ impl VmMetadataServiceInner {
             .timeout(IMDS_REQUEST_TIMEOUT)
             .build()
             .map_err(|e| {
-                crate::error::Error::builder(crate::error::Kind::Configuration)
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Configuration)
                     .with_message(format!("failed to build IMDS HTTP client: {e}"))
                     .with_source(e)
                     .build()
@@ -278,7 +278,7 @@ impl VmMetadataServiceInner {
             .send()
             .await
             .map_err(|e| {
-                crate::error::Error::builder(crate::error::Kind::Transport)
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
                     .with_status(crate::models::CosmosStatus::TRANSPORT_IO_FAILED)
                     .with_message(format!("IMDS request failed: {e}"))
                     .with_source(e)
@@ -286,7 +286,7 @@ impl VmMetadataServiceInner {
             })?;
 
         let body = response.text().await.map_err(|e| {
-            crate::error::Error::builder(crate::error::Kind::Transport)
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
                 .with_status(crate::models::CosmosStatus::TRANSPORT_BODY_READ_FAILED)
                 .with_message(format!("failed to read IMDS response body: {e}"))
                 .with_source(e)
@@ -294,7 +294,7 @@ impl VmMetadataServiceInner {
         })?;
 
         let metadata: AzureVmMetadata = serde_json::from_str(&body).map_err(|e| {
-            crate::error::Error::builder(crate::error::Kind::Serialization)
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Serialization)
                 .with_message("failed to parse IMDS response")
                 .with_source(e)
                 .build()
@@ -304,9 +304,11 @@ impl VmMetadataServiceInner {
 
     #[cfg(not(feature = "reqwest"))]
     async fn do_fetch() -> crate::error::Result<AzureVmMetadata> {
-        Err(crate::error::Error::builder(crate::error::Kind::Configuration)
-            .with_message("IMDS fetch requires the `reqwest` feature")
-            .build())
+        Err(
+            crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Configuration)
+                .with_message("IMDS fetch requires the `reqwest` feature")
+                .build(),
+        )
     }
 }
 

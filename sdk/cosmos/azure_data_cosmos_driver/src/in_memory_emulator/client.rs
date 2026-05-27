@@ -121,7 +121,7 @@ impl InMemoryEmulatorHttpClient {
     /// Dispatches a request against the in-memory store and returns the
     /// emulated response. Inherent method (no longer implements
     /// `azure_core::HttpClient`) so the entire emulator pipeline can
-    /// surface typed [`crate::error::Error`] values directly.
+    /// surface typed [`crate::error::CosmosError`] values directly.
     pub async fn execute_request(
         &self,
         request: &Request,
@@ -140,7 +140,7 @@ impl InMemoryEmulatorHttpClient {
         let region_name = match resolve_region(request.url(), self.store.config()) {
             Some(r) => r,
             None => {
-                return Err(crate::error::Error::builder(crate::error::Kind::Client)
+                return Err(crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Client)
                     .with_message(format!(
                         "in-memory emulator: request URL host '{}' does not match any configured region",
                         request.url().host_str().unwrap_or("<none>"),
@@ -211,17 +211,16 @@ impl TransportClient for EmulatorTransportClient {
             .emulator
             .execute_request(&core_request)
             .await
-            .map_err(|e| {
-                TransportError::new(e, crate::diagnostics::RequestSentStatus::Unknown)
-            })?;
+            .map_err(|e| TransportError::new(e, crate::diagnostics::RequestSentStatus::Unknown))?;
 
         // Collect the buffered response
         let raw = async_response.try_into_raw_response().await.map_err(|e| {
-            let cosmos_err = crate::error::Error::builder(crate::error::Kind::Transport)
-                .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
-                .with_message(e.to_string())
-                .with_source(e)
-                .build();
+            let cosmos_err =
+                crate::error::CosmosError::builder(crate::error::CosmosStatusKind::Transport)
+                    .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                    .with_message(e.to_string())
+                    .with_source(e)
+                    .build();
             TransportError::new(cosmos_err, crate::diagnostics::RequestSentStatus::Sent)
         })?;
 

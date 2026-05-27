@@ -18,7 +18,6 @@ pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
-mod cosmos_status;
 mod etag;
 mod finite_f64;
 pub(crate) mod partition_key;
@@ -57,8 +56,11 @@ pub use cosmos_resource_reference::CosmosResourceReference;
 pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub(crate) use cosmos_response::CosmosResponsePayload;
-pub use cosmos_status::SubStatusCode;
-pub use cosmos_status::{CosmosStatus, Kind};
+// Cosmos status types are owned by `crate::error::cosmos_status` (canonical home,
+// tightly coupled to the typed Cosmos error). Re-exported here for ergonomic access
+// via the historic `crate::models::CosmosStatus` path used throughout the driver
+// internals.
+pub use crate::error::cosmos_status::{CosmosStatus, CosmosStatusKind, SubStatusCode};
 pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
 pub use feed_range::FeedRange;

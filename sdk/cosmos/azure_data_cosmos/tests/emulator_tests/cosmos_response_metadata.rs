@@ -36,10 +36,14 @@ async fn create_container(
     db_client.container_client(&container_id).await
 }
 
-fn cosmos_headers_from_error(error: &azure_data_cosmos::Error) -> ResponseHeaders {
-    error
-        .cosmos_headers()
-        .unwrap_or_else(|| panic!("expected typed Cosmos response headers on error, got {error:?}"))
+fn cosmos_headers_from_error(error: &azure_data_cosmos::CosmosError) -> ResponseHeaders {
+    let driver_headers = error
+        .response()
+        .map(|r| r.headers().clone())
+        .unwrap_or_else(|| {
+            panic!("expected typed Cosmos response headers on error, got {error:?}")
+        });
+    ResponseHeaders::from_driver(&driver_headers)
 }
 
 #[tokio::test]
@@ -66,7 +70,7 @@ pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
                 .expect_err("expected 404 when reading non-existent item");
 
             assert_eq!(
-                error.status_code(),
+                error.status().status_code(),
                 StatusCode::NotFound,
                 "expected 404 NotFound"
             );
@@ -121,7 +125,7 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 .read_item(&pk, &item_id, None)
                 .await
                 .expect_err("expected 404 for pre-write read");
-            assert_eq!(pre_write_error.status_code(), StatusCode::NotFound);
+            assert_eq!(pre_write_error.status().status_code(), StatusCode::NotFound);
             let pre_write_headers = cosmos_headers_from_error(&pre_write_error);
             let pre_write_lsn = pre_write_headers
                 .lsn()

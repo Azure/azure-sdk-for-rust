@@ -176,7 +176,7 @@ impl IntoFuture for ThroughputPoller {
                 last_response = Some(result?);
             }
             last_response.map(ResourceResponse::new).ok_or_else(|| {
-                crate::Error::client(
+                crate::CosmosError::client(
                     "throughput poller stream ended without yielding a response",
                     None,
                 )

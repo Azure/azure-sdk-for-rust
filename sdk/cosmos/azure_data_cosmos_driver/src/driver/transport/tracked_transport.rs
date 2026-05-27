@@ -4,7 +4,7 @@
 //! Transport send-status inference utilities.
 
 use crate::diagnostics::RequestSentStatus;
-use crate::error::{Error, Kind};
+use crate::error::{CosmosError, CosmosStatusKind};
 use crate::models::SubStatusCode;
 
 /// Infers from a typed Cosmos error whether the request was definitely sent,
@@ -14,10 +14,10 @@ use crate::models::SubStatusCode;
 /// minted by the boundary mapper in [`crate::error`], so the predicate works
 /// regardless of whether the underlying failure originated in `azure_core`,
 /// `reqwest`, or somewhere else.
-pub(crate) fn infer_request_sent_status(error: &Error) -> RequestSentStatus {
+pub(crate) fn infer_request_sent_status(error: &CosmosError) -> RequestSentStatus {
     match error.kind() {
         // Pre-flight: never reached the wire.
-        Kind::Authentication => RequestSentStatus::NotSent,
+        CosmosStatusKind::Authentication => RequestSentStatus::NotSent,
         // Failure modes that provably precede any request bytes going onto
         // the wire:
         //
@@ -34,9 +34,9 @@ pub(crate) fn infer_request_sent_status(error: &Error) -> RequestSentStatus {
         // Generic `TRANSPORT_IO_FAILED` is deliberately *not* included —
         // it can fire mid-stream after request bytes left the socket and
         // so must stay `Unknown`.
-        Kind::Transport
+        CosmosStatusKind::Transport
             if matches!(
-                error.sub_status(),
+                error.status().sub_status(),
                 Some(SubStatusCode::TRANSPORT_CONNECTION_FAILED)
                     | Some(SubStatusCode::TRANSPORT_DNS_FAILED)
                     | Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE)
@@ -45,7 +45,7 @@ pub(crate) fn infer_request_sent_status(error: &Error) -> RequestSentStatus {
             RequestSentStatus::NotSent
         }
         // A real HTTP response came back.
-        Kind::Service => RequestSentStatus::Sent,
+        CosmosStatusKind::Service => RequestSentStatus::Sent,
         // Everything else (generic transport I/O, serialization, client,
         // configuration) could go either way at this point.
         _ => RequestSentStatus::Unknown,
@@ -57,8 +57,8 @@ mod tests {
     use super::*;
     use crate::models::CosmosStatus;
 
-    fn transport_err(status: CosmosStatus) -> Error {
-        Error::builder(Kind::Transport)
+    fn transport_err(status: CosmosStatus) -> CosmosError {
+        CosmosError::builder(CosmosStatusKind::Transport)
             .with_status(status)
             .with_message("synthetic")
             .build()
@@ -90,7 +90,7 @@ mod tests {
 
     #[test]
     fn client_error_is_unknown() {
-        let err = Error::builder(Kind::Client)
+        let err = CosmosError::builder(CosmosStatusKind::Client)
             .with_message("bad input")
             .build();
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn serialization_error_is_unknown() {
-        let err = Error::builder(Kind::Serialization)
+        let err = CosmosError::builder(CosmosStatusKind::Serialization)
             .with_message("bad json")
             .with_source(std::io::Error::other("stub"))
             .build();
@@ -107,10 +107,10 @@ mod tests {
 
     #[test]
     fn authentication_error_not_sent() {
-        let err = Error::builder(Kind::Authentication)
+        let err = CosmosError::builder(CosmosStatusKind::Authentication)
             .with_message("invalid token")
             .build();
-        assert_eq!(err.kind(), Kind::Authentication);
+        assert_eq!(err.kind(), CosmosStatusKind::Authentication);
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }
 }

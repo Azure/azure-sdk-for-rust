@@ -312,7 +312,7 @@ impl LiveState {
     /// Attempting to call this method while a page fetch is in-flight will result in an error, since the internal state is being mutated and cannot be safely snapshotted.
     fn to_continuation_token(&self) -> crate::Result<ContinuationToken> {
         let plan = self.plan.as_ref().ok_or_else(|| {
-            crate::Error::client(
+            crate::CosmosError::client(
                 "to_continuation_token called while a page fetch is in flight",
                 None,
             )
@@ -453,7 +453,7 @@ impl<T: Send + DeserializeOwned + 'static> FeedPageIterator<T> {
         match &self.source {
             PageSource::Live(state) => state.to_continuation_token(),
             #[cfg(test)]
-            PageSource::Synthetic(_) => Err(crate::Error::client(
+            PageSource::Synthetic(_) => Err(crate::CosmosError::client(
                 "synthetic test iterator does not support to_continuation_token",
                 None,
             )),
@@ -543,7 +543,7 @@ mod tests {
     async fn item_iterator_propagates_errors() {
         let pages = vec![
             Ok(create_test_page(vec![1, 2])),
-            Err(crate::Error::client("test error", None)),
+            Err(crate::CosmosError::client("test error", None)),
         ];
 
         let mut item_iter = synthetic_item_iter(pages);

@@ -45,7 +45,7 @@ impl ContainerClient {
             .resolve_container(database_id, container_id)
             .await
             .map_err(|e| {
-                azure_data_cosmos_driver::ErrorBuilder::from_error(e)
+                azure_data_cosmos_driver::CosmosErrorBuilder::from_error(e)
                     .with_context(format!(
                         "failed to resolve container metadata for '{database_id}/{container_id}'"
                     ))
@@ -962,7 +962,7 @@ impl ContainerClient {
             .resolve_all_partition_key_ranges(&self.container_ref, options.force_refresh())
             .await
             .ok_or_else(|| {
-                crate::Error::client("failed to resolve routing map for container", None)
+                crate::CosmosError::client("failed to resolve routing map for container", None)
             })?;
 
         if ranges.is_empty() && !options.force_refresh() {
@@ -974,12 +974,12 @@ impl ContainerClient {
                 .resolve_all_partition_key_ranges(&self.container_ref, true)
                 .await
                 .ok_or_else(|| {
-                    crate::Error::client("failed to resolve routing map for container", None)
+                    crate::CosmosError::client("failed to resolve routing map for container", None)
                 })?;
         }
 
         if ranges.is_empty() {
-            return Err(crate::Error::client(
+            return Err(crate::CosmosError::client(
                 "resolved routing map contains no partition key ranges; \
                  the container may not exist or the service may be unreachable",
                 None,
@@ -989,7 +989,7 @@ impl ContainerClient {
         ranges
             .iter()
             .map(FeedRange::try_from)
-            .collect::<Result<Vec<_>, azure_data_cosmos_driver::error::Error>>()
+            .collect::<Result<Vec<_>, azure_data_cosmos_driver::error::CosmosError>>()
             .map_err(Into::into)
     }
 
@@ -1009,13 +1009,13 @@ impl ContainerClient {
         let values = driver_pk.values();
 
         if values.is_empty() {
-            return Err(crate::Error::client(
+            return Err(crate::CosmosError::client(
                 "partition key must have at least one component",
                 None,
             ));
         }
         if values.len() > pk_def.paths().len() {
-            return Err(crate::Error::client(
+            return Err(crate::CosmosError::client(
                 format!(
                     "partition key has {} components but container definition has {} paths",
                     values.len(),
@@ -1028,7 +1028,7 @@ impl ContainerClient {
         let is_prefix =
             pk_def.kind() == PartitionKeyKind::MultiHash && values.len() < pk_def.paths().len();
         if !is_prefix && values.len() != pk_def.paths().len() {
-            return Err(crate::Error::client(
+            return Err(crate::CosmosError::client(
                 "prefix partition keys are only supported for MultiHash (hierarchical) containers",
                 None,
             ));
@@ -1044,7 +1044,7 @@ impl ContainerClient {
             )
             .await
             .ok_or_else(|| {
-                crate::Error::client("failed to resolve routing map for container", None)
+                crate::CosmosError::client("failed to resolve routing map for container", None)
             })?;
 
         if ranges.is_empty() && !options.force_refresh() {
@@ -1055,11 +1055,11 @@ impl ContainerClient {
                 .resolve_partition_key_ranges_for_key(&self.container_ref, &driver_pk, true)
                 .await
                 .ok_or_else(|| {
-                    crate::Error::client("failed to resolve routing map for container", None)
+                    crate::CosmosError::client("failed to resolve routing map for container", None)
                 })?;
 
             if ranges.is_empty() {
-                return Err(crate::Error::client(
+                return Err(crate::CosmosError::client(
                     "no partition key ranges found for the given partition key; \
                      the container may not exist or the service may be unreachable",
                     None,
@@ -1069,13 +1069,13 @@ impl ContainerClient {
             ranges
                 .iter()
                 .map(FeedRange::try_from)
-                .collect::<Result<Vec<_>, azure_data_cosmos_driver::error::Error>>()
+                .collect::<Result<Vec<_>, azure_data_cosmos_driver::error::CosmosError>>()
                 .map_err(Into::into)
         } else {
             ranges
                 .iter()
                 .map(FeedRange::try_from)
-                .collect::<Result<Vec<_>, azure_data_cosmos_driver::error::Error>>()
+                .collect::<Result<Vec<_>, azure_data_cosmos_driver::error::CosmosError>>()
                 .map_err(Into::into)
         }
     }

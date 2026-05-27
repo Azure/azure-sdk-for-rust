@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 /// Wire-level payload of a Cosmos DB response — the response body plus the
 /// parsed Cosmos-specific headers. This is the portion of a response that
-/// is also meaningful on an [`Error`](crate::error::Error) (which keeps its
+/// is also meaningful on an [`CosmosError`](crate::error::CosmosError) (which keeps its
 /// own copy of [`CosmosStatus`] and the operation
 /// [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)).
 #[derive(Clone, Debug, Default)]

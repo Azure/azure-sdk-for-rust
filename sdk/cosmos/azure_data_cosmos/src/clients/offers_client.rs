@@ -72,10 +72,12 @@ pub(crate) async fn begin_replace(
 ) -> crate::Result<crate::clients::ThroughputPoller> {
     let mut current_throughput = find_offer(&driver, &account, resource_id)
         .await?
-        .ok_or_else(|| crate::Error::client("no throughput offer found for this resource", None))?;
+        .ok_or_else(|| {
+            crate::CosmosError::client("no throughput offer found for this resource", None)
+        })?;
 
     if current_throughput.offer_id.is_empty() {
-        return Err(crate::Error::client(
+        return Err(crate::CosmosError::client(
             "throughput offer has an empty id",
             None,
         ));
