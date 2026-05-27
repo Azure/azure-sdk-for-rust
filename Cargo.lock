@@ -818,6 +818,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.0.0",
  "azure_core_test",
+ "azure_identity 1.0.0",
  "azure_storage_blob 1.1.0-beta.1",
  "bytes",
  "futures",
