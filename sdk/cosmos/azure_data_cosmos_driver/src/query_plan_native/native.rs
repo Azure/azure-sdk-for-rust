@@ -205,18 +205,18 @@ mod platform {
 #[cfg(not(target_os = "windows"))]
 mod platform {
     use std::ffi::CString;
-    use std::os::raw::c_void;
+    use std::os::raw::{c_char, c_int, c_void};
 
     pub type LibHandle = *mut c_void;
 
     unsafe extern "C" {
-        fn dlopen(filename: *const i8, flags: i32) -> *mut c_void;
-        fn dlsym(handle: *mut c_void, symbol: *const i8) -> *mut c_void;
-        fn dlclose(handle: *mut c_void) -> i32;
+        fn dlopen(filename: *const c_char, flags: c_int) -> *mut c_void;
+        fn dlsym(handle: *mut c_void, symbol: *const c_char) -> *mut c_void;
+        fn dlclose(handle: *mut c_void) -> c_int;
     }
 
-    const RTLD_NOW: i32 = 0x2;
-    const RTLD_LOCAL: i32 = 0x0;
+    const RTLD_NOW: c_int = 0x2;
+    const RTLD_LOCAL: c_int = 0x0;
 
     /// # Safety
     ///

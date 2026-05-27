@@ -126,12 +126,10 @@ impl QueryPlanProvider {
         let mut result_length: u32 = 0;
         let pk_count = partition_key_paths.len() as u32;
 
-        let mut hr = unsafe {
-            // SAFETY: all_token_ptrs is a flat array of valid wide-string pointers,
-            // token_counts contains the segment count per partition key path,
-            // and pk_count is the number of partition key paths. These match
-            // the native ABI's expectations for pPartitionKeyPathTokens,
-            // rgPartitionKeyPathTokensLengths, and nPartitionKeyCount.
+        // Closure to avoid duplicating the 11-argument FFI call.
+        // SAFETY: all pointers are valid for the duration of the closure call.
+        // The native ABI is documented in QueryPlanInterop.h.
+        let mut call_native = |buf: &mut Vec<u8>, out_len: &mut u32| unsafe {
             (lib.get_partition_key_ranges_from_query4)(
                 self.handle,
                 query_spec_native.as_ptr(),
@@ -141,29 +139,17 @@ impl QueryPlanProvider {
                 pk_count,
                 vec_policy_ptr,
                 vec_policy_len,
-                buffer.as_mut_ptr(),
-                buffer.len() as u32,
-                &mut result_length,
+                buf.as_mut_ptr(),
+                buf.len() as u32,
+                out_len,
             )
         };
 
-        if hr == query_plan_native::DISP_E_BUFFERTOOSMALL {
+        let mut hr = call_native(&mut buffer, &mut result_length);
+
+        if hr == query_plan_native::DISP_E_BUFFERTOOSMALL && result_length as usize > buffer.len() {
             buffer.resize(result_length as usize, 0);
-            hr = unsafe {
-                (lib.get_partition_key_ranges_from_query4)(
-                    self.handle,
-                    query_spec_native.as_ptr(),
-                    native_options,
-                    all_token_ptrs.as_ptr(),
-                    token_counts.as_ptr(),
-                    pk_count,
-                    vec_policy_ptr,
-                    vec_policy_len,
-                    buffer.as_mut_ptr(),
-                    buffer.len() as u32,
-                    &mut result_length,
-                )
-            };
+            hr = call_native(&mut buffer, &mut result_length);
         }
 
         let payload = String::from_utf8(buffer[..result_length as usize].to_vec())

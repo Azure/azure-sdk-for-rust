@@ -61,7 +61,7 @@ const QUERY_ENGINE_CONFIG: &str = r#"{
 
 fn create_provider() -> QueryPlanProvider {
     QueryPlanProvider::new(QUERY_ENGINE_CONFIG)
-        .expect("failed to create service provider -- is the DLL on PATH?")
+    .expect("failed to create service provider -- is the DLL on PATH?")
 }
 
 fn query_spec(query: &str) -> String {
@@ -74,18 +74,18 @@ fn query_spec_with_params(query: &str, params: serde_json::Value) -> String {
 
 fn hash_options() -> QueryPlanOptions {
     QueryPlanOptions {
-        require_formattable_order_by_query: true,
-        is_continuation_expected: false,
-        allow_non_value_aggregate_query: true,
-        allow_dcount: true,
-        ..QueryPlanOptions::default()
+    require_formattable_order_by_query: true,
+    is_continuation_expected: false,
+    allow_non_value_aggregate_query: true,
+    allow_dcount: true,
+    ..QueryPlanOptions::default()
     }
 }
 
 fn multi_hash_options() -> QueryPlanOptions {
     QueryPlanOptions {
-        partition_kind: PartitionKind::MultiHash,
-        ..hash_options()
+    partition_kind: PartitionKind::MultiHash,
+    ..hash_options()
     }
 }
 
@@ -95,19 +95,7 @@ fn multi_hash_options() -> QueryPlanOptions {
 /// for `SELECT VALUE` queries; non-value aggregates go into the map.
 fn has_aggregates(qi: &QueryInfo) -> bool {
     !qi.aggregates.is_empty()
-        || qi.group_by_alias_to_aggregate_type.values().any(|v| !v.is_null() && v.as_str() != Some(""))
-}
-
-/// Traces test entry and completion to stderr. Use with `--nocapture`
-/// to diagnose whether the DLL exit crash happens mid-test or after all
-/// tests complete.
-macro_rules! trace_test {
-    ($name:expr, $body:block) => {{
-        eprintln!("[TRACE] >>> {} ENTER", $name);
-        let _result = (|| { $body })();
-        eprintln!("[TRACE] <<< {} EXIT", $name);
-        _result
-    }};
+    || qi.group_by_alias_to_aggregate_type.values().any(|v| !v.is_null() && v.as_str() != Some(""))
 }
 
 // =========================================================================
@@ -116,19 +104,15 @@ macro_rules! trace_test {
 
 #[test]
 fn create_service_provider_succeeds() {
-    trace_test!("create_service_provider_succeeds", {
-        let _provider = create_provider();
-    });
+    let _provider = create_provider();
 }
 
 #[test]
 fn update_service_provider_succeeds() {
-    trace_test!("update_service_provider_succeeds", {
-        let provider = create_provider();
-        provider
+    let provider = create_provider();
+    provider
             .update(QUERY_ENGINE_CONFIG)
             .expect("update with same config should succeed");
-    });
 }
 
 // =========================================================================
@@ -137,20 +121,17 @@ fn update_service_provider_succeeds() {
 
 #[test]
 fn basic_select_constant() {
-    trace_test!("basic_select_constant", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(&query_spec("SELECT 5"), &["/key"], &hash_options(), None)
             .expect("SELECT 5 should succeed");
-        assert!(!info.query_ranges.is_empty());
-    });
+    assert!(!info.query_ranges.is_empty());
 }
 
 #[test]
 fn basic_select_top_constant() {
-    trace_test!("basic_select_top_constant", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT TOP 2 5"),
                 &["/key"],
@@ -158,16 +139,14 @@ fn basic_select_top_constant() {
                 None,
             )
             .expect("SELECT TOP 2 5 should succeed");
-        // No FROM clause -- top may or may not be populated depending on version.
-        assert!(!info.query_ranges.is_empty());
-    });
+    // No FROM clause -- top may or may not be populated depending on version.
+    assert!(!info.query_ranges.is_empty());
 }
 
 #[test]
 fn basic_select_star() {
-    trace_test!("basic_select_star", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c"),
                 &["/key"],
@@ -175,16 +154,13 @@ fn basic_select_star() {
                 None,
             )
             .expect("SELECT * FROM c should succeed");
-        assert!(!info.query_ranges.is_empty());
-        assert!(!info.query_ranges.is_empty());
-    });
+    assert!(!info.query_ranges.is_empty());
 }
 
 #[test]
 fn basic_where_true() {
-    trace_test!("basic_where_true", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE true"),
                 &["/key"],
@@ -192,15 +168,13 @@ fn basic_where_true() {
                 None,
             )
             .expect("WHERE true should succeed");
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 #[test]
 fn basic_where_false() {
-    trace_test!("basic_where_false", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE false"),
                 &["/key"],
@@ -208,9 +182,8 @@ fn basic_where_false() {
                 None,
             )
             .expect("WHERE false should succeed");
-        // The query should succeed; range semantics depend on engine version.
-        assert!(!info.query_ranges.is_empty());
-    });
+    // The query should succeed; range semantics depend on engine version.
+    assert!(!info.query_ranges.is_empty());
 }
 
 // =========================================================================
@@ -219,9 +192,8 @@ fn basic_where_false() {
 
 #[test]
 fn top_just_top() {
-    trace_test!("top_just_top", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT TOP 5 * FROM c"),
                 &["/key"],
@@ -229,35 +201,30 @@ fn top_just_top() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.top, Some(5));
-        assert!(qi.top.is_some());
-        assert!(qi.order_by.is_empty());
-        assert!(qi.distinct_type == DistinctType::None);
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.top, Some(5));
+    assert!(qi.order_by.is_empty());
+    assert!(qi.distinct_type == DistinctType::None);
 }
 
 #[test]
 fn top_parameterized() {
-    trace_test!("top_parameterized", {
-        let provider = create_provider();
-        let spec = query_spec_with_params(
+    let provider = create_provider();
+    let spec = query_spec_with_params(
             "SELECT TOP @TOPCOUNT * FROM c",
             serde_json::json!([{"name": "@TOPCOUNT", "value": 42}]),
-        );
-        let info = provider
+    );
+    let info = provider
             .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.top, Some(42));
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.top, Some(42));
 }
 
 #[test]
 fn top_with_non_partition_filter() {
-    trace_test!("top_with_non_partition_filter", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT TOP 5 * FROM c WHERE c.blah = 5"),
                 &["/key"],
@@ -265,16 +232,14 @@ fn top_with_non_partition_filter() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.top, Some(5));
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.top, Some(5));
 }
 
 #[test]
 fn top_with_partition_filter() {
-    trace_test!("top_with_partition_filter", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT TOP 5 * FROM c WHERE c.key = 5"),
                 &["/key"],
@@ -282,16 +247,14 @@ fn top_with_partition_filter() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.top, Some(5));
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.top, Some(5));
 }
 
 #[test]
 fn top_with_order_by() {
-    trace_test!("top_with_order_by", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT TOP 5 * FROM c ORDER BY c.blah"),
                 &["/key"],
@@ -299,10 +262,9 @@ fn top_with_order_by() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.top, Some(5));
-        assert!(!qi.order_by.is_empty());
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.top, Some(5));
+    assert!(!qi.order_by.is_empty());
 }
 
 // =========================================================================
@@ -311,9 +273,8 @@ fn top_with_order_by() {
 
 #[test]
 fn offset_limit_basic() {
-    trace_test!("offset_limit_basic", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c ORDER BY c.blah OFFSET 5 LIMIT 10"),
                 &["/key"],
@@ -321,31 +282,28 @@ fn offset_limit_basic() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.offset, Some(5));
-        assert_eq!(qi.limit, Some(10));
-        assert!(!qi.order_by.is_empty());
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.offset, Some(5));
+    assert_eq!(qi.limit, Some(10));
+    assert!(!qi.order_by.is_empty());
 }
 
 #[test]
 fn offset_limit_parameterized() {
-    trace_test!("offset_limit_parameterized", {
-        let provider = create_provider();
-        let spec = query_spec_with_params(
+    let provider = create_provider();
+    let spec = query_spec_with_params(
             "SELECT * FROM c ORDER BY c.blah OFFSET @skip LIMIT @take",
             serde_json::json!([
                 {"name": "@skip", "value": 10},
                 {"name": "@take", "value": 20}
             ]),
-        );
-        let info = provider
+    );
+    let info = provider
             .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.offset, Some(10));
-        assert_eq!(qi.limit, Some(20));
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.offset, Some(10));
+    assert_eq!(qi.limit, Some(20));
 }
 
 // =========================================================================
@@ -354,9 +312,8 @@ fn offset_limit_parameterized() {
 
 #[test]
 fn order_by_non_partition_key_asc() {
-    trace_test!("order_by_non_partition_key_asc", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c ORDER BY c.blah"),
                 &["/key"],
@@ -364,18 +321,16 @@ fn order_by_non_partition_key_asc() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(!qi.order_by.is_empty());
-        assert_eq!(qi.order_by[0], SortOrder::Ascending);
-        assert!(qi.rewritten_query.as_ref().map_or(false, |q| !q.is_empty()));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(!qi.order_by.is_empty());
+    assert_eq!(qi.order_by[0], SortOrder::Ascending);
+    assert!(qi.rewritten_query.as_ref().map_or(false, |q| !q.is_empty()));
 }
 
 #[test]
 fn order_by_partition_key() {
-    trace_test!("order_by_partition_key", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c ORDER BY c.key"),
                 &["/key"],
@@ -383,16 +338,14 @@ fn order_by_partition_key() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(!qi.order_by.is_empty());
-    });
+    let qi = info.query_info.unwrap();
+    assert!(!qi.order_by.is_empty());
 }
 
 #[test]
 fn order_by_desc() {
-    trace_test!("order_by_desc", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c ORDER BY c.blah DESC"),
                 &["/key"],
@@ -400,16 +353,14 @@ fn order_by_desc() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.order_by[0], SortOrder::Descending);
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.order_by[0], SortOrder::Descending);
 }
 
 #[test]
 fn multi_order_by() {
-    trace_test!("multi_order_by", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c ORDER BY c.a ASC, c.b DESC"),
                 &["/key"],
@@ -417,18 +368,16 @@ fn multi_order_by() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.order_by.len(), 2);
-        assert_eq!(qi.order_by[0], SortOrder::Ascending);
-        assert_eq!(qi.order_by[1], SortOrder::Descending);
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.order_by.len(), 2);
+    assert_eq!(qi.order_by[0], SortOrder::Ascending);
+    assert_eq!(qi.order_by[1], SortOrder::Descending);
 }
 
 #[test]
 fn order_by_with_top_and_projection() {
-    trace_test!("order_by_with_top_and_projection", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT TOP 5 c.blah FROM c ORDER BY c.blah"),
                 &["/key"],
@@ -436,10 +385,9 @@ fn order_by_with_top_and_projection() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert_eq!(qi.top, Some(5));
-        assert!(!qi.order_by.is_empty());
-    });
+    let qi = info.query_info.unwrap();
+    assert_eq!(qi.top, Some(5));
+    assert!(!qi.order_by.is_empty());
 }
 
 // =========================================================================
@@ -448,9 +396,8 @@ fn order_by_with_top_and_projection() {
 
 #[test]
 fn distinct_select_star() {
-    trace_test!("distinct_select_star", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT DISTINCT * FROM c"),
                 &["/key"],
@@ -458,17 +405,15 @@ fn distinct_select_star() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(qi.distinct_type != DistinctType::None);
-        assert_eq!(qi.distinct_type, DistinctType::Unordered);
-    });
+    let qi = info.query_info.unwrap();
+    assert!(qi.distinct_type != DistinctType::None);
+    assert_eq!(qi.distinct_type, DistinctType::Unordered);
 }
 
 #[test]
 fn distinct_field() {
-    trace_test!("distinct_field", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT DISTINCT c.blah FROM c"),
                 &["/key"],
@@ -476,16 +421,14 @@ fn distinct_field() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(qi.distinct_type != DistinctType::None);
-    });
+    let qi = info.query_info.unwrap();
+    assert!(qi.distinct_type != DistinctType::None);
 }
 
 #[test]
 fn distinct_value_with_order_by() {
-    trace_test!("distinct_value_with_order_by", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT DISTINCT VALUE c.blah FROM c ORDER BY c.blah"),
                 &["/key"],
@@ -493,11 +436,10 @@ fn distinct_value_with_order_by() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(qi.distinct_type != DistinctType::None);
-        assert_eq!(qi.distinct_type, DistinctType::Ordered);
-        assert!(!qi.order_by.is_empty());
-    });
+    let qi = info.query_info.unwrap();
+    assert!(qi.distinct_type != DistinctType::None);
+    assert_eq!(qi.distinct_type, DistinctType::Ordered);
+    assert!(!qi.order_by.is_empty());
 }
 
 // =========================================================================
@@ -506,9 +448,8 @@ fn distinct_value_with_order_by() {
 
 #[test]
 fn aggregate_avg() {
-    trace_test!("aggregate_avg", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE AVG(c.blah) FROM c"),
                 &["/key"],
@@ -516,17 +457,15 @@ fn aggregate_avg() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(has_aggregates(&qi));
-        assert!(qi.aggregates.contains(&"Average".to_string()));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(has_aggregates(&qi));
+    assert!(qi.aggregates.contains(&"Average".to_string()));
 }
 
 #[test]
 fn aggregate_min() {
-    trace_test!("aggregate_min", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE MIN(c.blah) FROM c"),
                 &["/key"],
@@ -534,16 +473,14 @@ fn aggregate_min() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(qi.aggregates.contains(&"Min".to_string()));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(qi.aggregates.contains(&"Min".to_string()));
 }
 
 #[test]
 fn aggregate_max() {
-    trace_test!("aggregate_max", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE MAX(c.blah) FROM c"),
                 &["/key"],
@@ -551,16 +488,14 @@ fn aggregate_max() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(qi.aggregates.contains(&"Max".to_string()));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(qi.aggregates.contains(&"Max".to_string()));
 }
 
 #[test]
 fn aggregate_sum() {
-    trace_test!("aggregate_sum", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE SUM(c.blah) FROM c"),
                 &["/key"],
@@ -568,16 +503,14 @@ fn aggregate_sum() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(qi.aggregates.contains(&"Sum".to_string()));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(qi.aggregates.contains(&"Sum".to_string()));
 }
 
 #[test]
 fn aggregate_count() {
-    trace_test!("aggregate_count", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE COUNT(1) FROM c"),
                 &["/key"],
@@ -585,16 +518,14 @@ fn aggregate_count() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(qi.aggregates.contains(&"Count".to_string()));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(qi.aggregates.contains(&"Count".to_string()));
 }
 
 #[test]
 fn aggregate_makelist() {
-    trace_test!("aggregate_makelist", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE MAKELIST(c.blah) FROM c"),
                 &["/key"],
@@ -602,16 +533,14 @@ fn aggregate_makelist() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(qi.aggregates.contains(&"MakeList".to_string()));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(qi.aggregates.contains(&"MakeList".to_string()));
 }
 
 #[test]
 fn aggregate_makeset() {
-    trace_test!("aggregate_makeset", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE MAKESET(c.blah) FROM c"),
                 &["/key"],
@@ -619,16 +548,14 @@ fn aggregate_makeset() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(qi.aggregates.contains(&"MakeSet".to_string()));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(qi.aggregates.contains(&"MakeSet".to_string()));
 }
 
 #[test]
 fn aggregate_no_partition_key() {
-    trace_test!("aggregate_no_partition_key", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE AVG(c.blah) FROM c"),
                 &[] as &[&str],
@@ -636,16 +563,14 @@ fn aggregate_no_partition_key() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(has_aggregates(&qi));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(has_aggregates(&qi));
 }
 
 #[test]
 fn aggregate_with_filter() {
-    trace_test!("aggregate_with_filter", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE AVG(c.blah) FROM c WHERE c.key = 5"),
                 &["/key"],
@@ -653,16 +578,14 @@ fn aggregate_with_filter() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(has_aggregates(&qi));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(has_aggregates(&qi));
 }
 
 #[test]
 fn aggregate_with_join() {
-    trace_test!("aggregate_with_join", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE AVG(j) FROM c JOIN j IN c.blah"),
                 &["/key"],
@@ -670,16 +593,14 @@ fn aggregate_with_join() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(has_aggregates(&qi));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(has_aggregates(&qi));
 }
 
 #[test]
 fn aggregate_with_top() {
-    trace_test!("aggregate_with_top", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT TOP 5 VALUE AVG(c.blah) FROM c"),
                 &["/key"],
@@ -687,10 +608,9 @@ fn aggregate_with_top() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(has_aggregates(&qi));
-        assert!(qi.top.is_some());
-    });
+    let qi = info.query_info.unwrap();
+    assert!(has_aggregates(&qi));
+    assert!(qi.top.is_some());
 }
 
 // =========================================================================
@@ -699,9 +619,8 @@ fn aggregate_with_top() {
 
 #[test]
 fn non_value_aggregate_min() {
-    trace_test!("non_value_aggregate_min", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT MIN(c.blah) FROM c"),
                 &["/key"],
@@ -709,16 +628,14 @@ fn non_value_aggregate_min() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(has_aggregates(&qi));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(has_aggregates(&qi));
 }
 
 #[test]
 fn non_value_aggregate_multiple() {
-    trace_test!("non_value_aggregate_multiple", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT MIN(c.blah), MAX(c.blah) FROM c"),
                 &["/key"],
@@ -726,16 +643,14 @@ fn non_value_aggregate_multiple() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(has_aggregates(&qi));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(has_aggregates(&qi));
 }
 
 #[test]
 fn non_value_aggregate_with_alias() {
-    trace_test!("non_value_aggregate_with_alias", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT MIN(c.blah) AS minBlah FROM c"),
                 &["/key"],
@@ -743,16 +658,14 @@ fn non_value_aggregate_with_alias() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(has_aggregates(&qi));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(has_aggregates(&qi));
 }
 
 #[test]
 fn non_value_aggregate_with_partition_filter() {
-    trace_test!("non_value_aggregate_with_partition_filter", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT MIN(c.blah) FROM c WHERE c.key = 1"),
                 &["/key"],
@@ -760,9 +673,8 @@ fn non_value_aggregate_with_partition_filter() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(has_aggregates(&qi));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(has_aggregates(&qi));
 }
 
 // =========================================================================
@@ -771,9 +683,8 @@ fn non_value_aggregate_with_partition_filter() {
 
 #[test]
 fn group_by_simple() {
-    trace_test!("group_by_simple", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT c.age, c.name FROM c GROUP BY c.age, c.name"),
                 &["/key"],
@@ -781,16 +692,14 @@ fn group_by_simple() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(!qi.group_by_expressions.is_empty());
-    });
+    let qi = info.query_info.unwrap();
+    assert!(!qi.group_by_expressions.is_empty());
 }
 
 #[test]
 fn group_by_with_aggregates() {
-    trace_test!("group_by_with_aggregates", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT c.team, COUNT(1) AS count, AVG(c.age) AS avg_age FROM c GROUP BY c.team"),
                 &["/key"],
@@ -798,18 +707,16 @@ fn group_by_with_aggregates() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(!qi.group_by_expressions.is_empty());
-        assert!(has_aggregates(&qi));
-        assert!(!qi.group_by_alias_to_aggregate_type.is_empty());
-    });
+    let qi = info.query_info.unwrap();
+    assert!(!qi.group_by_expressions.is_empty());
+    assert!(has_aggregates(&qi));
+    assert!(!qi.group_by_alias_to_aggregate_type.is_empty());
 }
 
 #[test]
 fn group_by_value_count() {
-    trace_test!("group_by_value_count", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT VALUE COUNT(1) FROM c GROUP BY c.age"),
                 &["/key"],
@@ -817,18 +724,16 @@ fn group_by_value_count() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(!qi.group_by_expressions.is_empty());
-        assert!(has_aggregates(&qi));
-        assert!(qi.has_select_value);
-    });
+    let qi = info.query_info.unwrap();
+    assert!(!qi.group_by_expressions.is_empty());
+    assert!(has_aggregates(&qi));
+    assert!(qi.has_select_value);
 }
 
 #[test]
 fn group_by_arbitrary_scalar() {
-    trace_test!("group_by_arbitrary_scalar", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT UPPER(c.name) AS name, AVG(c.income) AS income FROM c GROUP BY UPPER(c.name)"),
                 &["/key"],
@@ -836,10 +741,9 @@ fn group_by_arbitrary_scalar() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(!qi.group_by_expressions.is_empty());
-        assert!(has_aggregates(&qi));
-    });
+    let qi = info.query_info.unwrap();
+    assert!(!qi.group_by_expressions.is_empty());
+    assert!(has_aggregates(&qi));
 }
 
 // =========================================================================
@@ -848,9 +752,8 @@ fn group_by_arbitrary_scalar() {
 
 #[test]
 fn like_simple() {
-    trace_test!("like_simple", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.name LIKE '%test%'"),
                 &["/key"],
@@ -858,30 +761,26 @@ fn like_simple() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 #[test]
 fn like_parameterized() {
-    trace_test!("like_parameterized", {
-        let provider = create_provider();
-        let spec = query_spec_with_params(
+    let provider = create_provider();
+    let spec = query_spec_with_params(
             "SELECT * FROM c WHERE c.name LIKE @pattern",
             serde_json::json!([{"name": "@pattern", "value": "%test%"}]),
-        );
-        let info = provider
+    );
+    let info = provider
             .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 #[test]
 fn like_with_partition_key_filter() {
-    trace_test!("like_with_partition_key_filter", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.key = 'abc' AND c.name LIKE '%test%'"),
                 &["/key"],
@@ -889,8 +788,7 @@ fn like_with_partition_key_filter() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 // =========================================================================
@@ -899,9 +797,8 @@ fn like_with_partition_key_filter() {
 
 #[test]
 fn multi_key_is_defined() {
-    trace_test!("multi_key_is_defined", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM Root r WHERE r.a.b.c"),
                 &["/a/b/c", "/a/c"],
@@ -909,15 +806,13 @@ fn multi_key_is_defined() {
                 None,
             )
             .unwrap();
-        assert!(!info.query_ranges.is_empty());
-    });
+    assert!(!info.query_ranges.is_empty());
 }
 
 #[test]
 fn multi_key_point_lookup() {
-    trace_test!("multi_key_point_lookup", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM Root r WHERE r.a.b.c = null AND r.a.c = false"),
                 &["/a/b/c", "/a/c"],
@@ -925,15 +820,13 @@ fn multi_key_point_lookup() {
                 None,
             )
             .unwrap();
-        assert!(!info.query_ranges.is_empty());
-    });
+    assert!(!info.query_ranges.is_empty());
 }
 
 #[test]
 fn multi_hash_point_lookup() {
-    trace_test!("multi_hash_point_lookup", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.tenantId = 't1' AND c.userId = 'u1'"),
                 &["/tenantId", "/userId"],
@@ -941,8 +834,7 @@ fn multi_hash_point_lookup() {
                 None,
             )
             .unwrap();
-        assert!(!info.query_ranges.is_empty());
-    });
+    assert!(!info.query_ranges.is_empty());
 }
 
 // =========================================================================
@@ -951,9 +843,8 @@ fn multi_hash_point_lookup() {
 
 #[test]
 fn in_list_produces_multiple_ranges() {
-    trace_test!("in_list_produces_multiple_ranges", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.key IN (1, 2, 3)"),
                 &["/key"],
@@ -961,16 +852,14 @@ fn in_list_produces_multiple_ranges() {
                 None,
             )
             .unwrap();
-        let ranges = info.query_ranges;
-        assert!(ranges.len() >= 3, "IN list should produce multiple ranges");
-    });
+    let ranges = info.query_ranges;
+    assert!(ranges.len() >= 3, "IN list should produce multiple ranges");
 }
 
 #[test]
 fn or_filter_produces_ranges() {
-    trace_test!("or_filter_produces_ranges", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.key = 1 OR c.key = 2"),
                 &["/key"],
@@ -978,9 +867,8 @@ fn or_filter_produces_ranges() {
                 None,
             )
             .unwrap();
-        let ranges = info.query_ranges;
-        assert!(ranges.len() >= 2);
-    });
+    let ranges = info.query_ranges;
+    assert!(ranges.len() >= 2);
 }
 
 // =========================================================================
@@ -989,9 +877,8 @@ fn or_filter_produces_ranges() {
 
 #[test]
 fn subquery_basic() {
-    trace_test!("subquery_basic", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT (SELECT * FROM c) FROM c"),
                 &["/key"],
@@ -999,15 +886,13 @@ fn subquery_basic() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 #[test]
 fn subquery_with_filter_in_outer_query() {
-    trace_test!("subquery_with_filter_in_outer_query", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT (SELECT * FROM c) FROM c WHERE c.key = 42"),
                 &["/key"],
@@ -1015,15 +900,13 @@ fn subquery_with_filter_in_outer_query() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 #[test]
 fn subquery_with_filter_in_inner_query() {
-    trace_test!("subquery_with_filter_in_inner_query", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT (SELECT * FROM c WHERE c.key = 42) FROM c"),
                 &["/key"],
@@ -1031,15 +914,13 @@ fn subquery_with_filter_in_inner_query() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 #[test]
 fn subquery_as_filter() {
-    trace_test!("subquery_as_filter", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE (c.blah = (SELECT * FROM c WHERE c.key = 42 and c.id = 5)) and c.key = 32"),
                 &["/key"],
@@ -1047,8 +928,7 @@ fn subquery_as_filter() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 // =========================================================================
@@ -1057,9 +937,8 @@ fn subquery_as_filter() {
 
 #[test]
 fn point_range_string_equality() {
-    trace_test!("point_range_string_equality", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.key = 'value'"),
                 &["/key"],
@@ -1067,16 +946,14 @@ fn point_range_string_equality() {
                 None,
             )
             .unwrap();
-        let ranges = info.query_ranges;
-        assert_eq!(ranges.len(), 1, "equality should produce a single range");
-    });
+    let ranges = info.query_ranges;
+    assert_eq!(ranges.len(), 1, "equality should produce a single range");
 }
 
 #[test]
 fn point_range_number_equality() {
-    trace_test!("point_range_number_equality", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.key = 5"),
                 &["/key"],
@@ -1084,16 +961,14 @@ fn point_range_number_equality() {
                 None,
             )
             .unwrap();
-        let ranges = info.query_ranges;
-        assert_eq!(ranges.len(), 1);
-    });
+    let ranges = info.query_ranges;
+    assert_eq!(ranges.len(), 1);
 }
 
 #[test]
 fn point_range_null_equality() {
-    trace_test!("point_range_null_equality", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.key = null"),
                 &["/key"],
@@ -1101,16 +976,14 @@ fn point_range_null_equality() {
                 None,
             )
             .unwrap();
-        let ranges = info.query_ranges;
-        assert_eq!(ranges.len(), 1);
-    });
+    let ranges = info.query_ranges;
+    assert_eq!(ranges.len(), 1);
 }
 
 #[test]
 fn point_range_bool_equality() {
-    trace_test!("point_range_bool_equality", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.key = true"),
                 &["/key"],
@@ -1118,9 +991,8 @@ fn point_range_bool_equality() {
                 None,
             )
             .unwrap();
-        let ranges = info.query_ranges;
-        assert_eq!(ranges.len(), 1);
-    });
+    let ranges = info.query_ranges;
+    assert_eq!(ranges.len(), 1);
 }
 
 // =========================================================================
@@ -1129,9 +1001,8 @@ fn point_range_bool_equality() {
 
 #[test]
 fn system_function_abs() {
-    trace_test!("system_function_abs", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE ABS(c.key) = 1"),
                 &["/key"],
@@ -1139,15 +1010,13 @@ fn system_function_abs() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 #[test]
 fn system_function_is_defined() {
-    trace_test!("system_function_is_defined", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE IS_DEFINED(c.key)"),
                 &["/key"],
@@ -1155,8 +1024,7 @@ fn system_function_is_defined() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 // =========================================================================
@@ -1165,16 +1033,14 @@ fn system_function_is_defined() {
 
 #[test]
 fn negative_bad_function() {
-    trace_test!("negative_bad_function", {
-        let provider = create_provider();
-        let result = provider.get_partition_key_ranges(
+    let provider = create_provider();
+    let result = provider.get_partition_key_ranges(
             &query_spec("SELECT BADFUNC(r.age) FROM Root r"),
             &["/key"],
             &hash_options(),
             None,
-        );
-        assert!(result.is_err(), "unrecognized function should fail");
-    });
+    );
+    assert!(result.is_err(), "unrecognized function should fail");
 }
 
 // =========================================================================
@@ -1183,9 +1049,8 @@ fn negative_bad_function() {
 
 #[test]
 fn rewritten_query_for_order_by() {
-    trace_test!("rewritten_query_for_order_by", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c ORDER BY c.name"),
                 &["/key"],
@@ -1193,13 +1058,11 @@ fn rewritten_query_for_order_by() {
                 None,
             )
             .unwrap();
-        let qi = info.query_info.unwrap();
-        assert!(
+    let qi = info.query_info.unwrap();
+    assert!(
             qi.rewritten_query.as_ref().map_or(false, |q| !q.is_empty()),
             "cross-partition ORDER BY should produce a rewritten query"
-        );
-        assert!(qi.rewritten_query.as_ref().map_or(false, |q| !q.is_empty()));
-    });
+    );
 }
 
 // =========================================================================
@@ -1208,9 +1071,8 @@ fn rewritten_query_for_order_by() {
 
 #[test]
 fn query_plan_json_round_trip() {
-    trace_test!("query_plan_json_round_trip", {
-        let provider = create_provider();
-        let info = provider
+    let provider = create_provider();
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT TOP 5 c.name FROM c ORDER BY c.name"),
                 &["/key"],
@@ -1219,10 +1081,9 @@ fn query_plan_json_round_trip() {
             )
             .unwrap();
 
-        let json = serde_json::to_string(&info).unwrap();
-        let roundtripped: QueryPlan = serde_json::from_str(&json).unwrap();
-        assert_eq!(info, roundtripped);
-    });
+    let json = serde_json::to_string(&info).unwrap();
+    let roundtripped: QueryPlan = serde_json::from_str(&json).unwrap();
+    assert_eq!(info, roundtripped);
 }
 
 // =========================================================================
@@ -1231,10 +1092,9 @@ fn query_plan_json_round_trip() {
 
 #[test]
 fn unicode_bmp_characters_in_query() {
-    trace_test!("unicode_bmp_characters_in_query", {
-        let provider = create_provider();
-        // BMP characters: Chinese, Japanese, emoji (BMP range)
-        let info = provider
+    let provider = create_provider();
+    // BMP characters: Chinese, Japanese, emoji (BMP range)
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.name = '\u{4e16}\u{754c}'"),
                 &["/key"],
@@ -1242,16 +1102,14 @@ fn unicode_bmp_characters_in_query() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 #[test]
 fn unicode_surrogate_pair_in_query() {
-    trace_test!("unicode_surrogate_pair_in_query", {
-        let provider = create_provider();
-        // U+1F600 (grinning face) requires a surrogate pair in UTF-16
-        let info = provider
+    let provider = create_provider();
+    // U+1F600 (grinning face) requires a surrogate pair in UTF-16
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c WHERE c.name = '\u{1F600}'"),
                 &["/key"],
@@ -1259,16 +1117,14 @@ fn unicode_surrogate_pair_in_query() {
                 None,
             )
             .unwrap();
-        assert!(info.query_info.is_some());
-    });
+    assert!(info.query_info.is_some());
 }
 
 #[test]
 fn unicode_partition_key_path() {
-    trace_test!("unicode_partition_key_path", {
-        let provider = create_provider();
-        // Partition key path with non-ASCII characters
-        let info = provider
+    let provider = create_provider();
+    // Partition key path with non-ASCII characters
+    let info = provider
             .get_partition_key_ranges(
                 &query_spec("SELECT * FROM c"),
                 &["/\u{00fc}ser"],
@@ -1276,6 +1132,5 @@ fn unicode_partition_key_path() {
                 None,
             )
             .unwrap();
-        assert!(!info.query_ranges.is_empty());
-    });
+    assert!(!info.query_ranges.is_empty());
 }
