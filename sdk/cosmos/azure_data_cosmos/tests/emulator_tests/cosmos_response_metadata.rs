@@ -43,7 +43,7 @@ fn cosmos_headers_from_error(error: &azure_data_cosmos::CosmosError) -> Response
         .unwrap_or_else(|| {
             panic!("expected typed Cosmos response headers on error, got {error:?}")
         });
-    ResponseHeaders::from_driver(&driver_headers)
+    ResponseHeaders::from(driver_headers)
 }
 
 #[tokio::test]

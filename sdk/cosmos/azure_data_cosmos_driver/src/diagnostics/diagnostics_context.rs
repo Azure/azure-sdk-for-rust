@@ -2347,7 +2347,7 @@ mod tests {
             builder.complete_request(
                 handle,
                 StatusCode::TooManyRequests,
-                Some(SubStatusCode::new(424242)),
+                Some(SubStatusCode::new(65000)),
             );
         });
 
@@ -2361,7 +2361,7 @@ mod tests {
             .and_then(|s| s.as_str())
             .expect("status field must be a string");
         assert_eq!(
-            status, "429/424242",
+            status, "429/65000",
             "unknown sub-status must serialize as `[Kind] {{code}}/{{sub}}` with no name suffix"
         );
     }

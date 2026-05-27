@@ -47,16 +47,16 @@ use std::fmt;
 /// HTTP status code.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct SubStatusCode(u32);
+pub struct SubStatusCode(u16);
 
 impl SubStatusCode {
     /// Creates a new `SubStatusCode` from a numeric value.
-    pub const fn new(code: u32) -> Self {
+    pub const fn new(code: u16) -> Self {
         Self(code)
     }
 
     /// Returns the numeric value of the sub-status code.
-    pub const fn value(&self) -> u32 {
+    pub const fn value(&self) -> u16 {
         self.0
     }
 
@@ -64,7 +64,7 @@ impl SubStatusCode {
     ///
     /// Returns `None` if parsing fails.
     pub fn from_header_value(s: &str) -> Option<Self> {
-        s.trim().parse::<u32>().ok().map(SubStatusCode)
+        s.trim().parse::<u16>().ok().map(SubStatusCode)
     }
 
     /// Returns the name of this sub-status code, if known.
@@ -1452,13 +1452,13 @@ impl fmt::Display for SubStatusCode {
     }
 }
 
-impl From<u32> for SubStatusCode {
-    fn from(value: u32) -> Self {
+impl From<u16> for SubStatusCode {
+    fn from(value: u16) -> Self {
         SubStatusCode(value)
     }
 }
 
-impl From<SubStatusCode> for u32 {
+impl From<SubStatusCode> for u16 {
     fn from(code: SubStatusCode) -> Self {
         code.0
     }
@@ -1516,7 +1516,7 @@ impl CosmosStatus {
     }
 
     /// Sets the sub-status code on this `CosmosStatus`, returning the modified value.
-    pub fn with_sub_status(mut self, sub_status_code: u32) -> Self {
+    pub fn with_sub_status(mut self, sub_status_code: u16) -> Self {
         self.sub_status = Some(SubStatusCode::new(sub_status_code));
         self
     }
@@ -2250,8 +2250,8 @@ mod tests {
 
     #[test]
     fn display_unknown_sub_status() {
-        let status = CosmosStatus::new(StatusCode::Ok).with_sub_status(99999);
-        assert_eq!(format!("{}", status), "200/99999");
+        let status = CosmosStatus::new(StatusCode::Ok).with_sub_status(65000);
+        assert_eq!(format!("{}", status), "200/65000");
     }
 
     #[test]
@@ -2327,14 +2327,14 @@ mod tests {
     }
 
     #[test]
-    fn from_u32() {
-        let code = SubStatusCode::from(3200u32);
+    fn from_u16() {
+        let code = SubStatusCode::from(3200u16);
         assert_eq!(code, SubStatusCode::RU_BUDGET_EXCEEDED);
     }
 
     #[test]
-    fn into_u32() {
-        let value: u32 = SubStatusCode::RU_BUDGET_EXCEEDED.into();
+    fn into_u16() {
+        let value: u16 = SubStatusCode::RU_BUDGET_EXCEEDED.into();
         assert_eq!(value, 3200);
     }
 
@@ -2346,8 +2346,8 @@ mod tests {
 
     #[test]
     fn display_unknown_code() {
-        let code = SubStatusCode::new(99999);
-        assert_eq!(format!("{}", code), "99999");
+        let code = SubStatusCode::new(65000);
+        assert_eq!(format!("{}", code), "65000");
     }
 
     #[test]
@@ -2369,8 +2369,8 @@ mod tests {
 
     #[test]
     fn debug_unknown_code() {
-        let code = SubStatusCode::new(99999);
-        assert_eq!(format!("{:?}", code), "SubStatusCode(99999)");
+        let code = SubStatusCode::new(65000);
+        assert_eq!(format!("{:?}", code), "SubStatusCode(65000)");
     }
 
     #[test]
@@ -2409,7 +2409,7 @@ mod tests {
 
     #[test]
     fn name_returns_none_for_unknown() {
-        assert_eq!(SubStatusCode::new(99999).name(None), None);
+        assert_eq!(SubStatusCode::new(65000).name(None), None);
     }
 
     #[test]

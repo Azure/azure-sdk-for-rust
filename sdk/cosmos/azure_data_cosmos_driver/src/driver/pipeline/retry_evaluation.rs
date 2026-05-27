@@ -1289,7 +1289,7 @@ mod tests {
         // Explicit 404/0 (sub-status 0) construction — same outcome.
         assert!(is_region_confirming_status(&status_with_substatus(
             StatusCode::NotFound,
-            SubStatusCode::from(0u32)
+            SubStatusCode::from(0u16)
         )));
     }
 
