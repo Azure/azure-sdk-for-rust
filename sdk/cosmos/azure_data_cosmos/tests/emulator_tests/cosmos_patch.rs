@@ -62,8 +62,8 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
 /// tests in `azure_data_cosmos_driver::driver::pipeline::patch_handler`.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -140,8 +140,8 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
 /// `rmw_propagates_read_error_immediately`.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -184,8 +184,8 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
 /// underlying loop semantics.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -305,8 +305,8 @@ async fn setup_fault_injected_container(
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
     let rule = build_replace_412_rule("sdk-patch-412-once", Some(1));
@@ -371,8 +371,8 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<(), Box<dyn Error>>
 {

@@ -25,6 +25,10 @@ jobs:
   condition: and(succeeded(), ne(variables['Skip.Tests'],'true'), ne(${{ parameters.Matrix }}, '{}'))
   timeoutInMinutes: ${{ parameters.TimeoutInMinutes }}
   dependsOn: ${{ parameters.DependsOn }}
+  # Allow matrix entries to opt into non-blocking behavior by setting
+  # `ContinueOnError: "true"` as a matrix variable. Defaults to false so
+  # existing matrix entries / consumers see no behavior change.
+  continueOnError: $[ coalesce(variables['ContinueOnError'], 'false') ]
 
   strategy:
     matrix: $[ ${{ parameters.Matrix }} ]

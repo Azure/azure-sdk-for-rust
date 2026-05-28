@@ -6,6 +6,12 @@
 //! Verifies that `CosmosClientBuilder::with_backup_endpoints()` correctly
 //! threads backup endpoints through to the driver and that the client can
 //! initialize when the primary endpoint is unreachable.
+//!
+//! These tests are gated on `test_category = "emulator"` only — they are
+//! intentionally not run against `test_category = "emulator_vnext"` because
+//! the vnext (Linux) emulator exposes a single gateway endpoint and does not
+//! model the multi-endpoint topology backup-endpoint fallback is designed to
+//! exercise.
 
 #![cfg(feature = "key_auth")]
 

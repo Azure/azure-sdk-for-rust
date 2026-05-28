@@ -78,6 +78,7 @@ if ($env:AZURE_COSMOS_CONNECTION_STRING -eq "emulator") {
 $env:AZURE_COSMOS_TEST_MODE = $null
 $env:AZURE_COSMOS_EMULATOR_HOST = $null
 # Remove any --cfg=test_category="..." flag added by Test-Setup.ps1 or COSMOS_RUSTFLAGS.
-# The next package's setup will re-add the correct flag from COSMOS_RUSTFLAGS.
+# The next package's setup will re-add the correct flag from COSMOS_RUSTFLAGS
+# (or from AZURE_COSMOS_EMULATOR_FLAVOR=vnext when running the vnext stage).
 $env:RUSTFLAGS = $env:RUSTFLAGS -replace '\s*--cfg=test_category="[^"]*"', ''
 Write-Host "RUSTFLAGS after cleanup: $env:RUSTFLAGS"
