@@ -27,7 +27,9 @@
 //! unit-tested in `driver/pipeline/patch_handler.rs`.
 
 use crate::framework::DriverTestClient;
-use azure_data_cosmos_driver::models::{IncrValue, PartitionKey, PatchOp, PatchSpec};
+use azure_data_cosmos_driver::models::{
+    CosmosNumber, PartitionKey, PatchInstructions, PatchOperation,
+};
 use serde_json::{json, Value};
 use std::error::Error;
 
@@ -40,8 +42,8 @@ use std::error::Error;
 /// response body and the subsequent read.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -65,7 +67,7 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
                 .create_item(&container, item_id, pk, &initial_bytes)
                 .await?;
 
-            let spec = PatchSpec::new(vec![PatchOp::set("/deleted", json!(true))]);
+            let spec = PatchInstructions::from(vec![PatchOperation::set("/deleted", json!(true))]);
             let patch_response = context
                 .patch_item(&container, item_id, pk, &spec, None)
                 .await?;
@@ -101,8 +103,8 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
 /// guard with no network call.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -120,30 +122,36 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             // Each op below targets the PK path directly.
-            let guard_cases: Vec<(&'static str, PatchSpec)> = vec![
+            let guard_cases: Vec<(&'static str, PatchInstructions)> = vec![
                 (
                     "Set /pk",
-                    PatchSpec::new(vec![PatchOp::set("/pk", json!("other"))]),
+                    PatchInstructions::from(vec![PatchOperation::set("/pk", json!("other"))]),
                 ),
                 (
                     "Replace /pk",
-                    PatchSpec::new(vec![PatchOp::replace("/pk", json!("other"))]),
+                    PatchInstructions::from(vec![PatchOperation::replace("/pk", json!("other"))]),
                 ),
-                ("Remove /pk", PatchSpec::new(vec![PatchOp::remove("/pk")])),
+                (
+                    "Remove /pk",
+                    PatchInstructions::from(vec![PatchOperation::remove("/pk")]),
+                ),
                 (
                     "Add /pk",
-                    PatchSpec::new(vec![PatchOp::add("/pk", json!("other"))]),
+                    PatchInstructions::from(vec![PatchOperation::add("/pk", json!("other"))]),
                 ),
                 (
                     "Move to /pk",
-                    PatchSpec::new(vec![PatchOp::move_op("/name", "/pk")]),
+                    PatchInstructions::from(vec![PatchOperation::move_value("/name", "/pk")]),
                 ),
                 // moving FROM a PK path also mutates the partition key
                 // (the field is removed at the source after being copied to
                 // the destination). The guard must reject this too.
                 (
                     "Move from /pk",
-                    PatchSpec::new(vec![PatchOp::move_op("/pk", "/somewhere_else")]),
+                    PatchInstructions::from(vec![PatchOperation::move_value(
+                        "/pk",
+                        "/somewhere_else",
+                    )]),
                 ),
             ];
 
@@ -170,8 +178,8 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
 /// rejected. Exercises the `MultiHash` branch of `validate_partition_key_paths`.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -205,28 +213,34 @@ pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> 
                 .await?;
 
             // Each row targets one of the two PK paths.
-            let guard_cases: Vec<(&'static str, PatchSpec)> = vec![
+            let guard_cases: Vec<(&'static str, PatchInstructions)> = vec![
                 (
                     "Set /tenantId",
-                    PatchSpec::new(vec![PatchOp::set("/tenantId", json!("t2"))]),
+                    PatchInstructions::from(vec![PatchOperation::set("/tenantId", json!("t2"))]),
                 ),
                 (
                     "Set /userId",
-                    PatchSpec::new(vec![PatchOp::set("/userId", json!("u2"))]),
+                    PatchInstructions::from(vec![PatchOperation::set("/userId", json!("u2"))]),
                 ),
                 (
                     "Replace /tenantId",
-                    PatchSpec::new(vec![PatchOp::replace("/tenantId", json!("t2"))]),
+                    PatchInstructions::from(vec![PatchOperation::replace(
+                        "/tenantId",
+                        json!("t2"),
+                    )]),
                 ),
                 (
                     "Remove /userId",
-                    PatchSpec::new(vec![PatchOp::remove("/userId")]),
+                    PatchInstructions::from(vec![PatchOperation::remove("/userId")]),
                 ),
                 // moving FROM one of the hierarchical PK paths also
                 // mutates that PK component. Reject pre-flight.
                 (
                     "Move from /tenantId",
-                    PatchSpec::new(vec![PatchOp::move_op("/tenantId", "/somewhere_else")]),
+                    PatchInstructions::from(vec![PatchOperation::move_value(
+                        "/tenantId",
+                        "/somewhere_else",
+                    )]),
                 ),
             ];
 
@@ -288,7 +302,7 @@ struct PatchCompareCase {
     /// document.
     initial_props: Value,
     /// The patch ops to apply.
-    ops: Vec<PatchOp>,
+    ops: Vec<PatchOperation>,
     /// What the harness expects after applying `ops`.
     expected: Expected,
     /// Free-form provenance / notes.
@@ -310,7 +324,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
                     { "description": "c1" },
                 ],
             }),
-            ops: vec![PatchOp::set("/children/0/description", json!("testSet"))],
+            ops: vec![PatchOperation::set("/children/0/description", json!("testSet"))],
             expected: Expected::PostImageProps(json!({
                 "description": "orig",
                 "children": [
@@ -332,7 +346,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
                     {},
                 ],
             }),
-            ops: vec![PatchOp::add("/children/1/extra", json!("patched"))],
+            ops: vec![PatchOperation::add("/children/1/extra", json!("patched"))],
             expected: Expected::PostImageProps(json!({
                 "description": "orig",
                 "children": [
@@ -348,7 +362,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Remove",
             scenario_category: "happy_path",
             initial_props: json!({ "description": "orig", "leftover": "stay" }),
-            ops: vec![PatchOp::remove("/description")],
+            ops: vec![PatchOperation::remove("/description")],
             expected: Expected::PostImageProps(json!({ "leftover": "stay" })),
             notes: "Mirrors .NET Remove(\"/description\")",
         },
@@ -358,7 +372,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Replace",
             scenario_category: "happy_path",
             initial_props: json!({ "taskNum": 1 }),
-            ops: vec![PatchOp::replace("/taskNum", json!(42))],
+            ops: vec![PatchOperation::replace("/taskNum", json!(42))],
             expected: Expected::PostImageProps(json!({ "taskNum": 42 })),
             notes: "Mirrors .NET Replace(\"/taskNum\", newTaskNum)",
         },
@@ -373,7 +387,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
                     { "nullableInt": 7 },
                 ],
             }),
-            ops: vec![PatchOp::set("/children/1/nullableInt", Value::Null)],
+            ops: vec![PatchOperation::set("/children/1/nullableInt", Value::Null)],
             expected: Expected::PostImageProps(json!({
                 "children": [
                     { "description": "c0" },
@@ -388,7 +402,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Add",
             scenario_category: "nested",
             initial_props: json!({ "children": [ {}, {} ] }),
-            ops: vec![PatchOp::add("/children/0/cost", json!(1))],
+            ops: vec![PatchOperation::add("/children/0/cost", json!(1))],
             expected: Expected::PostImageProps(json!({
                 "children": [ { "cost": 1 }, {} ],
             })),
@@ -405,7 +419,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
                     { "name": "c1" },
                 ],
             }),
-            ops: vec![PatchOp::set("/children/0/name", Value::Null)],
+            ops: vec![PatchOperation::set("/children/0/name", Value::Null)],
             expected: Expected::PostImageProps(json!({
                 "children": [
                     { "name": null },
@@ -428,10 +442,10 @@ fn fixtures() -> Vec<PatchCompareCase> {
                 ],
             }),
             ops: vec![
-                PatchOp::set("/children/0/description", json!("testSet")),
-                PatchOp::add("/children/1/extra", json!("patched")),
-                PatchOp::remove("/description"),
-                PatchOp::replace("/taskNum", json!(99)),
+                PatchOperation::set("/children/0/description", json!("testSet")),
+                PatchOperation::add("/children/1/extra", json!("patched")),
+                PatchOperation::remove("/description"),
+                PatchOperation::replace("/taskNum", json!(99)),
             ],
             expected: Expected::PostImageProps(json!({
                 "taskNum": 99,
@@ -455,9 +469,9 @@ fn fixtures() -> Vec<PatchCompareCase> {
                 ],
             }),
             ops: vec![
-                PatchOp::add("/children/1/description", json!("Child#1")),
-                PatchOp::move_op("/children/0/description", "/description"),
-                PatchOp::move_op("/children/1/description", "/children/0/description"),
+                PatchOperation::add("/children/1/description", json!("Child#1")),
+                PatchOperation::move_value("/children/0/description", "/description"),
+                PatchOperation::move_value("/children/1/description", "/children/0/description"),
             ],
             expected: Expected::PostImageProps(json!({
                 "description": "Child#0",
@@ -475,7 +489,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Add",
             scenario_category: "missing_path",
             initial_props: json!({ "description": "orig" }),
-            ops: vec![PatchOp::add("/nonExistentParent/Child", json!("bar"))],
+            ops: vec![PatchOperation::add("/nonExistentParent/Child", json!("bar"))],
             expected: Expected::ErrorContains("nonExistentParent"),
             notes: "Mirrors .NET Add(\"/nonExistentParent/Child\", \"bar\") — expect bad-request from evaluator",
         },
@@ -485,7 +499,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Remove",
             scenario_category: "missing_path",
             initial_props: json!({ "description": "orig" }),
-            ops: vec![PatchOp::remove("/cost")],
+            ops: vec![PatchOperation::remove("/cost")],
             expected: Expected::ErrorContains("cost"),
             notes: "Mirrors .NET Remove(\"/cost\") on a doc without /cost",
         },
@@ -495,7 +509,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Replace",
             scenario_category: "missing_path",
             initial_props: json!({ "description": "orig" }),
-            ops: vec![PatchOp::replace("/missing", json!(7))],
+            ops: vec![PatchOperation::replace("/missing", json!(7))],
             expected: Expected::ErrorContains("missing"),
             notes: "Replace on a path that doesn't exist must fail per JSON Patch semantics",
         },
@@ -505,7 +519,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Move",
             scenario_category: "missing_path",
             initial_props: json!({ "description": "orig" }),
-            ops: vec![PatchOp::move_op("/missing", "/dest")],
+            ops: vec![PatchOperation::move_value("/missing", "/dest")],
             expected: Expected::ErrorContains("missing"),
             notes: "Move with absent source path must fail",
         },
@@ -516,7 +530,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Add",
             scenario_category: "happy_path",
             initial_props: json!({}),
-            ops: vec![PatchOp::add("/name", json!("alice"))],
+            ops: vec![PatchOperation::add("/name", json!("alice"))],
             expected: Expected::PostImageProps(json!({ "name": "alice" })),
             notes: "Construct + apply Add(string)",
         },
@@ -526,7 +540,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Add",
             scenario_category: "happy_path",
             initial_props: json!({}),
-            ops: vec![PatchOp::add("/createdAt", json!("2024-04-15T12:34:56Z"))],
+            ops: vec![PatchOperation::add("/createdAt", json!("2024-04-15T12:34:56Z"))],
             expected: Expected::PostImageProps(json!({
                 "createdAt": "2024-04-15T12:34:56Z",
             })),
@@ -538,7 +552,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Add",
             scenario_category: "happy_path",
             initial_props: json!({}),
-            ops: vec![PatchOp::add(
+            ops: vec![PatchOperation::add(
                 "/profile",
                 json!({ "city": "Seattle", "zip": 98052 }),
             )],
@@ -553,7 +567,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Replace",
             scenario_category: "happy_path",
             initial_props: json!({ "tags": ["a", "b"] }),
-            ops: vec![PatchOp::replace("/tags", json!(["x", "y", "z"]))],
+            ops: vec![PatchOperation::replace("/tags", json!(["x", "y", "z"]))],
             expected: Expected::PostImageProps(json!({ "tags": ["x", "y", "z"] })),
             notes: "Replace with array payload",
         },
@@ -563,7 +577,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Set",
             scenario_category: "happy_path",
             initial_props: json!({}),
-            ops: vec![PatchOp::set(
+            ops: vec![PatchOperation::set(
                 "/tenantGuid",
                 json!("11111111-2222-3333-4444-555555555555"),
             )],
@@ -578,7 +592,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Set",
             scenario_category: "null_value",
             initial_props: json!({ "optional": "v" }),
-            ops: vec![PatchOp::set("/optional", Value::Null)],
+            ops: vec![PatchOperation::set("/optional", Value::Null)],
             expected: Expected::PostImageProps(json!({ "optional": null })),
             notes: "Mirrors .NET Set<object>(path, null)",
         },
@@ -589,7 +603,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Increment",
             scenario_category: "happy_path",
             initial_props: json!({ "score": 1.5 }),
-            ops: vec![PatchOp::increment("/score", IncrValue::Float(7.0))],
+            ops: vec![PatchOperation::increment("/score", CosmosNumber::Float(7.0))],
             expected: Expected::PostImageProps(json!({ "score": 8.5 })),
             notes: "Mirrors .NET Increment(double 7.0)",
         },
@@ -599,7 +613,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Increment",
             scenario_category: "happy_path",
             initial_props: json!({ "count": 2 }),
-            ops: vec![PatchOp::increment("/count", IncrValue::Int(40))],
+            ops: vec![PatchOperation::increment("/count", CosmosNumber::Int(40))],
             expected: Expected::PostImageProps(json!({ "count": 42 })),
             notes: "Mirrors .NET Increment(long 40)",
         },
@@ -610,7 +624,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Set",
             scenario_category: "null_value",
             initial_props: json!({ "uuidField": "abc" }),
-            ops: vec![PatchOp::set("/uuidField", Value::Null)],
+            ops: vec![PatchOperation::set("/uuidField", Value::Null)],
             expected: Expected::PostImageProps(json!({ "uuidField": null })),
             notes: "Mirrors Java Set null on UUID-valued field",
         },
@@ -620,7 +634,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Add",
             scenario_category: "null_value",
             initial_props: json!({}),
-            ops: vec![PatchOp::add("/uuidField", Value::Null)],
+            ops: vec![PatchOperation::add("/uuidField", Value::Null)],
             expected: Expected::PostImageProps(json!({ "uuidField": null })),
             notes: "Mirrors Java Add null",
         },
@@ -630,7 +644,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Replace",
             scenario_category: "null_value",
             initial_props: json!({ "uuidField": "abc" }),
-            ops: vec![PatchOp::replace("/uuidField", Value::Null)],
+            ops: vec![PatchOperation::replace("/uuidField", Value::Null)],
             expected: Expected::PostImageProps(json!({ "uuidField": null })),
             notes: "Mirrors Java Replace null",
         },
@@ -641,7 +655,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Increment",
             scenario_category: "i64_fidelity",
             initial_props: json!({ "balance": 9_007_199_254_740_991i64 }),
-            ops: vec![PatchOp::increment("/balance", IncrValue::Int(2))],
+            ops: vec![PatchOperation::increment("/balance", CosmosNumber::Int(2))],
             expected: Expected::PostImageProps(json!({ "balance": 9_007_199_254_740_993i64 })),
             notes: "Past 2^53: must NOT be demoted to f64",
         },
@@ -651,7 +665,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Increment",
             scenario_category: "i64_fidelity",
             initial_props: json!({ "balance": 100i64 }),
-            ops: vec![PatchOp::increment("/balance", IncrValue::Int(-25))],
+            ops: vec![PatchOperation::increment("/balance", CosmosNumber::Int(-25))],
             expected: Expected::PostImageProps(json!({ "balance": 75i64 })),
             notes: "Negative integer delta on i64 target",
         },
@@ -661,7 +675,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Add",
             scenario_category: "array_append",
             initial_props: json!({ "tags": ["a", "b"] }),
-            ops: vec![PatchOp::add("/tags/-", json!("c"))],
+            ops: vec![PatchOperation::add("/tags/-", json!("c"))],
             expected: Expected::PostImageProps(json!({ "tags": ["a", "b", "c"] })),
             notes: "RFC 6901 array-append marker",
         },
@@ -671,7 +685,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Add",
             scenario_category: "array_idx",
             initial_props: json!({ "tags": ["a"] }),
-            ops: vec![PatchOp::add("/tags/99", json!("z"))],
+            ops: vec![PatchOperation::add("/tags/99", json!("z"))],
             expected: Expected::ErrorContains("99"),
             notes: "Index past end of array must fail",
         },
@@ -681,7 +695,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Set",
             scenario_category: "pointer_escape",
             initial_props: json!({ "a/b": "orig" }),
-            ops: vec![PatchOp::set("/a~1b", json!("new"))],
+            ops: vec![PatchOperation::set("/a~1b", json!("new"))],
             expected: Expected::PostImageProps(json!({ "a/b": "new" })),
             notes: "JSON Pointer escape ~1 -> /",
         },
@@ -691,7 +705,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Set",
             scenario_category: "pointer_escape",
             initial_props: json!({ "a~b": "orig" }),
-            ops: vec![PatchOp::set("/a~0b", json!("new"))],
+            ops: vec![PatchOperation::set("/a~0b", json!("new"))],
             expected: Expected::PostImageProps(json!({ "a~b": "new" })),
             notes: "JSON Pointer escape ~0 -> ~",
         },
@@ -703,7 +717,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             initial_props: json!({
                 "a": { "b": { "c": { "d": { "e": "orig" } } } },
             }),
-            ops: vec![PatchOp::set("/a/b/c/d/e", json!("new"))],
+            ops: vec![PatchOperation::set("/a/b/c/d/e", json!("new"))],
             expected: Expected::PostImageProps(json!({
                 "a": { "b": { "c": { "d": { "e": "new" } } } },
             })),
@@ -715,7 +729,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Move",
             scenario_category: "happy_path",
             initial_props: json!({ "src": "value", "dst": null }),
-            ops: vec![PatchOp::move_op("/src", "/dst")],
+            ops: vec![PatchOperation::move_value("/src", "/dst")],
             expected: Expected::PostImageProps(json!({ "dst": "value" })),
             notes: "Single Move between two scalar fields",
         },
@@ -725,7 +739,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Add",
             scenario_category: "happy_path",
             initial_props: json!({ "obj": { "existing": 1 } }),
-            ops: vec![PatchOp::add("/obj/newKey", json!("v"))],
+            ops: vec![PatchOperation::add("/obj/newKey", json!("v"))],
             expected: Expected::PostImageProps(json!({
                 "obj": { "existing": 1, "newKey": "v" },
             })),
@@ -737,7 +751,7 @@ fn fixtures() -> Vec<PatchCompareCase> {
             op_kind: "Set",
             scenario_category: "happy_path",
             initial_props: json!({ "key": "old" }),
-            ops: vec![PatchOp::set("/key", json!("new"))],
+            ops: vec![PatchOperation::set("/key", json!("new"))],
             expected: Expected::PostImageProps(json!({ "key": "new" })),
             notes: "Set replaces an existing key",
         },
@@ -785,8 +799,8 @@ fn assert_post_image_props(actual: &Value, expected_props: &Value, case_id: &str
 /// error surfacing) against the live emulator.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -826,7 +840,7 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
                     .await
                     .unwrap_or_else(|e| panic!("[{}] seed failed: {e}", case.id));
 
-                let spec = PatchSpec::new(case.ops.clone());
+                let spec = PatchInstructions::from(case.ops.clone());
                 let result = context
                     .patch_item(&container, &item_id, pk.clone(), &spec, None)
                     .await;
@@ -878,8 +892,8 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
 /// covers the same branch with a scripted dispatcher).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_read_missing_item_returns_not_found() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -892,7 +906,7 @@ pub async fn cosmos_patch_read_missing_item_returns_not_found() -> Result<(), Bo
             // Patch a freshly-named item that was never created.
             let missing_id = "patch-missing-item-001";
             let pk = "tenant-a";
-            let spec = PatchSpec::new(vec![PatchOp::set("/deleted", json!(true))]);
+            let spec = PatchInstructions::from(vec![PatchOperation::set("/deleted", json!(true))]);
             let err = context
                 .patch_item(&container, missing_id, pk, &spec, None)
                 .await
@@ -935,8 +949,8 @@ use std::sync::Arc;
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
     let custom_412 = CustomResponseBuilder::new(azure_core::http::StatusCode::PreconditionFailed)
@@ -971,7 +985,7 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
                 .create_item(&container, item_id, pk, &serde_json::to_vec(&initial)?)
                 .await?;
 
-            let spec = PatchSpec::new(vec![PatchOp::increment("/value", 1i64)]);
+            let spec = PatchInstructions::from(vec![PatchOperation::increment("/value", 1i64)]);
             let response = context
                 .patch_item(&container, item_id, pk, &spec, None)
                 .await?;
@@ -1008,8 +1022,8 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
     let custom_412 = CustomResponseBuilder::new(azure_core::http::StatusCode::PreconditionFailed)
@@ -1044,7 +1058,7 @@ pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             let max_attempts = std::num::NonZeroU8::new(2).unwrap();
-            let spec = PatchSpec::new(vec![PatchOp::increment("/value", 1i64)]);
+            let spec = PatchInstructions::from(vec![PatchOperation::increment("/value", 1i64)]);
             let err = context
                 .patch_item(&container, item_id, pk, &spec, Some(max_attempts))
                 .await

@@ -18,7 +18,7 @@ use std::num::NonZeroU32;
 /// don't have to traffic in the `-1` wire sentinel directly.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum MaxItemCount {
+pub enum MaxItemCountHint {
     /// Let the service decide the page size (emits `x-ms-max-item-count: -1`).
     ServerDecides,
 
@@ -59,6 +59,7 @@ pub(crate) mod request_header_names {
     pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
     pub const START_EPK: &str = "x-ms-start-epk";
     pub const END_EPK: &str = "x-ms-end-epk";
+    pub const READ_FEED_KEY_TYPE: &str = "x-ms-read-key-type";
     #[allow(dead_code)] // Reserved for future direct partition-key header writes.
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
@@ -148,10 +149,10 @@ pub struct CosmosRequestHeaders {
 
     /// Maximum number of items to return per page (`x-ms-max-item-count`).
     ///
-    /// Used by feed/query/changefeed reads. See [`MaxItemCount`] for the two
+    /// Used by feed/query/changefeed reads. See [`MaxItemCountHint`] for the two
     /// explicit values; the `-1` wire sentinel for "server decides" is
-    /// represented by [`MaxItemCount::ServerDecides`].
-    pub max_item_count: Option<MaxItemCount>,
+    /// represented by [`MaxItemCountHint::ServerDecides`].
+    pub max_item_count: Option<MaxItemCountHint>,
 
     /// Requests an incremental change feed read (`a-im: Incremental feed`).
     ///
@@ -236,8 +237,8 @@ impl CosmosRequestHeaders {
         }
         if let Some(count) = self.max_item_count {
             let wire = match count {
-                MaxItemCount::ServerDecides => "-1".to_string(),
-                MaxItemCount::Limit(n) => n.get().to_string(),
+                MaxItemCountHint::ServerDecides => "-1".to_string(),
+                MaxItemCountHint::Limit(n) => n.get().to_string(),
             };
             headers.insert(
                 request_header_names::MAX_ITEM_COUNT,
@@ -1031,7 +1032,7 @@ mod tests {
     #[test]
     fn write_to_headers_emits_max_item_count() {
         let cosmos_headers = CosmosRequestHeaders {
-            max_item_count: Some(MaxItemCount::Limit(NonZeroU32::new(7).unwrap())),
+            max_item_count: Some(MaxItemCountHint::Limit(NonZeroU32::new(7).unwrap())),
             ..Default::default()
         };
         let mut headers = Headers::new();

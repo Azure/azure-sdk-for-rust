@@ -5,12 +5,16 @@
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
+use azure_core::http::headers::HeaderName;
 use azure_core::{
     error::ErrorKind,
     http::{headers::Headers, StatusCode},
     Uuid,
 };
-use azure_data_cosmos::constants::{LSN, PARTITION_KEY_RANGE_ID, SESSION_TOKEN};
+const LSN: HeaderName = HeaderName::from_static("lsn");
+const PARTITION_KEY_RANGE_ID: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
+const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::Query;
 use azure_data_cosmos::{clients::ContainerClient, query::FeedScope};
@@ -63,8 +67,8 @@ fn header_u64(headers: &Headers, name: &azure_core::http::headers::HeaderName) -
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -108,8 +112,8 @@ pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
 ) -> Result<(), Box<dyn Error>> {
@@ -149,11 +153,12 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 .await?;
             assert_eq!(create_response.status(), StatusCode::Created);
             assert!(
-                create_response.session_token().is_some(),
+                create_response.headers().session_token().is_some(),
                 "expected session_token on create"
             );
             assert!(create_response.headers().etag().is_some(), "expected etag on create");
             let write_lsn = create_response
+                .headers()
                 .lsn()
                 .expect("create_item should surface partition LSN");
             // Weakened from donor's strict `<`: the partition LSN must never go
@@ -172,16 +177,17 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 .await?;
             assert_eq!(read_response.status(), StatusCode::Ok);
             assert!(
-                read_response.session_token().is_some(),
+                read_response.headers().session_token().is_some(),
                 "expected session_token on read"
             );
             assert!(read_response.headers().etag().is_some(), "expected etag on read");
             assert_eq!(
-                read_response.item_lsn(),
+                read_response.headers().item_lsn(),
                 Some(write_lsn),
                 "item_lsn on a point read should equal the LSN of the most recent write to that item"
             );
             let first_read_partition_lsn = read_response
+                .headers()
                 .lsn()
                 .expect("read_item should surface partition LSN");
             assert!(
@@ -202,6 +208,7 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 .await?;
             assert_eq!(second_write.status(), StatusCode::Created);
             let second_write_lsn = second_write
+                .headers()
                 .lsn()
                 .expect("second create_item should surface partition LSN");
             assert!(
@@ -215,8 +222,9 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
             let second_read = run_context
                 .read_item(&container_client, &pk, &item_id, None)
                 .await?;
-            assert_eq!(second_read.item_lsn(), Some(write_lsn));
+            assert_eq!(second_read.headers().item_lsn(), Some(write_lsn));
             let second_read_partition_lsn = second_read
+                .headers()
                 .lsn()
                 .expect("second read_item should surface partition LSN");
             assert!(second_read_partition_lsn >= second_write_lsn);
@@ -240,8 +248,8 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn query_pages_do_not_leak_lsn_in_items() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -286,7 +294,7 @@ pub async fn query_pages_do_not_leak_lsn_in_items() -> Result<(), Box<dyn Error>
             let mut saw_session_token = false;
             while let Some(page) = pages.next().await {
                 let page = page?;
-                if page.session_token().is_some() {
+                if page.headers().session_token().is_some() {
                     saw_session_token = true;
                 }
                 for item in page.into_items() {

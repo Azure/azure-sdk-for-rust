@@ -223,6 +223,7 @@
     "usseceast",
     "ussecwest",
     "ussecwestcentral",
+    "vnext",
     "westcentralus",
     "westeurope",
     "westindia",
@@ -237,6 +238,7 @@
     "**/query_plan_native/QueryPlanInterop.h",
     "**/query_plan_native/bindgen_wrapper.h",
     "**/query_plan_native/generated/native_bindings.rs"
+    "vnext-emulator-matrix.json"
   ],
   "overrides": [
     {
