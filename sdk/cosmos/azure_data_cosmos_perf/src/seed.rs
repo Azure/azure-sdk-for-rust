@@ -70,7 +70,7 @@ pub async fn seed_container(
     container: &ContainerClient,
     count: usize,
     concurrency: usize,
-) -> azure_core::Result<Vec<SeededItem>> {
+) -> azure_data_cosmos::Result<Vec<SeededItem>> {
     println!("Seeding {count} items (concurrency: {concurrency})...");
 
     let mut items = Vec::with_capacity(count);
@@ -128,11 +128,16 @@ pub async fn seed_container(
             }
             Some(Ok((_, None))) => {} // Task succeeded, continue
             Some(Err(e)) => {
+                // `JoinError` here means a seed worker panicked or was
+                // cancelled before it could complete. Surface it as a
+                // typed `Client` error so the caller can decide whether
+                // to retry the whole seed pass; we abort the remaining
+                // workers either way.
                 workers.abort_all();
-                return Err(azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    e,
-                ));
+                return Err(azure_data_cosmos_driver::CosmosError::builder()
+                    .with_message(format!("seed worker task failed: {e}"))
+                    .build()
+                    .into());
             }
             None => {} // No more tasks
         }

@@ -6,7 +6,7 @@
 //! Partition split and merge integration tests.
 
 use super::*;
-use azure_core::http::{HttpClient, Method, Request, Url};
+use azure_core::http::{Method, Request, Url};
 use std::time::Duration;
 
 #[tokio::test]

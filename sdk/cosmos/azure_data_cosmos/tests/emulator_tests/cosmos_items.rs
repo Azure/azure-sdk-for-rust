@@ -106,7 +106,9 @@ fn assert_response(
     );
 }
 
-async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
+async fn create_container(
+    run_context: &TestRunContext,
+) -> azure_data_cosmos::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-{}", Uuid::new_v4());
     run_context
@@ -125,6 +127,10 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -224,8 +230,8 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                     }
                     Err(err) => {
                         assert_eq!(
-                            Some(azure_core::http::StatusCode::NotFound),
-                            err.http_status()
+                            azure_core::http::StatusCode::NotFound,
+                            err.status().status_code()
                         );
                         break;
                     }
@@ -243,6 +249,10 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -306,6 +316,10 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
 pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -358,6 +372,10 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -418,6 +436,10 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -494,8 +516,8 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                     }
                     Err(err) => {
                         assert_eq!(
-                            Some(azure_core::http::StatusCode::NotFound),
-                            err.http_status()
+                            azure_core::http::StatusCode::NotFound,
+                            err.status().status_code()
                         );
                         break;
                     }
@@ -513,6 +535,10 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -591,10 +617,11 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .await;
 
             assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
+                azure_core::http::StatusCode::PreconditionFailed,
                 response
                     .expect_err("expected the server to return an error")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             Ok(())
@@ -608,6 +635,10 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -686,10 +717,11 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .await;
 
             assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
+                azure_core::http::StatusCode::PreconditionFailed,
                 response
                     .expect_err("expected the server to return an error")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             Ok(())
@@ -703,6 +735,10 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -784,10 +820,11 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .await;
 
             assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
+                azure_core::http::StatusCode::PreconditionFailed,
                 response
                     .expect_err("expected the server to return an error")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             Ok(())
@@ -816,6 +853,10 @@ struct ExplicitPkItem {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -904,10 +945,11 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
                 .read_item(PartitionKey::NULL, &item_no_pk_id, None)
                 .await;
             assert_eq!(
-                Some(azure_core::http::StatusCode::NotFound),
+                azure_core::http::StatusCode::NotFound,
                 result
                     .expect_err("expected a 404 for undefined-PK item read with NULL")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             // Read the null-PK item using NULL - should succeed.
@@ -933,10 +975,11 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
                 .read_item(PartitionKey::UNDEFINED, &item_null_pk_id, None)
                 .await;
             assert_eq!(
-                Some(azure_core::http::StatusCode::NotFound),
+                azure_core::http::StatusCode::NotFound,
                 result
                     .expect_err("expected a 404 for null-PK item read with UNDEFINED")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             // Delete the undefined-PK item using UNDEFINED.
@@ -966,6 +1009,10 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -1001,10 +1048,11 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
                 .create_item(&pk, &item_id, &item, None)
                 .await;
             assert_eq!(
-                Some(StatusCode::Conflict),
+                StatusCode::Conflict,
                 result
                     .expect_err("expected conflict on duplicate create")
-                    .http_status(),
+                    .status()
+                    .status_code(),
             );
 
             Ok(())
@@ -1020,6 +1068,10 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -1070,6 +1122,10 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(

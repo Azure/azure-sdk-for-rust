@@ -37,7 +37,10 @@ impl Operation for CreateItemOperation {
         "CreateItem"
     }
 
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<Option<Duration>> {
+    async fn execute(
+        &self,
+        container: &ContainerClient,
+    ) -> azure_data_cosmos::Result<Option<Duration>> {
         let id = Uuid::new_v4().to_string();
         let partition_key = Uuid::new_v4().to_string();
         let value = rand::rng().random_range(0..u64::MAX);

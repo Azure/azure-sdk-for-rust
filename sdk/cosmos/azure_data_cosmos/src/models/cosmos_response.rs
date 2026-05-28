@@ -80,7 +80,7 @@ impl CosmosResponse {
     }
 
     /// Deserializes the response body into a model type.
-    pub(crate) fn into_model<T: DeserializeOwned>(self) -> azure_core::Result<T> {
+    pub(crate) fn into_model<T: DeserializeOwned>(self) -> crate::Result<T> {
         self.body.into_single()
     }
 }

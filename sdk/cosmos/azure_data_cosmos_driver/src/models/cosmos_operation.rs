@@ -34,7 +34,7 @@ use std::borrow::Cow;
 /// use azure_data_cosmos_driver::options::OperationOptions;
 /// use url::Url;
 ///
-/// # async fn example() -> azure_core::Result<()> {
+/// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
 /// // 1. Set up runtime and driver
 /// let runtime = CosmosDriverRuntime::builder().build().await?;
 /// let account = AccountReference::with_master_key(
@@ -389,7 +389,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
     ///
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     /// let account = AccountReference::with_master_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
@@ -473,7 +473,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
     ///
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     /// let account = AccountReference::with_master_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
@@ -513,7 +513,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
     ///
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     /// let account = AccountReference::with_master_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),

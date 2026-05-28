@@ -8,6 +8,7 @@ pub mod control_plane;
 pub mod error_cases;
 #[cfg(feature = "fault_injection")]
 pub mod hedging;
+pub mod error_diagnostics;
 pub mod multi_region;
 pub mod point_operations;
 pub mod split_merge;

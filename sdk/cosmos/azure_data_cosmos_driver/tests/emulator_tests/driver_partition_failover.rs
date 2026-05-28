@@ -242,11 +242,20 @@ pub async fn partition_split_on_read_retries_and_succeeds() -> Result<(), Box<dy
             "410 fault should have been hit exactly once (the hit limit)"
         );
 
-        // The diagnostics should show more than one request (the initial 410 + the retry).
+        // The diagnostics on the surfaced response must capture EVERY
+        // attempt the operation made — that's the
+        // "one operation = one `DiagnosticsContext`" contract. The first
+        // attempt failed with the injected 410; the dataflow layer
+        // caught `is_partition_topology_change()`, invalidated the
+        // partition-key-range cache, and re-executed the request. The
+        // re-execution gets its own per-operation pipeline (and
+        // therefore its own diagnostics), but the dataflow retry path
+        // splices the failed attempt's diagnostics onto the retry's
+        // response before returning, so the caller sees both attempts.
         let diagnostics = read_response.diagnostics();
         assert!(
             diagnostics.request_count() > 1,
-            "Expected more than 1 request attempt (got {}) — the 410 should trigger a retry",
+            "Expected more than 1 request attempt (got {}) — the 410 should trigger a retry, and the dataflow layer must aggregate prior attempt diagnostics onto the final response",
             diagnostics.request_count()
         );
 

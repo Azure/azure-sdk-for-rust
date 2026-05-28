@@ -69,8 +69,8 @@ async fn ensure_database(driver: &CosmosDriver) {
         // Anything else (auth failure, throttling, network issues, ...) should surface as a
         // panic instead of leaving the next `resolve_container` call to fail with a confusing
         // "container not found" message.
-        let status = e.http_status();
-        if status != Some(azure_core::http::StatusCode::Conflict) {
+        let status = e.status().status_code();
+        if status != azure_core::http::StatusCode::Conflict {
             panic!("failed to ensure test database '{DB_NAME}': status={status:?} {e}");
         }
     }
@@ -97,8 +97,8 @@ async fn ensure_container(
     if let Err(e) = driver.execute_operation(op, Default::default()).await {
         // Same rationale as ensure_database: only 409 Conflict is expected (re-runs);
         // other errors must not be silently dropped.
-        let status = e.http_status();
-        if status != Some(azure_core::http::StatusCode::Conflict) {
+        let status = e.status().status_code();
+        if status != azure_core::http::StatusCode::Conflict {
             panic!("failed to ensure test container '{container_name}': status={status:?} {e}");
         }
     }
@@ -115,7 +115,7 @@ async fn fetch_gateway_plan(
     container: &ContainerReference,
     sql: &str,
     parameters: &[(&str, serde_json::Value)],
-) -> Result<serde_json::Value, azure_core::Error> {
+) -> Result<serde_json::Value, azure_data_cosmos_driver::CosmosError> {
     // Build {"query": ..., "parameters": [{"name":..., "value":...}, ...]}.
     let params_json: Vec<serde_json::Value> = parameters
         .iter()
@@ -133,22 +133,31 @@ async fn fetch_gateway_plan(
     } else {
         serde_json::json!({"query": sql, "parameters": params_json})
     };
-    let body = serde_json::to_vec(&query_body)?;
+    let body = serde_json::to_vec(&query_body).map_err(|e| {
+        azure_data_cosmos_driver::CosmosError::builder()
+            .with_status(
+                azure_data_cosmos_driver::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            )
+            .with_message("failed to serialize query-plan request body")
+            .with_source(e)
+            .build()
+    })?;
 
     let operation = CosmosOperation::query_plan(
         container.clone(),
         azure_data_cosmos_driver::query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES.into(),
     )
     .with_body(body);
-    let response = driver
+    driver
         .execute_operation(operation, OperationOptions::default())
-        .await?;
-    response
+        .await?
         .ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "gateway query-plan request returned no response body",
-            )
+            azure_data_cosmos_driver::CosmosError::builder()
+                .with_status(azure_data_cosmos_driver::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("gateway query-plan request returned no response body")
+                .build()
         })?
         .into_body()
         .into_single()
@@ -438,10 +447,10 @@ async fn validate_expects_400(
 ) {
     match fetch_gateway_plan(driver, container, sql, &[]).await {
         Err(e) => {
-            let status = e.http_status();
+            let status = e.status().status_code();
             assert_eq!(
                 status,
-                Some(azure_core::http::StatusCode::BadRequest),
+                azure_core::http::StatusCode::BadRequest,
                 "Expected HTTP 400 ({reason}) for '{sql}' but got status {status:?}: {e}"
             );
         }
@@ -556,7 +565,7 @@ async fn validate_hpk_expects_400(sql: &str, reason: &str) {
 /// `pub(crate)` so cannot be referenced directly from this integration test.
 const NEEDS_GATEWAY_FALLBACK: &str = "[NEEDS_GATEWAY_FALLBACK]";
 
-fn local_error_is_gateway_fallback(err: &azure_core::Error) -> bool {
+fn local_error_is_gateway_fallback(err: &azure_data_cosmos_driver::CosmosError) -> bool {
     format!("{err}").contains(NEEDS_GATEWAY_FALLBACK)
 }
 

@@ -70,15 +70,15 @@ Gateway 2.0 moves **replica-level** routing intelligence from the SDK into the s
 
 ### Connection Mode Comparison
 
-| Aspect | Gateway V1 | Gateway 2.0 | Direct (not in scope for Rust) |
-| --- | --- | --- | --- |
-| Latency SLA | No | **Yes** | Yes |
-| Simple Network | Yes | Yes | No |
-| Protocol | REST/HTTP over HTTP/2 | RNTBD message encoding over HTTP/2 | RNTBD over TCP |
-| Replica Mgmt | Gateway/Proxy | Proxy | SDK |
-| Partition Route | Gateway/Proxy | Proxy | SDK |
-| Regional Route | SDK | SDK | SDK |
-| Operational Cost (COGS + debug) | Low | Low | High |
+| Aspect                          | Gateway V1            | Gateway 2.0                        | Direct (not in scope for Rust) |
+| ------------------------------- | --------------------- | ---------------------------------- | ------------------------------ |
+| Latency SLA                     | No                    | **Yes**                            | Yes                            |
+| Simple Network                  | Yes                   | Yes                                | No                             |
+| Protocol                        | REST/HTTP over HTTP/2 | RNTBD message encoding over HTTP/2 | RNTBD over TCP                 |
+| Replica Mgmt                    | Gateway/Proxy         | Proxy                              | SDK                            |
+| Partition Route                 | Gateway/Proxy         | Proxy                              | SDK                            |
+| Regional Route                  | SDK                   | SDK                                | SDK                            |
+| Operational Cost (COGS + debug) | Low                   | Low                                | High                           |
 
 ---
 
@@ -107,11 +107,11 @@ All settings, options, and internal flags **must use a negative-term name** (`ga
 
 Every Gateway 2.0 EPK-range representation lives in the **driver crate** (`azure_data_cosmos_driver`):
 
-| Type | Role |
-| --- | --- |
-| `azure_data_cosmos_driver::models::range::EpkRange<T>` | Generic typed EPK range (`min` / `max` / `is_min_inclusive` / `is_max_inclusive` + `contains` / `is_empty` / `check_overlapping` / `Display` `[a,b)` form) |
-| `azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange` | Service model with `min_inclusive: EffectivePartitionKey` / `max_exclusive: EffectivePartitionKey` and full PKR metadata |
-| `azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey` | Strongly-typed EPK newtype with `compute_range()` returning `std::ops::Range<EffectivePartitionKey>` |
+| Type                                                                               | Role                                                                                                                                                       |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `azure_data_cosmos_driver::models::range::EpkRange<T>`                             | Generic typed EPK range (`min` / `max` / `is_min_inclusive` / `is_max_inclusive` + `contains` / `is_empty` / `check_overlapping` / `Display` `[a,b)` form) |
+| `azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange`         | Service model with `min_inclusive: EffectivePartitionKey` / `max_exclusive: EffectivePartitionKey` and full PKR metadata                                   |
+| `azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey` | Strongly-typed EPK newtype with `compute_range()` returning `std::ops::Range<EffectivePartitionKey>`                                                       |
 
 EPK header injection MUST consume `EffectivePartitionKey::compute_range()` directly and serialize through the driver crate's existing types. It MUST NOT introduce a new EPK-range struct, and MUST NOT depend on any SDK-crate analog (`azure_data_cosmos::routing::range::Range`, `azure_data_cosmos::routing::partition_key_range::PartitionKeyRange`, `azure_data_cosmos::hash::EffectivePartitionKey`). The SDK has no Gateway-2.0 surface area whatsoever — the SDK calls the generic `CosmosDriver::execute_operation` interface and the driver decides Gateway 2.0 vs Gateway V1 internally.
 
@@ -228,25 +228,25 @@ out.writeShortLE(operationType.id());
 RntbdUUID.encode(activityId, out);  // two longs
 ```
 
-| Offset | Size | Field | Encoding | Notes |
-| --- | --- | --- | --- | --- |
-| 0 | 4 | Total message length | uint32 LE | **Inclusive** of the 4 length bytes themselves (matches Java `writeIntLE` semantics). |
-| 4 | 2 | Resource type | uint16 LE | `writeShortLE(resourceType.id())` — narrower than direct-mode RNTBD's uint32 because thin-client IDs fit in 16 bits. |
-| 6 | 2 | Operation type | uint16 LE | `writeShortLE(operationType.id())` — same rationale. |
-| 8 | 16 | Activity ID | UUID, two uint64 LE | Java writes `(mostSignificantBits, leastSignificantBits)` as two little-endian `long`s — **this is not RFC 4122 byte order**. Worked example for UUID `0a1b2c3d-4e5f-6789-abcd-ef0123456789`: `mostSignificantBits = 0x0a1b2c3d_4e5f_6789` → LE bytes `89 67 5f 4e 3d 2c 1b 0a`; `leastSignificantBits = 0xabcd_ef01_2345_6789` → LE bytes `89 67 45 23 01 ef cd ab`. The on-the-wire 16-byte sequence is the MSB bytes followed by the LSB bytes. |
-| 24 | var | Metadata tokens | Token stream | Filtered by `thinClientProxyExcludedSet` (see §Phase 2 header naming). |
-| 24+N | 4 | Payload length | uint32 LE | **Only present when the operation type implies a payload** (writes, patch, query body, stored-proc args, batch). Absence is signaled by operation-type convention, not a flag bit. Parsers must consult the operation-type → has-payload table derived from Java's `RntbdRequestArgs`. |
-| 28+N | var | Payload body | Raw bytes | JSON or Cosmos binary, per resource type. |
+| Offset | Size | Field                | Encoding            | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------ | ---- | -------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0      | 4    | Total message length | uint32 LE           | **Inclusive** of the 4 length bytes themselves (matches Java `writeIntLE` semantics).                                                                                                                                                                                                                                                                                                                                                              |
+| 4      | 2    | Resource type        | uint16 LE           | `writeShortLE(resourceType.id())` — narrower than direct-mode RNTBD's uint32 because thin-client IDs fit in 16 bits.                                                                                                                                                                                                                                                                                                                               |
+| 6      | 2    | Operation type       | uint16 LE           | `writeShortLE(operationType.id())` — same rationale.                                                                                                                                                                                                                                                                                                                                                                                               |
+| 8      | 16   | Activity ID          | UUID, two uint64 LE | Java writes `(mostSignificantBits, leastSignificantBits)` as two little-endian `long`s — **this is not RFC 4122 byte order**. Worked example for UUID `0a1b2c3d-4e5f-6789-abcd-ef0123456789`: `mostSignificantBits = 0x0a1b2c3d_4e5f_6789` → LE bytes `89 67 5f 4e 3d 2c 1b 0a`; `leastSignificantBits = 0xabcd_ef01_2345_6789` → LE bytes `89 67 45 23 01 ef cd ab`. The on-the-wire 16-byte sequence is the MSB bytes followed by the LSB bytes. |
+| 24     | var  | Metadata tokens      | Token stream        | Filtered by `thinClientProxyExcludedSet` (see §Phase 2 header naming).                                                                                                                                                                                                                                                                                                                                                                             |
+| 24+N   | 4    | Payload length       | uint32 LE           | **Only present when the operation type implies a payload** (writes, patch, query body, stored-proc args, batch). Absence is signaled by operation-type convention, not a flag bit. Parsers must consult the operation-type → has-payload table derived from Java's `RntbdRequestArgs`.                                                                                                                                                             |
+| 28+N   | var  | Payload body         | Raw bytes           | JSON or Cosmos binary, per resource type.                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 #### RNTBD Response Wire Format
 
-| Offset | Size | Field | Encoding | Notes |
-| --- | --- | --- | --- | --- |
-| 0 | 4 | Total message length | uint32 LE | Inclusive of the 4 length bytes (same convention as request). |
-| 4 | 4 | Status code | uint32 LE | Maps to HTTP status + `CosmosStatus`. |
-| 8 | 16 | Activity ID | UUID, two uint64 LE | Same MSB-LE / LSB-LE pairing as request. |
-| 24 | var | Metadata tokens | Token stream | Request charge, session token, continuation, etc. |
-| 24+N | var | Body payload | Raw bytes | Optional; presence determined by total-length arithmetic (`total_length - header_and_tokens_len > 0`). |
+| Offset | Size | Field                | Encoding            | Notes                                                                                                  |
+| ------ | ---- | -------------------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
+| 0      | 4    | Total message length | uint32 LE           | Inclusive of the 4 length bytes (same convention as request).                                          |
+| 4      | 4    | Status code          | uint32 LE           | Maps to HTTP status + `CosmosStatus`.                                                                  |
+| 8      | 16   | Activity ID          | UUID, two uint64 LE | Same MSB-LE / LSB-LE pairing as request.                                                               |
+| 24     | var  | Metadata tokens      | Token stream        | Request charge, session token, continuation, etc.                                                      |
+| 24+N   | var  | Body payload         | Raw bytes           | Optional; presence determined by total-length arithmetic (`total_length - header_and_tokens_len > 0`). |
 
 #### Files Changed
 
@@ -282,35 +282,35 @@ This phase wires RNTBD serialization into the existing transport pipeline and ad
 
 Only `ResourceType::Document` is eligible for gateway 2.0 (following Java's approach):
 
-| Operation | Supported | Notes |
-| --- | --- | --- |
-| Create | Yes | |
-| Read | Yes | |
-| Replace | Yes | |
-| Upsert | Yes | |
-| Delete | Yes | |
-| Patch | Yes | |
-| Query | Yes | |
-| QueryPlan | Yes | |
-| ReadFeed | Yes | LatestVersion change feed only; excludes AllVersionsAndDeletes |
-| Batch | Yes | Transactional same-PK batch (single resource, single request). |
-| Bulk | Yes | SDK-side fan-out of independent CRUD ops; each fan-out leg is a separate eligible Document op. Distinct from Batch. |
-| StoredProcedure Execute | **No** | Stored-procedure execution is out of scope for Rust SDK GA. Eligibility fallback routes any incoming SPROC request to the standard gateway. |
-| All other resource types | **No** | Metadata operations use standard gateway |
+| Operation                | Supported | Notes                                                                                                                                       |
+| ------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create                   | Yes       |                                                                                                                                             |
+| Read                     | Yes       |                                                                                                                                             |
+| Replace                  | Yes       |                                                                                                                                             |
+| Upsert                   | Yes       |                                                                                                                                             |
+| Delete                   | Yes       |                                                                                                                                             |
+| Patch                    | Yes       |                                                                                                                                             |
+| Query                    | Yes       |                                                                                                                                             |
+| QueryPlan                | Yes       |                                                                                                                                             |
+| ReadFeed                 | Yes       | LatestVersion change feed only; excludes AllVersionsAndDeletes                                                                              |
+| Batch                    | Yes       | Transactional same-PK batch (single resource, single request).                                                                              |
+| Bulk                     | Yes       | SDK-side fan-out of independent CRUD ops; each fan-out leg is a separate eligible Document op. Distinct from Batch.                         |
+| StoredProcedure Execute  | **No**    | Stored-procedure execution is out of scope for Rust SDK GA. Eligibility fallback routes any incoming SPROC request to the standard gateway. |
+| All other resource types | **No**    | Metadata operations use standard gateway                                                                                                    |
 
 #### Header naming (proxy headers, in HTTP/2 request headers — not RNTBD tokens)
 
 These are wire-level HTTP/2 request headers on the outer POST to the proxy. They are **not** inside the RNTBD metadata token stream.
 
-| Header (wire) | Rust constant (crate) | Semantics | When emitted |
-| --- | --- | --- | --- |
-| `x-ms-thinclient-proxy-operation-type` | `GATEWAY20_OPERATION_TYPE` (driver) | Numeric operation type | Every Gateway 2.0 request |
-| `x-ms-thinclient-proxy-resource-type` | `GATEWAY20_RESOURCE_TYPE` (driver) | Numeric resource type | Every Gateway 2.0 request |
-| `x-ms-effective-partition-key` | **NEW** — `EFFECTIVE_PARTITION_KEY` (driver) | Canonical EPK hex | Point ops only |
-| `x-ms-documentdb-partitionkey` | existing `PARTITION_KEY` constant (SDK) | JSON-encoded partition-key value | Point ops AND single-logical-partition query ops, alongside `x-ms-effective-partition-key` |
-| `x-ms-thinclient-range-min` | **NEW** — `GATEWAY20_RANGE_MIN` (driver) | Lower bound of EPK range | Feed / cross-partition ops only |
-| `x-ms-thinclient-range-max` | **NEW** — `GATEWAY20_RANGE_MAX` (driver) | Upper bound of EPK range | Feed / cross-partition ops only |
-| `x-ms-cosmos-use-thinclient` | **NEW** — `GATEWAY20_USE_THINCLIENT` (driver) | Instructs account-metadata response to advertise thin-client endpoints | Account metadata fetches only |
+| Header (wire)                          | Rust constant (crate)                         | Semantics                                                              | When emitted                                                                               |
+| -------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `x-ms-thinclient-proxy-operation-type` | `GATEWAY20_OPERATION_TYPE` (driver)           | Numeric operation type                                                 | Every Gateway 2.0 request                                                                  |
+| `x-ms-thinclient-proxy-resource-type`  | `GATEWAY20_RESOURCE_TYPE` (driver)            | Numeric resource type                                                  | Every Gateway 2.0 request                                                                  |
+| `x-ms-effective-partition-key`         | **NEW** — `EFFECTIVE_PARTITION_KEY` (driver)  | Canonical EPK hex                                                      | Point ops only                                                                             |
+| `x-ms-documentdb-partitionkey`         | existing `PARTITION_KEY` constant (SDK)       | JSON-encoded partition-key value                                       | Point ops AND single-logical-partition query ops, alongside `x-ms-effective-partition-key` |
+| `x-ms-thinclient-range-min`            | **NEW** — `GATEWAY20_RANGE_MIN` (driver)      | Lower bound of EPK range                                               | Feed / cross-partition ops only                                                            |
+| `x-ms-thinclient-range-max`            | **NEW** — `GATEWAY20_RANGE_MAX` (driver)      | Upper bound of EPK range                                               | Feed / cross-partition ops only                                                            |
+| `x-ms-cosmos-use-thinclient`           | **NEW** — `GATEWAY20_USE_THINCLIENT` (driver) | Instructs account-metadata response to advertise thin-client endpoints | Account metadata fetches only                                                              |
 
 > Wire-header strings (`x-ms-thinclient-*`) are server-defined and unchanged; the Rust-side identifiers use the `GATEWAY20_*` prefix.
 
@@ -329,10 +329,10 @@ This subsection is the Rust mirror of the cross-SDK design landed in [Java PR #4
 
 ##### Wire carriers
 
-| Transport | Wire carrier for the resolved value | Encoding |
-| --- | --- | --- |
-| Standard Gateway (V1, HTTP) | HTTP request header `x-ms-cosmos-read-consistency-strategy` (per Java `HttpConstants.READ_CONSISTENCY_STRATEGY`) | String, exact case-sensitive values: `"Eventual"`, `"Session"`, `"LatestCommitted"`, `"GlobalStrong"`. Header is omitted entirely when the resolved RCS is `Default`. |
-| Gateway 2.0 (RNTBD) | RNTBD metadata token ID `0x00F0` | **Byte** type — `Eventual = 0x01`, `Session = 0x02`, `LatestCommitted = 0x03`, `GlobalStrong = 0x04`. The token MUST be Byte-encoded; per the Java PR an earlier String-typed prototype caused the proxy to hang. The token is omitted entirely when the resolved RCS is `Default`. |
+| Transport                   | Wire carrier for the resolved value                                                                              | Encoding                                                                                                                                                                                                                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Standard Gateway (V1, HTTP) | HTTP request header `x-ms-cosmos-read-consistency-strategy` (per Java `HttpConstants.READ_CONSISTENCY_STRATEGY`) | String, exact case-sensitive values: `"Eventual"`, `"Session"`, `"LatestCommitted"`, `"GlobalStrong"`. Header is omitted entirely when the resolved RCS is `Default`.                                                                                                               |
+| Gateway 2.0 (RNTBD)         | RNTBD metadata token ID `0x00F0`                                                                                 | **Byte** type — `Eventual = 0x01`, `Session = 0x02`, `LatestCommitted = 0x03`, `GlobalStrong = 0x04`. The token MUST be Byte-encoded; per the Java PR an earlier String-typed prototype caused the proxy to hang. The token is omitted entirely when the resolved RCS is `Default`. |
 
 The byte values are pinned against the proxy's C++ enum. Phase 1's RNTBD token catalog grows a row for `ReadConsistencyStrategy = 0x00F0 (Byte)` enumerating the four byte values.
 
@@ -359,7 +359,7 @@ The compute gateway rejects requests that carry both `x-ms-consistency-level` AN
 
 ##### GlobalStrong client-side validation
 
-When the resolved RCS is `GlobalStrong` and the account default consistency is **not** `Strong`, the driver MUST fail the operation **before** transport selection / serialization with a `BadRequestException`-equivalent (Rust: `azure_core::Error` with the appropriate `ErrorKind`). This avoids a wasted round-trip and matches Java's fail-fast semantics. The check uses the cached account properties already maintained by the driver; no additional metadata fetch is required.
+When the resolved RCS is `GlobalStrong` and the account default consistency is **not** `Strong`, the driver MUST fail the operation **before** transport selection / serialization with a `BadRequestException`-equivalent (Rust: a `Client`-kind `crate::error::Error` via `Error::client(...)`). This avoids a wasted round-trip and matches Java's fail-fast semantics. The check uses the cached account properties already maintained by the driver; no additional metadata fetch is required.
 
 ##### Implementation pitfall (Java bug class to avoid)
 
@@ -457,8 +457,8 @@ Retry policies are identical between Gateway 2.0 and standard gateway modes in b
 
 Gateway 2.0 has a single fallback mechanism:
 
-| Name | Scope | Trigger | Duration | Unwind |
-| --- | --- | --- | --- | --- |
+| Name                     | Scope       | Trigger                                                                                   | Duration            | Unwind                         |
+| ------------------------ | ----------- | ----------------------------------------------------------------------------------------- | ------------------- | ------------------------------ |
 | **Eligibility fallback** | Per-request | Operation is not eligible for Gateway 2.0 (fails `is_operation_supported_by_gateway20()`) | Single request only | N/A — recomputed every request |
 
 There is intentionally **no** Gateway 2.0–specific failure-fallback mechanism (no per-partition consecutive-failure counter, no sticky standard-gateway state, no cooldown). Java's thin client takes the same posture: `ThinClientStoreModel extends RxGatewayStoreModel`, model selection is per-request and stateless via `useThinClientStoreModel()`, and the existing `ClientRetryPolicy` / `WebExceptionRetryPolicy` chain already handles transport errors, 502/503/504, and regional unavailability uniformly across both transport modes. Rust follows the same approach: when a Gateway 2.0 request fails, the existing retry policies retry it (which may re-select Gateway 2.0 or land on standard gateway through normal regional-failover behavior); no new state machine is introduced.
@@ -538,58 +538,58 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 
 #### Pipeline Files
 
-| Action | File | Purpose |
-| --- | --- | --- |
-| NEW | `sdk/cosmos/ci-gateway20.yml` | Gateway 2.0 live tests pipeline definition (uses pre-provisioned account) |
-| EDIT | `sdk/cosmos/live-platform-matrix.json` | Add gateway 2.0 test matrix entry |
+| Action | File                                   | Purpose                                                                   |
+| ------ | -------------------------------------- | ------------------------------------------------------------------------- |
+| NEW    | `sdk/cosmos/ci-gateway20.yml`          | Gateway 2.0 live tests pipeline definition (uses pre-provisioned account) |
+| EDIT   | `sdk/cosmos/live-platform-matrix.json` | Add gateway 2.0 test matrix entry                                         |
 
 #### Test Coverage Matrix
 
-| Test Category | Unit | Integration | E2E | Scenarios |
-| --- | --- | --- | --- | --- |
-| RNTBD serialization | Yes | | | Round-trip, edge cases, malformed input |
-| RNTBD unknown-token tolerance | Yes | | | Inject synthetic unknown token IDs into a response frame; deserializer must skip + log, never panic / error / drop the rest of the response |
-| EPK computation | Yes | | | Single/hierarchical PK, hash versions 1 and 2, error cases (MultiHash V1, wrong component count) |
-| Operation filtering | Yes | | | All ResourceType × OperationType combos; asserts StoredProc Execute is rejected |
-| Header injection | Yes | | | Point vs feed EPK headers, proxy type headers, range-header un-padded form |
-| HPK + Gateway 2.0: full vs partial PK | Yes | | Yes | Hierarchical container (2- and 3-component PK paths). **Full PK** (all components specified) on a point op → emits `x-ms-effective-partition-key` carrying the single EPK from `EffectivePartitionKey::compute()`. **Partial PK** (1- or 2-component prefix) on a feed / cross-partition / delete-by-PK op → emits `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` carrying the EPK range from `EffectivePartitionKey::compute_range()`. Asserted at unit level (header presence + exact wire form, range bounds for each prefix length) and E2E (round-trip against a live HPK container). |
-| Account-name RNTBD token | Yes | | | `GlobalDatabaseAccountName` (`0x00CE`, `String`) present in the RNTBD metadata stream of every Gateway 2.0 request (point, feed, batch, bulk, change feed). Value matches the host label of the account endpoint URL. |
-| SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `(PartitionMerge \| IgnoreUnknownRntbdTokens)`, **not** `"0"`. Pin against the integer value sourced from .NET `SDKSupportedCapabilities.cs`. |
-| Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00F0` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
-| Consistency reconciliation: dual-header rejection | Yes | | | SDK never emits both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy` on V1; never emits both `ConsistencyLevel` and `ReadConsistencyStrategy` RNTBD tokens on V2. Verified across all 16 (CL × RCS, request-level × client-level) combinations. |
-| Consistency reconciliation: 4-source precedence | Yes | | | Request-RCS > Request-CL > Client-RCS > Client-CL > account default; `Default` at any RCS layer is a pass-through. Representative subset matching Java's data-provider tests. |
-| Consistency reconciliation: GlobalStrong validation | Yes | | | RCS=GlobalStrong on a non-Strong account produces a fail-fast `azure_core::Error` (no wire request emitted); on a Strong account the request proceeds normally. |
-| Consistency reconciliation: header-map immutability | Yes | | | Resolution does not mutate the operation's original request headers; an `applySessionToken`-equivalent rewrite cannot clobber `x-ms-consistency-level`. |
-| Consistency reconciliation: write-op behavior | Yes | | | Write op + RCS set → RCS is ignored, `ConsistencyLevel` (if any) flows through on the selected transport. |
-| Gateway 2.0 transport | Yes | Yes | | Correct HTTP/2 config, sharded pool selection |
-| Read/write pairing | Yes | | | Write region without Gateway 2.0 URL falls back for writes only |
-| Point CRUD | | | Yes | Create, read, replace, upsert, patch, delete |
-| Query | | | Yes | SQL query, cross-partition |
-| Batch | | | Yes | Transactional batch ops |
-| Bulk | | | Yes | Fan-out CRUD, distinct from Batch |
-| Change feed | | | Yes | LatestVersion, incremental |
-| Retry: 408 timeout | | Yes | | Cross-region for reads, local-only for writes |
-| Retry: 449 Retry-With | | Yes | | Dedicated 449 policy (≤ 3 attempts, exponential backoff, separate budget from 410/Gone), same Gateway 2.0 endpoint, no region switch, no fallback to Gateway V1 |
-| Retry: 503 | | Yes | | Regional failover via existing retry policies |
-| Retry: 410 Gone | | Yes | | PKRange refresh (sub-status specific); NameCacheStale → collection cache |
-| Retry: 404 / sub-status 1002 (ReadSessionNotAvailable) | | Yes | | Retry routes to a **remote-preferred** region (assert local-region retry only when no other region is available); assert PLF region wins when PLF has pinned the PKRangeId; assert that **no PKRange cache refresh** is triggered |
-| Operator override (`gateway20_disabled = true`) | Yes | Yes | | All eligible Document ops (point + feed + batch + change feed) route through standard gateway; default `false` does not change behavior |
-| Eligibility fallback | | Yes | | StoredProc Execute → standard gateway |
-| PLF precedence | | Yes | | Region without gw20_url + PLF override → standard gateway path |
-| Multi-region failover | | Yes | Yes | Preferred regions, failover |
-| Fault injection | | Yes | | Timeout, 503, network error |
-| Perf benchmarks | | | Yes | Already wired in perf crate |
-| Diagnostics validation | Yes | Yes | | TransportKind::Gateway20 in diagnostics output |
+| Test Category                                          | Unit | Integration | E2E | Scenarios                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------ | ---- | ----------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RNTBD serialization                                    | Yes  |             |     | Round-trip, edge cases, malformed input                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| RNTBD unknown-token tolerance                          | Yes  |             |     | Inject synthetic unknown token IDs into a response frame; deserializer must skip + log, never panic / error / drop the rest of the response                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| EPK computation                                        | Yes  |             |     | Single/hierarchical PK, hash versions 1 and 2, error cases (MultiHash V1, wrong component count)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Operation filtering                                    | Yes  |             |     | All ResourceType × OperationType combos; asserts StoredProc Execute is rejected                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Header injection                                       | Yes  |             |     | Point vs feed EPK headers, proxy type headers, range-header un-padded form                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| HPK + Gateway 2.0: full vs partial PK                  | Yes  |             | Yes | Hierarchical container (2- and 3-component PK paths). **Full PK** (all components specified) on a point op → emits `x-ms-effective-partition-key` carrying the single EPK from `EffectivePartitionKey::compute()`. **Partial PK** (1- or 2-component prefix) on a feed / cross-partition / delete-by-PK op → emits `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` carrying the EPK range from `EffectivePartitionKey::compute_range()`. Asserted at unit level (header presence + exact wire form, range bounds for each prefix length) and E2E (round-trip against a live HPK container). |
+| Account-name RNTBD token                               | Yes  |             |     | `GlobalDatabaseAccountName` (`0x00CE`, `String`) present in the RNTBD metadata stream of every Gateway 2.0 request (point, feed, batch, bulk, change feed). Value matches the host label of the account endpoint URL.                                                                                                                                                                                                                                                                                                                                                                                 |
+| SDK-supported-capabilities header                      | Yes  |             |     | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `(PartitionMerge \| IgnoreUnknownRntbdTokens)`, **not** `"0"`. Pin against the integer value sourced from .NET `SDKSupportedCapabilities.cs`.                                                                                                                                                                                                                                                                                                                                                                         |
+| Consistency reconciliation: token + header encoding    | Yes  |             |     | RNTBD token `0x00F0` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport.                                                                                                                                                                                                                                                                                                                                                                                   |
+| Consistency reconciliation: dual-header rejection      | Yes  |             |     | SDK never emits both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy` on V1; never emits both `ConsistencyLevel` and `ReadConsistencyStrategy` RNTBD tokens on V2. Verified across all 16 (CL × RCS, request-level × client-level) combinations.                                                                                                                                                                                                                                                                                                                                  |
+| Consistency reconciliation: 4-source precedence        | Yes  |             |     | Request-RCS > Request-CL > Client-RCS > Client-CL > account default; `Default` at any RCS layer is a pass-through. Representative subset matching Java's data-provider tests.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Consistency reconciliation: GlobalStrong validation    | Yes  |             |     | RCS=GlobalStrong on a non-Strong account produces a fail-fast `Client`-kind `crate::error::Error` (no wire request emitted); on a Strong account the request proceeds normally.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Consistency reconciliation: header-map immutability    | Yes  |             |     | Resolution does not mutate the operation's original request headers; an `applySessionToken`-equivalent rewrite cannot clobber `x-ms-consistency-level`.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Consistency reconciliation: write-op behavior          | Yes  |             |     | Write op + RCS set → RCS is ignored, `ConsistencyLevel` (if any) flows through on the selected transport.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Gateway 2.0 transport                                  | Yes  | Yes         |     | Correct HTTP/2 config, sharded pool selection                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Read/write pairing                                     | Yes  |             |     | Write region without Gateway 2.0 URL falls back for writes only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Point CRUD                                             |      |             | Yes | Create, read, replace, upsert, patch, delete                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Query                                                  |      |             | Yes | SQL query, cross-partition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Batch                                                  |      |             | Yes | Transactional batch ops                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Bulk                                                   |      |             | Yes | Fan-out CRUD, distinct from Batch                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Change feed                                            |      |             | Yes | LatestVersion, incremental                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Retry: 408 timeout                                     |      | Yes         |     | Cross-region for reads, local-only for writes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Retry: 449 Retry-With                                  |      | Yes         |     | Dedicated 449 policy (≤ 3 attempts, exponential backoff, separate budget from 410/Gone), same Gateway 2.0 endpoint, no region switch, no fallback to Gateway V1                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Retry: 503                                             |      | Yes         |     | Regional failover via existing retry policies                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Retry: 410 Gone                                        |      | Yes         |     | PKRange refresh (sub-status specific); NameCacheStale → collection cache                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Retry: 404 / sub-status 1002 (ReadSessionNotAvailable) |      | Yes         |     | Retry routes to a **remote-preferred** region (assert local-region retry only when no other region is available); assert PLF region wins when PLF has pinned the PKRangeId; assert that **no PKRange cache refresh** is triggered                                                                                                                                                                                                                                                                                                                                                                     |
+| Operator override (`gateway20_disabled = true`)        | Yes  | Yes         |     | All eligible Document ops (point + feed + batch + change feed) route through standard gateway; default `false` does not change behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Eligibility fallback                                   |      | Yes         |     | StoredProc Execute → standard gateway                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| PLF precedence                                         |      | Yes         |     | Region without gw20_url + PLF override → standard gateway path                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Multi-region failover                                  |      | Yes         | Yes | Preferred regions, failover                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Fault injection                                        |      | Yes         |     | Timeout, 503, network error                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Perf benchmarks                                        |      |             | Yes | Already wired in perf crate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Diagnostics validation                                 | Yes  | Yes         |     | TransportKind::Gateway20 in diagnostics output                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 #### Files Changed
 
-| Action | File | Purpose |
-| --- | --- | --- |
-| NEW | `tests/gateway20_rntbd_tests.rs` | RNTBD unit tests (driver) |
-| NEW | `tests/gateway20_pipeline_tests.rs` | Header injection + operation filtering (driver) |
-| NEW | `tests/emulator_tests/gateway20_e2e.rs` | E2E tests (SDK, requires emulator) |
-| EDIT | `tests/emulator_tests/cosmos_fault_injection.rs` | Add gateway 2.0 fault scenarios |
-| EDIT | `azure_data_cosmos_perf/src/runner.rs` | Perf config already wired |
+| Action | File                                             | Purpose                                         |
+| ------ | ------------------------------------------------ | ----------------------------------------------- |
+| NEW    | `tests/gateway20_rntbd_tests.rs`                 | RNTBD unit tests (driver)                       |
+| NEW    | `tests/gateway20_pipeline_tests.rs`              | Header injection + operation filtering (driver) |
+| NEW    | `tests/emulator_tests/gateway20_e2e.rs`          | E2E tests (SDK, requires emulator)              |
+| EDIT   | `tests/emulator_tests/cosmos_fault_injection.rs` | Add gateway 2.0 fault scenarios                 |
+| EDIT   | `azure_data_cosmos_perf/src/runner.rs`           | Perf config already wired                       |
 
 ---
 

@@ -45,11 +45,15 @@ impl AccountEndpoint {
 }
 
 impl std::str::FromStr for AccountEndpoint {
-    type Err = azure_core::Error;
+    type Err = crate::CosmosError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let url: Url = s.parse().map_err(|e: url::ParseError| {
-            azure_core::Error::new(azure_core::error::ErrorKind::Other, e)
+            crate::DriverCosmosError::builder()
+                .with_status(crate::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL)
+                .with_message("invalid account endpoint URL")
+                .with_arc_source(std::sync::Arc::new(e))
+                .build()
         })?;
         Ok(Self(url))
     }

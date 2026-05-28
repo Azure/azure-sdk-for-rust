@@ -30,8 +30,9 @@
 //! * [`MoveOp`](PatchOperation::MoveOp) — source must exist; source and destination
 //!   must be distinct; destination cannot be a descendant of the source.
 //!
-//! Failures return [`PatchEvalError`], which the PATCH handler converts into
-//! an `azure_core::Error` before surfacing it to callers.
+//! Failures return [`PatchEvalError`], which converts into a
+//! [`crate::error::CosmosError`] with HTTP status `400 BadRequest` (via the
+//! `From<PatchEvalError>` impl below) before being surfaced to callers.
 
 use crate::models::{CosmosNumber, PatchOperation};
 use serde_json::Value;
@@ -110,12 +111,14 @@ impl fmt::Display for PatchEvalError {
 
 impl std::error::Error for PatchEvalError {}
 
-impl From<PatchEvalError> for azure_core::Error {
+impl From<PatchEvalError> for crate::error::CosmosError {
     fn from(err: PatchEvalError) -> Self {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
-            err.to_string(),
-        )
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message(err.to_string())
+            .build()
     }
 }
 

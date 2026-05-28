@@ -6,7 +6,6 @@
 
 use super::*;
 use azure_core::http::headers::HeaderValue;
-use azure_core::http::HttpClient;
 
 #[tokio::test]
 async fn create_new_item() {

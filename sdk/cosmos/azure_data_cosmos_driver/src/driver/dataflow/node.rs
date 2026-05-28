@@ -69,7 +69,7 @@ pub(crate) trait PipelineNode: Send + std::any::Any {
     async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
-    ) -> azure_core::Result<PageResult>;
+    ) -> crate::error::Result<PageResult>;
 
     /// Consumes this node and returns its children as a `Vec`.
     ///

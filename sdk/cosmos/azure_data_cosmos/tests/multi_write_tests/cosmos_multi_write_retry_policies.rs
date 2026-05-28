@@ -194,10 +194,10 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
 
             let err = result.expect_err("write should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
-                err.http_status(),
+                StatusCode::RequestTimeout,
+                err.status().status_code(),
                 "expected RequestTimeout (408), got {:?}",
-                err.http_status()
+                err.status().status_code()
             );
 
             Ok(())
@@ -272,10 +272,10 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 
             let err = result.expect_err("upsert should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
-                err.http_status(),
+                StatusCode::RequestTimeout,
+                err.status().status_code(),
                 "expected RequestTimeout (408), got {:?}",
-                err.http_status()
+                err.status().status_code()
             );
 
             Ok(())
@@ -540,10 +540,10 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
             let err =
                 result.expect_err("replace should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
-                err.http_status(),
+                StatusCode::RequestTimeout,
+                err.status().status_code(),
                 "expected RequestTimeout (408), got {:?}",
-                err.http_status()
+                err.status().status_code()
             );
 
             Ok(())
@@ -623,10 +623,10 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 
             let err = result.expect_err("delete should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
-                err.http_status(),
+                StatusCode::RequestTimeout,
+                err.status().status_code(),
                 "expected RequestTimeout (408), got {:?}",
-                err.http_status()
+                err.status().status_code()
             );
 
             Ok(())
