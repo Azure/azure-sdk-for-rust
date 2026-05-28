@@ -722,17 +722,13 @@ fn now_monotonic_secs() -> u64 {
     Instant::now().saturating_duration_since(*anchor).as_secs()
 }
 
-fn global_limiter() -> &'static BacktraceCaptureLimiter {
-    static LIMITER: BacktraceCaptureLimiter = BacktraceCaptureLimiter::new_disabled();
-    &LIMITER
-}
-
 /// Returns a reference to the process-global symbol-resolution limiter.
 ///
 /// The runtime builder uses this to apply caller-supplied configuration; most
 /// other callers should not need direct access.
 pub(crate) fn global_resolution_limiter() -> &'static BacktraceCaptureLimiter {
-    global_limiter()
+    static LIMITER: BacktraceCaptureLimiter = BacktraceCaptureLimiter::new_disabled();
+    &LIMITER
 }
 
 /// Returns a reference to the process-global per-second cap on stack
