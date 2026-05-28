@@ -637,8 +637,8 @@ fn service_error_message(status: &CosmosStatus) -> String {
 /// The returned error carries **no** `DiagnosticsContext`. The operation
 /// pipeline's abort branch (the only production caller of this helper, via
 /// [`OperationAction::Abort`]) grafts the completed operation diagnostics
-/// onto the error via [`CosmosError::with_diagnostics`] before it leaves the
-/// pipeline. Keeping this module free of any diagnostics plumbing preserves
+/// onto the error via `CosmosError::builder().from_error(err).with_diagnostics(ctx).build()`
+/// before it leaves the pipeline. Keeping this module free of any diagnostics plumbing preserves
 /// `evaluate_transport_result` as a pure function over its inputs and
 /// avoids constructing a throw-away diagnostics value that would
 /// immediately be overwritten downstream.
