@@ -68,7 +68,7 @@ where
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Wire-format fields; not all are consumed today.
-pub struct QueryPlan {
+pub(crate) struct QueryPlan {
     /// The version of the query plan format.
     pub partitioned_query_execution_info_version: usize,
 
@@ -89,7 +89,7 @@ pub struct QueryPlan {
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Wire-format fields; hybrid search isn't fully wired yet.
-pub struct HybridSearchQueryInfo {
+pub(crate) struct HybridSearchQueryInfo {
     /// The query used for global statistics gathering.
     pub global_statistics_query: String,
 
@@ -113,7 +113,7 @@ pub struct HybridSearchQueryInfo {
 
 /// The kind of DISTINCT tracking required by the query.
 #[derive(Debug, Deserialize, Default, PartialEq, Eq, Serialize)]
-pub enum DistinctType {
+pub(crate) enum DistinctType {
     /// No deduplication required.
     #[default]
     None,
@@ -129,7 +129,7 @@ pub enum DistinctType {
 #[derive(Debug, Deserialize, Default, Serialize, PartialEq)]
 #[serde(default)]
 #[serde(rename_all = "camelCase")]
-pub struct QueryInfo {
+pub(crate) struct QueryInfo {
     /// The kind of DISTINCT clause, if any.
     pub distinct_type: DistinctType,
 
@@ -180,7 +180,7 @@ pub struct QueryInfo {
 
 /// Sort order for an `ORDER BY` expression.
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, Serialize)]
-pub enum SortOrder {
+pub(crate) enum SortOrder {
     Ascending,
     Descending,
 }
@@ -189,7 +189,7 @@ pub enum SortOrder {
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Inclusivity flags are wire-format; planner treats ranges uniformly.
-pub struct QueryRange {
+pub(crate) struct QueryRange {
     /// The minimum EPK value.
     #[serde(deserialize_with = "string_or_json")]
     pub min: String,
