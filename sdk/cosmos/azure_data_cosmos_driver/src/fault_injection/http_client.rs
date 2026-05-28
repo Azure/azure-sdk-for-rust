@@ -267,27 +267,20 @@ impl FaultClient {
         let mut cosmos_headers = CosmosResponseHeaders::new();
         cosmos_headers.substatus = sub_status;
 
-        let status = match sub_status {
-            Some(sub) => CosmosStatus::from_parts(status_code, Some(sub)),
-            None => CosmosStatus::new(status_code),
-        };
-
-        let cosmos_err = crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::new(
-                azure_core::http::StatusCode::InternalServerError,
-            ))
-            .with_status(status)
-            .with_message(message)
-            .with_response_parts(crate::models::CosmosResponsePayload::new(
-                crate::models::ResponseBody::NoPayload,
-                cosmos_headers,
-            ))
-            .build();
-
-        ApplyResult::Injected(Err(TransportError::new(
-            cosmos_err,
-            RequestSentStatus::Sent,
-        )))
+        // HTTP-status faults are returned as a successful transport response
+        // carrying the injected status code, headers, and body. The retry
+        // pipeline then classifies them as `TransportOutcome::HttpError` and
+        // preserves the original status all the way to the caller. Returning
+        // them as `TransportError` instead would cause the transport layer to
+        // tag the outer outcome with the synthetic `TRANSPORT_GENERATED_503`
+        // (see `transport_error_result` in `transport_pipeline.rs`), which
+        // would mask the injected status with a generic 503 — defeating the
+        // purpose of HTTP-status fault injection.
+        ApplyResult::Injected(Ok(HttpResponse {
+            status: u16::from(status_code),
+            headers: cosmos_headers.to_raw_headers(),
+            body: message.as_bytes().to_vec(),
+        }))
     }
 }
 
@@ -393,7 +386,7 @@ mod tests {
     use crate::models::SubStatusCode;
     use crate::options::Region;
     use async_trait::async_trait;
-    use azure_core::http::{headers::Headers, Method, Url};
+    use azure_core::http::{headers::Headers, Method, StatusCode, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
@@ -496,10 +489,20 @@ mod tests {
 
         // First two requests should hit the fault
         let result1 = fault_client.send(&request).await;
-        assert!(result1.is_err());
+        assert!(
+            result1
+                .as_ref()
+                .is_ok_and(|r| r.status == u16::from(StatusCode::InternalServerError)),
+            "first request should inject 500"
+        );
 
         let result2 = fault_client.send(&request).await;
-        assert!(result2.is_err());
+        assert!(
+            result2
+                .as_ref()
+                .is_ok_and(|r| r.status == u16::from(StatusCode::InternalServerError)),
+            "second request should inject 500"
+        );
 
         // Third request should pass through (hit limit reached)
         let result3 = fault_client.send(&request).await;
@@ -541,11 +544,14 @@ mod tests {
 
         let result = fault_client.send(&request).await;
 
-        assert!(result.is_err());
-        let err = result.unwrap_err();
+        // HTTP-status faults are surfaced as `Ok(HttpResponse)` so the
+        // pipeline classifies them as `TransportOutcome::HttpError` and
+        // preserves the injected status (rather than re-tagging the outer
+        // outcome as `TRANSPORT_GENERATED_503`).
+        let response = result.expect("expected Ok(HttpResponse) for HTTP-status fault");
         assert_eq!(
-            err.error.status().status_code(),
-            azure_core::http::StatusCode::InternalServerError,
+            response.status,
+            u16::from(azure_core::http::StatusCode::InternalServerError),
             "expected InternalServerError status code"
         );
 
@@ -566,11 +572,10 @@ mod tests {
 
         let result = fault_client.send(&request).await;
 
-        assert!(result.is_err());
-        let err = result.unwrap_err();
+        let response = result.expect("expected Ok(HttpResponse) for HTTP-status fault");
         assert_eq!(
-            err.error.status().status_code(),
-            azure_core::http::StatusCode::TooManyRequests,
+            response.status,
+            u16::from(azure_core::http::StatusCode::TooManyRequests),
             "expected TooManyRequests status code"
         );
     }
@@ -669,19 +674,13 @@ mod tests {
 
         // First request should hit the fault
         let result1 = fault_client.send(&request).await;
-        assert!(result1.is_err(), "first request should fail");
-        assert_eq!(
-            result1.unwrap_err().error.status().status_code(),
-            azure_core::http::StatusCode::ServiceUnavailable
-        );
+        let response1 = result1.expect("first request should inject HTTP-status fault");
+        assert_eq!(response1.status, u16::from(StatusCode::ServiceUnavailable));
 
         // Second request should also hit the fault
         let result2 = fault_client.send(&request).await;
-        assert!(result2.is_err(), "second request should fail");
-        assert_eq!(
-            result2.unwrap_err().error.status().status_code(),
-            azure_core::http::StatusCode::ServiceUnavailable
-        );
+        let response2 = result2.expect("second request should inject HTTP-status fault");
+        assert_eq!(response2.status, u16::from(StatusCode::ServiceUnavailable));
 
         // Third request should pass through (times limit reached)
         let result3 = fault_client.send(&request).await;
@@ -729,46 +728,36 @@ mod tests {
             let (request, _collector) = create_test_request();
 
             let result = fault_client.send(&request).await;
-            assert!(result.is_err(), "{:?} should produce an error", error_type);
-
-            let err = result.unwrap_err();
-            // Inspect the typed sub_status and the parsed
-            // `CosmosResponseHeaders::substatus` field directly.
+            // HTTP-status faults are surfaced as `Ok(HttpResponse)` carrying
+            // the injected status code and `x-ms-substatus` header. Parse
+            // the raw header to verify the substatus matches.
+            let response = result.unwrap_or_else(|err| {
+                panic!(
+                    "{:?} should produce an Ok(HttpResponse), got error: {:?}",
+                    error_type, err
+                )
+            });
+            let raw_substatus = response
+                .headers
+                .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
+                    "x-ms-substatus",
+                ));
             match expected_substatus {
                 Some(expected) => {
                     assert_eq!(
-                        err.error.status().sub_status(),
-                        Some(expected),
-                        "{:?}: typed sub_status mismatch",
-                        error_type
-                    );
-                    let cosmos_headers = err
-                        .error
-                        .wire_payload()
-                        .map(|p| p.headers())
-                        .unwrap_or_else(|| {
-                            panic!("{:?} should expose parsed Cosmos headers", error_type)
-                        });
-                    assert_eq!(
-                        cosmos_headers.substatus,
-                        Some(expected),
-                        "{:?}: CosmosResponseHeaders.substatus mismatch",
+                        raw_substatus.map(|s| s.to_owned()),
+                        Some(expected.value().to_string()),
+                        "{:?}: x-ms-substatus header mismatch",
                         error_type
                     );
                 }
                 None => {
                     assert!(
-                        err.error.status().sub_status().is_none(),
-                        "{:?} should not have a sub-status",
-                        error_type
+                        raw_substatus.is_none(),
+                        "{:?} should not carry an x-ms-substatus header, got {:?}",
+                        error_type,
+                        raw_substatus
                     );
-                    if let Some(cosmos_headers) = err.error.wire_payload().map(|p| p.headers()) {
-                        assert!(
-                            cosmos_headers.substatus.is_none(),
-                            "{:?} should not carry a parsed substatus header",
-                            error_type
-                        );
-                    }
                 }
             }
         }
@@ -874,10 +863,8 @@ mod tests {
             .insert(FAULT_INJECTION_OPERATION, "ReadItem");
 
         let result = fault_client.send(&request).await;
-        assert!(
-            result.is_err(),
-            "should inject fault for matching operation"
-        );
+        let response = result.expect("should inject HTTP-status fault for matching operation");
+        assert_eq!(response.status, u16::from(StatusCode::ServiceUnavailable));
         assert_eq!(mock_client.call_count(), 0);
     }
 
