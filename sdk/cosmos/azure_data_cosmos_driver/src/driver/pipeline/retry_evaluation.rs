@@ -655,9 +655,6 @@ fn build_service_error(
     // callers get a consistent typed status regardless of gateway version.
     let effective_status = synthesize_cross_partition_query_status(*status, body);
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::new(
-            azure_core::http::StatusCode::InternalServerError,
-        ))
         .with_status(effective_status)
         .with_message(service_error_message(&effective_status))
         .with_response_parts(crate::models::CosmosResponsePayload::new(

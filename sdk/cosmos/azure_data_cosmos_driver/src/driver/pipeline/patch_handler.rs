@@ -556,9 +556,6 @@ fn exhaustion_error(
             // pipeline. Attach `aggregated` here too in case a future caller
             // seeds `sub_op_diagnostics` without a `last_412` source.
             let mut b = crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::InternalServerError,
-                ))
                 .with_status(crate::models::CosmosStatus::new(
                     StatusCode::PreconditionFailed,
                 ))
@@ -1246,9 +1243,6 @@ mod tests {
             .complete(),
         );
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::new(
-                azure_core::http::StatusCode::InternalServerError,
-            ))
             .with_status(CosmosStatus::new(status))
             .with_message(msg)
             .with_response_parts(crate::models::CosmosResponsePayload::new(
