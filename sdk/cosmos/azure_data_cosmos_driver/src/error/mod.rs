@@ -149,19 +149,32 @@ enum ErrorContext {
 impl CosmosError {
     fn from_inner(mut inner: CosmosErrorInner) -> Self {
         if inner.backtrace.is_none() {
-            // If we are wrapping another Cosmos `CosmosError` as the source
-            // (status-changing re-wrap, e.g. promoting a service error to a
-            // transport error), inherit that error's backtrace instead of
-            // paying for a fresh capture at the wrap site. The wrap site is
-            // always the same handful of lines in the pipeline and adds no
-            // diagnostic value over the originating call stack — inheriting
-            // also saves one capture-throttle token per re-wrap, doubling
-            // the effective capture budget on retry-heavy paths.
-            if let Some(src) = inner.source.as_deref() {
-                let src_dyn: &(dyn StdError + 'static) = src;
-                if let Some(inner_cosmos) = src_dyn.downcast_ref::<CosmosError>() {
+            // If we are wrapping another Cosmos `CosmosError` somewhere in
+            // the source chain (status-changing re-wrap, e.g. promoting a
+            // service error to a transport error, or a Cosmos error
+            // re-imported through a third-party wrapper like
+            // `azure_core::Error`), inherit that error's backtrace instead
+            // of paying for a fresh capture at the wrap site. The wrap
+            // site is always the same handful of lines in the pipeline
+            // and adds no diagnostic value over the originating call
+            // stack — inheriting also saves one capture-throttle token
+            // per re-wrap, doubling the effective capture budget on
+            // retry-heavy paths.
+            //
+            // The walk is bounded by [`MAX_BACKTRACE_INHERITANCE_DEPTH`]
+            // so a pathological / cyclic `source()` chain cannot pin a
+            // thread on the error-construction hot path. Typical
+            // production chains are 1–2 deep; the cap leaves generous
+            // headroom while staying O(depth) per construction.
+            let mut cur: Option<&(dyn StdError + 'static)> =
+                inner.source.as_deref().map(|s| s as _);
+            for _ in 0..MAX_BACKTRACE_INHERITANCE_DEPTH {
+                let Some(src) = cur else { break };
+                if let Some(inner_cosmos) = src.downcast_ref::<CosmosError>() {
                     inner.backtrace = inner_cosmos.inner.backtrace.clone();
+                    break;
                 }
+                cur = src.source();
             }
             if inner.backtrace.is_none() {
                 inner.backtrace = Backtrace::capture();
@@ -474,6 +487,17 @@ impl StdError for CosmosError {
 /// relative to real Cosmos transport chains (~5 frames) but bounded so a
 /// pathological or cyclic chain cannot pin a thread formatting an error.
 const MAX_SOURCE_CHAIN_DEPTH: usize = 64;
+
+/// Maximum number of `.source()` frames walked by [`CosmosError::from_inner`]
+/// looking for an inheritable [`CosmosError`] backtrace.
+///
+/// Picked low (4) because realistic Cosmos wrap chains are 1–2 deep — the
+/// only motivating case for >1 is an indirect re-wrap through a
+/// third-party error type (e.g. `azure_core::Error` wrapping a
+/// `CosmosError` re-imported through a credential or policy boundary).
+/// The bound keeps the hot error-construction path O(depth) and prevents
+/// a pathological / cyclic chain from pinning a thread.
+const MAX_BACKTRACE_INHERITANCE_DEPTH: usize = 4;
 
 /// Driver-wide `Result` alias.
 pub type Result<T> = std::result::Result<T, CosmosError>;
@@ -924,6 +948,17 @@ mod tests {
     use super::*;
     use crate::models::{CosmosResponseHeaders, ResponseBody};
     use azure_core::http::StatusCode;
+    use std::sync::Mutex;
+
+    /// Serializes tests in this module that mutate the process-global
+    /// backtrace capture throttle (`global_capture_throttle()`).
+    /// Without this, `cargo test`'s parallel runner can reset the
+    /// throttle between one test's `set_capacity(1000)` call and its
+    /// subsequent capture, causing flaky `inner_bt_id.is_some()`
+    /// failures. The lock is local to this module — the backtrace
+    /// module has its own equivalent for tests that touch the
+    /// resolution limiter.
+    static BACKTRACE_TEST_LOCK: Mutex<()> = Mutex::new(());
 
     // -----------------------------------------------------------------
     // Test fixtures
@@ -1295,34 +1330,238 @@ mod tests {
 
     #[test]
     fn wrap_inherits_backtrace_from_cosmos_source() {
-        // Capture is opt-in; enable it for this test so the inheritance
-        // check is actually meaningful.
-        crate::error::backtrace::global_capture_throttle().set_capacity(1000);
-        let inner = end_to_end_timeout_error("inner");
-        let inner_bt_id = inner
-            .inner
-            .backtrace
-            .as_ref()
-            .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
-        assert!(
-            inner_bt_id.is_some(),
-            "inner must have a captured backtrace for this test to be meaningful"
-        );
+        // Serialize against sibling tests that also mutate the
+        // process-global capture throttle, and snapshot/restore so this
+        // test does not leak `set_capacity(1000)` into tests that
+        // depend on the default-off behavior.
+        let _guard = BACKTRACE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        // Snapshot both limiters so we restore via the public API and
+        // don't leak capture-on state into sibling tests.
+        let throttle = crate::error::backtrace::global_capture_throttle();
+        let resolution = crate::error::backtrace::global_resolution_limiter();
+        let prev_cap = throttle.capacity();
+        let prev_res = resolution.capacity();
+        let result = std::panic::catch_unwind(|| {
+            // Enable capture via the public API — this trips
+            // `PROGRAMMATIC_OVERRIDE`, so a concurrent first
+            // `Backtrace::capture()` from another test cannot clobber
+            // the throttle via `ensure_initialized()`'s env-derived
+            // init path. Resolution capacity is kept at its current
+            // value so the test doesn't accidentally change render
+            // behavior.
+            crate::error::backtrace::set_backtrace_options(
+                crate::error::backtrace::BacktraceOptions {
+                    max_captures_per_second: 1000,
+                    max_resolutions_per_second: prev_res,
+                },
+            );
+            let inner = end_to_end_timeout_error("inner");
+            let inner_bt_id = inner
+                .inner
+                .backtrace
+                .as_ref()
+                .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
+            assert!(
+                inner_bt_id.is_some(),
+                "inner must have a captured backtrace for this test to be meaningful"
+            );
 
-        let outer = CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
-            .with_message("outer")
-            .with_arc_source(Arc::new(inner))
-            .build();
-        let outer_bt_id = outer
-            .inner
-            .backtrace
-            .as_ref()
-            .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
-        assert_eq!(
-            outer_bt_id, inner_bt_id,
-            "outer error must share the inner's backtrace Arc, not capture a new one"
-        );
+            let outer = CosmosError::builder()
+                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_message("outer")
+                .with_arc_source(Arc::new(inner))
+                .build();
+            let outer_bt_id = outer
+                .inner
+                .backtrace
+                .as_ref()
+                .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
+            assert_eq!(
+                outer_bt_id, inner_bt_id,
+                "outer error must share the inner's backtrace Arc, not capture a new one"
+            );
+        });
+        // Restore via the public API too — `PROGRAMMATIC_OVERRIDE` stays
+        // set (sticky for the rest of the process) but the limiters
+        // return to their pre-test values.
+        crate::error::backtrace::set_backtrace_options(crate::error::backtrace::BacktraceOptions {
+            max_captures_per_second: prev_cap,
+            max_resolutions_per_second: prev_res,
+        });
+        if let Err(payload) = result {
+            std::panic::resume_unwind(payload);
+        }
+    }
+
+    /// Custom non-Cosmos error type that carries an arbitrary
+    /// `dyn StdError` as its source. Used to simulate a third-party
+    /// wrapper (e.g. `azure_core::Error`) sitting between an outer
+    /// `CosmosError` and an inner `CosmosError` re-imported through a
+    /// policy / credential boundary.
+    #[derive(Debug)]
+    struct ThirdPartyWrapper {
+        source: Arc<dyn StdError + Send + Sync + 'static>,
+    }
+
+    impl fmt::Display for ThirdPartyWrapper {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("third-party wrapper")
+        }
+    }
+
+    impl StdError for ThirdPartyWrapper {
+        fn source(&self) -> Option<&(dyn StdError + 'static)> {
+            Some(self.source.as_ref())
+        }
+    }
+
+    /// Regression guard for the indirect-wrap path: when a `CosmosError`
+    /// is re-imported into another `CosmosError` via a third-party
+    /// wrapper (e.g. `azure_core::Error` from a policy boundary),
+    /// inheritance must walk the source chain — bounded by
+    /// `MAX_BACKTRACE_INHERITANCE_DEPTH` — and find the inner Cosmos
+    /// backtrace instead of paying for a fresh capture at the wrap site.
+    #[test]
+    fn wrap_inherits_backtrace_through_indirect_third_party_wrapper() {
+        // Serialize + snapshot/restore — see `BACKTRACE_TEST_LOCK`.
+        let _guard = BACKTRACE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let throttle = crate::error::backtrace::global_capture_throttle();
+        let resolution = crate::error::backtrace::global_resolution_limiter();
+        let prev_cap = throttle.capacity();
+        let prev_res = resolution.capacity();
+        let result = std::panic::catch_unwind(|| {
+            // Enable capture via the public API — trips
+            // `PROGRAMMATIC_OVERRIDE` so a concurrent first
+            // `Backtrace::capture()` can't clobber the throttle. See
+            // `wrap_inherits_backtrace_from_cosmos_source`.
+            crate::error::backtrace::set_backtrace_options(
+                crate::error::backtrace::BacktraceOptions {
+                    max_captures_per_second: 1000,
+                    max_resolutions_per_second: prev_res,
+                },
+            );
+
+            let inner = end_to_end_timeout_error("deeply nested");
+            let inner_bt_id = inner
+                .inner
+                .backtrace
+                .as_ref()
+                .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
+            assert!(
+                inner_bt_id.is_some(),
+                "inner must have a captured backtrace for this test to be meaningful",
+            );
+
+            // Wrap `inner` in a non-Cosmos third-party error type, then
+            // wrap THAT as the source of an outer `CosmosError`. The
+            // outer error's immediate source is `ThirdPartyWrapper`, not
+            // `CosmosError`, so the previous-immediate-source-only
+            // implementation would have missed the inheritance and
+            // captured a fresh backtrace at the wrap site.
+            let wrapper = ThirdPartyWrapper {
+                source: Arc::new(inner),
+            };
+            let outer = CosmosError::builder()
+                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_message("outer")
+                .with_source(wrapper)
+                .build();
+
+            let outer_bt_id = outer
+                .inner
+                .backtrace
+                .as_ref()
+                .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
+            assert_eq!(
+                outer_bt_id, inner_bt_id,
+                "outer error must inherit the inner Cosmos backtrace through the third-party wrapper, not capture a fresh one",
+            );
+        });
+        crate::error::backtrace::set_backtrace_options(crate::error::backtrace::BacktraceOptions {
+            max_captures_per_second: prev_cap,
+            max_resolutions_per_second: prev_res,
+        });
+        if let Err(payload) = result {
+            std::panic::resume_unwind(payload);
+        }
+    }
+
+    /// Bounds test: an indirect chain that exceeds
+    /// `MAX_BACKTRACE_INHERITANCE_DEPTH` does NOT inherit (so the cap is
+    /// actually enforced) and falls back to a fresh capture. This is
+    /// the deliberate trade-off: bound the per-construction walk so a
+    /// pathological or cyclic chain cannot pin a thread on the error
+    /// hot path.
+    #[test]
+    fn wrap_falls_back_to_fresh_capture_when_chain_exceeds_inheritance_depth() {
+        // Serialize + snapshot/restore — see `BACKTRACE_TEST_LOCK`.
+        let _guard = BACKTRACE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let throttle = crate::error::backtrace::global_capture_throttle();
+        let resolution = crate::error::backtrace::global_resolution_limiter();
+        let prev_cap = throttle.capacity();
+        let prev_res = resolution.capacity();
+        let result = std::panic::catch_unwind(|| {
+            // Enable capture via the public API — trips
+            // `PROGRAMMATIC_OVERRIDE`. See
+            // `wrap_inherits_backtrace_from_cosmos_source`.
+            crate::error::backtrace::set_backtrace_options(
+                crate::error::backtrace::BacktraceOptions {
+                    max_captures_per_second: 1000,
+                    max_resolutions_per_second: prev_res,
+                },
+            );
+
+            let inner = end_to_end_timeout_error("deeply nested");
+            let inner_bt_id = inner
+                .inner
+                .backtrace
+                .as_ref()
+                .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
+            assert!(inner_bt_id.is_some());
+
+            // Build a chain of `MAX_BACKTRACE_INHERITANCE_DEPTH + 1`
+            // third-party wrappers, so the inner Cosmos error sits one
+            // frame past the cap. The walk should stop before reaching
+            // it and the outer error captures a fresh backtrace.
+            let mut src: Arc<dyn StdError + Send + Sync + 'static> = Arc::new(inner);
+            for _ in 0..=MAX_BACKTRACE_INHERITANCE_DEPTH {
+                src = Arc::new(ThirdPartyWrapper {
+                    source: src.clone(),
+                });
+            }
+            let outer = CosmosError::builder()
+                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_message("outer")
+                .with_arc_source(src)
+                .build();
+
+            let outer_bt_id = outer
+                .inner
+                .backtrace
+                .as_ref()
+                .map(crate::error::backtrace::tests::backtrace_inner_arc_identity);
+            assert!(
+                outer_bt_id.is_some(),
+                "fresh capture must succeed when inheritance is bounded out"
+            );
+            assert_ne!(
+                outer_bt_id, inner_bt_id,
+                "wrap chain deeper than MAX_BACKTRACE_INHERITANCE_DEPTH must NOT inherit; a fresh backtrace must be captured at the wrap site",
+            );
+        });
+        crate::error::backtrace::set_backtrace_options(crate::error::backtrace::BacktraceOptions {
+            max_captures_per_second: prev_cap,
+            max_resolutions_per_second: prev_res,
+        });
+        if let Err(payload) = result {
+            std::panic::resume_unwind(payload);
+        }
     }
 
     /// Documents — by way of full-string equality on the deterministic

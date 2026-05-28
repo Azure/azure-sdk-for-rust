@@ -133,36 +133,57 @@ impl Default for BacktraceOptions {
 ///
 /// Backtrace tuning is process-scoped (the underlying limiters are
 /// process-global atomics — see the module docs for why per-runtime state
-/// isn't viable on the error-construction path). Repeated calls follow
-/// last-writer-wins semantics: the most recent call's options become the
-/// active configuration. Calling this function also suppresses the
-/// otherwise-lazy env-var read that would happen on first
-/// `Backtrace::capture` / `Backtrace::rendered`.
+/// isn't viable on the error-construction path). Repeated programmatic
+/// calls follow last-writer-wins semantics: the most recent call's
+/// options become the active configuration.
 ///
-/// Typical use is once at process / runtime startup. Tests that mutate
-/// the limiters mid-run can still do so via the internal test helpers;
-/// concurrent calls between threads race in the standard last-writer-wins
-/// way.
+/// After this function returns, the env-var-derived lazy init is
+/// **permanently suppressed** — any in-flight or future
+/// `ensure_initialized()` call observes `PROGRAMMATIC_OVERRIDE = true`
+/// and refuses to apply env defaults that would clobber the operator's
+/// setting. This closes the race where a concurrent first
+/// `Backtrace::capture` could otherwise have overwritten the
+/// just-applied programmatic capacities with `0` (env-default when
+/// `RUST_BACKTRACE` is unset).
+///
+/// Typical use is once at process / runtime startup. Concurrent
+/// programmatic calls race in the standard last-writer-wins way.
 pub fn set_backtrace_options(options: BacktraceOptions) {
-    apply_options(options);
+    // Mark first to block any concurrent `ensure_initialized()` from
+    // overwriting our about-to-be-applied capacities with env defaults.
+    // `Release` pairs with the `Acquire` load in `ensure_initialized`.
+    PROGRAMMATIC_OVERRIDE.store(true, Ordering::Release);
+    global_capture_throttle().set_capacity(options.max_captures_per_second);
+    global_resolution_limiter().set_capacity(options.max_resolutions_per_second);
 }
 
 /// Idempotent lazy initializer that applies the env-var-derived defaults
-/// the first time backtrace machinery is exercised, unless a programmatic
-/// call to [`set_backtrace_options`] already ran. Cheap fast-path: a
-/// relaxed-load of an `AtomicBool` after the first call.
+/// the first time backtrace machinery is exercised, **unless** a
+/// programmatic call to [`set_backtrace_options`] has already run (or
+/// races with this one). Cheap fast-path: a relaxed-load of a `OnceLock`
+/// after the first call.
+///
+/// Implementation note: env-derived init runs at most once per process
+/// via [`OnceLock`], and the init closure first checks
+/// `PROGRAMMATIC_OVERRIDE` so a programmatic call that races with a
+/// first `Backtrace::capture` cannot be clobbered. The previous
+/// `AtomicBool`-gated implementation had a window where a thread that
+/// observed `INITIALIZED == false`, computed env defaults, and was then
+/// pre-empted could overwrite a concurrently-applied programmatic
+/// setting with `0` (env default when `RUST_BACKTRACE` is unset). See
+/// finding #4 in the review thread for the timeline.
 pub(crate) fn ensure_initialized() {
-    if INITIALIZED.load(Ordering::Relaxed) {
-        return;
-    }
-    let options = resolve_from_env();
-    apply_options(options);
-}
-
-fn apply_options(options: BacktraceOptions) {
-    global_capture_throttle().set_capacity(options.max_captures_per_second);
-    global_resolution_limiter().set_capacity(options.max_resolutions_per_second);
-    INITIALIZED.store(true, Ordering::Relaxed);
+    ENV_INIT_DONE.get_or_init(|| {
+        // If a programmatic override has already been applied (or is
+        // being applied concurrently and won the `Release` store
+        // sequencing against our `Acquire` load), do NOT touch the
+        // capacities — the operator's setting is authoritative.
+        if !PROGRAMMATIC_OVERRIDE.load(Ordering::Acquire) {
+            let options = resolve_from_env();
+            global_capture_throttle().set_capacity(options.max_captures_per_second);
+            global_resolution_limiter().set_capacity(options.max_resolutions_per_second);
+        }
+    });
 }
 
 fn resolve_from_env() -> BacktraceOptions {
@@ -199,10 +220,19 @@ fn parse_env_u32(raw: Option<&str>, default: u32) -> u32 {
         .unwrap_or(default)
 }
 
-/// `true` once either [`set_backtrace_options`] or [`ensure_initialized`]
-/// has applied a configuration. Suppresses the env-var-derived lazy init
-/// on the hot capture/render path after the first observation.
-static INITIALIZED: AtomicBool = AtomicBool::new(false);
+/// Set to `true` (with `Release` ordering) by [`set_backtrace_options`]
+/// before it writes any capacity. [`ensure_initialized`] checks this with
+/// `Acquire` ordering inside its `OnceLock` init closure and skips the
+/// env-derived capacity writes when set — preventing a concurrent first
+/// capture from overwriting a just-applied programmatic configuration
+/// with env defaults.
+static PROGRAMMATIC_OVERRIDE: AtomicBool = AtomicBool::new(false);
+
+/// Runs the env-derived init at most once per process. Hit on every
+/// `Backtrace::capture` / `Backtrace::rendered` call as the fast-path
+/// gate; after the first init the closure is never re-executed and
+/// `get_or_init` reduces to a relaxed load.
+static ENV_INIT_DONE: OnceLock<()> = OnceLock::new();
 
 /// Returns `true` when the stdlib backtrace environment variables ask
 /// for library-generated backtraces, matching stdlib precedence:
@@ -1170,5 +1200,68 @@ pub(crate) mod tests {
         // Zero is a valid override (operator explicitly disables) and
         // beats the non-zero default.
         assert_eq!(parse_env_u32(Some("0"), 99), 0);
+    }
+
+    /// Regression guard for the `set_backtrace_options` ↔
+    /// `ensure_initialized` race (review finding #4).
+    ///
+    /// Operator timeline that must succeed:
+    ///
+    /// 1. `set_backtrace_options({captures: 12345, resolutions: 67})`
+    ///    runs (typically at startup).
+    /// 2. Some thread later calls `Backtrace::capture` for the first
+    ///    time, which triggers `ensure_initialized`.
+    /// 3. The operator's capacities must **survive** the lazy env-init
+    ///    \u2014 a previous implementation would clobber them with
+    ///    `(0, 0)` if `RUST_BACKTRACE` was unset.
+    ///
+    /// We can't fully exercise the *concurrent* race deterministically
+    /// in a single-process unit test, but we can prove the contract:
+    /// once `set_backtrace_options` has run, a subsequent
+    /// `ensure_initialized` is a structural no-op for the capacities.
+    /// Combined with the `PROGRAMMATIC_OVERRIDE` flag's
+    /// `Release`-before-write / `Acquire`-before-check ordering, this
+    /// proves the concurrent case too: any `ensure_initialized` that
+    /// happens-after `set_backtrace_options`'s `Release` store sees
+    /// the override and refuses to write.
+    #[test]
+    fn set_backtrace_options_wins_against_subsequent_ensure_initialized() {
+        let _guard = TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+        // Snapshot existing state so we don't leak into sibling tests.
+        let throttle = global_capture_throttle();
+        let resolution = global_resolution_limiter();
+        let prev_cap = throttle.capacity();
+        let prev_res = resolution.capacity();
+        let prev_override = PROGRAMMATIC_OVERRIDE.swap(false, Ordering::AcqRel);
+
+        // Apply operator configuration via the public API.
+        set_backtrace_options(BacktraceOptions {
+            max_captures_per_second: 12_345,
+            max_resolutions_per_second: 67,
+        });
+        assert_eq!(throttle.capacity(), 12_345);
+        assert_eq!(resolution.capacity(), 67);
+
+        // Now drive `ensure_initialized` — even though `ENV_INIT_DONE`
+        // may not yet have been populated by another test in this run,
+        // the `PROGRAMMATIC_OVERRIDE` guard must keep the env-derived
+        // init from clobbering the operator's values.
+        ensure_initialized();
+        assert_eq!(
+            throttle.capacity(),
+            12_345,
+            "ensure_initialized() must not clobber a prior set_backtrace_options() capture capacity",
+        );
+        assert_eq!(
+            resolution.capacity(),
+            67,
+            "ensure_initialized() must not clobber a prior set_backtrace_options() resolution capacity",
+        );
+
+        // Restore.
+        throttle.set_capacity(prev_cap);
+        resolution.set_capacity(prev_res);
+        PROGRAMMATIC_OVERRIDE.store(prev_override, Ordering::Release);
     }
 }
