@@ -154,10 +154,35 @@ fn classify_for_azure_core(err: &CosmosError) -> azure_core::error::ErrorKind {
 
     // Primary discriminator: did we get a wire response from Cosmos?
     if err.0.is_from_wire() {
+        // Surface the response body (the typical HTTP error JSON, e.g.
+        // `{"code":"BadRequest","message":"..."}`) AND the
+        // Cosmos-typed headers (reconstructed back to raw form by
+        // `CosmosResponseHeaders::to_raw_headers`) as the `raw_response`
+        // so callers consuming `azure_core::Error` without downcasting
+        // still get the wire payload + headers. Callers that want the
+        // already-typed projection can still
+        // `downcast_ref::<CosmosError>()` and call
+        // `err.response().headers()`.
+        let raw_response = err.response().and_then(|resp| {
+            use azure_data_cosmos_driver::models::ResponseBody;
+            let body = match resp.body() {
+                ResponseBody::Bytes(b) => b.clone(),
+                ResponseBody::NoPayload => azure_core::Bytes::new(),
+                // `Items` is the query / feed response shape and never
+                // appears on the error path. Skip to avoid synthesizing
+                // a misleading concatenation.
+                ResponseBody::Items(_) => return None,
+            };
+            Some(Box::new(azure_core::http::RawResponse::from_bytes(
+                status.status_code(),
+                resp.headers().to_raw_headers(),
+                body,
+            )))
+        });
         return CoreKind::HttpResponse {
             status: status.status_code(),
             error_code: sub.map(|s| s.value().to_string()),
-            raw_response: None,
+            raw_response,
         };
     }
 

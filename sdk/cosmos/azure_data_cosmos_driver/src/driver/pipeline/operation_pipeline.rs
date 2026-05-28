@@ -397,7 +397,7 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
             OperationAction::SessionRetry { new_state } => {
                 // Retry to a different region — the 404/1002 is likely a
@@ -412,7 +412,7 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
             OperationAction::Abort { error } => {
                 // Flush deferred write-path effects if the abort status
@@ -1169,17 +1169,27 @@ fn advance_to_next_attempt(
 ///
 /// On timeout, the diagnostics builder is updated with
 /// `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` so downstream telemetry
+/// Enforces the operation's end-to-end deadline, surfacing a typed
+/// `408 / CLIENT_OPERATION_TIMEOUT` error when exceeded so callers
 /// can distinguish a client-side end-to-end timeout from a service 408.
+///
+/// Takes the [`DiagnosticsContextBuilder`] by value so the timeout-error
+/// path can finalize diagnostics and graft them onto the synthesized
+/// error in one step (without that graft, callers reading
+/// `error.diagnostics()` would see `None` on every end-to-end-timeout
+/// outcome even though the pipeline tracked every attempt). The builder
+/// is returned unchanged on the happy path so the caller can keep
+/// mutating it on subsequent iterations.
 fn enforce_deadline_or_timeout(
     deadline: Option<Instant>,
     options: &OperationOptionsView<'_>,
-    diagnostics: &mut DiagnosticsContextBuilder,
-) -> crate::error::Result<()> {
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> Result<DiagnosticsContextBuilder, crate::error::CosmosError> {
     let Some(d) = deadline else {
-        return Ok(());
+        return Ok(diagnostics);
     };
     if Instant::now() < d {
-        return Ok(());
+        return Ok(diagnostics);
     }
 
     let timeout_duration = options
@@ -1191,6 +1201,7 @@ fn enforce_deadline_or_timeout(
         azure_core::http::StatusCode::RequestTimeout,
         Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
     );
+    let diagnostics_ctx = Arc::new(diagnostics.complete());
     Err(crate::error::CosmosError::builder()
         .with_status(crate::models::CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
@@ -1199,6 +1210,7 @@ fn enforce_deadline_or_timeout(
         .with_message(format!(
             "end-to-end operation timeout exceeded ({timeout_duration:?})"
         ))
+        .with_diagnostics(diagnostics_ctx)
         .build())
 }
 
@@ -3081,31 +3093,38 @@ mod tests {
     #[test]
     fn enforce_deadline_none_is_ok() {
         let options = empty_options_view();
-        let mut diagnostics = test_diagnostics();
-        let result = super::enforce_deadline_or_timeout(None, &options, &mut diagnostics);
+        let diagnostics = test_diagnostics();
+        let result = super::enforce_deadline_or_timeout(None, &options, diagnostics);
         assert!(result.is_ok());
     }
 
     #[test]
     fn enforce_deadline_in_future_is_ok() {
         let options = empty_options_view();
-        let mut diagnostics = test_diagnostics();
+        let diagnostics = test_diagnostics();
         let deadline = std::time::Instant::now() + Duration::from_secs(60);
-        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, diagnostics);
         assert!(result.is_ok());
     }
 
     #[test]
-    fn enforce_deadline_in_past_returns_timeout_error() {
+    fn enforce_deadline_in_past_returns_timeout_error_with_diagnostics() {
         let options = empty_options_view();
-        let mut diagnostics = test_diagnostics();
+        let diagnostics = test_diagnostics();
         let deadline = std::time::Instant::now() - Duration::from_millis(1);
-        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, diagnostics);
         let err = result.expect_err("past deadline should produce an error");
         let msg = err.to_string();
         assert!(
             msg.contains("end-to-end operation timeout exceeded"),
             "unexpected error message: {msg}"
+        );
+        // Diagnostics must be attached so callers reading
+        // `error.diagnostics()` on a timeout outcome get the
+        // pipeline's tracked retry history rather than `None`.
+        assert!(
+            err.diagnostics().is_some(),
+            "timeout error must carry finalized diagnostics"
         );
     }
 }

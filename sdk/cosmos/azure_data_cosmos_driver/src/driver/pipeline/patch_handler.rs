@@ -1054,7 +1054,7 @@ mod tests {
         // every input Arc — the aggregator returns a fresh context.
         for input in &attempt_diags {
             assert!(
-                !Arc::ptr_eq(diag, input),
+                !Arc::ptr_eq(&diag, input),
                 "exhaustion error must surface the aggregated context, not any input Arc",
             );
         }

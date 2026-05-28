@@ -895,7 +895,7 @@ mod tests {
             .diagnostics()
             .expect("outer error must inherit inner diagnostics");
         assert!(
-            std::sync::Arc::ptr_eq(outer_diag, &diag),
+            std::sync::Arc::ptr_eq(&outer_diag, &diag),
             "outer diagnostics must be the same Arc as the inner's"
         );
     }

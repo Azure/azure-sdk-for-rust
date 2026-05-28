@@ -1470,7 +1470,10 @@ mod tests {
             .build();
 
         assert!(
-            Arc::ptr_eq(&attached.diagnostics().expect("diagnostics attached"), &diag),
+            Arc::ptr_eq(
+                &attached.diagnostics().expect("diagnostics attached"),
+                &diag
+            ),
             "builder must store the supplied diagnostics Arc verbatim"
         );
         assert!(
