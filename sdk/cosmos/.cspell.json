@@ -203,6 +203,7 @@
     "usseceast",
     "ussecwest",
     "ussecwestcentral",
+    "vnext",
     "westcentralus",
     "westeurope",
     "westindia",
@@ -214,7 +215,8 @@
   ],
   "ignorePaths": [
     "live-platform-matrix.json",
-    "release-platform-matrix.json"
+    "release-platform-matrix.json",
+    "vnext-emulator-matrix.json"
   ],
   "overrides": [
     {

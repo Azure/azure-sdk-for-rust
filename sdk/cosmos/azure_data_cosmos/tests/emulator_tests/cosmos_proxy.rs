@@ -96,7 +96,7 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
     } else {
         env_val
     };
-    let parsed: azure_data_cosmos::ConnectionString = conn_str.parse()?;
+    let parsed: azure_data_cosmos_driver::models::ConnectionString = conn_str.parse()?;
 
     let mut builder = azure_data_cosmos::CosmosClient::builder().with_proxy_allowed(true);
 
@@ -105,7 +105,7 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
         builder = builder.with_allow_emulator_invalid_certificates(true);
     }
 
-    let endpoint: azure_data_cosmos::CosmosAccountEndpoint = parsed.account_endpoint.parse()?;
+    let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
 
     // Spawn the build + request so we can wait on the proxy signal instead.
     // The driver probes the endpoint during build(), which will go through the
@@ -114,9 +114,9 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
     let request_handle = tokio::spawn(async move {
         let client = builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                azure_data_cosmos::AccountReference::with_authentication_key(
                     endpoint,
-                    parsed.account_key,
+                    parsed.account_key().clone(),
                 ),
                 azure_data_cosmos::RoutingStrategy::ProximityTo(azure_data_cosmos::Region::EAST_US),
             )

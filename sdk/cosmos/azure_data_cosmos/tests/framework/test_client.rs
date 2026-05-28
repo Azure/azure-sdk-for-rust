@@ -14,9 +14,10 @@ use azure_data_cosmos::options::ItemReadOptions;
 use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::Region;
 use azure_data_cosmos::{
-    clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
-    Query, RoutingStrategy,
+    clients::DatabaseClient, CosmosClient, CreateContainerOptions, PartitionKey, Query,
+    RoutingStrategy,
 };
+use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
 use std::future::Future;
 use std::pin::Pin;
@@ -340,7 +341,7 @@ impl TestClient {
             }
         }
 
-        let credential = connection_string.account_key.clone();
+        let credential = connection_string.account_key().clone();
         let mut builder = azure_data_cosmos::CosmosClient::builder();
 
         // Determine the region selection strategy
@@ -368,11 +369,11 @@ impl TestClient {
             builder = builder.with_fault_injection(fault_rules);
         }
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            connection_string.account_endpoint.parse()?;
+        let endpoint: azure_data_cosmos::AccountEndpoint =
+            connection_string.account_endpoint().parse()?;
         let cosmos_client = builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(endpoint, credential),
+                azure_data_cosmos::AccountReference::with_authentication_key(endpoint, credential),
                 strategy,
             )
             .await?;
@@ -477,7 +478,6 @@ impl TestClient {
                     let test_result = Box::pin(test(&run)).await;
 
                     if let Err(e) = &test_result {
-                        println!("Error running test: {}", e);
                         // Check if the error is a 429
                         let is_429 = e.to_string().contains("TooManyRequests")
                             || e.to_string().contains("Too Many Requests");
@@ -502,7 +502,18 @@ impl TestClient {
             run.cleanup().await?;
 
             match result {
-                Ok(test_result) => test_result,
+                Ok(test_result) => {
+                    if let Err(e) = &test_result {
+                        if e.downcast_ref::<super::InconclusiveError>().is_some() {
+                            // Make it clear to the reader that the failure is an inconclusive one
+                            eprintln!(concat!("This test returned an inconclusive result. ",
+                                "This does NOT indicate a failure, but rather that the test was unable to complete successfully ",
+                                "due to an external factor (e.g. a split not completing in time). ",
+                                "Inconclusive results do not need to block PRs unless the PR is specifically touching code related to this test."));
+                        }
+                    }
+                    test_result
+                }
                 Err(_) => Err(format!("Test timed out after {} seconds", timeout.as_secs()).into()),
             }
         } else if test_mode == CosmosTestMode::Required {
@@ -891,8 +902,8 @@ impl TestRunContext {
             )
         })?;
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            parsed.account_endpoint.parse().map_err(|e| {
+        let endpoint: azure_data_cosmos::AccountEndpoint =
+            parsed.account_endpoint().parse().map_err(|e| {
                 azure_core::Error::new(
                     azure_core::error::ErrorKind::Other,
                     format!("Failed to parse account endpoint: {}", e),
@@ -907,9 +918,9 @@ impl TestRunContext {
 
         builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                azure_data_cosmos::AccountReference::with_authentication_key(
                     endpoint,
-                    parsed.account_key.clone(),
+                    parsed.account_key().clone(),
                 ),
                 RoutingStrategy::ProximityTo(region),
             )

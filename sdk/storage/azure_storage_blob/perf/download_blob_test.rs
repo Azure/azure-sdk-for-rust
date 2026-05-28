@@ -15,6 +15,7 @@ use azure_core_test::{
     TestContext,
 };
 use azure_storage_blob::{BlobClient, BlobContainerClient};
+use azure_storage_blob_test::get_test_credential;
 use bytes::BytesMut;
 use futures::{FutureExt, StreamExt, TryStreamExt};
 
@@ -196,7 +197,7 @@ impl PerfTest for DownloadBlobTest {
         // Setup code before running the test
 
         let recording = context.recording();
-        let credential = recording.credential();
+        let credential = get_test_credential(recording);
         let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
         let endpoint = match &self.endpoint {
             Some(e) => e.clone(),

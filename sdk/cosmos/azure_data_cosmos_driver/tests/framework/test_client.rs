@@ -558,7 +558,7 @@ impl DriverTestRunContext {
     ///
     /// Mirrors [`read_item`](Self::read_item)'s shape but builds the
     /// [`CosmosOperation::patch_item`] body from a
-    /// [`PatchSpec`](azure_data_cosmos_driver::models::PatchSpec). The
+    /// [`PatchInstructions`](azure_data_cosmos_driver::models::PatchInstructions). The
     /// returned [`CosmosResponse`] is the synthetic response produced by the
     /// patch handler — its body is the locally-merged post-image and its
     /// status/diagnostics are inherited from the underlying conditional
@@ -571,7 +571,7 @@ impl DriverTestRunContext {
         container: &ContainerReference,
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
-        patch: &azure_data_cosmos_driver::models::PatchSpec,
+        patch: &azure_data_cosmos_driver::models::PatchInstructions,
         max_attempts: Option<std::num::NonZeroU8>,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
@@ -635,12 +635,24 @@ impl DriverTestRunContext {
             "Should use data plane pipeline for item operations"
         );
 
-        // Check transport security for emulator
-        if first_request.endpoint().contains("localhost") {
+        // Check transport security for emulator. The legacy emulator and the
+        // vnext emulator in HTTPS mode use a self-signed cert and surface as
+        // `EmulatorWithInsecureCertificates`. The vnext emulator in HTTP mode
+        // has no TLS at all and is classified as `Secure` today (the enum
+        // predates plain-HTTP emulator support — tracked separately).
+        if first_request.endpoint().contains("localhost")
+            || first_request.endpoint().contains("127.0.0.1")
+        {
+            let expected = if first_request.endpoint().starts_with("https://") {
+                TransportSecurity::EmulatorWithInsecureCertificates
+            } else {
+                TransportSecurity::Secure
+            };
             assert_eq!(
                 first_request.transport_security(),
-                TransportSecurity::EmulatorWithInsecureCertificates,
-                "Should use emulator transport security for localhost"
+                expected,
+                "Unexpected transport security for emulator endpoint {}",
+                first_request.endpoint()
             );
         }
 

@@ -71,7 +71,7 @@ fn request_target_overrides(
             ..
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
-            feed_range: Some(range),
+            feed_range: range,
             continuation,
             ..Default::default()
         },
@@ -1053,7 +1053,7 @@ impl CosmosDriver {
         // Typed changefeed headers (`a-im: Incremental feed`, server-decides page size).
         let mut request_headers = operation.request_headers().clone();
         request_headers.incremental_feed = true;
-        request_headers.max_item_count = Some(crate::models::MaxItemCount::ServerDecides);
+        request_headers.max_item_count = Some(crate::models::MaxItemCountHint::ServerDecides);
         operation = operation.with_request_headers(request_headers);
 
         let options = OperationOptions::default();
@@ -1452,7 +1452,7 @@ impl CosmosDriver {
             operation,
             overrides,
             &effective_options,
-            options.custom_headers(),
+            options.custom_headers.as_ref(),
             self.location_state_store.as_ref(),
             &transport,
             &endpoint,
@@ -1626,7 +1626,7 @@ impl CosmosDriver {
                             azure_core::error::ErrorKind::DataConversion,
                             "an opaque server continuation token cannot be used to resume a \
                              cross-partition query; use the SDK-issued continuation token from \
-                             FeedPageIterator::to_continuation_token()",
+                             QueryPageIterator::to_continuation_token()",
                         ));
                     }
                     Some(PipelineNodeState::Request {
@@ -2557,16 +2557,41 @@ mod tests {
         )
         .unwrap();
         let overrides = request_target_overrides(
-            RequestTarget::EffectivePartitionKeyRange {
-                range: range.clone(),
-                partition_key_range_id: "merged".to_string(),
-            },
+            RequestTarget::effective_partition_key_range(
+                range.clone(),
+                "merged".to_string(),
+                crate::models::FeedRange::new(
+                    EffectivePartitionKey::from("00"),
+                    EffectivePartitionKey::from("40"),
+                )
+                .unwrap(),
+            ),
             Some("ct".to_string()),
         );
 
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("merged"));
         assert_eq!(overrides.continuation.as_deref(), Some("ct"));
         assert_eq!(overrides.feed_range, Some(range));
+    }
+
+    #[test]
+    fn effective_partition_key_range_override_omits_exact_feed_range() {
+        let range = crate::models::FeedRange::new(
+            EffectivePartitionKey::from("10"),
+            EffectivePartitionKey::from("20"),
+        )
+        .unwrap();
+        let overrides = request_target_overrides(
+            RequestTarget::effective_partition_key_range(
+                range.clone(),
+                "pkrange".to_string(),
+                range,
+            ),
+            None,
+        );
+
+        assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
+        assert_eq!(overrides.feed_range, None);
     }
 
     #[tokio::test]

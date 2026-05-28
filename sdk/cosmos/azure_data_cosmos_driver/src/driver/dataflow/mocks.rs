@@ -215,14 +215,12 @@ pub(crate) fn logical_partition_target() -> RequestTarget {
 
 /// Creates a `RequestTarget` for an EPK range ("" to "80", partition key range ID "0").
 pub(crate) fn epk_range_target() -> RequestTarget {
-    RequestTarget::EffectivePartitionKeyRange {
-        range: FeedRange::new(
-            EffectivePartitionKey::min(),
-            EffectivePartitionKey::from("80"),
-        )
-        .unwrap(),
-        partition_key_range_id: "0".to_string(),
-    }
+    let range = FeedRange::new(
+        EffectivePartitionKey::MIN,
+        EffectivePartitionKey::from("80"),
+    )
+    .unwrap();
+    RequestTarget::effective_partition_key_range(range.clone(), "0".to_string(), range)
 }
 
 /// Creates a test response with the given body.

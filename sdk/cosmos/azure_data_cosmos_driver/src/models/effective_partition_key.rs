@@ -12,6 +12,7 @@ use crate::models::{
     PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
 };
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Write;
 
@@ -23,18 +24,14 @@ use std::fmt::Write;
 /// where an EPK is expected.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct EffectivePartitionKey(String);
+pub struct EffectivePartitionKey(Cow<'static, str>);
 
 impl EffectivePartitionKey {
-    /// Returns the minimum EPK (empty string), representing the start of the EPK space.
-    pub fn min() -> Self {
-        Self(String::new())
-    }
+    /// The minimum EPK (empty string), representing the start of the EPK space.
+    pub const MIN: Self = Self(Cow::Borrowed(""));
 
-    /// Returns the maximum exclusive EPK ("FF"), representing the upper bound of the EPK space.
-    pub fn max() -> Self {
-        Self("FF".to_string())
-    }
+    /// The maximum exclusive EPK (`"FF"`), representing the upper bound of the EPK space.
+    pub const MAX: Self = Self(Cow::Borrowed("FF"));
 
     /// Returns a reference to the inner string.
     pub fn as_str(&self) -> &str {
@@ -51,10 +48,10 @@ impl EffectivePartitionKey {
         version: PartitionKeyVersion,
     ) -> Self {
         if pk_values.is_empty() {
-            return Self::min();
+            return Self::MIN;
         }
         if pk_values.len() == 1 && pk_values[0].is_infinity() {
-            return Self::max();
+            return Self::MAX;
         }
 
         let hex = match kind {
@@ -168,13 +165,13 @@ impl PartialEq<&str> for EffectivePartitionKey {
 
 impl From<String> for EffectivePartitionKey {
     fn from(s: String) -> Self {
-        Self(s)
+        Self(Cow::Owned(s))
     }
 }
 
 impl From<&str> for EffectivePartitionKey {
     fn from(s: &str) -> Self {
-        Self(s.to_owned())
+        Self(Cow::Owned(s.to_owned()))
     }
 }
 
@@ -204,8 +201,8 @@ impl AsRef<str> for EffectivePartitionKey {
 /// See: <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5260>
 impl Ord for EffectivePartitionKey {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let a = self.0.as_str();
-        let b = other.0.as_str();
+        let a: &str = &self.0;
+        let b: &str = &other.0;
         let common = a.len().min(b.len());
         match a[..common].cmp(&b[..common]) {
             std::cmp::Ordering::Equal => {
@@ -317,15 +314,15 @@ mod tests {
     fn empty_pk_returns_min() {
         let result =
             EffectivePartitionKey::compute(&[], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
-        assert_eq!(result, EffectivePartitionKey::min());
+        assert_eq!(result, EffectivePartitionKey::MIN.clone());
     }
 
     #[test]
     fn infinity_pk_returns_max() {
-        let inf = PartitionKeyValue::infinity();
+        let inf = PartitionKeyValue::INFINITY;
         let result =
             EffectivePartitionKey::compute(&[inf], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
-        assert_eq!(result, EffectivePartitionKey::max());
+        assert_eq!(result, EffectivePartitionKey::MAX.clone());
     }
 
     /// V2 test cases ported from Java SDK tests via the Rust SDK's hash.rs.
@@ -583,7 +580,7 @@ mod tests {
     fn multi_hash_with_undefined() {
         let pk = vec![
             PartitionKeyValue::from("tenant1".to_string()),
-            PartitionKeyValue::undefined(),
+            PartitionKeyValue::UNDEFINED,
         ];
         let multi = EffectivePartitionKey::compute(
             &pk,
@@ -602,7 +599,7 @@ mod tests {
 
         // Second segment: hash of Undefined (0x00 byte)
         let single_undef = EffectivePartitionKey::compute(
-            &[PartitionKeyValue::undefined()],
+            &[PartitionKeyValue::UNDEFINED],
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );

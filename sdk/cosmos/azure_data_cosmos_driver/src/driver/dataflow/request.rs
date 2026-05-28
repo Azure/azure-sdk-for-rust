@@ -27,30 +27,49 @@ pub(crate) enum RequestTarget {
     /// An EPK slice that must be queried inside a broader physical partition key range
     /// (assuming the cached topology remains valid).
     EffectivePartitionKeyRange {
-        /// EPK range scoped by this request.
-        range: FeedRange,
+        /// EPK range scoped by this request, when narrower than `partition_key_range`.
+        range: Option<FeedRange>,
         /// Partition key range ID containing `range`.
         partition_key_range_id: String,
+        /// EPK range owned by the physical partition key range ID.
+        partition_key_range: FeedRange,
     },
 }
 
 impl RequestTarget {
-    /// Returns the EPK slice owned by this request target, if any.
-    fn owned_range(&self) -> Option<&FeedRange> {
-        match self {
-            RequestTarget::EffectivePartitionKeyRange { range, .. } => Some(range),
-            _ => None,
+    /// Creates a target for an effective partition key range inside a physical partition.
+    pub(crate) fn effective_partition_key_range(
+        range: FeedRange,
+        partition_key_range_id: String,
+        partition_key_range: FeedRange,
+    ) -> Self {
+        let range = if range == partition_key_range {
+            None
+        } else {
+            Some(range)
+        };
+
+        Self::EffectivePartitionKeyRange {
+            range,
+            partition_key_range_id,
+            partition_key_range,
         }
     }
 
-    /// Returns `true` if this target's EPK range starts at the same point as `parent_range`.
-    fn covers_start_of(&self, parent_range: &FeedRange) -> bool {
-        self.owned_range()
-            .is_some_and(|range| range.min_inclusive() == parent_range.min_inclusive())
+    /// Returns the EPK slice owned by this request target, if any.
+    fn owned_range(&self) -> Option<&FeedRange> {
+        match self {
+            RequestTarget::EffectivePartitionKeyRange {
+                range,
+                partition_key_range,
+                ..
+            } => Some(range.as_ref().unwrap_or(partition_key_range)),
+            _ => None,
+        }
     }
 }
 
-fn intersect_feed_ranges(left: &FeedRange, right: &FeedRange) -> Option<FeedRange> {
+pub(crate) fn intersect_feed_ranges(left: &FeedRange, right: &FeedRange) -> Option<FeedRange> {
     let min = if left.min_inclusive() >= right.min_inclusive() {
         left.min_inclusive().clone()
     } else {
@@ -253,8 +272,12 @@ impl Request {
                         self.handle_response(response)
                     })
             }
-            RequestTarget::EffectivePartitionKeyRange { range, .. } => {
-                let range = range.clone();
+            RequestTarget::EffectivePartitionKeyRange { .. } => {
+                let range = self
+                    .target
+                    .owned_range()
+                    .expect("effective partition key range target must have an owned range")
+                    .clone();
                 self.split_for_topology_change(context, &range).await
             }
         }
@@ -271,6 +294,11 @@ impl Request {
             .resolve_ranges(range, PartitionRoutingRefresh::ForceRefresh)
             .await?;
 
+        let continuation = match &self.state {
+            RequestState::Continuing { continuation } => Some(continuation.clone()),
+            _ => None,
+        };
+
         let replacement_nodes: Vec<Box<dyn PipelineNode>> = resolved
             .into_iter()
             .map(|resolved_range| {
@@ -282,24 +310,17 @@ impl Request {
                     "topology provider must return ranges that overlap the request's owned EPK range",
                 );
 
-                let target = RequestTarget::EffectivePartitionKeyRange {
-                    range: owned_range,
+                let target = RequestTarget::effective_partition_key_range(
+                    owned_range,
                     partition_key_range_id,
-                };
+                    resolved_range,
+                );
 
-                // Carry over the server continuation to the first replacement that
-                // covers the same starting EPK. For a split, only the left-most child
-                // inherits the continuation since it resumes where this node left off.
-                let continuation = match (target.covers_start_of(range), &self.state) {
-                    (
-                        true,
-                        RequestState::Continuing {
-                            continuation: latest_server_continuation,
-                        },
-                    ) => Some(latest_server_continuation.clone()),
-                    _ => None,
-                };
-                Box::new(Request::new(self.operation.clone(), target, continuation))
+                Box::new(Request::new(
+                    self.operation.clone(),
+                    target,
+                    continuation.clone(),
+                ))
                     as Box<dyn PipelineNode>
             })
             .collect();
@@ -441,7 +462,7 @@ mod tests {
         continuation: Option<&str>,
     ) -> RequestSpec {
         request_spec(
-            effective_partition_key_range_target(min, max, partition_key_range_id),
+            effective_partition_key_range_target(min, max, partition_key_range_id, min, max),
             continuation,
         )
     }
@@ -450,10 +471,18 @@ mod tests {
         min: &str,
         max: &str,
         partition_key_range_id: &str,
+        partition_min: &str,
+        partition_max: &str,
         continuation: Option<&str>,
     ) -> RequestSpec {
         request_spec(
-            effective_partition_key_range_target(min, max, partition_key_range_id),
+            effective_partition_key_range_target(
+                min,
+                max,
+                partition_key_range_id,
+                partition_min,
+                partition_max,
+            ),
             continuation,
         )
     }
@@ -525,15 +554,22 @@ mod tests {
         min: &str,
         max: &str,
         partition_key_range_id: &str,
+        partition_min: &str,
+        partition_max: &str,
     ) -> RequestTarget {
-        RequestTarget::EffectivePartitionKeyRange {
-            range: FeedRange::new(
+        RequestTarget::effective_partition_key_range(
+            FeedRange::new(
                 EffectivePartitionKey::from(min),
                 EffectivePartitionKey::from(max),
             )
             .unwrap(),
-            partition_key_range_id: partition_key_range_id.to_string(),
-        }
+            partition_key_range_id.to_string(),
+            FeedRange::new(
+                EffectivePartitionKey::from(partition_min),
+                EffectivePartitionKey::from(partition_max),
+            )
+            .unwrap(),
+        )
     }
 
     #[tokio::test]
@@ -653,7 +689,7 @@ mod tests {
             ]],
             vec![
                 partition_key_request("", "40", "1", Some("server-token")),
-                partition_key_request("40", "80", "2", None),
+                partition_key_request("40", "80", "2", Some("server-token")),
             ],
         )
         .await;
@@ -668,8 +704,8 @@ mod tests {
             ],
             vec![vec![physical_partition("", "80", "merged")]],
             vec![
-                effective_partition_key_request("", "40", "merged", Some("merge-token")),
-                effective_partition_key_request("40", "80", "merged", None),
+                effective_partition_key_request("", "40", "merged", "", "80", Some("merge-token")),
+                effective_partition_key_request("40", "80", "merged", "", "80", None),
             ],
         )
         .await;
@@ -700,8 +736,8 @@ mod tests {
     async fn topology_rewrite_can_return_from_merged_epk_slices_to_exact_pk_ranges() {
         assert_topology_rewrite(
             vec![
-                effective_partition_key_request("", "40", "merged", Some("ct")),
-                effective_partition_key_request("40", "80", "merged", None),
+                effective_partition_key_request("", "40", "merged", "", "80", Some("ct")),
+                effective_partition_key_request("40", "80", "merged", "", "80", None),
             ],
             vec![vec![
                 physical_partition("", "40", "left"),
@@ -737,10 +773,10 @@ mod tests {
             ],
             vec![
                 partition_key_request("00", "10", "split-a", Some("ct")),
-                effective_partition_key_request("10", "20", "split-b", None),
-                effective_partition_key_request("20", "30", "split-b", None),
-                effective_partition_key_request("30", "40", "split-c", None),
-                effective_partition_key_request("40", "50", "split-c", None),
+                effective_partition_key_request("10", "20", "split-b", "10", "30", Some("ct")),
+                effective_partition_key_request("20", "30", "split-b", "10", "30", None),
+                effective_partition_key_request("30", "40", "split-c", "30", "50", None),
+                effective_partition_key_request("40", "50", "split-c", "30", "50", None),
                 partition_key_request("50", "80", "split-d", None),
             ],
         )

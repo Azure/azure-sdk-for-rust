@@ -183,20 +183,7 @@ pub struct OperationOptions {
 
     // Additional headers beyond those natively supported by the driver.
     // May be removed in the future as we analyze exactly what options are needed.
-    custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
-}
-
-impl OperationOptions {
-    /// Sets additional headers to include in the request.
-    pub fn with_custom_headers(mut self, headers: HashMap<HeaderName, HeaderValue>) -> Self {
-        self.custom_headers = Some(headers);
-        self
-    }
-
-    /// Gets the custom headers.
-    pub fn custom_headers(&self) -> Option<&HashMap<HeaderName, HeaderValue>> {
-        self.custom_headers.as_ref()
-    }
+    pub custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
 }
 
 #[cfg(test)]

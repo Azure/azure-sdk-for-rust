@@ -16,8 +16,8 @@ use framework::TestClient;
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -83,8 +83,8 @@ pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dy
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn feed_range_from_partition_key_maps_correctly() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -142,8 +142,8 @@ pub async fn feed_range_from_partition_key_maps_correctly() -> Result<(), Box<dy
 /// for a full hierarchical partition key (all components provided).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn feed_range_from_full_hpk_returns_single_range() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -180,8 +180,8 @@ pub async fn feed_range_from_full_hpk_returns_single_range() -> Result<(), Box<d
 /// for a prefix hierarchical partition key (fewer components than paths).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn feed_range_from_prefix_hpk_returns_ranges() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -248,8 +248,8 @@ pub async fn feed_range_from_prefix_hpk_returns_ranges() -> Result<(), Box<dyn E
 /// a full key on a single-hash container.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn feed_range_from_partition_key_single_hash_full_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

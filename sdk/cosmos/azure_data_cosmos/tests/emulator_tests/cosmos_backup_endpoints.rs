@@ -6,14 +6,18 @@
 //! Verifies that `CosmosClientBuilder::with_backup_endpoints()` correctly
 //! threads backup endpoints through to the driver and that the client can
 //! initialize when the primary endpoint is unreachable.
+//!
+//! These tests are gated on `test_category = "emulator"` only — they are
+//! intentionally not run against `test_category = "emulator_vnext"` because
+//! the vnext (Linux) emulator exposes a single gateway endpoint and does not
+//! model the multi-endpoint topology backup-endpoint fallback is designed to
+//! exercise.
 
 #![cfg(feature = "key_auth")]
 
 use super::framework;
 
-use azure_data_cosmos::{
-    CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, RoutingStrategy,
-};
+use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClient, RoutingStrategy};
 use framework::{resolve_connection_string, HUB_REGION};
 use std::error::Error;
 
@@ -30,8 +34,8 @@ async fn client_boots_via_backup_when_primary_unreachable() -> Result<(), Box<dy
     let connection_string =
         resolve_connection_string().expect("Cosmos DB connection string must be configured");
 
-    let real_endpoint: CosmosAccountEndpoint = connection_string.account_endpoint.parse()?;
-    let fake_endpoint: CosmosAccountEndpoint = "https://localhost:9/".parse()?;
+    let real_endpoint: AccountEndpoint = connection_string.account_endpoint().parse()?;
+    let fake_endpoint: AccountEndpoint = "https://localhost:9/".parse()?;
 
     let mut builder = CosmosClient::builder().with_backup_endpoints(vec![real_endpoint]);
 
@@ -42,9 +46,9 @@ async fn client_boots_via_backup_when_primary_unreachable() -> Result<(), Box<dy
 
     let client = builder
         .build(
-            CosmosAccountReference::with_master_key(
+            AccountReference::with_authentication_key(
                 fake_endpoint,
-                connection_string.account_key.clone(),
+                connection_string.account_key().clone(),
             ),
             RoutingStrategy::ProximityTo(HUB_REGION),
         )

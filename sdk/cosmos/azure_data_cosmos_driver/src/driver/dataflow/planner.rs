@@ -18,6 +18,7 @@ use crate::{
 };
 
 use super::{
+    intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan},
     DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, Request,
     RequestTarget, SequentialDrain, TopologyProvider,
@@ -177,8 +178,8 @@ pub(crate) async fn build_sequential_drain(
             // A bare Request snapshot means the cross-partition query had only
             // a single child — apply it as a cursor at the minimum EPK.
             Some(ResumeCursor {
-                current_min_epk: EffectivePartitionKey::min(),
-                current_max_epk: EffectivePartitionKey::max(),
+                current_min_epk: EffectivePartitionKey::MIN.clone(),
+                current_max_epk: EffectivePartitionKey::MAX.clone(),
                 server_continuation,
             })
         }
@@ -211,13 +212,15 @@ pub(crate) async fn build_sequential_drain(
                     && resolved_range.range.min_inclusive() <= &cursor.current_min_epk
                     && &cursor.current_max_epk < resolved_range.range.max_exclusive()
                 {
-                    let resumed_target = RequestTarget::EffectivePartitionKeyRange {
-                        range: FeedRange::new(
-                            cursor.current_min_epk.clone(),
-                            cursor.current_max_epk.clone(),
-                        )?,
-                        partition_key_range_id: resolved_range.partition_key_range_id.clone(),
-                    };
+                    let resumed_range = FeedRange::new(
+                        cursor.current_min_epk.clone(),
+                        cursor.current_max_epk.clone(),
+                    )?;
+                    let resumed_target = RequestTarget::effective_partition_key_range(
+                        resumed_range,
+                        resolved_range.partition_key_range_id.clone(),
+                        resolved_range.range.clone(),
+                    );
                     let resumed_continuation = cursor.server_continuation.take();
                     request_nodes.push(Box::new(Request::new(
                         Arc::clone(operation),
@@ -225,13 +228,15 @@ pub(crate) async fn build_sequential_drain(
                         resumed_continuation,
                     )));
 
-                    let tail_target = RequestTarget::EffectivePartitionKeyRange {
-                        range: FeedRange::new(
-                            cursor.current_max_epk.clone(),
-                            resolved_range.range.max_exclusive().clone(),
-                        )?,
-                        partition_key_range_id: resolved_range.partition_key_range_id,
-                    };
+                    let tail_range = FeedRange::new(
+                        cursor.current_max_epk.clone(),
+                        resolved_range.range.max_exclusive().clone(),
+                    )?;
+                    let tail_target = RequestTarget::effective_partition_key_range(
+                        tail_range,
+                        resolved_range.partition_key_range_id,
+                        resolved_range.range,
+                    );
                     request_nodes.push(Box::new(Request::new(
                         Arc::clone(operation),
                         tail_target,
@@ -241,13 +246,18 @@ pub(crate) async fn build_sequential_drain(
                 }
             }
 
-            // Carry the server continuation onto the first surviving leaf,
-            // then clear it so subsequent leaves start fresh.
+            // Carry the server continuation to every leaf node, because
+            // we don't know which ones have been drained. The service does, and will
+            // just return empty pages for those if needed.
             let initial_continuation = resume.as_mut().and_then(|c| c.server_continuation.take());
-            let target = RequestTarget::EffectivePartitionKeyRange {
-                range: resolved_range.range,
-                partition_key_range_id: resolved_range.partition_key_range_id,
-            };
+            let range = intersect_feed_ranges(&resolved_range.range, &feed_range).expect(
+                "topology provider must return ranges that overlap the query plan EPK range",
+            );
+            let target = RequestTarget::effective_partition_key_range(
+                range,
+                resolved_range.partition_key_range_id,
+                resolved_range.range,
+            );
             request_nodes.push(Box::new(Request::new(
                 Arc::clone(operation),
                 target,
@@ -480,7 +490,22 @@ mod tests {
 
     /// Asserts that the pipeline is a `SequentialDrain` containing `Request` nodes
     /// targeting the given EPK ranges (in order).
+    type ExpectedDrainRequestWithPartition<'a> = (&'a str, &'a str, &'a str, &'a str, &'a str);
+    type ExpectedDrainRequestWithContinuation<'a> =
+        (&'a str, &'a str, &'a str, &'a str, &'a str, Option<&'a str>);
+
     fn assert_drain_requests(pipeline: Pipeline, expected: &[(&str, &str, &str)]) {
+        let expected = expected
+            .iter()
+            .map(|&(min, max, pk_range_id)| (min, max, pk_range_id, min, max))
+            .collect::<Vec<_>>();
+        assert_drain_requests_with_partitions(pipeline, &expected);
+    }
+
+    fn assert_drain_requests_with_partitions(
+        pipeline: Pipeline,
+        expected: &[ExpectedDrainRequestWithPartition<'_>],
+    ) {
         let drain = pipeline
             .into_root()
             .downcast::<SequentialDrain>()
@@ -493,30 +518,35 @@ mod tests {
             expected.len(),
             children.len(),
         );
-        for (child, &(min, max, pk_range_id)) in children.into_iter().zip(expected) {
+        for (child, &(min, max, pk_range_id, partition_min, partition_max)) in
+            children.into_iter().zip(expected)
+        {
             let request = child
                 .downcast::<Request>()
                 .expect("expected Request child node");
             assert_eq!(
                 *request.target(),
-                RequestTarget::EffectivePartitionKeyRange {
-                    range: FeedRange::new(
+                RequestTarget::effective_partition_key_range(
+                    FeedRange::new(
                         EffectivePartitionKey::from(min),
                         EffectivePartitionKey::from(max),
                     )
                     .unwrap(),
-                    partition_key_range_id: pk_range_id.to_string(),
-                },
+                    pk_range_id.to_string(),
+                    FeedRange::new(
+                        EffectivePartitionKey::from(partition_min),
+                        EffectivePartitionKey::from(partition_max),
+                    )
+                    .unwrap(),
+                ),
                 "mismatch for pk range {pk_range_id}"
             );
         }
     }
 
-    /// Asserts that each `Request` child targets the given range and has the
-    /// expected server continuation snapshot state.
-    fn assert_drain_requests_with_continuation(
+    fn assert_drain_requests_with_partitions_and_continuation(
         pipeline: Pipeline,
-        expected: &[(&str, &str, &str, Option<&str>)],
+        expected: &[ExpectedDrainRequestWithContinuation<'_>],
     ) {
         let drain = pipeline
             .into_root()
@@ -531,20 +561,27 @@ mod tests {
             children.len(),
         );
 
-        for (child, &(min, max, pk_range_id, continuation)) in children.into_iter().zip(expected) {
+        for (child, &(min, max, pk_range_id, partition_min, partition_max, continuation)) in
+            children.into_iter().zip(expected)
+        {
             let request = child
                 .downcast::<Request>()
                 .expect("expected Request child node");
             assert_eq!(
                 *request.target(),
-                RequestTarget::EffectivePartitionKeyRange {
-                    range: FeedRange::new(
+                RequestTarget::effective_partition_key_range(
+                    FeedRange::new(
                         EffectivePartitionKey::from(min),
                         EffectivePartitionKey::from(max),
                     )
                     .unwrap(),
-                    partition_key_range_id: pk_range_id.to_string(),
-                },
+                    pk_range_id.to_string(),
+                    FeedRange::new(
+                        EffectivePartitionKey::from(partition_min),
+                        EffectivePartitionKey::from(partition_max),
+                    )
+                    .unwrap(),
+                ),
                 "mismatch for pk range {pk_range_id}"
             );
 
@@ -665,7 +702,6 @@ mod tests {
     #[tokio::test]
     async fn topology_partition_wider_than_query_range() {
         // The topology partition [, FF) is wider than query range [20, 80).
-        // The resolved range matches the topology, not the query range.
         let plan = plan_with_ranges(vec![qr("20", "80")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-wide")])]);
@@ -673,7 +709,7 @@ mod tests {
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_drain_requests(pipeline, &[("", "FF", "pkrange-wide")]);
+        assert_drain_requests_with_partitions(pipeline, &[("20", "80", "pkrange-wide", "", "FF")]);
     }
 
     #[tokio::test]
@@ -1001,11 +1037,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_drain_requests_with_continuation(
+        assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[
-                ("55", "AA", "pk-merged", Some("server-token-xyz")),
-                ("AA", "FF", "pk-merged", None),
+                ("55", "AA", "pk-merged", "", "FF", Some("server-token-xyz")),
+                ("AA", "FF", "pk-merged", "", "FF", None),
             ],
         );
     }

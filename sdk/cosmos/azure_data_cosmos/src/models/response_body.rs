@@ -15,6 +15,7 @@ use serde::de::DeserializeOwned;
 /// the body may be a single payload (point reads/writes, batches) or a list of
 /// per-document slices (feed responses); use the helpers below to consume it.
 #[derive(Clone, Default, SafeDebug)]
+#[non_exhaustive]
 pub struct ResponseBody(DriverResponseBody);
 
 impl ResponseBody {

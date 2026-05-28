@@ -7,8 +7,7 @@
 mod account_endpoint;
 mod account_reference;
 pub mod clients;
-mod connection_string;
-pub mod constants;
+mod constants;
 mod credential;
 mod feed;
 pub mod options;
@@ -23,14 +22,13 @@ pub use clients::CosmosClient;
 #[doc(inline)]
 pub use clients::CosmosClientBuilder;
 
-pub use account_endpoint::CosmosAccountEndpoint;
-pub use account_reference::CosmosAccountReference;
+pub use account_endpoint::AccountEndpoint;
+pub use account_reference::AccountReference;
 pub use clients::ThroughputPoller;
-pub use connection_string::*;
 pub use credential::CosmosCredential;
 pub use models::{
-    BatchResponse, CosmosStatus, DiagnosticsContext, IncrValue, ItemResponse, PatchOp, PatchSpec,
-    ResourceResponse, ResponseBody, ResponseHeaders,
+    BatchResponse, CosmosNumber, CosmosStatus, DiagnosticsContext, ItemResponse, PatchInstructions,
+    PatchOperation, ResourceResponse, ResponseBody, ResponseHeaders,
 };
 pub use options::*;
 pub use query::Query;
@@ -44,9 +42,10 @@ pub use transactional_batch::{
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
     ContinuationToken, EffectivePartitionKey, FeedRange, PartitionKey, PartitionKeyValue,
+    SubStatusCode,
 };
 
-pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
+pub use feed::{FeedPage, QueryFeedPage, QueryItemIterator, QueryPageIterator};
 mod driver_bridge;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;

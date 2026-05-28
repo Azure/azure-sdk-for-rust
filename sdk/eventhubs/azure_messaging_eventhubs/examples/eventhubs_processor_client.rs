@@ -8,7 +8,9 @@
 //! processed.
 
 use azure_identity::DeveloperToolsCredential;
-use azure_messaging_eventhubs::{ConsumerClient, EventProcessor, InMemoryCheckpointStore};
+use azure_messaging_eventhubs::{
+    error::ErrorKind, ConsumerClient, EventProcessor, InMemoryCheckpointStore,
+};
 use futures::StreamExt;
 use std::sync::Arc;
 use tokio::sync::Mutex as AsyncMutex;
@@ -70,6 +72,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Opened consumer client");
 
     let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
+    // Receivers open with epoch 0; another instance attaching displaces
+    // this one and `stream_events()` resolves with `ConsumerDisconnected`.
     let processor = EventProcessor::builder()
         .build(consumer, checkpoint_store)
         .await?;
@@ -87,26 +91,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         partition_client.get_partition_id()
     );
 
-    let mut event_stream = partition_client.stream_events();
-    let mut event_count = 0;
-    while let Some(event) = event_stream.next().await {
-        println!("Received message {event_count}");
-        event_count += 1;
-        if event_count > 10 {
-            println!("Received 10 events, stopping the processor.");
-            break;
-        }
+    let mut event_stream = partition_client.stream_events().take(10).enumerate();
+    while let Some((idx, event)) = event_stream.next().await {
         match event {
             Ok(event) => {
-                println!("Received event: {:?}", event);
-                // Process the received event
-                println!("Partition key: {:?}", event.partition_key());
-                println!("Event offset: {:?}", event.offset());
-                println!("Event sequence number: {:?}", event.sequence_number());
+                println!("Received event #{idx}: {event:?}");
+                println!("  partition key:   {:?}", event.partition_key());
+                println!("  offset:          {:?}", event.offset());
+                println!("  sequence number: {:?}", event.sequence_number());
+            }
+            Err(err) if matches!(err.kind, ErrorKind::ConsumerDisconnected(_)) => {
+                // Partition reassigned; re-acquire via `next_partition_client`.
+                println!("Partition was reassigned to another consumer, stopping.");
+                break;
             }
             Err(err) => {
-                // Handle the error
-                eprintln!("Error receiving event: {:?}", err);
+                eprintln!("Error receiving event: {err:?}");
+                break;
             }
         }
     }
