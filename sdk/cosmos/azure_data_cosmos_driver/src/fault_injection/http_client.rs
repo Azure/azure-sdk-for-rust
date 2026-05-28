@@ -737,11 +737,9 @@ mod tests {
                     error_type, err
                 )
             });
-            let raw_substatus = response
-                .headers
-                .get_optional_str(&azure_core::http::headers::HeaderName::from_static(
-                    "x-ms-substatus",
-                ));
+            let raw_substatus = response.headers.get_optional_str(
+                &azure_core::http::headers::HeaderName::from_static("x-ms-substatus"),
+            );
             match expected_substatus {
                 Some(expected) => {
                     assert_eq!(
