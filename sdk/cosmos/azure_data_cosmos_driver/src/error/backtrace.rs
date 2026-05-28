@@ -169,7 +169,7 @@ pub fn set_backtrace_options(options: BacktraceOptions) {
 /// first `Backtrace::capture` cannot be clobbered. The previous
 /// `AtomicBool`-gated implementation had a window where a thread that
 /// observed `INITIALIZED == false`, computed env defaults, and was then
-/// pre-empted could overwrite a concurrently-applied programmatic
+/// preempted could overwrite a concurrently-applied programmatic
 /// setting with `0` (env default when `RUST_BACKTRACE` is unset). See
 /// finding #4 in the review thread for the timeline.
 pub(crate) fn ensure_initialized() {
