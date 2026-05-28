@@ -46,7 +46,7 @@ use super::{
 pub(crate) fn build_trivial_pipeline(
     operation: Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
-) -> azure_core::Result<Pipeline> {
+) -> crate::error::Result<Pipeline> {
     debug_assert!(
         operation.is_trivial(),
         "build_trivial_pipeline called with non-trivial operation: {:?} targeting {:?}",
@@ -65,13 +65,13 @@ pub(crate) fn build_trivial_pipeline(
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         Some(other) => {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!(
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
                     "continuation token shape {} does not match a trivial operation",
                     snapshot_kind(&other)
-                ),
-            ));
+                ))
+                .build());
         }
     };
 
@@ -84,11 +84,15 @@ pub(crate) fn build_trivial_pipeline(
             if let Some(pk) = f.partition_key() {
                 RequestTarget::LogicalPartitionKey(pk.clone())
             } else {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "FeedRange targeting requires a fan-out pipeline; \
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE,
+                    )
+                    .with_message(
+                        "FeedRange targeting requires a fan-out pipeline; \
                  use plan_operation for cross-partition queries",
-                ));
+                    )
+                    .build());
             }
         }
     };
@@ -130,7 +134,7 @@ pub(crate) async fn build_sequential_drain(
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
-) -> azure_core::Result<Pipeline> {
+) -> crate::error::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
     let resume = match resume {
@@ -149,22 +153,23 @@ pub(crate) async fn build_sequential_drain(
                 } => server_continuation,
                 PipelineNodeState::Drained => None,
                 other => {
-                    return Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        format!(
+                    return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE).with_message(format!(
                             "continuation token has unsupported nested shape inside SequentialDrain: {}",
                             snapshot_kind(&other)
-                        ),
-                    ));
+                        )).build());
                 }
             };
             let current_min_epk = EffectivePartitionKey::from(current_min_epk);
             let current_max_epk = EffectivePartitionKey::from(current_max_epk);
             if current_min_epk > current_max_epk {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "continuation token has invalid SequentialDrain range (min > max)",
-                ));
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    )
+                    .with_message(
+                        "continuation token has invalid SequentialDrain range (min > max)",
+                    )
+                    .build());
             }
             Some(ResumeCursor {
                 current_min_epk,
@@ -274,10 +279,10 @@ pub(crate) async fn build_sequential_drain(
         if resume.is_some() {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "query plan produced no partition ranges to query",
-        ));
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("query plan produced no partition ranges to query")
+            .build());
     }
 
     // Even when there's only one request node, we still need to wrap it in a SequentialDrain
@@ -303,7 +308,7 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
 }
 
 /// Validates that the query plan does not require features we don't yet support.
-fn validate_query_plan(plan: &QueryPlan) -> azure_core::Result<()> {
+fn validate_query_plan(plan: &QueryPlan) -> crate::error::Result<()> {
     if plan.hybrid_search_query_info.is_some() {
         return Err(unsupported_feature("hybrid search queries"));
     }
@@ -315,7 +320,7 @@ fn validate_query_plan(plan: &QueryPlan) -> azure_core::Result<()> {
     Ok(())
 }
 
-fn validate_query_info(info: &QueryInfo) -> azure_core::Result<()> {
+fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
     if info.top.is_some() {
         return Err(unsupported_feature("TOP clause in cross-partition queries"));
     }
@@ -339,11 +344,11 @@ fn validate_query_info(info: &QueryInfo) -> azure_core::Result<()> {
     Ok(())
 }
 
-fn unsupported_feature(feature: &str) -> azure_core::Error {
-    azure_core::Error::with_message(
-        azure_core::error::ErrorKind::Other,
-        format!("unsupported query feature: {feature}"),
-    )
+fn unsupported_feature(feature: &str) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+        .with_message(format!("unsupported query feature: {feature}"))
+        .build()
 }
 
 #[cfg(test)]
@@ -444,10 +449,13 @@ mod tests {
             Err(_) => panic!("did not expect panic for FeedRange target"),
             // Returned Err in release mode (also acceptable)
             Ok(Err(err)) => {
-                assert_eq!(
-                    err.to_string(),
-                    "FeedRange targeting requires a fan-out pipeline; \
-                     use plan_operation for cross-partition queries"
+                let rendered = err.to_string();
+                assert!(
+                    rendered.ends_with(
+                        "FeedRange targeting requires a fan-out pipeline; \
+                         use plan_operation for cross-partition queries"
+                    ),
+                    "unexpected: {rendered}"
                 );
             }
             _ => panic!("expected error or panic for FeedRange target"),
@@ -727,9 +735,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: TOP clause in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: TOP clause in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -748,9 +757,11 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: LIMIT clause in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered
+                .ends_with("unsupported query feature: LIMIT clause in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -770,9 +781,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: ORDER BY in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: ORDER BY in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -791,9 +803,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: aggregates in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: aggregates in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -812,9 +825,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: GROUP BY in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: GROUP BY in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -837,9 +851,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: hybrid search queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: hybrid search queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -864,9 +879,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "query plan produced no partition ranges to query"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("query plan produced no partition ranges to query"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -874,15 +890,22 @@ mod tests {
     async fn propagates_topology_resolution_error() {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "topology resolution failed",
-        ))]);
+        let mut topology =
+            MockTopologyProvider::new(vec![Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("topology resolution failed")
+                .build())]);
 
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(err.to_string(), "topology resolution failed");
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("topology resolution failed"),
+            "unexpected: {rendered}"
+        );
     }
 
     // -----------------------------------------------------------------

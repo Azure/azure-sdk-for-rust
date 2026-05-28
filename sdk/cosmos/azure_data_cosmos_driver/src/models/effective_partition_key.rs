@@ -96,22 +96,22 @@ impl EffectivePartitionKey {
     pub(crate) fn compute_range(
         pk_values: &[PartitionKeyValue],
         pk_definition: &PartitionKeyDefinition,
-    ) -> azure_core::Result<std::ops::Range<Self>> {
+    ) -> crate::error::Result<std::ops::Range<Self>> {
         if pk_values.is_empty() {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                "compute_range called with empty pk_values",
-            ));
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY)
+                .with_message("compute_range called with empty pk_values")
+                .build());
         }
         if pk_values.len() > pk_definition.paths().len() {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                format!(
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                .with_message(format!(
                     "more partition key components ({}) than definition paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()
-                ),
-            ));
+                ))
+                .build());
         }
 
         let kind = pk_definition.kind();
@@ -122,14 +122,11 @@ impl EffectivePartitionKey {
             kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
 
         if kind != PartitionKeyKind::MultiHash && pk_values.len() != pk_definition.paths().len() {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                format!(
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH).with_message(format!(
                     "non-MultiHash containers require exactly as many components ({}) as paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()
-                ),
-            ));
+                )).build());
         }
 
         if is_prefix {

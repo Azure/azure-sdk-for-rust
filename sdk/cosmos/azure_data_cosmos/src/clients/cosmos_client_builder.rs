@@ -266,7 +266,8 @@ impl CosmosClientBuilder {
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
     /// The account reference bundles an endpoint and credential. Construct one using
-    /// [`AccountReference::with_credential()`] or [`AccountReference::with_authentication_key()`].
+    /// [`AccountReference::with_credential()`] or [`AccountReference::with_authentication_key()`]
+    /// (the latter requires the `key_auth` feature).
     ///
     /// # Arguments
     ///
@@ -280,7 +281,7 @@ impl CosmosClientBuilder {
         self,
         account: AccountReference,
         routing_strategy: RoutingStrategy,
-    ) -> azure_core::Result<CosmosClient> {
+    ) -> crate::Result<CosmosClient> {
         let (account_endpoint, credential) = account.into_parts();
         let endpoint = account_endpoint.into_url();
 
@@ -366,10 +367,10 @@ impl CosmosClientBuilder {
             driver_runtime_builder = driver_runtime_builder
                 .register_throughput_control_group(group)
                 .map_err(|e| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        format!("failed to register throughput control group: {e}"),
-                    )
+                    crate::DriverCosmosError::builder()
+                        .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
+                        .with_message(format!("failed to register throughput control group: {e}"))
+                        .build()
                 })?;
         }
         let driver_runtime = driver_runtime_builder.build().await?;

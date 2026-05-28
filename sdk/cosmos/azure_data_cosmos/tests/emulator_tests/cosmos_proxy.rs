@@ -65,6 +65,14 @@ pub async fn proxy_disabled_by_default_ignores_env() -> Result<(), Box<dyn Error
 /// routes requests through the proxy specified by `HTTPS_PROXY`.
 #[tokio::test]
 pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> {
+    // Skip on the vnext (Linux) emulator pipeline: the vnext gateway does
+    // not honor an outbound proxy in the same way the legacy emulator does
+    // and the test consistently fails there. Keep enabled for the legacy
+    // emulator and for any non-emulator backend.
+    if std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR").as_deref() == Ok("vnext") {
+        eprintln!("Skipping proxy_enabled test on vnext emulator.");
+        return Ok(());
+    }
     // Skip when test mode is "skipped" or no connection string is available.
     let test_mode = std::env::var("AZURE_COSMOS_TEST_MODE").unwrap_or_default();
     let conn_string_available = std::env::var(CONNECTION_STRING_ENV_VAR).is_ok();

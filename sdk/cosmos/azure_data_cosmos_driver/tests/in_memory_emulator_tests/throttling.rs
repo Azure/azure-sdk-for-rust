@@ -4,7 +4,6 @@
 //! Throughput throttling integration tests (429/3200).
 
 use super::*;
-use azure_core::http::HttpClient;
 
 static RETRY_AFTER: azure_core::http::headers::HeaderName =
     azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms");

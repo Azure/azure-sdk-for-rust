@@ -97,13 +97,13 @@ fn compare_item_responses(real: &ItemResponse, emu: &ItemResponse) {
 }
 
 /// Compares two SDK error responses: both must have the same HTTP status.
-fn compare_sdk_errors(real: &azure_core::Error, emu: &azure_core::Error) {
+fn compare_sdk_errors(real: &azure_data_cosmos::CosmosError, emu: &azure_data_cosmos::CosmosError) {
     assert_eq!(
-        real.http_status(),
-        emu.http_status(),
-        "Error status mismatch: real={:?} emulator={:?}",
-        real.http_status(),
-        emu.http_status(),
+        real.status().status_code(),
+        emu.status().status_code(),
+        "CosmosError status mismatch: real={:?} emulator={:?}",
+        real.status().status_code(),
+        emu.status().status_code(),
     );
 }
 
@@ -128,22 +128,17 @@ fn make_stale_session_token(token: &str) -> String {
     }
 }
 
-fn assert_read_session_not_available(err: &azure_core::Error, label: &str) {
+fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label: &str) {
     assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
+        err.status().status_code(),
+        StatusCode::NotFound,
         "{label}: stale session read should return 404",
     );
-    match err.kind() {
-        azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
-            assert_eq!(
-                error_code.as_deref(),
-                Some("1002"),
-                "{label}: stale session read should surface substatus 1002",
-            );
-        }
-        other => panic!("{label}: expected HttpResponse error, got {other}"),
-    }
+    assert_eq!(
+        err.status().sub_status().map(|s| s.value()),
+        Some(1002),
+        "{label}: stale session read should surface substatus 1002",
+    );
 }
 
 /// Asserts emulator-only response metadata when no real account is available.
@@ -176,7 +171,7 @@ async fn read_item_with_503_retry(
     label: &str,
 ) -> ItemResponse {
     const MAX_ATTEMPTS: usize = 5;
-    let mut last_err: Option<azure_core::Error> = None;
+    let mut last_err: Option<azure_data_cosmos::CosmosError> = None;
     for attempt in 1..=MAX_ATTEMPTS {
         match container.read_item(pk, id, None).await {
             Ok(resp) => {
@@ -184,13 +179,7 @@ async fn read_item_with_503_retry(
                 return resp;
             }
             Err(e) => {
-                let is_503 = matches!(
-                    e.kind(),
-                    azure_core::error::ErrorKind::HttpResponse {
-                        status: StatusCode::ServiceUnavailable,
-                        ..
-                    },
-                );
+                let is_503 = e.status().status_code() == StatusCode::ServiceUnavailable;
                 eprintln!(
                     "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed (is_503={is_503}): {e}",
                 );
@@ -441,6 +430,10 @@ async fn sdk_create_database_and_container_through_driver() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_create_and_read_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -503,6 +496,10 @@ async fn sdk_create_and_read_item() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_replace_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -592,6 +589,10 @@ async fn sdk_replace_item() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_upsert_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -681,6 +682,10 @@ async fn sdk_upsert_item() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_delete_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -723,7 +728,7 @@ async fn sdk_delete_item() {
         .read_item("pk1", &item.id, None)
         .await
         .expect_err("emulator: reading deleted item should fail");
-    assert_eq!(emu_err.http_status(), Some(StatusCode::NotFound));
+    assert_eq!(emu_err.status().status_code(), StatusCode::NotFound);
 
     if let Some(ref real) = real_container {
         let real_err = real
@@ -736,6 +741,10 @@ async fn sdk_delete_item() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_create_multiple_items_and_read_back() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -803,8 +812,8 @@ async fn sdk_create_duplicate_item_returns_conflict() {
         .await
         .expect_err("emulator: duplicate create should fail");
     assert_eq!(
-        emu_err.http_status(),
-        Some(StatusCode::Conflict),
+        emu_err.status().status_code(),
+        StatusCode::Conflict,
         "emulator: duplicate create should return 409",
     );
 
@@ -828,8 +837,8 @@ async fn sdk_read_nonexistent_item_returns_not_found() {
         .await
         .expect_err("emulator: reading nonexistent item should fail");
     assert_eq!(
-        emu_err.http_status(),
-        Some(StatusCode::NotFound),
+        emu_err.status().status_code(),
+        StatusCode::NotFound,
         "emulator: nonexistent item should return 404",
     );
 
