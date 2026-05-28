@@ -243,6 +243,18 @@ impl Request {
         error: crate::error::CosmosError,
         continuation: Option<String>,
     ) -> crate::error::Result<PageResult> {
+        // Capture the failed attempt's diagnostics before consuming the
+        // error. The per-operation pipeline that produced this error
+        // owns its own `DiagnosticsContext`; the dataflow retry below
+        // will spin up another full pipeline invocation with a fresh
+        // context. Without splicing the prior context onto the
+        // retry's response, callers reading
+        // `response.diagnostics().request_count()` would only see the
+        // final successful attempt — violating the
+        // "one operation = one `DiagnosticsContext` capturing every
+        // attempt" contract. Always capture, regardless of branch, so
+        // the splice happens uniformly on every successful retry path.
+        let prior_diagnostics = error.diagnostics();
         match &self.target {
             RequestTarget::NonPartitioned => {
                 // Non-partitioned resources don't have partition topology changes.
@@ -268,6 +280,16 @@ impl Request {
                             status = ?response.status(),
                             "retry after logical partition key topology change succeeded"
                         );
+                        // Splice the prior failed attempt's diagnostics
+                        // onto the retry's diagnostics so the surfaced
+                        // `CosmosResponse` reflects every attempt the
+                        // operation made (see `prior_diagnostics`
+                        // capture above for rationale).
+                        let response = if let Some(prior) = prior_diagnostics {
+                            response.with_aggregated_prior_diagnostics(&[prior])
+                        } else {
+                            response
+                        };
                         self.handle_response(response)
                     })
             }
@@ -277,6 +299,18 @@ impl Request {
                     .owned_range()
                     .expect("effective partition key range target must have an owned range")
                     .clone();
+                // TODO(diagnostics-aggregation): the split path replaces
+                // this node with one or more sub-range `Request` nodes
+                // that each execute independently in subsequent
+                // `next_page` calls. Splicing `prior_diagnostics` into
+                // every sub-node's first response would require
+                // threading the prior context through the replacement
+                // nodes; tracked as a follow-up. For now, prior
+                // attempts on the EPK-range split path are still
+                // captured by the replacement node when it triggers
+                // its own dataflow retry, but not aggregated onto the
+                // first successful sub-range response.
+                let _ = prior_diagnostics;
                 self.split_for_topology_change(context, &range).await
             }
         }

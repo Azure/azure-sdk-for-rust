@@ -155,6 +155,37 @@ impl CosmosResponse {
     pub fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext> {
         &self.diagnostics
     }
+
+    /// Prepends the per-request diagnostics from one or more prior
+    /// attempts onto this response's diagnostics, returning the response
+    /// with an aggregated [`DiagnosticsContext`].
+    ///
+    /// Used by the dataflow layer when an earlier attempt failed (for
+    /// example, with `410` / `PARTITION_KEY_RANGE_GONE`) and a subsequent
+    /// retry — which gets its own per-operation pipeline invocation and
+    /// therefore its own diagnostics — ultimately succeeded. Without this,
+    /// callers reading `response.diagnostics().request_count()` would only
+    /// see the final successful attempt; the per-operation contract is
+    /// "one operation = one [`DiagnosticsContext`] capturing **every**
+    /// attempt", so we splice the prior attempts in.
+    ///
+    /// Aggregation uses [`DiagnosticsContext::aggregate_sub_operations`],
+    /// which preserves insertion order — prior attempts come first,
+    /// followed by this response's own attempts.
+    pub(crate) fn with_aggregated_prior_diagnostics(
+        mut self,
+        prior: &[Arc<DiagnosticsContext>],
+    ) -> Self {
+        if prior.is_empty() {
+            return self;
+        }
+        let mut sources: Vec<Arc<DiagnosticsContext>> = prior.to_vec();
+        sources.push(Arc::clone(&self.diagnostics));
+        if let Some(aggregated) = DiagnosticsContext::aggregate_sub_operations(&sources) {
+            self.diagnostics = Arc::new(aggregated);
+        }
+        self
+    }
 }
 
 #[cfg(test)]
