@@ -30,7 +30,6 @@ pub struct CosmosClientOptions {
     /// unless overridden by per-request options.
     pub(crate) operation: OperationOptions,
     pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
-    pub(crate) application_region: Option<Region>,
 }
 
 impl CosmosClientOptions {
