@@ -27,7 +27,7 @@ pub use account_endpoint::AccountEndpoint;
 pub use account_reference::AccountReference;
 pub use clients::ThroughputPoller;
 pub use credential::CosmosCredential;
-pub use error::{CosmosError, Result, SubStatusCode};
+pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
 
 /// Internal alias for the driver's `CosmosError`. Used at error-construction
 /// sites inside this crate so they can call the driver's
@@ -35,7 +35,7 @@ pub use error::{CosmosError, Result, SubStatusCode};
 /// public [`CosmosError`] newtype. Not exposed in the public API.
 pub(crate) use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 pub use models::{
-    BatchResponse, CosmosNumber, CosmosStatus, DiagnosticsContext, ItemResponse, PatchInstructions,
+    BatchResponse, CosmosNumber, DiagnosticsContext, ItemResponse, PatchInstructions,
     PatchOperation, ResourceResponse, ResponseBody, ResponseHeaders,
 };
 pub use options::*;
