@@ -2296,7 +2296,7 @@ async fn execute_hedged(
                     activity_id = %ctx.activity_id,
                     winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
                     was_hedge = false,
-                    "cosmos.hedge.won",
+                    "cosmos.hedge.winner_selected",
                 );
                 // Only a `Final` primary outcome resets the
                 // consecutive-hedge-win counter on this
@@ -2440,7 +2440,7 @@ async fn execute_hedged(
                         activity_id = %ctx.activity_id,
                         winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
                         was_hedge = true,
-                        "cosmos.hedge.won",
+                        "cosmos.hedge.winner_selected",
                     );
                     record_hedge_outcome(
                         ctx.hedge_outcome_recorder,
@@ -2493,7 +2493,7 @@ async fn execute_hedged(
                                 activity_id = %ctx.activity_id,
                                 winner_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
                                 was_hedge = true,
-                                "cosmos.hedge.won",
+                                "cosmos.hedge.winner_selected",
                             );
                             record_hedge_outcome(
                                 ctx.hedge_outcome_recorder,
@@ -2555,7 +2555,7 @@ async fn execute_hedged(
                         activity_id = %ctx.activity_id,
                         winner_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
                         was_hedge = true,
-                        "cosmos.hedge.won",
+                        "cosmos.hedge.winner_selected",
                     );
                     record_hedge_outcome(
                         ctx.hedge_outcome_recorder,
@@ -2609,7 +2609,7 @@ async fn execute_hedged(
                                 activity_id = %ctx.activity_id,
                                 winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
                                 was_hedge = true,
-                                "cosmos.hedge.won",
+                                "cosmos.hedge.winner_selected",
                             );
                             record_hedge_outcome(
                                 ctx.hedge_outcome_recorder,
