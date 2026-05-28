@@ -4,6 +4,7 @@
 use azure_core::{http::Url, Result};
 use azure_core_test::Recording;
 use azure_storage_blob::BlobContainerClient;
+use azure_storage_blob_test::get_test_credential;
 
 pub trait OnceLockExt {
     type Output;
@@ -55,6 +56,6 @@ impl RecordingExt for Recording {
             .path_segments_mut()
             .expect("endpoint must be a valid base URL")
             .push(&format!("perf-container-{}", azure_core::Uuid::new_v4()));
-        BlobContainerClient::new(container_url, Some(self.credential()), None)
+        BlobContainerClient::new(container_url, Some(get_test_credential(self)), None)
     }
 }
