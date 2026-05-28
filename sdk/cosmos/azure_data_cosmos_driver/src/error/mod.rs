@@ -1819,19 +1819,29 @@ mod tests {
     fn display_alternate_includes_header_source_chain_and_diagnostics() {
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err:#}");
-        // The alternate form is `<header>\n\nCaused by:\n  0: <src>\n\nDiagnostics:\n<diag>`.
+        // The alternate form is `<header>\n\nCaused by:\n  0: <src>[\n\nStack backtrace:\n<…>]\n\nDiagnostics:\n<diag>`.
         // The diagnostics block embeds a freshly-generated UUID
         // (`activity={uuid}`) and a wall-clock duration, neither of which
         // is reproducible, so we split at the diagnostics boundary and
-        // assert exactness on the deterministic prefix.
+        // assert structurally on the deterministic prefix. The Stack
+        // backtrace block is conditionally present depending on whether
+        // backtrace capture is enabled (off by default in local test
+        // runs; on with `RUST_BACKTRACE=1` in CI or when a sibling test
+        // programmatically enables it), so we accept either shape.
         let (prefix, diag_section) = rendered
             .split_once("\n\nDiagnostics:\n")
             .expect("alternate Display must include a Diagnostics: block");
-        assert_eq!(
-            prefix,
-            "503/20003 (TransportGenerated503): outer transport failure\n\n\
+        let header_and_source = "503/20003 (TransportGenerated503): outer transport failure\n\n\
              Caused by:\n  \
-             0: 408/20008 (ClientOperationTimeout): inner timeout",
+             0: 408/20008 (ClientOperationTimeout): inner timeout";
+        assert!(
+            prefix.starts_with(header_and_source),
+            "alternate Display prefix must start with the header+source-chain block, got: {prefix}",
+        );
+        let interposed = &prefix[header_and_source.len()..];
+        assert!(
+            interposed.is_empty() || interposed.starts_with("\n\nStack backtrace:\n"),
+            "interposed content between source chain and diagnostics must be empty or a Stack backtrace block, got: {interposed}",
         );
         // Diagnostics block: bounded structural check — every line of the
         // `DiagnosticsContext` `Display` impl begins with `activity=…`.
@@ -1876,19 +1886,31 @@ mod tests {
     fn debug_alternate_propagates_to_source_and_diagnostics() {
         let err = make_error_with_diagnostics_and_source();
         let rendered = format!("{err:#?}");
-        // Alternate `{e:#?}` matches plain `{e:?}` in this fixture
-        // because backtrace capture is opt-in (disabled by default in
-        // tests) so no `Stack backtrace:` block is appended. If capture
-        // were enabled, the alternate form would additionally include
-        // `\n\nStack backtrace:\n<…>`.
+        // Alternate `{e:#?}` matches plain `{e:?}` in this fixture when
+        // backtrace capture is disabled (the default in local test runs);
+        // when capture IS enabled (e.g. `RUST_BACKTRACE=1` in CI or a
+        // sibling test that programmatically enables it), the rendered
+        // form additionally interposes `\n\nStack backtrace:\n<…>`
+        // between the source chain and the diagnostics block. The test
+        // is tolerant of either shape: it asserts the deterministic
+        // header + source-chain prefix and the diagnostics suffix, and
+        // ignores any intervening backtrace block.
         let (prefix, diag_section) = rendered
             .split_once("\n\nDiagnostics:\n")
             .expect("alternate Debug must include a Diagnostics: block");
-        assert_eq!(
-            prefix,
-            "503/20003 (TransportGenerated503): outer transport failure\n\n\
+        let header_and_source = "503/20003 (TransportGenerated503): outer transport failure\n\n\
              Caused by:\n  \
-             0: 408/20008 (ClientOperationTimeout): inner timeout",
+             0: 408/20008 (ClientOperationTimeout): inner timeout";
+        assert!(
+            prefix.starts_with(header_and_source),
+            "alternate Debug prefix must start with the header+source-chain block, got: {prefix}",
+        );
+        // Anything between the deterministic prefix and the diagnostics
+        // suffix must be either empty or a `Stack backtrace:` block.
+        let interposed = &prefix[header_and_source.len()..];
+        assert!(
+            interposed.is_empty() || interposed.starts_with("\n\nStack backtrace:\n"),
+            "interposed content between source chain and diagnostics must be empty or a Stack backtrace block, got: {interposed}",
         );
         // Alternate Debug renders diagnostics via `{diag:#?}` — the
         // pretty-printed struct dump, still beginning with the type name.
