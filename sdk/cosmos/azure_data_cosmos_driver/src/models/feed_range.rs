@@ -11,7 +11,7 @@
 use azure_core::{error::ErrorKind, fmt::SafeDebug};
 use base64::Engine;
 use serde::{Deserialize, Serialize};
-use std::{cmp, fmt, str::FromStr};
+use std::{fmt, str::FromStr};
 
 use crate::models::{effective_partition_key::EffectivePartitionKey, ItemReference, PartitionKey};
 use crate::models::{partition_key_range::PartitionKeyRange, PartitionKeyDefinition};
@@ -88,8 +88,8 @@ impl FeedRange {
     /// Creates a feed range covering the entire partition key space (`""..FF`).
     pub fn full() -> Self {
         Self(FeedRangeRepr::Range {
-            min_inclusive: EffectivePartitionKey::min(),
-            max_exclusive: EffectivePartitionKey::max(),
+            min_inclusive: EffectivePartitionKey::MIN.clone(),
+            max_exclusive: EffectivePartitionKey::MAX.clone(),
         })
     }
 
@@ -128,6 +128,18 @@ impl FeedRange {
         }
     }
 
+    /// Returns `true` if this feed range represents a single logical partition (or
+    /// a hierarchical-partition-key prefix), as opposed to an explicit `[min, max)`
+    /// EPK range.
+    ///
+    /// Logical-partition feed ranges have implicit single-partition targeting semantics
+    /// that are lost when combined with arbitrary EPK ranges, so callers that wish to
+    /// merge feed ranges (for example, session-token coalescing) typically exclude this
+    /// variant before doing so.
+    pub fn is_logical_partition(&self) -> bool {
+        matches!(self.0, FeedRangeRepr::LogicalPartition { .. })
+    }
+
     /// Returns the inclusive lower bound of this range.
     pub fn min_inclusive(&self) -> &EffectivePartitionKey {
         match &self.0 {
@@ -164,38 +176,6 @@ impl FeedRange {
     /// Two feed ranges overlap when one starts before the other ends and vice versa.
     pub fn overlaps(&self, other: &FeedRange) -> bool {
         self.min_inclusive() < other.max_exclusive() && other.min_inclusive() < self.max_exclusive()
-    }
-
-    /// Returns `true` if this feed range can be combined with `other`.
-    ///
-    /// Two ranges can be combined when they overlap or are adjacent
-    /// (one's max equals the other's min).
-    pub fn can_merge(&self, other: &FeedRange) -> bool {
-        match (&self.0, &other.0) {
-            // Logical partition feed ranges cannot be merged with any other range,
-            // even an identical one, because they carry the implicit expectation
-            // of targeting a single logical partition.
-            (FeedRangeRepr::LogicalPartition { .. }, _)
-            | (_, FeedRangeRepr::LogicalPartition { .. }) => false,
-            (FeedRangeRepr::Range { .. }, FeedRangeRepr::Range { .. }) => {
-                self.overlaps(other)
-                    || self.max_exclusive() == other.min_inclusive()
-                    || other.max_exclusive() == self.min_inclusive()
-            }
-        }
-    }
-
-    /// Combines this feed range with `other` into a bounding range.
-    pub fn merge_with(&self, other: &FeedRange) -> FeedRange {
-        debug_assert!(
-            self.can_merge(other),
-            "merge_with called on disjoint ranges or logical partition range: self={:?}, other={:?}",
-            self, other
-        );
-        Self(FeedRangeRepr::Range {
-            min_inclusive: cmp::min(self.min_inclusive().clone(), other.min_inclusive().clone()),
-            max_exclusive: cmp::max(self.max_exclusive().clone(), other.max_exclusive().clone()),
-        })
     }
 
     fn to_json(&self) -> FeedRangeJson {
@@ -379,90 +359,6 @@ mod tests {
         .unwrap();
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
-    }
-
-    #[test]
-    fn can_merge_adjacent() {
-        let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("50"),
-        )
-        .unwrap();
-        let b = FeedRange::new(
-            EffectivePartitionKey::from("50"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        assert!(a.can_merge(&b));
-        assert!(b.can_merge(&a));
-    }
-
-    #[test]
-    fn can_merge_overlapping_is_commutative() {
-        let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("70"),
-        )
-        .unwrap();
-        let b = FeedRange::new(
-            EffectivePartitionKey::from("40"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        assert!(a.can_merge(&b));
-        assert!(b.can_merge(&a));
-    }
-
-    #[test]
-    fn can_merge_disjoint_is_false_both_directions() {
-        let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("30"),
-        )
-        .unwrap();
-        let b = FeedRange::new(
-            EffectivePartitionKey::from("50"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        assert!(!a.can_merge(&b));
-        assert!(!b.can_merge(&a));
-    }
-
-    #[test]
-    fn can_merge_rejects_logical_partition_ranges_symmetrically() {
-        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
-        let logical = FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
-        let explicit = FeedRange::new(
-            EffectivePartitionKey::from(""),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        assert!(!logical.can_merge(&explicit));
-        assert!(!explicit.can_merge(&logical));
-        assert!(!logical.can_merge(&logical));
-    }
-
-    #[test]
-    fn merge_with_bounds() {
-        let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("50"),
-        )
-        .unwrap();
-        let b = FeedRange::new(
-            EffectivePartitionKey::from("30"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        let merged = a.merge_with(&b);
-        assert_eq!(merged.min_inclusive().as_str(), "00");
-        assert_eq!(merged.max_exclusive().as_str(), "FF");
     }
 
     #[test]

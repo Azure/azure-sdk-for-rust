@@ -9,7 +9,6 @@ use crate::models::{
     CosmosResponse, CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders,
 };
 use crate::transactional_batch::TransactionalBatchResponse;
-use crate::SessionToken;
 
 /// A response from a transactional batch operation.
 ///
@@ -21,6 +20,7 @@ use crate::SessionToken;
 /// [`TransactionalBatchOperationResult`](crate::TransactionalBatchOperationResult)
 /// entries for per-item ETags.
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct BatchResponse {
     response: CosmosResponse,
 }
@@ -43,16 +43,6 @@ impl BatchResponse {
     /// Consumes the response and returns the response body.
     pub fn into_body(self) -> ResponseBody {
         self.response.into_body()
-    }
-
-    /// Returns the request charge (RU consumption) for this operation, if available.
-    pub fn request_charge(&self) -> Option<f64> {
-        self.response.request_charge()
-    }
-
-    /// Returns the session token from this response, if available.
-    pub fn session_token(&self) -> Option<SessionToken> {
-        self.response.session_token()
     }
 
     /// Returns the diagnostics for this operation.

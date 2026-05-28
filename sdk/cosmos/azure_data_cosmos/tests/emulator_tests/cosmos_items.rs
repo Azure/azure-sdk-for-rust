@@ -44,13 +44,13 @@ fn assert_response(
     read_operation: bool,
 ) {
     assert_eq!(response.status(), expected_status, "unexpected status code");
-    let request_charge = response.request_charge();
+    let request_charge = response.headers().request_charge();
     assert!(
         request_charge.is_some(),
         "expected request charge to be present"
     );
     assert!(
-        request_charge.unwrap() > 0.0,
+        request_charge.unwrap().value() > 0.0,
         "expected request charge to be positive"
     );
     if read_operation {
@@ -64,7 +64,7 @@ fn assert_response(
     }
 
     assert!(
-        response.session_token().is_some(),
+        response.headers().session_token().is_some(),
         "expected session token to be present"
     );
     let diagnostics = response.diagnostics();
@@ -1096,7 +1096,7 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
 
             // Session token must be present for session consistency.
             assert!(
-                response.session_token().is_some(),
+                response.headers().session_token().is_some(),
                 "expected session token on create_item response"
             );
 
@@ -1121,11 +1121,14 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
             );
 
             // Request charge must be positive.
-            let charge = response.request_charge();
+            let charge = response.headers().request_charge();
             assert!(charge.is_some(), "expected request charge");
-            assert!(charge.unwrap() > 0.0, "request charge must be positive");
             assert!(
-                f64::from(diagnostics.total_request_charge()) >= charge.unwrap(),
+                charge.unwrap().value() > 0.0,
+                "request charge must be positive"
+            );
+            assert!(
+                f64::from(diagnostics.total_request_charge()) >= charge.unwrap().value(),
                 "diagnostics total request charge should aggregate response request charge"
             );
 

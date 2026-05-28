@@ -50,7 +50,7 @@ pub use continuation_token::ContinuationToken;
 pub(crate) use continuation_token::ResolvedToken;
 pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
-    CosmosResponseHeaders, MaxItemCount, OfferAutoscaleSettings,
+    CosmosResponseHeaders, MaxItemCountHint, OfferAutoscaleSettings,
 };
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
@@ -62,7 +62,7 @@ pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
 pub use feed_range::FeedRange;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
-pub use patch::{IncrValue, PatchOp, PatchSpec};
+pub use patch::{CosmosNumber, PatchInstructions, PatchOperation};
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
 pub use resource_reference::{DatabaseReference, ItemReference};
@@ -173,6 +173,21 @@ impl PartitionKeyDefinition {
     pub fn is_complete(&self, pk: &PartitionKey) -> bool {
         pk.len() == self.paths.len()
     }
+
+    /// Overrides the [`PartitionKeyKind`] inferred by [`new`](Self::new).
+    ///
+    /// Most callers should rely on the automatic inference; this setter is for
+    /// the rare case where the wire-side kind must differ from the path count.
+    pub fn with_kind(mut self, kind: PartitionKeyKind) -> Self {
+        self.kind = kind;
+        self
+    }
+
+    /// Overrides the [`PartitionKeyVersion`] (defaults to [`PartitionKeyVersion::V2`]).
+    pub fn with_version(mut self, version: PartitionKeyVersion) -> Self {
+        self.version = version;
+        self
+    }
 }
 
 /// Creates a single-path [`PartitionKeyDefinition`] from a string slice.
@@ -239,6 +254,7 @@ fn default_pk_version() -> PartitionKeyVersion {
 /// - `2` -> `V2`
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u32", into = "u32")]
+#[non_exhaustive]
 pub enum PartitionKeyVersion {
     /// Partition key version 1.
     V1,

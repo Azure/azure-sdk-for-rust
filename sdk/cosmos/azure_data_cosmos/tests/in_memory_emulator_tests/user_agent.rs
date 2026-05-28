@@ -23,7 +23,7 @@ use std::sync::{Arc, Mutex};
 use azure_core::http::{headers::USER_AGENT, Method, Request, Url};
 use azure_data_cosmos::regions::Region;
 use azure_data_cosmos::{
-    CosmosAccountReference, CosmosClientBuilder, RoutingStrategy, UserAgentSuffix,
+    AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy, UserAgentSuffix,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
@@ -129,8 +129,8 @@ async fn build_client_with_provisioned_container(
         builder = builder.with_user_agent_suffix(s);
     }
 
-    let account = CosmosAccountReference::with_master_key(
-        EMULATOR_GATEWAY_URL.parse().unwrap(),
+    let account = AccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new(EMULATOR_KEY),
     );
 
