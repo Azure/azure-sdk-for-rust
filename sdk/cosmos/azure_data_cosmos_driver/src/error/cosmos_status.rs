@@ -1482,7 +1482,6 @@ impl From<SubStatusCode> for u16 {
 /// assert_eq!(pk_range_gone.name(), Some("PartitionKeyRangeGone"));
 /// ```
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
-#[non_exhaustive]
 pub struct CosmosStatus {
     status_code: StatusCode,
     sub_status: Option<SubStatusCode>,

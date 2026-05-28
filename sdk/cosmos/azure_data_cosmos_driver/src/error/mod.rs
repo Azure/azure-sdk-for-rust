@@ -313,8 +313,12 @@ impl CosmosError {
     /// This is a fundamental limitation of stack capture in async Rust.
     /// For the logical async call chain, use `tracing` spans wrapping
     /// the calling code.
-    pub fn backtrace(&self) -> Option<&Arc<str>> {
-        self.inner.backtrace.as_ref().and_then(Backtrace::rendered)
+    pub fn backtrace(&self) -> Option<Arc<str>> {
+        self.inner
+            .backtrace
+            .as_ref()
+            .and_then(Backtrace::rendered)
+            .cloned()
     }
 
     // -----------------------------------------------------------------
