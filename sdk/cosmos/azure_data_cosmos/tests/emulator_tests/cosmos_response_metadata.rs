@@ -51,6 +51,10 @@ fn cosmos_headers_from_error(error: &azure_data_cosmos::CosmosError) -> Response
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
+)]
 pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -97,6 +101,10 @@ pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
 ) -> Result<(), Box<dyn Error>> {
