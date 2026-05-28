@@ -11,6 +11,12 @@
 //!   2. Partition split / 410 Gone handling — when a data operation returns 410
 //!      (PartitionIsGone), the pipeline performs a failover retry and the operation
 //!      ultimately succeeds.
+//!
+//! These tests are gated on `test_category = "emulator"` only — they are
+//! intentionally not run against `test_category = "emulator_vnext"` because
+//! partition-failover semantics depend on PK-range cache + multi-replica
+//! gateway behavior that the vnext (Linux) emulator does not model the same
+//! way as the legacy Windows emulator.
 
 #![cfg(feature = "fault_injection")]
 

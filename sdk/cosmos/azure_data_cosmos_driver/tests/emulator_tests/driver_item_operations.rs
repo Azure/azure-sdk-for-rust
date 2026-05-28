@@ -31,8 +31,8 @@ struct TestItem {
 /// 5. Validates diagnostics for both operations
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -101,8 +101,8 @@ pub async fn create_and_read_item() -> Result<(), Box<dyn Error>> {
 /// Tests that control plane operations use the metadata pipeline.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn control_plane_uses_metadata_pipeline() -> Result<(), Box<dyn Error>> {
     DriverTestClient::run_with_unique_db(async |context, database| {
@@ -143,8 +143,8 @@ pub async fn control_plane_uses_metadata_pipeline() -> Result<(), Box<dyn Error>
 /// Tests diagnostics content for emulator operations.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>> {
     DriverTestClient::run_with_unique_db(async |context, database| {
@@ -196,12 +196,22 @@ pub async fn diagnostics_contain_expected_fields() -> Result<(), Box<dyn Error>>
             "Endpoint should be captured"
         );
 
-        // For emulator, verify transport security
+        // For emulator, verify transport security. The legacy emulator and
+        // the vnext emulator in HTTPS mode use a self-signed cert and surface
+        // as `EmulatorWithInsecureCertificates`. The vnext emulator in HTTP
+        // mode has no TLS at all and is classified as `Secure` today (the
+        // enum predates plain-HTTP emulator support — tracked separately).
         if request.endpoint().contains("localhost") || request.endpoint().contains("127.0.0.1") {
+            let expected = if request.endpoint().starts_with("https://") {
+                TransportSecurity::EmulatorWithInsecureCertificates
+            } else {
+                TransportSecurity::Secure
+            };
             assert_eq!(
                 request.transport_security(),
-                TransportSecurity::EmulatorWithInsecureCertificates,
-                "Emulator should use insecure certificates transport"
+                expected,
+                "Unexpected transport security for emulator endpoint {}",
+                request.endpoint()
             );
         }
 
