@@ -17,7 +17,7 @@ use crate::{
         },
         routing::AccountEndpointState,
     },
-    models::{CosmosOperation, CosmosStatus, OperationType, ResourceType},
+    models::{CosmosOperation, OperationType, ResourceType},
     options::{
         AvailabilityStrategy, HedgeThreshold, HedgingStrategy, OperationOptionsView, Region,
     },
@@ -41,22 +41,6 @@ const HEDGEABLE_RESOURCE_TYPES: &[ResourceType] = &[ResourceType::Document];
 /// Future phases will append feed-style operations
 /// (`Query` / `ReadFeed` / `QueryPlan`) and metadata reads.
 const HEDGEABLE_OPERATION_TYPES: &[OperationType] = &[OperationType::Read];
-
-/// Returns `true` when the status is a **final** (non-retriable) outcome:
-/// any 1xx/2xx/3xx, the explicitly non-retriable client errors
-/// (`400`, `401`, `405`, `409`, `412`, `413`), or `404` with no
-/// sub-status. Everything else — including `404/1002`, `408`, `429`,
-/// `503`, and `403` regardless of sub-status — is treated as retriable
-/// so that the racing hedge gets a chance to win.
-pub(crate) fn is_final_result(status: &CosmosStatus) -> bool {
-    let code: u16 = status.status_code().into();
-    if code < 400 {
-        return true;
-    }
-
-    let sub = status.sub_status().map(|s| s.value()).unwrap_or(0);
-    matches!(code, 400 | 401 | 405 | 409 | 412 | 413) || (code == 404 && sub == 0)
-}
 
 /// Returns `true` when the operation is eligible for cross-region hedging.
 ///
@@ -402,50 +386,50 @@ mod tests {
 
     #[test]
     fn is_final_result_success() {
-        assert!(is_final_result(&status(200, None)));
-        assert!(is_final_result(&status(201, None)));
-        assert!(is_final_result(&status(304, None)));
+        assert!(status(200, None).is_final_result());
+        assert!(status(201, None).is_final_result());
+        assert!(status(304, None).is_final_result());
     }
 
     #[test]
     fn is_final_result_conflict() {
-        assert!(is_final_result(&status(409, None)));
+        assert!(status(409, None).is_final_result());
     }
 
     #[test]
     fn is_final_result_503() {
-        assert!(!is_final_result(&status(503, None)));
+        assert!(!status(503, None).is_final_result());
     }
 
     #[test]
     fn is_final_result_404_0() {
-        assert!(is_final_result(&status(404, None)));
-        assert!(is_final_result(&status(404, Some(0))));
+        assert!(status(404, None).is_final_result());
+        assert!(status(404, Some(0)).is_final_result());
     }
 
     #[test]
     fn is_final_result_404_1002() {
-        assert!(!is_final_result(&status(404, Some(1002))));
+        assert!(!status(404, Some(1002)).is_final_result());
     }
 
     #[test]
     fn is_final_result_429() {
-        assert!(!is_final_result(&status(429, None)));
+        assert!(!status(429, None).is_final_result());
     }
 
     #[test]
     fn is_final_result_403_transient() {
         // Per §7.2 row, 403 (with or without sub-status) is transient
         // for hedging purposes.
-        assert!(!is_final_result(&status(403, None)));
-        assert!(!is_final_result(&status(403, Some(3))));
+        assert!(!status(403, None).is_final_result());
+        assert!(!status(403, Some(3)).is_final_result());
     }
 
     #[test]
     fn is_final_result_other_client_errors_final() {
         for code in [400_u16, 401, 405, 412, 413] {
             assert!(
-                is_final_result(&status(code, None)),
+                status(code, None).is_final_result(),
                 "expected {} to be final",
                 code
             );

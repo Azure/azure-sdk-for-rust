@@ -43,7 +43,7 @@ use super::{
         TransportRequest, TransportResult,
     },
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
-    hedging_eligibility::{evaluate_hedge_eligibility, is_final_result},
+    hedging_eligibility::evaluate_hedge_eligibility,
     retry_evaluation::{
         build_http_error, evaluate_transport_result, is_region_confirming_status,
         partition_effects_for_deferral,
@@ -1657,14 +1657,14 @@ enum HedgeClass {
 ///
 /// `Err` (e.g. failure constructing the request) and any non-final
 /// TransportOutcome map to `Transient`. A `Success` is always final; an
-/// `HttpError` is final iff `is_final_result` returns `true` for its
+/// `HttpError` is final iff [`CosmosStatus::is_final_result`] returns `true` for its
 /// status.
 fn classify_hedge_result(result: azure_core::Result<TransportResult>) -> HedgeClass {
     match result {
         Ok(tr) => match &tr.outcome {
             TransportOutcome::Success { .. } => HedgeClass::Final(Box::new(tr)),
             TransportOutcome::HttpError { status, .. } => {
-                if is_final_result(status) {
+                if status.is_final_result() {
                     HedgeClass::Final(Box::new(tr))
                 } else {
                     HedgeClass::Transient
@@ -1685,12 +1685,12 @@ fn classify_hedge_result(result: azure_core::Result<TransportResult>) -> HedgeCl
 /// primary's outcome was `Final` for [`record_hedge_outcome`] gating.
 ///
 /// Returns `true` iff a `Success` or an `HttpError` whose status passes
-/// [`is_final_result`]. Mirrors `classify_hedge_result` exactly — keep
+/// [`CosmosStatus::is_final_result`]. Mirrors `classify_hedge_result` exactly — keep
 /// the two in lockstep.
 fn result_is_final(tr: &TransportResult) -> bool {
     match &tr.outcome {
         TransportOutcome::Success { .. } => true,
-        TransportOutcome::HttpError { status, .. } => is_final_result(status),
+        TransportOutcome::HttpError { status, .. } => status.is_final_result(),
         TransportOutcome::TransportError { .. } | TransportOutcome::DeadlineExceeded { .. } => {
             false
         }
@@ -2266,7 +2266,7 @@ async fn execute_hedged(
             // Primary resolved before either timer. Short-circuiting
             // the secondary launch is only safe when the primary's
             // outcome is **final** (HTTP success or application-classified
-            // error per `is_final_result`). A *retriable* outcome
+            // error per `CosmosStatus::is_final_result`). A *retriable* outcome
             // (5xx / 429 / 408 / 410 / 404-1002 / 403-with-sub /
             // transport error / deadline) must still race against the
             // secondary so a healthy alternate region can win —

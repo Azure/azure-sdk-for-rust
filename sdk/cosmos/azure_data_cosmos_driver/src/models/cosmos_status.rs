@@ -1308,6 +1308,28 @@ impl CosmosStatus {
             && self.sub_status == Some(SubStatusCode::TRANSPORT_GENERATED_503)
     }
 
+    /// Returns `true` when this status is a **final** (non-retriable) outcome
+    /// for the purposes of cross-region hedging (HEDGING_SPEC §7.1).
+    ///
+    /// Final statuses are:
+    /// * any 1xx / 2xx / 3xx response,
+    /// * the explicitly non-retriable client errors `400`, `401`, `405`,
+    ///   `409`, `412`, `413`,
+    /// * `404` with no sub-status (or sub-status `0`).
+    ///
+    /// Everything else — including `404/1002`, `408`, `429`, `503`, and
+    /// `403` regardless of sub-status — is treated as retriable so the
+    /// racing hedge gets a chance to win.
+    pub(crate) fn is_final_result(&self) -> bool {
+        let code: u16 = self.status_code.into();
+        if code < 400 {
+            return true;
+        }
+
+        let sub = self.sub_status.map(|s| s.value()).unwrap_or(0);
+        matches!(code, 400 | 401 | 405 | 409 | 412 | 413) || (code == 404 && sub == 0)
+    }
+
     /// Returns the human-readable name of this status combination, if known.
     ///
     /// Unlike the raw sub-status code, this method always resolves ambiguous
