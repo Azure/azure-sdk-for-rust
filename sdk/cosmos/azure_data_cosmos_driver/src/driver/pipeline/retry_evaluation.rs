@@ -719,7 +719,7 @@ fn build_transport_error(
         .with_status(*status)
         .with_message(message)
         .with_arc_source(std::sync::Arc::new(error.clone()));
-    if let Some(diag) = error.diagnostics().cloned() {
+    if let Some(diag) = error.diagnostics() {
         b = b.with_diagnostics(diag);
     }
     b.build()

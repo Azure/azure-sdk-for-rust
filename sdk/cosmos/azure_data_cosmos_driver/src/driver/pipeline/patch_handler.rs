@@ -373,7 +373,7 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
                 // `CosmosError::with_diagnostics` before returning) — extract
                 // and forward it.
                 if let Some(diag) = err.diagnostics() {
-                    sub_op_diagnostics.push(Arc::clone(diag));
+                    sub_op_diagnostics.push(diag);
                 }
                 last_412 = Some(err);
                 continue;

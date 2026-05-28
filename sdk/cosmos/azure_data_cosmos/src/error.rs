@@ -62,7 +62,7 @@ impl CosmosError {
     /// wire-response errors this is `Some(response.diagnostics())`; for
     /// synthetic errors it is whatever the pipeline attached, or `None`.
     pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>> {
-        self.0.diagnostics().cloned()
+        self.0.diagnostics()
     }
 }
 

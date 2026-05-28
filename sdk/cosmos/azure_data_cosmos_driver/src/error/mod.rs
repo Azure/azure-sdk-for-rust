@@ -227,7 +227,19 @@ impl CosmosError {
     /// [`CosmosErrorBuilder::with_diagnostics`] (typically late, when the
     /// operation pipeline finalizes diagnostics around an aborted
     /// transport call); `None` when no diagnostics were attached.
-    pub fn diagnostics(&self) -> Option<&Arc<DiagnosticsContext>> {
+    pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>> {
+        match &self.inner.context {
+            ErrorContext::Wire { response } => Some(response.diagnostics()),
+            ErrorContext::WirePending { .. } => None,
+            ErrorContext::Synthetic { diagnostics } => diagnostics.clone(),
+        }
+    }
+
+    /// `pub(crate)`: borrowing version of [`diagnostics()`](Self::diagnostics)
+    /// for internal hot paths that only need to read the diagnostics
+    /// (e.g. formatting in `Display` / `Debug`, structural assertions
+    /// in tests) and want to avoid the per-call `Arc` refcount bump.
+    pub(crate) fn diagnostics_ref(&self) -> Option<&Arc<DiagnosticsContext>> {
         match &self.inner.context {
             ErrorContext::Wire { response } => Some(response.diagnostics_ref()),
             ErrorContext::WirePending { .. } => None,
@@ -423,7 +435,7 @@ fn write_diagnostics(
     debug: bool,
     alternate: bool,
 ) -> fmt::Result {
-    let Some(diag) = err.diagnostics() else {
+    let Some(diag) = err.diagnostics_ref() else {
         return Ok(());
     };
     let diag = diag.as_ref();
@@ -962,7 +974,7 @@ mod tests {
             .with_diagnostics(Arc::clone(&diag))
             .build();
         assert!(err.response().is_none());
-        assert!(Arc::ptr_eq(err.diagnostics().unwrap(), &diag));
+        assert!(Arc::ptr_eq(&err.diagnostics().unwrap(), &diag));
     }
 
     #[test]
@@ -982,8 +994,8 @@ mod tests {
             .build();
 
         assert_eq!(err.status().status_code(), StatusCode::NotFound);
-        assert!(Arc::ptr_eq(err.diagnostics().unwrap(), &resp_diag));
-        assert!(!Arc::ptr_eq(err.diagnostics().unwrap(), &unrelated_diag));
+        assert!(Arc::ptr_eq(&err.diagnostics().unwrap(), &resp_diag));
+        assert!(!Arc::ptr_eq(&err.diagnostics().unwrap(), &unrelated_diag));
         let wire = err.response().expect("wire response present");
         assert_eq!(wire.status().status_code(), StatusCode::NotFound);
     }
@@ -1056,7 +1068,7 @@ mod tests {
         // Promotion: a Wire context with the assembled response is produced.
         let wire = err.response().expect("promotion to Wire");
         assert_eq!(wire.status().status_code(), StatusCode::NotFound);
-        assert!(Arc::ptr_eq(err.diagnostics().unwrap(), &diag));
+        assert!(Arc::ptr_eq(&err.diagnostics().unwrap(), &diag));
         assert!(Arc::ptr_eq(wire.diagnostics_ref(), &diag));
     }
 
@@ -1079,7 +1091,7 @@ mod tests {
 
         let wire = finalized.response().expect("finalization promoted to Wire");
         assert_eq!(wire.status().status_code(), StatusCode::ServiceUnavailable);
-        assert!(Arc::ptr_eq(finalized.diagnostics().unwrap(), &diag));
+        assert!(Arc::ptr_eq(&finalized.diagnostics().unwrap(), &diag));
         assert!(Arc::ptr_eq(wire.diagnostics_ref(), &diag));
     }
 
@@ -1120,7 +1132,7 @@ mod tests {
 
         let wire = decorated.response().expect("Wire carried forward");
         assert_eq!(wire.status().status_code(), StatusCode::Conflict);
-        assert!(Arc::ptr_eq(decorated.diagnostics().unwrap(), &diag));
+        assert!(Arc::ptr_eq(&decorated.diagnostics().unwrap(), &diag));
     }
 
     #[test]
@@ -1148,7 +1160,7 @@ mod tests {
             original.status().status_code()
         );
         assert_eq!(format!("{cloned}"), format!("{original}"));
-        assert!(Arc::ptr_eq(cloned.diagnostics().unwrap(), &diag));
+        assert!(Arc::ptr_eq(&cloned.diagnostics().unwrap(), &diag));
     }
 
     #[test]
@@ -1458,7 +1470,7 @@ mod tests {
             .build();
 
         assert!(
-            Arc::ptr_eq(attached.diagnostics().expect("diagnostics attached"), &diag),
+            Arc::ptr_eq(&attached.diagnostics().expect("diagnostics attached"), &diag),
             "builder must store the supplied diagnostics Arc verbatim"
         );
         assert!(
