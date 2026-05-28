@@ -73,17 +73,18 @@ pub(crate) async fn begin_replace(
     throughput: ThroughputProperties,
     operation_options: OperationOptions,
 ) -> crate::Result<crate::clients::ThroughputPoller> {
-    let mut current_throughput = find_offer(&driver, &account, resource_id, operation_options.clone())
-        .await?
-        .ok_or_else(|| {
-            // No offer exists for the resource — typically the caller
-            // pointed at a resource that doesn't support throughput
-            // (e.g. a serverless or shared-throughput container).
-            crate::DriverCosmosError::builder()
-                .with_status(crate::CosmosStatus::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE)
-                .with_message("no throughput offer found for this resource")
-                .build()
-        })?;
+    let mut current_throughput =
+        find_offer(&driver, &account, resource_id, operation_options.clone())
+            .await?
+            .ok_or_else(|| {
+                // No offer exists for the resource — typically the caller
+                // pointed at a resource that doesn't support throughput
+                // (e.g. a serverless or shared-throughput container).
+                crate::DriverCosmosError::builder()
+                    .with_status(crate::CosmosStatus::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE)
+                    .with_message("no throughput offer found for this resource")
+                    .build()
+            })?;
 
     if current_throughput.offer_id.is_empty() {
         // Service contract violation: an offer was returned but it has
