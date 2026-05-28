@@ -263,8 +263,8 @@ EmulatorStore
 | `_etag`               | `String`      | Quoted UUID                                                                                                             |
 | `_ts`                 | `u64`         | Last-modified timestamp (Unix epoch seconds)                                                                            |
 | `_lsn`                | `u64`         | Current LSN of this partition                                                                                           |
-| `min_inclusive`       | `Epk`         | Lower EPK bound (inclusive), e.g. `Epk::min()`                                                                          |
-| `max_exclusive`       | `Epk`         | Upper EPK bound (exclusive), e.g. `Epk::max()`                                                                          |
+| `min_inclusive`       | `Epk`         | Lower EPK bound (inclusive), e.g. `Epk::MIN`                                                                            |
+| `max_exclusive`       | `Epk`         | Upper EPK bound (exclusive), e.g. `Epk::MAX`                                                                            |
 | `status`              | `String`      | `"online"` (or absent during split/merge lock)                                                                          |
 | `parents`             | `Vec<String>` | Parent partition IDs after split/merge (empty for initial partitions)                                                   |
 | `rid_prefix`          | `u32`         | Partition-local RID prefix for document allocation                                                                      |
@@ -327,7 +327,7 @@ Container (4 partitions, EPK range = "" .. "FF")
 └── PhysicalPartition 3: ["BFFF...FF",     "FF")          ← PKRange ID 3
 ```
 
-The hex-encoded EPK space `[Epk::min(), Epk::max())` is divided into N equal-width ranges.
+The hex-encoded EPK space `[Epk::MIN, Epk::MAX)` is divided into N equal-width ranges.
 Range boundaries are computed by dividing the numeric hash space and converting back to hex.
 
 ### The `Epk` Newtype
@@ -453,8 +453,8 @@ For hierarchical PK with N components, the EPK is `N * 32` hex characters long.
 #### EPK Range Boundaries
 
 EPK ranges use `Epk` comparison (lexicographic on the underlying uppercase hex string):
-- **Min inclusive**: `Epk::min()` — empty string, corresponds to empty partition key
-- **Max exclusive**: `Epk::max()` — `"FF"`, corresponds to infinity partition key
+- **Min inclusive**: `Epk::MIN` — empty string, corresponds to empty partition key
+- **Max exclusive**: `Epk::MAX` — `"FF"`, corresponds to infinity partition key
 
 The emulator's `epk` module re-exports the production `EffectivePartitionKey` from
 `azure_data_cosmos_driver::models::effective_partition_key` and delegates all hashing to

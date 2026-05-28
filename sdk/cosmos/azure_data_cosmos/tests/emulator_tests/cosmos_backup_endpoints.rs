@@ -17,9 +17,7 @@
 
 use super::framework;
 
-use azure_data_cosmos::{
-    CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, RoutingStrategy,
-};
+use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClient, RoutingStrategy};
 use framework::{resolve_connection_string, HUB_REGION};
 use std::error::Error;
 
@@ -36,8 +34,8 @@ async fn client_boots_via_backup_when_primary_unreachable() -> Result<(), Box<dy
     let connection_string =
         resolve_connection_string().expect("Cosmos DB connection string must be configured");
 
-    let real_endpoint: CosmosAccountEndpoint = connection_string.account_endpoint.parse()?;
-    let fake_endpoint: CosmosAccountEndpoint = "https://localhost:9/".parse()?;
+    let real_endpoint: AccountEndpoint = connection_string.account_endpoint().parse()?;
+    let fake_endpoint: AccountEndpoint = "https://localhost:9/".parse()?;
 
     let mut builder = CosmosClient::builder().with_backup_endpoints(vec![real_endpoint]);
 
@@ -48,9 +46,9 @@ async fn client_boots_via_backup_when_primary_unreachable() -> Result<(), Box<dy
 
     let client = builder
         .build(
-            CosmosAccountReference::with_master_key(
+            AccountReference::with_authentication_key(
                 fake_endpoint,
-                connection_string.account_key.clone(),
+                connection_string.account_key().clone(),
             ),
             RoutingStrategy::ProximityTo(HUB_REGION),
         )

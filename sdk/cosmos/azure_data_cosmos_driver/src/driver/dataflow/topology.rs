@@ -196,14 +196,8 @@ mod tests {
 
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "0");
-        assert_eq!(
-            ranges[0].range.min_inclusive(),
-            &EffectivePartitionKey::min()
-        );
-        assert_eq!(
-            ranges[0].range.max_exclusive(),
-            &EffectivePartitionKey::max()
-        );
+        assert_eq!(ranges[0].range.min_inclusive(), &EffectivePartitionKey::MIN);
+        assert_eq!(ranges[0].range.max_exclusive(), &EffectivePartitionKey::MAX);
     }
 
     #[tokio::test]
@@ -218,10 +212,7 @@ mod tests {
 
         assert_eq!(ranges.len(), 2);
         assert_eq!(ranges[0].partition_key_range_id, "1");
-        assert_eq!(
-            ranges[0].range.min_inclusive(),
-            &EffectivePartitionKey::min()
-        );
+        assert_eq!(ranges[0].range.min_inclusive(), &EffectivePartitionKey::MIN);
         assert_eq!(
             ranges[0].range.max_exclusive(),
             &EffectivePartitionKey::from("80")
@@ -231,10 +222,7 @@ mod tests {
             ranges[1].range.min_inclusive(),
             &EffectivePartitionKey::from("80")
         );
-        assert_eq!(
-            ranges[1].range.max_exclusive(),
-            &EffectivePartitionKey::max()
-        );
+        assert_eq!(ranges[1].range.max_exclusive(), &EffectivePartitionKey::MAX);
     }
 
     #[tokio::test]
@@ -243,7 +231,7 @@ mod tests {
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
 
         let left_half = FeedRange::new(
-            EffectivePartitionKey::min(),
+            EffectivePartitionKey::MIN.clone(),
             EffectivePartitionKey::from("80"),
         )
         .unwrap();

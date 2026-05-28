@@ -1325,12 +1325,12 @@ fn create_partitions(
         // lower bound is `boundaries[i-1]` and its upper bound is
         // `boundaries[i]`. The two open ends use the sentinels.
         let min = if i == 0 {
-            Epk::min()
+            Epk::MIN.clone()
         } else {
             Epk::from(boundaries[(i - 1) as usize].clone())
         };
         let max = if i == n - 1 {
-            Epk::max()
+            Epk::MAX.clone()
         } else {
             Epk::from(boundaries[i as usize].clone())
         };
@@ -1368,7 +1368,7 @@ fn create_partitions(
 /// Computes the N-1 internal EPK boundary strings that divide the reachable
 /// hash space into N equal ranges, returning the boundaries in lex-comparable
 /// hex form. The endpoints (partition 0's lower bound and partition N-1's
-/// upper bound) are represented by the [`Epk::min()`] / [`Epk::max()`]
+/// upper bound) are represented by the [`Epk::MIN.clone()`] / [`Epk::MAX.clone()`]
 /// sentinels at the call site, so they are intentionally not emitted here.
 ///
 /// # Boundary scheme by partition key kind/version
@@ -2239,7 +2239,7 @@ fn compute_epk_midpoint_v2(min: &Epk, max: &Epk) -> Result<Epk, String> {
 ///    contribute zeros.
 /// 3. Reverse `encode_double_as_uint64` and recover the underlying `u32`.
 ///
-/// Sentinels (`Epk::min()` / `Epk::max()`) map to `0` and `u32::MAX`. The
+/// Sentinels (`Epk::MIN.clone()` / `Epk::MAX.clone()`) map to `0` and `u32::MAX`. The
 /// midpoint is computed in `u32` space (wrap-safe via `u64`) and re-encoded
 /// the same way `v1_boundaries` produces its bounds, so the resulting EPK is
 /// indistinguishable from a freshly-provisioned 2-partition layout for the
@@ -2635,16 +2635,16 @@ mod tests {
     /// `compute_epk_midpoint_v1` must produce a boundary that lies strictly
     /// between `min` and `max` in the encoded V1 EPK lex ordering — that is
     /// what enables `PhysicalPartition::contains_epk`'s half-open interval
-    /// check after a split. Verify on the full-range parent (`Epk::min()`,
-    /// `Epk::max()`) and on a narrower parent.
+    /// check after a split. Verify on the full-range parent (`Epk::MIN.clone()`,
+    /// `Epk::MAX.clone()`) and on a narrower parent.
     #[test]
     fn compute_epk_midpoint_v1_lies_between_bounds() {
         use crate::models::{PartitionKeyKind, PartitionKeyVersion};
 
         // Full range: midpoint of u32 [0, MAX] is u32::MAX / 2 = 0x7FFFFFFF.
         let mid_full = super::compute_epk_midpoint(
-            &Epk::min(),
-            &Epk::max(),
+            &Epk::MIN,
+            &Epk::MAX,
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V1,
         )
@@ -2693,8 +2693,8 @@ mod tests {
     fn compute_epk_midpoint_rejects_non_hash() {
         use crate::models::{PartitionKeyKind, PartitionKeyVersion};
         let err = super::compute_epk_midpoint(
-            &Epk::min(),
-            &Epk::max(),
+            &Epk::MIN,
+            &Epk::MAX,
             PartitionKeyKind::Range,
             PartitionKeyVersion::V2,
         )

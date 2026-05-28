@@ -370,7 +370,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
 
             // Verify common response metadata is also available on QueryFeedPage
             assert!(
-                page.request_charge().is_some(),
+                page.headers().request_charge().is_some(),
                 "expected request charge on feed page"
             );
             let diagnostics = page.diagnostics();
@@ -396,7 +396,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
                 "expected positive total request charge in feed page diagnostics"
             );
             assert!(
-                page.session_token().is_some(),
+                page.headers().session_token().is_some(),
                 "expected session token on feed page"
             );
 

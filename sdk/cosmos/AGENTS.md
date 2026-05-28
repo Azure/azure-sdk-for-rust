@@ -222,7 +222,7 @@ where
 
 - ✅ **Management/metadata resource representations**: Account properties, offers, database properties, container properties, partition key ranges (NOT data plane documents/items)
 - ✅ **Supporting structures**: Types that are properties of models (IndexingPolicy, PartitionKeyDefinition, VectorEmbeddingPolicy, consistency levels, indexing modes, connection modes)
-- ✅ **Operation-specific envelopes**: Structures created for operation support (TransactionalBatch, PatchDocument, BulkOperations)
+- ✅ **Operation-specific envelopes**: Structures created for operation support (TransactionalBatch, PatchInstructions, BulkOperations)
 - ✅ **Header/wire values**: Types serialized into request headers or body (ETag, SessionToken, PartitionKey, TriggerReference, ThroughputControlGroupName)
 
 **Exclude from `models/` (use dedicated modules)**:

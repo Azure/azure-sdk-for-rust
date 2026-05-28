@@ -15,24 +15,24 @@ use azure_core::http::Url;
 /// Parsing from a string:
 ///
 /// ```rust
-/// use azure_data_cosmos::CosmosAccountEndpoint;
+/// use azure_data_cosmos::AccountEndpoint;
 ///
-/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
+/// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// ```
 ///
 /// Converting from a [`Url`](azure_core::http::Url):
 ///
 /// ```rust
-/// use azure_data_cosmos::CosmosAccountEndpoint;
+/// use azure_data_cosmos::AccountEndpoint;
 /// use azure_core::http::Url;
 ///
 /// let url: Url = "https://myaccount.documents.azure.com/".parse().unwrap();
-/// let endpoint = CosmosAccountEndpoint::from(url);
+/// let endpoint = AccountEndpoint::from(url);
 /// ```
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct CosmosAccountEndpoint(Url);
+pub struct AccountEndpoint(Url);
 
-impl CosmosAccountEndpoint {
+impl AccountEndpoint {
     /// Returns a reference to the underlying [`Url`].
     pub fn url(&self) -> &Url {
         &self.0
@@ -44,7 +44,7 @@ impl CosmosAccountEndpoint {
     }
 }
 
-impl std::str::FromStr for CosmosAccountEndpoint {
+impl std::str::FromStr for AccountEndpoint {
     type Err = crate::CosmosError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -59,13 +59,13 @@ impl std::str::FromStr for CosmosAccountEndpoint {
     }
 }
 
-impl From<Url> for CosmosAccountEndpoint {
+impl From<Url> for AccountEndpoint {
     fn from(url: Url) -> Self {
         Self(url)
     }
 }
 
-impl std::fmt::Display for CosmosAccountEndpoint {
+impl std::fmt::Display for AccountEndpoint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
     }

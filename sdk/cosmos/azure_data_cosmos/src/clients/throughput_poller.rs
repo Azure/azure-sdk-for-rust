@@ -56,7 +56,7 @@ const DEFAULT_POLLING_INTERVAL: Duration = Duration::seconds(5);
 ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
 ///     .await?;
 /// while let Some(status) = poller.try_next().await? {
-///     if let Some(charge) = status.request_charge() {
+///     if let Some(charge) = status.headers().request_charge() {
 ///         println!("Request charge: {charge}");
 ///     }
 /// }

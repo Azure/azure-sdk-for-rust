@@ -6,6 +6,36 @@
 use crate::FeedRange;
 use azure_data_cosmos_driver::models::{SessionToken, SessionTokenSegment};
 
+/// Returns `true` if `a` and `b` can be combined into a single bounding feed range.
+///
+/// Two ranges can be combined when they overlap or are adjacent (one's max equals
+/// the other's min). Logical-partition feed ranges are never mergeable, even with
+/// themselves, because they carry implicit single-partition targeting semantics
+/// that are lost when combined with arbitrary EPK ranges.
+fn can_merge(a: &FeedRange, b: &FeedRange) -> bool {
+    if a.is_logical_partition() || b.is_logical_partition() {
+        return false;
+    }
+    a.overlaps(b)
+        || a.max_exclusive() == b.min_inclusive()
+        || b.max_exclusive() == a.min_inclusive()
+}
+
+/// Combines two mergeable feed ranges into the smallest bounding range.
+///
+/// Caller must ensure [`can_merge`] returns `true` for `a` and `b`.
+fn merge_ranges(a: &FeedRange, b: &FeedRange) -> FeedRange {
+    debug_assert!(
+        can_merge(a, b),
+        "merge_ranges called on disjoint ranges or logical-partition range: a={:?}, b={:?}",
+        a,
+        b,
+    );
+    let min = std::cmp::min(a.min_inclusive(), b.min_inclusive()).clone();
+    let max = std::cmp::max(a.max_exclusive(), b.max_exclusive()).clone();
+    FeedRange::new(min, max).expect("min_inclusive <= max_exclusive after merge")
+}
+
 /// Returns `true` if the session token string contains multiple comma-separated segments.
 fn is_compound(token: &str) -> bool {
     token.contains(',')
@@ -198,8 +228,8 @@ fn analyze_subsets(
             if k == start_idx {
                 continue;
             }
-            if merged_range.can_merge(fr) {
-                merged_range = merged_range.merge_with(fr);
+            if can_merge(&merged_range, fr) {
+                merged_range = merge_ranges(&merged_range, fr);
                 tokens.push(tok.clone());
                 indices.push(*idx);
             }
@@ -659,29 +689,48 @@ mod tests {
     fn can_merge_adjacent() {
         let a = fr("AA", "BB");
         let b = fr("BB", "DD");
-        assert!(a.can_merge(&b));
-        assert!(b.can_merge(&a));
+        assert!(can_merge(&a, &b));
+        assert!(can_merge(&b, &a));
     }
 
     #[test]
     fn can_merge_overlapping() {
         let a = fr("AA", "CC");
         let b = fr("BB", "DD");
-        assert!(a.can_merge(&b));
+        assert!(can_merge(&a, &b));
     }
 
     #[test]
     fn cannot_merge_disjoint() {
         let a = fr("AA", "BB");
         let b = fr("CC", "DD");
-        assert!(!a.can_merge(&b));
+        assert!(!can_merge(&a, &b));
     }
 
     #[test]
-    fn merge_with_produces_bounding_range() {
+    fn can_merge_rejects_logical_partition_ranges_symmetrically() {
+        use azure_data_cosmos_driver::models::{PartitionKey, PartitionKeyDefinition};
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let logical = FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
+        let explicit = fr("", "FF");
+        assert!(!can_merge(&logical, &explicit));
+        assert!(!can_merge(&explicit, &logical));
+        assert!(!can_merge(&logical, &logical));
+    }
+
+    #[test]
+    fn merge_ranges_produces_bounding_range() {
         let a = fr("AA", "BB");
         let b = fr("BB", "DD");
-        let merged = a.merge_with(&b);
+        let merged = merge_ranges(&a, &b);
         assert_eq!(merged, fr("AA", "DD"));
+    }
+
+    #[test]
+    fn merge_ranges_overlapping_uses_outermost_bounds() {
+        let a = fr("00", "50");
+        let b = fr("30", "FF");
+        let merged = merge_ranges(&a, &b);
+        assert_eq!(merged, fr("00", "FF"));
     }
 }

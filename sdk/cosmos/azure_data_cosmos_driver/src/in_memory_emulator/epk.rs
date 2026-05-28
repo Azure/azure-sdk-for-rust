@@ -135,11 +135,11 @@ fn extract_pk_at_path(
         match obj.get(*segment) {
             Some(next) if i == last_idx => return json_to_pk_component(next),
             Some(next) => current = next,
-            None => return Ok(PartitionKeyValue::undefined()),
+            None => return Ok(PartitionKeyValue::UNDEFINED),
         }
     }
     // Unreachable: loop returns or assigns on every iteration.
-    Ok(PartitionKeyValue::undefined())
+    Ok(PartitionKeyValue::UNDEFINED)
 }
 
 /// Converts a single JSON value to a [`PartitionKeyValue`], rejecting non-scalars
@@ -260,7 +260,7 @@ mod tests {
     fn extract_pk_missing_path_is_undefined() {
         let body = serde_json::json!({"id": "doc1"});
         let components = extract_pk_from_body(&body, &["/missing"]).unwrap();
-        assert_eq!(components, vec![PartitionKeyValue::undefined()]);
+        assert_eq!(components, vec![PartitionKeyValue::UNDEFINED]);
     }
 
     #[test]

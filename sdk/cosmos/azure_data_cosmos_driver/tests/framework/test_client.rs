@@ -493,7 +493,7 @@ impl DriverTestRunContext {
     ///
     /// Mirrors [`read_item`](Self::read_item)'s shape but builds the
     /// [`CosmosOperation::patch_item`] body from a
-    /// [`PatchSpec`](azure_data_cosmos_driver::models::PatchSpec). The
+    /// [`PatchInstructions`](azure_data_cosmos_driver::models::PatchInstructions). The
     /// returned [`CosmosResponse`] is the synthetic response produced by the
     /// patch handler — its body is the locally-merged post-image and its
     /// status/diagnostics are inherited from the underlying conditional
@@ -506,7 +506,7 @@ impl DriverTestRunContext {
         container: &ContainerReference,
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
-        patch: &azure_data_cosmos_driver::models::PatchSpec,
+        patch: &azure_data_cosmos_driver::models::PatchInstructions,
         max_attempts: Option<std::num::NonZeroU8>,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self

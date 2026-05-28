@@ -183,8 +183,8 @@ pub(crate) async fn build_sequential_drain(
             // A bare Request snapshot means the cross-partition query had only
             // a single child — apply it as a cursor at the minimum EPK.
             Some(ResumeCursor {
-                current_min_epk: EffectivePartitionKey::min(),
-                current_max_epk: EffectivePartitionKey::max(),
+                current_min_epk: EffectivePartitionKey::MIN.clone(),
+                current_max_epk: EffectivePartitionKey::MAX.clone(),
                 server_continuation,
             })
         }

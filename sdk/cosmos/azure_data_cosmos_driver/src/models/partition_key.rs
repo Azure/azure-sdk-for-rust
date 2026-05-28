@@ -160,6 +160,9 @@ impl PartitionKeyValue {
     /// The Undefined partition key value.
     pub const UNDEFINED: Self = Self(InnerPartitionKeyValue::Undefined);
 
+    /// The special Infinity sentinel partition key value, used for EPK boundary calculations.
+    pub const INFINITY: Self = Self(InnerPartitionKeyValue::Infinity);
+
     /// Writes this value into a byte buffer using the V2 hashing encoding.
     ///
     /// Used by the effective partition key computation for MurmurHash3-128.
@@ -199,19 +202,6 @@ impl PartitionKeyValue {
             }
             _ => self.clone(),
         }
-    }
-
-    /// Creates the special Infinity sentinel value, used for EPK boundary calculations.
-    #[cfg(test)]
-    pub(crate) fn infinity() -> Self {
-        InnerPartitionKeyValue::Infinity.into()
-    }
-
-    /// Creates the Undefined partition key value.
-    ///
-    /// Represents items with no partition key property set.
-    pub fn undefined() -> Self {
-        InnerPartitionKeyValue::Undefined.into()
     }
 }
 

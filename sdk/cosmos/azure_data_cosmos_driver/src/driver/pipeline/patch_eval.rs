@@ -15,26 +15,26 @@
 //!
 //! Path parsing follows RFC 6901 (JSON Pointer), with the standard escapes
 //! `~0 -> ~` and `~1 -> /`. The trailing token `-` in an array context refers
-//! to the past-the-end position (used only by [`PatchOp::Add`] to append).
+//! to the past-the-end position (used only by [`PatchOperation::Add`] to append).
 //!
 //! Op semantics follow Cosmos DB's documented PATCH behavior:
 //!
-//! * [`Add`](PatchOp::Add) — the parent path must exist. Arrays: numeric index
+//! * [`Add`](PatchOperation::Add) — the parent path must exist. Arrays: numeric index
 //!   `<= len`, or `-` to append. Objects: replaces existing keys.
-//! * [`Set`](PatchOp::Set) — like Add but a missing leaf in an object always
+//! * [`Set`](PatchOperation::Set) — like Add but a missing leaf in an object always
 //!   succeeds (Add-or-Replace). Cosmos-specific.
-//! * [`Replace`](PatchOp::Replace) — the leaf must already exist.
-//! * [`Remove`](PatchOp::Remove) — the leaf must exist; cannot target root.
-//! * [`Increment`](PatchOp::Increment) — leaf must be a JSON number;
-//!   [`IncrValue::Int`] refuses to merge with a fractional target.
-//! * [`MoveOp`](PatchOp::MoveOp) — source must exist; source and destination
+//! * [`Replace`](PatchOperation::Replace) — the leaf must already exist.
+//! * [`Remove`](PatchOperation::Remove) — the leaf must exist; cannot target root.
+//! * [`Increment`](PatchOperation::Increment) — leaf must be a JSON number;
+//!   [`CosmosNumber::Int`] refuses to merge with a fractional target.
+//! * [`MoveOp`](PatchOperation::MoveOp) — source must exist; source and destination
 //!   must be distinct; destination cannot be a descendant of the source.
 //!
 //! Failures return [`PatchEvalError`], which converts into a
 //! [`crate::error::CosmosError`] with HTTP status `400 BadRequest` (via the
 //! `From<PatchEvalError>` impl below) before being surfaced to callers.
 
-use crate::models::{IncrValue, PatchOp};
+use crate::models::{CosmosNumber, PatchOperation};
 use serde_json::Value;
 use std::fmt;
 
@@ -66,7 +66,7 @@ pub(crate) enum PatchEvalError {
         path: String,
     },
     /// The path resolved to a value of an unexpected JSON type (e.g.,
-    /// [`Increment`](PatchOp::Increment) on a string).
+    /// [`Increment`](PatchOperation::Increment) on a string).
     TypeMismatch {
         /// Human-readable expected description.
         expected: &'static str,
@@ -124,21 +124,24 @@ impl From<PatchEvalError> for crate::error::CosmosError {
 
 /// Applies the ordered list of `ops` to `doc` in place, returning the first
 /// failure (if any). Ops up to the failing one have already mutated `doc`.
-pub(crate) fn apply_patch_ops(doc: &mut Value, ops: &[PatchOp]) -> Result<(), PatchEvalError> {
+pub(crate) fn apply_patch_ops(
+    doc: &mut Value,
+    ops: &[PatchOperation],
+) -> Result<(), PatchEvalError> {
     for op in ops {
         apply_one(doc, op)?;
     }
     Ok(())
 }
 
-fn apply_one(doc: &mut Value, op: &PatchOp) -> Result<(), PatchEvalError> {
+fn apply_one(doc: &mut Value, op: &PatchOperation) -> Result<(), PatchEvalError> {
     match op {
-        PatchOp::Add { path, value } => add_or_set(doc, path, value.clone(), AddOrSet::Add),
-        PatchOp::Set { path, value } => add_or_set(doc, path, value.clone(), AddOrSet::Set),
-        PatchOp::Replace { path, value } => replace(doc, path, value.clone()),
-        PatchOp::Remove { path } => remove(doc, path).map(|_| ()),
-        PatchOp::Increment { path, value } => increment(doc, path, *value),
-        PatchOp::MoveOp { from, path } => move_op(doc, from, path),
+        PatchOperation::Add { path, value } => add_or_set(doc, path, value.clone(), AddOrSet::Add),
+        PatchOperation::Set { path, value } => add_or_set(doc, path, value.clone(), AddOrSet::Set),
+        PatchOperation::Replace { path, value } => replace(doc, path, value.clone()),
+        PatchOperation::Remove { path } => remove(doc, path).map(|_| ()),
+        PatchOperation::Increment { path, value } => increment(doc, path, *value),
+        PatchOperation::Move { from, path } => move_value(doc, from, path),
     }
 }
 
@@ -391,7 +394,7 @@ fn remove(doc: &mut Value, path: &str) -> Result<Value, PatchEvalError> {
     }
 }
 
-fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchEvalError> {
+fn increment(doc: &mut Value, path: &str, delta: CosmosNumber) -> Result<(), PatchEvalError> {
     let tokens = parse_pointer(path)?;
     if tokens.is_empty() {
         return Err(PatchEvalError::MissingTarget(path.to_string()));
@@ -428,7 +431,7 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
 
     let new_value = match (delta, num.as_i64(), num.as_f64()) {
         // Integer delta on integer target — preserve integer fidelity.
-        (IncrValue::Int(d), Some(target), _) => {
+        (CosmosNumber::Int(d), Some(target), _) => {
             let sum = target
                 .checked_add(d)
                 .ok_or_else(|| PatchEvalError::TypeMismatch {
@@ -439,7 +442,7 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
             Value::Number(sum.into())
         }
         // Integer delta on floating target — fail rather than demote.
-        (IncrValue::Int(_), None, Some(_)) => {
+        (CosmosNumber::Int(_), None, Some(_)) => {
             return Err(PatchEvalError::TypeMismatch {
                 expected: "integer number",
                 actual: "fractional number",
@@ -456,7 +459,7 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
         // than silently demote precision — the integer-delta arm above is
         // available for callers that need exact arithmetic on large
         // integers.
-        (IncrValue::Float(d), Some(target), _) => {
+        (CosmosNumber::Float(d), Some(target), _) => {
             const F64_INT_LIMIT: u64 = 1u64 << 53;
             if target.unsigned_abs() > F64_INT_LIMIT {
                 return Err(PatchEvalError::TypeMismatch {
@@ -478,7 +481,7 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
             }
         }
         // Float delta on floating target.
-        (IncrValue::Float(d), None, Some(target)) => {
+        (CosmosNumber::Float(d), None, Some(target)) => {
             let sum = target + d;
             match serde_json::Number::from_f64(sum) {
                 Some(n) => Value::Number(n),
@@ -504,7 +507,7 @@ fn increment(doc: &mut Value, path: &str, delta: IncrValue) -> Result<(), PatchE
     Ok(())
 }
 
-fn move_op(doc: &mut Value, from: &str, to: &str) -> Result<(), PatchEvalError> {
+fn move_value(doc: &mut Value, from: &str, to: &str) -> Result<(), PatchEvalError> {
     if from == to {
         return Ok(());
     }
@@ -545,7 +548,7 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    fn apply(doc: Value, ops: &[PatchOp]) -> Result<Value, PatchEvalError> {
+    fn apply(doc: Value, ops: &[PatchOperation]) -> Result<Value, PatchEvalError> {
         let mut d = doc;
         apply_patch_ops(&mut d, ops)?;
         Ok(d)
@@ -554,42 +557,42 @@ mod tests {
     #[test]
     fn add_into_object_inserts_key() {
         let doc = json!({"a": 1});
-        let out = apply(doc, &[PatchOp::add("/b", json!(2))]).unwrap();
+        let out = apply(doc, &[PatchOperation::add("/b", json!(2))]).unwrap();
         assert_eq!(out, json!({"a": 1, "b": 2}));
     }
 
     #[test]
     fn add_with_dash_appends_to_array() {
         let doc = json!({"xs": [1, 2]});
-        let out = apply(doc, &[PatchOp::add("/xs/-", json!(3))]).unwrap();
+        let out = apply(doc, &[PatchOperation::add("/xs/-", json!(3))]).unwrap();
         assert_eq!(out, json!({"xs": [1, 2, 3]}));
     }
 
     #[test]
     fn add_at_array_index_inserts() {
         let doc = json!({"xs": [1, 3]});
-        let out = apply(doc, &[PatchOp::add("/xs/1", json!(2))]).unwrap();
+        let out = apply(doc, &[PatchOperation::add("/xs/1", json!(2))]).unwrap();
         assert_eq!(out, json!({"xs": [1, 2, 3]}));
     }
 
     #[test]
     fn add_with_missing_parent_fails() {
         let doc = json!({});
-        let err = apply(doc, &[PatchOp::add("/a/b", json!(1))]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::add("/a/b", json!(1))]).unwrap_err();
         assert!(matches!(err, PatchEvalError::MissingParent(_)), "{err}");
     }
 
     #[test]
     fn set_creates_missing_leaf_in_object() {
         let doc = json!({"a": 1});
-        let out = apply(doc, &[PatchOp::set("/b", json!(2))]).unwrap();
+        let out = apply(doc, &[PatchOperation::set("/b", json!(2))]).unwrap();
         assert_eq!(out, json!({"a": 1, "b": 2}));
     }
 
     #[test]
     fn replace_missing_leaf_fails() {
         let doc = json!({"a": 1});
-        let err = apply(doc, &[PatchOp::replace("/b", json!(2))]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::replace("/b", json!(2))]).unwrap_err();
         assert!(matches!(err, PatchEvalError::MissingTarget(_)), "{err}");
     }
 
@@ -597,35 +600,35 @@ mod tests {
     fn replace_allows_type_change() {
         // RFC 6902 permits replace to change a value's type.
         let doc = json!({"a": 1});
-        let out = apply(doc, &[PatchOp::replace("/a", json!("hi"))]).unwrap();
+        let out = apply(doc, &[PatchOperation::replace("/a", json!("hi"))]).unwrap();
         assert_eq!(out, json!({"a": "hi"}));
     }
 
     #[test]
     fn remove_strips_leaf() {
         let doc = json!({"a": 1, "b": 2});
-        let out = apply(doc, &[PatchOp::remove("/a")]).unwrap();
+        let out = apply(doc, &[PatchOperation::remove("/a")]).unwrap();
         assert_eq!(out, json!({"b": 2}));
     }
 
     #[test]
     fn remove_root_fails() {
         let doc = json!({"a": 1});
-        let err = apply(doc, &[PatchOp::remove("")]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::remove("")]).unwrap_err();
         assert!(matches!(err, PatchEvalError::CannotRemoveRoot));
     }
 
     #[test]
     fn remove_missing_fails() {
         let doc = json!({"a": 1});
-        let err = apply(doc, &[PatchOp::remove("/missing")]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::remove("/missing")]).unwrap_err();
         assert!(matches!(err, PatchEvalError::MissingTarget(_)), "{err}");
     }
 
     #[test]
     fn increment_int_preserves_fidelity() {
         let doc = json!({"n": 9_000_000_000_000_000i64});
-        let out = apply(doc, &[PatchOp::increment("/n", 1i64)]).unwrap();
+        let out = apply(doc, &[PatchOperation::increment("/n", 1i64)]).unwrap();
         let n = out["n"].as_i64().unwrap();
         assert_eq!(n, 9_000_000_000_000_001);
     }
@@ -633,14 +636,14 @@ mod tests {
     #[test]
     fn increment_int_on_float_fails() {
         let doc = json!({"n": 1.5});
-        let err = apply(doc, &[PatchOp::increment("/n", 1i64)]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::increment("/n", 1i64)]).unwrap_err();
         assert!(matches!(err, PatchEvalError::TypeMismatch { .. }), "{err}");
     }
 
     #[test]
     fn increment_float_on_int_promotes_to_float() {
         let doc = json!({"n": 2});
-        let out = apply(doc, &[PatchOp::increment("/n", 0.5f64)]).unwrap();
+        let out = apply(doc, &[PatchOperation::increment("/n", 0.5f64)]).unwrap();
         assert!((out["n"].as_f64().unwrap() - 2.5).abs() < f64::EPSILON);
     }
 
@@ -653,7 +656,7 @@ mod tests {
         // `9_007_199_254_740_992.0` — durably losing the value when written
         // back as JSON. Pin the fast-fail behavior.
         let doc = json!({ "n": 9_007_199_254_740_993i64 });
-        let err = apply(doc, &[PatchOp::increment("/n", 0.0f64)]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::increment("/n", 0.0f64)]).unwrap_err();
         assert!(
             matches!(err, PatchEvalError::TypeMismatch { .. }),
             "Float-delta Increment on i64 outside ±2^53 must reject; got {err}"
@@ -661,7 +664,7 @@ mod tests {
 
         // Negative side of the limit too.
         let doc = json!({ "n": -9_007_199_254_740_993i64 });
-        let err = apply(doc, &[PatchOp::increment("/n", 0.0f64)]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::increment("/n", 0.0f64)]).unwrap_err();
         assert!(
             matches!(err, PatchEvalError::TypeMismatch { .. }),
             "Float-delta Increment on negative i64 outside ±2^53 must reject; got {err}"
@@ -669,35 +672,35 @@ mod tests {
 
         // Right at the limit (±2^53) is still representable and must succeed.
         let doc = json!({ "n": 9_007_199_254_740_992i64 });
-        let out = apply(doc, &[PatchOp::increment("/n", 0.0f64)]).unwrap();
+        let out = apply(doc, &[PatchOperation::increment("/n", 0.0f64)]).unwrap();
         assert_eq!(out["n"].as_f64().unwrap(), 9_007_199_254_740_992.0);
     }
 
     #[test]
     fn increment_on_non_number_fails() {
         let doc = json!({"n": "five"});
-        let err = apply(doc, &[PatchOp::increment("/n", 1i64)]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::increment("/n", 1i64)]).unwrap_err();
         assert!(matches!(err, PatchEvalError::TypeMismatch { .. }), "{err}");
     }
 
     #[test]
     fn move_renames_field() {
         let doc = json!({"a": 1});
-        let out = apply(doc, &[PatchOp::move_op("/a", "/b")]).unwrap();
+        let out = apply(doc, &[PatchOperation::move_value("/a", "/b")]).unwrap();
         assert_eq!(out, json!({"b": 1}));
     }
 
     #[test]
     fn move_to_same_path_is_noop() {
         let doc = json!({"a": 1});
-        let out = apply(doc, &[PatchOp::move_op("/a", "/a")]).unwrap();
+        let out = apply(doc, &[PatchOperation::move_value("/a", "/a")]).unwrap();
         assert_eq!(out, json!({"a": 1}));
     }
 
     #[test]
     fn move_into_own_descendant_fails() {
         let doc = json!({"a": {"x": 1}});
-        let err = apply(doc, &[PatchOp::move_op("/a", "/a/inner")]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::move_value("/a", "/a/inner")]).unwrap_err();
         assert!(matches!(err, PatchEvalError::InvalidMove(_)), "{err}");
     }
 
@@ -709,7 +712,7 @@ mod tests {
         // `/a~1b` even though the byte-prefix check is also correct in this
         // specific case.
         let doc = json!({"a/b": {"x": 1}});
-        let err = apply(doc, &[PatchOp::move_op("/a~1b", "/a~1b/c")]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::move_value("/a~1b", "/a~1b/c")]).unwrap_err();
         assert!(matches!(err, PatchEvalError::InvalidMove(_)), "{err}");
     }
 
@@ -719,7 +722,7 @@ mod tests {
         // without a `/` guard; token-level compare says no). The move must
         // proceed.
         let doc = json!({"a": 1, "ab": {"x": 2}});
-        let out = apply(doc, &[PatchOp::move_op("/a", "/ab/y")]).unwrap();
+        let out = apply(doc, &[PatchOperation::move_value("/a", "/ab/y")]).unwrap();
         assert_eq!(out, json!({"ab": {"x": 2, "y": 1}}));
     }
 
@@ -731,12 +734,15 @@ mod tests {
         let doc = json!({"a": 1, "b": {}});
         let original = doc.clone();
         let mut d = doc;
-        let err =
-            apply_patch_ops(&mut d, &[PatchOp::move_op("/a", "/missing/parent/x")]).unwrap_err();
+        let err = apply_patch_ops(
+            &mut d,
+            &[PatchOperation::move_value("/a", "/missing/parent/x")],
+        )
+        .unwrap_err();
         assert!(matches!(err, PatchEvalError::MissingParent(_)), "{err}");
         assert_eq!(
             d, original,
-            "move_op must be atomic: a failed move must leave the document unchanged"
+            "move_value must be atomic: a failed move must leave the document unchanged"
         );
     }
 
@@ -746,7 +752,7 @@ mod tests {
         // (no shift). Cosmos backend semantics: "set is similar to add… in
         // an array, Set replaces an existing element value".
         let doc = json!({"xs": [1, 2, 3]});
-        let out = apply(doc, &[PatchOp::set("/xs/1", json!(9))]).unwrap();
+        let out = apply(doc, &[PatchOperation::set("/xs/1", json!(9))]).unwrap();
         assert_eq!(out, json!({"xs": [1, 9, 3]}));
     }
 
@@ -754,7 +760,7 @@ mod tests {
     fn set_with_dash_appends_to_array() {
         // Set with the trailing '-' token still appends, matching Add.
         let doc = json!({"xs": [1, 2]});
-        let out = apply(doc, &[PatchOp::set("/xs/-", json!(3))]).unwrap();
+        let out = apply(doc, &[PatchOperation::set("/xs/-", json!(3))]).unwrap();
         assert_eq!(out, json!({"xs": [1, 2, 3]}));
     }
 
@@ -764,7 +770,7 @@ mod tests {
         // silently insert (the Add codepath uses allow_append=true; Set
         // does not).
         let doc = json!({"xs": [1, 2]});
-        let err = apply(doc, &[PatchOp::set("/xs/5", json!(9))]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::set("/xs/5", json!(9))]).unwrap_err();
         assert!(
             matches!(err, PatchEvalError::ArrayIndexOutOfRange { .. }),
             "{err}"
@@ -775,23 +781,23 @@ mod tests {
     fn pointer_escapes() {
         // ~1 -> '/', ~0 -> '~'
         let doc = json!({"a/b": 1, "tilde~": "x"});
-        let out = apply(doc.clone(), &[PatchOp::replace("/a~1b", json!(2))]).unwrap();
+        let out = apply(doc.clone(), &[PatchOperation::replace("/a~1b", json!(2))]).unwrap();
         assert_eq!(out["a/b"], json!(2));
-        let out2 = apply(doc, &[PatchOp::replace("/tilde~0", json!("y"))]).unwrap();
+        let out2 = apply(doc, &[PatchOperation::replace("/tilde~0", json!("y"))]).unwrap();
         assert_eq!(out2["tilde~"], json!("y"));
     }
 
     #[test]
     fn invalid_pointer_fails() {
         let doc = json!({});
-        let err = apply(doc, &[PatchOp::add("invalid", json!(1))]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::add("invalid", json!(1))]).unwrap_err();
         assert!(matches!(err, PatchEvalError::InvalidPath(_)), "{err}");
     }
 
     #[test]
     fn array_index_out_of_range_fails() {
         let doc = json!({"xs": [1]});
-        let err = apply(doc, &[PatchOp::add("/xs/5", json!(2))]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::add("/xs/5", json!(2))]).unwrap_err();
         assert!(
             matches!(err, PatchEvalError::ArrayIndexOutOfRange { .. }),
             "{err}"
@@ -813,9 +819,9 @@ mod tests {
         let out = apply(
             doc,
             &[
-                PatchOp::increment("/a", 1i64),
-                PatchOp::move_op("/a", "/b"),
-                PatchOp::increment("/b", 1i64),
+                PatchOperation::increment("/a", 1i64),
+                PatchOperation::move_value("/a", "/b"),
+                PatchOperation::increment("/b", 1i64),
             ],
         )
         .unwrap();
@@ -833,7 +839,7 @@ mod tests {
         // when `len == 0`) and panic at `arr[0] = v`. The empty-array guard
         // must convert this into a typed `ArrayIndexOutOfRange`.
         let doc = json!({"xs": []});
-        let err = apply(doc, &[PatchOp::set("/xs/0", json!("v"))]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::set("/xs/0", json!("v"))]).unwrap_err();
         assert!(
             matches!(
                 err,
@@ -852,7 +858,7 @@ mod tests {
         // same shape as the Set case but on the pre-existing Replace
         // branch (`arr[idx] = v` at the bottom of `replace`).
         let doc = json!({"xs": []});
-        let err = apply(doc, &[PatchOp::replace("/xs/0", json!("v"))]).unwrap_err();
+        let err = apply(doc, &[PatchOperation::replace("/xs/0", json!("v"))]).unwrap_err();
         assert!(
             matches!(
                 err,
@@ -873,7 +879,7 @@ mod tests {
         // at index 0 on an empty array (equivalent to push), which RFC 6902
         // permits and which `allow_append=true` correctly handles.
         let doc = json!({"xs": []});
-        let out = apply(doc, &[PatchOp::add("/xs/0", json!("v"))]).unwrap();
+        let out = apply(doc, &[PatchOperation::add("/xs/0", json!("v"))]).unwrap();
         assert_eq!(out, json!({"xs": ["v"]}));
     }
 
@@ -881,7 +887,7 @@ mod tests {
     fn add_on_empty_array_with_dash_succeeds() {
         // F14 regression guard: `-` (append) on an empty array still works.
         let doc = json!({"xs": []});
-        let out = apply(doc, &[PatchOp::add("/xs/-", json!("v"))]).unwrap();
+        let out = apply(doc, &[PatchOperation::add("/xs/-", json!("v"))]).unwrap();
         assert_eq!(out, json!({"xs": ["v"]}));
     }
 }

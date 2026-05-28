@@ -4,11 +4,10 @@
 use crate::{
     clients::{ClientContext, DatabaseClient},
     models::{DatabaseProperties, ResourceResponse},
-    CreateDatabaseOptions, FeedItemIterator, Query, QueryDatabasesOptions,
+    CreateDatabaseOptions, Query, QueryDatabasesOptions, QueryItemIterator,
 };
 use azure_core::http::Url;
 use azure_data_cosmos_driver::models::CosmosOperation;
-use azure_data_cosmos_driver::options::OperationOptions;
 use serde::Serialize;
 
 pub use super::cosmos_client_builder::CosmosClientBuilder;
@@ -22,16 +21,16 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// Using Entra ID authentication:
 ///
 /// ```rust,no_run
-/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, Region, RoutingStrategy};
+/// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, Region, RoutingStrategy};
 /// use std::sync::Arc;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
 ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+/// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/"
 ///     .parse()
 ///     .unwrap();
-/// let account = CosmosAccountReference::with_credential(endpoint, credential);
+/// let account = AccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClient::builder()
 ///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
@@ -42,14 +41,14 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 /// Using key authentication (requires `key_auth` feature):
 ///
 /// ```rust,no_run,ignore
-/// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, Region, RoutingStrategy};
+/// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, Region, RoutingStrategy};
 /// use azure_core::credentials::Secret;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+/// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/"
 ///     .parse()
 ///     .unwrap();
-/// let account = CosmosAccountReference::with_master_key(
+/// let account = AccountReference::with_authentication_key(
 ///     endpoint,
 ///     Secret::from("my_account_key"),
 /// );
@@ -70,15 +69,15 @@ impl CosmosClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, Region, RoutingStrategy};
+    /// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, Region, RoutingStrategy};
     ///
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
     ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-    /// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+    /// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/"
     ///     .parse()
     ///     .unwrap();
-    /// let account = CosmosAccountReference::with_credential(endpoint, credential);
+    /// let account = AccountReference::with_credential(endpoint, credential);
     /// let client = CosmosClient::builder()
     ///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
     ///     .await?;
@@ -127,14 +126,14 @@ impl CosmosClient {
     pub async fn query_databases(
         &self,
         query: impl Into<Query>,
-        #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<QueryDatabasesOptions>,
-    ) -> crate::Result<FeedItemIterator<DatabaseProperties>> {
+    ) -> crate::Result<QueryItemIterator<DatabaseProperties>> {
+        let options = options.unwrap_or_default();
         let query = query.into();
         let account = self.context.driver.account().clone();
         let initial_operation =
             CosmosOperation::query_databases(account).with_body(serde_json::to_vec(&query)?);
-        let operation_options = OperationOptions::default();
+        let operation_options = options.operation;
 
         let plan = self
             .context
@@ -142,7 +141,7 @@ impl CosmosClient {
             .plan_operation(initial_operation, &operation_options, None)
             .await?;
 
-        Ok(FeedItemIterator::new(
+        Ok(QueryItemIterator::new(
             self.context.driver.clone(),
             None,
             plan,
@@ -160,9 +159,9 @@ impl CosmosClient {
     pub async fn create_database(
         &self,
         id: &str,
-        #[allow(unused_variables, reason = "This parameter may be used in the future")]
         options: Option<CreateDatabaseOptions>,
     ) -> crate::Result<ResourceResponse<DatabaseProperties>> {
+        let options = options.unwrap_or_default();
         #[derive(Serialize)]
         struct RequestBody<'a> {
             id: &'a str,
@@ -174,7 +173,7 @@ impl CosmosClient {
 
         // Control-plane creates always need the full response body so the
         // caller can inspect the created resource properties.
-        let mut operation_options = OperationOptions::default();
+        let mut operation_options = options.operation;
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 

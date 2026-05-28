@@ -113,7 +113,7 @@ to parse a data plane body:
 
 1. Issue an internal `OperationType::Read` for the target item.
 2. Parse the JSON body into a `serde_json::Value`.
-3. Apply the supplied `PatchSpec` operations locally.
+3. Apply the supplied `PatchInstructions` operations locally.
 4. Re-serialize and issue an `If-Match`-guarded `OperationType::Replace`.
 5. Restart on `412 PreconditionFailed`, up to `patch_max_attempts`
    (default 5).

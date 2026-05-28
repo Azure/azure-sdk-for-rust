@@ -79,13 +79,13 @@ impl OperationOverrides {
         headers: &mut azure_core::http::headers::Headers,
     ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
-            if feed_range.min_inclusive() != &EffectivePartitionKey::min() {
+            if feed_range.min_inclusive() != &EffectivePartitionKey::MIN {
                 headers.insert(
                     HeaderName::from_static(request_header_names::START_EPK),
                     HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
                 );
             }
-            if feed_range.max_exclusive() != &EffectivePartitionKey::max() {
+            if feed_range.max_exclusive() != &EffectivePartitionKey::MAX {
                 headers.insert(
                     HeaderName::from_static(request_header_names::END_EPK),
                     HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),

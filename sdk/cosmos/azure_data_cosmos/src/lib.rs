@@ -7,8 +7,7 @@
 mod account_endpoint;
 mod account_reference;
 pub mod clients;
-mod connection_string;
-pub mod constants;
+mod constants;
 mod credential;
 mod error;
 mod feed;
@@ -24,12 +23,11 @@ pub use clients::CosmosClient;
 #[doc(inline)]
 pub use clients::CosmosClientBuilder;
 
-pub use account_endpoint::CosmosAccountEndpoint;
-pub use account_reference::CosmosAccountReference;
+pub use account_endpoint::AccountEndpoint;
+pub use account_reference::AccountReference;
 pub use clients::ThroughputPoller;
-pub use connection_string::*;
 pub use credential::CosmosCredential;
-pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
+pub use error::{CosmosError, Result, SubStatusCode};
 
 /// Internal alias for the driver's `CosmosError`. Used at error-construction
 /// sites inside this crate so they can call the driver's
@@ -37,8 +35,8 @@ pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
 /// public [`CosmosError`] newtype. Not exposed in the public API.
 pub(crate) use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 pub use models::{
-    BatchResponse, DiagnosticsContext, IncrValue, ItemResponse, PatchOp, PatchSpec,
-    ResourceResponse, ResponseBody, ResponseHeaders,
+    BatchResponse, CosmosNumber, CosmosStatus, DiagnosticsContext, ItemResponse, PatchInstructions,
+    PatchOperation, ResourceResponse, ResponseBody, ResponseHeaders,
 };
 pub use options::*;
 pub use query::Query;
@@ -52,9 +50,10 @@ pub use transactional_batch::{
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
     ContinuationToken, EffectivePartitionKey, FeedRange, PartitionKey, PartitionKeyValue,
+    SubStatusCode,
 };
 
-pub use feed::{FeedItemIterator, FeedPage, FeedPageIterator, QueryFeedPage};
+pub use feed::{FeedPage, QueryFeedPage, QueryItemIterator, QueryPageIterator};
 mod driver_bridge;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;

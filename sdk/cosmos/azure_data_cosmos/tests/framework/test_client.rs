@@ -14,9 +14,10 @@ use azure_data_cosmos::options::ItemReadOptions;
 use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::Region;
 use azure_data_cosmos::{
-    clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
-    Query, RoutingStrategy,
+    clients::DatabaseClient, CosmosClient, CreateContainerOptions, PartitionKey, Query,
+    RoutingStrategy,
 };
+use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
 use std::future::Future;
 use std::pin::Pin;
@@ -340,7 +341,7 @@ impl TestClient {
             }
         }
 
-        let credential = connection_string.account_key.clone();
+        let credential = connection_string.account_key().clone();
         let mut builder = azure_data_cosmos::CosmosClient::builder();
 
         // Determine the region selection strategy
@@ -368,11 +369,11 @@ impl TestClient {
             builder = builder.with_fault_injection(fault_rules);
         }
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            connection_string.account_endpoint.parse()?;
+        let endpoint: azure_data_cosmos::AccountEndpoint =
+            connection_string.account_endpoint().parse()?;
         let cosmos_client = builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(endpoint, credential),
+                azure_data_cosmos::AccountReference::with_authentication_key(endpoint, credential),
                 strategy,
             )
             .await?;
@@ -897,7 +898,7 @@ impl TestRunContext {
 
         let parsed: ConnectionString = connection_string.parse()?;
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint = parsed.account_endpoint.parse()?;
+        let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
         let mut builder = CosmosClient::builder();
 
         #[cfg(feature = "allow_invalid_certificates")]
@@ -907,9 +908,9 @@ impl TestRunContext {
 
         builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                azure_data_cosmos::AccountReference::with_authentication_key(
                     endpoint,
-                    parsed.account_key.clone(),
+                    parsed.account_key().clone(),
                 ),
                 RoutingStrategy::ProximityTo(region),
             )

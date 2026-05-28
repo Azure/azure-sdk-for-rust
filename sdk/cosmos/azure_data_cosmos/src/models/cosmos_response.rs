@@ -6,7 +6,6 @@
 use std::sync::Arc;
 
 use crate::models::{CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders};
-use crate::SessionToken;
 use azure_data_cosmos_driver::models::CosmosResponse as DriverResponse;
 use serde::de::DeserializeOwned;
 
@@ -73,18 +72,6 @@ impl CosmosResponse {
     /// Consumes the response and returns the response body.
     pub(crate) fn into_body(self) -> ResponseBody {
         self.body
-    }
-
-    /// Returns the request charge (RU consumption) for this operation, if available.
-    pub(crate) fn request_charge(&self) -> Option<f64> {
-        self.cosmos_headers.request_charge().map(|rc| rc.value())
-    }
-
-    /// Returns the session token from this response, if available.
-    pub(crate) fn session_token(&self) -> Option<SessionToken> {
-        self.cosmos_headers
-            .session_token()
-            .map(|st| SessionToken::from(st.as_str().to_string()))
     }
 
     /// Returns a cloned [`Arc`] handle to the diagnostics for this operation.

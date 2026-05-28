@@ -23,15 +23,17 @@ pub(crate) async fn find_offer(
     driver: &CosmosDriver,
     account: &AccountReference,
     resource_id: &str,
+    operation_options: OperationOptions,
 ) -> crate::Result<Option<ThroughputProperties>> {
     let query = Query::from("SELECT * FROM c WHERE c.offerResourceId = @rid")
         .with_parameter("@rid", resource_id)?;
     let body = serde_json::to_vec(&query)?;
 
     let operation = CosmosOperation::query_offers(account.clone()).with_body(body);
-    let options = OperationOptions::default();
 
-    let driver_response = driver.execute_operation(operation, options).await?;
+    let driver_response = driver
+        .execute_operation(operation, operation_options)
+        .await?;
     let Some(driver_response) = driver_response else {
         // No offer found for this resource
         return Ok(None);
@@ -69,8 +71,9 @@ pub(crate) async fn begin_replace(
     account: AccountReference,
     resource_id: &str,
     throughput: ThroughputProperties,
+    operation_options: OperationOptions,
 ) -> crate::Result<crate::clients::ThroughputPoller> {
-    let mut current_throughput = find_offer(&driver, &account, resource_id)
+    let mut current_throughput = find_offer(&driver, &account, resource_id, operation_options.clone())
         .await?
         .ok_or_else(|| {
             // No offer exists for the resource — typically the caller
@@ -103,7 +106,7 @@ pub(crate) async fn begin_replace(
     // The Offers API always requires the full response body (the service does not
     // support Prefer: return=minimal for offers), so explicitly enable content response.
     let replace_options = {
-        let mut opts = OperationOptions::default();
+        let mut opts = operation_options;
         opts.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
         opts

@@ -100,8 +100,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use azure_core::credentials::Secret;
     use azure_data_cosmos::{
-        CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder, RoutingStrategy,
-        UserAgentSuffix,
+        AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy, UserAgentSuffix,
     };
     use clap::Parser;
 
@@ -164,19 +163,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         builder = builder.with_user_agent_suffix(s);
     }
 
-    let endpoint: CosmosAccountEndpoint = config.endpoint.parse()?;
+    let endpoint: AccountEndpoint = config.endpoint.parse()?;
     let client = match &config.auth {
         AuthMethod::Key => {
             let key = config.key.as_deref().ok_or(
                 "Account key is required for key auth. Use --key or set AZURE_COSMOS_KEY env var.",
             )?;
             let account =
-                CosmosAccountReference::with_master_key(endpoint, Secret::from(key.to_string()));
+                AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
             builder.build(account, strategy).await?
         }
         AuthMethod::Aad => {
             let credential = create_aad_credential()?;
-            let account = CosmosAccountReference::with_credential(endpoint, credential);
+            let account = AccountReference::with_credential(endpoint, credential);
             builder.build(account, strategy).await?
         }
     };
@@ -230,7 +229,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set up results container — either on the same account or a separate one
     let results_container = if let Some(ref results_endpoint) = config.results_endpoint {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
-        let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
+        let results_ep: AccountEndpoint = results_endpoint.parse()?;
         let results_builder = CosmosClientBuilder::new();
         let results_builder = if let Some(s) = user_agent_suffix.clone() {
             results_builder.with_user_agent_suffix(s)
@@ -243,7 +242,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let key = config.results_key.as_deref().ok_or(
                     "Results account key is required. Use --results-key or set AZURE_COSMOS_RESULTS_KEY.",
                 )?;
-                let account = CosmosAccountReference::with_master_key(
+                let account = AccountReference::with_authentication_key(
                     results_ep,
                     Secret::from(key.to_string()),
                 );
@@ -251,7 +250,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             AuthMethod::Aad => {
                 let credential = create_aad_credential()?;
-                let account = CosmosAccountReference::with_credential(results_ep, credential);
+                let account = AccountReference::with_credential(results_ep, credential);
                 results_builder.build(account, results_strategy).await?
             }
         };
