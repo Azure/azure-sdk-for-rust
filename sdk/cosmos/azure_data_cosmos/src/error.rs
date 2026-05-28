@@ -152,8 +152,17 @@ fn classify_for_azure_core(err: &CosmosError) -> azure_core::error::ErrorKind {
     let status = err.status();
     let sub = status.sub_status();
 
-    // Primary discriminator: did we get a wire response from Cosmos?
-    if err.0.is_from_wire() {
+    // Primary discriminator: did we get a wire response from Cosmos
+    // that is reachable via the public `response()` accessor?
+    //
+    // We deliberately key off `response().is_some()` rather than the
+    // driver's `is_from_wire()` predicate. The two are kept in lockstep
+    // today (both report `true` only for the externally-visible `Wire`
+    // state) but going through `response()` directly means a future
+    // drift in the driver's predicate semantics cannot reintroduce the
+    // class of bug where the SDK boundary classifies an error as
+    // `HttpResponse` while silently dropping its payload + headers.
+    if let Some(resp) = err.response() {
         // Surface the response body (the typical HTTP error JSON, e.g.
         // `{"code":"BadRequest","message":"..."}`) AND the
         // Cosmos-typed headers (reconstructed back to raw form by
@@ -163,22 +172,23 @@ fn classify_for_azure_core(err: &CosmosError) -> azure_core::error::ErrorKind {
         // already-typed projection can still
         // `downcast_ref::<CosmosError>()` and call
         // `err.response().headers()`.
-        let raw_response = err.response().and_then(|resp| {
-            use azure_data_cosmos_driver::models::ResponseBody;
-            let body = match resp.body() {
-                ResponseBody::Bytes(b) => b.clone(),
-                ResponseBody::NoPayload => azure_core::Bytes::new(),
-                // `Items` is the query / feed response shape and never
-                // appears on the error path. Skip to avoid synthesizing
-                // a misleading concatenation.
-                ResponseBody::Items(_) => return None,
-            };
-            Some(Box::new(azure_core::http::RawResponse::from_bytes(
+        use azure_data_cosmos_driver::models::ResponseBody;
+        let raw_response = match resp.body() {
+            ResponseBody::Bytes(b) => Some(Box::new(azure_core::http::RawResponse::from_bytes(
                 status.status_code(),
                 resp.headers().to_raw_headers(),
-                body,
-            )))
-        });
+                b.clone(),
+            ))),
+            ResponseBody::NoPayload => Some(Box::new(azure_core::http::RawResponse::from_bytes(
+                status.status_code(),
+                resp.headers().to_raw_headers(),
+                azure_core::Bytes::new(),
+            ))),
+            // `Items` is the query / feed response shape and never
+            // appears on the error path. Skip to avoid synthesizing a
+            // misleading concatenation.
+            ResponseBody::Items(_) => None,
+        };
         return CoreKind::HttpResponse {
             status: status.status_code(),
             error_code: sub.map(|s| s.value().to_string()),

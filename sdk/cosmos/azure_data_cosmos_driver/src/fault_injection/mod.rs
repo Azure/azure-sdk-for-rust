@@ -20,7 +20,7 @@
 //!   and probability.
 //! - [`FaultInjectionRule`] — Combines a condition with a result and additional controls
 //!   like timing windows (`start_time`/`end_time`), `hit_limit`, and `probability`.
-//! - [`FaultClient`] — A [`TransportClient`](crate::driver::transport::cosmos_transport_client::TransportClient)
+//! - [`FaultClient`] — A `TransportClient`
 //!   implementation that evaluates rules and injects faults.
 //! - `FaultInjectingHttpClientFactory` — An `HttpClientFactory`
 //!   decorator that wraps created clients with fault injection.

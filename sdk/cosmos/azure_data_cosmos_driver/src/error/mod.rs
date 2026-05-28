@@ -207,16 +207,20 @@ impl CosmosError {
     }
 
     /// Returns `true` if this error originated from a wire response from
-    /// the service (either fully finalized `Wire` or
-    /// the pre-finalization `WirePending`
-    /// staging state). Returns `false` for purely synthetic errors
-    /// (transport failures, client validation, configuration, …) which
-    /// have no associated server response.
+    /// the service **that has been fully assembled with finalized
+    /// diagnostics** — i.e. the same state the public
+    /// [`response()`](Self::response) accessor exposes (`Some(_)`).
+    ///
+    /// Returns `false` for purely synthetic errors (transport failures,
+    /// client validation, configuration, …) **and** for the internal
+    /// pre-finalization `WirePending` staging state. Keeping this
+    /// predicate in lockstep with [`response()`](Self::response) means
+    /// external classifiers (notably the SDK boundary's
+    /// `From<CosmosError> for azure_core::Error`) can rely on
+    /// `is_from_wire() ⇔ response().is_some()` and never observe an
+    /// `HttpResponse`-classified error with no payload reachable.
     pub fn is_from_wire(&self) -> bool {
-        matches!(
-            &self.inner.context,
-            ErrorContext::Wire { .. } | ErrorContext::WirePending { .. }
-        )
+        matches!(&self.inner.context, ErrorContext::Wire { .. })
     }
 
     /// Returns the diagnostics context for the failed operation.
@@ -676,13 +680,23 @@ impl CosmosErrorBuilder {
     /// Attaches a standalone operation [`DiagnosticsContext`].
     ///
     /// * **Ignored if [`with_response`](Self::with_response) was also
-    ///   called** — diagnostics then flow through `response.diagnostics()`.
+    ///   called on the same builder** — the freshly-supplied response's
+    ///   own diagnostics is authoritative.
     /// * **Promotes a `WirePending` base error to a `Wire` one** when
     ///   chained via [`from_error`](Self::from_error): the staged body +
     ///   headers carried by the base error are assembled with the supplied
     ///   diagnostics and the resolved status into a [`CosmosResponse`].
     ///   This is the operation pipeline's per-operation finalization
     ///   path.
+    /// * **Overrides the diagnostics on a `Wire` base error** when
+    ///   chained via [`from_error`](Self::from_error): the base
+    ///   response's body, headers, and status are preserved verbatim,
+    ///   and a new [`CosmosResponse`] is assembled with the supplied
+    ///   diagnostics in place of the original. This is the path
+    ///   `patch_handler::exhaustion_error` uses to graft the aggregated
+    ///   cross-attempt diagnostics onto a wrapped service 412, and the
+    ///   path any future caller would use to re-decorate a wire error
+    ///   with operation-level diagnostics.
     pub fn with_diagnostics(mut self, diagnostics: Arc<DiagnosticsContext>) -> Self {
         self.diagnostics = Some(diagnostics);
         self
@@ -741,7 +755,7 @@ impl CosmosErrorBuilder {
         //  1. `with_response`               -> Wire (CosmosResponse wins)
         //  2. `with_response_parts`         -> Wire (if diagnostics also set) or WirePending
         //  3. base = WirePending + `with_diagnostics` (no setters) -> promote to Wire
-        //  4. base = Wire + `with_diagnostics`                     -> Wire (response's diag is the truth; user diag ignored)
+        //  4. base = Wire + `with_diagnostics`                     -> Wire (response rebuilt with the new diagnostics; body+headers+status preserved)
         //  5. else                                                  -> Synthetic
         let (status, context) = if let Some(response) = self.response {
             // (1) Full response supplied; it wins.
@@ -801,12 +815,34 @@ impl CosmosErrorBuilder {
                     }
                 },
                 Some(ErrorContext::Wire { response }) => {
-                    // (4) Base already Wire. Carry the response forward
-                    // verbatim — its diagnostics is the truth; any
-                    // `with_diagnostics` on this builder is discarded by
-                    // the "CosmosResponse wins" rule.
-                    let response = (**response).clone();
+                    // (4) Base already Wire.
+                    //
+                    // * If the caller did NOT supply `with_diagnostics`,
+                    //   carry the response forward verbatim — its
+                    //   diagnostics is the truth.
+                    // * If the caller DID supply `with_diagnostics` via
+                    //   `from_error(wire).with_diagnostics(d)`, rebuild
+                    //   the response with `d` replacing the original
+                    //   diagnostics. This is the path used by
+                    //   `patch_handler::exhaustion_error` (and any future
+                    //   caller that needs to graft aggregated /
+                    //   operation-level diagnostics onto an existing
+                    //   wire error). Body, headers, and status all stay
+                    //   pinned to the base response — "CosmosResponse
+                    //   wins" still holds for body / headers / status;
+                    //   only the diagnostics slot is overridable on the
+                    //   re-decoration path. Note this differs from rule
+                    //   (1) (`with_response` on this same builder),
+                    //   where the caller just supplied the full response
+                    //   and the response's own diagnostics is therefore
+                    //   authoritative.
+                    let payload = response.payload().clone();
                     let status = response.status();
+                    let diagnostics = self
+                        .diagnostics
+                        .clone()
+                        .unwrap_or_else(|| response.diagnostics());
+                    let response = finalize_response(payload, status, diagnostics);
                     (
                         status,
                         ErrorContext::Wire {
@@ -1133,6 +1169,49 @@ mod tests {
         let wire = decorated.response().expect("Wire carried forward");
         assert_eq!(wire.status().status_code(), StatusCode::Conflict);
         assert!(Arc::ptr_eq(&decorated.diagnostics().unwrap(), &diag));
+    }
+
+    /// Re-decorating a `Wire` base error via
+    /// `from_error(wire).with_diagnostics(d)` must override the response's
+    /// diagnostics with `d` while preserving the base response's body,
+    /// headers, and status. This is the path
+    /// `patch_handler::exhaustion_error` uses to graft the aggregated
+    /// cross-attempt diagnostics onto a wrapped service 412 — without
+    /// this rule the override would be silently discarded by an earlier
+    /// "CosmosResponse wins" formulation of builder rule (4) and the
+    /// aggregated history would never reach the caller.
+    #[test]
+    fn from_error_wire_with_diagnostics_overrides_response_diagnostics() {
+        let original_diag = make_test_diagnostics();
+        let response = make_test_response(
+            CosmosStatus::new(StatusCode::PreconditionFailed),
+            Arc::clone(&original_diag),
+        );
+        let original = CosmosError::builder()
+            .with_response(response)
+            .with_message("etag mismatch")
+            .build();
+
+        let override_diag = make_test_diagnostics();
+        let decorated = CosmosErrorBuilder::from_error(original)
+            .with_diagnostics(Arc::clone(&override_diag))
+            .with_context("op=patch")
+            .build();
+
+        // The override wins for `diagnostics()` — both on the outer error
+        // and (because the response is rebuilt) on the wire response too.
+        assert!(
+            Arc::ptr_eq(&decorated.diagnostics().unwrap(), &override_diag),
+            "with_diagnostics override must replace the base response's diagnostics"
+        );
+        let wire = decorated.response().expect("still Wire after override");
+        assert!(
+            Arc::ptr_eq(wire.diagnostics_ref(), &override_diag),
+            "rebuilt response must carry the override diagnostics, not the original"
+        );
+        // Body / headers / status are pinned to the base response.
+        assert_eq!(wire.status().status_code(), StatusCode::PreconditionFailed);
+        assert!(!Arc::ptr_eq(wire.diagnostics_ref(), &original_diag));
     }
 
     #[test]
@@ -1671,6 +1750,31 @@ mod tests {
         assert_eq!(
             err.status().sub_status(),
             Some(SubStatusCode::TRANSPORT_DNS_FAILED)
+        );
+    }
+
+    /// `WirePending` is an internal-only staging state. The public
+    /// [`CosmosError::is_from_wire`] predicate must stay in lockstep
+    /// with [`CosmosError::response`] (both report "no wire response
+    /// reachable externally") so the SDK boundary classifier cannot
+    /// observe an `HttpResponse`-classified error with no payload
+    /// reachable. The internal `wire_payload()` accessor still
+    /// surfaces the staged parts for in-pipeline finalization.
+    #[test]
+    fn wire_pending_reports_not_from_wire() {
+        let err = CosmosError::builder()
+            .with_status(CosmosStatus::new(StatusCode::TooManyRequests))
+            .with_message("staged")
+            .with_response_parts(make_test_payload())
+            .build();
+        assert!(err.response().is_none());
+        assert!(
+            !err.is_from_wire(),
+            "WirePending must not advertise is_from_wire()==true; it would lie to the SDK classifier"
+        );
+        assert!(
+            err.wire_payload().is_some(),
+            "internal accessor must still expose staged parts for in-pipeline finalization"
         );
     }
 }

@@ -409,7 +409,15 @@ fn missing_body_error(msg: &'static str) -> crate::error::CosmosError {
 /// constructor that happens to use `StatusCode::PreconditionFailed` for a
 /// synthetic error cannot accidentally trigger the RMW retry path.
 fn is_precondition_failed(err: &crate::error::CosmosError) -> bool {
-    err.is_from_wire() && err.status().is_precondition_failed()
+    // Use `wire_payload()` (true for both `Wire` and the internal
+    // `WirePending` staging state) rather than the narrower public
+    // `is_from_wire()` predicate. The patch handler's RMW loop sees
+    // sub-op errors fresh out of `driver.execute_operation()` — by that
+    // point they are normally `Wire`, but we want the test fixtures (and
+    // any future in-pipeline call site) to be able to recognize a
+    // service 412 without having to fabricate a full finalized
+    // diagnostics context. The status check still narrows to 412.
+    err.wire_payload().is_some() && err.status().is_precondition_failed()
 }
 
 /// Extracts the `x-ms-session-token` from a service-built cosmos error's
@@ -1221,6 +1229,22 @@ mod tests {
         if let Some(token) = session_token {
             headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
         }
+        // Match the production shape: the operation pipeline's abort
+        // branch always promotes the per-attempt `WirePending` error
+        // into a finalized `Wire` error by attaching the completed
+        // operation diagnostics (see `execute_operation_pipeline`'s
+        // abort arm). Without this, the test fixture would build a
+        // `WirePending` error that does not exercise the same
+        // `CosmosErrorBuilder` rules production callers hit when
+        // they re-decorate the error (notably `exhaustion_error`,
+        // which graft-overrides diagnostics on a Wire base).
+        let diagnostics = Arc::new(
+            crate::diagnostics::DiagnosticsContextBuilder::new(
+                crate::models::ActivityId::new_uuid(),
+                Arc::new(crate::options::DiagnosticsOptions::default()),
+            )
+            .complete(),
+        );
         crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::new(
                 azure_core::http::StatusCode::InternalServerError,
@@ -1231,6 +1255,7 @@ mod tests {
                 body.to_vec(),
                 headers,
             ))
+            .with_diagnostics(diagnostics)
             .build()
     }
 
