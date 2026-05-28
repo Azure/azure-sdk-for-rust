@@ -469,6 +469,22 @@ Before considering any task complete, run the following checks **in order** on a
 5. **Test check** (if tests exist): `cargo test -p <crate-name> --all-features`
    - Tests gated by `test_category` (e.g., emulator tests) are always compiled but are **ignored at runtime** unless the corresponding cfg is set via `RUSTFLAGS`.
    - To actually run emulator tests: `RUSTFLAGS='--cfg test_category="emulator"' cargo test -p <crate-name> --tests`
+   - To run against the new **vnext (Linux) emulator** instead, point at a vnext container and use the `emulator_vnext` cfg:
+
+     ```bash
+     # Start the vnext emulator in Docker (HTTP mode):
+     docker run -d --name cosmosdb-emulator-vnext \
+         -p 8081:8081 -p 8080:8080 \
+         -e ENABLE_EXPLORER=false \
+         mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+
+     # Point the test framework at it and select the vnext-compatible test set:
+     export AZURE_COSMOS_CONNECTION_STRING='AccountEndpoint=http://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;'
+     RUSTFLAGS='--cfg test_category="emulator_vnext"' \
+         cargo test -p azure_data_cosmos_driver --test emulator -- --test-threads=1
+     ```
+
+     A subset of emulator tests (backup-endpoint fallback, partition failover) are intentionally not gated on `"emulator_vnext"` because they rely on multi-endpoint topology the vnext gateway does not model. See the per-file module headers for the exclusion rationale.
 
 **Common documentation link errors to avoid**:
 

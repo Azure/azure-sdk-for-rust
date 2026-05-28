@@ -40,8 +40,8 @@ use std::error::Error;
 /// response body and the subsequent read.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -101,8 +101,8 @@ pub async fn cosmos_patch_basic_set() -> Result<(), Box<dyn Error>> {
 /// guard with no network call.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -170,8 +170,8 @@ pub async fn cosmos_patch_pk_guard() -> Result<(), Box<dyn Error>> {
 /// rejected. Exercises the `MultiHash` branch of `validate_partition_key_paths`.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_pk_guard_hierarchical() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -785,8 +785,8 @@ fn assert_post_image_props(actual: &Value, expected_props: &Value, case_id: &str
 /// error surfacing) against the live emulator.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -878,8 +878,8 @@ pub async fn cosmos_patch_semantics() -> Result<(), Box<dyn Error>> {
 /// covers the same branch with a scripted dispatcher).
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_read_missing_item_returns_not_found() -> Result<(), Box<dyn Error>> {
     Box::pin(DriverTestClient::run_with_unique_db(
@@ -935,8 +935,8 @@ use std::sync::Arc;
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
     let custom_412 = CustomResponseBuilder::new(azure_core::http::StatusCode::PreconditionFailed)
@@ -1008,8 +1008,8 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
     let custom_412 = CustomResponseBuilder::new(azure_core::http::StatusCode::PreconditionFailed)

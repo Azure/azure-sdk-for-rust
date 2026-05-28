@@ -14,6 +14,70 @@ if ($env:COSMOS_RUSTFLAGS) {
     Write-Host "RUSTFLAGS appended with COSMOS_RUSTFLAGS: $env:RUSTFLAGS"
 }
 
+# Vnext (Linux) emulator path. Triggered by AZURE_COSMOS_EMULATOR_FLAVOR=vnext
+# (set as a matrix variable on the cosmos vnext leg in
+# sdk/cosmos/vnext-emulator-matrix.json). Manages the Docker container
+# lifecycle locally so the pipeline doesn't need any service-specific steps.
+# The corresponding teardown happens at the agent layer (1ES agents are
+# ephemeral) — we deliberately do NOT remove the container in cleanup so
+# subsequent crates in the same Test-Packages.ps1 loop reuse it.
+if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
+    $vnextContainerName = 'cosmosdb-emulator-vnext'
+    $vnextImage = 'mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview'
+    # Well-known emulator master key — same value used by the legacy Windows
+    # emulator and accepted by the vnext image. Safe to commit; not a secret.
+    $vnextKey = 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=='
+
+    if (-not (Get-Command 'docker' -ErrorAction SilentlyContinue)) {
+        throw "AZURE_COSMOS_EMULATOR_FLAVOR=vnext requires Docker but the docker CLI was not found on PATH."
+    }
+
+    # Idempotent: only start the container if it's not already running. This
+    # matters because Test-Packages.ps1 calls Test-Setup.ps1 once per crate
+    # (azure_data_cosmos and azure_data_cosmos_driver in the cosmos service).
+    $existing = docker ps --filter "name=$vnextContainerName" --format "{{.Names}}" 2>$null
+    if ($existing -eq $vnextContainerName) {
+        Write-Host "Cosmos DB vnext emulator container '$vnextContainerName' is already running."
+    } else {
+        LogGroupStart "Starting Cosmos DB vnext emulator (Docker)"
+        Invoke-LoggedCommand "docker pull $vnextImage"
+        Invoke-LoggedCommand "docker run -d --name $vnextContainerName --publish 8081:8081 --publish 8080:8080 -e ENABLE_EXPLORER=false $vnextImage"
+
+        # Best-effort readiness probe. Tests will surface a clearer failure
+        # than a stuck step if the probe never succeeds.
+        $deadline = (Get-Date).AddSeconds(180)
+        $probeUrl = 'http://localhost:8080/ready'
+        $ready = $false
+        while ((Get-Date) -lt $deadline) {
+            try {
+                $resp = Invoke-WebRequest -Uri $probeUrl -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+                if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 300) {
+                    Write-Host "vnext emulator reports ready (HTTP $($resp.StatusCode))."
+                    $ready = $true
+                    break
+                }
+            } catch {
+                Write-Host "Waiting for vnext emulator readiness: $($_.Exception.Message)"
+            }
+            Start-Sleep -Seconds 5
+        }
+        if (-not $ready) {
+            Write-Warning "vnext emulator readiness probe did not succeed within 180s - proceeding anyway."
+            docker logs --tail 50 $vnextContainerName 2>&1 | Write-Host
+        }
+        LogGroupEnd
+    }
+
+    if (-not $env:AZURE_COSMOS_CONNECTION_STRING) {
+        $env:AZURE_COSMOS_CONNECTION_STRING = "AccountEndpoint=http://localhost:8081;AccountKey=$vnextKey;"
+        Write-Host "Set AZURE_COSMOS_CONNECTION_STRING to vnext emulator endpoint."
+    }
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_vnext`""
+    Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
+    $env:RUST_TEST_THREADS = "1"
+    return
+}
+
 # Skip emulator setup if AZURE_COSMOS_CONNECTION_STRING is already set
 if ($env:AZURE_COSMOS_CONNECTION_STRING) {
     Write-Host "AZURE_COSMOS_CONNECTION_STRING is already set. Skipping Cosmos DB Emulator setup."
