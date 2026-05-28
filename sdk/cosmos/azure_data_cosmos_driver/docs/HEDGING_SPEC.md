@@ -238,9 +238,8 @@ the driver-default `HedgingStrategy` is used (§5.2). Rationale: the
 Rust driver is greenfield and has no backward-compatibility constraint
 that forced .NET v3 / Java v4 to gate hedging on PPAF. PPCB is fed by
 hedging via `record_consecutive_hedge_win` (§9.5) but does not gate
-the hedge decision. Opt-out is via `AvailabilityStrategy::Disabled` or
-`AZURE_COSMOS_HEDGING_DISABLED=true`. See §5.2 for the full
-activation rules.
+the hedge decision. Opt-out is via `AvailabilityStrategy::Disabled`.
+See §5.2 for the full activation rules.
 
 ### 2.7 Diagnostics
 
@@ -512,11 +511,10 @@ pub enum AvailabilityStrategy {
 > is on by default for accounts that satisfy §5.1, setting
 > `AvailabilityStrategy::Disabled` at the **client** level is the
 > code-level kill switch: it suppresses the §5.2 driver default for
-> every operation on that client and is equivalent (in effect) to
-> `AZURE_COSMOS_HEDGING_DISABLED=true` at deploy time. Setting
-> `Disabled` on a single operation suppresses only that operation;
-> sibling operations continue to use the client-level strategy or the
-> §5.2 default. The full precedence chain is in §11.3.1.
+> every operation on that client. Setting `Disabled` on a single
+> operation suppresses only that operation; sibling operations continue
+> to use the client-level strategy or the §5.2 default. The full
+> precedence chain is in §11.3.1.
 
 ### 4.3 Integration with OperationOptions
 
@@ -537,20 +535,12 @@ pub struct OperationOptions {
 
 ### 4.4 Environment Variable Support
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `AZURE_COSMOS_HEDGING_THRESHOLD_MS` | Overrides the driver default threshold in milliseconds. Zero or non-numeric values are ignored. | (driver default — see §5.2) |
-| `AZURE_COSMOS_HEDGING_DISABLED` | When set to any common truthy value (`true`, `1`, `yes`, `on` — case-insensitive, whitespace ignored), disables hedging entirely at runtime regardless of code-level config. Any other value (`false`, `0`, `no`, `off`, empty, unrecognized) leaves hedging enabled. Useful as a deployment-time kill switch. | `false` |
-
-The env-var threshold sits at priority 3 in the resolution order
-(§11.3.1) — it overrides the built-in default but is overridden by any
-code-level `AvailabilityStrategy` set on the client or operation.
-`AZURE_COSMOS_HEDGING_DISABLED=true` is equivalent to setting
-`AvailabilityStrategy::Disabled` at the client level.
-
-There is no env var for `threshold_step`, write hedging, or SDK-default
-suppression because none of those features exist (see §4.1 divergence
-note).
+This driver does **not** expose environment-variable overrides for hedging.
+Deploy-time intent should be expressed in code via the
+`AvailabilityStrategy` knobs on `DriverOptions` / `OperationOptions`
+(§11). There is no env var for the hedge threshold, write hedging, or
+SDK-default suppression because none of those features exist (see §4.1
+divergence note).
 
 ---
 
@@ -616,8 +606,7 @@ eligibility rules — it is independent of PPAF and PPCB. Rationale: the
 Rust driver is greenfield, so we do not need the .NET / Java
 PPAF-coupled opt-in to preserve backward compatibility. Tail-latency
 protection is a generally useful default; users who do not want it can
-opt out at any layer via `AvailabilityStrategy::Disabled` (§4.2) or
-the `AZURE_COSMOS_HEDGING_DISABLED` env var (§4.4).
+opt out at any layer via `AvailabilityStrategy::Disabled` (§4.2).
 
 **Driver default values** (used when no user strategy is configured):
 
@@ -1322,8 +1311,7 @@ threshold-timer latency on top.
 
 Because hedging is on by default (§5.2), operators on TC-saturated
 accounts should explicitly opt out via `AvailabilityStrategy::Disabled`
-on the driver or via `AZURE_COSMOS_HEDGING_DISABLED=true` at deploy
-time.
+on the driver.
 
 **Mitigations the implementation must adopt:**
 
@@ -1908,9 +1896,8 @@ The driver picks the effective strategy in the following priority order
 |:---:|---|---|
 | 1 | Operation `availability_strategy` (incl. `Disabled`) | Per-request override |
 | 2 | Client / runtime `availability_strategy` | Applies to all requests |
-| 3 | Environment variables (§4.4) | Deploy-time intent; `AZURE_COSMOS_HEDGING_DISABLED` short-circuits to `Disabled`; `AZURE_COSMOS_HEDGING_THRESHOLD_MS` overrides the default threshold but only if no code-level strategy is set |
-| 4 | **Driver default** (§5.2) | Default-on for accounts with ≥ 2 applicable preferred regions; threshold = `min(1000ms, request_timeout / 2)`; independent of PPAF/PPCB |
-| 5 | None | Hedging off (single-region account or insufficient region config) |
+| 3 | **Driver default** (§5.2) | Default-on for accounts with ≥ 2 applicable preferred regions; threshold = `min(1000ms, request_timeout / 2)`; independent of PPAF/PPCB |
+| 4 | None | Hedging off (single-region account or insufficient region config) |
 
 The resolved strategy is consumed by `evaluate_transport_result`
 (TPS §3.4), which calls `should_hedge()` (§5.1) and (when eligible)
@@ -1920,15 +1907,12 @@ does the resolution lookup once per per-attempt iteration; there is
 no separate orchestrator-side resolution step.
 
 A user-configured `AvailabilityStrategy::Disabled` at any layer suppresses every
-lower layer (including the driver default and env-var-derived strategy) —
-explicit opt-out always wins.
+lower layer (including the driver default) — explicit opt-out always
+wins.
 
-The env var `AZURE_COSMOS_HEDGING_DISABLED=true` is equivalent to setting
-`AvailabilityStrategy::Disabled` at the runtime layer (priority 3). It
-overrides priorities 4 and 5 but is itself overridden by code-level
-`Hedging(..)` at priorities 1 or 2. Operators who want to globally
-disable hedging at deploy time without touching code should use this
-env var.
+There is no environment-variable opt-out; operators who want to globally
+disable hedging should set `AvailabilityStrategy::Disabled` on the
+client (§11.1).
 
 ---
 
@@ -2099,7 +2083,6 @@ also transient, §14.1 applies.
 | `should_hedge_write_never` | Writes (Create / Replace / Upsert / Delete / Patch) NEVER hedged regardless of topology |
 | `should_hedge_non_document` | Non-Document `ResourceType`s excluded in Phase 1 |
 | `should_hedge_disabled_override` | Per-operation `AvailabilityStrategy::Disabled` overrides client-level hedging |
-| `should_hedge_env_disabled` | `AZURE_COSMOS_HEDGING_DISABLED=true` suppresses driver default + env-var threshold |
 | `is_final_result_success` | 200 → final |
 | `is_final_result_conflict` | 409 → final |
 | `is_final_result_503` | 503 → transient |
@@ -2206,9 +2189,6 @@ that section.
   `Some(AvailabilityStrategy::Hedging(..))`,
   `Some(AvailabilityStrategy::Disabled)`, or `None`; layered
   resolution per §11.3 / §11.3.1.
-- **Environment variable opt-out** (§4.4 / §11.3.1):
-  `AZURE_COSMOS_HEDGING_DISABLED` and
-  `AZURE_COSMOS_HEDGING_THRESHOLD_MS`.
 - **PPCB feedback callsite** (§9.5): `record_consecutive_hedge_win`
   invoked on every alternate-region win; the PPCB-side state
   transition is co-designed with the PPCB module owner before
@@ -2319,8 +2299,7 @@ of them constitutes a new goal and requires a spec amendment.
    independent of PPAF and PPCB (§5.2). Rationale: the Rust driver is
    greenfield and has no backward-compatibility constraint that
    forced .NET v3 and Java v4 to gate hedging on PPAF. Opt-out is via
-   `AvailabilityStrategy::Disabled` (per-op or per-client) or
-   `AZURE_COSMOS_HEDGING_DISABLED=true` at deploy time.
+   `AvailabilityStrategy::Disabled` (per-op or per-client).
 
 2. **Interaction with `EndToEndOperationLatencyPolicy`** —
    **Resolved.** Primary and alternate share the deadline (§9.4).

@@ -175,16 +175,10 @@ pub struct OperationOptions {
     /// Cross-region availability strategy controlling whether eligible
     /// requests are hedged to additional regions when the primary is slow.
     ///
-    /// **Default**: `None` — the driver resolves the effective strategy
-    /// from environment variables and built-in defaults (see
-    /// `docs/HEDGING_SPEC.md` §11). Setting `Some(AvailabilityStrategy::Disabled)`
-    /// at any layer turns hedging off for that scope.
-    ///
-    /// Env-var derivation (`AZURE_COSMOS_HEDGING_THRESHOLD_MS`,
-    /// `AZURE_COSMOS_HEDGING_DISABLED`) is intentionally **not** wired via
-    /// `#[option(env = ...)]` here because two variables together produce a
-    /// single `AvailabilityStrategy` value; the conversion lives in the
-    /// resolver (see `docs/HEDGING_SPEC.md` §11.3.1).
+    /// **Default**: `None` — the driver applies the built-in default
+    /// strategy (see `docs/HEDGING_SPEC.md` §5.2). Setting
+    /// `Some(AvailabilityStrategy::Disabled)` at any layer turns hedging
+    /// off for that scope.
     pub availability_strategy: Option<AvailabilityStrategy>,
 
     // Additional headers beyond those natively supported by the driver.

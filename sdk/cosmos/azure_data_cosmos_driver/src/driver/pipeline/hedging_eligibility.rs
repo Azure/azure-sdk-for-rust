@@ -19,8 +19,7 @@ use crate::{
     },
     models::{CosmosOperation, CosmosStatus, OperationType, ResourceType},
     options::{
-        env_parsing, AvailabilityStrategy, HedgeThreshold, HedgingStrategy, OperationOptionsView,
-        Region,
+        AvailabilityStrategy, HedgeThreshold, HedgingStrategy, OperationOptionsView, Region,
     },
 };
 
@@ -62,10 +61,9 @@ pub(crate) fn is_final_result(status: &CosmosStatus) -> bool {
 /// Returns `true` when the operation is eligible for cross-region hedging.
 ///
 /// `strategy` is the resolved strategy from
-/// [`resolve_availability_strategy`]. `None` represents either an explicit
-/// `AvailabilityStrategy::Disabled` at any layer or the
-/// `AZURE_COSMOS_HEDGING_DISABLED=true` env-var kill switch — both
-/// short-circuit to `false`.
+/// [`resolve_availability_strategy`]. `None` represents an explicit
+/// `AvailabilityStrategy::Disabled` at any layer and short-circuits to
+/// `false`.
 ///
 /// `excluded_regions` is the post-resolution `ExcludeRegions` set from the
 /// operation's options view; the applicable preferred-region count is
@@ -119,29 +117,15 @@ pub(crate) fn should_hedge(
 ///
 /// 1. Operation / account / runtime `availability_strategy` (resolved by
 ///    [`OperationOptionsView`] before we are called).
-/// 2. `AZURE_COSMOS_HEDGING_DISABLED=true` env-var kill switch
-///    (short-circuits to `None`).
-/// 3. `AZURE_COSMOS_HEDGING_THRESHOLD_MS` env var (threshold override,
-///    still wrapped in the driver-default `HedgingStrategy`).
-/// 4. Driver default — `min(1000ms, request_timeout / 2)`.
+/// 2. Driver default — `min(1000ms, request_timeout / 2)`.
 ///
 /// Returns `None` only when an explicit `AvailabilityStrategy::Disabled`
-/// at layers 1–2 turns hedging off; otherwise always returns `Some(_)`.
+/// at layer 1 turns hedging off; otherwise always returns `Some(_)`.
 /// The "single-region account / insufficient regions" case is enforced
 /// separately in [`should_hedge`].
 pub(crate) fn resolve_availability_strategy(
     view: &OperationOptionsView<'_>,
     request_timeout: Option<Duration>,
-) -> Option<HedgingStrategy> {
-    resolve_availability_strategy_with(view, request_timeout, |name| std::env::var(name))
-}
-
-/// Test seam for [`resolve_availability_strategy`] that lets unit tests
-/// inject env-var lookups without mutating process state.
-pub(crate) fn resolve_availability_strategy_with(
-    view: &OperationOptionsView<'_>,
-    request_timeout: Option<Duration>,
-    env_var: impl Fn(&str) -> Result<String, std::env::VarError> + Copy,
 ) -> Option<HedgingStrategy> {
     // Priority 1 — code-level strategy.
     match view.availability_strategy() {
@@ -150,19 +134,7 @@ pub(crate) fn resolve_availability_strategy_with(
         None => {}
     }
 
-    // Priority 2 — env-var kill switch.
-    if env_parsing::parse_hedging_disabled_from_env_with(env_var) {
-        return None;
-    }
-
-    // Priority 3 — env-var threshold override (still produces a strategy).
-    if let Some(env_threshold) = env_parsing::parse_hedging_threshold_from_env_with(env_var) {
-        if let Some(t) = HedgeThreshold::new(env_threshold) {
-            return Some(HedgingStrategy::new(t));
-        }
-    }
-
-    // Priority 4 — driver default.
+    // Priority 2 — driver default.
     Some(HedgingStrategy::new(default_threshold(request_timeout)))
 }
 
@@ -277,8 +249,6 @@ pub(crate) fn evaluate_hedge_eligibility(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use std::sync::Arc;
 
     use azure_core::http::StatusCode;
     use url::Url;
@@ -421,34 +391,11 @@ mod tests {
 
     #[test]
     fn should_hedge_disabled_override() {
-        // `None` represents either Disabled at any layer or env-disabled
-        // — both short-circuit before should_hedge is even called.
+        // `None` represents Disabled at any layer — short-circuits before
+        // should_hedge is even called.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
         let op = read_item_operation();
         assert!(!should_hedge(None, &op, &state, &[]));
-    }
-
-    #[test]
-    fn should_hedge_env_disabled() {
-        // Mirrors the disabled-override semantic: env-disabled produces
-        // `None` out of resolve_availability_strategy_with, which the
-        // caller forwards into should_hedge as `None`.
-        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
-        let op = read_item_operation();
-
-        let env = Arc::new(OperationOptions::default());
-        let runtime = Arc::new(OperationOptions::default());
-        let account = Arc::new(OperationOptions::default());
-        let operation = OperationOptions::default();
-        let view =
-            OperationOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
-
-        let resolved = resolve_availability_strategy_with(&view, None, |name| match name {
-            "AZURE_COSMOS_HEDGING_DISABLED" => Ok("true".to_string()),
-            _ => Err(std::env::VarError::NotPresent),
-        });
-        assert!(resolved.is_none());
-        assert!(!should_hedge(resolved.as_ref(), &op, &state, &[]));
     }
 
     // ───────────────────────── is_final_result ─────────────────────────
@@ -516,10 +463,7 @@ mod tests {
         let op = OperationOptions::default();
         let view = empty_view(&op);
 
-        let strategy = resolve_availability_strategy_with(&view, None, |_| {
-            Err(std::env::VarError::NotPresent)
-        })
-        .expect("driver default is Some");
+        let strategy = resolve_availability_strategy(&view, None).expect("driver default is Some");
         assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
     }
 
@@ -529,10 +473,7 @@ mod tests {
         let view = empty_view(&op);
 
         let strategy =
-            resolve_availability_strategy_with(&view, Some(Duration::from_millis(600)), |_| {
-                Err(std::env::VarError::NotPresent)
-            })
-            .expect("Some");
+            resolve_availability_strategy(&view, Some(Duration::from_millis(600))).expect("Some");
         assert_eq!(strategy.threshold().get(), Duration::from_millis(300));
     }
 
@@ -542,10 +483,7 @@ mod tests {
         let view = empty_view(&op);
 
         let strategy =
-            resolve_availability_strategy_with(&view, Some(Duration::from_secs(30)), |_| {
-                Err(std::env::VarError::NotPresent)
-            })
-            .expect("Some");
+            resolve_availability_strategy(&view, Some(Duration::from_secs(30))).expect("Some");
         assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
     }
 
@@ -556,15 +494,11 @@ mod tests {
             .build();
         let view = empty_view(&op);
 
-        let strategy = resolve_availability_strategy_with(&view, None, |_| {
-            // Even if env says "give us a threshold", explicit Disabled wins.
-            Ok("250".to_string())
-        });
-        assert!(strategy.is_none());
+        assert!(resolve_availability_strategy(&view, None).is_none());
     }
 
     #[test]
-    fn resolve_operation_hedging_overrides_env() {
+    fn resolve_operation_hedging_strategy_used_directly() {
         let op_strategy =
             HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
         let op = OperationOptionsBuilder::new()
@@ -572,48 +506,8 @@ mod tests {
             .build();
         let view = empty_view(&op);
 
-        let strategy = resolve_availability_strategy_with(&view, None, |_| Ok("750".to_string()))
-            .expect("Some");
+        let strategy = resolve_availability_strategy(&view, None).expect("Some");
         assert_eq!(strategy.threshold().get(), Duration::from_millis(200));
-    }
-
-    #[test]
-    fn resolve_env_disabled_short_circuits_to_none() {
-        let op = OperationOptions::default();
-        let view = empty_view(&op);
-
-        let strategy = resolve_availability_strategy_with(&view, None, |name| match name {
-            "AZURE_COSMOS_HEDGING_DISABLED" => Ok("true".to_string()),
-            "AZURE_COSMOS_HEDGING_THRESHOLD_MS" => Ok("250".to_string()),
-            _ => Err(std::env::VarError::NotPresent),
-        });
-        assert!(strategy.is_none());
-    }
-
-    #[test]
-    fn resolve_env_threshold_overrides_driver_default() {
-        let op = OperationOptions::default();
-        let view = empty_view(&op);
-
-        let strategy = resolve_availability_strategy_with(&view, None, |name| match name {
-            "AZURE_COSMOS_HEDGING_THRESHOLD_MS" => Ok("250".to_string()),
-            _ => Err(std::env::VarError::NotPresent),
-        })
-        .expect("Some");
-        assert_eq!(strategy.threshold().get(), Duration::from_millis(250));
-    }
-
-    #[test]
-    fn resolve_invalid_env_threshold_falls_back_to_default() {
-        let op = OperationOptions::default();
-        let view = empty_view(&op);
-
-        let strategy = resolve_availability_strategy_with(&view, None, |name| match name {
-            "AZURE_COSMOS_HEDGING_THRESHOLD_MS" => Ok("0".to_string()),
-            _ => Err(std::env::VarError::NotPresent),
-        })
-        .expect("Some");
-        assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
     }
 
     // ───────────────────────── ExcludedRegions integration ─────────────────────────
