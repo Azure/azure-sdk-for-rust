@@ -502,7 +502,18 @@ impl TestClient {
             run.cleanup().await?;
 
             match result {
-                Ok(test_result) => test_result,
+                Ok(test_result) => {
+                    if let Err(e) = &test_result {
+                        if e.downcast_ref::<super::InconclusiveError>().is_some() {
+                            // Make it clear to the reader that the failure is an inconclusive one
+                            eprintln!(concat!("This test returned an inconclusive result. ",
+                                "This does NOT indicate a failure, but rather that the test was unable to complete successfully ",
+                                "due to an external factor (e.g. a split not completing in time). ",
+                                "Inconclusive results do not need to block PRs unless the PR is specifically touching code related to this test."));
+                        }
+                    }
+                    test_result
+                }
                 Err(_) => Err(format!("Test timed out after {} seconds", timeout.as_secs()).into()),
             }
         } else if test_mode == CosmosTestMode::Required {
