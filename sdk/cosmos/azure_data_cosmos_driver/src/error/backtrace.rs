@@ -72,7 +72,7 @@ use std::{
 /// Construct via [`BacktraceOptions::default`], which consults the
 /// stdlib `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE` environment variables
 /// to pick between fully-off (both fields `0`) and the safe per-second
-/// defaults (`10_000` captures, `5` resolutions). Then mutate the
+/// defaults (`1_000` captures, `5` resolutions). Then mutate the
 /// individual fields as needed before passing to
 /// [`set_backtrace_options`]. The struct is `#[non_exhaustive]` to
 /// reserve room for future knobs without breaking external construction.
@@ -88,7 +88,7 @@ pub struct BacktraceOptions {
 impl BacktraceOptions {
     /// Safe default capture cap applied when `RUST_LIB_BACKTRACE` /
     /// `RUST_BACKTRACE` enables backtraces.
-    const SAFE_CAPTURES_PER_SECOND: u32 = 10_000;
+    const SAFE_CAPTURES_PER_SECOND: u32 = 1_000;
     /// Safe default fresh-resolution cap applied when `RUST_LIB_BACKTRACE`
     /// / `RUST_BACKTRACE` enables backtraces.
     const SAFE_RESOLUTIONS_PER_SECOND: u32 = 5;
@@ -100,7 +100,7 @@ impl Default for BacktraceOptions {
     /// Consults the stdlib `RUST_LIB_BACKTRACE` (library-scoped) and
     /// `RUST_BACKTRACE` (process-wide) environment variables, matching
     /// stdlib precedence (library-scoped wins). When either asks for
-    /// backtraces, returns the safe per-second defaults (`10_000`
+    /// backtraces, returns the safe per-second defaults (`1_000`
     /// captures, `5` fresh resolutions); otherwise returns both fields
     /// set to `0` (fully disabled).
     fn default() -> Self {

@@ -11,7 +11,7 @@
 //! bound the cost during an error storm:
 //!
 //! * **Capture throttle** — per-second cap on raw stack walks
-//!   (`RUST_BACKTRACE`-enabled default `10_000`, `0` to disable); once
+//!   (`RUST_BACKTRACE`-enabled default `1_000`, `0` to disable); once
 //!   exhausted, capture returns `None` for the rest of the 1-second
 //!   window.
 //! * **Resolution limiter** — per-second cap on *fresh* symbol resolution

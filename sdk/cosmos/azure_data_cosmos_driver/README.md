@@ -47,7 +47,7 @@ This crate follows **strict semantic versioning** but can move to new major vers
 
 | Knob              | `BacktraceOptions` field     | Env var                                         | Default when backtraces enabled | Default when disabled | What it bounds                                                                                              |
 | ----------------- | ---------------------------- | ----------------------------------------------- | ------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Capture throttle  | `max_captures_per_second`    | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND`    | `10_000`                        | `0` (disabled)        | Hard ceiling on stack walks per second, regardless of cache state.                                          |
+| Capture throttle  | `max_captures_per_second`    | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND`    | `1_000`                         | `0` (disabled)        | Hard ceiling on stack walks per second, regardless of cache state.                                          |
 | Resolution budget | `max_resolutions_per_second` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` | `5`                             | `0` (disabled)        | How many backtraces may perform *fresh* symbol resolution per second. Cache hits do **not** consume budget. |
 
 Both fields take `u32`. Setting either to `0` fully disables that limiter; setting both to `0` fully disables backtrace capture.
