@@ -41,8 +41,8 @@ use crate::driver::pipeline::from_local_body::from_local_body_and_driver_headers
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::driver::CosmosDriver;
 use crate::models::{
-    cosmos_headers::response_header_names, CosmosOperation, CosmosResponse, PartitionKeyKind,
-    PatchInstructions, PatchOperation, Precondition, SessionToken,
+    CosmosOperation, CosmosResponse, PartitionKeyKind, PatchInstructions, PatchOperation,
+    Precondition, SessionToken,
 };
 use crate::options::OperationOptions;
 use async_trait::async_trait;
