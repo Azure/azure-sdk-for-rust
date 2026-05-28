@@ -317,7 +317,7 @@ async fn hedging_read_primary_fast() {
          PrimaryWonPreThreshold (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.total_requests_launched, 1,
+        hedge_diag.alternate_region, None,
         "only the primary should have been launched (§6.5 #3 zero-overhead \
          happy path); diag={hedge_diag:?}",
     );
@@ -327,10 +327,10 @@ async fn hedging_read_primary_fast() {
         "primary (East US) should be the winning region; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.regions_contacted,
-        vec![Region::EAST_US],
-        "only the primary region should appear in the contacted-regions \
-         trail; diag={hedge_diag:?}",
+        hedge_diag.primary_region,
+        Region::EAST_US,
+        "primary_region must record East US on the zero-overhead happy \
+         path; diag={hedge_diag:?}",
     );
 }
 
@@ -384,7 +384,8 @@ async fn hedging_read_primary_slow() {
          state must classify as AlternateWon (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.total_requests_launched, 2,
+        hedge_diag.alternate_region,
+        Some(Region::WEST_US),
         "primary + alternate should both have been launched; diag={hedge_diag:?}",
     );
     assert_eq!(
@@ -393,9 +394,9 @@ async fn hedging_read_primary_slow() {
         "alternate (West US) should be the winning region; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.regions_contacted,
-        vec![Region::EAST_US, Region::WEST_US],
-        "both regions should appear in the contacted-regions trail; \
+        hedge_diag.primary_region,
+        Region::EAST_US,
+        "primary_region must record East US (the losing region); \
          diag={hedge_diag:?}",
     );
     assert!(
@@ -459,7 +460,8 @@ async fn hedging_read_primary_503() {
          AlternateWon (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.total_requests_launched, 2,
+        hedge_diag.alternate_region,
+        Some(Region::WEST_US),
         "primary + alternate should both have been launched; diag={hedge_diag:?}",
     );
     assert_eq!(
@@ -468,9 +470,10 @@ async fn hedging_read_primary_503() {
         "alternate (West US) should be the winning region; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.regions_contacted,
-        vec![Region::EAST_US, Region::WEST_US],
-        "both regions should appear in the contacted-regions trail; diag={hedge_diag:?}",
+        hedge_diag.primary_region,
+        Region::EAST_US,
+        "primary_region must record East US (the delayed-503 leg); \
+         diag={hedge_diag:?}",
     );
     assert!(
         rule.hit_count() >= 1,
@@ -765,7 +768,8 @@ async fn hedging_read_both_regions_slow() {
          classify as PrimaryWonAfterHedge (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.total_requests_launched, 2,
+        hedge_diag.alternate_region,
+        Some(Region::WEST_US),
         "both pipelines should have been spawned (graceful degradation); \
          diag={hedge_diag:?}",
     );
@@ -907,7 +911,7 @@ async fn hedging_failback_to_primary() {
          diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.total_requests_launched, 1,
+        hedge_diag.alternate_region, None,
         "read #6: only the primary should run (§6.5 #3 zero-overhead path); \
          diag={hedge_diag:?}",
     );
@@ -1126,7 +1130,7 @@ async fn hedging_alternate_wins_trip_ppcb() {
          (West US) primary endpoint; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.total_requests_launched, 1,
+        hedge_diag.alternate_region, None,
         "post-trip read: only the primary should run (§6.5 #3 zero-overhead \
          path); diag={hedge_diag:?}",
     );

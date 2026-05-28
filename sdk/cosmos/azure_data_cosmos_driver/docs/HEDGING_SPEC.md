@@ -926,9 +926,9 @@ fn decorate(
     secondary: &RoutingDecision,
     winner: Side,
 ) -> CosmosResponse {
-    let regions_contacted = match winner {
-        Side::Primary   => vec![primary.region.clone()],
-        Side::Secondary => vec![primary.region.clone(), secondary.region.clone()],
+    let (primary_region, alternate_region) = match winner {
+        Side::Primary   => (primary.region.clone(), None),
+        Side::Secondary => (primary.region.clone(), Some(secondary.region.clone())),
     };
     let response_region = match winner {
         Side::Primary   => primary.region.clone(),
@@ -936,9 +936,9 @@ fn decorate(
     };
     resp.attach_hedge_diagnostics(HedgeDiagnostics {
         strategy_config: HedgingStrategyConfig { threshold },
-        regions_contacted,
+        primary_region,
+        alternate_region,
         response_region,
-        total_requests_launched: if matches!(winner, Side::Secondary) { 2 } else { 2 },
         was_hedge: matches!(winner, Side::Secondary),
     });
     resp
@@ -1637,9 +1637,9 @@ for the operation — i.e. `should_hedge()` returned `true` and the
 | Field | Value |
 |---|---|
 | `strategy_config` | The active strategy config (always populated) |
-| `regions_contacted` | `vec![regions[0]]` (just the primary) |
+| `primary_region` | `regions[0]` |
+| `alternate_region` | `None` |
 | `response_region` | `regions[0]` |
-| `total_requests_launched` | `1` |
 | `was_hedge` | `false` |
 | `terminal_state` | `HedgeTerminalState::PrimaryWonPreThreshold` |
 
@@ -1684,29 +1684,27 @@ the numerator.
 pub struct HedgeDiagnostics {
     /// The hedging strategy configuration that was active.
     pub strategy_config: HedgingStrategyConfig,
-    /// Regions that had requests launched (up to and including the winner).
+    /// The primary region the operation was initially dispatched to.
+    pub primary_region: Region,
+    /// The alternate region the hedge was dispatched to, if any.
     ///
-    /// With the single-alternate model (§6) this is either
-    /// `vec![primary]` (primary won before the threshold timer fired,
-    /// or the deadline fired before any hedge was launched) or
-    /// `vec![primary, alternate]` (the alternate hedge was spawned).
-    pub regions_contacted: Vec<Region>,
+    /// `None` when only the primary leg ran (terminal states
+    /// `PrimaryWonPreThreshold` and `DeadlineExceededPreThreshold`);
+    /// `Some(_)` otherwise.
+    pub alternate_region: Option<Region>,
     /// The target region of the winning response.
     ///
     /// For terminal-error states (`BothTransient`, `CancelledAwaitingPartner`,
     /// `DeadlineExceededPreThreshold`) this is the primary region as a
     /// sentinel — no response was actually returned to the caller.
     pub response_region: Region,
-    /// How many hedge requests were launched (including primary).
-    /// Either `1` (no hedge fired) or `2` (alternate spawned).
-    pub total_requests_launched: usize,
     /// Whether the alternate hedge produced the response returned to
     /// the caller.
     ///
     /// **Invariant:** `was_hedge == true` if and only if
     /// `terminal_state == HedgeTerminalState::AlternateWon`. Win-rate
     /// metrics must use this field (or equivalently `terminal_state`)
-    /// rather than inspecting `regions_contacted` length.
+    /// rather than inspecting `alternate_region.is_some()`.
     pub was_hedge: bool,
     /// Structured classification of how the hedge race terminated.
     /// See the terminal-state taxonomy table above for semantics.
@@ -2108,8 +2106,8 @@ also transient, §14.1 applies.
 
 | Test | Setup | Validates |
 |------|-------|-----------|
-| `hedging_read_primary_slow` | 2s delay on Region A reads, threshold 200ms | Alternate Region B wins; diagnostics show `was_hedge=true`, `total_requests_launched=2` |
-| `hedging_read_primary_fast` | No faults | Primary wins before threshold; `hedge_diagnostics=Some(_)` with `was_hedge=false` and `total_requests_launched=1` |
+| `hedging_read_primary_slow` | 2s delay on Region A reads, threshold 200ms | Alternate Region B wins; diagnostics show `was_hedge=true`, `alternate_region=Some(B)` |
+| `hedging_read_primary_fast` | No faults | Primary wins before threshold; `hedge_diagnostics=Some(_)` with `was_hedge=false` and `alternate_region=None` |
 | `hedging_read_primary_503` | 503 on Region A reads | Alternate Region B wins with success |
 | `hedging_read_both_regions_slow` | 2s delay on both regions | Whichever responds first wins (graceful degradation) |
 | `hedging_write_not_hedged` | 2s delay on writes on a multi-master account | NO alternate hedge fires; write returns after the delay |
@@ -2258,7 +2256,7 @@ operations, stored procedure execution, adaptive threshold tuning.
   ChangeFeed contact regions *before* the hedge dispatch starts
   (query plan fetches, partition-key-range cache loads,
   identity-batching pre-flights, metadata-cache priming).
-  `HedgeDiagnostics::regions_contacted` covers only the regions the
+  `HedgeDiagnostics::alternate_region` covers only the regions the
   hedge path itself fanned out to; pre-hedge contacts show up in
   the surrounding `DiagnosticsContext` (existing per-attempt region
   trail). Operators must consult both surfaces to distinguish

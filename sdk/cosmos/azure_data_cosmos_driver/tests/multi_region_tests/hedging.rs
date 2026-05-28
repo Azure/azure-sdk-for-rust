@@ -151,19 +151,15 @@ pub async fn hedging_primary_slow_alternate_wins() -> Result<(), Box<dyn Error>>
                  hedge_diag = {hedge_diag:?}",
             );
             assert_eq!(
-                hedge_diag.total_requests_launched, 2,
-                "both primary and alternate legs must be launched once the \
-                 threshold elapses; hedge_diag = {hedge_diag:?}",
-            );
-            assert!(
-                hedge_diag.regions_contacted.contains(&PRIMARY_REGION),
-                "regions_contacted must include the primary (which lost the race); \
+                hedge_diag.primary_region, PRIMARY_REGION,
+                "primary_region must record the region that lost the race; \
                  hedge_diag = {hedge_diag:?}",
             );
-            assert!(
-                hedge_diag.regions_contacted.contains(&ALTERNATE_REGION),
-                "regions_contacted must include the alternate (which won the race); \
-                 hedge_diag = {hedge_diag:?}",
+            assert_eq!(
+                hedge_diag.alternate_region,
+                Some(ALTERNATE_REGION),
+                "alternate_region must be populated once the threshold elapses \
+                 and a hedge is spawned; hedge_diag = {hedge_diag:?}",
             );
 
             assert!(
@@ -232,7 +228,7 @@ pub async fn hedging_primary_fast_no_alternate() -> Result<(), Box<dyn Error>> {
                  hedge_diag = {hedge_diag:?}",
             );
             assert_eq!(
-                hedge_diag.total_requests_launched, 1,
+                hedge_diag.alternate_region, None,
                 "only the primary leg should be launched on the zero-overhead happy \
                  path (spec §6.5 invariant #3); hedge_diag = {hedge_diag:?}",
             );
