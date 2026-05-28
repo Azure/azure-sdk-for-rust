@@ -87,6 +87,7 @@ impl CosmosClient {
     pub fn builder() -> CosmosClientBuilder {
         CosmosClientBuilder::new()
     }
+
     /// Gets a [`DatabaseClient`] that can be used to access the database with the specified ID.
     ///
     /// # Arguments

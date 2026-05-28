@@ -33,4 +33,14 @@ pub enum RoutingStrategy {
     /// Specifying an unknown region name results in undefined region
     /// selection behavior that may change in future versions of the SDK.
     ProximityTo(Region),
+
+    /// Select target regions using a fixed preference order.
+    ///
+    /// This list **does not** restrict which regions the SDK may select for routing,
+    /// only the order in which it considers them. After failover exhausts the list of preferred regions,
+    /// the SDK will arbitrarily select from other available regions.
+    ///
+    /// If you need to prohibit the SDK from selecting certain regions,
+    /// use [`OperationOptions::excluded_regions`](crate::options::OperationOptions::excluded_regions).
+    PreferredRegions(Vec<Region>),
 }
