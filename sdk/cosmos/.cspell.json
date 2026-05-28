@@ -237,7 +237,7 @@
     "release-platform-matrix.json",
     "**/query_plan_native/QueryPlanInterop.h",
     "**/query_plan_native/bindgen_wrapper.h",
-    "**/query_plan_native/generated/native_bindings.rs"
+    "**/query_plan_native/generated/native_bindings.rs",
     "vnext-emulator-matrix.json"
   ],
   "overrides": [
