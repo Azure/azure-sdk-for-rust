@@ -4,8 +4,8 @@
 //! Helpers for building mock `GetDatabaseAccount` responses in fault injection tests.
 // cSpell: disable
 
-use azure_core::http::{headers::Headers, StatusCode};
-use azure_data_cosmos::fault_injection::CustomResponse;
+use azure_core::http::StatusCode;
+use azure_data_cosmos::fault_injection::{CustomResponse, CustomResponseBuilder};
 use azure_data_cosmos::regions::Region;
 
 /// Builds a [`CustomResponse`] containing a valid `AccountProperties` JSON payload
@@ -48,11 +48,9 @@ pub fn mock_database_account_response_for_account(
     multi_write: bool,
 ) -> CustomResponse {
     let body = mock_database_account_json(account_name, writable, readable, multi_write);
-    CustomResponse {
-        status_code: StatusCode::Ok,
-        headers: Headers::new(),
-        body: body.into_bytes(),
-    }
+    CustomResponseBuilder::new(StatusCode::Ok)
+        .with_body(body.into_bytes())
+        .build()
 }
 
 /// Builds a valid `AccountProperties` JSON string with the specified regions.
@@ -119,7 +117,7 @@ mod tests {
         );
 
         let value: serde_json::Value =
-            serde_json::from_slice(&response.body).expect("should deserialize");
+            serde_json::from_slice(response.body()).expect("should deserialize");
 
         let writable = value["writableLocations"].as_array().unwrap();
         let readable = value["readableLocations"].as_array().unwrap();
@@ -139,7 +137,7 @@ mod tests {
         );
 
         let value: serde_json::Value =
-            serde_json::from_slice(&response.body).expect("should deserialize");
+            serde_json::from_slice(response.body()).expect("should deserialize");
 
         assert!(value["enableMultipleWriteLocations"].as_bool().unwrap());
     }

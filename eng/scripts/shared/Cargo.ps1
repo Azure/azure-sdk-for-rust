@@ -21,15 +21,20 @@ function Get-CargoPackages() {
   return $metadata.packages
 }
 
-function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
-  $names = @()
+function Get-PackagesFromPackageInfo($packageInfoDirectory) {
+  $packages = @()
   $packageInfoFiles = Get-ChildItem -Path $packageInfoDirectory -Filter '*.json' -File
   foreach ($packageInfoFile in $packageInfoFiles) {
     $packageInfo = Get-Content -Path $packageInfoFile.FullName | ConvertFrom-Json
-    $names += $packageInfo.name
+    $packages += $packageInfo
   }
 
-  return $names
+  return $packages
+}
+
+function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
+  $packages = Get-PackagesFromPackageInfo($packageInfoDirectory)
+  $packages.name
 }
 
 function Get-VersionParamsFromCgManifest(
@@ -38,11 +43,14 @@ function Get-VersionParamsFromCgManifest(
 ) {
   $cgManifest = Get-Content $cgManifestPath `
   | ConvertFrom-Json
-  $versions = $cgManifest.
+  $components = $cgManifest.
   registrations.
-  Where({ $_.component.type -eq 'cargo' -and $_.component.cargo.name -eq $packageName }).
-  component.cargo.version
+  Where({ $_.component.type -eq 'cargo' -and $_.component.cargo.name -eq $packageName })
+  if (!$components) {
+    Write-Error "Component '$packageName' not found in cgmanifest.json"
+  }
 
+  $versions = $components.component.cargo.version
   if (!$versions) {
     Write-Error "No versions found for package '$packageName' in cgmanifest.json"
   }

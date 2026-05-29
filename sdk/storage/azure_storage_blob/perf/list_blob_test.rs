@@ -3,7 +3,7 @@
 
 use std::sync::{Arc, OnceLock};
 
-use azure_core::{error::ErrorKind, Bytes};
+use azure_core::{error::ErrorKind, http::Url, Bytes};
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
@@ -12,6 +12,7 @@ use azure_core_test::{
     TestContext,
 };
 use azure_storage_blob::BlobContainerClient;
+use azure_storage_blob_test::get_test_credential;
 use futures::{FutureExt, TryStreamExt};
 
 pub struct ListBlobTest {
@@ -72,7 +73,7 @@ impl PerfTest for ListBlobTest {
         // Setup code before running the test
 
         let recording = context.recording();
-        let credential = recording.credential();
+        let credential = get_test_credential(recording);
         let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
         let endpoint = match &self.endpoint {
             Some(e) => e.clone(),
@@ -82,7 +83,12 @@ impl PerfTest for ListBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
+        let mut container_url = Url::parse(&endpoint)?;
+        container_url
+            .path_segments_mut()
+            .expect("endpoint must be a valid base URL")
+            .push(&container_name);
+        let client = BlobContainerClient::new(container_url, Some(credential), None)?;
         self.client.set(client).map_err(|_| {
             azure_core::Error::with_message(ErrorKind::Other, "Failed to set client")
         })?;
@@ -110,7 +116,7 @@ impl PerfTest for ListBlobTest {
         let mut iterator = self.client.get().unwrap().list_blobs(None)?.into_pages();
         while let Some(blob_segment) = iterator.try_next().await? {
             let body = blob_segment.into_model()?;
-            for blob in body.segment.blob_items.iter() {
+            for blob in body.blob_items.iter() {
                 std::hint::black_box(blob);
             }
         }

@@ -283,7 +283,7 @@ fn extract_test_proxy(
         let message = format!(
             "failed to extract {}: {:?}",
             archive_file_path.display(),
-            &err
+            err
         );
         azure_core::Error::with_error(ErrorKind::Io, err, message)
     })

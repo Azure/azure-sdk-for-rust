@@ -14,7 +14,7 @@ use azure_core::{
     },
 };
 use serde::Deserialize;
-use std::{borrow::Cow, convert::Infallible, fmt, sync::Arc};
+use std::{any::type_name, borrow::Cow, convert::Infallible, fmt, sync::Arc};
 
 // cspell:ignore fedauthredirect msedge oidcrequesturi
 const OIDC_VARIABLE_NAME: &str = "SYSTEM_OIDCREQUESTURI";
@@ -24,17 +24,28 @@ const TFS_FEDAUTHREDIRECT_HEADER: HeaderName = HeaderName::from_static("x-tfs-fe
 const ALLOWED_HEADERS: &[&str] = &["x-msedge-ref", "x-vss-e2eid"];
 
 /// Authenticates an [Azure Pipelines service connection](https://learn.microsoft.com/azure/devops/pipelines/library/service-endpoints).
-#[derive(Debug)]
 pub struct AzurePipelinesCredential(ClientAssertionCredential<Client>);
 
+impl fmt::Debug for AzurePipelinesCredential {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple(type_name::<Self>()).finish_non_exhaustive()
+    }
+}
+
 /// Options for constructing a new [`AzurePipelinesCredential`].
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct AzurePipelinesCredentialOptions {
     /// Options for the [`ClientAssertionCredential`] used by the [`AzurePipelinesCredential`].
     pub credential_options: ClientAssertionCredentialOptions,
 
     #[cfg(test)]
     pub(crate) env: Option<Env>,
+}
+
+impl fmt::Debug for AzurePipelinesCredentialOptions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct(type_name::<Self>()).finish_non_exhaustive()
+    }
 }
 
 impl AzurePipelinesCredential {

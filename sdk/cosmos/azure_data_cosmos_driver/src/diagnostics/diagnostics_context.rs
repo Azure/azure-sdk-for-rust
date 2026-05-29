@@ -1547,6 +1547,51 @@ impl DiagnosticsContext {
             .complete()
     }
 
+    /// Concatenates the per-request diagnostics from a sequence of
+    /// sub-operation contexts into a single aggregated [`DiagnosticsContext`].
+    ///
+    /// Used by the PATCH handler to surface **one operation = one
+    /// [`DiagnosticsContext`]** even though the handler internally executes
+    /// 2+ pipeline runs (Read + Replace, possibly with 412 retries). Each
+    /// source is one sub-op's finalized context; the aggregated context's
+    /// `requests` is the concatenation, in input order, of every sub-op's
+    /// `RequestDiagnostics`.
+    ///
+    /// The aggregated context inherits its `activity_id`, `options`,
+    /// `cpu_monitor`, `machine_id`, and `fault_injection_enabled` from the
+    /// **last** source — which corresponds to the last sub-op the handler
+    /// issued and whose status it already surfaces to callers. Operation
+    /// `status` likewise comes from the last source. `duration` is the sum
+    /// of the sources' durations (sub-ops are issued sequentially), so
+    /// callers see a single total time for the operation.
+    ///
+    /// Returns `None` only when `sources` is empty.
+    pub(crate) fn aggregate_sub_operations(sources: &[Arc<DiagnosticsContext>]) -> Option<Self> {
+        let last = sources.last()?;
+        let aggregated_requests: Vec<RequestDiagnostics> = sources
+            .iter()
+            .flat_map(|c| c.requests.iter().cloned())
+            .collect();
+        let aggregated_duration = sources
+            .iter()
+            .map(|c| c.duration)
+            .fold(Duration::ZERO, |a, b| a.saturating_add(b));
+        Some(DiagnosticsContext {
+            activity_id: last.activity_id.clone(),
+            duration: aggregated_duration,
+            requests: Arc::new(aggregated_requests),
+            status: last.status,
+            options: Arc::clone(&last.options),
+            cpu_monitor: last.cpu_monitor.clone(),
+            machine_id: last.machine_id.clone(),
+            fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
+            #[cfg(test)]
+            test_system_usage: last.test_system_usage.clone(),
+            cached_json_detailed: OnceLock::new(),
+            cached_json_summary: OnceLock::new(),
+        })
+    }
+
     /// Returns the operation's activity ID.
     pub fn activity_id(&self) -> &ActivityId {
         &self.activity_id
@@ -1774,6 +1819,34 @@ impl PartialEq for DiagnosticsContext {
 }
 
 impl Eq for DiagnosticsContext {}
+
+impl std::fmt::Display for DiagnosticsContext {
+    /// `{ctx}` — one-line summary suitable for `tracing` fields and log
+    /// lines: `activity=… duration=…ms requests=N charge=…RU [status=…]`.
+    ///
+    /// `{ctx:#}` — the one-line summary followed by the summarized
+    /// diagnostics JSON (`DiagnosticsVerbosity::Summary`). The detailed
+    /// JSON remains available via
+    /// [`to_json_string`](Self::to_json_string).
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "activity={} duration={}ms requests={} charge={}RU",
+            self.activity_id(),
+            self.duration().as_millis(),
+            self.request_count(),
+            self.total_request_charge(),
+        )?;
+        if let Some(status) = self.status() {
+            write!(f, " status={status}")?;
+        }
+        if f.alternate() {
+            f.write_str("\n")?;
+            f.write_str(self.to_json_string(Some(DiagnosticsVerbosity::Summary)))?;
+        }
+        Ok(())
+    }
+}
 
 /// Builds a summary for requests in a single region.
 fn build_region_summary(
@@ -2090,6 +2163,68 @@ mod tests {
     }
 
     #[test]
+    fn aggregate_sub_operations_concatenates_request_diagnostics() {
+        // Concatenates sub-op RequestDiagnostics in input order, inherits
+        // operation-level fields (activity_id, status) from the LAST source,
+        // and sums per-source durations. This is the contract the PATCH
+        // handler depends on to surface "one operation = one
+        // DiagnosticsContext" across its Read + Replace sub-ops.
+        let read_activity = ActivityId::new_uuid();
+        let read_ctx = Arc::new(make_context_with(read_activity.clone(), |builder| {
+            builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.westus2.documents.azure.com",
+            );
+            builder.set_operation_status(StatusCode::Ok, None);
+        }));
+
+        let replace_activity = ActivityId::new_uuid();
+        let replace_ctx = Arc::new(make_context_with(replace_activity.clone(), |builder| {
+            builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::EAST_US_2),
+                "https://test.eastus2.documents.azure.com",
+            );
+            builder.set_operation_status(StatusCode::Created, None);
+        }));
+
+        let aggregated =
+            DiagnosticsContext::aggregate_sub_operations(&[read_ctx.clone(), replace_ctx.clone()])
+                .expect("aggregation must succeed for non-empty source");
+
+        assert_eq!(
+            aggregated.request_count(),
+            2,
+            "aggregated context must contain one RequestDiagnostics per sub-op"
+        );
+        assert_eq!(
+            aggregated.activity_id(),
+            &replace_activity,
+            "operation-level activity_id must come from the last source"
+        );
+        assert_eq!(
+            aggregated.status().map(|s| s.status_code()),
+            Some(StatusCode::Created),
+            "operation-level status must come from the last source"
+        );
+        // Both source regions are reachable through the aggregated context.
+        let regions = aggregated.regions_contacted();
+        assert!(regions.contains(&Region::WEST_US_2));
+        assert!(regions.contains(&Region::EAST_US_2));
+    }
+
+    #[test]
+    fn aggregate_sub_operations_returns_none_for_empty_input() {
+        // Edge case: defensive None for callers that don't pre-check —
+        // exercised by the patch handler's `.unwrap_or_else(...)` safety
+        // net even though the real call site always has at least one
+        // source.
+        let aggregated = DiagnosticsContext::aggregate_sub_operations(&[]);
+        assert!(aggregated.is_none());
+    }
+
+    #[test]
     fn to_json_detailed() {
         let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
             let handle = builder.start_test_request(
@@ -2166,6 +2301,72 @@ mod tests {
     }
 
     #[test]
+    fn to_json_detailed_with_known_sub_status() {
+        // Verifies that when a request completes with a sub-status that has
+        // a well-known name (e.g. 3200 → RUBudgetExceeded), the serialized
+        // `status` field carries the full `[Kind] {code}/{sub} ({name})`
+        // form produced by `CosmosStatus::Display`.
+        let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
+            let handle = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            builder.complete_request(
+                handle,
+                StatusCode::TooManyRequests,
+                Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+            );
+        });
+
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let value = normalize_diagnostics_json(json);
+        let status = value
+            .get("requests")
+            .and_then(|r| r.as_array())
+            .and_then(|a| a.first())
+            .and_then(|r| r.get("status"))
+            .and_then(|s| s.as_str())
+            .expect("status field must be a string");
+        assert_eq!(
+            status, "429/3200 (RUBudgetExceeded)",
+            "named sub-status must serialize as `[Kind] {{code}}/{{sub}} ({{name}})`"
+        );
+    }
+
+    #[test]
+    fn to_json_detailed_with_unknown_sub_status() {
+        // Verifies the `[Kind] {code}/{sub}` form (no name suffix) when the
+        // sub-status code is not in the well-known table.
+        let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
+            let handle = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            builder.complete_request(
+                handle,
+                StatusCode::TooManyRequests,
+                Some(SubStatusCode::new(65000)),
+            );
+        });
+
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let value = normalize_diagnostics_json(json);
+        let status = value
+            .get("requests")
+            .and_then(|r| r.as_array())
+            .and_then(|a| a.first())
+            .and_then(|r| r.get("status"))
+            .and_then(|s| s.as_str())
+            .expect("status field must be a string");
+        assert_eq!(
+            status, "429/65000",
+            "unknown sub-status must serialize as `[Kind] {{code}}/{{sub}}` with no name suffix"
+        );
+    }
+
+    #[test]
     fn to_json_summary() {
         let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
             // Add several requests to trigger deduplication
@@ -2178,7 +2379,11 @@ mod tests {
                 builder.update_request(handle, |req| {
                     req.request_charge = RequestCharge::new(i as f64)
                 });
-                builder.complete_request(handle, StatusCode::TooManyRequests, None);
+                builder.complete_request(
+                    handle,
+                    StatusCode::TooManyRequests,
+                    Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+                );
             }
         });
 
@@ -2196,7 +2401,7 @@ mod tests {
                 "first": {
                     "execution_context": "retry",
                     "endpoint": "https://test.documents.azure.com/",
-                    "status": "429",
+                    "status": "429/3200 (RUBudgetExceeded)",
                     "request_charge": 0.0,
                     "duration_ms": 0,
                     "timed_out": false
@@ -2204,15 +2409,16 @@ mod tests {
                 "last": {
                     "execution_context": "retry",
                     "endpoint": "https://test.documents.azure.com/",
-                    "status": "429",
+                    "status": "429/3200 (RUBudgetExceeded)",
                     "request_charge": 4.0,
                     "duration_ms": 0,
                     "timed_out": false
                 },
                 "deduplicated_groups": [{
                     "endpoint": "https://test.documents.azure.com/",
-                    "status": "429",
+                    "status": "429/3200 (RUBudgetExceeded)",
                     "execution_context": "retry",
+
                     "count": 3,
                     "total_request_charge": 6.0,
                     "min_duration_ms": 0,

@@ -7,6 +7,7 @@
 #![allow(dead_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+pub(crate) mod buffers;
 pub mod clients;
 #[allow(unused_imports)]
 mod generated;
@@ -18,5 +19,4 @@ pub use clients::*;
 pub use parsers::*;
 mod logging;
 pub mod models;
-pub use models::error;
 pub use models::error::{Result, StorageError};

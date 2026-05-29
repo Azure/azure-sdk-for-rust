@@ -29,9 +29,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let container_client = db_client.container_client(&args.container).await?;
 
     let response = container_client
-        .read_item::<serde_json::Value>(&args.partition_key, &args.item_id, None)
+        .read_item(&args.partition_key, &args.item_id, None)
         .await?;
-    let item = response.into_model()?;
+    let item: serde_json::Value = response.into_model()?;
     println!("{}", serde_json::to_string_pretty(&item)?);
 
     Ok(())

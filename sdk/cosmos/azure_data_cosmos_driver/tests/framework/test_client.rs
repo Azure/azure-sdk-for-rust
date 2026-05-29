@@ -15,6 +15,7 @@ use azure_data_cosmos_driver::{
     options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
 };
 use std::{error::Error, future::Future, sync::Arc};
+use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 
 use super::env::{
@@ -39,7 +40,13 @@ pub struct TestEnv {
 /// Returns `Ok(None)` if the environment is not configured and tests should be skipped.
 pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let _ = tracing_subscriber::fmt::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_env_filter(
+            EnvFilter::builder()
+                // Tests with intentional failures cause noise, so we set the default level to "off"
+                // to silence them unless the user explicitly configures it.
+                .with_default_directive("off".parse().unwrap())
+                .from_env_lossy(),
+        )
         .try_init();
 
     let test_mode = get_test_mode();
@@ -296,7 +303,7 @@ impl DriverTestRunContext {
             .with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
@@ -326,7 +333,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::delete_database(database.clone());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (204 No Content)
@@ -346,21 +353,54 @@ impl DriverTestRunContext {
         container_name: &str,
         partition_key_path: &str,
     ) -> Result<ContainerReference, Box<dyn Error>> {
+        self.create_container_with_pk_paths(database, container_name, &[partition_key_path])
+            .await
+    }
+
+    /// Creates a container with one or more partition-key paths.
+    ///
+    /// Pass a single-element slice for a flat partition key (sets `kind`
+    /// to `Hash`), or multiple paths for a hierarchical partition key
+    /// (sets `kind` to `MultiHash`). Mirrors the `paths` array in the
+    /// [PartitionKey definition][pk-spec], with the `kind` derived from
+    /// the number of paths.
+    ///
+    /// [pk-spec]: https://learn.microsoft.com/en-us/rest/api/cosmos-db/create-a-collection
+    pub async fn create_container_with_pk_paths(
+        &self,
+        database: &DatabaseReference,
+        container_name: &str,
+        partition_key_paths: &[&str],
+    ) -> Result<ContainerReference, Box<dyn Error>> {
+        assert!(
+            !partition_key_paths.is_empty(),
+            "container requires at least one partition-key path"
+        );
         let driver = self
             .client
             .runtime
             .get_or_create_driver(self.client.account.clone(), None)
             .await?;
 
+        let paths_json = partition_key_paths
+            .iter()
+            .map(|p| format!("\"{}\"", p))
+            .collect::<Vec<_>>()
+            .join(",");
+        let kind = if partition_key_paths.len() == 1 {
+            "Hash"
+        } else {
+            "MultiHash"
+        };
         let body = format!(
-            r#"{{"id": "{}", "partitionKey": {{"paths": ["{}"], "kind": "Hash", "version": 2}}}}"#,
-            container_name, partition_key_path
+            r#"{{"id": "{}", "partitionKey": {{"paths": [{}], "kind": "{}", "version": 2}}}}"#,
+            container_name, paths_json, kind
         );
         let operation =
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, OperationOptions::default())
             .await?;
 
         // Check for success status (201 Created)
@@ -403,7 +443,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)
@@ -443,8 +483,50 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, OperationOptions::default())
             .await?;
+
+        Ok(result)
+    }
+
+    /// Patches an item using the driver's `OperationType::Patch` RMW loop.
+    ///
+    /// Mirrors [`read_item`](Self::read_item)'s shape but builds the
+    /// [`CosmosOperation::patch_item`] body from a
+    /// [`PatchInstructions`](azure_data_cosmos_driver::models::PatchInstructions). The
+    /// returned [`CosmosResponse`] is the synthetic response produced by the
+    /// patch handler — its body is the locally-merged post-image and its
+    /// status/diagnostics are inherited from the underlying conditional
+    /// `Replace`.
+    ///
+    /// If `max_attempts` is `None`, the handler uses
+    /// `DEFAULT_PATCH_MAX_ATTEMPTS` (5).
+    pub async fn patch_item(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        patch: &azure_data_cosmos_driver::models::PatchInstructions,
+        max_attempts: Option<std::num::NonZeroU8>,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
+        let driver = self
+            .client
+            .runtime
+            .get_or_create_driver(self.client.account.clone(), None)
+            .await?;
+
+        let pk = partition_key.into();
+        let item_ref = ItemReference::from_name(container, pk, item_id.to_owned());
+        let body = serde_json::to_vec(patch)?;
+        let mut operation = CosmosOperation::patch_item(item_ref).with_body(body);
+        if let Some(n) = max_attempts {
+            operation = operation.with_patch_max_attempts(n);
+        }
+
+        let result = driver
+            .execute_operation(operation, OperationOptions::default())
+            .await?
+            .expect("PATCH operation must return a response");
 
         Ok(result)
     }
@@ -488,12 +570,24 @@ impl DriverTestRunContext {
             "Should use data plane pipeline for item operations"
         );
 
-        // Check transport security for emulator
-        if first_request.endpoint().contains("localhost") {
+        // Check transport security for emulator. The legacy emulator and the
+        // vnext emulator in HTTPS mode use a self-signed cert and surface as
+        // `EmulatorWithInsecureCertificates`. The vnext emulator in HTTP mode
+        // has no TLS at all and is classified as `Secure` today (the enum
+        // predates plain-HTTP emulator support — tracked separately).
+        if first_request.endpoint().contains("localhost")
+            || first_request.endpoint().contains("127.0.0.1")
+        {
+            let expected = if first_request.endpoint().starts_with("https://") {
+                TransportSecurity::EmulatorWithInsecureCertificates
+            } else {
+                TransportSecurity::Secure
+            };
             assert_eq!(
                 first_request.transport_security(),
-                TransportSecurity::EmulatorWithInsecureCertificates,
-                "Should use emulator transport security for localhost"
+                expected,
+                "Unexpected transport security for emulator endpoint {}",
+                first_request.endpoint()
             );
         }
 

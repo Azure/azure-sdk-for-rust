@@ -37,25 +37,25 @@ struct TestItem {
 /// Helper function to assert common response properties.
 /// Verifies status code, that request charge is present and positive, endpoint is correct,
 /// and that session token, activity ID, and server duration are present.
-fn assert_response<T>(
-    response: &ItemResponse<T>,
+fn assert_response(
+    response: &ItemResponse,
     expected_status: StatusCode,
     _expected_endpoint: &str,
     read_operation: bool,
 ) {
     assert_eq!(response.status(), expected_status, "unexpected status code");
-    let request_charge = response.request_charge();
+    let request_charge = response.headers().request_charge();
     assert!(
         request_charge.is_some(),
         "expected request charge to be present"
     );
     assert!(
-        request_charge.unwrap() > 0.0,
+        request_charge.unwrap().value() > 0.0,
         "expected request charge to be positive"
     );
     if read_operation {
         // ETag is only returned on read operations
-        let etag = response.etag();
+        let etag = response.headers().etag();
         assert!(etag.is_some(), "expected etag to be present");
         assert!(
             !etag.unwrap().to_string().is_empty(),
@@ -64,7 +64,7 @@ fn assert_response<T>(
     }
 
     assert!(
-        response.session_token().is_some(),
+        response.headers().session_token().is_some(),
         "expected session token to be present"
     );
     let diagnostics = response.diagnostics();
@@ -106,7 +106,9 @@ fn assert_response<T>(
     );
 }
 
-async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
+async fn create_container(
+    run_context: &TestRunContext,
+) -> azure_data_cosmos::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-{}", Uuid::new_v4());
     run_context
@@ -123,8 +125,12 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -155,12 +161,11 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Try to read the item
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -184,8 +189,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Update again, but this time ask for the response
             item.value = 12;
@@ -203,7 +207,7 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = response.into_body().json()?;
+            let updated_item: TestItem = response.into_body().into_single()?;
             assert_eq!(item, updated_item);
 
             // Delete the item
@@ -214,24 +218,20 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             // Try to read the item again, expecting a 404
             // loop with backoff to avoid test flakes due to eventual consistency
             loop {
-                match container_client
-                    .read_item::<TestItem>(&pk, &item_id, None)
-                    .await
-                {
+                match container_client.read_item(&pk, &item_id, None).await {
                     Ok(_) => {
                         println!("expected a 404 error when reading the deleted item, retrying...");
                         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                     }
                     Err(err) => {
                         assert_eq!(
-                            Some(azure_core::http::StatusCode::NotFound),
-                            err.http_status()
+                            azure_core::http::StatusCode::NotFound,
+                            err.status().status_code()
                         );
                         break;
                     }
@@ -247,8 +247,12 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -281,7 +285,7 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<serde_json::Value>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -309,8 +313,12 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -342,7 +350,7 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, &pk, &item_id, None)
+                .read_item(&container_client, &pk, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -362,8 +370,12 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -410,7 +422,7 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
                 &get_effective_hub_endpoint(),
                 false,
             );
-            let updated_item: TestItem = upsert_response.into_body().json()?;
+            let updated_item: TestItem = upsert_response.into_body().into_single()?;
             assert_eq!(item, updated_item);
 
             Ok(())
@@ -422,8 +434,12 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -467,7 +483,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             );
 
             let read_response = run_context
-                .read_item::<TestItem>(&container_client, PartitionKey::NULL, &item_id, None)
+                .read_item(&container_client, PartitionKey::NULL, &item_id, None)
                 .await?;
             assert_response(
                 &read_response,
@@ -491,7 +507,7 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
             // loop with backoff to avoid test flakes due to eventual consistency
             loop {
                 match container_client
-                    .read_item::<()>(PartitionKey::NULL, &item_id, None)
+                    .read_item(PartitionKey::NULL, &item_id, None)
                     .await
                 {
                     Ok(_) => {
@@ -500,8 +516,8 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
                     }
                     Err(err) => {
                         assert_eq!(
-                            Some(azure_core::http::StatusCode::NotFound),
-                            err.http_status()
+                            azure_core::http::StatusCode::NotFound,
+                            err.status().status_code()
                         );
                         break;
                     }
@@ -517,8 +533,12 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -553,8 +573,9 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Replace item with correct Etag
@@ -596,10 +617,11 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .await;
 
             assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
+                azure_core::http::StatusCode::PreconditionFailed,
                 response
                     .expect_err("expected the server to return an error")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             Ok(())
@@ -611,8 +633,12 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -647,8 +673,9 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Upsert item with correct Etag
@@ -690,10 +717,11 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .await;
 
             assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
+                azure_core::http::StatusCode::PreconditionFailed,
                 response
                     .expect_err("expected the server to return an error")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             Ok(())
@@ -705,8 +733,12 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -741,8 +773,9 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
             //Store Etag from response
             let etag: Etag = response
                 .headers()
-                .get_str(&azure_core::http::headers::ETAG)
+                .etag()
                 .expect("expected the etag to be returned")
+                .as_str()
                 .into();
 
             //Delete item with correct Etag
@@ -787,10 +820,11 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .await;
 
             assert_eq!(
-                Some(azure_core::http::StatusCode::PreconditionFailed),
+                azure_core::http::StatusCode::PreconditionFailed,
                 response
                     .expect_err("expected the server to return an error")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             Ok(())
@@ -817,8 +851,12 @@ struct ExplicitPkItem {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -886,7 +924,7 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Read the undefined-PK item using UNDEFINED - should succeed.
             let read_response = run_context
-                .read_item::<UndefinedPkItem>(
+                .read_item(
                     &container_client,
                     PartitionKey::UNDEFINED,
                     &item_no_pk_id,
@@ -904,18 +942,19 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Reading the undefined-PK item with NULL should fail (wrong partition).
             let result = container_client
-                .read_item::<serde_json::Value>(PartitionKey::NULL, &item_no_pk_id, None)
+                .read_item(PartitionKey::NULL, &item_no_pk_id, None)
                 .await;
             assert_eq!(
-                Some(azure_core::http::StatusCode::NotFound),
+                azure_core::http::StatusCode::NotFound,
                 result
                     .expect_err("expected a 404 for undefined-PK item read with NULL")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             // Read the null-PK item using NULL - should succeed.
             let read_response = run_context
-                .read_item::<TestItem>(
+                .read_item(
                     &container_client,
                     PartitionKey::NULL,
                     &item_null_pk_id,
@@ -933,13 +972,14 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 
             // Reading the null-PK item with UNDEFINED should fail (wrong partition).
             let result = container_client
-                .read_item::<serde_json::Value>(PartitionKey::UNDEFINED, &item_null_pk_id, None)
+                .read_item(PartitionKey::UNDEFINED, &item_null_pk_id, None)
                 .await;
             assert_eq!(
-                Some(azure_core::http::StatusCode::NotFound),
+                azure_core::http::StatusCode::NotFound,
                 result
                     .expect_err("expected a 404 for null-PK item read with UNDEFINED")
-                    .http_status()
+                    .status()
+                    .status_code()
             );
 
             // Delete the undefined-PK item using UNDEFINED.
@@ -967,8 +1007,12 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
 /// item already exists. This exercises the driver's error-path bridging.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -1004,10 +1048,11 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
                 .create_item(&pk, &item_id, &item, None)
                 .await;
             assert_eq!(
-                Some(StatusCode::Conflict),
+                StatusCode::Conflict,
                 result
                     .expect_err("expected conflict on duplicate create")
-                    .http_status(),
+                    .status()
+                    .status_code(),
             );
 
             Ok(())
@@ -1021,8 +1066,12 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
 /// when `ContentResponseOnWrite::Enabled` is set.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -1057,7 +1106,7 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
             );
 
             // Deserialize the body and verify it matches the original item.
-            let created: TestItem = response.into_body().json()?;
+            let created: TestItem = response.into_body().into_single()?;
             assert_eq!(item, created);
 
             Ok(())
@@ -1071,8 +1120,12 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
 /// metadata: session token, activity ID, request charge, and server duration.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -1099,7 +1152,7 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
 
             // Session token must be present for session consistency.
             assert!(
-                response.session_token().is_some(),
+                response.headers().session_token().is_some(),
                 "expected session token on create_item response"
             );
 
@@ -1124,11 +1177,14 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
             );
 
             // Request charge must be positive.
-            let charge = response.request_charge();
+            let charge = response.headers().request_charge();
             assert!(charge.is_some(), "expected request charge");
-            assert!(charge.unwrap() > 0.0, "request charge must be positive");
             assert!(
-                f64::from(diagnostics.total_request_charge()) >= charge.unwrap(),
+                charge.unwrap().value() > 0.0,
+                "request charge must be positive"
+            );
+            assert!(
+                f64::from(diagnostics.total_request_charge()) >= charge.unwrap().value(),
                 "diagnostics total request charge should aggregate response request charge"
             );
 
@@ -1145,8 +1201,7 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
             );
 
             // Response body should be empty when ContentResponseOnWrite is not enabled.
-            let body = response.into_body().into_string()?;
-            assert_eq!("", body);
+            assert!(response.into_body().is_empty());
 
             Ok(())
         },

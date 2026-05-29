@@ -12,15 +12,17 @@ use std::{
 
 use async_trait::async_trait;
 use azure_core::{
+    credentials::TokenCredential,
     error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
         AsyncRawResponse, Body, ClientOptions, Context, NoFormat, Request, RequestContent,
-        StatusCode,
+        StatusCode, Url,
     },
     Bytes, Result,
 };
-use azure_core_test::Recording;
+use azure_core_test::{Recording, TestMode};
+use azure_identity::ManagedIdentityCredential;
 use azure_storage_blob::{
     models::{
         BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
@@ -124,6 +126,32 @@ pub fn recorded_test_setup(
     )
 }
 
+/// Returns a credential suitable for storage operations.
+///
+/// In playback mode, returns the recording's mock credential immediately.
+/// Otherwise, if the environment variable `AZURE_STORAGE_USE_MANAGED_IDENTITY` is set to
+/// `"true"`, returns a [`ManagedIdentityCredential`]. Falls back to the recording's
+/// test credential via [`Recording::credential`].
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
+pub fn get_test_credential(recording: &Recording) -> Arc<dyn TokenCredential> {
+    if recording.test_mode() == TestMode::Playback {
+        return recording.credential();
+    }
+
+    let use_managed_identity = std::env::var("AZURE_STORAGE_USE_MANAGED_IDENTITY")
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+
+    if use_managed_identity {
+        ManagedIdentityCredential::new(None).expect("failed to create ManagedIdentityCredential")
+    } else {
+        recording.credential()
+    }
+}
+
 /// Takes in a Recording instance and returns a randomized blob name with prefix "blob" of length 16.
 ///
 /// # Arguments
@@ -163,8 +191,9 @@ pub fn get_blob_service_client(
         account_type,
         &mut service_client_options.client_options,
     );
+    let service_url = Url::parse(&endpoint)?;
     BlobServiceClient::new(
-        &endpoint,
+        service_url,
         Some(recording.credential()),
         Some(service_client_options),
     )
@@ -190,9 +219,18 @@ pub async fn get_container_client(
         account_type,
         &mut container_client_options.client_options,
     );
+    let mut container_url = Url::parse(&endpoint)?;
+    container_url
+        .path_segments_mut()
+        .map_err(|_| {
+            azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                "Invalid endpoint URL: cannot append container name.",
+            )
+        })?
+        .push(&container_name);
     let container_client = BlobContainerClient::new(
-        &endpoint,
-        &container_name,
+        container_url,
         Some(recording.credential()),
         Some(container_client_options),
     )?;

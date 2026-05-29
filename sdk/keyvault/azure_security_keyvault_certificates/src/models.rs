@@ -24,7 +24,7 @@ impl StatusMonitor for CertificateOperation {
     }
 }
 
-/// Options to be passed to [`CertificateClient::create_certificate()`](crate::clients::CertificateClient::create_certificate())
+/// Options to be passed to [`CertificateClient::begin_create_certificate()`](crate::clients::CertificateClient::begin_create_certificate())
 #[derive(Clone, Default, SafeDebug)]
 pub struct CertificateClientCreateCertificateOptions<'a> {
     /// Allows customization of the [`Poller`](azure_core::http::poller::Poller).

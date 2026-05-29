@@ -36,7 +36,7 @@ impl AdaptiveTransport {
         connection_pool: &ConnectionPoolOptions,
         client_factory: Arc<dyn HttpClientFactory>,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         Ok(match config.version_policy {
             HttpVersionPolicy::Http11Only => {
                 Self::Gateway(client_factory.build(connection_pool, config)?)
@@ -56,7 +56,7 @@ impl AdaptiveTransport {
         connection_pool: &ConnectionPoolOptions,
         client_factory: Arc<dyn HttpClientFactory>,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         Ok(Self::Gateway(
             client_factory.build(connection_pool, config)?,
         ))

@@ -1,14 +1,27 @@
 # Release History
 
-## 0.36.0 (Unreleased)
+## 1.1.0-beta.1 (Unreleased)
 
 ### Features Added
+
+- `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
 ### Other Changes
+
+## 1.0.0 (2026-05-11)
+
+### Features Added
+
+- Initial stable release.
+
+### Breaking Changes
+
+- Added `#[non_exhaustive]` to `AttributeArray`, `AttributeValue`, `SpanStatus`, and `SpanKind`.
+- Bearer token authorization now requires TLS (https).
 
 ## 0.35.0 (2026-04-22)
 

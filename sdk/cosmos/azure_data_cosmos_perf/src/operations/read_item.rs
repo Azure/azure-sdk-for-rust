@@ -32,11 +32,14 @@ impl Operation for ReadItemOperation {
         "ReadItem"
     }
 
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<Option<Duration>> {
+    async fn execute(
+        &self,
+        container: &ContainerClient,
+    ) -> azure_data_cosmos::Result<Option<Duration>> {
         let item = self.items.random();
 
         let response = container
-            .read_item::<serde_json::Value>(&item.partition_key, &item.id, self.options.clone())
+            .read_item(&item.partition_key, &item.id, self.options.clone())
             .await?;
         Ok(extract_backend_duration(response.headers()))
     }

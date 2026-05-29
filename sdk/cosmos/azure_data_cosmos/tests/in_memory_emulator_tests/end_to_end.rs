@@ -23,7 +23,8 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, DatabaseProperties};
 use azure_data_cosmos::regions::Region;
-use azure_data_cosmos::CosmosAccountReference;
+use azure_data_cosmos::AccountEndpoint;
+use azure_data_cosmos::AccountReference;
 use azure_data_cosmos::{
     ContentResponseOnWrite, CosmosClient, CosmosClientBuilder, ItemReadOptions, ItemResponse,
     ItemWriteOptions, OperationOptions, RoutingStrategy,
@@ -32,7 +33,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
     VirtualRegion,
 };
-use azure_data_cosmos_driver::models::{ConnectionString, CosmosResponseHeaders};
+use azure_data_cosmos_driver::models::ConnectionString;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use uuid::Uuid;
@@ -62,20 +63,21 @@ struct PaddedTestItem {
 
 /// Builds a [`ResponseSnapshot`] from an SDK [`ItemResponse`] so the shared
 /// validation framework in [`super::validation`] can be reused.
-fn snapshot_from_item_response<T>(resp: &ItemResponse<T>, label: &str) -> ResponseSnapshot {
-    let headers = CosmosResponseHeaders::from_headers(resp.headers());
+fn snapshot_from_item_response(resp: &ItemResponse, label: &str) -> ResponseSnapshot {
+    let headers = resp.headers().clone();
+    let sub_status_code = headers.substatus().map(|s| s.value());
     ResponseSnapshot {
         status_code: u16::from(resp.status()),
-        sub_status_code: headers.substatus.as_ref().map(|s| s.value()),
-        headers,
+        sub_status_code,
+        headers: headers.__into_driver_headers(),
         body: None, // body comparison handled separately via deserialization
         label: label.to_owned(),
     }
 }
 
-fn compare_item_responses_with_spec<T>(
-    real: &ItemResponse<T>,
-    emu: &ItemResponse<T>,
+fn compare_item_responses_with_spec(
+    real: &ItemResponse,
+    emu: &ItemResponse,
     header_spec: &HeaderValidationSpec,
 ) {
     let real_snap = snapshot_from_item_response(real, "real");
@@ -90,18 +92,18 @@ fn compare_item_responses_with_spec<T>(
 
 /// Compares an emulator and real [`ItemResponse`] using the shared header
 /// validation spec for point operations.
-fn compare_item_responses<T>(real: &ItemResponse<T>, emu: &ItemResponse<T>) {
+fn compare_item_responses(real: &ItemResponse, emu: &ItemResponse) {
     compare_item_responses_with_spec(real, emu, &HeaderValidationSpec::for_point_operation());
 }
 
 /// Compares two SDK error responses: both must have the same HTTP status.
-fn compare_sdk_errors(real: &azure_core::Error, emu: &azure_core::Error) {
+fn compare_sdk_errors(real: &azure_data_cosmos::CosmosError, emu: &azure_data_cosmos::CosmosError) {
     assert_eq!(
-        real.http_status(),
-        emu.http_status(),
-        "Error status mismatch: real={:?} emulator={:?}",
-        real.http_status(),
-        emu.http_status(),
+        real.status().status_code(),
+        emu.status().status_code(),
+        "CosmosError status mismatch: real={:?} emulator={:?}",
+        real.status().status_code(),
+        emu.status().status_code(),
     );
 }
 
@@ -126,26 +128,21 @@ fn make_stale_session_token(token: &str) -> String {
     }
 }
 
-fn assert_read_session_not_available(err: &azure_core::Error, label: &str) {
+fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label: &str) {
     assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
+        err.status().status_code(),
+        StatusCode::NotFound,
         "{label}: stale session read should return 404",
     );
-    match err.kind() {
-        azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
-            assert_eq!(
-                error_code.as_deref(),
-                Some("1002"),
-                "{label}: stale session read should surface substatus 1002",
-            );
-        }
-        other => panic!("{label}: expected HttpResponse error, got {other}"),
-    }
+    assert_eq!(
+        err.status().sub_status().map(|s| s.value()),
+        Some(1002),
+        "{label}: stale session read should surface substatus 1002",
+    );
 }
 
 /// Asserts emulator-only response metadata when no real account is available.
-fn assert_emulator_item_response<T>(resp: &ItemResponse<T>, expected_status: StatusCode) {
+fn assert_emulator_item_response(resp: &ItemResponse, expected_status: StatusCode) {
     assert_eq!(resp.status(), expected_status);
     let snap = snapshot_from_item_response(resp, "emulator");
     assert!(
@@ -172,23 +169,17 @@ async fn read_item_with_503_retry(
     pk: &'static str,
     id: &'static str,
     label: &str,
-) -> ItemResponse<TestItem> {
+) -> ItemResponse {
     const MAX_ATTEMPTS: usize = 5;
-    let mut last_err: Option<azure_core::Error> = None;
+    let mut last_err: Option<azure_data_cosmos::CosmosError> = None;
     for attempt in 1..=MAX_ATTEMPTS {
-        match container.read_item::<TestItem>(pk, id, None).await {
+        match container.read_item(pk, id, None).await {
             Ok(resp) => {
                 eprintln!("[{label}] read_item succeeded on attempt {attempt}/{MAX_ATTEMPTS}",);
                 return resp;
             }
             Err(e) => {
-                let is_503 = matches!(
-                    e.kind(),
-                    azure_core::error::ErrorKind::HttpResponse {
-                        status: StatusCode::ServiceUnavailable,
-                        ..
-                    },
-                );
+                let is_503 = e.status().status_code() == StatusCode::ServiceUnavailable;
                 eprintln!(
                     "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed (is_503={is_503}): {e}",
                 );
@@ -236,8 +227,8 @@ impl SdkDualBackend {
         let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
         let emulator_store = emulator.store();
 
-        let emulator_account = CosmosAccountReference::with_master_key(
-            EMULATOR_GATEWAY_URL.parse().unwrap(),
+        let emulator_account = AccountReference::with_authentication_key(
+            EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
             azure_core::credentials::Secret::new("dGVzdGtleQ=="),
         );
 
@@ -439,6 +430,10 @@ async fn sdk_create_database_and_container_through_driver() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_create_and_read_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -475,25 +470,25 @@ async fn sdk_create_and_read_item() {
 
     // ── Read item back ───────────────────────────────────────────
     let emu_read = emu_container
-        .read_item::<TestItem>("pk1", "sdk-item-1", None)
+        .read_item("pk1", "sdk-item-1", None)
         .await
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
-    assert!(emu_read.etag().is_some(), "emulator read should have etag");
+    assert!(
+        emu_read.headers().etag().is_some(),
+        "emulator read should have etag"
+    );
 
     if let Some(ref real) = real_container {
-        let real_read = real
-            .read_item::<TestItem>("pk1", "sdk-item-1", None)
-            .await
-            .unwrap();
+        let real_read = real.read_item("pk1", "sdk-item-1", None).await.unwrap();
         compare_item_responses(&real_read, &emu_read);
 
-        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        let real_doc: TestItem = real_read.into_body().into_single().unwrap();
         assert_eq!(real_doc.id, "sdk-item-1");
         assert_eq!(real_doc.value, 42);
     }
 
-    let emu_doc: TestItem = emu_read.into_body().json().unwrap();
+    let emu_doc: TestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_doc.id, "sdk-item-1");
     assert_eq!(emu_doc.value, 42);
 
@@ -501,6 +496,10 @@ async fn sdk_create_and_read_item() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_replace_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -562,37 +561,38 @@ async fn sdk_replace_item() {
             .unwrap();
         compare_item_responses(&real_replace, &emu_replace);
 
-        let real_doc: TestItem = real_replace.into_body().json().unwrap();
+        let real_doc: TestItem = real_replace.into_body().into_single().unwrap();
         assert_eq!(real_doc.value, 99);
     }
 
-    let emu_doc: TestItem = emu_replace.into_body().json().unwrap();
+    let emu_doc: TestItem = emu_replace.into_body().into_single().unwrap();
     assert_eq!(emu_doc.value, 99);
 
     let emu_read = emu_container
-        .read_item::<TestItem>("pk1", &updated.id, None)
+        .read_item("pk1", &updated.id, None)
         .await
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
     if let Some(ref real) = real_container {
-        let real_read = real
-            .read_item::<TestItem>("pk1", &updated.id, None)
-            .await
-            .unwrap();
+        let real_read = real.read_item("pk1", &updated.id, None).await.unwrap();
         compare_item_responses(&real_read, &emu_read);
 
-        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        let real_doc: TestItem = real_read.into_body().into_single().unwrap();
         assert_eq!(real_doc.value, 99);
     }
 
-    let emu_read_doc: TestItem = emu_read.into_body().json().unwrap();
+    let emu_read_doc: TestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_read_doc.value, 99);
 
     backend.cleanup_real_database(&db_name).await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_upsert_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -654,37 +654,38 @@ async fn sdk_upsert_item() {
             .unwrap();
         compare_item_responses(&real_upsert_update, &emu_upsert_update);
 
-        let real_doc: TestItem = real_upsert_update.into_body().json().unwrap();
+        let real_doc: TestItem = real_upsert_update.into_body().into_single().unwrap();
         assert_eq!(real_doc.value, 20);
     }
 
-    let emu_doc: TestItem = emu_upsert_update.into_body().json().unwrap();
+    let emu_doc: TestItem = emu_upsert_update.into_body().into_single().unwrap();
     assert_eq!(emu_doc.value, 20);
 
     let emu_read = emu_container
-        .read_item::<TestItem>("pk1", &updated.id, None)
+        .read_item("pk1", &updated.id, None)
         .await
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
     if let Some(ref real) = real_container {
-        let real_read = real
-            .read_item::<TestItem>("pk1", &updated.id, None)
-            .await
-            .unwrap();
+        let real_read = real.read_item("pk1", &updated.id, None).await.unwrap();
         compare_item_responses(&real_read, &emu_read);
 
-        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        let real_doc: TestItem = real_read.into_body().into_single().unwrap();
         assert_eq!(real_doc.value, 20);
     }
 
-    let emu_read_doc: TestItem = emu_read.into_body().json().unwrap();
+    let emu_read_doc: TestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_read_doc.value, 20);
 
     backend.cleanup_real_database(&db_name).await;
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_delete_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -724,14 +725,14 @@ async fn sdk_delete_item() {
     }
 
     let emu_err = emu_container
-        .read_item::<TestItem>("pk1", &item.id, None)
+        .read_item("pk1", &item.id, None)
         .await
         .expect_err("emulator: reading deleted item should fail");
-    assert_eq!(emu_err.http_status(), Some(StatusCode::NotFound));
+    assert_eq!(emu_err.status().status_code(), StatusCode::NotFound);
 
     if let Some(ref real) = real_container {
         let real_err = real
-            .read_item::<TestItem>("pk1", &item.id, None)
+            .read_item("pk1", &item.id, None)
             .await
             .expect_err("real: reading deleted item should fail");
         compare_sdk_errors(&real_err, &emu_err);
@@ -740,6 +741,10 @@ async fn sdk_delete_item() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_create_multiple_items_and_read_back() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -766,18 +771,15 @@ async fn sdk_create_multiple_items_and_read_back() {
 
     for i in 0..3 {
         let id = format!("multi-{i}");
-        let emu_read = emu_container
-            .read_item::<TestItem>("pk1", &id, None)
-            .await
-            .unwrap();
+        let emu_read = emu_container.read_item("pk1", &id, None).await.unwrap();
         assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
-        let emu_doc: TestItem = emu_read.into_body().json().unwrap();
+        let emu_doc: TestItem = emu_read.into_body().into_single().unwrap();
         assert_eq!(emu_doc.value, i);
 
         if let Some(ref real) = real_container {
-            let real_read = real.read_item::<TestItem>("pk1", &id, None).await.unwrap();
-            let real_doc: TestItem = real_read.into_body().json().unwrap();
+            let real_read = real.read_item("pk1", &id, None).await.unwrap();
+            let real_doc: TestItem = real_read.into_body().into_single().unwrap();
             assert_eq!(real_doc.value, i);
         }
     }
@@ -810,8 +812,8 @@ async fn sdk_create_duplicate_item_returns_conflict() {
         .await
         .expect_err("emulator: duplicate create should fail");
     assert_eq!(
-        emu_err.http_status(),
-        Some(StatusCode::Conflict),
+        emu_err.status().status_code(),
+        StatusCode::Conflict,
         "emulator: duplicate create should return 409",
     );
 
@@ -831,18 +833,18 @@ async fn sdk_read_nonexistent_item_returns_not_found() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
     let emu_err = emu_container
-        .read_item::<TestItem>("pk1", "does-not-exist", None)
+        .read_item("pk1", "does-not-exist", None)
         .await
         .expect_err("emulator: reading nonexistent item should fail");
     assert_eq!(
-        emu_err.http_status(),
-        Some(StatusCode::NotFound),
+        emu_err.status().status_code(),
+        StatusCode::NotFound,
         "emulator: nonexistent item should return 404",
     );
 
     if let Some(ref real) = real_container {
         let real_err = real
-            .read_item::<TestItem>("pk1", "does-not-exist", None)
+            .read_item("pk1", "does-not-exist", None)
             .await
             .expect_err("real: reading nonexistent item should fail");
         compare_sdk_errors(&real_err, &emu_err);
@@ -864,11 +866,10 @@ async fn sdk_read_with_stale_session_token_returns_error() {
         .create_item("pk1", &seed.id, &seed, Some(write_options_with_content()))
         .await
         .expect("emulator seed create should succeed");
-    let emu_seed_headers = CosmosResponseHeaders::from_headers(emu_seed.headers());
+    let emu_seed_headers = emu_seed.headers().clone();
     let emu_stale_token = make_stale_session_token(
         emu_seed_headers
-            .session_token
-            .as_ref()
+            .session_token()
             .expect("emulator seed create should return a session token")
             .as_str(),
     );
@@ -880,7 +881,7 @@ async fn sdk_read_with_stale_session_token_returns_error() {
         .with_operation_options(operation);
 
     let emu_err = emu_container
-        .read_item::<TestItem>("pk1", "seed-for-session", Some(read_options.clone()))
+        .read_item("pk1", "seed-for-session", Some(read_options.clone()))
         .await
         .expect_err("emulator should return error for stale session read");
     assert_read_session_not_available(&emu_err, "emulator");
@@ -890,11 +891,10 @@ async fn sdk_read_with_stale_session_token_returns_error() {
             .create_item("pk1", &seed.id, &seed, Some(write_options_with_content()))
             .await
             .expect("real seed create should succeed");
-        let real_seed_headers = CosmosResponseHeaders::from_headers(real_seed.headers());
+        let real_seed_headers = real_seed.headers().clone();
         let real_stale_token = make_stale_session_token(
             real_seed_headers
-                .session_token
-                .as_ref()
+                .session_token()
                 .expect("real seed create should return a session token")
                 .as_str(),
         );
@@ -906,7 +906,7 @@ async fn sdk_read_with_stale_session_token_returns_error() {
             .with_operation_options(operation);
 
         match real
-            .read_item::<TestItem>("pk1", "seed-for-session", Some(real_read_options))
+            .read_item("pk1", "seed-for-session", Some(real_read_options))
             .await
         {
             Err(real_err) => {
@@ -914,7 +914,7 @@ async fn sdk_read_with_stale_session_token_returns_error() {
                 compare_sdk_errors(&real_err, &emu_err);
             }
             Ok(real_resp) => {
-                let real_doc: TestItem = real_resp.into_body().json().unwrap();
+                let real_doc: TestItem = real_resp.into_body().into_single().unwrap();
                 assert_eq!(real_doc.id, "seed-for-session");
                 assert_eq!(real_doc.pk, "pk1");
             }
@@ -957,8 +957,8 @@ async fn sdk_create_retries_after_429_throttling() {
             .unwrap(),
     );
 
-    let emulator_account = CosmosAccountReference::with_master_key(
-        EMULATOR_GATEWAY_URL.parse().unwrap(),
+    let emulator_account = AccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emulator_client = CosmosClientBuilder::new()
@@ -1002,17 +1002,17 @@ async fn sdk_create_retries_after_429_throttling() {
     );
     assert_emulator_item_response(&emu_create, StatusCode::Created);
 
-    let emu_doc: PaddedTestItem = emu_create.into_body().json().unwrap();
+    let emu_doc: PaddedTestItem = emu_create.into_body().into_single().unwrap();
     assert_eq!(emu_doc.value, 42);
     assert_eq!(emu_doc.padding.len(), 8 * 1024);
 
     let emu_read = emu_container
-        .read_item::<PaddedTestItem>("pk1", &throttled.id, None)
+        .read_item("pk1", &throttled.id, None)
         .await
         .unwrap();
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
-    let emu_read_doc: PaddedTestItem = emu_read.into_body().json().unwrap();
+    let emu_read_doc: PaddedTestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_read_doc.value, 42);
     assert_eq!(emu_read_doc.padding.len(), 8 * 1024);
 }
@@ -1117,8 +1117,8 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
 
     // Build the SDK client with the emulator runtime.
-    let emu_account = CosmosAccountReference::with_master_key(
-        east_url.parse().unwrap(),
+    let emu_account = AccountReference::with_authentication_key(
+        east_url.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emu_client = CosmosClientBuilder::new()
@@ -1165,7 +1165,10 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
 
     // Verify response headers.
-    assert!(emu_read.etag().is_some(), "etag should be present");
+    assert!(
+        emu_read.headers().etag().is_some(),
+        "etag should be present"
+    );
     let snap = snapshot_from_item_response(&emu_read, "emulator");
     assert!(snap.headers.activity_id.is_some(), "activity_id present");
     assert!(snap.headers.etag.is_some(), "etag present");
@@ -1187,7 +1190,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
 
     // Verify typed body.
-    let emu_doc: TestItem = emu_read.into_body().json().unwrap();
+    let emu_doc: TestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_doc.id, "fi-item");
     assert_eq!(emu_doc.pk, "pk1");
     assert_eq!(emu_doc.value, 42);
@@ -1227,7 +1230,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
             &HeaderValidationSpec::for_point_operation(),
             BodyValidationSpec::DocumentMatch,
         );
-        let real_doc: TestItem = real_read.into_body().json().unwrap();
+        let real_doc: TestItem = real_read.into_body().into_single().unwrap();
         assert_eq!(real_doc.id, "fi-item");
         assert_eq!(real_doc.value, 42);
 
@@ -1277,8 +1280,8 @@ async fn resolve_real_client_with_fault_injection(
     let endpoint = conn_str.account_endpoint().to_string();
     let key = conn_str.account_key().secret().to_string();
 
-    let account = CosmosAccountReference::with_master_key(
-        endpoint.parse().unwrap(),
+    let account = AccountReference::with_authentication_key(
+        endpoint.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new(key),
     );
 
@@ -1341,8 +1344,8 @@ async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
     let endpoint = conn_str.account_endpoint().to_string();
     let key = conn_str.account_key().secret().to_string();
 
-    let account = CosmosAccountReference::with_master_key(
-        endpoint.parse().unwrap(),
+    let account = AccountReference::with_authentication_key(
+        endpoint.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new(key),
     );
 

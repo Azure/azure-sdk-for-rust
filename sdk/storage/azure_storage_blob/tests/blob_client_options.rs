@@ -4,6 +4,7 @@
 use azure_core::{
     http::{
         ClientOptions, ExponentialRetryOptions, FixedRetryOptions, RequestContent, RetryOptions,
+        Url,
     },
     time::Duration,
 };
@@ -263,8 +264,7 @@ async fn test_retry_exhaustion() -> Result<(), Box<dyn std::error::Error>> {
     let fail_policy = Arc::new(FailFirstPolicy::new(10, call_count.clone()));
 
     let container_client = BlobContainerClient::new(
-        "https://fake.blob.core.windows.net/",
-        "fakecontainer",
+        Url::parse("https://fake.blob.core.windows.net/fakecontainer")?,
         None,
         Some(
             BlobContainerClientOptions {

@@ -25,14 +25,14 @@
 
 use std::{collections::HashMap, env};
 
-use azure_core::http::RequestContent;
+use azure_core::http::{RequestContent, Url};
 use azure_identity::DeveloperToolsCredential;
 use azure_storage_blob::{
     models::{
         BlockBlobClientUploadBlobFromUrlOptions, BlockBlobClientUploadOptions, BlockListType,
         BlockLookupList,
     },
-    BlobContainerClient,
+    BlobContainerClient, BlobServiceClient,
 };
 
 #[tokio::main]
@@ -40,12 +40,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account = env::var("AZURE_STORAGE_ACCOUNT_NAME")
         .expect("Set AZURE_STORAGE_ACCOUNT_NAME environment variable");
 
-    let endpoint = format!("https://{}.blob.core.windows.net/", account);
+    let service_url = Url::parse(&format!("https://{account}.blob.core.windows.net/"))?;
     let container_name = "test-container-block-blob";
 
     let credential = DeveloperToolsCredential::new(None)?;
-    let container_client =
-        BlobContainerClient::new(&endpoint, container_name, Some(credential), None)?;
+    let service_client = BlobServiceClient::new(service_url, Some(credential), None)?;
+    let container_client = service_client.blob_container_client(container_name);
 
     println!("Creating container '{container_name}'...");
     container_client.create(None).await?;
@@ -117,17 +117,17 @@ async fn staged_upload(
     Ok(())
 }
 
-/// Copies a blob from another URL and demonstrates the `with_if_not_exists`
+/// Copies a blob from another URL and demonstrates the `if_not_exists`
 /// guard that prevents clobbering an existing destination blob.
 async fn copy_from_url(
     container_client: &BlobContainerClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // Create a source blob to copy from, tagging it and guarding against accidental
-    // overwrites with `with_if_not_exists` + `with_tags`.
+    // Create a source blob to copy from. `if_not_exists()` prevents overwriting an
+    // existing blob, and `with_tags()` sets index tags via the `x-ms-tags` header.
     let source_blob_name = "copy-source.txt";
     let source_client = container_client.blob_client(source_blob_name);
     let upload_options = BlockBlobClientUploadOptions::default()
-        .with_if_not_exists()
+        .if_not_exists()
         .with_tags(HashMap::from([(
             "origin".to_string(),
             "sample".to_string(),
@@ -153,9 +153,9 @@ async fn copy_from_url(
         .await?;
     println!("Copied '{source_blob_name}' → '{dest_blob_name}'");
 
-    // Second copy attempt with `with_if_not_exists`: destination already exists,
+    // Second copy attempt with `if_not_exists`: destination already exists,
     // so the service returns 409 Conflict.
-    let guard_options = BlockBlobClientUploadBlobFromUrlOptions::default().with_if_not_exists();
+    let guard_options = BlockBlobClientUploadBlobFromUrlOptions::default().if_not_exists();
     match dest_client
         .block_blob_client()
         .upload_blob_from_url(source_client.url().as_str().into(), Some(guard_options))

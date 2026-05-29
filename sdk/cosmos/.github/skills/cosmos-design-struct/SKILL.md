@@ -226,7 +226,7 @@ If a separate builder type is used, follow these conventions:
 1. Name it `<Type>Builder`.
 2. Keep builder fields private.
 3. Provide `with_*` setters for optional fields.
-4. Provide terminal `build(self, ...) -> <Type>` (or `azure_core::Result<Type>` when fallible).
+4. Provide terminal `build(self, ...) -> <Type>` (or `crate::error::Result<Type>` / `azure_data_cosmos::Result<Type>` when fallible).
 5. Keep required fields on `build(...)`, not as optional builder state.
 6. Add `<Type>::builder(... required args ...) -> <Type>Builder` to initialize the builder type.
 

@@ -4,19 +4,61 @@
 //! Cosmos DB operation result types.
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponseHeaders, CosmosStatus};
+use crate::models::{CosmosResponseHeaders, CosmosStatus, ResponseBody};
 use std::sync::Arc;
+
+/// Wire-level payload of a Cosmos DB response — the response body plus the
+/// parsed Cosmos-specific headers. This is the portion of a response that
+/// is also meaningful on an [`CosmosError`](crate::error::CosmosError) (which keeps its
+/// own copy of [`CosmosStatus`] and the operation
+/// [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)).
+#[derive(Clone, Debug, Default)]
+#[non_exhaustive]
+pub(crate) struct CosmosResponsePayload {
+    /// Response body, possibly composed of multiple byte slices.
+    body: ResponseBody,
+
+    /// Extracted Cosmos-specific headers.
+    headers: CosmosResponseHeaders,
+}
+
+impl CosmosResponsePayload {
+    /// Creates a new payload from a body and parsed headers.
+    pub(crate) fn new(body: impl Into<ResponseBody>, headers: CosmosResponseHeaders) -> Self {
+        Self {
+            body: body.into(),
+            headers,
+        }
+    }
+
+    /// Returns a reference to the typed response body.
+    pub(crate) fn body(&self) -> &ResponseBody {
+        &self.body
+    }
+
+    /// Consumes the payload and returns the body.
+    pub(crate) fn into_body(self) -> ResponseBody {
+        self.body
+    }
+
+    /// Returns a reference to the extracted headers.
+    pub(crate) fn headers(&self) -> &CosmosResponseHeaders {
+        &self.headers
+    }
+}
 
 /// Result of a Cosmos DB operation.
 ///
-/// Contains the response body (as raw bytes), relevant headers, and comprehensive
-/// status information for the operation.
+/// Contains the response body (as a [`ResponseBody`] of one or more
+/// reference-counted byte slices), relevant headers, and comprehensive status
+/// information for the operation.
 ///
 /// # Schema-Agnostic Design
 ///
-/// The driver returns response bodies as raw bytes (`Vec<u8>`). The higher-level
-/// SDK (e.g., `azure_data_cosmos`) handles deserialization into typed structures.
-/// This allows the driver to be reused across different serialization strategies.
+/// The driver returns response bodies as raw bytes via [`ResponseBody`].
+/// The higher-level SDK (e.g., `azure_data_cosmos`) handles deserialization into
+/// typed structures. This allows the driver to be reused across different
+/// serialization strategies.
 ///
 /// # Example
 ///
@@ -31,14 +73,11 @@ use std::sync::Arc;
 ///     // Deserialize body...
 /// }
 /// ```
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CosmosResponse {
-    /// Raw response body (UTF-8 JSON or Cosmos binary encoding).
-    body: Vec<u8>,
-
-    /// Extracted Cosmos-specific headers.
-    headers: CosmosResponseHeaders,
+    /// Wire-level payload (body + parsed headers).
+    payload: CosmosResponsePayload,
 
     /// Operation status including HTTP status code and optional sub-status.
     status: CosmosStatus,
@@ -51,36 +90,49 @@ impl CosmosResponse {
     /// Creates a new `CosmosResponse`.
     ///
     /// This is typically called by the driver after completing an operation.
+    /// The `body` may be supplied as raw bytes (e.g., `Vec<u8>`, `Bytes`) and
+    /// will be wrapped as a single-part [`ResponseBody`].
     pub(crate) fn new(
-        body: Vec<u8>,
+        body: impl Into<ResponseBody>,
         headers: CosmosResponseHeaders,
         status: CosmosStatus,
         diagnostics: Arc<DiagnosticsContext>,
     ) -> Self {
         Self {
-            body,
-            headers,
+            payload: CosmosResponsePayload::new(body, headers),
             status,
             diagnostics,
         }
     }
 
-    /// Returns a reference to the response body.
-    ///
-    /// The body is raw bytes - typically UTF-8 JSON but may be Cosmos binary
-    /// encoding for certain operations. The higher-level SDK handles parsing.
-    pub fn body(&self) -> &[u8] {
-        &self.body
+    /// Returns a reference to the wire-level payload (body + headers).
+    pub(crate) fn payload(&self) -> &CosmosResponsePayload {
+        &self.payload
     }
 
-    /// Consumes the result and returns the body.
-    pub fn into_body(self) -> Vec<u8> {
-        self.body
+    /// Returns a reference to the typed response body.
+    pub fn body(&self) -> &ResponseBody {
+        self.payload.body()
+    }
+
+    /// Test-only helper: returns the body as raw bytes, panicking if the body is
+    /// not a [`ResponseBody::Bytes`] variant.
+    #[cfg(test)]
+    pub(crate) fn body_bytes(&self) -> &[u8] {
+        match self.body() {
+            ResponseBody::Bytes(b) => b.as_ref(),
+            _ => panic!("expected ResponseBody::Bytes"),
+        }
+    }
+
+    /// Consumes the response and returns the body.
+    pub fn into_body(self) -> ResponseBody {
+        self.payload.into_body()
     }
 
     /// Returns a reference to the extracted headers.
     pub fn headers(&self) -> &CosmosResponseHeaders {
-        &self.headers
+        self.payload.headers()
     }
 
     /// Returns the operation status.
@@ -97,6 +149,42 @@ impl CosmosResponse {
     /// [`DiagnosticsContext`].
     pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         Arc::clone(&self.diagnostics)
+    }
+
+    /// Returns a borrow of the diagnostics [`Arc`] without cloning it.
+    pub fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext> {
+        &self.diagnostics
+    }
+
+    /// Prepends the per-request diagnostics from one or more prior
+    /// attempts onto this response's diagnostics, returning the response
+    /// with an aggregated [`DiagnosticsContext`].
+    ///
+    /// Used by the dataflow layer when an earlier attempt failed (for
+    /// example, with `410` / `PARTITION_KEY_RANGE_GONE`) and a subsequent
+    /// retry — which gets its own per-operation pipeline invocation and
+    /// therefore its own diagnostics — ultimately succeeded. Without this,
+    /// callers reading `response.diagnostics().request_count()` would only
+    /// see the final successful attempt; the per-operation contract is
+    /// "one operation = one [`DiagnosticsContext`] capturing **every**
+    /// attempt", so we splice the prior attempts in.
+    ///
+    /// Aggregation uses [`DiagnosticsContext::aggregate_sub_operations`],
+    /// which preserves insertion order — prior attempts come first,
+    /// followed by this response's own attempts.
+    pub(crate) fn with_aggregated_prior_diagnostics(
+        mut self,
+        prior: &[Arc<DiagnosticsContext>],
+    ) -> Self {
+        if prior.is_empty() {
+            return self;
+        }
+        let mut sources: Vec<Arc<DiagnosticsContext>> = prior.to_vec();
+        sources.push(Arc::clone(&self.diagnostics));
+        if let Some(aggregated) = DiagnosticsContext::aggregate_sub_operations(&sources) {
+            self.diagnostics = Arc::new(aggregated);
+        }
+        self
     }
 }
 
@@ -149,7 +237,10 @@ mod tests {
         assert_eq!(status.status_code(), StatusCode::Ok);
         assert!(status.is_success());
         assert!(status.sub_status().is_none());
-        assert_eq!(result.body(), b"{\"id\": \"test\"}");
+        match result.body() {
+            ResponseBody::Bytes(b) => assert_eq!(b.as_ref(), b"{\"id\": \"test\"}"),
+            _ => panic!("expected Bytes variant"),
+        }
         assert_eq!(
             result.headers().request_charge,
             Some(RequestCharge::new(5.5))
@@ -190,7 +281,10 @@ mod tests {
             make_diagnostics(Some(StatusCode::Created), None),
         );
 
-        assert_eq!(result.body(), b"body");
+        match result.body() {
+            ResponseBody::Bytes(b) => assert_eq!(b.as_ref(), b"body"),
+            _ => panic!("expected Bytes variant"),
+        }
         assert_eq!(result.status().status_code(), StatusCode::Created);
         assert!(result.status().sub_status().is_none());
         assert_eq!(
@@ -199,7 +293,8 @@ mod tests {
         );
 
         let body = result.into_body();
-        assert_eq!(body, b"body");
+        let bytes = body.single().unwrap();
+        assert_eq!(&bytes[..], b"body");
     }
 
     #[test]

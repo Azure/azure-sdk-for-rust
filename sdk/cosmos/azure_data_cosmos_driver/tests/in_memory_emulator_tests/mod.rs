@@ -3,8 +3,10 @@
 
 //! Shared test helpers for the in-memory emulator integration tests.
 
+pub mod account_metadata_refresh;
 pub mod control_plane;
 pub mod error_cases;
+pub mod error_diagnostics;
 pub mod multi_region;
 pub mod point_operations;
 pub mod split_merge;

@@ -11,8 +11,8 @@ use super::framework;
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::fault_injection::{
-    FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
-    FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+    FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+    FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use framework::{TestClient, TestOptions};
@@ -52,8 +52,8 @@ fn create_test_item(unique_id: &str) -> TestItem {
 /// With probability 0.0, the fault should never be applied.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -69,7 +69,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -99,9 +99,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 
             // With probability 0.0, all reads should succeed
             for i in 1..=5 {
-                let result = fault_container_client
-                    .read_item::<TestItem>(&pk, &item_id, None)
-                    .await;
+                let result = fault_container_client.read_item(&pk, &item_id, None).await;
                 assert!(
                     result.is_ok(),
                     "read {} should succeed with probability 0.0: {:?}",
@@ -112,7 +110,7 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -120,8 +118,8 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 /// Test probability fault injection - with probability 1.0, fault should always apply.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -137,7 +135,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -167,14 +165,12 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 
             // With probability 1.0, all reads should fail
             for i in 1..=5 {
-                let result = fault_container_client
-                    .read_item::<TestItem>(&pk, &item_id, None)
-                    .await;
+                let result = fault_container_client.read_item(&pk, &item_id, None).await;
                 let err =
                     result.expect_err(&format!("read {} should fail with probability 1.0", i));
                 assert_eq!(
-                    Some(StatusCode::ServiceUnavailable),
-                    err.http_status(),
+                    StatusCode::ServiceUnavailable,
+                    err.status().status_code(),
                     "read {} should return 503",
                     i
                 );
@@ -182,7 +178,7 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -191,8 +187,8 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 /// Injects 429 for the first 2 requests, verifies 3rd succeeds.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -208,7 +204,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
         .with_hit_limit(2)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -237,9 +233,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // First request - should succeed after retries
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
             // Verify the read succeeded
             assert!(
                 result.is_ok(),
@@ -252,7 +246,7 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -260,8 +254,8 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 /// Test DeleteItem fault - verify CRUD operations unaffected.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -276,7 +270,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -306,9 +300,7 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed
-            let read_result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let read_result = fault_container_client.read_item(&pk, &item_id, None).await;
             assert!(
                 read_result.is_ok(),
                 "read should succeed: {:?}",
@@ -333,14 +325,14 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
                 .await;
             let err = delete_result.expect_err("delete should fail due to fault injection");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
-                err.http_status(),
+                StatusCode::ServiceUnavailable,
+                err.status().status_code(),
                 "delete should return 503 ServiceUnavailable"
             );
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -348,8 +340,8 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
 /// Test container-specific fault - verify other containers unaffected.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -366,7 +358,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -396,9 +388,7 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed since container name doesn't match "FaultyContainer"
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
 
             assert!(
                 result.is_ok(),
@@ -421,20 +411,20 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
                 .container_client(faulty_container_id)
                 .await?;
             let faulty_result = faulty_fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
+                .read_item(&pk, &item_id, None)
                 .await;
 
             let err = faulty_result
                 .expect_err("read should fail for container matching 'FaultyContainer'");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
-                err.http_status(),
+                StatusCode::ServiceUnavailable,
+                err.status().status_code(),
                 "expected 503 ServiceUnavailable for FaultyContainer"
             );
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -442,8 +432,8 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 /// Test multiple rules priority - first matching rule wins.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem
@@ -468,9 +458,7 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
         .with_condition(condition2)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new()
-        .with_rule(Arc::new(rule1))
-        .with_rule(Arc::new(rule2));
+    let fault_builder = vec![Arc::new(rule1), Arc::new(rule2)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -498,21 +486,19 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
 
             // Should get 429 (first rule), not 503 (second rule)
             let err = result.expect_err("expected first rule (429) to apply");
             assert_eq!(
-                Some(StatusCode::TooManyRequests),
-                err.http_status(),
+                StatusCode::TooManyRequests,
+                err.status().status_code(),
                 "first matching rule should win (429, not 503)"
             );
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -521,8 +507,8 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
 /// Second rule applies immediately and should win.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with a future start_time (won't be active yet)
@@ -548,9 +534,7 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
         .with_condition(condition2)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new()
-        .with_rule(Arc::new(rule1))
-        .with_rule(Arc::new(rule2));
+    let fault_builder = vec![Arc::new(rule1), Arc::new(rule2)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -578,21 +562,19 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
             let fault_db_client = fault_client.database_client(db_client.id());
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
 
             // Should get 503 (second rule) because first rule hasn't started yet
             let err = result.expect_err("expected second rule (503) to apply");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
-                err.http_status(),
+                StatusCode::ServiceUnavailable,
+                err.status().status_code(),
                 "second rule should apply (503) since first rule has not started"
             );
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -601,8 +583,8 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
 /// Second rule should win.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with an end_time in the past (already expired)
@@ -628,9 +610,7 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
         .with_condition(condition2)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new()
-        .with_rule(Arc::new(rule1))
-        .with_rule(Arc::new(rule2));
+    let fault_builder = vec![Arc::new(rule1), Arc::new(rule2)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -661,21 +641,19 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
             // Small delay to ensure duration has passed
             tokio::time::sleep(Duration::from_millis(100)).await;
 
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
 
             // Should get 503 (second rule) because first rule's duration has expired
             let err = result.expect_err("expected second rule (503) to apply");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
-                err.http_status(),
+                StatusCode::ServiceUnavailable,
+                err.status().status_code(),
                 "second rule should apply (503) since first rule's end_time has passed"
             );
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -683,8 +661,8 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
 /// Test hit_limit behavior - fault stops after N applications.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -703,7 +681,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
         .with_hit_limit(8)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -733,23 +711,21 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
             // First 2 requests should fail with one in region retry
             for i in 1..=2 {
-                let result = fault_container_client
-                    .read_item::<TestItem>(&pk, &item_id, None)
-                    .await;
+                let result = fault_container_client.read_item(&pk, &item_id, None).await;
                 assert!(
                     result.is_err(),
                     "request {} should fail (within hit_limit)",
                     i
                 );
                 assert_eq!(
-                    Some(StatusCode::InternalServerError),
-                    result.unwrap_err().http_status()
+                    StatusCode::InternalServerError,
+                    result.unwrap_err().status().status_code()
                 );
             }
 
             // After hit_limit is exhausted by retries, the next read should succeed
             let result = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await;
             assert!(
                 result.is_ok(),
@@ -759,7 +735,7 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -767,11 +743,11 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 /// Test empty rules - no fault injection, operations should succeed.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
-    let fault_builder = FaultInjectionClientBuilder::new();
+    let fault_builder: Vec<Arc<FaultInjectionRule>> = Vec::new();
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -800,9 +776,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Read should succeed with no fault rules
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
 
             assert!(
                 result.is_ok(),
@@ -812,7 +786,7 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -820,8 +794,8 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 /// Test that item operations succeed when metadata operations are faulted.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -848,7 +822,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
     rule.disable();
 
     let rule_handle = Arc::clone(&rule);
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
+    let fault_builder = vec![rule];
 
     TestClient::run_with_unique_db(
         async move |run_context, db_client| {
@@ -898,7 +872,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 
             // Read item should succeed (use run_context.read_item for replication retry)
             let read_result = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await;
             assert!(
                 read_result.is_ok(),
@@ -920,7 +894,7 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }
@@ -929,8 +903,8 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 /// and re-enabling it resumes injection.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -947,12 +921,12 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             .build(),
     );
 
-    assert_eq!(rule.id, "enable-disable-test");
+    assert_eq!(rule.id(), "enable-disable-test");
     assert!(rule.is_enabled());
 
     let rule_handle = Arc::clone(&rule);
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(rule);
+    let fault_builder = vec![rule];
 
     TestClient::run_with_unique_db(
         async move |run_context, db_client| {
@@ -981,9 +955,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             let fault_container_client = fault_db_client.container_client(&container_id).await?;
 
             // Rule is enabled — read should fail
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
             assert!(result.is_err(), "read should fail while rule is enabled");
 
             // Disable the rule at runtime
@@ -991,9 +963,7 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             assert!(!rule_handle.is_enabled());
 
             // Read should now succeed
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
             assert!(
                 result.is_ok(),
                 "read should succeed after disabling rule: {:?}",
@@ -1005,14 +975,12 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
             assert!(rule_handle.is_enabled());
 
             // Read should fail again
-            let result = fault_container_client
-                .read_item::<TestItem>(&pk, &item_id, None)
-                .await;
+            let result = fault_container_client.read_item(&pk, &item_id, None).await;
             assert!(result.is_err(), "read should fail after re-enabling rule");
 
             Ok(())
         },
-        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
     )
     .await
 }

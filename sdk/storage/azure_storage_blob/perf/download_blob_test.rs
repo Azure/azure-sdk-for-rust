@@ -6,7 +6,7 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-use azure_core::{error::ErrorKind, Bytes};
+use azure_core::{error::ErrorKind, http::Url, Bytes};
 use azure_core_test::{
     perf::{
         CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
@@ -15,6 +15,7 @@ use azure_core_test::{
     TestContext,
 };
 use azure_storage_blob::{BlobClient, BlobContainerClient};
+use azure_storage_blob_test::get_test_credential;
 use bytes::BytesMut;
 use futures::{FutureExt, StreamExt, TryStreamExt};
 
@@ -88,7 +89,7 @@ impl DownloadBlobTest {
                     name: "collect",
                     display_message: "Collect the blob contents instead of streaming them",
                     mandatory: false,
-                    short_activator: Some('l'),
+                    short_activator: None,
                     long_activator: "collect",
                     expected_args_len: 1,
                     option_type: PerfTestOptionKind::String,
@@ -196,7 +197,7 @@ impl PerfTest for DownloadBlobTest {
         // Setup code before running the test
 
         let recording = context.recording();
-        let credential = recording.credential();
+        let credential = get_test_credential(recording);
         let container_name = format!("perf-container-{}", azure_core::Uuid::new_v4());
         let endpoint = match &self.endpoint {
             Some(e) => e.clone(),
@@ -206,7 +207,12 @@ impl PerfTest for DownloadBlobTest {
             ),
         };
         println!("Using endpoint: {}", endpoint);
-        let client = BlobContainerClient::new(&endpoint, &container_name, Some(credential), None)?;
+        let mut container_url = Url::parse(&endpoint)?;
+        container_url
+            .path_segments_mut()
+            .expect("endpoint must be a valid base URL")
+            .push(&container_name);
+        let client = BlobContainerClient::new(container_url, Some(credential), None)?;
         self.client.get_or_init(|| client);
 
         // Retrieve the blob container client we just set (it's safe to unwrap here because we *just* set it above).

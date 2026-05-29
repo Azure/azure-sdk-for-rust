@@ -12,6 +12,7 @@ use crate::models::{
     PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
 };
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Write;
 
@@ -23,18 +24,14 @@ use std::fmt::Write;
 /// where an EPK is expected.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct EffectivePartitionKey(String);
+pub struct EffectivePartitionKey(Cow<'static, str>);
 
 impl EffectivePartitionKey {
-    /// Returns the minimum EPK (empty string), representing the start of the EPK space.
-    pub fn min() -> Self {
-        Self(String::new())
-    }
+    /// The minimum EPK (empty string), representing the start of the EPK space.
+    pub const MIN: Self = Self(Cow::Borrowed(""));
 
-    /// Returns the maximum exclusive EPK ("FF"), representing the upper bound of the EPK space.
-    pub fn max() -> Self {
-        Self("FF".to_string())
-    }
+    /// The maximum exclusive EPK (`"FF"`), representing the upper bound of the EPK space.
+    pub const MAX: Self = Self(Cow::Borrowed("FF"));
 
     /// Returns a reference to the inner string.
     pub fn as_str(&self) -> &str {
@@ -45,16 +42,16 @@ impl EffectivePartitionKey {
     ///
     /// This hashes the given values according to the partition key kind and version,
     /// producing the EPK that determines which partition key range owns a given item.
-    pub fn compute(
+    pub(crate) fn compute(
         pk_values: &[PartitionKeyValue],
         kind: PartitionKeyKind,
         version: PartitionKeyVersion,
     ) -> Self {
         if pk_values.is_empty() {
-            return Self::min();
+            return Self::MIN;
         }
         if pk_values.len() == 1 && pk_values[0].is_infinity() {
-            return Self::max();
+            return Self::MAX;
         }
 
         let hex = match kind {
@@ -96,25 +93,25 @@ impl EffectivePartitionKey {
     /// - `pk_values.len()` exceeds `pk_definition.paths().len()`.
     /// - For non-MultiHash containers, `pk_values.len()` does not equal
     ///   `pk_definition.paths().len()` (prefix keys are only valid for MultiHash).
-    pub fn compute_range(
+    pub(crate) fn compute_range(
         pk_values: &[PartitionKeyValue],
         pk_definition: &PartitionKeyDefinition,
-    ) -> azure_core::Result<std::ops::Range<Self>> {
+    ) -> crate::error::Result<std::ops::Range<Self>> {
         if pk_values.is_empty() {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                "compute_range called with empty pk_values",
-            ));
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY)
+                .with_message("compute_range called with empty pk_values")
+                .build());
         }
         if pk_values.len() > pk_definition.paths().len() {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                format!(
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                .with_message(format!(
                     "more partition key components ({}) than definition paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()
-                ),
-            ));
+                ))
+                .build());
         }
 
         let kind = pk_definition.kind();
@@ -125,14 +122,11 @@ impl EffectivePartitionKey {
             kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
 
         if kind != PartitionKeyKind::MultiHash && pk_values.len() != pk_definition.paths().len() {
-            return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                format!(
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH).with_message(format!(
                     "non-MultiHash containers require exactly as many components ({}) as paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()
-                ),
-            ));
+                )).build());
         }
 
         if is_prefix {
@@ -168,13 +162,13 @@ impl PartialEq<&str> for EffectivePartitionKey {
 
 impl From<String> for EffectivePartitionKey {
     fn from(s: String) -> Self {
-        Self(s)
+        Self(Cow::Owned(s))
     }
 }
 
 impl From<&str> for EffectivePartitionKey {
     fn from(s: &str) -> Self {
-        Self(s.to_owned())
+        Self(Cow::Owned(s.to_owned()))
     }
 }
 
@@ -204,8 +198,8 @@ impl AsRef<str> for EffectivePartitionKey {
 /// See: <https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5260>
 impl Ord for EffectivePartitionKey {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let a = self.0.as_str();
-        let b = other.0.as_str();
+        let a: &str = &self.0;
+        let b: &str = &other.0;
         let common = a.len().min(b.len());
         match a[..common].cmp(&b[..common]) {
             std::cmp::Ordering::Equal => {
@@ -317,15 +311,15 @@ mod tests {
     fn empty_pk_returns_min() {
         let result =
             EffectivePartitionKey::compute(&[], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
-        assert_eq!(result, EffectivePartitionKey::min());
+        assert_eq!(result, EffectivePartitionKey::MIN.clone());
     }
 
     #[test]
     fn infinity_pk_returns_max() {
-        let inf = PartitionKeyValue::infinity();
+        let inf = PartitionKeyValue::INFINITY;
         let result =
             EffectivePartitionKey::compute(&[inf], PartitionKeyKind::Hash, PartitionKeyVersion::V2);
-        assert_eq!(result, EffectivePartitionKey::max());
+        assert_eq!(result, EffectivePartitionKey::MAX.clone());
     }
 
     /// V2 test cases ported from Java SDK tests via the Rust SDK's hash.rs.
@@ -583,7 +577,7 @@ mod tests {
     fn multi_hash_with_undefined() {
         let pk = vec![
             PartitionKeyValue::from("tenant1".to_string()),
-            PartitionKeyValue::undefined(),
+            PartitionKeyValue::UNDEFINED,
         ];
         let multi = EffectivePartitionKey::compute(
             &pk,
@@ -602,7 +596,7 @@ mod tests {
 
         // Second segment: hash of Undefined (0x00 byte)
         let single_undef = EffectivePartitionKey::compute(
-            &[PartitionKeyValue::undefined()],
+            &[PartitionKeyValue::UNDEFINED],
             PartitionKeyKind::Hash,
             PartitionKeyVersion::V2,
         );

@@ -216,7 +216,7 @@ This example lists all the keys in the specified Azure Key Vault.
 use azure_security_keyvault_keys::ResourceExt;
 use futures::TryStreamExt;
 
-let mut pager = client.list_key_properties(None)?.into_stream();
+let mut pager = client.list_key_properties(None)?;
 while let Some(key) = pager.try_next().await? {
     // Get the key name from the ID.
     let name = key.resource_id()?.name;

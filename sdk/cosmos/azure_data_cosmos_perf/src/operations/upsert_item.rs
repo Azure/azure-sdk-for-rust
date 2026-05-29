@@ -33,7 +33,10 @@ impl Operation for UpsertItemOperation {
         "UpsertItem"
     }
 
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<Option<Duration>> {
+    async fn execute(
+        &self,
+        container: &ContainerClient,
+    ) -> azure_data_cosmos::Result<Option<Duration>> {
         let seeded = self.items.random();
         let value = rand::rng().random_range(0..u64::MAX);
 

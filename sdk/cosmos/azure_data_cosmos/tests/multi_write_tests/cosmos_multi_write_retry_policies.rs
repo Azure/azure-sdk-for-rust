@@ -17,8 +17,8 @@ use super::framework;
 use azure_core::http::StatusCode;
 use azure_core::Uuid;
 use azure_data_cosmos::fault_injection::{
-    FaultInjectionClientBuilder, FaultInjectionConditionBuilder, FaultInjectionErrorType,
-    FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+    FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+    FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::Query;
@@ -68,7 +68,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         .with_hit_limit(1)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -107,7 +107,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
 
             // Read should succeed via cross-region retry after hub returns 408
             let result = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await;
 
             assert!(
@@ -126,7 +126,7 @@ pub async fn read_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -155,7 +155,7 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -194,17 +194,17 @@ pub async fn write_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> 
 
             let err = result.expect_err("write should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
-                err.http_status(),
+                StatusCode::RequestTimeout,
+                err.status().status_code(),
                 "expected RequestTimeout (408), got {:?}",
-                err.http_status()
+                err.status().status_code()
             );
 
             Ok(())
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -233,7 +233,7 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -272,17 +272,17 @@ pub async fn upsert_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 
             let err = result.expect_err("upsert should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
-                err.http_status(),
+                StatusCode::RequestTimeout,
+                err.status().status_code(),
                 "expected RequestTimeout (408), got {:?}",
-                err.http_status()
+                err.status().status_code()
             );
 
             Ok(())
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -314,7 +314,7 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         .with_hit_limit(1)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -367,7 +367,7 @@ pub async fn query_cross_region_retry_on_408() -> Result<(), Box<dyn Error>> {
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -399,7 +399,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
         .with_hit_limit(1)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -437,7 +437,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
 
             // Read should succeed via cross-region retry after hub returns 500
             let result = run_context
-                .read_item::<TestItem>(&fault_container_client, &pk, &item_id, None)
+                .read_item(&fault_container_client, &pk, &item_id, None)
                 .await;
 
             assert!(
@@ -456,7 +456,7 @@ pub async fn read_cross_region_retry_on_500() -> Result<(), Box<dyn Error>> {
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -485,7 +485,7 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -540,17 +540,17 @@ pub async fn replace_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>
             let err =
                 result.expect_err("replace should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
-                err.http_status(),
+                StatusCode::RequestTimeout,
+                err.status().status_code(),
                 "expected RequestTimeout (408), got {:?}",
-                err.http_status()
+                err.status().status_code()
             );
 
             Ok(())
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )
@@ -579,7 +579,7 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
         .with_condition(condition)
         .build();
 
-    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+    let fault_builder = vec![Arc::new(rule)];
 
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
@@ -623,17 +623,17 @@ pub async fn delete_no_cross_region_retry_on_408() -> Result<(), Box<dyn Error>>
 
             let err = result.expect_err("delete should fail with 408 and not retry across regions");
             assert_eq!(
-                Some(StatusCode::RequestTimeout),
-                err.http_status(),
+                StatusCode::RequestTimeout,
+                err.status().status_code(),
                 "expected RequestTimeout (408), got {:?}",
-                err.http_status()
+                err.status().status_code()
             );
 
             Ok(())
         },
         Some(
             TestOptions::new()
-                .with_fault_injection_builder(fault_builder)
+                .with_fault_injection_rules(fault_builder)
                 .with_fault_client_application_region(HUB_REGION),
         ),
     )

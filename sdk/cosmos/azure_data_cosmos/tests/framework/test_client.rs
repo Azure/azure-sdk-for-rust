@@ -8,14 +8,16 @@
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::fault_injection::FaultInjectionClientBuilder;
+use azure_data_cosmos::fault_injection::FaultInjectionRule;
 use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemReadOptions;
+use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::Region;
 use azure_data_cosmos::{
-    clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
-    Query, RoutingStrategy,
+    clients::DatabaseClient, CosmosClient, CreateContainerOptions, PartitionKey, Query,
+    RoutingStrategy,
 };
+use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
 use std::future::Future;
 use std::pin::Pin;
@@ -49,7 +51,7 @@ pub const EMULATOR_HOST: &str = "127.0.0.1";
 /// successfully retry on the original. Used for failover scenarios where
 /// either landing is valid.
 pub fn assert_region_contacted_with_retry(
-    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    diagnostics: &azure_data_cosmos::DiagnosticsContext,
     expected_region: &Region,
 ) {
     assert!(
@@ -73,7 +75,7 @@ pub fn assert_region_contacted_with_retry(
 /// stay on `expected_region` (the driver may still fail over to an alternate
 /// region after exhausting its local retry budget).
 pub fn assert_local_retry_attempted_on_region(
-    diagnostics: &azure_data_cosmos::CosmosDiagnosticsContext,
+    diagnostics: &azure_data_cosmos::DiagnosticsContext,
     expected_region: &Region,
 ) {
     let requests = diagnostics.requests();
@@ -97,13 +99,17 @@ pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 pub struct TestOptions {
     /// Application region for the normal (non-fault) client.
     pub client_application_region: Option<Region>,
-    /// Fault injection builder for the fault injection client.
-    /// If provided, a separate client will be created with fault injection capabilities.
-    /// The builder is applied after transport setup (e.g., invalid certificate acceptance)
-    /// so that the FaultClient wraps the correct inner HTTP client.
-    pub fault_injection_builder: Option<FaultInjectionClientBuilder>,
+    /// Fault injection rules for the fault injection client.
+    ///
+    /// Setting this to `Some(rules)` — even an empty `Vec` — provisions a
+    /// dedicated fault-injection [`CosmosClient`] alongside the regular
+    /// test client; the rules are forwarded to the driver runtime after
+    /// transport setup (e.g., invalid-certificate acceptance) so that the
+    /// driver's `FaultClient` wraps the correct inner HTTP client.
+    /// `None` (the default) means no fault-injection client is created.
+    pub fault_injection_rules: Option<Vec<std::sync::Arc<FaultInjectionRule>>>,
     /// Application region for the fault injection client.
-    /// Used in combination with `fault_injection_builder`.
+    /// Used in combination with `fault_injection_rules`.
     pub fault_client_application_region: Option<Region>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
@@ -121,11 +127,18 @@ impl TestOptions {
         self
     }
 
-    /// Sets the fault injection builder for the fault injection client.
-    /// The builder will be applied after transport setup so the FaultClient
-    /// properly wraps the configured HTTP client (e.g., one that accepts invalid certificates).
-    pub fn with_fault_injection_builder(mut self, builder: FaultInjectionClientBuilder) -> Self {
-        self.fault_injection_builder = Some(builder);
+    /// Sets the fault injection rules for the fault injection client.
+    ///
+    /// The rules will be applied after transport setup so the `FaultClient`
+    /// properly wraps the configured HTTP client (e.g., one that accepts
+    /// invalid certificates). Passing an empty `Vec` still provisions the
+    /// fault-injection client — useful for tests that exercise the
+    /// "no rules configured" path.
+    pub fn with_fault_injection_rules(
+        mut self,
+        rules: Vec<std::sync::Arc<FaultInjectionRule>>,
+    ) -> Self {
+        self.fault_injection_rules = Some(rules);
         self
     }
 
@@ -246,20 +259,20 @@ impl TestClient {
     pub async fn from_env_with_fault_options(
         fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, None, fault_client_application_region).await
+        Self::from_env_inner(None, Vec::new(), fault_client_application_region).await
     }
 
     pub async fn from_env(
         application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(application_region, None, None).await
+        Self::from_env_inner(application_region, Vec::new(), None).await
     }
 
-    pub async fn from_env_with_fault_builder(
-        fault_builder: FaultInjectionClientBuilder,
+    pub async fn from_env_with_fault_rules(
+        fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, Some(fault_builder), application_region).await
+        Self::from_env_inner(None, fault_rules, application_region).await
     }
 
     /// Creates a new [`TestClient`] from local environment variables.
@@ -269,7 +282,7 @@ impl TestClient {
     /// running on Azure Pipelines, when it will panic instead.
     async fn from_env_inner(
         application_region: Option<Region>,
-        fault_builder: Option<FaultInjectionClientBuilder>,
+        fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
@@ -292,7 +305,7 @@ impl TestClient {
                     EMULATOR_CONNECTION_STRING,
                     application_region,
                     true,
-                    fault_builder,
+                    fault_rules,
                     None,
                 )
                 .await
@@ -302,7 +315,7 @@ impl TestClient {
                     &env_var,
                     application_region,
                     false,
-                    fault_builder,
+                    fault_rules,
                     fault_client_application_region,
                 )
                 .await
@@ -314,7 +327,7 @@ impl TestClient {
         connection_string: &str,
         application_region: Option<Region>,
         mut allow_invalid_certificates: bool,
-        fault_builder: Option<FaultInjectionClientBuilder>,
+        fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         fault_client_application_region: Option<Region>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
@@ -328,7 +341,7 @@ impl TestClient {
             }
         }
 
-        let credential = connection_string.account_key.clone();
+        let credential = connection_string.account_key().clone();
         let mut builder = azure_data_cosmos::CosmosClient::builder();
 
         // Determine the region selection strategy
@@ -351,16 +364,16 @@ impl TestClient {
             );
         }
 
-        // Configure fault injection if builder provided
-        if let Some(fault_builder) = fault_builder {
-            builder = builder.with_fault_injection(fault_builder);
+        // Configure fault injection if rules provided
+        if !fault_rules.is_empty() {
+            builder = builder.with_fault_injection(fault_rules);
         }
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            connection_string.account_endpoint.parse()?;
+        let endpoint: azure_data_cosmos::AccountEndpoint =
+            connection_string.account_endpoint().parse()?;
         let cosmos_client = builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(endpoint, credential),
+                azure_data_cosmos::AccountReference::with_authentication_key(endpoint, credential),
                 strategy,
             )
             .await?;
@@ -417,19 +430,28 @@ impl TestClient {
         // Initialize tracing subscriber for logging, if not already initialized.
         // The error is ignored because it only happens if the subscriber is already initialized.
         _ = tracing_subscriber::fmt()
-            .with_env_filter(EnvFilter::from_default_env())
+            .with_env_filter(
+                EnvFilter::builder()
+                    // Tests with intentional failures cause noise, so we set the default level to "off"
+                    // to silence them unless the user explicitly configures it.
+                    .with_default_directive("off".parse().unwrap())
+                    .from_env_lossy(),
+            )
             .try_init();
 
         let test_client = Self::from_env(options.client_application_region.clone()).await?;
 
-        // Create fault injection client if builder or application region were provided
-        // builder should be passed in for emulator tests to ensure the FaultClient
+        // Create fault injection client if rules or application region were provided.
+        // Rules should be passed in for emulator tests to ensure the FaultClient
         // wraps the HTTP client with invalid cert acceptance,
-        // which is required for emulator connectivity
-        let fault_client = if let Some(builder) = options.fault_injection_builder {
+        // which is required for emulator connectivity.
+        // An explicitly-set empty Vec still provisions the fault client (some
+        // tests exercise the "no rules configured" path); `None` means
+        // `with_fault_injection_rules` was never called.
+        let fault_client = if let Some(rules) = options.fault_injection_rules {
             Some(
-                Self::from_env_with_fault_builder(
-                    builder,
+                Self::from_env_with_fault_rules(
+                    rules,
                     options.fault_client_application_region.clone(),
                 )
                 .await?,
@@ -456,7 +478,7 @@ impl TestClient {
                     let test_result = Box::pin(test(&run)).await;
 
                     if let Err(e) = &test_result {
-                        println!("Error running test: {}", e);
+                        println!("CosmosError running test: {}", e);
                         // Check if the error is a 429
                         let is_429 = e.to_string().contains("TooManyRequests")
                             || e.to_string().contains("Too Many Requests");
@@ -481,7 +503,18 @@ impl TestClient {
             run.cleanup().await?;
 
             match result {
-                Ok(test_result) => test_result,
+                Ok(test_result) => {
+                    if let Err(e) = &test_result {
+                        if e.downcast_ref::<super::InconclusiveError>().is_some() {
+                            // Make it clear to the reader that the failure is an inconclusive one
+                            eprintln!(concat!("This test returned an inconclusive result. ",
+                                "This does NOT indicate a failure, but rather that the test was unable to complete successfully ",
+                                "due to an external factor (e.g. a split not completing in time). ",
+                                "Inconclusive results do not need to block PRs unless the PR is specifically touching code related to this test."));
+                        }
+                    }
+                    test_result
+                }
                 Err(_) => Err(format!("Test timed out after {} seconds", timeout.as_secs()).into()),
             }
         } else if test_mode == CosmosTestMode::Required {
@@ -524,7 +557,7 @@ impl TestClient {
                 // Emulator is always strong consistency, so we can skip the read check in that case
                 match run_context.client().create_database(db_id, None).await {
                     Ok(_) => {}
-                    Err(e) if e.http_status() == Some(StatusCode::Conflict) => {}
+                    Err(e) if e.status().status_code() == StatusCode::Conflict => {}
                     Err(e) => return Err(e.into()),
                 }
                 let db_client = run_context.shared_db_client();
@@ -541,7 +574,7 @@ impl TestClient {
 ///
 /// The normal client is always available via `client()` and `shared_db_client()`.
 /// The fault injection client is available via `fault_client()` and `fault_db_client()`
-/// if `TestOptions::with_fault_injection_builder()` was called
+/// if `TestOptions::with_fault_injection_rules()` was called
 /// or if `TestOptions::with_fault_client_application_region()` was called.
 pub struct TestRunContext {
     run_id: String,
@@ -575,7 +608,7 @@ impl TestRunContext {
 
     /// Gets the fault injection [`CosmosClient`], if configured.
     ///
-    /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_builder()` or
+    /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_rules()` or
     /// if `TestOptions::with_fault_client_application_region()` was called,
     /// otherwise returns `None`.
     pub fn fault_client(&self) -> Option<&CosmosClient> {
@@ -589,7 +622,7 @@ impl TestRunContext {
 
     /// Gets the shared database client using the fault injection client.
     ///
-    /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_injection_builder()` or
+    /// Returns `Some(DatabaseClient)` if `TestOptions::with_fault_injection_rules()` or
     /// if `TestOptions::with_fault_client_application_region()` was called,
     /// otherwise returns `None`.
     pub fn fault_db_client(&self) -> Option<DatabaseClient> {
@@ -598,13 +631,13 @@ impl TestRunContext {
     }
 
     /// Creates a new, empty, database for this test run with default throughput options.
-    pub async fn create_db(&self) -> azure_core::Result<DatabaseClient> {
+    pub async fn create_db(&self) -> azure_data_cosmos::Result<DatabaseClient> {
         // The TestAccount has a unique context_id that includes the test name.
         let db_name = self.db_name();
         let response = match self.client().create_database(&db_name, None).await {
             // The database creation was successful.
             Ok(props) => props,
-            Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+            Err(e) if e.status().status_code() == StatusCode::Conflict => {
                 // The database already exists, from a previous test run.
                 // Delete it and re-create it.
                 let db_client = self.client().database_client(&db_name);
@@ -627,16 +660,13 @@ impl TestRunContext {
 
     /// Reads an item from the specified container with exponential backoff retries on 404 errors.
     /// This is useful for tests where eventual consistency may cause transient read failures.
-    pub async fn read_item<T>(
+    pub async fn read_item(
         &self,
         container: &ContainerClient,
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemReadOptions>,
-    ) -> azure_core::Result<ItemResponse<T>>
-    where
-        T: serde::de::DeserializeOwned,
-    {
+    ) -> azure_data_cosmos::Result<ItemResponse> {
         // Own the inputs so no borrowed data must live across `.await`.
         let partition_key = partition_key.into().to_owned();
         let item_id = item_id.to_owned();
@@ -653,10 +683,10 @@ impl TestRunContext {
                 .await
             {
                 Ok(response) => return Ok(response),
-                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                Err(e) if e.status().status_code() == StatusCode::NotFound => {
                     println!(
                         "Read item failed with {:?}: {}. Retrying after {:?}...",
-                        e.http_status(),
+                        e.status().status_code(),
                         e,
                         backoff
                     );
@@ -675,7 +705,7 @@ impl TestRunContext {
         container: &ContainerClient,
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
-    ) -> azure_core::Result<Vec<T>>
+    ) -> azure_data_cosmos::Result<Vec<T>>
     where
         T: serde::de::DeserializeOwned + std::marker::Send + 'static,
     {
@@ -685,13 +715,20 @@ impl TestRunContext {
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
         loop {
-            match container.query_items::<T>(query.clone(), partition_key.clone(), None) {
+            match container
+                .query_items::<T>(
+                    query.clone(),
+                    FeedScope::partition(partition_key.clone()),
+                    None,
+                )
+                .await
+            {
                 Ok(pager) => match pager.try_collect::<Vec<T>>().await {
                     Ok(items) => return Ok(items),
-                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    Err(e) if e.status().status_code() == StatusCode::NotFound => {
                         println!(
                             "Query items failed with {:?}: {}. Retrying after {:?}...",
-                            e.http_status(),
+                            e.status().status_code(),
                             e,
                             backoff
                         );
@@ -700,10 +737,10 @@ impl TestRunContext {
                     }
                     Err(e) => return Err(e),
                 },
-                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                Err(e) if e.status().status_code() == StatusCode::NotFound => {
                     println!(
                         "Query items failed with {:?}: {}. Retrying after {:?}...",
-                        e.http_status(),
+                        e.status().status_code(),
                         e,
                         backoff
                     );
@@ -722,7 +759,7 @@ impl TestRunContext {
         db_client: &DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         options: Option<azure_data_cosmos::CreateContainerOptions>,
-    ) -> azure_core::Result<ContainerClient> {
+    ) -> azure_data_cosmos::Result<ContainerClient> {
         let mut backoff = Duration::from_millis(100);
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
@@ -735,7 +772,7 @@ impl TestRunContext {
                     let created = response.into_model()?;
                     return db_client.container_client(&created.id).await;
                 }
-                Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
+                Err(e) if e.status().status_code() == StatusCode::TooManyRequests => {
                     println!(
                         "Create container got 429 (Too Many Requests). Retrying after {:?}...",
                         backoff
@@ -743,7 +780,7 @@ impl TestRunContext {
                     tokio::time::sleep(backoff).await;
                     backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
-                Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+                Err(e) if e.status().status_code() == StatusCode::Conflict => {
                     // Container already exists, delete and recreate it, then return a client
                     let container_client = db_client.container_client(&properties.id).await?;
                     container_client.delete(None).await?;
@@ -775,7 +812,7 @@ impl TestRunContext {
         db_client: &'a DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         throughput: ThroughputProperties,
-    ) -> Pin<Box<dyn Future<Output = azure_core::Result<ContainerClient>> + Send + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = azure_data_cosmos::Result<ContainerClient>> + Send + 'a>> {
         Box::pin(async move {
             let created_properties = db_client
                 .create_container(
@@ -849,7 +886,7 @@ impl TestRunContext {
     /// Creates a CosmosClient with a specific preferred region.
     async fn create_client_with_preferred_region(
         region: Region,
-    ) -> Result<CosmosClient, azure_core::Error> {
+    ) -> Result<CosmosClient, azure_data_cosmos::CosmosError> {
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
             .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
 
@@ -859,20 +896,9 @@ impl TestRunContext {
             &env_var
         };
 
-        let parsed: ConnectionString = connection_string.parse().map_err(|e| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("Failed to parse connection string: {}", e),
-            )
-        })?;
+        let parsed: ConnectionString = connection_string.parse()?;
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            parsed.account_endpoint.parse().map_err(|e| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    format!("Failed to parse account endpoint: {}", e),
-                )
-            })?;
+        let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
         let mut builder = CosmosClient::builder();
 
         #[cfg(feature = "allow_invalid_certificates")]
@@ -882,9 +908,9 @@ impl TestRunContext {
 
         builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                azure_data_cosmos::AccountReference::with_authentication_key(
                     endpoint,
-                    parsed.account_key.clone(),
+                    parsed.account_key().clone(),
                 ),
                 RoutingStrategy::ProximityTo(region),
             )
@@ -900,7 +926,7 @@ impl TestRunContext {
             "SELECT * FROM root r WHERE r.id LIKE 'auto-test-{}'",
             self.run_id
         ));
-        let mut pager = self.client().query_databases(query, None)?;
+        let mut pager = self.client().query_databases(query, None).await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             ids.push(db.id);

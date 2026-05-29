@@ -139,14 +139,14 @@ impl CertificateClient {
     ///
     /// // Wait for the certificate operation to complete and get the certificate.
     /// let certificate = client
-    ///     .create_certificate("certificate-name", body.try_into()?, None)?
+    ///     .begin_create_certificate("certificate-name", body.try_into()?, None)?
     ///     .await?
     ///     .into_model()?;
     ///
     /// # Ok(()) }
     /// ```
     #[tracing::function("KeyVault.createCertificate")]
-    pub fn create_certificate(
+    pub fn begin_create_certificate(
         &self,
         certificate_name: &str,
         parameters: RequestContent<CreateCertificateParameters>,

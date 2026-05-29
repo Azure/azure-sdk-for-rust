@@ -20,8 +20,12 @@ use framework::TestClient;
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -72,11 +76,13 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
                 indexing_policy.indexing_mode.unwrap()
             );
 
-            let mut query_pager = db_client.query_containers(
-                Query::from("SELECT * FROM root r WHERE r.id = @id")
-                    .with_parameter("@id", &properties.id)?,
-                None,
-            )?;
+            let mut query_pager = db_client
+                .query_containers(
+                    Query::from("SELECT * FROM root r WHERE r.id = @id")
+                        .with_parameter("@id", &properties.id)?,
+                    None,
+                )
+                .await?;
             let mut ids = vec![];
             while let Some(db) = query_pager.try_next().await? {
                 ids.push(db.id);
@@ -120,11 +126,13 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
             container_client.delete(None).await?;
 
-            query_pager = db_client.query_containers(
-                Query::from("SELECT * FROM root r WHERE r.id = @id")
-                    .with_parameter("@id", &properties.id)?,
-                None,
-            )?;
+            query_pager = db_client
+                .query_containers(
+                    Query::from("SELECT * FROM root r WHERE r.id = @id")
+                        .with_parameter("@id", &properties.id)?,
+                    None,
+                )
+                .await?;
             let mut ids = vec![];
             while let Some(db) = query_pager.try_next().await? {
                 ids.push(db.id);
@@ -140,8 +148,12 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn container_crud_hierarchical_pk() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

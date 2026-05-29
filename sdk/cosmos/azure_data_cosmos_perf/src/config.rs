@@ -135,6 +135,21 @@ pub struct Config {
     /// If omitted, auto-detected via `git rev-parse --short HEAD`.
     #[arg(long)]
     pub commit_sha: Option<String>,
+
+    /// User-Agent suffix appended to every Cosmos DB request.
+    ///
+    /// Forwarded to `CosmosClientBuilder::with_user_agent_suffix` for both the
+    /// primary and results clients so perf-harness traffic can be isolated in
+    /// server-side telemetry. Pass an empty string to omit the suffix
+    /// entirely. Constraints (max 25 characters, HTTP-header-safe) come from
+    /// `UserAgentSuffix`; invalid values cause the process to exit with a
+    /// descriptive error.
+    #[arg(
+        long,
+        env = "AZURE_COSMOS_USER_AGENT_SUFFIX",
+        default_value = "rust-perf"
+    )]
+    pub user_agent_suffix: String,
 }
 
 /// Authentication method for connecting to Cosmos DB.
