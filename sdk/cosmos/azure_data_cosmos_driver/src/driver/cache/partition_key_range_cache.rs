@@ -288,10 +288,10 @@ impl PartitionKeyRangeCache {
         container: &ContainerReference,
         force_refresh: bool,
         fetch_pk_ranges: F,
-    ) -> azure_core::Result<Arc<ContainerRoutingMap>>
+    ) -> crate::error::Result<Arc<ContainerRoutingMap>>
     where
         F: Fn(ContainerReference, Option<String>) -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<PkRangeFetchResult>>,
+        Fut: std::future::Future<Output = crate::error::Result<PkRangeFetchResult>>,
     {
         let key = container.clone();
 
@@ -495,10 +495,10 @@ async fn fetch_and_build_routing_map_with_error<F, Fut>(
     container: ContainerReference,
     previous_routing_map: Option<Arc<ContainerRoutingMap>>,
     fetch_pk_ranges: F,
-) -> azure_core::Result<ContainerRoutingMap>
+) -> crate::error::Result<ContainerRoutingMap>
 where
     F: Fn(ContainerReference, Option<String>) -> Fut,
-    Fut: std::future::Future<Output = azure_core::Result<PkRangeFetchResult>>,
+    Fut: std::future::Future<Output = crate::error::Result<PkRangeFetchResult>>,
 {
     let mut all_ranges = Vec::new();
     let mut continuation = previous_routing_map
@@ -593,15 +593,15 @@ where
 
     match ContainerRoutingMap::try_create(all_ranges, None, continuation) {
         Ok(Some(map)) => Ok(map),
-        Ok(None) => Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
-            "partition key range fetch returned an empty set; \
-             the container may not exist or the service may be unreachable",
-        )),
-        Err(e) => Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
-            format!("partition key ranges invalid: {e}"),
-        )),
+        Ok(None) => Err(crate::error::CosmosError::builder()
+            .with_message(
+                "partition key range fetch returned an empty set; \
+                 the container may not exist or the service may be unreachable",
+            )
+            .build()),
+        Err(e) => Err(crate::error::CosmosError::builder()
+            .with_message(format!("partition key ranges invalid: {e}"))
+            .build()),
     }
 }
 
@@ -1101,7 +1101,7 @@ mod tests {
         async fn ok_fetch(
             _container: ContainerReference,
             continuation: Option<String>,
-        ) -> azure_core::Result<PkRangeFetchResult> {
+        ) -> crate::error::Result<PkRangeFetchResult> {
             if continuation.is_some() {
                 Ok(PkRangeFetchResult {
                     ranges: vec![],
@@ -1127,7 +1127,7 @@ mod tests {
         async fn must_not_call(
             _container: ContainerReference,
             _continuation: Option<String>,
-        ) -> azure_core::Result<PkRangeFetchResult> {
+        ) -> crate::error::Result<PkRangeFetchResult> {
             panic!("fetch must not run for a cached routing map");
         }
         let cached = cache
@@ -1145,11 +1145,10 @@ mod tests {
         async fn failing_fetch(
             _container: ContainerReference,
             _continuation: Option<String>,
-        ) -> azure_core::Result<PkRangeFetchResult> {
-            Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "simulated transport failure",
-            ))
+        ) -> crate::error::Result<PkRangeFetchResult> {
+            Err(crate::error::CosmosError::builder()
+                .with_message("simulated transport failure")
+                .build())
         }
 
         let result = cache
@@ -1175,10 +1174,11 @@ mod tests {
             let attempts = attempts_clone.clone();
             async move {
                 attempts.fetch_add(1, Ordering::SeqCst);
-                Err::<PkRangeFetchResult, _>(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "transient",
-                ))
+                Err::<PkRangeFetchResult, _>(
+                    crate::error::CosmosError::builder()
+                        .with_message("transient")
+                        .build(),
+                )
             }
         };
 
@@ -1219,7 +1219,7 @@ mod tests {
         async fn seed_fetch(
             _container: ContainerReference,
             continuation: Option<String>,
-        ) -> azure_core::Result<PkRangeFetchResult> {
+        ) -> crate::error::Result<PkRangeFetchResult> {
             if continuation.is_some() {
                 Ok(PkRangeFetchResult {
                     ranges: vec![],
@@ -1259,7 +1259,7 @@ mod tests {
                     async fn b_fetch(
                         _container: ContainerReference,
                         continuation: Option<String>,
-                    ) -> azure_core::Result<PkRangeFetchResult> {
+                    ) -> crate::error::Result<PkRangeFetchResult> {
                         if continuation.is_some() {
                             Ok(PkRangeFetchResult {
                                 ranges: vec![],

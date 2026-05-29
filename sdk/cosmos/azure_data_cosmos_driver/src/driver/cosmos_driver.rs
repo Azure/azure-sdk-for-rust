@@ -1156,7 +1156,7 @@ impl CosmosDriver {
         &self,
         container: ContainerReference,
         continuation: Option<String>,
-    ) -> azure_core::Result<PkRangeFetchResult> {
+    ) -> crate::error::Result<PkRangeFetchResult> {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
@@ -1201,7 +1201,9 @@ impl CosmosDriver {
                     // Attach the originating operation's diagnostics to the
                     // parse failure so callers can correlate the malformed
                     // response with its ActivityId/region.
-                    crate::diagnostics::attach_diagnostics(e, Arc::clone(&diagnostics))
+                    crate::error::CosmosErrorBuilder::from_error(e)
+                        .with_diagnostics(Arc::clone(&diagnostics))
+                        .build()
                 })?;
                 match parse_pk_ranges_response(&body_bytes) {
                     Some(ranges) => Ok(PkRangeFetchResult {
@@ -1214,13 +1216,10 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        Err(crate::diagnostics::attach_diagnostics(
-                            azure_core::Error::with_message(
-                                azure_core::error::ErrorKind::DataConversion,
-                                "failed to parse partition key ranges response body",
-                            ),
-                            diagnostics,
-                        ))
+                        Err(crate::error::CosmosError::builder()
+                            .with_message("failed to parse partition key ranges response body")
+                            .with_diagnostics(diagnostics)
+                            .build())
                     }
                 }
             }
@@ -1946,7 +1945,7 @@ impl CosmosDriver {
         &self,
         container: &ContainerReference,
         force_refresh: bool,
-    ) -> azure_core::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+    ) -> crate::error::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
         let routing_map = self
             .pk_range_cache
             .try_lookup_with_error(container, force_refresh, |c, cont| {
@@ -1956,11 +1955,12 @@ impl CosmosDriver {
 
         let ranges = routing_map.ranges();
         if ranges.is_empty() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "resolved routing map contains no partition key ranges; \
-                 the container may not exist or the service may be unreachable",
-            ));
+            return Err(crate::error::CosmosError::builder()
+                .with_message(
+                    "resolved routing map contains no partition key ranges; \
+                     the container may not exist or the service may be unreachable",
+                )
+                .build());
         }
         Ok(ranges.to_vec())
     }
@@ -1977,21 +1977,19 @@ impl CosmosDriver {
         container: &ContainerReference,
         partition_key: &PartitionKey,
         force_refresh: bool,
-    ) -> azure_core::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+    ) -> crate::error::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
         if partition_key.is_empty() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "partition key must have at least one component",
-            ));
+            return Err(crate::error::CosmosError::builder()
+                .with_message("partition key must have at least one component")
+                .build());
         }
 
         let pk_def = container.partition_key_definition();
         let epk_range = EffectivePartitionKey::compute_range(partition_key.values(), pk_def)
             .map_err(|e| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    format!("effective partition key computation failed: {e}"),
-                )
+                crate::error::CosmosError::builder()
+                    .with_message(format!("effective partition key computation failed: {e}"))
+                    .build()
             })?;
 
         if epk_range.start == epk_range.end {
@@ -2003,10 +2001,9 @@ impl CosmosDriver {
                 })
                 .await?;
             if routing_map.ranges().is_empty() {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "resolved routing map contains no partition key ranges",
-                ));
+                return Err(crate::error::CosmosError::builder()
+                    .with_message("resolved routing map contains no partition key ranges")
+                    .build());
             }
             Ok(routing_map
                 .get_range_by_effective_partition_key(&epk_range.start)

@@ -19,7 +19,6 @@
 //! `DiagnosticsContext` which is safe to share via `Arc` without locking.
 
 mod diagnostics_context;
-mod error_diagnostics;
 mod proxy_configuration;
 
 pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
@@ -28,12 +27,4 @@ pub use diagnostics_context::{
     RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
     TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
 };
-// The error-diagnostics carrier and helpers are wrapper-crate plumbing.
-// They are reachable from `azure_data_cosmos` (which wraps them behind
-// `CosmosError`) but are not part of this driver crate's intended
-// public surface — `#[doc(hidden)]` keeps them out of the published
-// rustdoc so they do not become semver-stable surface area that
-// external driver-crate consumers can rely on.
-#[doc(hidden)]
-pub use error_diagnostics::{attach_diagnostics, split_diagnostics_carrier};
 pub use proxy_configuration::ProxyConfiguration;

@@ -15,6 +15,7 @@ use tokio::task::JoinSet;
 use uuid::Uuid;
 
 use crate::operations::Operation;
+use crate::shard_observer::{ShardObserver, ShardSnapshot};
 use crate::stats::{self, Stats};
 
 /// Walks the `std::error::Error::source()` chain and joins messages with " → ".
@@ -127,6 +128,11 @@ struct ErrorResult {
     operation: String,
     error_message: String,
     source_message: Option<String>,
+    /// Pre-failure context for the transport shard that owned the failing
+    /// request. `None` when diagnostics did not carry shard info (e.g. the
+    /// failure happened before the shard handed the stream off).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    shard_snapshot: Option<ShardSnapshot>,
 }
 
 /// Configuration for a perf test run.
@@ -278,6 +284,7 @@ pub async fn run(config: RunConfig) {
     // Spawn fixed worker pool — each worker loops until cancelled
     let start = Instant::now();
     let mut workers = JoinSet::new();
+    let observer = Arc::new(ShardObserver::new());
 
     for _ in 0..concurrency {
         let ops = operations.clone();
@@ -288,6 +295,7 @@ pub async fn run(config: RunConfig) {
         let err_workload_id = workload_id.clone();
         let err_commit_sha = commit_sha.clone();
         let err_hostname = hostname.clone();
+        let observer = observer.clone();
 
         workers.spawn(async move {
             while !cancelled.load(Ordering::Relaxed) {
@@ -296,11 +304,29 @@ pub async fn run(config: RunConfig) {
 
                 let op_start = Instant::now();
                 match op.execute(&container).await {
-                    Ok(backend) => {
-                        stats.record_latency(op.name(), op_start.elapsed(), backend);
+                    Ok(outcome) => {
+                        stats.record_latency(
+                            op.name(),
+                            op_start.elapsed(),
+                            outcome.backend_duration,
+                        );
+                        if let Some(shard_id) =
+                            outcome.diagnostics.as_deref().and_then(extract_shard_id)
+                        {
+                            // Observation result is discarded on success — we only
+                            // need to keep ShardObserver bookkeeping warm so that
+                            // an eventual failure on the same shard has rich
+                            // history to snapshot.
+                            let _ = observer.observe(shard_id, true);
+                        }
                     }
                     Err(e) => {
                         stats.record_error(op.name());
+                        let shard_snapshot = e
+                            .diagnostics()
+                            .as_deref()
+                            .and_then(extract_shard_id)
+                            .map(|shard_id| observer.observe(shard_id, false));
                         upsert_error(
                             &err_container,
                             op.name(),
@@ -308,6 +334,7 @@ pub async fn run(config: RunConfig) {
                             &err_workload_id,
                             &err_commit_sha,
                             &err_hostname,
+                            shard_snapshot,
                         )
                         .await;
                     }
@@ -440,6 +467,7 @@ async fn upsert_results(
 /// Writes a single error document to the results container.
 ///
 /// Failures are logged to stderr but never propagated—this must not stop the workload.
+#[allow(clippy::too_many_arguments)]
 async fn upsert_error(
     container: &ContainerClient,
     operation: &str,
@@ -447,6 +475,7 @@ async fn upsert_error(
     workload_id: &str,
     commit_sha: &str,
     hostname: &str,
+    shard_snapshot: Option<ShardSnapshot>,
 ) {
     let now = time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
@@ -463,6 +492,7 @@ async fn upsert_error(
         operation: operation.to_string(),
         error_message: format!("{error}"),
         source_message: error_source_chain(error),
+        shard_snapshot,
     };
     if let Err(e) = container
         .upsert_item(&doc.partition_key, &id, &doc, None)
@@ -470,4 +500,16 @@ async fn upsert_error(
     {
         eprintln!("Warning: failed to upsert error result: {e}");
     }
+}
+
+/// Pulls the transport shard id from a finalized DiagnosticsContext, if any.
+///
+/// Scans the per-attempt RequestDiagnostics list (newest first) and returns the
+/// first transport-shard binding it finds.
+fn extract_shard_id(diagnostics: &azure_data_cosmos::models::DiagnosticsContext) -> Option<u64> {
+    diagnostics
+        .requests()
+        .iter()
+        .rev()
+        .find_map(|req| req.transport_shard().map(|s| s.shard_id()))
 }

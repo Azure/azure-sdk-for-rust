@@ -1050,18 +1050,17 @@ pub async fn error_diagnostics_records_retry_history() -> Result<(), Box<dyn Err
                 .await
                 .expect_err("503 fault must drive the read into the error path");
 
-            // CosmosError exposes the operation's final HTTP status from
-            // the attached diagnostics (preferred over the inner
-            // ErrorKind::HttpResponse.status).
+            // CosmosError exposes the operation's final HTTP status via the
+            // attached CosmosStatus (which is sourced from diagnostics).
             assert_eq!(
-                err.status_code(),
-                Some(503),
-                "CosmosError::status_code() should reflect the injected 503"
+                u16::from(err.status().status_code()),
+                503,
+                "CosmosError::status() should reflect the injected 503"
             );
             assert_eq!(
-                err.http_status(),
-                Some(StatusCode::ServiceUnavailable),
-                "CosmosError::http_status() should reflect the injected 503"
+                err.status().status_code(),
+                StatusCode::ServiceUnavailable,
+                "CosmosError::status() should be StatusCode::ServiceUnavailable"
             );
 
             // Diagnostics carrier survives end-to-end.
@@ -1230,10 +1229,10 @@ pub async fn error_diagnostics_includes_fault_injection_evaluations() -> Result<
     .await
 }
 
-/// Cross-checks that the `CosmosError` convenience accessors
-/// (`status_code`, `http_status`, `kind`, `diagnostics`) agree with the
-/// inner `DiagnosticsContext` on the fault-injected error path. Guards
-/// against accidental divergence between the two surfaces.
+/// Cross-checks that the `CosmosError` accessors (`status`, `response`,
+/// `diagnostics`) agree with the inner `DiagnosticsContext` on the
+/// fault-injected error path. Guards against accidental divergence between
+/// the two surfaces.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "emulator"),
@@ -1283,42 +1282,29 @@ pub async fn cosmos_error_accessors_match_diagnostics_after_fault() -> Result<()
                 .await
                 .expect_err("read must fail under fault injection");
 
-            // Public field exposure matches accessor methods.
-            assert_eq!(err.status_code, err.status_code());
-            assert_eq!(err.sub_status, err.sub_status());
-            assert!(err.diagnostics.is_some(), "diagnostics field must be Some");
-            assert!(
-                err.diagnostics().is_some(),
-                "diagnostics() must return Some when the field is Some"
-            );
+            // diagnostics() is Some on the fault-injected error path.
+            let diag = err
+                .diagnostics()
+                .expect("CosmosError must carry diagnostics on the fault-injected error path");
 
-            // status_code accessor agrees with diagnostics.status().
-            let diag = err.diagnostics().unwrap();
+            // CosmosError::status() agrees with diagnostics.status() — the
+            // two surfaces are derived from the same final-attempt record
+            // and must not diverge.
             let diag_status = diag
                 .status()
                 .expect("diagnostics must have a final status after a failure");
             assert_eq!(
-                err.status_code(),
-                Some(u16::from(diag_status.status_code())),
-                "CosmosError::status_code() must equal diagnostics.status().status_code()"
+                u16::from(err.status().status_code()),
+                u16::from(diag_status.status_code()),
+                "CosmosError::status() must equal diagnostics.status().status_code()"
             );
 
-            // http_status (StatusCode form) and status_code (u16 form) agree.
-            assert_eq!(
-                err.http_status().map(u16::from),
-                err.status_code(),
-                "http_status() and status_code() must agree"
-            );
-
-            // The error kind must still be HttpResponse for service-side
-            // faults — wrappers don't downgrade it to ErrorKind::Other.
+            // The error must reflect the wire response (a real 503 came
+            // back from the service-side fault), not a synthetic
+            // client-side failure.
             assert!(
-                matches!(
-                    err.kind(),
-                    azure_core::error::ErrorKind::HttpResponse { .. }
-                ),
-                "ErrorKind should be HttpResponse for a 503, got {:?}",
-                err.kind()
+                err.response().is_some(),
+                "CosmosError must carry a CosmosResponse for a service-side 503"
             );
 
             Ok(())
