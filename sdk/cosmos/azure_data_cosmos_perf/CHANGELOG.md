@@ -7,6 +7,7 @@
 
 ### Features Added
 
+- Per-error documents written to the results container now include a `shard_snapshot` field with pre-failure shard context (perf-observed connection age, time since the shard last completed a successful request, last 10 perf-assigned sequence numbers on the shard, and whether any other shard was first observed within the previous 100 ms). ([#4445](https://github.com/Azure/azure-sdk-for-rust/pull/4445))
 - Initial implementation of the Cosmos DB performance testing CLI tool.
 - Point read, create item, single-partition query, and upsert operations with concurrent execution.
 - Key-based and AAD (Entra ID) authentication via `ManagedIdentityCredential`.

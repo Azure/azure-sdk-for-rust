@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::CosmosError;
+use azure_data_cosmos::{CosmosError, DiagnosticsContext};
 use rand::RngExt;
 use serde::Serialize;
 use sysinfo::System;
@@ -16,6 +16,7 @@ use tokio::task::JoinSet;
 use uuid::Uuid;
 
 use crate::operations::Operation;
+use crate::shard_observer::{ShardObserver, ShardSnapshot};
 use crate::stats::{self, Stats};
 
 /// Walks the `std::error::Error::source()` chain and joins messages with " → ".
@@ -54,6 +55,23 @@ fn extract_error_diagnostics(
     };
     let json = serde_json::from_str::<serde_json::Value>(diagnostics.to_json_string(None)).ok();
     (json, error.status_code(), error.sub_status())
+}
+
+/// Returns the shard id of the **final** transport attempt recorded on
+/// this diagnostics context, if any.
+///
+/// We scan from the most-recent request backwards because the final
+/// attempt's shard is the one that actually returned the observed status
+/// (success or terminal failure). Earlier attempts may have hit other
+/// shards via shard-local retry — those are tracked separately via the
+/// observer's open-history; this function only returns the shard that
+/// *ended* the operation.
+fn final_attempt_shard_id(diagnostics: &DiagnosticsContext) -> Option<u64> {
+    diagnostics
+        .requests()
+        .iter()
+        .rev()
+        .find_map(|r| r.transport_shard().map(|t| t.shard_id()))
 }
 
 /// Structured perf result document stored in Cosmos DB for long-term monitoring.
@@ -170,6 +188,21 @@ struct ErrorResult {
     /// pipeline before diagnostics were initialized.
     #[serde(skip_serializing_if = "Option::is_none")]
     diagnostics_json: Option<serde_json::Value>,
+    /// Pre-failure shard context reconstructed by the perf-side
+    /// `ShardObserver`. Carries:
+    ///
+    /// - **age** of this shard (proxy for h2 connection-open time),
+    /// - **time since last successful request** on this shard,
+    /// - **last 10 perf-assigned sequence numbers** for this shard
+    ///   (driver-side h2 stream-ids are not exposed by the SDK, so this
+    ///   is the next-best fingerprint of "what other requests this shard
+    ///   was handling just before the failure"),
+    /// - whether **any other shard was opened in the last 100 ms**.
+    ///
+    /// `None` when no transport shard could be associated with the error
+    /// (e.g., credential failures, request-not-sent transport errors).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    shard_snapshot: Option<ShardSnapshot>,
 }
 
 /// Configuration for a perf test run.
@@ -318,6 +351,9 @@ pub async fn run(config: RunConfig) {
         }
     });
 
+    // Shared shard observer — feeds pre-failure shard context into ErrorResult.
+    let observer = Arc::new(ShardObserver::new());
+
     // Spawn fixed worker pool — each worker loops until cancelled
     let start = Instant::now();
     let mut workers = JoinSet::new();
@@ -331,6 +367,7 @@ pub async fn run(config: RunConfig) {
         let err_workload_id = workload_id.clone();
         let err_commit_sha = commit_sha.clone();
         let err_hostname = hostname.clone();
+        let observer = observer.clone();
 
         workers.spawn(async move {
             while !cancelled.load(Ordering::Relaxed) {
@@ -339,15 +376,34 @@ pub async fn run(config: RunConfig) {
 
                 let op_start = Instant::now();
                 match op.execute(&container).await {
-                    Ok(backend) => {
-                        stats.record_latency(op.name(), op_start.elapsed(), backend);
+                    Ok(outcome) => {
+                        stats.record_latency(
+                            op.name(),
+                            op_start.elapsed(),
+                            outcome.backend_duration,
+                        );
+                        // Update per-shard "last success" / sequence-number
+                        // state on the happy path so it's available the
+                        // next time *this* shard errors.
+                        if let Some(diag) = outcome.diagnostics.as_deref() {
+                            if let Some(shard_id) = final_attempt_shard_id(diag) {
+                                let _ = observer.observe(shard_id, true);
+                            }
+                        }
                     }
                     Err(e) => {
                         stats.record_error(op.name());
+                        // Observe with success=false; the returned snapshot
+                        // is captured into the ErrorResult below.
+                        let shard_snapshot = e
+                            .diagnostics()
+                            .and_then(final_attempt_shard_id)
+                            .map(|shard_id| observer.observe(shard_id, false));
                         upsert_error(
                             &err_container,
                             op.name(),
                             &e,
+                            shard_snapshot,
                             &err_workload_id,
                             &err_commit_sha,
                             &err_hostname,
@@ -487,6 +543,7 @@ async fn upsert_error(
     container: &ContainerClient,
     operation: &str,
     error: &CosmosError,
+    shard_snapshot: Option<ShardSnapshot>,
     workload_id: &str,
     commit_sha: &str,
     hostname: &str,
@@ -511,6 +568,7 @@ async fn upsert_error(
         status_code,
         sub_status,
         diagnostics_json,
+        shard_snapshot,
     };
     if let Err(e) = container
         .upsert_item(&doc.partition_key, &id, &doc, None)
