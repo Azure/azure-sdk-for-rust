@@ -5,7 +5,7 @@
 
 pub mod options;
 
-use crate::stream::{BytesStream, SeekableStream};
+use crate::stream::{BytesStream, ReadStream, SeekableStream};
 #[cfg(feature = "json")]
 use crate::{http::JsonFormat, json::to_json};
 use crate::{
@@ -17,6 +17,7 @@ use crate::{
 };
 #[cfg(any(feature = "json", feature = "xml"))]
 use crate::{time::OffsetDateTime, Value};
+use futures::AsyncRead;
 #[cfg(any(feature = "json", feature = "xml"))]
 use serde::Serialize;
 #[cfg(any(feature = "json", feature = "xml"))]
@@ -321,6 +322,25 @@ impl<T, F> RequestContent<T, F> {
     pub fn from_str(body: &str) -> Self {
         Self::from_slice(body.as_bytes())
     }
+
+    /// Create a new `RequestContent` from an [`AsyncRead`] source.
+    ///
+    /// The source is wrapped in a type that implements [`SeekableStream`] but errs when [`SeekableStream::reset()`] is called.
+    /// Then `len` is optional and, if `Some`, will be set in the `content-length` header.
+    ///
+    /// # Examples
+    ///
+    /// With a struct implementing `tokio::io::AsyncRead`, you can
+    pub fn from_reader<R>(reader: R, len: Option<u64>) -> Self
+    where
+        R: AsyncRead + Unpin + Clone + Send + Sync + 'static,
+    {
+        let reader = ReadStream::new(reader, len);
+        Self {
+            body: Body::SeekableStream(Box::new(reader)),
+            phantom: PhantomData,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -349,6 +369,33 @@ impl<T, F> From<Bytes> for RequestContent<T, F> {
     fn from(body: Bytes) -> Self {
         Self {
             body: Body::Bytes(body),
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<T, F> From<Box<dyn SeekableStream>> for RequestContent<T, F> {
+    /// Create a new `RequestContent` from a [`SeekableStream`].
+    ///
+    /// # Implementations
+    ///
+    /// Some implementations available in this crate:
+    ///
+    /// - [`BytesStream`]
+    ///
+    /// # Examples
+    ///
+    /// Send a [`BytesStream`] as the request body.
+    ///
+    /// ```
+    /// # use typespec_client_core::{http::RequestContent, stream::{BytesStream, SeekableStream}};
+    /// let stream: Box<dyn SeekableStream> = Box::new(BytesStream::new(b"stream data".as_slice()));
+    /// let content: RequestContent<()> = stream.into();
+    /// assert_eq!(content.body().len(), Some(11));
+    /// ```
+    fn from(stream: Box<dyn SeekableStream>) -> Self {
+        Self {
+            body: Body::SeekableStream(stream),
             phantom: PhantomData,
         }
     }
@@ -751,5 +798,30 @@ mod tests {
         }
 
         assert_eq!(body.is_empty(), Some(true));
+    }
+
+    #[tokio::test]
+    async fn request_content_from_tokio_stream_reader() {
+        use crate::stream::TokioAsyncReadExt as _;
+        use futures::io::AsyncReadExt as _;
+        use tokio_util::io::StreamReader;
+
+        let expected = b"test";
+        let iter = tokio_stream::iter(vec![
+            Ok::<_, std::io::Error>(Bytes::from_static(&[b't', b'e'])),
+            Ok(Bytes::from_static(&[b's', b't'])),
+        ]);
+        // StreamReader is tokio::io::AsyncRead but not Clone; wrap it in SharedStream
+        // via TokioAsyncReadExt so it satisfies SeekableStream without requiring Clone on R.
+        let stream = StreamReader::new(iter).shared(None);
+        let content: RequestContent<String> = RequestContent::from_reader(stream, None);
+
+        let Body::SeekableStream(mut body) = content.body else {
+            panic!("expected stream");
+        };
+
+        let mut buf = Vec::new();
+        body.read_to_end(&mut buf).await.unwrap();
+        assert_eq!(buf, expected);
     }
 }
