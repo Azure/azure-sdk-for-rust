@@ -6,8 +6,6 @@
 mod bytes_stream;
 mod read_stream;
 mod shared;
-#[cfg(feature = "tokio")]
-pub(crate) mod tokio;
 
 use crate::{
     error::{Error, ErrorKind, Result},

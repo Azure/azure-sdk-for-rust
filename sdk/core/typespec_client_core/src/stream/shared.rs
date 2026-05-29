@@ -125,38 +125,6 @@ where
     }
 }
 
-/// Extension trait to wrap any [`tokio::io::AsyncRead`] source in a [`SharedStream`].
-///
-/// # Examples
-///
-/// ```no_run
-/// # #[cfg(feature = "tokio")]
-/// # async fn example() {
-/// use typespec_client_core::stream::TokioAsyncReadExt as _;
-/// let data = std::io::Cursor::new(b"hello".to_vec());
-/// let stream = data.shared(Some(5));
-/// # }
-/// ```
-#[cfg(feature = "tokio")]
-pub trait TokioAsyncReadExt: Sized {
-    /// Wraps `self` in a [`SharedStream`].
-    ///
-    /// # Arguments
-    ///
-    /// * `len` - The total byte length of the stream, if known.
-    fn shared(self, len: Option<u64>) -> SharedStream;
-}
-
-#[cfg(feature = "tokio")]
-impl<R> TokioAsyncReadExt for R
-where
-    R: tokio::io::AsyncRead + Unpin + Send + Sync + 'static,
-{
-    fn shared(self, len: Option<u64>) -> SharedStream {
-        SharedStream::new(super::tokio::ReadStream::new(self, len))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,24 +183,6 @@ mod tests {
     async fn futures_async_read_ext() {
         let data = b"hello via ext trait";
         let mut stream = BytesStream::new(data.as_slice()).shared(Some(data.len() as u64));
-
-        assert_eq!(stream.len(), Some(data.len() as u64));
-
-        let mut buf = vec![0u8; data.len()];
-        let n = stream.read(&mut buf).await.unwrap();
-        assert_eq!(n, data.len());
-        assert_eq!(&buf, data);
-    }
-
-    #[cfg(feature = "tokio")]
-    #[tokio::test]
-    async fn tokio_async_read_ext() {
-        use super::TokioAsyncReadExt;
-
-        let data = b"hello from tokio";
-        // Use UFCS to avoid ambiguity: std::io::Cursor implements both AsyncRead traits.
-        let mut stream =
-            TokioAsyncReadExt::shared(std::io::Cursor::new(data.to_vec()), Some(data.len() as u64));
 
         assert_eq!(stream.len(), Some(data.len() as u64));
 

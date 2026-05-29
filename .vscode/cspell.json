@@ -15,6 +15,7 @@
     ".devcontainer/oncreate",
     ".github/",
     ".vscode/",
+    "Cargo.lock",
     "NOTICE.txt",
     "deny.toml",
     "eng/",
