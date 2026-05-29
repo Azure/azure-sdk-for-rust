@@ -125,7 +125,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use azure_core::http::{HttpClient, Url};
+use azure_core::http::Url;
 use azure_data_cosmos_driver::diagnostics::{HedgeDiagnostics, HedgeTerminalState};
 use azure_data_cosmos_driver::driver::CosmosDriver;
 use azure_data_cosmos_driver::fault_injection::{
@@ -257,7 +257,10 @@ async fn read_item_result(
     op_options: OperationOptions,
     item_id: &str,
     pk: &str,
-) -> azure_core::Result<azure_data_cosmos_driver::models::CosmosResponse> {
+) -> Result<
+    azure_data_cosmos_driver::models::CosmosResponse,
+    azure_data_cosmos_driver::error::CosmosError,
+> {
     let container = driver
         .resolve_container_by_name(DB_NAME, COLL_NAME)
         .await

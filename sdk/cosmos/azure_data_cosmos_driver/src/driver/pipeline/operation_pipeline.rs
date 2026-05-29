@@ -45,7 +45,7 @@ use super::{
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
     retry_evaluation::{
-        build_http_error, evaluate_transport_result, is_region_confirming_status,
+        build_service_error, evaluate_transport_result, is_region_confirming_status,
         partition_effects_for_deferral,
     },
 };
@@ -365,7 +365,7 @@ pub(crate) async fn execute_operation_pipeline(
                             operation.is_read_only(),
                             last_error,
                         )?;
-                        enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                        diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
                         continue;
                     }
                 }
@@ -670,7 +670,7 @@ pub(crate) async fn execute_operation_pipeline(
                             operation.is_read_only(),
                             last_error,
                         )?;
-                        enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                        diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
                         continue;
                     }
                 }
@@ -1654,7 +1654,7 @@ enum HedgeClass {
 /// TransportOutcome map to `Transient`. A `Success` is always final; an
 /// `HttpError` is final iff [`CosmosStatus::is_final_result`] returns `true` for its
 /// status.
-fn classify_hedge_result(result: azure_core::Result<TransportResult>) -> HedgeClass {
+fn classify_hedge_result(result: crate::error::Result<TransportResult>) -> HedgeClass {
     match result {
         Ok(tr) => match &tr.outcome {
             TransportOutcome::Success { .. } => HedgeClass::Final(Box::new(tr)),
@@ -1720,14 +1720,14 @@ fn result_is_final(tr: &TransportResult) -> bool {
 fn finalize_hedge_attempt(
     result: Box<TransportResult>,
     diagnostics: DiagnosticsContextBuilder,
-) -> azure_core::Result<CosmosResponse> {
+) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         outcome @ TransportOutcome::Success { .. } => {
             build_cosmos_response(Box::new(TransportResult { outcome }), diagnostics)
         }
         TransportOutcome::HttpError {
             status,
-            headers,
+            cosmos_headers,
             body,
             ..
         } => {
@@ -1739,7 +1739,7 @@ fn finalize_hedge_attempt(
                 "cosmos.hedge.terminal_http_error",
             );
             drop(diagnostics);
-            Err(build_http_error(&status, &headers, &body))
+            Err(build_service_error(&status, &cosmos_headers, &body))
         }
         TransportOutcome::TransportError { error, .. } => {
             tracing::warn!(
@@ -1758,10 +1758,9 @@ fn finalize_hedge_attempt(
                 "cosmos.hedge.terminal_deadline_exceeded",
             );
             drop(diagnostics);
-            Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "deadline exceeded during hedged attempt",
-            ))
+            Err(crate::error::CosmosError::builder()
+                .with_message("deadline exceeded during hedged attempt")
+                .build())
         }
     }
 }
@@ -1841,7 +1840,7 @@ async fn perform_single_attempt(
     execution_context: ExecutionContext,
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
     diagnostics: &mut DiagnosticsContextBuilder,
-) -> azure_core::Result<TransportResult> {
+) -> crate::error::Result<TransportResult> {
     // Resolve session token using the same precedence the main loop uses.
     let resolved_session_token = ctx
         .session_consistency_active
@@ -1965,7 +1964,7 @@ async fn harvest_remaining_attempt<F>(attempt: F, parent: &mut DiagnosticsContex
 where
     F: Future<
             Output = (
-                azure_core::Result<TransportResult>,
+                crate::error::Result<TransportResult>,
                 DiagnosticsContextBuilder,
             ),
         > + Unpin
@@ -1991,11 +1990,10 @@ where
 /// operation's [`DiagnosticsContextBuilder`] before this error is
 /// returned — they are not carried inside the error itself, matching
 /// the rest of the operation pipeline's diagnostics model.
-fn application_cancelled_error() -> azure_core::Error {
-    azure_core::Error::with_message(
-        azure_core::error::ErrorKind::Other,
-        "operation cancelled by application deadline during cross-region hedging",
-    )
+fn application_cancelled_error() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_message("operation cancelled by application deadline during cross-region hedging")
+        .build()
 }
 
 /// Races a still-pending hedge attempt against the end-to-end deadline.
@@ -2012,13 +2010,13 @@ async fn await_attempt_or_deadline_harvest<F>(
     deadline: Option<Instant>,
     parent: &mut DiagnosticsContextBuilder,
 ) -> Option<(
-    azure_core::Result<TransportResult>,
+    crate::error::Result<TransportResult>,
     DiagnosticsContextBuilder,
 )>
 where
     F: Future<
             Output = (
-                azure_core::Result<TransportResult>,
+                crate::error::Result<TransportResult>,
                 DiagnosticsContextBuilder,
             ),
         > + Unpin
@@ -2081,7 +2079,7 @@ fn deadline_elapsed(deadline: Option<Instant>) -> bool {
 pub(crate) enum HedgedRaceResult {
     /// The race ended in a state the operation pipeline must surface
     /// directly to the caller.
-    Terminal(azure_core::Result<CosmosResponse>),
+    Terminal(crate::error::Result<CosmosResponse>),
 
     /// Both legs returned `Transient` outcomes without the deadline
     /// firing. The caller must:
@@ -2107,7 +2105,7 @@ pub(crate) enum HedgedRaceResult {
     BothTransient {
         primary_region: Option<Region>,
         secondary_region: Option<Region>,
-        last_error: azure_core::Error,
+        last_error: crate::error::CosmosError,
         diagnostics: DiagnosticsContextBuilder,
     },
 }
@@ -2222,10 +2220,9 @@ async fn execute_hedged(
     let threshold_duration = match azure_core::time::Duration::try_from(threshold.get()) {
         Ok(d) => d,
         Err(_) => {
-            return HedgedRaceResult::Terminal(Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "hedge threshold exceeds azure_core::time::Duration range",
-            )));
+            return HedgedRaceResult::Terminal(Err(crate::error::CosmosError::builder()
+                .with_message("hedge threshold exceeds azure_core::time::Duration range")
+                .build()));
         }
     };
     let threshold_timer = Box::pin(azure_core::sleep(threshold_duration));
@@ -2248,7 +2245,7 @@ async fn execute_hedged(
         Box<
             dyn Future<
                     Output = (
-                        azure_core::Result<TransportResult>,
+                        crate::error::Result<TransportResult>,
                         DiagnosticsContextBuilder,
                     ),
                 > + Send
@@ -2654,20 +2651,19 @@ async fn execute_hedged(
 fn transient_outcome_error(
     primary_region: Option<&Region>,
     secondary_region: Option<&Region>,
-) -> azure_core::Error {
+) -> crate::error::CosmosError {
     let p = primary_region
         .map(Region::as_str)
         .unwrap_or(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL);
     let s = secondary_region
         .map(Region::as_str)
         .unwrap_or(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL);
-    azure_core::Error::with_message(
-        azure_core::error::ErrorKind::Other,
-        format!(
+    crate::error::CosmosError::builder()
+        .with_message(format!(
             "hedging completed without producing a final response \
              (primary={p}, secondary={s})"
-        ),
-    )
+        ))
+        .build()
 }
 
 /// Centralizes the diagnostics attachment, structured tracing, and
@@ -2780,8 +2776,8 @@ fn try_advance_after_both_transient(
     retry_state: &mut OperationRetryState,
     location: &LocationSnapshot,
     is_read_only: bool,
-    last_error: azure_core::Error,
-) -> Result<(), azure_core::Error> {
+    last_error: crate::error::CosmosError,
+) -> Result<(), crate::error::CosmosError> {
     let consumed: u32 = 2;
     let next_count = retry_state.failover_retry_count.saturating_add(consumed);
     if next_count > retry_state.max_failover_retries {
@@ -4768,14 +4764,13 @@ mod tests {
     // ── classify_hedge_result (Part 4b) ────────────────────────────────
 
     fn http_result(status_code: u16, sub_status: Option<u32>) -> super::TransportResult {
-        use azure_core::http::{headers::Headers, StatusCode};
+        use azure_core::http::StatusCode;
         let mut status = crate::models::CosmosStatus::new(StatusCode::from(status_code));
         if let Some(v) = sub_status {
-            status = status.with_sub_status(v);
+            status = status.with_sub_status(v as u16);
         }
         super::TransportResult::from_http_response(
             status,
-            Headers::new(),
             crate::models::CosmosResponseHeaders::default(),
             Vec::new(),
         )
@@ -4832,10 +4827,9 @@ mod tests {
 
     #[test]
     fn classify_hedge_result_request_build_error_is_transient() {
-        let err = azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "synthetic build error",
-        );
+        let err = crate::error::CosmosError::builder()
+            .with_message("synthetic build error")
+            .build();
         assert!(matches!(
             super::classify_hedge_result(Err(err)),
             super::HedgeClass::Transient
@@ -4930,12 +4924,7 @@ mod tests {
         let diagnostics = test_diagnostics();
         let err = super::finalize_hedge_attempt(tr, diagnostics)
             .expect_err("409 should be surfaced as an error");
-        match err.kind() {
-            azure_core::error::ErrorKind::HttpResponse { status, .. } => {
-                assert_eq!(u16::from(*status), 409);
-            }
-            other => panic!("expected HttpResponse error kind, got {other:?}"),
-        }
+        assert_eq!(u16::from(err.status().status_code()), 409);
     }
 
     #[test]
@@ -4946,7 +4935,6 @@ mod tests {
         let diagnostics = test_diagnostics();
         let err = super::finalize_hedge_attempt(tr, diagnostics)
             .expect_err("deadline should produce an error");
-        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
         assert!(err.to_string().contains("deadline exceeded"));
     }
 
@@ -5009,9 +4997,8 @@ mod tests {
     }
 
     #[test]
-    fn application_cancelled_error_is_other_kind_with_app_cancel_message() {
+    fn application_cancelled_error_carries_app_cancel_message() {
         let err = super::application_cancelled_error();
-        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
         let msg = err.to_string();
         assert!(
             msg.contains("cancelled by application deadline"),
@@ -5083,10 +5070,11 @@ mod tests {
         // The "attempt" completes immediately (well within HARVEST_WINDOW).
         let attempt = Box::pin(async move {
             (
-                Err::<super::TransportResult, _>(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "synthetic transport error",
-                )),
+                Err::<super::TransportResult, _>(
+                    crate::error::CosmosError::builder()
+                        .with_message("synthetic transport error")
+                        .build(),
+                ),
                 child,
             )
         });
@@ -5122,10 +5110,11 @@ mod tests {
             )
             .await;
             (
-                Err::<super::TransportResult, _>(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "should not reach here",
-                )),
+                Err::<super::TransportResult, _>(
+                    crate::error::CosmosError::builder()
+                        .with_message("should not reach here")
+                        .build(),
+                ),
                 child,
             )
         });

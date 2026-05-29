@@ -317,7 +317,7 @@ mod tests {
     fn status(code: u16, sub: Option<u32>) -> CosmosStatus {
         let mut s = CosmosStatus::new(StatusCode::from(code));
         if let Some(v) = sub {
-            s = s.with_sub_status(v);
+            s = s.with_sub_status(v as u16);
         }
         s
     }

@@ -22,6 +22,8 @@ use crate::{
     models::{CosmosOperation, CosmosResponseHeaders, CosmosStatus, SubStatusCode},
 };
 
+use std::sync::atomic::Ordering;
+
 use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
 
 /// Whether the current request is handled by the PPCB threshold mechanism.
@@ -651,7 +653,7 @@ fn service_error_message(status: &CosmosStatus) -> String {
 /// `evaluate_transport_result` as a pure function over its inputs and
 /// avoids constructing a throw-away diagnostics value that would
 /// immediately be overwritten downstream.
-fn build_service_error(
+pub(crate) fn build_service_error(
     status: &CosmosStatus,
     cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
