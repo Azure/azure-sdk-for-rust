@@ -326,14 +326,44 @@ impl<T, F> RequestContent<T, F> {
     /// Create a new `RequestContent` from an [`AsyncRead`] source.
     ///
     /// The source is wrapped in a type that implements [`SeekableStream`] but errs when [`SeekableStream::reset()`] is called.
-    /// Then `len` is optional and, if `Some`, will be set in the `content-length` header.
+    /// `len` is optional and, if `Some`, will be set in the `content-length` header.
     ///
     /// # Examples
     ///
-    /// With a struct implementing `tokio::io::AsyncRead`, you can
+    /// If you have a [`futures::io::AsyncRead`] that implements [`Clone`] already like a [`Cursor`](futures::io::Cursor),
+    /// you can call `from_reader` directly.
+    ///
+    /// ```no_run
+    /// use typespec_client_core::http::RequestContent;
+    /// use futures::io::Cursor;
+    ///
+    /// let data = b"hello world";
+    /// let cursor = Cursor::new(data.to_vec());
+    /// let content: RequestContent<String> = RequestContent::from_reader(cursor, Some(data.len() as u64));
+    /// ```
+    ///
+    /// Wrap a `tokio::io::AsyncRead` source e.g., a `tokio_util::io::StreamReader`, using
+    /// `tokio_util::compat::TokioAsyncReadCompatExt` to convert it to a `futures::io::AsyncRead`.
+    /// Then use [`FuturesAsyncReadExt::shared`](crate::stream::FuturesAsyncReadExt) to make it
+    /// cloneable before passing it to `from_reader`.
+    ///
+    /// ```no_run
+    /// use bytes::Bytes;
+    /// use typespec_client_core::{http::RequestContent, stream::FuturesAsyncReadExt as _};
+    /// use tokio_util::{compat::TokioAsyncReadCompatExt as _, io::StreamReader};
+    ///
+    /// # async fn example() {
+    /// let iter = tokio_stream::iter(vec![
+    ///     Ok::<_, std::io::Error>(Bytes::from_static(b"hello ")),
+    ///     Ok(Bytes::from_static(b"world")),
+    /// ]);
+    /// let stream = StreamReader::new(iter).compat().shared(None);
+    /// let content: RequestContent<String> = RequestContent::from_reader(stream, None);
+    /// # }
+    /// ```
     pub fn from_reader<R>(reader: R, len: Option<u64>) -> Self
     where
-        R: AsyncRead + Unpin + Clone + Send + Sync + 'static,
+        R: AsyncRead + Unpin + Send + Sync + 'static,
     {
         let reader = ReadStream::new(reader, len);
         Self {
@@ -801,10 +831,47 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn request_content_from_reader() {
+        use futures::io::{AsyncRead, AsyncReadExt as _, Cursor};
+        use std::{
+            pin::Pin,
+            task::{Context, Poll},
+        };
+
+        /// A minimal [`AsyncRead`] that does not implement [`Clone`], used to verify
+        /// that [`RequestContent::from_reader`] works with non-`Clone` sources.
+        struct NonCloneReader(Cursor<Vec<u8>>);
+        impl Unpin for NonCloneReader {}
+        impl AsyncRead for NonCloneReader {
+            fn poll_read(
+                mut self: Pin<&mut Self>,
+                cx: &mut Context<'_>,
+                buf: &mut [u8],
+            ) -> Poll<std::io::Result<usize>> {
+                Pin::new(&mut self.0).poll_read(cx, buf)
+            }
+        }
+
+        let data = b"hello from reader";
+        let reader = NonCloneReader(Cursor::new(data.to_vec()));
+        let content: RequestContent<String> =
+            RequestContent::from_reader(reader, Some(data.len() as u64));
+
+        assert_eq!(content.body().len(), Some(data.len() as u64));
+
+        let Body::SeekableStream(mut body) = content.body else {
+            panic!("expected stream");
+        };
+        let mut buf = Vec::new();
+        body.read_to_end(&mut buf).await.unwrap();
+        assert_eq!(buf, data);
+    }
+
+    #[tokio::test]
     async fn request_content_from_tokio_stream_reader() {
-        use crate::stream::TokioAsyncReadExt as _;
+        use crate::stream::FuturesAsyncReadExt as _;
         use futures::io::AsyncReadExt as _;
-        use tokio_util::io::StreamReader;
+        use tokio_util::{compat::TokioAsyncReadCompatExt as _, io::StreamReader};
 
         let expected = b"test";
         let iter = tokio_stream::iter(vec![
@@ -813,7 +880,7 @@ mod tests {
         ]);
         // StreamReader is tokio::io::AsyncRead but not Clone; wrap it in SharedStream
         // via TokioAsyncReadExt so it satisfies SeekableStream without requiring Clone on R.
-        let stream = StreamReader::new(iter).shared(None);
+        let stream = StreamReader::new(iter).compat().shared(None);
         let content: RequestContent<String> = RequestContent::from_reader(stream, None);
 
         let Body::SeekableStream(mut body) = content.body else {
