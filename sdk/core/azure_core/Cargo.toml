@@ -46,7 +46,6 @@ http = "1.4.0"
 include-file.workspace = true
 json-patch = "4.1.0"
 reqwest.workspace = true
-thiserror.workspace = true
 tokio.workspace = true
 tracing-subscriber.workspace = true
 ureq = { version = "3.2.0", default-features = false, features = [
