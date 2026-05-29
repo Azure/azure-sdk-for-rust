@@ -5,11 +5,10 @@ use crate::{
     clients::{offers_client, ClientContext, ContainerClient},
     models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
     options::ReadDatabaseOptions,
-    CreateContainerOptions, DeleteDatabaseOptions, FeedItemIterator, Query, QueryContainersOptions,
-    ThroughputOptions,
+    CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
+    QueryItemIterator, ThroughputOptions,
 };
 use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
-use azure_data_cosmos_driver::options::OperationOptions;
 
 use super::ThroughputPoller;
 
@@ -47,7 +46,7 @@ impl DatabaseClient {
     /// # Errors
     ///
     /// Returns an error if the container does not exist or the metadata cannot be resolved.
-    pub async fn container_client(&self, name: &str) -> crate::CosmosResult<ContainerClient> {
+    pub async fn container_client(&self, name: &str) -> crate::Result<ContainerClient> {
         ContainerClient::new(self.context.clone(), name, &self.database_id).await
     }
 
@@ -73,17 +72,17 @@ impl DatabaseClient {
     ///     .into_model()?;
     /// # }
     /// ```
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read(
         &self,
         options: Option<ReadDatabaseOptions>,
-    ) -> crate::CosmosResult<ResourceResponse<DatabaseProperties>> {
+    ) -> crate::Result<ResourceResponse<DatabaseProperties>> {
+        let options = options.unwrap_or_default();
         let operation = CosmosOperation::read_database(self.database_ref.clone());
 
         let driver_response = self
             .context
             .driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options.operation)
             .await?;
 
         Ok(ResourceResponse::new(
@@ -107,33 +106,36 @@ impl DatabaseClient {
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # use azure_data_cosmos::clients::DatabaseClient;
     /// # let db_client: DatabaseClient = panic!("this is a non-running example");
-    /// let containers = db_client.query_containers(
-    ///     "SELECT * FROM dbs",
-    ///     None)?;
+    /// let containers = db_client
+    ///     .query_containers("SELECT * FROM dbs", None)
+    ///     .await?;
     /// # }
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
-    pub fn query_containers(
+    pub async fn query_containers(
         &self,
         query: impl Into<Query>,
         options: Option<QueryContainersOptions>,
-    ) -> crate::CosmosResult<FeedItemIterator<ContainerProperties>> {
-        let db_ref = DatabaseReference::from_name(
-            self.context.driver.account().clone(),
-            self.database_id.clone(),
-        );
-        let factory = move || CosmosOperation::query_containers(db_ref.clone());
+    ) -> crate::Result<QueryItemIterator<ContainerProperties>> {
+        let options = options.unwrap_or_default();
+        let query = query.into();
+        let initial_operation = CosmosOperation::query_containers(self.database_ref.clone())
+            .with_body(serde_json::to_vec(&query)?);
+        let operation_options = options.operation;
 
-        crate::query::executor::QueryExecutor::new(
+        let plan = self
+            .context
+            .driver
+            .plan_operation(initial_operation, &operation_options, None)
+            .await?;
+
+        Ok(QueryItemIterator::new(
             self.context.driver.clone(),
-            factory,
-            query.into(),
-            Default::default(),
-            crate::query::QueryExecutorConfig::default(),
-        )
-        .into_stream()
+            None,
+            plan,
+            operation_options,
+        ))
     }
 
     /// Creates a new container.
@@ -147,7 +149,7 @@ impl DatabaseClient {
         &self,
         properties: ContainerProperties,
         options: Option<CreateContainerOptions>,
-    ) -> crate::CosmosResult<ResourceResponse<ContainerProperties>> {
+    ) -> crate::Result<ResourceResponse<ContainerProperties>> {
         let options = options.unwrap_or_default();
         let body = serde_json::to_vec(&properties)?;
         let mut operation =
@@ -161,14 +163,14 @@ impl DatabaseClient {
 
         // Control-plane creates always need the full response body so the
         // caller can inspect the created resource properties.
-        let mut operation_options = OperationOptions::default();
+        let mut operation_options = options.operation;
         operation_options.content_response_on_write =
             Some(azure_data_cosmos_driver::options::ContentResponseOnWrite::Enabled);
 
         let driver_response = self
             .context
             .driver
-            .execute_operation(operation, operation_options)
+            .execute_singleton_operation(operation, operation_options)
             .await?;
 
         Ok(ResourceResponse::new(
@@ -182,17 +184,17 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn delete(
         &self,
         options: Option<DeleteDatabaseOptions>,
-    ) -> crate::CosmosResult<ResourceResponse<()>> {
+    ) -> crate::Result<ResourceResponse<()>> {
+        let options = options.unwrap_or_default();
         let operation = CosmosOperation::delete_database(self.database_ref.clone());
 
         let driver_response = self
             .context
             .driver
-            .execute_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options.operation)
             .await?;
 
         Ok(ResourceResponse::new(
@@ -206,11 +208,11 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
-    #[allow(unused_variables, reason = "This parameter may be used in the future")]
     pub async fn read_throughput(
         &self,
         options: Option<ThroughputOptions>,
-    ) -> crate::CosmosResult<Option<ThroughputProperties>> {
+    ) -> crate::Result<Option<ThroughputProperties>> {
+        let options = options.unwrap_or_default();
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
         let resource_id = db
@@ -222,9 +224,9 @@ impl DatabaseClient {
             &self.context.driver,
             self.context.driver.account(),
             &resource_id,
+            options.operation,
         )
         .await
-        .map(|(offer, _diagnostics)| offer)
     }
 
     /// Begins replacing the database throughput properties.
@@ -241,7 +243,7 @@ impl DatabaseClient {
     ///
     /// ```rust,no_run
     /// # use azure_data_cosmos::models::ThroughputProperties;
-    /// # async fn example(db_client: azure_data_cosmos::clients::DatabaseClient) -> azure_data_cosmos::CosmosResult<()> {
+    /// # async fn example(db_client: azure_data_cosmos::clients::DatabaseClient) -> azure_data_cosmos::Result<()> {
     /// let throughput = db_client
     ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
     ///     .await? // start the replace operation
@@ -254,11 +256,7 @@ impl DatabaseClient {
         &self,
         throughput: ThroughputProperties,
         options: Option<ThroughputOptions>,
-    ) -> crate::CosmosResult<ThroughputPoller> {
-        #[allow(
-            unused_variables,
-            reason = "The 'options' variable may be used in the future"
-        )]
+    ) -> crate::Result<ThroughputPoller> {
         let options = options.unwrap_or_default();
         // We need to get the RID for the database.
         let db = self.read(None).await?.into_model()?;
@@ -272,7 +270,30 @@ impl DatabaseClient {
             self.context.driver.account().clone(),
             &resource_id,
             throughput,
+            options.operation,
         )
         .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Compile-time assertion that `DatabaseClient` async method futures are `Send`.
+    ///
+    /// This function is never called; it only needs to compile.
+    /// If any future is not `Send`, compilation will fail.
+    #[allow(dead_code, unreachable_code, unused_variables)]
+    fn _assert_futures_are_send() {
+        fn assert_send<T: Send>(_: T) {}
+        let client: &DatabaseClient = todo!();
+        assert_send(client.container_client(todo!()));
+        assert_send(client.read(todo!()));
+        assert_send(client.query_containers(Query::from("SELECT * FROM c"), todo!()));
+        assert_send(client.create_container(todo!(), todo!()));
+        assert_send(client.delete(todo!()));
+        assert_send(client.read_throughput(todo!()));
+        assert_send(client.begin_replace_throughput(todo!(), todo!()));
     }
 }

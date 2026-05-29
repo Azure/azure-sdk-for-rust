@@ -5,8 +5,8 @@
 //! Builder for creating [`CosmosClient`] instances.
 
 use crate::{
-    clients::ClientContext, options::ThroughputControlGroupOptions, CosmosAccountReference,
-    CosmosClient, CosmosClientOptions, CosmosCredential, RoutingStrategy,
+    clients::ClientContext, options::ThroughputControlGroupOptions, AccountReference, CosmosClient,
+    CosmosClientOptions, CosmosCredential, RoutingStrategy,
 };
 
 use azure_data_cosmos_driver::options::ConnectionPoolOptions;
@@ -21,9 +21,9 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 /// Use this builder to configure and create a `CosmosClient` for interacting with Azure Cosmos DB.
 ///
 /// An account reference (endpoint + credential) is required when calling [`build()`](Self::build).
-/// Pass any type that implements `Into<CosmosAccountReference>`, such as a
-/// [`CosmosAccountReference`] created via convenience constructors, or a tuple of
-/// `(CosmosAccountEndpoint, credential)` or `(Url, credential)`.
+/// Construct an [`AccountReference`] via [`AccountReference::with_credential`] (for token-credential
+/// auth) or [`AccountReference::with_authentication_key`] (for shared-key auth, requires the
+/// `key_auth` feature), then pass it to `build`.
 ///
 /// A [`RoutingStrategy`] is also required to specify how the SDK should select regions.
 ///
@@ -33,7 +33,7 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 ///
 /// ```rust,no_run
 /// use azure_data_cosmos::{
-///     CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint,
+///     CosmosClientBuilder, AccountReference, AccountEndpoint,
 ///     Region, RoutingStrategy,
 /// };
 /// use std::sync::Arc;
@@ -41,8 +41,8 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let credential: Arc<dyn azure_core::credentials::TokenCredential> =
 ///     azure_identity::DeveloperToolsCredential::new(None).unwrap();
-/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
-/// let account = CosmosAccountReference::with_credential(endpoint, credential);
+/// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
+/// let account = AccountReference::with_credential(endpoint, credential);
 /// let client = CosmosClientBuilder::new()
 ///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
@@ -54,14 +54,14 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 ///
 /// ```rust,no_run,ignore
 /// use azure_data_cosmos::{
-///     CosmosClientBuilder, CosmosAccountReference, CosmosAccountEndpoint,
+///     CosmosClientBuilder, AccountReference, AccountEndpoint,
 ///     Region, RoutingStrategy,
 /// };
 /// use azure_core::credentials::Secret;
 ///
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-/// let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
-/// let account = CosmosAccountReference::with_master_key(endpoint, Secret::from("my_account_key"));
+/// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
+/// let account = AccountReference::with_authentication_key(endpoint, Secret::from("my_account_key"));
 /// let client = CosmosClientBuilder::new()
 ///     .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
 ///     .await?;
@@ -214,7 +214,7 @@ impl CosmosClientBuilder {
     /// # Arguments
     ///
     /// * `endpoints` - Ordered list of fallback endpoint URLs.
-    pub fn with_backup_endpoints(mut self, endpoints: Vec<crate::CosmosAccountEndpoint>) -> Self {
+    pub fn with_backup_endpoints(mut self, endpoints: Vec<crate::AccountEndpoint>) -> Self {
         self.backup_endpoints = endpoints.into_iter().map(|e| e.into_url()).collect();
         self
     }
@@ -265,11 +265,9 @@ impl CosmosClientBuilder {
 
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
-    /// The account reference bundles an endpoint and credential. You can create one using
-    /// [`CosmosAccountReference::with_credential()`] or [`CosmosAccountReference::with_master_key()`].
-    ///
-    /// You can also pass a tuple of `(CosmosAccountEndpoint, credential)` or `(Url, credential)`,
-    /// where `credential` is any type that implements `Into<CosmosCredential>`.
+    /// The account reference bundles an endpoint and credential. Construct one using
+    /// [`AccountReference::with_credential()`] or [`AccountReference::with_authentication_key()`]
+    /// (the latter requires the `key_auth` feature).
     ///
     /// # Arguments
     ///
@@ -280,18 +278,11 @@ impl CosmosClientBuilder {
     ///
     /// Returns an error if the client cannot be constructed.
     pub async fn build(
-        mut self,
-        account: impl Into<CosmosAccountReference>,
+        self,
+        account: AccountReference,
         routing_strategy: RoutingStrategy,
-    ) -> crate::CosmosResult<CosmosClient> {
-        // Apply the region selection strategy to internal options.
-        match routing_strategy {
-            RoutingStrategy::ProximityTo(region) => {
-                self.options.application_region = Some(region);
-            }
-        }
-
-        let (account_endpoint, credential) = account.into().into_parts();
+    ) -> crate::Result<CosmosClient> {
+        let (account_endpoint, credential) = account.into_parts();
         let endpoint = account_endpoint.into_url();
 
         // Clone credential for the driver before the SDK consumes it for auth policy.
@@ -304,20 +295,6 @@ impl CosmosClientBuilder {
         let driver_fi_rules: Vec<
             std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
         > = self.fault_injection_rules;
-
-        let preferred_regions = if let Some(ref region) = self.options.application_region {
-            crate::region_proximity::generate_preferred_region_list(region)
-                .map(|s| s.to_vec())
-                .unwrap_or_else(|| {
-                    tracing::warn!(
-                        region = %region,
-                        "unrecognized application region; falling back to account-defined region order"
-                    );
-                    Vec::new()
-                })
-        } else {
-            Vec::new()
-        };
 
         // Preserve the SDK's historical default: per-partition circuit breaker
         // (PPCB) is enabled unless the user explicitly opts out via
@@ -359,6 +336,12 @@ impl CosmosClientBuilder {
         }
         driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
 
+        // The wrapping-SDK identifier always reflects this crate, so requests
+        // can be attributed to `azure_data_cosmos` in addition to the driver.
+        driver_runtime_builder = driver_runtime_builder.with_wrapping_sdk_identifier(format!(
+            "azsdk-rust-cosmos/{}",
+            env!("CARGO_PKG_VERSION")
+        ));
         // Forward the user-agent suffix captured above to the driver runtime.
         if let Some(suffix) = driver_user_agent_suffix {
             driver_runtime_builder = driver_runtime_builder.with_user_agent_suffix(suffix);
@@ -384,17 +367,14 @@ impl CosmosClientBuilder {
             driver_runtime_builder = driver_runtime_builder
                 .register_throughput_control_group(group)
                 .map_err(|e| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        format!("failed to register throughput control group: {e}"),
-                    )
+                    crate::DriverCosmosError::builder()
+                        .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
+                        .with_message(format!("failed to register throughput control group: {e}"))
+                        .build()
                 })?;
         }
         let driver_runtime = driver_runtime_builder.build().await?;
-        let driver_options =
-            azure_data_cosmos_driver::options::DriverOptions::builder(driver_account)
-                .with_preferred_regions(preferred_regions)
-                .build();
+        let driver_options = build_driver_options(driver_account, routing_strategy);
         let driver = driver_runtime
             .get_or_create_driver(driver_options.account().clone(), Some(driver_options))
             .await?;
@@ -403,6 +383,38 @@ impl CosmosClientBuilder {
             context: ClientContext { driver },
         })
     }
+}
+
+/// Builds [`DriverOptions`](azure_data_cosmos_driver::options::DriverOptions) for the given
+/// account and routing strategy.
+///
+/// The routing strategy is converted to an ordered preferred-regions list:
+///
+/// - [`RoutingStrategy::ProximityTo`] expands to a proximity-sorted list of all
+///   Azure regions, with the specified region first. An unrecognized region logs
+///   a warning and falls back to an empty list, which causes the driver to use
+///   the account's own region order.
+/// - [`RoutingStrategy::PreferredRegions`] passes the caller's list through unchanged.
+fn build_driver_options(
+    account: azure_data_cosmos_driver::models::AccountReference,
+    strategy: RoutingStrategy,
+) -> azure_data_cosmos_driver::options::DriverOptions {
+    let preferred_regions = match strategy {
+        RoutingStrategy::ProximityTo(region) =>
+            crate::region_proximity::generate_preferred_region_list(&region)
+                .map(|s| s.to_vec())
+                .unwrap_or_else(|| {
+                    tracing::warn!(
+                        region = %region,
+                        "unrecognized application region; falling back to account-defined region order"
+                    );
+                    Vec::new()
+                }),
+        RoutingStrategy::PreferredRegions(regions) => regions,
+    };
+    azure_data_cosmos_driver::options::DriverOptions::builder(account)
+        .with_preferred_regions(preferred_regions)
+        .build()
 }
 
 /// Builds a driver [`AccountReference`](azure_data_cosmos_driver::models::AccountReference)
@@ -424,15 +436,10 @@ fn build_driver_account(
     base.with_backup_endpoints(backup_endpoints)
 }
 
-// Unit tests for routing-strategy behavior were removed because
-// CosmosClient::builder().build() now eagerly creates a CosmosDriver,
-// which requires a real endpoint. Re-add once fault injection is linked
-// from the SDK to the driver.
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::UserAgentSuffix;
+    use crate::{Region, UserAgentSuffix};
 
     /// Reproduces the bug where `CosmosClientBuilder::with_user_agent_suffix`
     /// did not forward the suffix to the driver runtime, causing the
@@ -546,5 +553,53 @@ mod tests {
             Some(false),
             "explicit env-var opt-out must propagate to the driver runtime"
         );
+    }
+
+    fn test_account() -> azure_data_cosmos_driver::models::AccountReference {
+        azure_data_cosmos_driver::models::AccountReference::with_master_key(
+            "https://test.documents.azure.com/".parse().unwrap(),
+            "dGVzdA==",
+        )
+    }
+
+    /// `ProximityTo` a known region produces a non-empty preferred_regions list
+    /// with the source region first.
+    #[test]
+    fn proximity_to_known_region_starts_with_source() {
+        let opts = build_driver_options(
+            test_account(),
+            RoutingStrategy::ProximityTo(Region::EAST_US),
+        );
+        let regions = opts.preferred_regions();
+        assert!(
+            !regions.is_empty(),
+            "should produce a non-empty list for a known region"
+        );
+        assert_eq!(regions[0], Region::EAST_US, "source region should be first");
+    }
+
+    /// `ProximityTo` an unrecognized region falls back to an empty preferred_regions
+    /// list so the driver uses the account's own region order.
+    #[test]
+    fn proximity_to_unknown_region_returns_empty_list() {
+        let opts = build_driver_options(
+            test_account(),
+            RoutingStrategy::ProximityTo(Region::from("not-a-real-region")),
+        );
+        assert!(
+            opts.preferred_regions().is_empty(),
+            "unrecognized region should yield an empty list"
+        );
+    }
+
+    /// `PreferredRegions` passes the caller's list through to the driver options unchanged.
+    #[test]
+    fn preferred_regions_passes_through_unchanged() {
+        let input = vec![Region::WEST_US, Region::EAST_US, Region::WEST_EUROPE];
+        let opts = build_driver_options(
+            test_account(),
+            RoutingStrategy::PreferredRegions(input.clone()),
+        );
+        assert_eq!(opts.preferred_regions(), input.as_slice());
     }
 }

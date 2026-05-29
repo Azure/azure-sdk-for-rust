@@ -47,16 +47,16 @@ use std::fmt;
 /// HTTP status code.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct SubStatusCode(u32);
+pub struct SubStatusCode(u16);
 
 impl SubStatusCode {
     /// Creates a new `SubStatusCode` from a numeric value.
-    pub const fn new(code: u32) -> Self {
+    pub const fn new(code: u16) -> Self {
         Self(code)
     }
 
     /// Returns the numeric value of the sub-status code.
-    pub const fn value(&self) -> u32 {
+    pub const fn value(&self) -> u16 {
         self.0
     }
 
@@ -64,7 +64,7 @@ impl SubStatusCode {
     ///
     /// Returns `None` if parsing fails.
     pub fn from_header_value(s: &str) -> Option<Self> {
-        s.trim().parse::<u32>().ok().map(SubStatusCode)
+        s.trim().parse::<u16>().ok().map(SubStatusCode)
     }
 
     /// Returns the name of this sub-status code, if known.
@@ -467,6 +467,55 @@ impl SubStatusCode {
             20913 => Some("WriteRegionBarrierChangedMidOperation"),
             20914 => Some("RegionScopedSessionContainerInBadState"),
 
+            // Client SDK–synthesized error codes (20100-20349) — see
+            // the constants block on `impl SubStatusCode` for the full
+            // catalog and rationale.
+            20100 => Some("ClientPartitionKeyEmpty"),
+            20101 => Some("ClientPartitionKeyTooManyComponents"),
+            20102 => Some("ClientPrefixPartitionKeyRequiresMultiHash"),
+            20103 => Some("ClientNonMultiHashPartitionKeyArityMismatch"),
+            20104 => Some("ClientConnectionStringEmpty"),
+            20105 => Some("ClientConnectionStringMalformedPart"),
+            20106 => Some("ClientConnectionStringMissingAccountEndpoint"),
+            20107 => Some("ClientConnectionStringMissingAccountKey"),
+            20108 => Some("ClientInvalidAccountEndpointUrl"),
+            20109 => Some("ClientInvalidUrl"),
+            20110 => Some("ClientUnknownConsistencyLevel"),
+            20111 => Some("ClientUnknownPriorityLevel"),
+            20112 => Some("ClientFeedRangeRequiresFanoutPipeline"),
+            20113 => Some("ClientUnsupportedQueryFeature"),
+            20114 => Some("ClientQueryPlanInvalidTopOffsetLimit"),
+            20115 => Some("ClientQueryPlanComplexProjectionUnsupported"),
+            20116 => Some("ClientOpaqueTokenInvalidForCrossPartitionQuery"),
+            20117 => Some("ClientContinuationTokenNonQueryOperation"),
+            20150 => Some("ClientDuplicateFaultInjectionRuleId"),
+            20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
+            20152 => Some("ClientThroughputControlGroupNotRegistered"),
+            20153 => Some("ClientHttpClientConstructionFailed"),
+            20154 => Some("ClientReqwestFeatureRequired"),
+            20155 => Some("ClientRequestUrlMissingHost"),
+            20156 => Some("ClientRequestUrlMissingKnownPort"),
+            20157 => Some("ClientImdsHttpClientConstructionFailed"),
+            20158 => Some("ClientImdsReqwestFeatureRequired"),
+            20200 => Some("ClientContinuationTokenFetchInFlight"),
+            20201 => Some("ClientTopologyProviderMissing"),
+            20202 => Some("ClientDriverNotInitialized"),
+            20203 => Some("ClientContinuationTokenShapeMismatch"),
+            20204 => Some("ClientContinuationTokenUnexpectedNestedShape"),
+            20205 => Some("ClientContinuationTokenInvalidEpkRange"),
+            20206 => Some("ClientSplitRetriesExhausted"),
+            20207 => Some("ClientBuildResponseInvokedOnFailure"),
+            20208 => Some("ClientRootNodeCannotRequestSplit"),
+            20209 => Some("ClientCrossPartitionQueryRequiresContainerRef"),
+            20210 => Some("ClientSingletonOperationReturnedEmptyPage"),
+            20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
+            20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
+            20301 => Some("ClientNoThroughputOfferForResource"),
+            20302 => Some("ClientQueryPlanProducedEmptyRanges"),
+            20303 => Some("ServiceReturnedOfferWithoutId"),
+            20304 => Some("ClientThroughputPollerIncomplete"),
+            20305 => Some("ClientTopologyResolutionFailed"),
+
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
             21002 => Some("PartitionKeyRangeGoneExceededRetryLimit"),
@@ -497,6 +546,14 @@ impl SubStatusCode {
     // =========================================================================
     // Constants - organized by HTTP status code context
     // =========================================================================
+    //
+    // Many of the constants below mirror sub-status codes emitted by the
+    // Cosmos DB service and are exposed primarily as a documented catalog
+    // for pattern matching on responses; the Rust SDK itself does not
+    // synthesize most of them. Constants in the `CLIENT_*` / `SERVICE_*`
+    // / `TRANSPORT_*` / `AUTHENTICATION_*` / `SERIALIZATION_*` ranges
+    // (20100-20402) are SDK-synthesized and are the ones the driver may
+    // emit directly.
 
     // ----- General -----
 
@@ -598,9 +655,6 @@ impl SubStatusCode {
 
     /// Offer replace disabled for auto-scale offer (1015).
     pub const OFFER_REPLACE_DISABLED_AUTO_SCALE_OFFER: SubStatusCode = SubStatusCode(1015);
-
-    /// Client ID mismatch (1026).
-    pub const CLIENT_ID_MISMATCH: SubStatusCode = SubStatusCode(1026);
 
     /// Unique index re-index in progress (1027).
     pub const UNIQUE_INDEX_RE_INDEX_IN_PROGRESS: SubStatusCode = SubStatusCode(1027);
@@ -787,9 +841,6 @@ impl SubStatusCode {
     /// Prepare time limit exceeded (3207).
     pub const PREPARE_TIME_EXCEEDED: SubStatusCode = SubStatusCode(3207);
 
-    /// Client TCP channel full (3208).
-    pub const CLIENT_TCP_CHANNEL_FULL: SubStatusCode = SubStatusCode(3208);
-
     /// Stored procedure concurrency limit (3084).
     pub const STORED_PROCEDURE_CONCURRENCY: SubStatusCode = SubStatusCode(3084);
 
@@ -970,29 +1021,11 @@ impl SubStatusCode {
     /// Offer not configured (10004).
     pub const OFFER_NOT_CONFIGURED: SubStatusCode = SubStatusCode(10004);
 
-    /// Transport generated 410 (20001).
-    pub const TRANSPORT_GENERATED_410: SubStatusCode = SubStatusCode(20001);
-
-    /// Timeout generated 410 (20002).
-    pub const TIMEOUT_GENERATED_410: SubStatusCode = SubStatusCode(20002);
-
     /// Transport generated 503 (20003).
     pub const TRANSPORT_GENERATED_503: SubStatusCode = SubStatusCode(20003);
 
     /// Client generated 401 — authorization/signing failure (20401).
     pub const CLIENT_GENERATED_401: SubStatusCode = SubStatusCode(20401);
-
-    /// Client CPU overload (20004).
-    pub const CLIENT_CPU_OVERLOAD: SubStatusCode = SubStatusCode(20004);
-
-    /// Client thread starvation (20005).
-    pub const CLIENT_THREAD_STARVATION: SubStatusCode = SubStatusCode(20005);
-
-    /// Channel closed (20006).
-    pub const CHANNEL_CLOSED: SubStatusCode = SubStatusCode(20006);
-
-    /// Malformed continuation token (20007).
-    pub const MALFORMED_CONTINUATION_TOKEN: SubStatusCode = SubStatusCode(20007);
 
     /// Client operation timeout (20008).
     pub const CLIENT_OPERATION_TIMEOUT: SubStatusCode = SubStatusCode(20008);
@@ -1000,41 +1033,51 @@ impl SubStatusCode {
     /// Transit timeout (20911).
     pub const TRANSIT_TIMEOUT: SubStatusCode = SubStatusCode(20911);
 
-    /// Closed client (20912).
-    pub const CLOSED_CLIENT: SubStatusCode = SubStatusCode(20912);
+    // ----- Transport sub-status codes (20010-20015) -----
+    // Used directly by typed transport-error constructors (see
+    // `crate::error::Error::transport`) so upstream code can discriminate on
+    // `CosmosStatus` instead of downcasting through the source chain. The
+    // wrapped third-party error (`reqwest`/`hyper`/`h2`/`io`) is always
+    // preserved as the Cosmos error's `source` for callers that still want
+    // low-level detail.
+
+    /// Transport connection failed — TCP connect refused / reset before the
+    /// request reached the wire (20010).
+    pub const TRANSPORT_CONNECTION_FAILED: SubStatusCode = SubStatusCode(20010);
+
+    /// Generic transport I/O failure with no more specific discriminator
+    /// available (20011).
+    pub const TRANSPORT_IO_FAILED: SubStatusCode = SubStatusCode(20011);
+
+    /// DNS resolution failed for the target endpoint (20012). Best-effort
+    /// detection via `io::Error` / reqwest error inspection.
+    pub const TRANSPORT_DNS_FAILED: SubStatusCode = SubStatusCode(20012);
+
+    /// Failure while streaming or reading the response body (20014). Distinct
+    /// from a serde / JSON parse failure on already-buffered bytes.
+    pub const TRANSPORT_BODY_READ_FAILED: SubStatusCode = SubStatusCode(20014);
+
+    /// HTTP/2 protocol incompatibility — e.g. `HTTP_1_1_REQUIRED`,
+    /// `PROTOCOL_ERROR`, `FRAME_SIZE_ERROR` (20015). Used by the HTTP/2 →
+    /// HTTP/1.1 downgrade path so call-sites can check `status()` instead of
+    /// downcasting through the source chain for `h2::Error`.
+    pub const TRANSPORT_HTTP2_INCOMPATIBLE: SubStatusCode = SubStatusCode(20015);
+
+    // ----- Serialization boundary mapping code (20020) -----
+
+    /// Response body failed to deserialize (20020). Used by
+    /// `crate::error::Error::serialization`.
+    pub const SERIALIZATION_RESPONSE_BODY_INVALID: SubStatusCode = SubStatusCode(20020);
+
+    // ----- Authentication boundary mapping code (20402) -----
+
+    /// Credential / AAD token acquisition failed before the request was
+    /// signed (20402). Distinct from [`SubStatusCode::CLIENT_GENERATED_401`]
+    /// which means the SDK synthesized a 401 itself; this one means the
+    /// credential provider call failed.
+    pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: SubStatusCode = SubStatusCode(20402);
 
     // ----- SDK Server-side codes (21xxx) -----
-
-    /// Name cache stale exceeded retry limit (21001).
-    pub const NAME_CACHE_STALE_EXCEEDED_RETRY_LIMIT: SubStatusCode = SubStatusCode(21001);
-
-    /// Partition key range gone exceeded retry limit (21002).
-    pub const PARTITION_KEY_RANGE_GONE_EXCEEDED_RETRY_LIMIT: SubStatusCode = SubStatusCode(21002);
-
-    /// Completing split exceeded retry limit (21003).
-    pub const COMPLETING_SPLIT_EXCEEDED_RETRY_LIMIT: SubStatusCode = SubStatusCode(21003);
-
-    /// Completing partition migration exceeded retry limit (21004).
-    pub const COMPLETING_PARTITION_MIGRATION_EXCEEDED_RETRY_LIMIT: SubStatusCode =
-        SubStatusCode(21004);
-
-    /// Server generated 410 (21005).
-    pub const SERVER_GENERATED_410: SubStatusCode = SubStatusCode(21005);
-
-    /// Global strong write barrier not met (21006).
-    pub const GLOBAL_STRONG_WRITE_BARRIER_NOT_MET: SubStatusCode = SubStatusCode(21006);
-
-    /// Read quorum not met (21007).
-    pub const READ_QUORUM_NOT_MET: SubStatusCode = SubStatusCode(21007);
-
-    /// Server generated 503 (21008).
-    pub const SERVER_GENERATED_503: SubStatusCode = SubStatusCode(21008);
-
-    /// No valid store response (21009).
-    pub const NO_VALID_STORE_RESPONSE: SubStatusCode = SubStatusCode(21009);
-
-    /// Server generated 408 (21010).
-    pub const SERVER_GENERATED_408: SubStatusCode = SubStatusCode(21010);
 
     /// Server barrier throttled (21011).
     pub const SERVER_BARRIER_THROTTLED: SubStatusCode = SubStatusCode(21011);
@@ -1135,6 +1178,233 @@ impl SubStatusCode {
 
     /// Collection truncate not allowed during merge (6300).
     pub const COLLECTION_TRUNCATE_NOT_ALLOWED_DURING_MERGE: SubStatusCode = SubStatusCode(6300);
+
+    // =========================================================================
+    // Client SDK–synthesized error codes (20100-20349)
+    // =========================================================================
+    //
+    // These sub-status codes are emitted **only** by the Rust SDK / driver
+    // when it detects a problem itself — never by the Cosmos DB service.
+    // Their presence on a `CosmosError` therefore unambiguously means
+    // "this error originated client-side". Each constant maps to a
+    // single, specific call site so an operator looking at a customer
+    // report can pinpoint exactly which code path produced the error.
+    //
+    // Ranges:
+    //   * 20100-20149 — SDK input validation (caller passed bad input)
+    //   * 20150-20199 — SDK configuration / setup errors
+    //   * 20200-20249 — SDK internal invariants ("this can't happen")
+    //   * 20300-20349 — SDK-detected service contract violations
+
+    // ----- 20100-20149: SDK input validation -----
+
+    /// Partition key was supplied with zero components (20100).
+    pub const CLIENT_PARTITION_KEY_EMPTY: SubStatusCode = SubStatusCode(20100);
+
+    /// Partition key has more components than the container definition's
+    /// partition-key paths (20101).
+    pub const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: SubStatusCode = SubStatusCode(20101);
+
+    /// Prefix partition key supplied for a non-MultiHash (non-hierarchical)
+    /// container (20102).
+    pub const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: SubStatusCode = SubStatusCode(20102);
+
+    /// Non-MultiHash partition key supplied with a component count that
+    /// doesn't equal the definition's path count (20103).
+    pub const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: SubStatusCode =
+        SubStatusCode(20103);
+
+    /// Connection string is empty (20104).
+    pub const CLIENT_CONNECTION_STRING_EMPTY: SubStatusCode = SubStatusCode(20104);
+
+    /// Connection string contains a malformed `k=v` segment (20105).
+    pub const CLIENT_CONNECTION_STRING_MALFORMED_PART: SubStatusCode = SubStatusCode(20105);
+
+    /// Connection string is missing the required `AccountEndpoint` field
+    /// (20106).
+    pub const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT: SubStatusCode =
+        SubStatusCode(20106);
+
+    /// Connection string is missing the required `AccountKey` field (20107).
+    pub const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY: SubStatusCode = SubStatusCode(20107);
+
+    /// Account endpoint URL failed to parse via `url::ParseError` (20108).
+    pub const CLIENT_INVALID_ACCOUNT_ENDPOINT_URL: SubStatusCode = SubStatusCode(20108);
+
+    /// Generic `url::ParseError` surfaced through the SDK's
+    /// `From<url::ParseError>` impl (20109).
+    pub const CLIENT_INVALID_URL: SubStatusCode = SubStatusCode(20109);
+
+    /// Caller passed an unrecognized consistency-level string to
+    /// `FromStr` (20110).
+    pub const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: SubStatusCode = SubStatusCode(20110);
+
+    /// Caller passed an unrecognized priority-level string to `FromStr`
+    /// (20111).
+    pub const CLIENT_UNKNOWN_PRIORITY_LEVEL: SubStatusCode = SubStatusCode(20111);
+
+    /// A `FeedRange` was targeted at an operation that lacks the
+    /// cross-partition fan-out pipeline (20112).
+    pub const CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE: SubStatusCode = SubStatusCode(20112);
+
+    /// Query contains a feature the local query-plan generator does not
+    /// support (20113). Caller should fall back to the gateway query plan.
+    pub const CLIENT_UNSUPPORTED_QUERY_FEATURE: SubStatusCode = SubStatusCode(20113);
+
+    /// Query plan rejected an invalid `TOP` / `OFFSET` / `LIMIT` value
+    /// (20114).
+    pub const CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT: SubStatusCode = SubStatusCode(20114);
+
+    /// Query plan rejected a `GROUP BY` / `ORDER BY` expression that is
+    /// not a simple property path (20115). Caller should fall back to the
+    /// gateway query plan.
+    pub const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: SubStatusCode =
+        SubStatusCode(20115);
+
+    /// Opaque server continuation token was supplied to resume a
+    /// cross-partition query; the SDK requires its own structured token
+    /// (20116).
+    pub const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: SubStatusCode =
+        SubStatusCode(20116);
+
+    /// A continuation token was supplied for a non-query operation (or
+    /// the token itself targets a non-query operation) (20117).
+    /// Client-side continuation tokens are only valid for query
+    /// operations.
+    pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
+
+    // ----- 20150-20199: SDK configuration / setup errors -----
+
+    /// Two fault-injection rules registered with the same id (20150).
+    pub const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: SubStatusCode = SubStatusCode(20150);
+
+    /// Throughput-control-group registration failed at runtime
+    /// initialization (20151). Inner error is preserved as
+    /// `StdError::source`.
+    pub const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: SubStatusCode =
+        SubStatusCode(20151);
+
+    /// A throughput-control-group name was referenced from an operation
+    /// but is not present in the runtime registry (20152).
+    pub const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: SubStatusCode = SubStatusCode(20152);
+
+    /// HTTP client construction failed inside the driver's default
+    /// transport factory (20153). Inner reqwest / hyper error is
+    /// preserved as `StdError::source`.
+    pub const CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED: SubStatusCode = SubStatusCode(20153);
+
+    /// The default transport requires the `reqwest` cargo feature and it
+    /// was not enabled (20154).
+    pub const CLIENT_REQWEST_FEATURE_REQUIRED: SubStatusCode = SubStatusCode(20154);
+
+    /// Request URL had no host component (20155). Sharded transport
+    /// cannot key on host.
+    pub const CLIENT_REQUEST_URL_MISSING_HOST: SubStatusCode = SubStatusCode(20155);
+
+    /// Request URL had no recognizable port (default 443 / explicit port
+    /// missing or unsupported) (20156).
+    pub const CLIENT_REQUEST_URL_MISSING_KNOWN_PORT: SubStatusCode = SubStatusCode(20156);
+
+    /// IMDS HTTP client construction failed (20157). Inner error is
+    /// preserved as `StdError::source`.
+    pub const CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED: SubStatusCode = SubStatusCode(20157);
+
+    /// IMDS fetch requires the `reqwest` cargo feature and it was not
+    /// enabled (20158).
+    pub const CLIENT_IMDS_REQWEST_FEATURE_REQUIRED: SubStatusCode = SubStatusCode(20158);
+
+    // ----- 20200-20249: SDK internal invariants -----
+
+    /// `to_continuation_token` was called while a page fetch was
+    /// in-flight; the iterator's internal state could not be snapshotted
+    /// safely (20200).
+    pub const CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT: SubStatusCode = SubStatusCode(20200);
+
+    /// A pipeline asked for topology resolution but its plan was built
+    /// without a topology provider (20201).
+    pub const CLIENT_TOPOLOGY_PROVIDER_MISSING: SubStatusCode = SubStatusCode(20201);
+
+    /// An operation was issued on a `CosmosDriver` that had not been
+    /// initialized (20202).
+    pub const CLIENT_DRIVER_NOT_INITIALIZED: SubStatusCode = SubStatusCode(20202);
+
+    /// A trivial (single-partition) operation was resumed from a
+    /// continuation token whose shape doesn't match a trivial operation
+    /// (20203).
+    pub const CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH: SubStatusCode = SubStatusCode(20203);
+
+    /// A continuation token's nested `SequentialDrain` shape contains an
+    /// unsupported pipeline node type (20204).
+    pub const CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE: SubStatusCode =
+        SubStatusCode(20204);
+
+    /// A continuation token's encoded EPK range is invalid (min > max)
+    /// (20205).
+    pub const CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE: SubStatusCode = SubStatusCode(20205);
+
+    /// `SequentialDrain` exhausted its split-retry budget without
+    /// converging on a stable topology (20206).
+    pub const CLIENT_SPLIT_RETRIES_EXHAUSTED: SubStatusCode = SubStatusCode(20206);
+
+    /// `build_cosmos_response` was invoked on a non-success operation
+    /// result (20207). Indicates a pipeline-stage routing bug.
+    pub const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: SubStatusCode = SubStatusCode(20207);
+
+    /// A pipeline root node requested `SplitRequired`; splits must be
+    /// handled by a parent node (20208).
+    pub const CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT: SubStatusCode = SubStatusCode(20208);
+
+    /// A cross-partition query plan was attempted without a container
+    /// reference (20209).
+    pub const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: SubStatusCode =
+        SubStatusCode(20209);
+
+    /// A singleton operation returned an empty page (20210). The
+    /// singleton-execution path expects exactly one result page.
+    pub const CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE: SubStatusCode = SubStatusCode(20210);
+
+    /// `compute_range` was invoked with an empty partition-key value
+    /// list (20211).
+    pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode =
+        SubStatusCode(20211);
+
+    // ----- 20300-20349: SDK-detected service contract violations -----
+
+    /// The supplied session-token feed ranges contain no overlap with
+    /// the target feed range, typically because the underlying partition
+    /// has split / merged (20300). Paired with HTTP 410 Gone.
+    pub const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: SubStatusCode =
+        SubStatusCode(20300);
+
+    /// The throughput-offers query returned no offer for the requested
+    /// resource (20301). Typically the resource doesn't support
+    /// throughput (serverless / shared throughput). Paired with HTTP 404.
+    pub const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: SubStatusCode = SubStatusCode(20301);
+
+    /// The query-plan / routing-map resolution produced an empty set of
+    /// partition ranges to query (20302). Paired with HTTP 500.
+    pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: SubStatusCode = SubStatusCode(20302);
+
+    /// The service returned a throughput offer with an empty `id` field
+    /// (20303). A broken server invariant — the SDK cannot issue a
+    /// follow-up replace without the offer id. Paired with HTTP 500.
+    pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: SubStatusCode = SubStatusCode(20303);
+
+    /// The async throughput-replace poller's underlying stream ended
+    /// without yielding any response (20304). Paired with HTTP 408
+    /// because the throughput-replace operation has no service SLA on
+    /// completion time — the most informative thing the SDK can
+    /// surface is "the operation didn't complete in the time you were
+    /// willing to wait", which `408 RequestTimeout` already conveys to
+    /// callers.
+    pub const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: SubStatusCode = SubStatusCode(20304);
+
+    /// The partition-key-range cache could not resolve any ranges for
+    /// the target feed range (20305). The underlying pk-range fetch
+    /// either returned no result or produced an empty set, so the SDK
+    /// has no routing information for the operation. Paired with HTTP
+    /// 503 — an internal client-side condition, not a transport failure.
+    pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
 }
 
 impl Default for SubStatusCode {
@@ -1163,13 +1433,13 @@ impl fmt::Display for SubStatusCode {
     }
 }
 
-impl From<u32> for SubStatusCode {
-    fn from(value: u32) -> Self {
+impl From<u16> for SubStatusCode {
+    fn from(value: u16) -> Self {
         SubStatusCode(value)
     }
 }
 
-impl From<SubStatusCode> for u32 {
+impl From<SubStatusCode> for u16 {
     fn from(code: SubStatusCode) -> Self {
         code.0
     }
@@ -1227,7 +1497,7 @@ impl CosmosStatus {
     }
 
     /// Sets the sub-status code on this `CosmosStatus`, returning the modified value.
-    pub fn with_sub_status(mut self, sub_status_code: u32) -> Self {
+    pub fn with_sub_status(mut self, sub_status_code: u16) -> Self {
         self.sub_status = Some(SubStatusCode::new(sub_status_code));
         self
     }
@@ -1265,9 +1535,76 @@ impl CosmosStatus {
         u16::from(self.status_code) == 410
     }
 
-    /// Returns `true` if this is an HTTP 404 Not Found response.
+    /// Returns `true` if this is a "clean" HTTP 404 Not Found response — that
+    /// is, status code 404 with either no sub-status or sub-status `0`
+    /// (`UNKNOWN`).
+    ///
+    /// Non-zero sub-statuses on 404 carry meaningfully different semantics
+    /// (e.g. `1002` `READ_SESSION_NOT_AVAILABLE` is a transient session-
+    /// consistency signal, `1003` `OWNER_RESOURCE_NOT_FOUND` indicates the
+    /// parent database/container is missing, etc.) and would be misleading
+    /// to surface as a generic "not found". Callers wanting to detect those
+    /// should match the corresponding [`CosmosStatus`] predicate or constant
+    /// explicitly.
     pub fn is_not_found(&self) -> bool {
         u16::from(self.status_code) == 404
+            && self.sub_status.is_none_or(|s| s == SubStatusCode::UNKNOWN)
+    }
+
+    /// Returns `true` if this is an HTTP 409 Conflict response.
+    pub fn is_conflict(&self) -> bool {
+        u16::from(self.status_code) == 409
+    }
+
+    /// Returns `true` if this is an HTTP 412 Precondition Failed response.
+    pub fn is_precondition_failed(&self) -> bool {
+        u16::from(self.status_code) == 412
+    }
+
+    /// Returns `true` if this is an HTTP 408 (request timeout) response —
+    /// covers both a service-side timeout and a synthetic client-side
+    /// end-to-end timeout (`408 / 20008`).
+    pub fn is_timeout(&self) -> bool {
+        u16::from(self.status_code) == 408
+    }
+
+    /// Returns `true` if this is an HTTP 400 (bad request) response.
+    pub fn is_bad_request(&self) -> bool {
+        u16::from(self.status_code) == 400
+    }
+
+    /// Returns `true` if this is an HTTP 401 (unauthorized) response —
+    /// covers both a service-side 401 and the SDK-synthesized
+    /// `CLIENT_GENERATED_401` / `AUTHENTICATION_TOKEN_ACQUISITION_FAILED`.
+    pub fn is_unauthorized(&self) -> bool {
+        u16::from(self.status_code) == 401
+    }
+
+    /// Returns `true` if this is an HTTP 403 (forbidden) response. Use
+    /// [`is_write_forbidden`](Self::is_write_forbidden) for the specific
+    /// 403 / 3 case that indicates the region is not the write region.
+    pub fn is_forbidden(&self) -> bool {
+        u16::from(self.status_code) == 403
+    }
+
+    /// Returns `true` if this is an HTTP 503 (service unavailable) response
+    /// — covers both a service-side 503 and synthetic transport-generated
+    /// 503s. Use [`is_transport_generated_503`](Self::is_transport_generated_503)
+    /// to detect the synthetic case specifically.
+    pub fn is_service_unavailable(&self) -> bool {
+        u16::from(self.status_code) == 503
+    }
+
+    /// Returns `true` if the error is generally considered transient and could
+    /// reasonably be retried by a higher layer.
+    ///
+    /// The categorical retry-trigger set is `408 / 429 / 449 / 503`, which
+    /// covers both real service responses (e.g. a service-side 503) and the
+    /// SDK's synthetic transport-generated codes (`TRANSPORT_GENERATED_503`,
+    /// `CLIENT_OPERATION_TIMEOUT` on `408`, etc.) since both share the same
+    /// HTTP status code by construction.
+    pub fn is_transient(&self) -> bool {
+        matches!(u16::from(self.status_code), 408 | 429 | 449 | 503)
     }
 
     /// Returns `true` if this is a write-forbidden error (HTTP 403, sub-status 3).
@@ -1286,6 +1623,19 @@ impl CosmosStatus {
     pub fn is_partition_key_range_gone(&self) -> bool {
         u16::from(self.status_code) == 410
             && self.sub_status == Some(SubStatusCode::PARTITION_KEY_RANGE_GONE)
+    }
+
+    /// Returns `true` if this is an HTTP 410 caused by partition topology changing.
+    pub(crate) fn is_partition_topology_change(&self) -> bool {
+        u16::from(self.status_code) == 410
+            && matches!(
+                self.sub_status,
+                Some(
+                    SubStatusCode::PARTITION_KEY_RANGE_GONE
+                        | SubStatusCode::COMPLETING_SPLIT
+                        | SubStatusCode::COMPLETING_PARTITION_MIGRATION
+                )
+            )
     }
 
     /// Returns `true` if this indicates a transport-generated 503 (client-side).
@@ -1345,6 +1695,66 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_GENERATED_401),
     };
 
+    /// Transport connection failed (HTTP 503, sub-status 20010).
+    pub const TRANSPORT_CONNECTION_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::ServiceUnavailable,
+        sub_status: Some(SubStatusCode::TRANSPORT_CONNECTION_FAILED),
+    };
+
+    /// Generic transport I/O failure (HTTP 503, sub-status 20011).
+    pub const TRANSPORT_IO_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::ServiceUnavailable,
+        sub_status: Some(SubStatusCode::TRANSPORT_IO_FAILED),
+    };
+
+    /// DNS resolution failed (HTTP 503, sub-status 20012).
+    pub const TRANSPORT_DNS_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::ServiceUnavailable,
+        sub_status: Some(SubStatusCode::TRANSPORT_DNS_FAILED),
+    };
+
+    /// Response body read failure (HTTP 503, sub-status 20014).
+    pub const TRANSPORT_BODY_READ_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::ServiceUnavailable,
+        sub_status: Some(SubStatusCode::TRANSPORT_BODY_READ_FAILED),
+    };
+
+    /// HTTP/2 incompatibility — caller should downgrade to HTTP/1.1
+    /// (HTTP 503, sub-status 20015).
+    pub const TRANSPORT_HTTP2_INCOMPATIBLE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::ServiceUnavailable,
+        sub_status: Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE),
+    };
+
+    /// Response body failed to deserialize (HTTP 500, sub-status 20020).
+    pub const SERIALIZATION_RESPONSE_BODY_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID),
+    };
+
+    /// AAD / credential provider token acquisition failed
+    /// (HTTP 401, sub-status 20402).
+    pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::Unauthorized,
+        sub_status: Some(SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED),
+    };
+
+    // ----- 400: Bad Request -----
+
+    /// Cross-partition query not servable by the client
+    /// (HTTP 400, sub-status 1004).
+    ///
+    /// The service rejected the query because it requires client-side
+    /// features the calling SDK does not support (e.g. cross-partition
+    /// `ORDER BY`, aggregates, or other features that need a query plan
+    /// the SDK cannot execute). Callers should upgrade the SDK to a
+    /// version that implements the requested features, or rewrite the
+    /// query.
+    pub const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CROSS_PARTITION_QUERY_NOT_SERVABLE),
+    };
+
     // ----- 404: Not Found -----
 
     /// Read session not available (HTTP 404, sub-status 1002).
@@ -1402,6 +1812,317 @@ impl CosmosStatus {
         status_code: StatusCode::TooManyRequests,
         sub_status: Some(SubStatusCode::RU_BUDGET_EXCEEDED),
     };
+
+    // ----- Client SDK–synthesized statuses (20100-20349) -----
+    //
+    // Convenience constants pairing each `CLIENT_*` `SubStatusCode` with
+    // the canonical HTTP status code for that error. See the
+    // `SubStatusCode` constants for the per-code rationale and call site
+    // mapping.
+
+    // Input validation (HTTP 400, sub-status 20100-20149)
+
+    /// 400 / 20100 — partition key was supplied with zero components.
+    pub const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_PARTITION_KEY_EMPTY),
+    };
+
+    /// 400 / 20101 — partition key has more components than the container
+    /// definition's paths.
+    pub const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS),
+    };
+
+    /// 400 / 20102 — prefix partition key supplied for a non-MultiHash
+    /// container.
+    pub const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH),
+    };
+
+    /// 400 / 20103 — non-MultiHash partition key supplied with the wrong
+    /// number of components.
+    pub const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH),
+    };
+
+    /// 400 / 20104 — connection string is empty.
+    pub const CLIENT_CONNECTION_STRING_EMPTY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CONNECTION_STRING_EMPTY),
+    };
+
+    /// 400 / 20105 — connection string contains a malformed `k=v` segment.
+    pub const CLIENT_CONNECTION_STRING_MALFORMED_PART: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CONNECTION_STRING_MALFORMED_PART),
+    };
+
+    /// 400 / 20106 — connection string is missing `AccountEndpoint`.
+    pub const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT),
+    };
+
+    /// 400 / 20107 — connection string is missing `AccountKey`.
+    pub const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY),
+    };
+
+    /// 400 / 20108 — account endpoint URL failed to parse.
+    pub const CLIENT_INVALID_ACCOUNT_ENDPOINT_URL: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL),
+    };
+
+    /// 400 / 20109 — generic `url::ParseError` surfaced through the SDK's
+    /// `From<url::ParseError>` impl.
+    pub const CLIENT_INVALID_URL: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_INVALID_URL),
+    };
+
+    /// 400 / 20110 — unrecognized consistency level string in `FromStr`.
+    pub const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_UNKNOWN_CONSISTENCY_LEVEL),
+    };
+
+    /// 400 / 20111 — unrecognized priority level string in `FromStr`.
+    pub const CLIENT_UNKNOWN_PRIORITY_LEVEL: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_UNKNOWN_PRIORITY_LEVEL),
+    };
+
+    /// 400 / 20112 — `FeedRange` targeting requires a fan-out pipeline.
+    pub const CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE),
+    };
+
+    /// 400 / 20113 — query contains an unsupported feature; fall back to
+    /// the gateway query plan.
+    pub const CLIENT_UNSUPPORTED_QUERY_FEATURE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_UNSUPPORTED_QUERY_FEATURE),
+    };
+
+    /// 400 / 20114 — invalid `TOP` / `OFFSET` / `LIMIT` clause value.
+    pub const CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT),
+    };
+
+    /// 400 / 20115 — `GROUP BY` / `ORDER BY` expression is not a simple
+    /// property path; fall back to the gateway query plan.
+    pub const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED),
+    };
+
+    /// 400 / 20116 — opaque server continuation token used to resume a
+    /// cross-partition query.
+    pub const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY),
+    };
+
+    /// 400 / 20117 — continuation token supplied for a non-query
+    /// operation. Client-side continuation tokens are only valid for
+    /// query operations.
+    pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
+    };
+
+    // Configuration / setup (HTTP 400, sub-status 20150-20199)
+
+    /// 400 / 20150 — duplicate fault-injection rule id.
+    pub const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID),
+    };
+
+    /// 400 / 20151 — throughput-control-group registration failed.
+    pub const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED),
+    };
+
+    /// 400 / 20152 — throughput-control-group name not registered.
+    pub const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED),
+    };
+
+    /// 400 / 20153 — default HTTP client construction failed.
+    pub const CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED),
+    };
+
+    /// 400 / 20154 — `reqwest` cargo feature required but not enabled.
+    pub const CLIENT_REQWEST_FEATURE_REQUIRED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_REQWEST_FEATURE_REQUIRED),
+    };
+
+    /// 400 / 20155 — request URL has no host component.
+    pub const CLIENT_REQUEST_URL_MISSING_HOST: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_REQUEST_URL_MISSING_HOST),
+    };
+
+    /// 400 / 20156 — request URL has no recognizable port.
+    pub const CLIENT_REQUEST_URL_MISSING_KNOWN_PORT: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_REQUEST_URL_MISSING_KNOWN_PORT),
+    };
+
+    /// 400 / 20157 — IMDS HTTP client construction failed.
+    pub const CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED),
+    };
+
+    /// 400 / 20158 — IMDS fetch requires the `reqwest` cargo feature.
+    pub const CLIENT_IMDS_REQWEST_FEATURE_REQUIRED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED),
+    };
+
+    // Internal invariants (HTTP 500, sub-status 20200-20249)
+
+    /// 500 / 20200 — `to_continuation_token` called while a page fetch
+    /// was in-flight.
+    pub const CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT),
+    };
+
+    /// 500 / 20201 — topology resolution requested without a topology
+    /// provider on the plan.
+    pub const CLIENT_TOPOLOGY_PROVIDER_MISSING: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_PROVIDER_MISSING),
+    };
+
+    /// 500 / 20202 — operation issued on an uninitialized driver.
+    pub const CLIENT_DRIVER_NOT_INITIALIZED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_DRIVER_NOT_INITIALIZED),
+    };
+
+    /// 500 / 20203 — trivial-operation resume from a non-trivial
+    /// continuation token shape.
+    pub const CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH),
+    };
+
+    /// 500 / 20204 — `SequentialDrain` nested node is of an unsupported
+    /// type.
+    pub const CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE),
+    };
+
+    /// 500 / 20205 — continuation token's EPK range is invalid (min > max).
+    pub const CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
+    };
+
+    /// 500 / 20206 — `SequentialDrain` exhausted its split-retry budget.
+    pub const CLIENT_SPLIT_RETRIES_EXHAUSTED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_SPLIT_RETRIES_EXHAUSTED),
+    };
+
+    /// 500 / 20207 — `build_cosmos_response` invoked on a non-success
+    /// operation result.
+    pub const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE),
+    };
+
+    /// 500 / 20208 — root pipeline node requested a `SplitRequired`.
+    pub const CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT),
+    };
+
+    /// 500 / 20209 — cross-partition query plan attempted without a
+    /// container reference.
+    pub const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF),
+    };
+
+    /// 500 / 20210 — singleton operation returned an empty page.
+    pub const CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE),
+    };
+
+    /// 500 / 20211 — `compute_range` invoked with an empty partition-key
+    /// value list.
+    pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY),
+    };
+
+    // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
+
+    /// 410 / 20300 — the supplied session-token feed ranges contain no
+    /// overlap with the target feed range (partition has split / merged).
+    pub const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::Gone,
+        sub_status: Some(SubStatusCode::CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN),
+    };
+
+    /// 404 / 20301 — throughput-offers query returned no offer for the
+    /// requested resource.
+    pub const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::NotFound,
+        sub_status: Some(SubStatusCode::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE),
+    };
+
+    /// 500 / 20302 — query plan / routing-map resolution produced an
+    /// empty set of partition ranges.
+    pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES),
+    };
+
+    /// 500 / 20303 — the service returned a throughput offer with an
+    /// empty `id` field, violating its own contract.
+    pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_RETURNED_OFFER_WITHOUT_ID),
+    };
+
+    /// 408 / 20304 — the async throughput-replace poller's underlying
+    /// stream ended without yielding any response. Throughput replace
+    /// has no service SLA on completion time, so the SDK surfaces this
+    /// as a timeout-like condition rather than a transport failure.
+    pub const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::RequestTimeout,
+        sub_status: Some(SubStatusCode::CLIENT_THROUGHPUT_POLLER_INCOMPLETE),
+    };
+
+    /// 503 / 20305 — the partition-key-range cache could not resolve
+    /// any ranges for the target feed range. The pk-range fetch either
+    /// returned no result or produced an empty set, leaving the SDK
+    /// without routing information.
+    pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::ServiceUnavailable,
+        sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
+    };
 }
 
 impl fmt::Debug for CosmosStatus {
@@ -1409,9 +2130,9 @@ impl fmt::Debug for CosmosStatus {
         let status_u16: u16 = self.status_code.into();
         match (self.sub_status, self.name()) {
             (Some(sub), Some(name)) => {
-                write!(f, "CosmosStatus({}/{} {})", status_u16, sub.value(), name)
+                write!(f, "CosmosStatus({}/{} {})", status_u16, sub.value(), name,)
             }
-            (Some(sub), None) => write!(f, "CosmosStatus({}/{})", status_u16, sub.value()),
+            (Some(sub), None) => write!(f, "CosmosStatus({}/{})", status_u16, sub.value(),),
             (None, _) => write!(f, "CosmosStatus({})", status_u16),
         }
     }
@@ -1421,7 +2142,7 @@ impl fmt::Display for CosmosStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let status_u16: u16 = self.status_code.into();
         match (self.sub_status, self.name()) {
-            (Some(sub), Some(name)) => write!(f, "{}/{} ({})", status_u16, sub.value(), name),
+            (Some(sub), Some(name)) => write!(f, "{}/{} ({})", status_u16, sub.value(), name,),
             (Some(sub), None) => write!(f, "{}/{}", status_u16, sub.value()),
             (None, _) => write!(f, "{}", status_u16),
         }
@@ -1465,58 +2186,6 @@ impl Serialize for CosmosStatus {
         let mut s = serializer.serialize_struct("CosmosStatus", 1)?;
         s.serialize_field("status", &self.to_string())?;
         s.end()
-    }
-}
-
-impl<'de> Deserialize<'de> for CosmosStatus {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        struct Helper {
-            status: Option<String>,
-            status_code: Option<u16>,
-            sub_status_code: Option<u32>,
-        }
-        let h = Helper::deserialize(deserializer)?;
-
-        if let Some(status_code) = h.status_code {
-            return Ok(CosmosStatus {
-                status_code: StatusCode::from(status_code),
-                sub_status: h.sub_status_code.map(SubStatusCode::new),
-            });
-        }
-
-        if let Some(status) = h.status {
-            let normalized = status
-                .split_once(' ')
-                .map_or(status.as_str(), |(left, _)| left);
-            if let Some((status_code, sub_status_code)) = normalized.split_once('/') {
-                let status_code = status_code
-                    .parse::<u16>()
-                    .map_err(serde::de::Error::custom)?;
-                let sub_status_code = sub_status_code
-                    .parse::<u32>()
-                    .map_err(serde::de::Error::custom)?;
-                return Ok(CosmosStatus {
-                    status_code: StatusCode::from(status_code),
-                    sub_status: Some(SubStatusCode::new(sub_status_code)),
-                });
-            }
-
-            let status_code = normalized
-                .parse::<u16>()
-                .map_err(serde::de::Error::custom)?;
-            return Ok(CosmosStatus {
-                status_code: StatusCode::from(status_code),
-                sub_status: None,
-            });
-        }
-
-        Err(serde::de::Error::custom(
-            "CosmosStatus must include status or status_code",
-        ))
     }
 }
 
@@ -1595,8 +2264,8 @@ mod tests {
 
     #[test]
     fn display_unknown_sub_status() {
-        let status = CosmosStatus::new(StatusCode::Ok).with_sub_status(99999);
-        assert_eq!(format!("{}", status), "200/99999");
+        let status = CosmosStatus::new(StatusCode::Ok).with_sub_status(65000);
+        assert_eq!(format!("{}", status), "200/65000");
     }
 
     #[test]
@@ -1621,13 +2290,10 @@ mod tests {
     }
 
     #[test]
-    fn serialization_roundtrip() {
+    fn serializes_named_substatus() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
         let json = serde_json::to_string(&status).unwrap();
         assert!(json.contains("\"status\":\"429/3200 (RUBudgetExceeded)\""));
-
-        let deserialized: CosmosStatus = serde_json::from_str(&json).unwrap();
-        assert_eq!(deserialized, status);
     }
 
     #[test]
@@ -1675,14 +2341,14 @@ mod tests {
     }
 
     #[test]
-    fn from_u32() {
-        let code = SubStatusCode::from(3200u32);
+    fn from_u16() {
+        let code = SubStatusCode::from(3200u16);
         assert_eq!(code, SubStatusCode::RU_BUDGET_EXCEEDED);
     }
 
     #[test]
-    fn into_u32() {
-        let value: u32 = SubStatusCode::RU_BUDGET_EXCEEDED.into();
+    fn into_u16() {
+        let value: u16 = SubStatusCode::RU_BUDGET_EXCEEDED.into();
         assert_eq!(value, 3200);
     }
 
@@ -1694,8 +2360,8 @@ mod tests {
 
     #[test]
     fn display_unknown_code() {
-        let code = SubStatusCode::new(99999);
-        assert_eq!(format!("{}", code), "99999");
+        let code = SubStatusCode::new(65000);
+        assert_eq!(format!("{}", code), "65000");
     }
 
     #[test]
@@ -1717,8 +2383,8 @@ mod tests {
 
     #[test]
     fn debug_unknown_code() {
-        let code = SubStatusCode::new(99999);
-        assert_eq!(format!("{:?}", code), "SubStatusCode(99999)");
+        let code = SubStatusCode::new(65000);
+        assert_eq!(format!("{:?}", code), "SubStatusCode(65000)");
     }
 
     #[test]
@@ -1757,7 +2423,7 @@ mod tests {
 
     #[test]
     fn name_returns_none_for_unknown() {
-        assert_eq!(SubStatusCode::new(99999).name(None), None);
+        assert_eq!(SubStatusCode::new(65000).name(None), None);
     }
 
     #[test]
@@ -1839,31 +2505,7 @@ mod tests {
     #[test]
     fn sdk_client_codes() {
         // Verify SDK client-side codes match Java/NET
-        assert_eq!(SubStatusCode::TRANSPORT_GENERATED_410.value(), 20001);
-        assert_eq!(SubStatusCode::TIMEOUT_GENERATED_410.value(), 20002);
         assert_eq!(SubStatusCode::TRANSPORT_GENERATED_503.value(), 20003);
-        assert_eq!(SubStatusCode::CLIENT_CPU_OVERLOAD.value(), 20004);
-        assert_eq!(SubStatusCode::CLIENT_THREAD_STARVATION.value(), 20005);
         assert_eq!(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value(), 20008);
-    }
-
-    #[test]
-    fn sdk_server_codes() {
-        // Verify SDK server-side codes match Java/.NET
-        assert_eq!(
-            SubStatusCode::NAME_CACHE_STALE_EXCEEDED_RETRY_LIMIT.value(),
-            21001
-        );
-        assert_eq!(
-            SubStatusCode::PARTITION_KEY_RANGE_GONE_EXCEEDED_RETRY_LIMIT.value(),
-            21002
-        );
-        assert_eq!(SubStatusCode::SERVER_GENERATED_410.value(), 21005);
-        assert_eq!(
-            SubStatusCode::GLOBAL_STRONG_WRITE_BARRIER_NOT_MET.value(),
-            21006
-        );
-        assert_eq!(SubStatusCode::READ_QUORUM_NOT_MET.value(), 21007);
-        assert_eq!(SubStatusCode::SERVER_GENERATED_503.value(), 21008);
     }
 }

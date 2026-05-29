@@ -3,7 +3,6 @@
 
 use std::error::Error;
 
-use azure_core::http::StatusCode;
 use azure_data_cosmos::CosmosClient;
 use clap::{Args, Subcommand};
 
@@ -60,7 +59,7 @@ impl ReadCommand {
                     .read_item(&partition_key, &item_id, None)
                     .await;
                 match response {
-                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    Err(e) if e.status().is_not_found() => {
                         println!("Item not found!")
                     }
                     Ok(r) => {

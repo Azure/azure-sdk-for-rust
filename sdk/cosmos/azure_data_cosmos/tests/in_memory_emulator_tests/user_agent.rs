@@ -23,7 +23,7 @@ use std::sync::{Arc, Mutex};
 use azure_core::http::{headers::USER_AGENT, Method, Request, Url};
 use azure_data_cosmos::regions::Region;
 use azure_data_cosmos::{
-    CosmosAccountReference, CosmosClientBuilder, RoutingStrategy, UserAgentSuffix,
+    AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy, UserAgentSuffix,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
@@ -129,8 +129,8 @@ async fn build_client_with_provisioned_container(
         builder = builder.with_user_agent_suffix(s);
     }
 
-    let account = CosmosAccountReference::with_master_key(
-        EMULATOR_GATEWAY_URL.parse().unwrap(),
+    let account = AccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new(EMULATOR_KEY),
     );
 
@@ -395,4 +395,51 @@ async fn user_agent_suffix_appears_on_metadata_requests() {
         "expected every metadata request to carry user-agent suffix {SUFFIX:?}; \
          requests missing the suffix: {missing:?}",
     );
+}
+
+/// Verifies that the SDK-owned wrapping identifier `azsdk-rust-cosmos/<ver>`
+/// is prepended to the driver's own identifier on every captured request,
+/// regardless of whether a [`UserAgentSuffix`] is configured. This lets
+/// telemetry distinguish between callers using `azure_data_cosmos` and
+/// callers driving `azure_data_cosmos_driver` directly.
+#[tokio::test]
+async fn wrapping_sdk_identifier_appears_on_all_requests() {
+    // `env!("CARGO_PKG_VERSION")` here is the version of `azure_data_cosmos`,
+    // which is exactly what `cosmos_client_builder` reports to the driver via
+    // `with_wrapping_sdk_identifier`.
+    let expected_prefix = format!(
+        "azsdk-rust-cosmos/{} azsdk-rust-cosmos-driver/",
+        env!("CARGO_PKG_VERSION"),
+    );
+
+    for suffix in [None, Some(UserAgentSuffix::new("myapp-westus2"))] {
+        let observer = RecordingObserver::new();
+        let emulator = build_emulator(observer.clone());
+
+        // Exercise both data-plane and metadata code paths so we cover every
+        // pipeline that emits a User-Agent header.
+        perform_create_and_read(emulator.clone(), suffix.clone()).await;
+        perform_metadata_reads(emulator, suffix.clone()).await;
+
+        let snapshots = observer.snapshots();
+        assert!(
+            !snapshots.is_empty(),
+            "expected at least one captured request"
+        );
+
+        let missing: Vec<_> = snapshots
+            .iter()
+            .filter(|s| {
+                !s.user_agent
+                    .as_deref()
+                    .is_some_and(|ua| ua.starts_with(&expected_prefix))
+            })
+            .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "expected every captured request (suffix={suffix:?}) to start with {expected_prefix:?}; \
+             requests missing the prefix: {missing:?}",
+        );
+    }
 }

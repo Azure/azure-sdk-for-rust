@@ -14,16 +14,19 @@ use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
-    driver::routing::{
-        can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
-        partition_endpoint_state::HealthStatus, partition_key_range_id::PartitionKeyRangeId,
-        remove_probe_succeeded_entry, session_manager::SessionManager, AccountEndpointState,
-        CosmosEndpoint, LocationEffect, LocationSnapshot, LocationStateStore,
+    driver::{
+        routing::{
+            can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
+            partition_endpoint_state::HealthStatus, partition_key_range_id::PartitionKeyRangeId,
+            remove_probe_succeeded_entry, session_manager::SessionManager, AccountEndpointState,
+            CosmosEndpoint, LocationEffect, LocationSnapshot, LocationStateStore,
+        },
+        transport::CosmosTransport,
     },
-    driver::transport::CosmosTransport,
     models::{
-        request_header_names, AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse,
-        Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
+        cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
+        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel,
+        EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
     },
     options::{
         OperationOptionsView, ReadConsistencyStrategy, Region, ThroughputControlGroupSnapshot,
@@ -45,6 +48,80 @@ use crate::driver::transport::{
     AuthorizationContext,
 };
 
+/// Per-request overrides that take precedence over values from [`CosmosOperation`].
+///
+/// Used by the dataflow pipeline to inject routing and pagination state that
+/// varies per physical partition or per page, without mutating the shared
+/// `CosmosOperation`. Each field, when `Some`, emits the corresponding request
+/// header in [`OperationOverrides::apply_headers`].
+#[derive(Debug, Clone, Default)]
+pub(crate) struct OperationOverrides {
+    /// Feed range to constrain the request to (emits `x-ms-start-epk` / `x-ms-end-epk`).
+    pub feed_range: Option<crate::models::FeedRange>,
+
+    /// Physical partition key range ID (emits `x-ms-documentdb-partitionkeyrangeid`).
+    pub partition_key_range_id: Option<String>,
+
+    /// Logical partition key (emits `x-ms-documentdb-partitionkey`).
+    pub partition_key: Option<crate::models::PartitionKey>,
+
+    /// Continuation token for pagination (emits `x-ms-continuation`).
+    pub continuation: Option<String>,
+}
+
+impl OperationOverrides {
+    /// Applies the override headers to the given header map.
+    ///
+    /// Headers set here take precedence over any previously-set values for
+    /// the same header name (they overwrite on conflict).
+    pub fn apply_headers(
+        &self,
+        headers: &mut azure_core::http::headers::Headers,
+    ) -> crate::error::Result<()> {
+        if let Some(feed_range) = &self.feed_range {
+            if feed_range.min_inclusive() != &EffectivePartitionKey::MIN {
+                headers.insert(
+                    HeaderName::from_static(request_header_names::START_EPK),
+                    HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
+                );
+            }
+            if feed_range.max_exclusive() != &EffectivePartitionKey::MAX {
+                headers.insert(
+                    HeaderName::from_static(request_header_names::END_EPK),
+                    HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
+                );
+            }
+            headers.insert(
+                HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
+                HeaderValue::from_static("EffectivePartitionKey"),
+            );
+        }
+
+        if let Some(pk_range_id) = &self.partition_key_range_id {
+            headers.insert(
+                HeaderName::from_static(request_header_names::PARTITION_KEY_RANGE_ID),
+                HeaderValue::from(pk_range_id.clone()),
+            );
+        }
+
+        if let Some(pk) = &self.partition_key {
+            let pk_headers = pk.as_headers()?;
+            for (name, value) in pk_headers {
+                headers.insert(name, value);
+            }
+        }
+
+        if let Some(continuation) = &self.continuation {
+            headers.insert(
+                HeaderName::from_static(request_header_names::CONTINUATION),
+                HeaderValue::from(continuation.clone()),
+            );
+        }
+
+        Ok(())
+    }
+}
+
 /// Executes a Cosmos DB operation through the new pipeline architecture.
 ///
 /// This is the entry point called by `CosmosDriver::execute_operation`.
@@ -56,6 +133,7 @@ use crate::driver::transport::{
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     operation: &CosmosOperation,
+    overrides: OperationOverrides,
     options: &OperationOptionsView<'_>,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     location_state_store: &LocationStateStore,
@@ -71,34 +149,10 @@ pub(crate) async fn execute_operation_pipeline(
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<&ThroughputControlGroupSnapshot>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
-) -> azure_core::Result<CosmosResponse> {
+) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
-
-    // Helper: wrap an early-exit error with the in-progress diagnostics so
-    // callers can recover the per-attempt history via
-    // `CosmosError::diagnostics`. The builder is consumed; the borrow
-    // checker is satisfied because every use occurs on a diverging branch.
-    //
-    // **Macro hygiene:** `macro_rules!` does not alpha-rename identifiers
-    // captured from the enclosing function. Renaming the outer
-    // `diagnostics` binding silently breaks both macros.
-    macro_rules! return_with_diagnostics {
-        ($err:expr) => {{
-            let ctx = std::sync::Arc::new(diagnostics.complete());
-            return Err(crate::diagnostics::attach_diagnostics($err, ctx));
-        }};
-    }
-
-    macro_rules! try_with_diagnostics {
-        ($expr:expr) => {
-            match $expr {
-                Ok(v) => v,
-                Err(err) => return_with_diagnostics!(err),
-            }
-        };
-    }
 
     // Determine if session consistency is active for this operation.
     let session_capturing_disabled = options
@@ -220,7 +274,7 @@ pub(crate) async fn execute_operation_pipeline(
             throughput_control,
         };
         let mut transport_request =
-            try_with_diagnostics!(build_transport_request(operation, custom_headers, &ctx));
+            build_transport_request(operation, &overrides, custom_headers, &ctx)?;
 
         // HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §3.4:
         // Emit the `x-ms-cosmos-hub-region-processing-only: True` header
@@ -238,12 +292,10 @@ pub(crate) async fn execute_operation_pipeline(
             "transport request created");
 
         let selected_transport = match pipeline_type {
-            PipelineType::DataPlane => try_with_diagnostics!(
-                transport.get_dataplane_transport(account_endpoint, routing.transport_mode)
-            ),
-            PipelineType::Metadata => {
-                try_with_diagnostics!(transport.get_metadata_transport(account_endpoint))
+            PipelineType::DataPlane => {
+                transport.get_dataplane_transport(account_endpoint, routing.transport_mode)?
             }
+            PipelineType::Metadata => transport.get_metadata_transport(account_endpoint)?,
         };
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
@@ -351,9 +403,7 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                if let Err(err) = enforce_deadline_or_timeout(deadline, options, &mut diagnostics) {
-                    return_with_diagnostics!(err);
-                }
+                diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
             OperationAction::SessionRetry { new_state } => {
                 // Retry to a different region — the 404/1002 is likely a
@@ -368,11 +418,9 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                if let Err(err) = enforce_deadline_or_timeout(deadline, options, &mut diagnostics) {
-                    return_with_diagnostics!(err);
-                }
+                diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
-            OperationAction::Abort { error, status } => {
+            OperationAction::Abort { error } => {
                 // Flush deferred write-path effects if the abort status
                 // confirms the region processed the request (e.g., 409
                 // Conflict, 412 Precondition Failed). On non-confirming
@@ -380,7 +428,8 @@ pub(crate) async fn execute_operation_pipeline(
                 // the buffered effects are discarded — we never proved any
                 // region was actually healthy, so polluting routing state
                 // would be wrong.
-                let confirming = status.as_ref().is_some_and(is_region_confirming_status);
+                let cosmos_status = error.status();
+                let confirming = is_region_confirming_status(&cosmos_status);
                 if confirming {
                     flush_pending_write_effects(&mut retry_state, location_state_store).await;
                 } else {
@@ -389,7 +438,7 @@ pub(crate) async fn execute_operation_pipeline(
 
                 tracing::error!(
                     activity_id = %activity_id,
-                    status = ?status,
+                    status = ?cosmos_status,
                     error = %error,
                     operation_type = ?operation.operation_type(),
                     resource_type = ?operation.resource_type(),
@@ -400,13 +449,19 @@ pub(crate) async fn execute_operation_pipeline(
                     pk_range_id = ?retry_state.partition_key_range_id,
                     "operation aborted",
                 );
-                if let Some(cosmos_status) = status {
-                    diagnostics.set_operation_status(
-                        cosmos_status.status_code(),
-                        cosmos_status.sub_status(),
-                    );
-                }
-                return_with_diagnostics!(error);
+                diagnostics
+                    .set_operation_status(cosmos_status.status_code(), cosmos_status.sub_status());
+                // Graft the completed operation diagnostics (retry history,
+                // region attempts, per-request events) onto the error before
+                // returning. Without this, callers reading
+                // `error.diagnostics()` would see `None` on every aborted
+                // operation even though the pipeline tracked everything —
+                // the only path that attaches diagnostics in the
+                // non-aborted case is `build_cosmos_response`.
+                let diagnostics_ctx = Arc::new(diagnostics.complete());
+                return Err(crate::error::CosmosErrorBuilder::from_error(error)
+                    .with_diagnostics(diagnostics_ctx)
+                    .build());
             }
         }
     }
@@ -753,11 +808,14 @@ struct TransportRequestContext<'a> {
 /// Builds a `TransportRequest` from the operation and routing decision.
 ///
 /// If `resolved_session_token` is provided, it is added to the request headers.
+/// Override headers from `overrides` are applied after operation headers, so they
+/// take precedence.
 fn build_transport_request(
     operation: &CosmosOperation,
+    overrides: &OperationOverrides,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     ctx: &TransportRequestContext<'_>,
-) -> azure_core::Result<TransportRequest> {
+) -> crate::error::Result<TransportRequest> {
     let paths = operation.compute_resource_paths();
     let url = {
         let mut base = ctx.routing.selected_url.clone();
@@ -799,54 +857,53 @@ fn build_transport_request(
         );
     }
 
-    // Add partition key headers
-    if let Some(pk) = operation.partition_key() {
-        let pk_headers = pk.as_headers()?;
-        for (name, value) in pk_headers {
-            headers.insert(name, value);
+    // Apply operation type-specific headers.
+    match operation.operation_type() {
+        OperationType::Upsert => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_UPSERT),
+                HeaderValue::from_static("true"),
+            );
         }
-    }
-
-    // Cosmos DB uses POST for both create and upsert; the service
-    // distinguishes them via this header.
-    if operation.operation_type() == OperationType::Upsert {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_UPSERT),
-            HeaderValue::from_static("true"),
-        );
-    }
-
-    // Cosmos DB queries are POST requests with a JSON body of shape
-    // `{"query": "...", "parameters": [...]}`. The service requires both the
-    // IsQuery flag and the query+json content type. Emitting these here
-    // (driven by OperationType::Query) means SDK callers and tests never need
-    // to put these well-known headers into `custom_headers`.
-    if operation.operation_type() == OperationType::Query {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_QUERY),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            azure_core::http::headers::CONTENT_TYPE,
-            HeaderValue::from_static(request_header_names::QUERY_CONTENT_TYPE),
-        );
-    }
-
-    // Cosmos DB uses POST for batch (same endpoint as create/upsert);
-    // the service requires these headers to process the request as a batch.
-    if operation.operation_type() == OperationType::Batch {
-        headers.insert(
-            HeaderName::from_static(request_header_names::IS_BATCH_REQUEST),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            HeaderName::from_static(request_header_names::BATCH_ATOMIC),
-            HeaderValue::from_static("True"),
-        );
-        headers.insert(
-            HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
-            HeaderValue::from_static("False"),
-        );
+        OperationType::Batch => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_BATCH_REQUEST),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::BATCH_ATOMIC),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::BATCH_CONTINUE_ON_ERROR),
+                HeaderValue::from_static("False"),
+            );
+        }
+        OperationType::Query | OperationType::SqlQuery => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(QUERY_CONTENT_TYPE),
+            );
+        }
+        OperationType::QueryPlan => {
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY),
+                HeaderValue::from_static("True"),
+            );
+            headers.insert(
+                azure_core::http::headers::CONTENT_TYPE,
+                HeaderValue::from_static(QUERY_CONTENT_TYPE),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::IS_QUERY_PLAN_REQUEST),
+                HeaderValue::from_static("True"),
+            );
+        }
+        _ => {}
     }
 
     // Add operation type header for fault injection rule matching
@@ -862,6 +919,10 @@ fn build_transport_request(
             headers.insert(FAULT_INJECTION_OPERATION, fault_op.as_str());
         }
     }
+
+    // Apply overrides — these take precedence over operation-level headers
+    // (e.g., an override partition key replaces the operation's partition key).
+    overrides.apply_headers(&mut headers)?;
 
     // Add resolved session token
     if let Some(token) = &ctx.resolved_session_token {
@@ -900,15 +961,10 @@ fn build_transport_request(
 }
 
 /// Builds a `CosmosResponse` from a successful `TransportResult`.
-///
-/// **Invariant:** must only be called after a `TransportOutcome::Success`
-/// gating check. Debug builds `debug_assert` this; release builds construct
-/// a synthetic error **with the in-progress diagnostics attached** so the
-/// rarest failure stays observable in production telemetry.
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
-) -> azure_core::Result<CosmosResponse> {
+) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         TransportOutcome::Success {
             status,
@@ -926,21 +982,13 @@ fn build_cosmos_response(
                 diagnostics_ctx,
             ))
         }
-        other => {
-            debug_assert!(
-                false,
-                "build_cosmos_response must only be called with TransportOutcome::Success; got {other}",
-            );
-            let err = azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
-                    "internal: build_cosmos_response called with non-success TransportOutcome ({other}); please file a bug",
-                ),
-            );
-            Err(crate::diagnostics::attach_diagnostics(
-                err,
-                Arc::new(diagnostics.complete()),
-            ))
+        _ => {
+            // This should only be called with a Complete(Success) result.
+            // Treat as a programmer-error invariant violation.
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE)
+                .with_message("build_cosmos_response called with non-success result")
+                .build())
         }
     }
 }
@@ -1127,17 +1175,27 @@ fn advance_to_next_attempt(
 ///
 /// On timeout, the diagnostics builder is updated with
 /// `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` so downstream telemetry
+/// Enforces the operation's end-to-end deadline, surfacing a typed
+/// `408 / CLIENT_OPERATION_TIMEOUT` error when exceeded so callers
 /// can distinguish a client-side end-to-end timeout from a service 408.
+///
+/// Takes the [`DiagnosticsContextBuilder`] by value so the timeout-error
+/// path can finalize diagnostics and graft them onto the synthesized
+/// error in one step (without that graft, callers reading
+/// `error.diagnostics()` would see `None` on every end-to-end-timeout
+/// outcome even though the pipeline tracked every attempt). The builder
+/// is returned unchanged on the happy path so the caller can keep
+/// mutating it on subsequent iterations.
 fn enforce_deadline_or_timeout(
     deadline: Option<Instant>,
     options: &OperationOptionsView<'_>,
-    diagnostics: &mut DiagnosticsContextBuilder,
-) -> azure_core::Result<()> {
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> Result<DiagnosticsContextBuilder, crate::error::CosmosError> {
     let Some(d) = deadline else {
-        return Ok(());
+        return Ok(diagnostics);
     };
     if Instant::now() < d {
-        return Ok(());
+        return Ok(diagnostics);
     }
 
     let timeout_duration = options
@@ -1149,10 +1207,17 @@ fn enforce_deadline_or_timeout(
         azure_core::http::StatusCode::RequestTimeout,
         Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
     );
-    Err(azure_core::Error::new(
-        azure_core::error::ErrorKind::Other,
-        format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-    ))
+    let diagnostics_ctx = Arc::new(diagnostics.complete());
+    Err(crate::error::CosmosError::builder()
+        .with_status(crate::models::CosmosStatus::from_parts(
+            azure_core::http::StatusCode::RequestTimeout,
+            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        ))
+        .with_message(format!(
+            "end-to-end operation timeout exceeded ({timeout_duration:?})"
+        ))
+        .with_diagnostics(diagnostics_ctx)
+        .build())
 }
 
 /// On a successful PPCB probe request, removes the `ProbeCandidate` entry
@@ -1208,6 +1273,7 @@ mod tests {
     use url::Url;
 
     use super::build_transport_request;
+    use super::OperationOverrides;
     use super::TransportRequestContext;
     use crate::{
         diagnostics::ExecutionContext,
@@ -1220,8 +1286,9 @@ mod tests {
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
-            ContainerReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey,
-            PartitionKeyDefinition, SystemProperties, ThroughputControlGroupName,
+            ContainerReference, CosmosOperation, DatabaseReference, EffectivePartitionKey,
+            FeedRange, ItemReference, PartitionKey, PartitionKeyDefinition, SystemProperties,
+            ThroughputControlGroupName,
         },
         options::{PriorityLevel, ThroughputControlGroupSnapshot},
     };
@@ -1267,6 +1334,80 @@ mod tests {
     }
 
     #[test]
+    fn apply_headers_pk_range_only_omits_read_key_type() {
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("0".to_string()),
+            ..Default::default()
+        };
+        let mut headers = azure_core::http::headers::Headers::new();
+        overrides
+            .apply_headers(&mut headers)
+            .expect("apply_headers should succeed");
+
+        assert_eq!(
+            headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::PARTITION_KEY_RANGE_ID
+                ))
+                .map(|s| s.to_string()),
+            Some("0".to_string())
+        );
+        assert!(
+            headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::READ_FEED_KEY_TYPE
+                ))
+                .is_none(),
+            "whole-PK-range targets must not emit x-ms-read-key-type"
+        );
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(request_header_names::START_EPK))
+            .is_none());
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(request_header_names::END_EPK))
+            .is_none());
+    }
+
+    #[test]
+    fn apply_headers_feed_range_emits_read_key_type_and_epk_bounds() {
+        let feed_range = FeedRange::new(
+            EffectivePartitionKey::from("10"),
+            EffectivePartitionKey::from("20"),
+        )
+        .unwrap();
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("pkrange".to_string()),
+            feed_range: Some(feed_range),
+            ..Default::default()
+        };
+        let mut headers = azure_core::http::headers::Headers::new();
+        overrides
+            .apply_headers(&mut headers)
+            .expect("apply_headers should succeed");
+
+        assert_eq!(
+            headers
+                .get_optional_str(&HeaderName::from_static(
+                    request_header_names::READ_FEED_KEY_TYPE
+                ))
+                .map(|s| s.to_string()),
+            Some("EffectivePartitionKey".to_string())
+        );
+        assert_eq!(
+            headers
+                .get_optional_str(&HeaderName::from_static(request_header_names::START_EPK))
+                .map(|s| s.to_string()),
+            Some("10".to_string())
+        );
+        assert_eq!(
+            headers
+                .get_optional_str(&HeaderName::from_static(request_header_names::END_EPK))
+                .map(|s| s.to_string()),
+            Some("20".to_string())
+        );
+    }
+
+    #[test]
     fn build_transport_request_feed_path_is_resolved() {
         let operation = CosmosOperation::read_all_databases(test_account());
 
@@ -1281,7 +1422,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs");
     }
@@ -1302,7 +1444,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
@@ -1323,7 +1466,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         let activity_header = request
             .headers
@@ -1348,8 +1492,12 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
         };
-        let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+        let overrides = OperationOverrides {
+            partition_key: Some(PartitionKey::from("pk1")),
+            ..Default::default()
+        };
+        let request = build_transport_request(&operation, &overrides, None, &ctx)
+            .expect("request should build");
 
         let partition_key_header = request
             .headers
@@ -1382,7 +1530,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(
             request.url.as_str(),
@@ -1412,7 +1561,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(
             request.url.as_str(),
@@ -1658,7 +1808,7 @@ mod tests {
     }
 
     mod should_capture_session_token_from_status_tests {
-        use azure_core::http::{headers::Headers, StatusCode};
+        use azure_core::http::StatusCode;
 
         use crate::{
             driver::pipeline::components::TransportOutcome,
@@ -1678,7 +1828,6 @@ mod tests {
         fn http_error_outcome(status: StatusCode) -> TransportOutcome {
             TransportOutcome::HttpError {
                 status: CosmosStatus::new(status),
-                headers: Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: Vec::new(),
                 request_sent: crate::diagnostics::RequestSentStatus::Sent,
@@ -2561,7 +2710,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         let is_upsert = request
             .headers
@@ -2593,7 +2743,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert!(
             request
@@ -2627,7 +2778,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert_eq!(
             request
@@ -2673,7 +2825,8 @@ mod tests {
             throughput_control: None,
         };
         let request =
-            build_transport_request(&operation, None, &ctx).expect("request should build");
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
 
         assert!(
             request
@@ -2710,7 +2863,9 @@ mod tests {
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
-        let request = build_transport_request(&operation, None, &ctx).unwrap();
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .unwrap();
 
         let priority = request
             .headers
@@ -2753,7 +2908,9 @@ mod tests {
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
-        let request = build_transport_request(&operation, None, &ctx).unwrap();
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .unwrap();
 
         let bucket = request
             .headers
@@ -2797,7 +2954,9 @@ mod tests {
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
-        let request = build_transport_request(&operation, None, &ctx).unwrap();
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .unwrap();
 
         assert_eq!(
             request.headers.get_optional_str(&HeaderName::from_static(
@@ -2815,15 +2974,19 @@ mod tests {
 
     #[test]
     fn build_transport_request_auto_emits_query_headers_for_query_operations() {
-        // Single-partition item query
-        let op = CosmosOperation::query_items(test_container(), PartitionKey::from("pk1"))
-            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
-        assert_query_headers_present(&op, "query_items");
+        let container = test_container();
+        let pk_def = container.partition_key_definition().clone();
 
-        // Cross-partition item query
-        let op = CosmosOperation::query_items_cross_partition(test_container())
+        // Single-partition item query (scoped to a logical partition via FeedRange)
+        let feed_range = FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
+        let op = CosmosOperation::query_items(container.clone(), Some(feed_range))
             .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
-        assert_query_headers_present(&op, "query_items_cross_partition");
+        assert_query_headers_present(&op, "query_items (single partition)");
+
+        // Cross-partition item query (full container via FeedRange::full)
+        let op = CosmosOperation::query_items(container, Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        assert_query_headers_present(&op, "query_items (cross partition)");
 
         // Offer query (used by find_offer / throughput poller path)
         let op = CosmosOperation::query_offers(test_account())
@@ -2845,7 +3008,8 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
         };
-        let req = build_transport_request(op, None, &ctx).expect("request should build");
+        let req = build_transport_request(op, &OperationOverrides::default(), None, &ctx)
+            .expect("request should build");
         assert_eq!(
             req.headers
                 .get_optional_str(&HeaderName::from_static(request_header_names::IS_QUERY)),
@@ -2855,7 +3019,7 @@ mod tests {
         assert_eq!(
             req.headers
                 .get_optional_str(&azure_core::http::headers::CONTENT_TYPE),
-            Some(request_header_names::QUERY_CONTENT_TYPE),
+            Some(crate::models::cosmos_headers::QUERY_CONTENT_TYPE),
             "{label}: Content-Type should be application/query+json"
         );
     }
@@ -2925,7 +3089,8 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
         };
-        build_transport_request(&operation, None, &ctx).expect("request should build")
+        build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+            .expect("request should build")
     }
 
     /// T-6 — When the latch is set on `retry_state`, the helper emits
@@ -3009,32 +3174,38 @@ mod tests {
     #[test]
     fn enforce_deadline_none_is_ok() {
         let options = empty_options_view();
-        let mut diagnostics = test_diagnostics();
-        let result = super::enforce_deadline_or_timeout(None, &options, &mut diagnostics);
+        let diagnostics = test_diagnostics();
+        let result = super::enforce_deadline_or_timeout(None, &options, diagnostics);
         assert!(result.is_ok());
     }
 
     #[test]
     fn enforce_deadline_in_future_is_ok() {
         let options = empty_options_view();
-        let mut diagnostics = test_diagnostics();
+        let diagnostics = test_diagnostics();
         let deadline = std::time::Instant::now() + Duration::from_secs(60);
-        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, diagnostics);
         assert!(result.is_ok());
     }
 
     #[test]
-    fn enforce_deadline_in_past_returns_timeout_error() {
+    fn enforce_deadline_in_past_returns_timeout_error_with_diagnostics() {
         let options = empty_options_view();
-        let mut diagnostics = test_diagnostics();
+        let diagnostics = test_diagnostics();
         let deadline = std::time::Instant::now() - Duration::from_millis(1);
-        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, diagnostics);
         let err = result.expect_err("past deadline should produce an error");
-        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
         let msg = err.to_string();
         assert!(
             msg.contains("end-to-end operation timeout exceeded"),
             "unexpected error message: {msg}"
+        );
+        // Diagnostics must be attached so callers reading
+        // `error.diagnostics()` on a timeout outcome get the
+        // pipeline's tracked retry history rather than `None`.
+        assert!(
+            err.diagnostics().is_some(),
+            "timeout error must carry finalized diagnostics"
         );
     }
 }

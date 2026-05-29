@@ -15,8 +15,8 @@ use std::sync::Arc;
 /// A read operation should succeed because the fault never fires.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -77,8 +77,8 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 /// Tests that a ServiceUnavailable fault with probability 1.0 causes read failures.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_service_unavailable_causes_failure() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -136,8 +136,8 @@ pub async fn fault_injection_service_unavailable_causes_failure() -> Result<(), 
 /// A rule targeting only ReadItem should not affect CreateItem operations.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -201,8 +201,8 @@ pub async fn fault_injection_operation_type_filter() -> Result<(), Box<dyn Error
 /// then allow operations to succeed normally.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_hit_limit_stops_after_n_faults() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -280,8 +280,8 @@ pub async fn fault_injection_hit_limit_stops_after_n_faults() -> Result<(), Box<
 /// Tests that a ConnectionError fault causes read failures.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()

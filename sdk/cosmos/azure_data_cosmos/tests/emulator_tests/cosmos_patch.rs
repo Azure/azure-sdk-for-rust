@@ -13,7 +13,7 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
-use azure_data_cosmos::{PatchItemOptions, PatchOp, PatchSpec};
+use azure_data_cosmos::{PatchInstructions, PatchItemOptions, PatchOperation};
 use framework::TestClient;
 #[cfg(feature = "fault_injection")]
 use framework::TestOptions;
@@ -34,7 +34,7 @@ struct PatchTestItem {
 
 async fn create_container(
     run_context: &TestRunContext,
-) -> azure_data_cosmos::CosmosResult<ContainerClient> {
+) -> azure_data_cosmos::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-{}", Uuid::new_v4());
     run_context
@@ -51,7 +51,7 @@ async fn create_container(
 /// SDK-level happy path through [`ContainerClient::patch_item`].
 ///
 /// Exercises the public `azure_data_cosmos` API end-to-end: it creates an
-/// item, issues a [`PatchSpec`] mixing `Set`, `Increment`, and `Replace`,
+/// item, issues a [`PatchInstructions`] mixing `Set`, `Increment`, and `Replace`,
 /// then verifies that:
 ///
 /// * the response is HTTP 200 with diagnostics populated,
@@ -64,8 +64,8 @@ async fn create_container(
 /// tests in `azure_data_cosmos_driver::driver::pipeline::patch_handler`.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -87,10 +87,10 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
                 .create_item(&pk, &item_id, &initial, None)
                 .await?;
 
-            let patch = PatchSpec::new(vec![
-                PatchOp::set("/deleted", serde_json::json!(true)),
-                PatchOp::increment("/visits", 3i64),
-                PatchOp::replace("/display_name", serde_json::json!("after")),
+            let patch = PatchInstructions::from(vec![
+                PatchOperation::set("/deleted", serde_json::json!(true)),
+                PatchOperation::increment("/visits", 3i64),
+                PatchOperation::replace("/display_name", serde_json::json!("after")),
             ]);
 
             let patch_response: ItemResponse = container_client
@@ -142,8 +142,8 @@ pub async fn patch_item_round_trip() -> Result<(), Box<dyn Error>> {
 /// `rmw_propagates_read_error_immediately`.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -153,14 +153,17 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
             let missing_id = format!("missing-{unique_id}");
             let pk = format!("pk-{unique_id}");
 
-            let patch = PatchSpec::new(vec![PatchOp::set("/deleted", serde_json::json!(true))]);
+            let patch = PatchInstructions::from(vec![PatchOperation::set(
+                "/deleted",
+                serde_json::json!(true),
+            )]);
             let err = container_client
                 .patch_item(&pk, &missing_id, patch, None)
                 .await
                 .expect_err("expected NotFound, got Ok");
             assert_eq!(
-                err.http_status(),
-                Some(StatusCode::NotFound),
+                err.status().status_code(),
+                StatusCode::NotFound,
                 "expected 404 NotFound from the read leg; got: {err}",
             );
 
@@ -186,8 +189,8 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
 /// underlying loop semantics.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -211,7 +214,7 @@ pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error
 
             let options =
                 PatchItemOptions::default().with_max_attempts(std::num::NonZeroU8::new(1).unwrap());
-            let patch = PatchSpec::new(vec![PatchOp::increment("/visits", 1i64)]);
+            let patch = PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]);
             let response: ItemResponse = container_client
                 .patch_item(&pk, &item_id, patch, Some(options))
                 .await?;
@@ -307,8 +310,8 @@ async fn setup_fault_injected_container(
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
     let rule = build_replace_412_rule("sdk-patch-412-once", Some(1));
@@ -327,7 +330,7 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
             let (regular, fault_container, item_id, pk) =
                 setup_fault_injected_container(run_context, db_client, &initial).await?;
 
-            let patch = PatchSpec::new(vec![PatchOp::increment("/visits", 1i64)]);
+            let patch = PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]);
             let response: ItemResponse = fault_container
                 .patch_item(&pk, &item_id, patch, None)
                 .await?;
@@ -373,8 +376,8 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<(), Box<dyn Error>>
 {
@@ -396,15 +399,15 @@ pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<
 
             let max_attempts = std::num::NonZeroU8::new(2).unwrap();
             let patch_options = PatchItemOptions::default().with_max_attempts(max_attempts);
-            let patch = PatchSpec::new(vec![PatchOp::increment("/visits", 1i64)]);
+            let patch = PatchInstructions::from(vec![PatchOperation::increment("/visits", 1i64)]);
 
             let err = fault_container
                 .patch_item(&pk, &item_id, patch, Some(patch_options))
                 .await
                 .expect_err("PATCH should fail after exhausting max_attempts");
             assert_eq!(
-                err.http_status(),
-                Some(StatusCode::PreconditionFailed),
+                err.status().status_code(),
+                StatusCode::PreconditionFailed,
                 "exhausted PATCH should surface 412 PreconditionFailed; got: {err}"
             );
 

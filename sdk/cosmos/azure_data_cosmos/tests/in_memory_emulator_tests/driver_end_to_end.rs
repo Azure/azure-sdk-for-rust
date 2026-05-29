@@ -106,6 +106,10 @@ async fn setup_with_container() -> (
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn create_and_read_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -195,6 +199,10 @@ async fn create_and_read_item_through_driver() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn create_database_and_container_through_driver() {
     let backend = DualBackend::setup().await.unwrap();
     let db_name = format!("dual-cp-{}", &backend.run_id);
@@ -244,7 +252,7 @@ async fn create_database_and_container_through_driver() {
         CosmosOperation::create_container(emu_db_ref).with_body(coll_body.clone());
     let emu_create_coll = backend
         .emulator_driver
-        .execute_operation(emu_create_coll_op, OperationOptions::default())
+        .execute_singleton_operation(emu_create_coll_op, OperationOptions::default())
         .await
         .unwrap();
 
@@ -254,7 +262,7 @@ async fn create_database_and_container_through_driver() {
         let real_db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
         let real_op = CosmosOperation::create_container(real_db_ref).with_body(coll_body.clone());
         let resp = driver
-            .execute_operation(real_op, OperationOptions::default())
+            .execute_singleton_operation(real_op, OperationOptions::default())
             .await
             .unwrap();
         Some(resp)
@@ -297,6 +305,10 @@ async fn create_database_and_container_through_driver() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn delete_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -359,7 +371,7 @@ async fn delete_item_through_driver() {
     // ── Verify item is gone (emulator) ───────────────────────────
     let emu_read_deleted = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -376,7 +388,7 @@ async fn delete_item_through_driver() {
     // ── Verify item is gone (real) ───────────────────────────────
     if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
         let real_read_deleted = driver
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_item(ItemReference::from_name(
                     real_ctr,
                     PartitionKey::from("pk1"),
@@ -396,6 +408,10 @@ async fn delete_item_through_driver() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn replace_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -508,7 +524,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
     let real_stale_token =
         if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
             let seed_result = driver
-                .execute_operation(
+                .execute_singleton_operation(
                     CosmosOperation::create_item(ItemReference::from_name(
                         real_ctr,
                         PartitionKey::from("pk1"),
@@ -535,7 +551,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
     // the emulator routed the seed write to.
     let emu_seed_result = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -563,7 +579,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
     // ── Emulator ─────────────────────────────────────────────────
     let emu_err = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -576,20 +592,16 @@ async fn read_with_stale_session_token_returns_404_1002() {
 
     let emu_err = emu_err.expect_err("Emulator should return an error for stale session read");
     assert_eq!(
-        emu_err.http_status(),
+        Some(emu_err.status().status_code()),
         Some(azure_core::http::StatusCode::NotFound),
         "Emulator error should be HTTP 404",
     );
-    match emu_err.kind() {
-        azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
-            assert_eq!(
-                error_code.as_deref(),
-                Some("1002"),
-                "Emulator error should have substatus 1002",
-            );
-        }
-        other => panic!("Expected HttpResponse error, got: {other}"),
-    }
+    let error_code = emu_err.status().sub_status().map(|s| s.value().to_string());
+    assert_eq!(
+        error_code.as_deref(),
+        Some("1002"),
+        "Emulator error should have substatus 1002",
+    );
 
     // ── Real account (if available) ──────────────────────────────
     if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
@@ -597,7 +609,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
             .clone()
             .expect("real_stale_token should be set when real driver is available");
         let real_err = driver
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_item(ItemReference::from_name(
                     real_ctr,
                     PartitionKey::from("pk1"),
@@ -610,21 +622,20 @@ async fn read_with_stale_session_token_returns_404_1002() {
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
         assert_eq!(
-            real_err.http_status(),
+            Some(real_err.status().status_code()),
             Some(azure_core::http::StatusCode::NotFound),
             "Real error should be HTTP 404",
         );
-        match real_err.kind() {
-            azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
-                if error_code.as_deref() != Some("1002") {
-                    eprintln!(
-                        "  [warning] Real service returned substatus {:?} instead of 1002 — \
-                         gateway may not enforce session consistency for V1 tokens on this account",
-                        error_code,
-                    );
-                }
-            }
-            other => panic!("Expected HttpResponse error, got: {other}"),
+        let error_code = real_err
+            .status()
+            .sub_status()
+            .map(|s| s.value().to_string());
+        if error_code.as_deref() != Some("1002") {
+            eprintln!(
+                "  [warning] Real service returned substatus {:?} instead of 1002 — \
+                 gateway may not enforce session consistency for V1 tokens on this account",
+                error_code,
+            );
         }
     }
 
@@ -638,7 +649,7 @@ async fn read_after_split_refreshes_driver_routing_map() {
 
     let create = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -675,7 +686,7 @@ async fn read_after_split_refreshes_driver_routing_map() {
 
     let read = backend
         .emulator_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -699,6 +710,10 @@ async fn read_after_split_refreshes_driver_routing_map() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn upsert_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -854,7 +869,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .unwrap();
 
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -874,7 +889,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .unwrap();
 
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::replace_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -898,7 +913,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .build();
 
     let west_read_before_resume = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -909,7 +924,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .expect_err("paused satellite should not observe the hub write yet");
     assert_eq!(
-        west_read_before_resume.http_status(),
+        Some(west_read_before_resume.status().status_code()),
         Some(azure_core::http::StatusCode::NotFound),
         "read should fail while West US replication is paused",
     );
@@ -917,7 +932,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
     emulator_store.resume_replication("West US");
 
     let west_read_after_resume = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -999,7 +1014,7 @@ async fn create_retries_after_429_throttling() {
     }))
     .unwrap();
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1021,7 +1036,7 @@ async fn create_retries_after_429_throttling() {
 
     let start = std::time::Instant::now();
     let create = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1042,7 +1057,7 @@ async fn create_retries_after_429_throttling() {
     assert_eq!(u16::from(create.status()), 201);
 
     let read = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1078,6 +1093,10 @@ async fn create_retries_after_429_throttling() {
 /// scenario runs against a real account and responses are compared.
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn read_failover_on_503_via_fault_injection() {
     use azure_core::http::Url;
     use azure_data_cosmos_driver::fault_injection::{
@@ -1181,7 +1200,7 @@ async fn read_failover_on_503_via_fault_injection() {
     .unwrap();
 
     let emu_create = emu_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -1201,7 +1220,7 @@ async fn read_failover_on_503_via_fault_injection() {
 
     // ── Read item — should failover from East US → West US ───────
     let emu_read = emu_driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk1"),
@@ -1363,7 +1382,7 @@ async fn try_real_failover_comparison(
         db_name.clone(),
     );
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_database(account.clone()).with_body(db_body),
             OperationOptions::default(),
         )
@@ -1376,7 +1395,7 @@ async fn try_real_failover_comparison(
     }))
     .ok()?;
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_container(db_ref.clone()).with_body(coll_body),
             OperationOptions::default(),
         )
@@ -1390,7 +1409,7 @@ async fn try_real_failover_comparison(
 
     // Create item.
     driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::create_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1404,7 +1423,7 @@ async fn try_real_failover_comparison(
 
     // Read item — should failover.
     let read_result = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::read_item(ItemReference::from_name(
                 &container,
                 PartitionKey::from("pk1"),
@@ -1416,7 +1435,7 @@ async fn try_real_failover_comparison(
 
     // Cleanup.
     let _ = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::delete_database(db_ref),
             OperationOptions::default(),
         )
@@ -1476,6 +1495,10 @@ async fn setup_with_v1_container() -> (
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn v1_create_read_replace_delete_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_v1_container().await;
 
@@ -1584,7 +1607,7 @@ async fn v1_writes_distribute_across_partitions() {
         let body_bytes = serde_json::to_vec(&body).unwrap();
         let resp = backend
             .emulator_driver
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::create_item(ItemReference::from_name(
                     &emu_container,
                     PartitionKey::from(pk.clone()),
@@ -1611,7 +1634,7 @@ async fn v1_writes_distribute_across_partitions() {
         let id = format!("v1-doc-{}", i);
         let resp = backend
             .emulator_driver
-            .execute_operation(
+            .execute_singleton_operation(
                 CosmosOperation::read_item(ItemReference::from_name(
                     &emu_container,
                     PartitionKey::from(pk),

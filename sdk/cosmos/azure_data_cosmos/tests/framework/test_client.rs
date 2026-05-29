@@ -11,11 +11,13 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionRule;
 use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemReadOptions;
+use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::Region;
 use azure_data_cosmos::{
-    clients::DatabaseClient, ConnectionString, CosmosClient, CreateContainerOptions, PartitionKey,
-    Query, RoutingStrategy,
+    clients::DatabaseClient, CosmosClient, CreateContainerOptions, PartitionKey, Query,
+    RoutingStrategy,
 };
+use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
 use std::future::Future;
 use std::pin::Pin;
@@ -339,7 +341,7 @@ impl TestClient {
             }
         }
 
-        let credential = connection_string.account_key.clone();
+        let credential = connection_string.account_key().clone();
         let mut builder = azure_data_cosmos::CosmosClient::builder();
 
         // Determine the region selection strategy
@@ -367,11 +369,11 @@ impl TestClient {
             builder = builder.with_fault_injection(fault_rules);
         }
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            connection_string.account_endpoint.parse()?;
+        let endpoint: azure_data_cosmos::AccountEndpoint =
+            connection_string.account_endpoint().parse()?;
         let cosmos_client = builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(endpoint, credential),
+                azure_data_cosmos::AccountReference::with_authentication_key(endpoint, credential),
                 strategy,
             )
             .await?;
@@ -428,7 +430,13 @@ impl TestClient {
         // Initialize tracing subscriber for logging, if not already initialized.
         // The error is ignored because it only happens if the subscriber is already initialized.
         _ = tracing_subscriber::fmt()
-            .with_env_filter(EnvFilter::from_default_env())
+            .with_env_filter(
+                EnvFilter::builder()
+                    // Tests with intentional failures cause noise, so we set the default level to "off"
+                    // to silence them unless the user explicitly configures it.
+                    .with_default_directive("off".parse().unwrap())
+                    .from_env_lossy(),
+            )
             .try_init();
 
         let test_client = Self::from_env(options.client_application_region.clone()).await?;
@@ -470,7 +478,7 @@ impl TestClient {
                     let test_result = Box::pin(test(&run)).await;
 
                     if let Err(e) = &test_result {
-                        println!("Error running test: {}", e);
+                        println!("CosmosError running test: {}", e);
                         // Check if the error is a 429
                         let is_429 = e.to_string().contains("TooManyRequests")
                             || e.to_string().contains("Too Many Requests");
@@ -495,7 +503,18 @@ impl TestClient {
             run.cleanup().await?;
 
             match result {
-                Ok(test_result) => test_result,
+                Ok(test_result) => {
+                    if let Err(e) = &test_result {
+                        if e.downcast_ref::<super::InconclusiveError>().is_some() {
+                            // Make it clear to the reader that the failure is an inconclusive one
+                            eprintln!(concat!("This test returned an inconclusive result. ",
+                                "This does NOT indicate a failure, but rather that the test was unable to complete successfully ",
+                                "due to an external factor (e.g. a split not completing in time). ",
+                                "Inconclusive results do not need to block PRs unless the PR is specifically touching code related to this test."));
+                        }
+                    }
+                    test_result
+                }
                 Err(_) => Err(format!("Test timed out after {} seconds", timeout.as_secs()).into()),
             }
         } else if test_mode == CosmosTestMode::Required {
@@ -538,7 +557,7 @@ impl TestClient {
                 // Emulator is always strong consistency, so we can skip the read check in that case
                 match run_context.client().create_database(db_id, None).await {
                     Ok(_) => {}
-                    Err(e) if e.http_status() == Some(StatusCode::Conflict) => {}
+                    Err(e) if e.status().status_code() == StatusCode::Conflict => {}
                     Err(e) => return Err(e.into()),
                 }
                 let db_client = run_context.shared_db_client();
@@ -612,13 +631,13 @@ impl TestRunContext {
     }
 
     /// Creates a new, empty, database for this test run with default throughput options.
-    pub async fn create_db(&self) -> azure_data_cosmos::CosmosResult<DatabaseClient> {
+    pub async fn create_db(&self) -> azure_data_cosmos::Result<DatabaseClient> {
         // The TestAccount has a unique context_id that includes the test name.
         let db_name = self.db_name();
         let response = match self.client().create_database(&db_name, None).await {
             // The database creation was successful.
             Ok(props) => props,
-            Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+            Err(e) if e.status().status_code() == StatusCode::Conflict => {
                 // The database already exists, from a previous test run.
                 // Delete it and re-create it.
                 let db_client = self.client().database_client(&db_name);
@@ -647,7 +666,7 @@ impl TestRunContext {
         partition_key: impl Into<PartitionKey>,
         item_id: &str,
         options: Option<ItemReadOptions>,
-    ) -> azure_data_cosmos::CosmosResult<ItemResponse> {
+    ) -> azure_data_cosmos::Result<ItemResponse> {
         // Own the inputs so no borrowed data must live across `.await`.
         let partition_key = partition_key.into().to_owned();
         let item_id = item_id.to_owned();
@@ -664,10 +683,10 @@ impl TestRunContext {
                 .await
             {
                 Ok(response) => return Ok(response),
-                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                Err(e) if e.status().status_code() == StatusCode::NotFound => {
                     println!(
                         "Read item failed with {:?}: {}. Retrying after {:?}...",
-                        e.http_status(),
+                        e.status().status_code(),
                         e,
                         backoff
                     );
@@ -686,7 +705,7 @@ impl TestRunContext {
         container: &ContainerClient,
         query: impl Into<Query>,
         partition_key: impl Into<PartitionKey>,
-    ) -> azure_data_cosmos::CosmosResult<Vec<T>>
+    ) -> azure_data_cosmos::Result<Vec<T>>
     where
         T: serde::de::DeserializeOwned + std::marker::Send + 'static,
     {
@@ -696,13 +715,20 @@ impl TestRunContext {
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
         loop {
-            match container.query_items::<T>(query.clone(), partition_key.clone(), None) {
+            match container
+                .query_items::<T>(
+                    query.clone(),
+                    FeedScope::partition(partition_key.clone()),
+                    None,
+                )
+                .await
+            {
                 Ok(pager) => match pager.try_collect::<Vec<T>>().await {
                     Ok(items) => return Ok(items),
-                    Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                    Err(e) if e.status().status_code() == StatusCode::NotFound => {
                         println!(
                             "Query items failed with {:?}: {}. Retrying after {:?}...",
-                            e.http_status(),
+                            e.status().status_code(),
                             e,
                             backoff
                         );
@@ -711,10 +737,10 @@ impl TestRunContext {
                     }
                     Err(e) => return Err(e),
                 },
-                Err(e) if e.http_status() == Some(StatusCode::NotFound) => {
+                Err(e) if e.status().status_code() == StatusCode::NotFound => {
                     println!(
                         "Query items failed with {:?}: {}. Retrying after {:?}...",
-                        e.http_status(),
+                        e.status().status_code(),
                         e,
                         backoff
                     );
@@ -733,7 +759,7 @@ impl TestRunContext {
         db_client: &DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         options: Option<azure_data_cosmos::CreateContainerOptions>,
-    ) -> azure_data_cosmos::CosmosResult<ContainerClient> {
+    ) -> azure_data_cosmos::Result<ContainerClient> {
         let mut backoff = Duration::from_millis(100);
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
@@ -746,7 +772,7 @@ impl TestRunContext {
                     let created = response.into_model()?;
                     return db_client.container_client(&created.id).await;
                 }
-                Err(e) if e.http_status() == Some(StatusCode::TooManyRequests) => {
+                Err(e) if e.status().status_code() == StatusCode::TooManyRequests => {
                     println!(
                         "Create container got 429 (Too Many Requests). Retrying after {:?}...",
                         backoff
@@ -754,7 +780,7 @@ impl TestRunContext {
                     tokio::time::sleep(backoff).await;
                     backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
-                Err(e) if e.http_status() == Some(StatusCode::Conflict) => {
+                Err(e) if e.status().status_code() == StatusCode::Conflict => {
                     // Container already exists, delete and recreate it, then return a client
                     let container_client = db_client.container_client(&properties.id).await?;
                     container_client.delete(None).await?;
@@ -786,8 +812,7 @@ impl TestRunContext {
         db_client: &'a DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         throughput: ThroughputProperties,
-    ) -> Pin<Box<dyn Future<Output = azure_data_cosmos::CosmosResult<ContainerClient>> + Send + 'a>>
-    {
+    ) -> Pin<Box<dyn Future<Output = azure_data_cosmos::Result<ContainerClient>> + Send + 'a>> {
         Box::pin(async move {
             let created_properties = db_client
                 .create_container(
@@ -861,7 +886,7 @@ impl TestRunContext {
     /// Creates a CosmosClient with a specific preferred region.
     async fn create_client_with_preferred_region(
         region: Region,
-    ) -> azure_data_cosmos::CosmosResult<CosmosClient> {
+    ) -> Result<CosmosClient, azure_data_cosmos::CosmosError> {
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
             .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
 
@@ -871,20 +896,9 @@ impl TestRunContext {
             &env_var
         };
 
-        let parsed: ConnectionString = connection_string.parse().map_err(|e| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("Failed to parse connection string: {}", e),
-            )
-        })?;
+        let parsed: ConnectionString = connection_string.parse()?;
 
-        let endpoint: azure_data_cosmos::CosmosAccountEndpoint =
-            parsed.account_endpoint.parse().map_err(|e| {
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Other,
-                    format!("Failed to parse account endpoint: {}", e),
-                )
-            })?;
+        let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
         let mut builder = CosmosClient::builder();
 
         #[cfg(feature = "allow_invalid_certificates")]
@@ -894,9 +908,9 @@ impl TestRunContext {
 
         builder
             .build(
-                azure_data_cosmos::CosmosAccountReference::with_master_key(
+                azure_data_cosmos::AccountReference::with_authentication_key(
                     endpoint,
-                    parsed.account_key.clone(),
+                    parsed.account_key().clone(),
                 ),
                 RoutingStrategy::ProximityTo(region),
             )
@@ -912,7 +926,7 @@ impl TestRunContext {
             "SELECT * FROM root r WHERE r.id LIKE 'auto-test-{}'",
             self.run_id
         ));
-        let mut pager = self.client().query_databases(query, None)?;
+        let mut pager = self.client().query_databases(query, None).await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             ids.push(db.id);

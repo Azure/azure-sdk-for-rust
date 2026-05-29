@@ -4,7 +4,7 @@
 //! Multi-region integration tests.
 
 use super::*;
-use azure_core::http::{headers::HeaderName, HttpClient};
+use azure_core::http::headers::HeaderName;
 
 #[tokio::test]
 async fn write_forbidden_403_3() {

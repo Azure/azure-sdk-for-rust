@@ -8,7 +8,6 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::{CosmosError, DiagnosticsContext};
 use rand::RngExt;
 use serde::Serialize;
 use sysinfo::System;
@@ -16,7 +15,6 @@ use tokio::task::JoinSet;
 use uuid::Uuid;
 
 use crate::operations::Operation;
-use crate::shard_observer::{ShardObserver, ShardSnapshot};
 use crate::stats::{self, Stats};
 
 /// Walks the `std::error::Error::source()` chain and joins messages with " → ".
@@ -32,46 +30,6 @@ fn error_source_chain(error: &dyn std::error::Error) -> Option<String> {
     } else {
         Some(sources.join(" → "))
     }
-}
-
-/// Extracts the SDK's per-operation diagnostics from the error (if the
-/// driver attached one) and returns:
-/// 1. the full diagnostics serialized as a JSON `Value` (stored as ADX
-///    `dynamic` rather than a quoted string),
-/// 2. the final HTTP status code (after retries / failovers), and
-/// 3. the Cosmos sub-status code, if any.
-///
-/// All three fields are `None` when the error did not carry diagnostics
-/// (e.g. it escaped the driver pipeline before they were initialized) or
-/// when the JSON the SDK produced is malformed (defensive only).
-fn extract_error_diagnostics(
-    error: &CosmosError,
-) -> (Option<serde_json::Value>, Option<u16>, Option<u32>) {
-    let Some(diagnostics) = error.diagnostics() else {
-        // Even without a diagnostics context, the error itself may carry
-        // an HTTP status code (e.g. credential failures don't go through
-        // the diagnostics pipeline). Surface what we can.
-        return (None, error.status_code(), error.sub_status());
-    };
-    let json = serde_json::from_str::<serde_json::Value>(diagnostics.to_json_string(None)).ok();
-    (json, error.status_code(), error.sub_status())
-}
-
-/// Returns the shard id of the **final** transport attempt recorded on
-/// this diagnostics context, if any.
-///
-/// We scan from the most-recent request backwards because the final
-/// attempt's shard is the one that actually returned the observed status
-/// (success or terminal failure). Earlier attempts may have hit other
-/// shards via shard-local retry — those are tracked separately via the
-/// observer's open-history; this function only returns the shard that
-/// *ended* the operation.
-fn final_attempt_shard_id(diagnostics: &DiagnosticsContext) -> Option<u64> {
-    diagnostics
-        .requests()
-        .iter()
-        .rev()
-        .find_map(|r| r.transport_shard().map(|t| t.shard_id()))
 }
 
 /// Structured perf result document stored in Cosmos DB for long-term monitoring.
@@ -169,40 +127,6 @@ struct ErrorResult {
     operation: String,
     error_message: String,
     source_message: Option<String>,
-    /// Final HTTP status code recorded on the diagnostics context (after
-    /// retries and failovers). `None` for errors that escaped the pipeline
-    /// before diagnostics were initialized. Promoted to a top-level column
-    /// so dashboards can group/filter without parsing `diagnostics_json`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    status_code: Option<u16>,
-    /// Cosmos sub-status code (from the `x-ms-substatus` response header or
-    /// synthetic transport sub-status). Only present when the response
-    /// included one — many errors (notably plain HTTP 500 with no body)
-    /// have no sub-status.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    sub_status: Option<u32>,
-    /// Full per-operation `DiagnosticsContext` JSON (activity_id, region,
-    /// transport shard, per-attempt events, etc.) — populated when the
-    /// driver pipeline attached diagnostics to the error via
-    /// `try_extract_diagnostics`. `None` for errors that escaped the
-    /// pipeline before diagnostics were initialized.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    diagnostics_json: Option<serde_json::Value>,
-    /// Pre-failure shard context reconstructed by the perf-side
-    /// `ShardObserver`. Carries:
-    ///
-    /// - **age** of this shard (proxy for h2 connection-open time),
-    /// - **time since last successful request** on this shard,
-    /// - **last 10 perf-assigned sequence numbers** for this shard
-    ///   (driver-side h2 stream-ids are not exposed by the SDK, so this
-    ///   is the next-best fingerprint of "what other requests this shard
-    ///   was handling just before the failure"),
-    /// - whether **any other shard was opened in the last 100 ms**.
-    ///
-    /// `None` when no transport shard could be associated with the error
-    /// (e.g., credential failures, request-not-sent transport errors).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    shard_snapshot: Option<ShardSnapshot>,
 }
 
 /// Configuration for a perf test run.
@@ -351,9 +275,6 @@ pub async fn run(config: RunConfig) {
         }
     });
 
-    // Shared shard observer — feeds pre-failure shard context into ErrorResult.
-    let observer = Arc::new(ShardObserver::new());
-
     // Spawn fixed worker pool — each worker loops until cancelled
     let start = Instant::now();
     let mut workers = JoinSet::new();
@@ -367,7 +288,6 @@ pub async fn run(config: RunConfig) {
         let err_workload_id = workload_id.clone();
         let err_commit_sha = commit_sha.clone();
         let err_hostname = hostname.clone();
-        let observer = observer.clone();
 
         workers.spawn(async move {
             while !cancelled.load(Ordering::Relaxed) {
@@ -376,34 +296,15 @@ pub async fn run(config: RunConfig) {
 
                 let op_start = Instant::now();
                 match op.execute(&container).await {
-                    Ok(outcome) => {
-                        stats.record_latency(
-                            op.name(),
-                            op_start.elapsed(),
-                            outcome.backend_duration,
-                        );
-                        // Update per-shard "last success" / sequence-number
-                        // state on the happy path so it's available the
-                        // next time *this* shard errors.
-                        if let Some(diag) = outcome.diagnostics.as_deref() {
-                            if let Some(shard_id) = final_attempt_shard_id(diag) {
-                                let _ = observer.observe(shard_id, true);
-                            }
-                        }
+                    Ok(backend) => {
+                        stats.record_latency(op.name(), op_start.elapsed(), backend);
                     }
                     Err(e) => {
                         stats.record_error(op.name());
-                        // Observe with success=false; the returned snapshot
-                        // is captured into the ErrorResult below.
-                        let shard_snapshot = e
-                            .diagnostics()
-                            .and_then(final_attempt_shard_id)
-                            .map(|shard_id| observer.observe(shard_id, false));
                         upsert_error(
                             &err_container,
                             op.name(),
                             &e,
-                            shard_snapshot,
                             &err_workload_id,
                             &err_commit_sha,
                             &err_hostname,
@@ -542,8 +443,7 @@ async fn upsert_results(
 async fn upsert_error(
     container: &ContainerClient,
     operation: &str,
-    error: &CosmosError,
-    shard_snapshot: Option<ShardSnapshot>,
+    error: &azure_data_cosmos::CosmosError,
     workload_id: &str,
     commit_sha: &str,
     hostname: &str,
@@ -552,8 +452,6 @@ async fn upsert_error(
         .format(&time::format_description::well_known::Rfc3339)
         .expect("RFC 3339 formatting should never fail");
     let id = Uuid::new_v4().to_string();
-
-    let (diagnostics_json, status_code, sub_status) = extract_error_diagnostics(error);
 
     let doc = ErrorResult {
         id: id.clone(),
@@ -565,10 +463,6 @@ async fn upsert_error(
         operation: operation.to_string(),
         error_message: format!("{error}"),
         source_message: error_source_chain(error),
-        status_code,
-        sub_status,
-        diagnostics_json,
-        shard_snapshot,
     };
     if let Err(e) = container
         .upsert_item(&doc.partition_key, &id, &doc, None)

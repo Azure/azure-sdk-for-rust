@@ -4,7 +4,7 @@
 //! Opaque parsed session token segment for merge operations.
 
 use super::vector_session_token::SessionTokenValue;
-use azure_core::{error::ErrorKind, fmt::SafeDebug};
+use azure_core::fmt::SafeDebug;
 use std::fmt;
 use std::str::FromStr;
 
@@ -22,14 +22,16 @@ pub struct SessionTokenSegment {
 }
 
 impl FromStr for SessionTokenSegment {
-    type Err = azure_core::Error;
+    type Err = crate::error::CosmosError;
 
-    fn from_str(s: &str) -> azure_core::Result<Self> {
+    fn from_str(s: &str) -> crate::error::Result<Self> {
         let (pk_range_id, value_str) = s.trim().split_once(':').ok_or_else(|| {
-            azure_core::Error::with_message(
-                ErrorKind::DataConversion,
-                "invalid session token segment: missing ':'",
-            )
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("invalid session token segment: missing ':'")
+                .build()
         })?;
         let value = SessionTokenValue::parse(value_str)?;
         Ok(Self {

@@ -7,11 +7,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::Query;
+use azure_data_cosmos::{clients::ContainerClient, query::FeedScope};
 use futures::StreamExt;
 
-use super::{extract_backend_duration, Operation, OperationOutcome};
+use super::{extract_backend_duration, Operation};
 use crate::seed::SharedItems;
 
 /// Runs a single-partition query against a random seeded partition key.
@@ -35,7 +35,7 @@ impl Operation for QueryItemsOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::CosmosResult<OperationOutcome> {
+    ) -> azure_data_cosmos::Result<Option<Duration>> {
         let item = self.items.random();
         let pk = &item.partition_key;
 
@@ -43,27 +43,21 @@ impl Operation for QueryItemsOperation {
             Query::from("SELECT * FROM c WHERE c.partition_key = @pk").with_parameter("@pk", pk)?;
 
         let mut stream = container
-            .query_items::<serde_json::Value>(query, pk, None)?
+            .query_items::<serde_json::Value>(query, FeedScope::partition(pk), None)
+            .await?
             .into_pages();
 
         // Sum backend durations across pages so a multi-page query reports
         // the total server processing time, mirroring how the client-observed
         // elapsed wraps the entire stream consumption.
         let mut backend_total: Option<Duration> = None;
-        // Pages may hit different shards; use the final-page diagnostics
-        // for shard observation since that's the most recent activity.
-        let mut last_diagnostics = None;
         while let Some(result) = stream.next().await {
             let page = result?;
             if let Some(d) = extract_backend_duration(page.headers()) {
                 backend_total = Some(backend_total.unwrap_or_default() + d);
             }
-            last_diagnostics = Some(page.diagnostics());
         }
 
-        Ok(OperationOutcome {
-            backend_duration: backend_total,
-            diagnostics: last_diagnostics,
-        })
+        Ok(backend_total)
     }
 }

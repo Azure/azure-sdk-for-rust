@@ -105,14 +105,16 @@ impl std::fmt::Display for ReadConsistencyStrategy {
 }
 
 impl std::str::FromStr for ReadConsistencyStrategy {
-    type Err = azure_core::Error;
+    type Err = crate::error::CosmosError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s).ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!("Unknown read consistency strategy: {}", s),
-            )
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!("Unknown read consistency strategy: {s}"))
+                .build()
         })
     }
 }

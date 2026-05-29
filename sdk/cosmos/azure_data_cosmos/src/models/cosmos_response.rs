@@ -6,7 +6,6 @@
 use std::sync::Arc;
 
 use crate::models::{CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders};
-use crate::SessionToken;
 use azure_data_cosmos_driver::models::CosmosResponse as DriverResponse;
 use serde::de::DeserializeOwned;
 
@@ -75,35 +74,13 @@ impl CosmosResponse {
         self.body
     }
 
-    /// Returns the request charge (RU consumption) for this operation, if available.
-    pub(crate) fn request_charge(&self) -> Option<f64> {
-        self.cosmos_headers.request_charge().map(|rc| rc.value())
-    }
-
-    /// Returns the session token from this response, if available.
-    pub(crate) fn session_token(&self) -> Option<SessionToken> {
-        self.cosmos_headers
-            .session_token()
-            .map(|st| SessionToken::from(st.as_str().to_string()))
-    }
-
     /// Returns a cloned [`Arc`] handle to the diagnostics for this operation.
     pub(crate) fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         Arc::clone(&self.diagnostics)
     }
 
     /// Deserializes the response body into a model type.
-    ///
-    /// On parse failure, the operation diagnostics are attached to the
-    /// returned [`CosmosError`](crate::CosmosError) so callers can
-    /// correlate the deserialization failure with the underlying HTTP
-    /// exchange (ActivityId, region, status, per-attempt history, etc.).
-    pub(crate) fn into_model<T: DeserializeOwned>(self) -> crate::CosmosResult<T> {
-        let diagnostics = Arc::clone(&self.diagnostics);
-        self.body.into_single::<T>().map_err(|e| {
-            let azure_err =
-                azure_data_cosmos_driver::diagnostics::attach_diagnostics(e, diagnostics);
-            crate::CosmosError::from(azure_err)
-        })
+    pub(crate) fn into_model<T: DeserializeOwned>(self) -> crate::Result<T> {
+        self.body.into_single()
     }
 }

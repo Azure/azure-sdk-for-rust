@@ -258,37 +258,60 @@ impl VmMetadataServiceInner {
     }
 
     #[cfg(feature = "reqwest")]
-    async fn do_fetch() -> azure_core::Result<AzureVmMetadata> {
+    async fn do_fetch() -> crate::error::Result<AzureVmMetadata> {
         // Build a dedicated client with short timeouts so non-Azure hosts
         // fail fast instead of blocking callers for a full TCP timeout.
         let http_client = reqwest::Client::builder()
             .connect_timeout(IMDS_CONNECT_TIMEOUT)
             .timeout(IMDS_REQUEST_TIMEOUT)
             .build()
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Other, e))?;
+            .map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED,
+                    )
+                    .with_message("failed to build IMDS HTTP client")
+                    .with_source(e)
+                    .build()
+            })?;
 
         let response = http_client
             .get(IMDS_ENDPOINT)
             .header("metadata", "true")
             .send()
             .await
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
+            .map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::models::CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_message("IMDS request failed")
+                    .with_source(e)
+                    .build()
+            })?;
 
-        let body = response
-            .text()
-            .await
-            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::Io, e))?;
+        let body = response.text().await.map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::models::CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                .with_message("failed to read IMDS response body")
+                .with_source(e)
+                .build()
+        })?;
 
-        let metadata: AzureVmMetadata = serde_json::from_str(&body)?;
+        let metadata: AzureVmMetadata = serde_json::from_str(&body).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to parse IMDS response")
+                .with_source(e)
+                .build()
+        })?;
         Ok(metadata)
     }
 
     #[cfg(not(feature = "reqwest"))]
-    async fn do_fetch() -> azure_core::Result<AzureVmMetadata> {
-        Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "IMDS fetch requires the `reqwest` feature",
-        ))
+    async fn do_fetch() -> crate::error::Result<AzureVmMetadata> {
+        Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED)
+            .with_message("IMDS fetch requires the `reqwest` feature")
+            .build())
     }
 }
 

@@ -15,7 +15,6 @@
 
 use std::time::{Duration, Instant};
 
-use azure_core::error::ErrorKind;
 use futures::{future::Either, pin_mut};
 use tracing::trace;
 
@@ -25,7 +24,7 @@ use crate::{
         RequestEvent, RequestEventType, RequestHandle, RequestSentStatus, TransportSecurity,
         TransportShardDiagnostics,
     },
-    models::{CosmosResponseHeaders, CosmosStatus, Credential},
+    models::{CosmosResponseHeaders, CosmosStatus, Credential, SubStatusCode},
 };
 
 use super::{
@@ -37,10 +36,6 @@ use super::{
 use crate::driver::pipeline::components::{
     ThrottleAction, ThrottleRetryState, TransportOutcome, TransportRequest, TransportResult,
 };
-
-/// Cosmos DB retry-after header (milliseconds).
-const RETRY_AFTER_MS: azure_core::http::headers::HeaderName =
-    azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms");
 
 /// Keep a small budget before the e2e deadline so we still have time
 /// to send one final attempt.
@@ -110,12 +105,11 @@ pub(crate) fn evaluate_transport_retry(
         return ThrottleAction::Propagate;
     }
 
-    // Extract the service-specified retry delay from response headers,
-    // or fall back to exponential backoff.
+    // Extract the service-specified retry delay from the parsed cosmos
+    // response headers, or fall back to exponential backoff.
     let service_delay = result
-        .response_headers()
-        .and_then(|h| h.get_optional_str(&RETRY_AFTER_MS))
-        .and_then(|v| v.parse::<u64>().ok())
+        .cosmos_headers()
+        .and_then(|h| h.retry_after_ms)
         .map(Duration::from_millis);
 
     let delay = service_delay.unwrap_or_else(|| throttle_state.fallback_delay());
@@ -233,19 +227,19 @@ pub(crate) async fn execute_transport_pipeline(
         // Apply standard Cosmos headers
         apply_cosmos_headers(&mut http_request, ctx.user_agent);
 
-        // Sign the request
-        if let Err(e) = sign_request(&mut http_request, ctx.credential, &request.auth_context).await
+        if let Err(cosmos_err) =
+            sign_request(&mut http_request, ctx.credential, &request.auth_context).await
         {
             diagnostics.fail_transport_request(
                 request_handle,
-                e.to_string(),
+                cosmos_err.to_string(),
                 RequestSentStatus::NotSent,
                 CosmosStatus::CLIENT_GENERATED_401,
             );
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
                     status: CosmosStatus::CLIENT_GENERATED_401,
-                    error: e,
+                    error: cosmos_err,
                     request_sent: RequestSentStatus::NotSent,
                 },
             };
@@ -284,7 +278,10 @@ pub(crate) async fn execute_transport_pipeline(
                 diagnostics.set_fault_injection_evaluations(request_handle, evals);
             }
         }
-        tracing::debug!("transport request complete");
+        tracing::debug!(
+            outcome = ?result.result.outcome,
+            "transport request complete"
+        );
 
         if result.shard_id.is_some_and(|failed_shard_id| {
             local_connectivity_retry_count < MAX_LOCAL_CONNECTIVITY_RETRIES
@@ -301,9 +298,8 @@ pub(crate) async fn execute_transport_pipeline(
             continue;
         }
 
-        let result = result.result;
-
         // Check for 429 throttling → transport-level retry
+        let result = result.result;
         let action = evaluate_transport_retry(&result, &throttle_state);
         match action {
             ThrottleAction::Retry { delay, new_state } => {
@@ -540,16 +536,27 @@ fn should_retry_connectivity_failure(
     }
 }
 
-fn is_connectivity_error(error: &azure_core::Error) -> bool {
-    matches!(error.kind(), ErrorKind::Connection | ErrorKind::Io)
-}
-
-fn format_transport_error_details(error: &azure_core::Error) -> String {
-    crate::driver::error_chain_summary(error)
+fn is_connectivity_error(error: &crate::error::CosmosError) -> bool {
+    // Transport / connectivity failures are synthetic errors (no wire
+    // response) whose sub-status is one of the well-known transport
+    // boundary-mapping codes minted by the SDK.
+    if error.is_from_wire() {
+        return false;
+    }
+    matches!(
+        error.status().sub_status(),
+        Some(SubStatusCode::TRANSPORT_GENERATED_503)
+            | Some(SubStatusCode::TRANSPORT_CONNECTION_FAILED)
+            | Some(SubStatusCode::TRANSPORT_IO_FAILED)
+            | Some(SubStatusCode::TRANSPORT_DNS_FAILED)
+            | Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE)
+            | Some(SubStatusCode::TRANSPORT_BODY_READ_FAILED)
+            | Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+    )
 }
 
 fn transport_error_result(
-    error: azure_core::Error,
+    cosmos_error: crate::error::CosmosError,
     headers_received: bool,
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
@@ -557,10 +564,10 @@ fn transport_error_result(
     let sent_status = if headers_received {
         RequestSentStatus::Sent
     } else {
-        infer_request_sent_status(&error)
+        infer_request_sent_status(&cosmos_error)
     };
     let status = CosmosStatus::TRANSPORT_GENERATED_503;
-    let error_details = format_transport_error_details(&error);
+    let error_details = format_transport_error_details_cosmos(&cosmos_error);
 
     if headers_received {
         diagnostics.add_event(
@@ -578,10 +585,14 @@ fn transport_error_result(
     TransportResult {
         outcome: TransportOutcome::TransportError {
             status,
-            error,
+            error: cosmos_error,
             request_sent: sent_status,
         },
     }
+}
+
+fn format_transport_error_details_cosmos(error: &crate::error::CosmosError) -> String {
+    crate::driver::error_chain_summary(error)
 }
 
 enum HttpAttemptResult {
@@ -593,7 +604,7 @@ enum HttpAttemptResult {
         shard_diagnostics: Option<TransportShardDiagnostics>,
     },
     Error {
-        error: azure_core::Error,
+        error: crate::error::CosmosError,
         headers_received: bool,
         shard_id: Option<u64>,
         shard_diagnostics: Option<TransportShardDiagnostics>,
@@ -618,6 +629,9 @@ fn failed_transport_shard(
         } => Some(FailedTransportShardDiagnostics::new(
             transport_shard,
             *request_sent,
+            // Surface just the underlying message — the [Kind] / status
+            // prefix from the Cosmos Display is captured separately in
+            // the request status.
             error.to_string(),
         )),
         _ => None,
@@ -653,7 +667,7 @@ fn map_http_response_payload(
     });
 
     diagnostics.complete_request(request_handle, status_code, sub_status);
-    TransportResult::from_http_response(cosmos_status, headers, cosmos_headers, body)
+    TransportResult::from_http_response(cosmos_status, cosmos_headers, body)
 }
 
 #[cfg(test)]
@@ -696,10 +710,10 @@ mod tests {
             )
             .await;
             Err(TransportError::new(
-                azure_core::Error::new(
-                    azure_core::error::ErrorKind::Io,
-                    "request should have timed out before completion",
-                ),
+                crate::error::CosmosError::builder()
+                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_message("request should have timed out before completion")
+                    .build(),
                 crate::diagnostics::RequestSentStatus::Unknown,
             ))
         }
@@ -709,7 +723,6 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(azure_core::http::StatusCode::TooManyRequests),
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -718,13 +731,12 @@ mod tests {
     }
 
     fn make_throttled_result_with_retry_after(ms: u64) -> TransportResult {
-        let mut headers = azure_core::http::headers::Headers::new();
-        headers.insert("x-ms-retry-after-ms", ms.to_string());
+        let mut cosmos_headers = CosmosResponseHeaders::default();
+        cosmos_headers.retry_after_ms = Some(ms);
         TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(azure_core::http::StatusCode::TooManyRequests),
-                headers,
-                cosmos_headers: CosmosResponseHeaders::default(),
+                cosmos_headers,
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
             },
@@ -936,21 +948,18 @@ mod tests {
 
     #[derive(Debug)]
     struct ScriptedTransportClient {
-        error_kind: azure_core::error::ErrorKind,
+        status: CosmosStatus,
         message: &'static str,
     }
 
     #[async_trait]
     impl TransportClient for ScriptedTransportClient {
         async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
-            let error_kind = match &self.error_kind {
-                ErrorKind::Connection => ErrorKind::Connection,
-                ErrorKind::Io => ErrorKind::Io,
-                ErrorKind::Other => ErrorKind::Other,
-                _ => ErrorKind::Other,
-            };
             Err(TransportError::new(
-                azure_core::Error::with_message(error_kind, self.message),
+                crate::error::CosmosError::builder()
+                    .with_status(self.status)
+                    .with_message(self.message)
+                    .build(),
                 crate::diagnostics::RequestSentStatus::Unknown,
             ))
         }
@@ -974,17 +983,22 @@ mod tests {
             &self,
             _connection_pool: &crate::options::ConnectionPoolOptions,
             _config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn TransportClient>> {
+        ) -> crate::error::Result<Arc<dyn TransportClient>> {
             self.clients.lock().unwrap().pop().ok_or_else(|| {
-                azure_core::Error::with_message(ErrorKind::Other, "no scripted client available")
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message("no scripted client available")
+                    .build()
             })
         }
     }
 
     fn scripted_transport(
-        error_kind_a: azure_core::error::ErrorKind,
+        status_a: CosmosStatus,
         message_a: &'static str,
-        error_kind_b: azure_core::error::ErrorKind,
+        status_b: CosmosStatus,
         message_b: &'static str,
     ) -> AdaptiveTransport {
         let pool = crate::options::ConnectionPoolOptions::builder()
@@ -995,11 +1009,11 @@ mod tests {
             .unwrap();
         let factory = Arc::new(ScriptedFactory::new(vec![
             Arc::new(ScriptedTransportClient {
-                error_kind: error_kind_a,
+                status: status_a,
                 message: message_a,
             }),
             Arc::new(ScriptedTransportClient {
-                error_kind: error_kind_b,
+                status: status_b,
                 message: message_b,
             }),
         ]));
@@ -1043,9 +1057,9 @@ mod tests {
     #[tokio::test]
     async fn execute_transport_pipeline_retries_not_sent_connectivity_error_on_different_shard() {
         let client = scripted_transport(
-            ErrorKind::Connection,
+            CosmosStatus::TRANSPORT_CONNECTION_FAILED,
             "first shard failed",
-            ErrorKind::Connection,
+            CosmosStatus::TRANSPORT_CONNECTION_FAILED,
             "second shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1080,9 +1094,10 @@ mod tests {
         assert_eq!(requests.len(), 2);
         assert_eq!(requests[1].local_shard_retry_count(), 1);
         assert_eq!(requests[1].failed_transport_shards().len(), 1);
-        assert_eq!(
-            requests[1].failed_transport_shards()[0].error(),
-            "first shard failed"
+        let recorded = requests[1].failed_transport_shards()[0].error();
+        assert!(
+            recorded.ends_with("first shard failed"),
+            "unexpected: {recorded}"
         );
     }
 
@@ -1092,9 +1107,9 @@ mod tests {
         let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
 
         let client_without_retry = scripted_transport(
-            ErrorKind::Io,
+            CosmosStatus::TRANSPORT_IO_FAILED,
             "first io shard failed",
-            ErrorKind::Io,
+            CosmosStatus::TRANSPORT_IO_FAILED,
             "second io shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1129,9 +1144,9 @@ mod tests {
         }
 
         let client_with_retry = scripted_transport(
-            ErrorKind::Io,
+            CosmosStatus::TRANSPORT_IO_FAILED,
             "first io shard failed",
-            ErrorKind::Io,
+            CosmosStatus::TRANSPORT_IO_FAILED,
             "second io shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1210,13 +1225,13 @@ mod tests {
     #[test]
     fn format_transport_error_details_includes_error_chain() {
         let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
-        let error = azure_core::Error::with_error(
-            ErrorKind::Io,
-            inner,
-            "failed to execute `reqwest` request",
-        );
+        let cosmos = crate::error::CosmosError::builder()
+            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+            .with_message("failed to execute `reqwest` request")
+            .with_source(inner)
+            .build();
 
-        let details = format_transport_error_details(&error);
+        let details = format_transport_error_details_cosmos(&cosmos);
         assert!(details.contains("failed to execute `reqwest` request"));
         assert!(details.contains("socket reset"));
     }

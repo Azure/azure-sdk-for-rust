@@ -19,7 +19,7 @@ use azure_data_cosmos::options::{
     ExcludedRegions, ItemReadOptions, ItemWriteOptions, OperationOptions,
 };
 use azure_data_cosmos::regions::Region;
-use azure_data_cosmos::{DiagnosticsContext, ResponseHeaders};
+use azure_data_cosmos::ResponseHeaders;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
@@ -42,16 +42,6 @@ pub(crate) fn extract_backend_duration(headers: &ResponseHeaders) -> Option<Dura
         .map(|ms| Duration::from_secs_f64(ms / 1000.0))
 }
 
-/// Outcome of a single successful operation invocation.
-///
-/// Carries both the server-reported processing duration (used for backend
-/// latency stats) and the per-request `DiagnosticsContext` (used by the
-/// shard observer to track per-shard state on the success path).
-pub struct OperationOutcome {
-    pub backend_duration: Option<Duration>,
-    pub diagnostics: Option<Arc<DiagnosticsContext>>,
-}
-
 /// A single executable perf test operation.
 ///
 /// Implementations are expected to be stateless or use interior mutability.
@@ -63,15 +53,16 @@ pub trait Operation: Send + Sync {
 
     /// Executes one instance of the operation.
     ///
-    /// Returns an [`OperationOutcome`] carrying the optional backend
-    /// duration (from `x-ms-request-duration-ms`) and the per-request
-    /// `DiagnosticsContext` from the response, so the runner can update
-    /// the shard observer on the success path the same way it does on
-    /// the error path.
+    /// Returns `Ok(Some(d))` when the server reported a processing duration
+    /// via the `x-ms-request-duration-ms` response header (this is the
+    /// backend latency surfaced separately from the client-observed
+    /// wall-clock latency). Returns `Ok(None)` when no backend duration
+    /// could be observed (multi-page query streams may aggregate, see
+    /// individual implementations).
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::CosmosResult<OperationOutcome>;
+    ) -> azure_data_cosmos::Result<Option<Duration>>;
 }
 
 /// The item type used for seeding, reading, querying, and upserting.

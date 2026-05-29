@@ -42,7 +42,7 @@ const DEFAULT_POLLING_INTERVAL: Duration = Duration::seconds(5);
 ///
 /// ```rust,no_run
 /// # use azure_data_cosmos::models::ThroughputProperties;
-/// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::CosmosResult<()> {
+/// # async fn example(container_client: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::Result<()> {
 /// // Simple: just await the final result
 /// let throughput = container_client
 ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
@@ -56,7 +56,7 @@ const DEFAULT_POLLING_INTERVAL: Duration = Duration::seconds(5);
 ///     .begin_replace_throughput(ThroughputProperties::manual(500), None)
 ///     .await?;
 /// while let Some(status) = poller.try_next().await? {
-///     if let Some(charge) = status.request_charge() {
+///     if let Some(charge) = status.headers().request_charge() {
 ///         println!("Request charge: {charge}");
 ///     }
 /// }
@@ -64,7 +64,7 @@ const DEFAULT_POLLING_INTERVAL: Duration = Duration::seconds(5);
 /// # }
 /// ```
 pub struct ThroughputPoller {
-    stream: BoxStream<'static, crate::CosmosResult<CosmosResponse>>,
+    stream: BoxStream<'static, crate::Result<CosmosResponse>>,
 }
 
 impl ThroughputPoller {
@@ -151,7 +151,7 @@ enum PollState {
 }
 
 impl Stream for ThroughputPoller {
-    type Item = crate::CosmosResult<ResourceResponse<ThroughputProperties>>;
+    type Item = crate::Result<ResourceResponse<ThroughputProperties>>;
 
     fn poll_next(
         mut self: Pin<&mut Self>,
@@ -164,12 +164,9 @@ impl Stream for ThroughputPoller {
 }
 
 impl IntoFuture for ThroughputPoller {
-    type Output = crate::CosmosResult<ResourceResponse<ThroughputProperties>>;
-    type IntoFuture = Pin<
-        Box<
-            dyn Future<Output = crate::CosmosResult<ResourceResponse<ThroughputProperties>>> + Send,
-        >,
-    >;
+    type Output = crate::Result<ResourceResponse<ThroughputProperties>>;
+    type IntoFuture =
+        Pin<Box<dyn Future<Output = crate::Result<ResourceResponse<ThroughputProperties>>> + Send>>;
 
     fn into_future(self) -> Self::IntoFuture {
         Box::pin(async move {
@@ -179,11 +176,17 @@ impl IntoFuture for ThroughputPoller {
                 last_response = Some(result?);
             }
             last_response.map(ResourceResponse::new).ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "throughput poller stream ended without yielding a response",
+                // The poller's underlying stream ended without yielding
+                // any response. Surface as 408 with a dedicated
+                // sub-status: throughput replace has no service SLA on
+                // completion time, so a timeout-like condition is the
+                // most honest mapping (vs. a misleading 503).
+                crate::CosmosError::from(
+                    crate::DriverCosmosError::builder()
+                        .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_POLLER_INCOMPLETE)
+                        .with_message("throughput poller stream ended without yielding a response")
+                        .build(),
                 )
-                .into()
             })
         })
     }

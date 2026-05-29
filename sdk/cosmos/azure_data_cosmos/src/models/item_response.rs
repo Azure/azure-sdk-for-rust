@@ -8,7 +8,6 @@ use std::sync::Arc;
 use crate::models::{
     CosmosResponse, CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders,
 };
-use crate::SessionToken;
 use serde::de::DeserializeOwned;
 
 /// A response from a point item operation (create, read, replace, upsert, delete).
@@ -20,6 +19,7 @@ use serde::de::DeserializeOwned;
 /// control. The item payload is consumed via [`into_body`](Self::into_body)
 /// or deserialized in one shot via [`into_model::<T>`](Self::into_model).
 #[derive(Debug)]
+#[non_exhaustive]
 pub struct ItemResponse {
     response: CosmosResponse,
 }
@@ -47,16 +47,6 @@ impl ItemResponse {
         self.response.into_body()
     }
 
-    /// Returns the request charge (RU consumption) for this operation, if available.
-    pub fn request_charge(&self) -> Option<f64> {
-        self.response.request_charge()
-    }
-
-    /// Returns the session token from this response, if available.
-    pub fn session_token(&self) -> Option<SessionToken> {
-        self.response.session_token()
-    }
-
     /// Returns the diagnostics for this operation.
     ///
     /// The returned [`DiagnosticsContext`] surfaces the full per-operation
@@ -66,24 +56,12 @@ impl ItemResponse {
         self.response.diagnostics()
     }
 
-    /// The logical sequence number (LSN) of the partition replica that served this request.
-    /// Advances with every write on the partition.
-    pub fn lsn(&self) -> Option<u64> {
-        self.response.cosmos_headers().lsn()
-    }
-
-    /// The logical sequence number (LSN) of the specific item/document operated on.
-    /// Reflects the last write to this particular item.
-    pub fn item_lsn(&self) -> Option<u64> {
-        self.response.cosmos_headers().item_lsn()
-    }
-
     /// Deserializes the response body into a model type.
     ///
     /// The target type `T` is supplied at the call site (turbofish) because
     /// `ItemResponse` no longer carries a type parameter; this lets callers
     /// inspect status / headers / diagnostics without committing to a `T`.
-    pub fn into_model<T: DeserializeOwned>(self) -> crate::CosmosResult<T> {
+    pub fn into_model<T: DeserializeOwned>(self) -> crate::Result<T> {
         self.response.into_model::<T>()
     }
 }

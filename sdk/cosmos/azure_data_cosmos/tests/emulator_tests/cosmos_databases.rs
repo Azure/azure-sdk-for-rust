@@ -13,8 +13,8 @@ use futures::TryStreamExt;
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {
@@ -37,7 +37,7 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
 
         let query = Query::from("SELECT * FROM root r WHERE r.id = @id")
             .with_parameter("@id", &test_db_id)?;
-        let mut pager = cosmos_client.query_databases(query.clone(), None)?;
+        let mut pager = cosmos_client.query_databases(query.clone(), None).await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             ids.push(db.id);
@@ -50,7 +50,7 @@ pub async fn database_crud() -> Result<(), Box<dyn Error>> {
         // We're testing delete, so we want to manually delete the DB rather than letting the clean-up process do it.
         db_client.delete(None).await?;
 
-        let mut pager = cosmos_client.query_databases(query, None)?;
+        let mut pager = cosmos_client.query_databases(query, None).await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             ids.push(db.id);

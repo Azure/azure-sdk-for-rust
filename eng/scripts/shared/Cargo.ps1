@@ -43,11 +43,14 @@ function Get-VersionParamsFromCgManifest(
 ) {
   $cgManifest = Get-Content $cgManifestPath `
   | ConvertFrom-Json
-  $versions = $cgManifest.
+  $components = $cgManifest.
   registrations.
-  Where({ $_.component.type -eq 'cargo' -and $_.component.cargo.name -eq $packageName }).
-  component.cargo.version
+  Where({ $_.component.type -eq 'cargo' -and $_.component.cargo.name -eq $packageName })
+  if (!$components) {
+    Write-Error "Component '$packageName' not found in cgmanifest.json"
+  }
 
+  $versions = $components.component.cargo.version
   if (!$versions) {
     Write-Error "No versions found for package '$packageName' in cgmanifest.json"
   }
