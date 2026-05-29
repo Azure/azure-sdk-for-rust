@@ -17,84 +17,14 @@ parameters:
     default: true
 
 steps:
-- pwsh: |
-    $Toolchain = '${{ parameters.Toolchain }}'
-    $MaxAttempts = ${{ parameters.MaxAttempts }}  
-    $SetDefault = $${{ parameters.SetDefault }}
-
-    function Invoke-LoggedCommand($command) {
-        Write-Host "##[group]$command"
-        Invoke-Expression $command
-        Write-Host "##[endgroup]"
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "Command failed: $command"
-            exit $LASTEXITCODE
-        }
-    }
-
-    if ($Toolchain -eq 'msrv') {
-        Write-Host "Reading MSRV from azure_core"
-        $toolchainArg = cargo read-manifest --manifest-path "$(System.DefaultWorkingDirectory)/sdk/core/azure_core/Cargo.toml"
-          | ConvertFrom-Json
-          | Select-Object -ExpandProperty rust_version
-    }
-    elseif ($Toolchain -eq 'active') {
-        # You can't call 'rustup install' without a toolchain before rustup 1.28.0. If know we'll be doing that, make sure
-        # we have the latest rustup installed
-        
-        # Depending on the version of rustup currently installed, simply calling `rustup --version` will install the
-        # active toolchain per rust-toolchain.toml if it's not already installed. We should check the rust version
-        # outside of our repo's context to avoid any rustup-toolchain file influence.
-
-        Push-Location '$(Pipeline.Workspace)'
-        Invoke-LoggedCommand "rustup --version" | Tee-Object -Variable rustupVersion
-        
-        if ($rustupVersion -match 'rustup (\d+).(\d+).\d+') {
-            $major = $matches[1]
-            $minor = $matches[2]
-            if ($major -lt 1 -or $minor -lt 28) {
-                Invoke-LoggedCommand "rustup self update"
-            }
-        }
-        Pop-Location
-
-        $toolchainArg = ''
-    }
-    else {
-        $toolchainArg = $toolchain
-    }
-
-    $attempts = 0
-
-    while ($true) {
-        $attempts++
-
-        Invoke-LoggedCommand "rustup install --no-self-update $toolchainArg"
-
-        if ($?) { break }
-
-        if ($attempts -lt $MaxAttempts) {
-            Write-Host "Install failed, attempt $attempts, retrying..."
-        }
-        else {
-            Write-Host "Install failed after $attempts attempts."
-            exit 1
-        }
-
-        # Failures to update are usually caused by file locks in Windows.
-        # Sleep for a few seconds to give the blocking process a chance to release the lock.
-        Start-Sleep -Seconds 3
-    }
-
-    if ($SetDefault) {
-        if ($Toolchain -eq 'active') {
-            $toolchainArg = rustup show active-toolchain -v | Select-Object -First 1
-        }
-
-        Invoke-LoggedCommand "rustup default $toolchainArg"
-    }
-
-    Invoke-LoggedCommand "rustup show"
-
+- task: PowerShell@2
   displayName: "Use Rust ${{ parameters.Toolchain }}"
+  inputs:
+    pwsh: true
+    filePath: $(Build.SourcesDirectory)/eng/scripts/Use-Rust.ps1
+    arguments: >
+      -Toolchain '${{ parameters.Toolchain }}'
+      -MaxAttempts ${{ parameters.MaxAttempts }}
+      -SetDefault $${{ parameters.SetDefault }}
+      -OutsideDirectory '$(Pipeline.Workspace)'
   workingDirectory: ${{ parameters.WorkingDirectory }}
