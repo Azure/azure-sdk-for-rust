@@ -12,16 +12,18 @@ The Rust driver retries writes by default for retryable status codes. This is sa
 
 ### Idempotency Requirements
 
-For write retries to be safe, customers must use ETag preconditions (`If-Match` headers) on replace and upsert operations. Without ETags, a retried write could silently overwrite a concurrent update. This is a best practice regardless of retries — ETags protect against lost updates from concurrent writers.
+Write retries are not strictly idempotent — the initial attempt and a retry may return different status codes (e.g., create returns 201 on success, then 409 on retry). What makes retries "safe" is that the final state of the resource is the same regardless of how many times the operation is executed, and the non-2xx status codes are deterministic signals the application can handle.
 
-| Operation | Idempotent? | Retry safe? |
-|-----------|-------------|-------------|
-| Create | Yes (409 on duplicate) | Always |
-| Delete | Yes (404 on duplicate) | Always |
-| Replace / Upsert | With ETag precondition | Yes — 412 on stale ETag prevents silent overwrites |
-| Replace / Upsert | Without ETag | No — risk of lost update on retry |
-| Patch | Yes (operation-level idempotency) | Always |
-| Stored Procedure | No | **Never** — retries disabled |
+For replace and upsert operations, customers must use ETag preconditions (`If-Match` headers) to enable optimistic locking. Without ETags, there is no concurrency control — concurrent writers or retried writes can silently overwrite each other.
+
+| Operation | Idempotent? | Retry safe? | Initial attempt | On retry (duplicate) | App must handle |
+|-----------|-------------|-------------|-----------------|----------------------|-----------------|
+| Create | Yes | Always | 201 Created | 409 Conflict | 409 |
+| Delete | Yes | Always | 204 No Content | 404 Not Found | 404 |
+| Replace / Upsert | With ETag | Yes | 200 OK | 412 Precondition Failed (if concurrent update) | 412 |
+| Replace / Upsert | Without ETag | No | 200 OK | 200 OK (silent overwrite — no concurrency control) | — |
+| Patch | Yes | Always | 200 OK | 200 OK (operation-level idempotency) | — |
+| Stored Procedure | No | **Never** | Varies | Undefined (side effects may repeat) | N/A — retries disabled |
 
 ## Status Code Handling
 
