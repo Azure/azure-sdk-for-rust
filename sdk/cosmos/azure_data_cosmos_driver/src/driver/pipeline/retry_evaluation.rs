@@ -252,15 +252,9 @@ fn evaluate_http_outcome(
         return result;
     }
 
-    if let Some(result) = try_handle_retry_trigger_group(
-        operation,
-        endpoint,
-        retry_state,
-        &status,
-        &cosmos_headers,
-        &body,
-        request_sent,
-    ) {
+    if let Some(result) =
+        try_handle_retry_trigger_group(operation, endpoint, retry_state, &status, request_sent)
+    {
         return result;
     }
 
@@ -401,8 +395,6 @@ fn try_handle_retry_trigger_group(
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: &CosmosStatus,
-    cosmos_headers: &CosmosResponseHeaders,
-    body: &[u8],
     request_sent: RequestSentStatus,
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     let is_system_resource_unavailable = status.is_throttled()
@@ -547,7 +539,6 @@ fn evaluate_transport_layer_outcome(
         return (
             OperationAction::Abort {
                 error: build_transport_error(&status, error),
-                status: Some(status),
             },
             effects,
         );
