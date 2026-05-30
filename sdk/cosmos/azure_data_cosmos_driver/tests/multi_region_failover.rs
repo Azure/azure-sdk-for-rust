@@ -143,7 +143,6 @@ async fn session_not_available_retries_across_locations() {
 /// HTTP errors correctly (the integration-level companion to the unit test
 /// `fetch_account_properties_surfaces_5xx_body_as_status_error_issue_4483`).
 #[tokio::test]
-#[ignore = "Requires live Cosmos account and AAD credentials (DeveloperToolsCredential chain)"]
 async fn aad_token_credential_account_metadata_smoke_test() {
     let Some(account) = build_account_with_token_credential_from_env() else {
         eprintln!(

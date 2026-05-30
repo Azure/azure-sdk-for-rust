@@ -55,7 +55,6 @@ use std::sync::Arc;
 ///   -- --ignored --nocapture
 /// ```
 #[tokio::test]
-#[ignore = "Repro for issue #4483 — fails until the fix gates account-metadata parsing on response.is_success(). Also requires test_category 'emulator'."]
 pub async fn account_metadata_503_surfaces_as_status_error_issue_4483() -> Result<(), Box<dyn Error>>
 {
     // Inject a persistent 503 on ALL MetadataReadDatabaseAccount requests so
