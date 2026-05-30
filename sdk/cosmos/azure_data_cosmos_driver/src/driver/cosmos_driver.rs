@@ -1956,6 +1956,10 @@ mod tests {
         Success,
         Http2Incompatible,
         ConnectionError,
+        /// Verbatim 503 body reported on issue #4483: the gateway returns
+        /// a Cosmos-flavored JSON error envelope (no `_self` field) and the
+        /// driver currently relabels it as a deserialization failure.
+        ServiceUnavailable503Issue4483,
     }
 
     #[derive(Debug)]
@@ -1987,6 +1991,11 @@ mod tests {
                         .build(),
                     crate::diagnostics::RequestSentStatus::NotSent,
                 )),
+                ResponsePlan::ServiceUnavailable503Issue4483 => Ok(HttpResponse {
+                    status: 503,
+                    headers: Headers::new(),
+                    body: br#"{"code":"ServiceUnavailable","message":"pgcosmos extension is still starting; retry request shortly"}"#.to_vec(),
+                }),
             }
         }
     }
@@ -2827,5 +2836,74 @@ mod tests {
                 .await;
 
         assert!(result.is_err(), "should fail without previous props");
+    }
+
+    /// Regression test for https://github.com/Azure/azure-sdk-for-rust/issues/4483.
+    ///
+    /// `fetch_account_properties_with_transport` currently feeds the raw
+    /// response body to `serde_json::from_slice::<AccountProperties>` without
+    /// inspecting `response.status`. Any non-2xx JSON envelope (e.g. the
+    /// 503 `{"code":"ServiceUnavailable",...}` body returned by an extension
+    /// that is still starting, or an AAD 401/403 envelope in prod) trips
+    /// serde with `missing field \`_self\`` and is relabeled as
+    /// [`CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID`] (HTTP 500,
+    /// sub-status 20020). The customer never sees the real upstream status.
+    ///
+    /// Expected behavior once the bug is fixed: the surfaced error reflects
+    /// the upstream HTTP status (`StatusCode::ServiceUnavailable`, 503) and
+    /// is NOT a `SERIALIZATION_RESPONSE_BODY_INVALID` deserialize error.
+    ///
+    /// This test is `#[ignore]` so it does not break CI before the fix
+    /// lands; the fix PR should remove the `#[ignore]` attribute. Run
+    /// locally with:
+    ///
+    /// ```sh
+    /// cargo test -p azure_data_cosmos_driver \
+    ///   fetch_account_properties_surfaces_5xx_body_as_status_error_issue_4483 \
+    ///   -- --ignored --nocapture
+    /// ```
+    #[tokio::test]
+    #[ignore = "regression repro for issue #4483; fails until the fix gates parsing on HTTP status"]
+    async fn fetch_account_properties_surfaces_5xx_body_as_status_error_issue_4483() {
+        let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
+            plan: ResponsePlan::ServiceUnavailable503Issue4483,
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("repro-issue-4483/0.0.0");
+
+        let err = CosmosDriver::fetch_account_properties_with_transport(
+            &transport,
+            &account,
+            &user_agent,
+        )
+        .await
+        .expect_err(
+            "503 ServiceUnavailable response with a non-empty JSON envelope must surface as an error",
+        );
+
+        let status = err.status();
+        let rendered = format!("{err:?}");
+
+        assert_ne!(
+            status,
+            crate::models::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "issue #4483: 5xx body must NOT be reported as a deserialization failure; \
+             expected an upstream-status error (e.g. 503 ServiceUnavailable). \
+             Got status={status:?} err={rendered}"
+        );
+        assert!(
+            !rendered.contains("missing field `_self`"),
+            "issue #4483: the user-visible error must not leak the internal \
+             `missing field \\`_self\\`` serde detail. Got: {rendered}"
+        );
+        assert_eq!(
+            u16::from(status.status_code()),
+            503,
+            "issue #4483: the surfaced error should reflect the upstream HTTP 503 status. \
+             Got status={status:?} err={rendered}"
+        );
     }
 }
