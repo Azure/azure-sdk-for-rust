@@ -27,4 +27,4 @@ steps:
       -MaxAttempts ${{ parameters.MaxAttempts }}
       -SetDefault $${{ parameters.SetDefault }}
       -OutsideDirectory '$(Pipeline.Workspace)'
-  workingDirectory: ${{ parameters.WorkingDirectory }}
+    workingDirectory: ${{ parameters.WorkingDirectory }}
