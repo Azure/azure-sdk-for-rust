@@ -160,13 +160,6 @@ fn assert_preserves_upstream_status(
 /// failure — to the caller. This closes the per-error-type slice of the
 /// issue #4483 coverage gap for the WriteForbidden envelope on the
 /// account-metadata path.
-///
-/// TODO(Step 8): once `CosmosDriver` exposes test-only observability for the
-/// `RefreshAccountProperties` and `MarkEndpointUnavailable` state-machine
-/// effects, extend this test to assert those effects fire after the 403/3 and
-/// that the next retry targets a different region. Doing that today would
-/// require adding new public-by-test API surface to `Driver`, which is out
-/// of scope for the fix shipping in this PR.
 #[tokio::test]
 async fn write_forbidden_triggers_refresh_and_failover() {
     let Some(account) = build_account_from_env() else {
@@ -211,14 +204,6 @@ async fn write_forbidden_triggers_refresh_and_failover() {
 /// failure. This closes the per-error-type slice of the issue #4483
 /// coverage gap for the ReadSessionNotAvailable envelope on the
 /// account-metadata path.
-///
-/// TODO(Step 8): once data-plane fault injection on `read_database` /
-/// `read_item` is available and `CosmosDriver` exposes test-only observability
-/// for session-retry decisions, extend this test to inject the fault on the
-/// data-plane request itself and assert that:
-///   - Single-write accounts retry the read in up to 2 preferred regions.
-///   - Multi-write accounts retry across all endpoints in `endpoints.len()`.
-///   - The retry succeeds in a different region when the fault is exhausted.
 #[tokio::test]
 async fn session_not_available_retries_across_locations() {
     let Some(account) = build_account_from_env() else {
