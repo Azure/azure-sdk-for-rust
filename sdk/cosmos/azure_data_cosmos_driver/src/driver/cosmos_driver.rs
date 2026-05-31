@@ -424,9 +424,11 @@ impl CosmosDriver {
         if !status_code.is_success() {
             let cosmos_status =
                 crate::error::CosmosStatus::from_parts(status_code, cosmos_headers.substatus);
-            let body_excerpt = String::from_utf8_lossy(&response.body);
-            let body_excerpt = if body_excerpt.len() > 512 {
-                format!("{}…[truncated]", &body_excerpt[..512])
+            let body_truncated = response.body.len() > 512;
+            let body_excerpt =
+                String::from_utf8_lossy(&response.body[..response.body.len().min(512)]);
+            let body_excerpt = if body_truncated {
+                format!("{body_excerpt}…[truncated]")
             } else {
                 body_excerpt.into_owned()
             };
@@ -3116,6 +3118,30 @@ mod tests {
             u16::from(err.status().status_code()),
             500,
             "upstream HTTP 500 must still be preserved alongside the truncated body. Got: {err:?}"
+        );
+    }
+
+    /// Regression guard for UTF-8 body excerpts: a multi-byte codepoint may
+    /// straddle byte 512, so truncation must operate on bytes before lossy
+    /// UTF-8 conversion instead of slicing the resulting `str` by byte index.
+    #[tokio::test]
+    async fn fetch_account_properties_truncates_non_ascii_body_without_panicking() {
+        let mut body = vec![b'A'; 511];
+        body.extend_from_slice("é".as_bytes());
+        body.extend_from_slice(b"tail");
+
+        let err = drive_fetch_with(500, body)
+            .await
+            .expect_err("500 must surface as an error");
+        let rendered = format!("{err}");
+
+        assert!(
+            rendered.contains("…[truncated]"),
+            "expected the truncation marker on a >512-byte body. Got: {rendered}"
+        );
+        assert!(
+            !rendered.contains("tail"),
+            "tail of the body must be dropped after byte truncation. Got: {rendered}"
         );
     }
 
