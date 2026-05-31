@@ -33,12 +33,15 @@
 
 #![cfg(feature = "fault_injection")]
 
+use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
+use azure_data_cosmos_driver::error::CosmosError;
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
     FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos_driver::models::AccountReference;
+use azure_data_cosmos_driver::{CosmosStatus, SubStatusCode};
 use azure_identity::DeveloperToolsCredential;
 use std::sync::Arc;
 
@@ -111,19 +114,43 @@ fn build_account_metadata_fault_rule(
     )
 }
 
-/// Asserts the rendered error from a faulted operation preserves the upstream
-/// HTTP status keyword and does NOT leak the issue #4483 serde signature.
-fn assert_no_self_serde_leak(rendered: &str, status_keyword: &str) {
-    assert!(
-        !rendered.contains("missing field `_self`"),
-        "issue #4483: the user-visible error must NOT leak the internal \
-         `missing field \\`_self\\`` serde detail. Got: {rendered}"
+/// Asserts that the surfaced error from a faulted `GET /` preserves the
+/// upstream HTTP status from the injected fault — i.e. it is NOT wrapped as
+/// the synthetic `SERIALIZATION_RESPONSE_BODY_INVALID` (500/20020) that
+/// today's account-metadata path produces when the body fails to deserialize
+/// as `AccountProperties`. That wrapping is the precise bug shape behind
+/// issue #4483: any non-2xx body (whether plain text or a Cosmos JSON error
+/// envelope missing `_self`) currently surfaces as a generic serialization
+/// failure instead of the upstream status.
+///
+/// Checking `status.status_code()` (and the sub-status when the fault sets
+/// one) is structurally precise — it does not depend on `Display` text or
+/// the exact body shape the fault injector chose to emit, both of which
+/// could change without changing the user-observable behavior under test.
+fn assert_preserves_upstream_status(
+    err: &CosmosError,
+    expected_status: StatusCode,
+    expected_sub_status: Option<SubStatusCode>,
+) {
+    let status = err.status();
+    assert_ne!(
+        status,
+        CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+        "issue #4483: error must preserve the upstream HTTP status, not be \
+         relabeled as SERIALIZATION_RESPONSE_BODY_INVALID. Got: {err:?}"
     );
-    let lowered = rendered.to_lowercase();
-    assert!(
-        lowered.contains(&status_keyword.to_lowercase()),
-        "surfaced error should reflect the injected fault `{status_keyword}`. Got: {rendered}"
+    assert_eq!(
+        status.status_code(),
+        expected_status,
+        "expected the injected upstream status to be preserved. Got: {err:?}"
     );
+    if let Some(expected_sub) = expected_sub_status {
+        assert_eq!(
+            status.sub_status(),
+            Some(expected_sub),
+            "expected the injected sub-status to be preserved. Got: {err:?}"
+        );
+    }
 }
 
 /// Behavioral coverage for the WriteForbidden (403/3) error path.
@@ -166,8 +193,11 @@ async fn write_forbidden_triggers_refresh_and_failover() {
              WriteForbidden — the account-metadata fetch cannot complete",
         );
 
-    let rendered = format!("{err:?} | {err}");
-    assert_no_self_serde_leak(&rendered, "Forbidden");
+    assert_preserves_upstream_status(
+        &err,
+        StatusCode::Forbidden,
+        Some(SubStatusCode::WRITE_FORBIDDEN),
+    );
     assert!(
         rule.hit_count() > 0,
         "MetadataReadDatabaseAccount WriteForbidden fault should have been hit at least once"
@@ -215,8 +245,11 @@ async fn session_not_available_retries_across_locations() {
              ReadSessionNotAvailable — the account-metadata fetch cannot complete",
         );
 
-    let rendered = format!("{err:?} | {err}");
-    assert_no_self_serde_leak(&rendered, "NotFound");
+    assert_preserves_upstream_status(
+        &err,
+        StatusCode::NotFound,
+        Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+    );
     assert!(
         rule.hit_count() > 0,
         "MetadataReadDatabaseAccount ReadSessionNotAvailable fault should have been hit at least once"
@@ -280,9 +313,11 @@ async fn aad_token_credential_account_metadata_smoke_test() {
         .expect("runtime should be created");
 
     // get_or_create_driver triggers the lazy account-metadata (`GET /`) fetch
-    // with the AAD bearer token. Under a persistent 503 it must surface an
-    // upstream HTTP-status error — never a serde "missing field `_self`"
-    // failure (issue #4483).
+    // with the AAD bearer token. Under a persistent 503 it must surface the
+    // upstream HTTP status — never the synthetic
+    // `SERIALIZATION_RESPONSE_BODY_INVALID` (500/20020) that issue #4483
+    // currently produces when the body can't be deserialized as
+    // `AccountProperties`.
     let err = runtime
         .get_or_create_driver(account, None)
         .await
@@ -291,17 +326,7 @@ async fn aad_token_credential_account_metadata_smoke_test() {
              MetadataReadDatabaseAccount, even with an AAD credential",
         );
 
-    let rendered = format!("{err:?} | {err}");
-    assert!(
-        !rendered.contains("missing field `_self`"),
-        "issue #4483 regression: AAD + 503 on GET / must NOT surface as a \
-         `missing field \\`_self\\`` serde failure. Got: {rendered}"
-    );
-    assert!(
-        rendered.contains("503") || rendered.to_lowercase().contains("serviceunavailable"),
-        "surfaced error should reflect the upstream HTTP 503 / ServiceUnavailable status. \
-         Got: {rendered}"
-    );
+    assert_preserves_upstream_status(&err, StatusCode::ServiceUnavailable, None);
     assert!(
         rule.hit_count() > 0,
         "MetadataReadDatabaseAccount fault should have been hit at least once"
