@@ -509,21 +509,22 @@ mod tests {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Coverage for issue #4483: non-2xx response bodies must not be parsed
-    // as `AccountProperties`.
+    // Coverage: non-2xx response bodies must not be parsed as
+    // `AccountProperties`.
     //
-    // Today, `fetch_account_properties_with_transport` calls
-    // `parse_account_properties_payload(&response.body)` unconditionally —
-    // it does not gate on `response.status`. As a result, when the gateway
-    // returns a 4xx/5xx with a Cosmos error envelope (or a plain-text body
-    // from an upstream proxy / fault injector), the serde failure surfaces
-    // as `missing field _self` / `SERIALIZATION_RESPONSE_BODY_INVALID`
-    // (status 500, sub-status 20020), masking the real status.
+    // Without status-gated parsing, `fetch_account_properties_with_transport`
+    // would call `parse_account_properties_payload(&response.body)`
+    // unconditionally — without checking `response.status`. As a result, when
+    // the gateway returns a 4xx/5xx with a Cosmos error envelope (or a
+    // plain-text body from an upstream proxy / fault injector), the serde
+    // failure would surface as `missing field _self` /
+    // `SERIALIZATION_RESPONSE_BODY_INVALID` (status 500, sub-status 20020),
+    // masking the real status.
     //
-    // The tests below pin down today's parsing behavior so that once the
-    // fix lands (gate parsing on `is_success()` and return a typed HTTP
-    // error otherwise), the call sites can be re-pointed at the new path
-    // with confidence that error-shaped bodies remain unparseable here.
+    // The tests below pin down the parser's behavior on error-shaped bodies
+    // so that the call sites can rely on the fact that error-shaped bodies
+    // remain unparseable here (and must therefore be handled by the
+    // status-gating branch upstream of the parser).
     // ─────────────────────────────────────────────────────────────────────
 
     #[test]
@@ -532,8 +533,8 @@ mod tests {
         let body = r#"{"code":"ServiceUnavailable","message":"Service is currently unavailable."}"#;
         let err = serde_json::from_str::<AccountProperties>(body)
             .expect_err("503 error envelope must not deserialize as AccountProperties");
-        // The error is the `missing field _self` shape that issue #4483
-        // observed being relabeled as a serialization error by the driver.
+        // The error has the `missing field _self` shape that the production
+        // bug observed being relabeled as a serialization error by the driver.
         assert!(
             err.to_string().contains("_self") || err.to_string().contains("missing field"),
             "expected serde to fail on the missing AccountProperties fields, got: {err}"
@@ -544,7 +545,7 @@ mod tests {
     fn error_envelope_unauthorized_does_not_parse_as_account_properties() {
         // Shape returned by the gateway for HTTP 401 (AAD InvalidToken,
         // TokenExpired, RBAC propagation race, etc.) — the production
-        // trigger called out in issue #4483.
+        // trigger for the account-metadata-as-serde bug.
         let body = r#"{"code":"Unauthorized","message":"The input authorization token can't serve the request."}"#;
         serde_json::from_str::<AccountProperties>(body)
             .expect_err("401 error envelope must not deserialize as AccountProperties");

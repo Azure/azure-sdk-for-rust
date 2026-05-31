@@ -412,8 +412,8 @@ impl CosmosDriver {
         })?;
         let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
 
-        // Issue #4483: gate parsing on HTTP status. The account-metadata path
-        // previously fed *every* response body to
+        // Gate parsing on HTTP status. Without this guard the account-metadata
+        // path would feed *every* response body to
         // `serde_json::from_slice::<AccountProperties>`, which meant non-2xx
         // bodies (a 503 `{"code":"ServiceUnavailable",...}` envelope, an AAD
         // 401/403 envelope, a plain-text proxy body, etc.) all surfaced as
@@ -422,9 +422,9 @@ impl CosmosDriver {
         // — and the real upstream status was lost. Mirror the main data-plane
         // pipeline: only parse on `is_success()`; otherwise propagate the
         // upstream `(status_code, sub_status, headers, body)` verbatim so
-        // callers (incl. the 5-minute background refresh from PR #4407) can
-        // distinguish transient throttles, regional outages, and auth failures
-        // from genuine schema mismatches.
+        // callers (including the periodic background refresh) can distinguish
+        // transient throttles, regional outages, and auth failures from
+        // genuine schema mismatches.
         let status_code = azure_core::http::StatusCode::from(response.status);
         // 3xx responses are treated as non-success here; redirect following, if
         // any, belongs to the transport layer below this response interpreter.
@@ -2000,10 +2000,10 @@ mod tests {
         Success,
         Http2Incompatible,
         ConnectionError,
-        /// Verbatim 503 body reported on issue #4483: the gateway returns
-        /// a Cosmos-flavored JSON error envelope (no `_self` field) and the
-        /// driver currently relabels it as a deserialization failure.
-        ServiceUnavailable503Issue4483,
+        /// Verbatim 503 body the gateway can return: a Cosmos-flavored JSON
+        /// error envelope (no `_self` field). Without status-gated parsing the
+        /// driver would relabel it as a deserialization failure.
+        ServiceUnavailable503,
     }
 
     #[derive(Debug)]
@@ -2035,7 +2035,7 @@ mod tests {
                         .build(),
                     crate::diagnostics::RequestSentStatus::NotSent,
                 )),
-                ResponsePlan::ServiceUnavailable503Issue4483 => Ok(HttpResponse {
+                ResponsePlan::ServiceUnavailable503 => Ok(HttpResponse {
                     status: 503,
                     headers: Headers::new(),
                     body: br#"{"code":"ServiceUnavailable","message":"pgcosmos extension is still starting; retry request shortly"}"#.to_vec(),
@@ -2882,30 +2882,31 @@ mod tests {
         assert!(result.is_err(), "should fail without previous props");
     }
 
-    /// Regression test for https://github.com/Azure/azure-sdk-for-rust/issues/4483.
+    /// Regression test for the account-metadata 5xx-as-serde bug.
     ///
-    /// Before the fix, `fetch_account_properties_with_transport` fed the raw
-    /// response body to `serde_json::from_slice::<AccountProperties>` without
-    /// inspecting `response.status`. Any non-2xx JSON envelope (e.g. the
+    /// Without status-gated parsing, `fetch_account_properties_with_transport`
+    /// would feed the raw response body to
+    /// `serde_json::from_slice::<AccountProperties>` without inspecting
+    /// `response.status`. Any non-2xx JSON envelope (e.g. the
     /// 503 `{"code":"ServiceUnavailable",...}` body returned by an extension
-    /// that is still starting, or an AAD 401/403 envelope in prod) tripped
-    /// serde with `missing field \`_self\`` and was relabeled as
+    /// that is still starting, or an AAD 401/403 envelope in prod) trips
+    /// serde with `missing field \`_self\`` and gets relabeled as
     /// [`CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID`] (HTTP 500,
-    /// sub-status 20020). The customer never saw the real upstream status.
+    /// sub-status 20020), so the customer never sees the real upstream status.
     ///
-    /// After the fix the surfaced error reflects the upstream HTTP status
-    /// (`StatusCode::ServiceUnavailable`, 503) and is NOT a
-    /// `SERIALIZATION_RESPONSE_BODY_INVALID` deserialize error.
+    /// This test pins the post-fix invariant: the surfaced error reflects the
+    /// upstream HTTP status (`StatusCode::ServiceUnavailable`, 503) and is NOT
+    /// a `SERIALIZATION_RESPONSE_BODY_INVALID` deserialize error.
     #[tokio::test]
-    async fn fetch_account_properties_surfaces_5xx_body_as_status_error_issue_4483() {
+    async fn fetch_account_properties_surfaces_5xx_body_as_status_error() {
         let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
-            plan: ResponsePlan::ServiceUnavailable503Issue4483,
+            plan: ResponsePlan::ServiceUnavailable503,
         });
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let account = signed_test_account("https://test.documents.azure.com:443/");
-        let user_agent = azure_core::http::headers::HeaderValue::from("repro-issue-4483/0.0.0");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 
         let err = CosmosDriver::fetch_account_properties_with_transport(
             &transport,
@@ -2923,25 +2924,25 @@ mod tests {
         assert_ne!(
             status,
             crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-            "issue #4483: 5xx body must NOT be reported as a deserialization failure; \
+            "5xx body must NOT be reported as a deserialization failure; \
              expected an upstream-status error (e.g. 503 ServiceUnavailable). \
              Got status={status:?} err={rendered}"
         );
         assert!(
             !rendered.contains("missing field `_self`"),
-            "issue #4483: the user-visible error must not leak the internal \
+            "the user-visible error must not leak the internal \
              `missing field \\`_self\\`` serde detail. Got: {rendered}"
         );
         assert_eq!(
             u16::from(status.status_code()),
             503,
-            "issue #4483: the surfaced error should reflect the upstream HTTP 503 status. \
+            "the surfaced error should reflect the upstream HTTP 503 status. \
              Got status={status:?} err={rendered}"
         );
         assert_eq!(
             status.sub_status(),
             None,
-            "issue #4483: no x-ms-substatus header should remain None, not Some(0). Got: {status:?}"
+            "no x-ms-substatus header should remain None, not Some(0). Got: {status:?}"
         );
         assert!(
             err.response().is_none(),
@@ -2950,15 +2951,15 @@ mod tests {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Issue #4483 coverage-gap tests.
+    // Account-metadata 5xx/4xx coverage-gap tests.
     //
     // The regression test above (`fetch_account_properties_surfaces_5xx_
-    // body_as_status_error_issue_4483`) pins the verbatim 503 body from the
-    // issue. The tests below exercise the *other* non-2xx shapes the
-    // status-gating fix has to handle correctly:
+    // body_as_status_error`) pins the verbatim 503 body shape. The tests below
+    // exercise the *other* non-2xx shapes the status-gating fix has to handle
+    // correctly:
     //
-    //   * 401 with an AAD-style JSON envelope (production trigger called out
-    //     in the issue body).
+    //   * 401 with an AAD-style JSON envelope (the production trigger for
+    //     RBAC-propagation / token-expiry / IMDS hiccups).
     //   * 502 with a plain-text upstream-proxy body (LB / sidecar fault
     //     injectors emit these — they are not JSON at all, so they used to
     //     produce a particularly opaque `expected value at line 1 column 1`
@@ -2978,8 +2979,8 @@ mod tests {
     // ─────────────────────────────────────────────────────────────────────
 
     /// Minimal `TransportClient` that returns a single canned `(status, body)`
-    /// regardless of the request. Lets each #4483 coverage-gap test below
-    /// declare the exact wire response it needs without growing the shared
+    /// regardless of the request. Lets each coverage-gap test below declare
+    /// the exact wire response it needs without growing the shared
     /// `ResponsePlan` enum.
     #[derive(Debug)]
     struct RawResponseClient {
@@ -3008,15 +3009,15 @@ mod tests {
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
         let account = signed_test_account("https://test.documents.azure.com:443/");
-        let user_agent = azure_core::http::headers::HeaderValue::from("repro-issue-4483/0.0.0");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 
         CosmosDriver::fetch_account_properties_with_transport(&transport, &account, &user_agent)
             .await
     }
 
-    /// Coverage gap: AAD 401 envelope on the account-metadata path
-    /// (production trigger called out in issue #4483 — RBAC propagation
-    /// races, token expiry, IMDS hiccups).
+    /// Coverage gap: AAD 401 envelope on the account-metadata path (the
+    /// production trigger for RBAC propagation races, token expiry, IMDS
+    /// hiccups).
     ///
     /// Asserts the surfaced status is upstream HTTP 401 — not the synthetic
     /// `SERIALIZATION_RESPONSE_BODY_INVALID` — and the `missing field
