@@ -368,6 +368,10 @@ impl CosmosDriver {
     }
 
     /// Fetches account properties using a specific adaptive transport.
+    ///
+    /// This off-pipeline fetch can attach wire payload internally for cache and
+    /// test assertions, but it does not have a diagnostics context to promote
+    /// errors to externally visible `response()` / `diagnostics()` values.
     async fn fetch_account_properties_with_transport(
         transport: &super::transport::adaptive_transport::AdaptiveTransport,
         account: &AccountReference,
@@ -439,8 +443,7 @@ impl CosmosDriver {
                     cosmos_headers,
                 ))
                 .with_message(format!(
-                    "AccountProperties fetch from {endpoint} returned HTTP {}: {body_excerpt}",
-                    response.status
+                    "AccountProperties fetch from {endpoint} returned HTTP {status_code}: {body_excerpt}"
                 ))
                 .build());
         }
@@ -2916,7 +2919,7 @@ mod tests {
 
         assert_ne!(
             status,
-            crate::models::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
             "issue #4483: 5xx body must NOT be reported as a deserialization failure; \
              expected an upstream-status error (e.g. 503 ServiceUnavailable). \
              Got status={status:?} err={rendered}"
@@ -2931,6 +2934,15 @@ mod tests {
             503,
             "issue #4483: the surfaced error should reflect the upstream HTTP 503 status. \
              Got status={status:?} err={rendered}"
+        );
+        assert_eq!(
+            status.sub_status(),
+            None,
+            "issue #4483: no x-ms-substatus header should remain None, not Some(0). Got: {status:?}"
+        );
+        assert!(
+            err.response().is_none(),
+            "off-pipeline account metadata errors do not expose response() without diagnostics. Got: {err:?}"
         );
     }
 
@@ -3020,7 +3032,7 @@ mod tests {
 
         assert_ne!(
             status,
-            crate::models::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
             "401 AAD envelope must not be relabeled as a serde failure. Got: {rendered}"
         );
         assert_eq!(
@@ -3050,7 +3062,7 @@ mod tests {
 
         assert_ne!(
             status,
-            crate::models::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
             "plain-text non-2xx body must not be relabeled as a serde failure. Got: {rendered}"
         );
         assert_eq!(
@@ -3080,7 +3092,7 @@ mod tests {
 
         assert_ne!(
             status,
-            crate::models::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
             "empty non-2xx body must not be relabeled as a serde failure. Got: {rendered}"
         );
         assert_eq!(
@@ -3159,7 +3171,7 @@ mod tests {
 
         assert_eq!(
             err.status(),
-            crate::models::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
             "2xx parse failures must continue to be classified as \
              SERIALIZATION_RESPONSE_BODY_INVALID (the status-gating fix only \
              changes the non-2xx branch). Got: {err:?}"
@@ -3168,6 +3180,10 @@ mod tests {
             err.wire_payload().is_some(),
             "parse-failure branch must still attach CosmosResponseHeaders / payload (R3). \
              Got: {err:?}"
+        );
+        assert!(
+            err.response().is_none(),
+            "2xx parse-failure errors are built off-pipeline and do not expose response(). Got: {err:?}"
         );
     }
 }
