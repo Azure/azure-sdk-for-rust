@@ -161,8 +161,11 @@ fn assert_preserves_upstream_status(
 /// issue #4483 coverage gap for the WriteForbidden envelope on the
 /// account-metadata path.
 #[tokio::test]
-async fn write_forbidden_triggers_refresh_and_failover() {
+async fn write_forbidden_on_metadata_preserves_upstream_status_issue_4483() {
     let Some(account) = build_account_from_env() else {
+        eprintln!(
+            "Skipping WriteForbidden metadata fault test: AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, or AZURE_COSMOS_TEST_DATABASE unset"
+        );
         return;
     };
 
@@ -205,8 +208,11 @@ async fn write_forbidden_triggers_refresh_and_failover() {
 /// coverage gap for the ReadSessionNotAvailable envelope on the
 /// account-metadata path.
 #[tokio::test]
-async fn session_not_available_retries_across_locations() {
+async fn session_not_available_on_metadata_preserves_upstream_status_issue_4483() {
     let Some(account) = build_account_from_env() else {
+        eprintln!(
+            "Skipping ReadSessionNotAvailable metadata fault test: AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, or AZURE_COSMOS_TEST_DATABASE unset"
+        );
         return;
     };
 
@@ -264,9 +270,9 @@ async fn session_not_available_retries_across_locations() {
 /// exercised in CI — and that is exactly the shape of the production
 /// failure reported in issue #4483.
 ///
-/// The test skips cleanly (`return;`) when either `AZURE_COSMOS_ENDPOINT` is
-/// unset or no `DeveloperToolsCredential` chain can be constructed in the
-/// current environment, so it stays green in CI until those prerequisites
+/// The test skips cleanly with a stderr notice when either
+/// `AZURE_COSMOS_ENDPOINT` is unset or no `DeveloperToolsCredential` chain can
+/// be constructed in the current environment, so it stays green in CI until those prerequisites
 /// are provisioned. Run locally with:
 ///
 /// ```sh
