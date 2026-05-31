@@ -405,9 +405,45 @@ impl CosmosDriver {
                 .with_context(format!("AccountProperties fetch from {endpoint}"))
                 .build()
         })?;
+        let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
+
+        // Issue #4483: gate parsing on HTTP status. The account-metadata path
+        // previously fed *every* response body to
+        // `serde_json::from_slice::<AccountProperties>`, which meant non-2xx
+        // bodies (a 503 `{"code":"ServiceUnavailable",...}` envelope, an AAD
+        // 401/403 envelope, a plain-text proxy body, etc.) all surfaced as
+        // `missing field _self` — relabeled as
+        // `SERIALIZATION_RESPONSE_BODY_INVALID` (HTTP 500 / sub-status 20020)
+        // — and the real upstream status was lost. Mirror the main data-plane
+        // pipeline: only parse on `is_success()`; otherwise propagate the
+        // upstream `(status_code, sub_status, headers, body)` verbatim so
+        // callers (incl. the 5-minute background refresh from PR #4407) can
+        // distinguish transient throttles, regional outages, and auth failures
+        // from genuine schema mismatches.
+        let status_code = azure_core::http::StatusCode::from(response.status);
+        if !status_code.is_success() {
+            let cosmos_status =
+                crate::error::CosmosStatus::from_parts(status_code, cosmos_headers.substatus);
+            let body_excerpt = String::from_utf8_lossy(&response.body);
+            let body_excerpt = if body_excerpt.len() > 512 {
+                format!("{}…[truncated]", &body_excerpt[..512])
+            } else {
+                body_excerpt.into_owned()
+            };
+            return Err(crate::error::CosmosError::builder()
+                .with_status(cosmos_status)
+                .with_response_parts(crate::models::CosmosResponsePayload::new(
+                    response.body,
+                    cosmos_headers,
+                ))
+                .with_message(format!(
+                    "AccountProperties fetch from {endpoint} returned HTTP {}: {body_excerpt}",
+                    response.status
+                ))
+                .build());
+        }
+
         let props = Self::parse_account_properties_payload(&response.body).map_err(|err| {
-            let cosmos_headers =
-                crate::models::CosmosResponseHeaders::from_headers(&response.headers);
             crate::error::CosmosErrorBuilder::from_error(err)
                 .with_response_parts(crate::models::CosmosResponsePayload::new(
                     crate::models::ResponseBody::NoPayload,
@@ -2840,30 +2876,19 @@ mod tests {
 
     /// Regression test for https://github.com/Azure/azure-sdk-for-rust/issues/4483.
     ///
-    /// `fetch_account_properties_with_transport` currently feeds the raw
+    /// Before the fix, `fetch_account_properties_with_transport` fed the raw
     /// response body to `serde_json::from_slice::<AccountProperties>` without
     /// inspecting `response.status`. Any non-2xx JSON envelope (e.g. the
     /// 503 `{"code":"ServiceUnavailable",...}` body returned by an extension
-    /// that is still starting, or an AAD 401/403 envelope in prod) trips
-    /// serde with `missing field \`_self\`` and is relabeled as
+    /// that is still starting, or an AAD 401/403 envelope in prod) tripped
+    /// serde with `missing field \`_self\`` and was relabeled as
     /// [`CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID`] (HTTP 500,
-    /// sub-status 20020). The customer never sees the real upstream status.
+    /// sub-status 20020). The customer never saw the real upstream status.
     ///
-    /// Expected behavior once the bug is fixed: the surfaced error reflects
-    /// the upstream HTTP status (`StatusCode::ServiceUnavailable`, 503) and
-    /// is NOT a `SERIALIZATION_RESPONSE_BODY_INVALID` deserialize error.
-    ///
-    /// This test is `#[ignore]` so it does not break CI before the fix
-    /// lands; the fix PR should remove the `#[ignore]` attribute. Run
-    /// locally with:
-    ///
-    /// ```sh
-    /// cargo test -p azure_data_cosmos_driver \
-    ///   fetch_account_properties_surfaces_5xx_body_as_status_error_issue_4483 \
-    ///   -- --ignored --nocapture
-    /// ```
+    /// After the fix the surfaced error reflects the upstream HTTP status
+    /// (`StatusCode::ServiceUnavailable`, 503) and is NOT a
+    /// `SERIALIZATION_RESPONSE_BODY_INVALID` deserialize error.
     #[tokio::test]
-    #[ignore = "regression repro for issue #4483; fails until the fix gates parsing on HTTP status"]
     async fn fetch_account_properties_surfaces_5xx_body_as_status_error_issue_4483() {
         let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
             plan: ResponsePlan::ServiceUnavailable503Issue4483,
