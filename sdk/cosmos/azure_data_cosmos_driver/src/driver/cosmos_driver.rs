@@ -425,6 +425,8 @@ impl CosmosDriver {
         // distinguish transient throttles, regional outages, and auth failures
         // from genuine schema mismatches.
         let status_code = azure_core::http::StatusCode::from(response.status);
+        // 3xx responses are treated as non-success here; redirect following, if
+        // any, belongs to the transport layer below this response interpreter.
         if !status_code.is_success() {
             let cosmos_status =
                 crate::error::CosmosStatus::from_parts(status_code, cosmos_headers.substatus);
