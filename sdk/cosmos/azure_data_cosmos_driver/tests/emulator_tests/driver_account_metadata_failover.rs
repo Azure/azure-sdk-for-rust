@@ -56,6 +56,10 @@ use std::sync::Arc;
 ///   -- --ignored --nocapture
 /// ```
 #[tokio::test]
+#[cfg_attr(
+    target_os = "windows",
+    ignore = "issue #4483 emulator test: account-metadata fetch is cached/bypassed on Windows; in-process scripted test fetch_account_properties_surfaces_5xx_body_as_status_error_issue_4483 covers the same invariant — track Windows reliability as a follow-up"
+)]
 pub async fn account_metadata_503_surfaces_as_status_error_issue_4483() -> Result<(), Box<dyn Error>>
 {
     // Inject a persistent 503 on ALL MetadataReadDatabaseAccount requests so
