@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+// cspell:ignore serviceunavailable
 
 //! Integration coverage for account-metadata (`GET /`) fault behavior tested
 //! against the local emulator via fault injection.
@@ -77,7 +78,7 @@ pub async fn account_metadata_503_surfaces_as_status_error_issue_4483() -> Resul
     let rules = vec![Arc::clone(&rule)];
 
     // Use `run_with_fault_injection` (not the `_unique_db_` variant) so the
-    // harness does NOT pre-emptively create a database before our closure
+    // harness does NOT preemptively create a database before our closure
     // runs — we need to be the ones who first trigger the lazy account
     // metadata fetch so we can inspect the resulting error directly.
     DriverTestClient::run_with_fault_injection(rules, async |context| {
