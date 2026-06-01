@@ -440,7 +440,7 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
         .await?;
     }
 
-    // Sleeping to allow for tag indexing.
+    // Find "hello world" blob by its tag {"foo": "bar"}.
     // In live mode, poll until tags are indexed (up to 60s total timeout).
     // In record mode, use a fixed 15s sleep.
     if ctx.recording().test_mode() == TestMode::Live {
@@ -465,22 +465,22 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
             );
             time::sleep(Duration::from_secs(5)).await;
         }
-    } else if ctx.recording().test_mode() == TestMode::Record {
-        time::sleep(Duration::from_secs(15)).await;
+    } else {
+        if ctx.recording().test_mode() == TestMode::Record {
+            time::sleep(Duration::from_secs(15)).await;
+        }
+        let mut pager = container_client
+            .find_blobs_by_tags("\"foo\"='bar'", None)?
+            .into_pages();
+        let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
+        let blobs = &filter_blob_segment.blob_items;
+        assert!(
+            blobs
+                .iter()
+                .any(|blob| blob.name.as_ref().unwrap() == &blob1_name),
+            "Failed to find \"{blob1_name}\" in filtered blob results."
+        );
     }
-
-    // Find "hello world" blob by its tag {"foo": "bar"}
-    let mut pager = container_client
-        .find_blobs_by_tags("\"foo\"='bar'", None)?
-        .into_pages();
-    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &filter_blob_segment.blob_items;
-    assert!(
-        blobs
-            .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob1_name),
-        "Failed to find \"{blob1_name}\" in filtered blob results."
-    );
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
     let mut pager = container_client

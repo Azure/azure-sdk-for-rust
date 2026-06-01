@@ -216,7 +216,7 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     )
     .await?;
 
-    // Sleeping to allow for tag indexing.
+    // Find "hello world" blob by its tag {"foo": "bar"}.
     // In live mode, poll until tags are indexed (up to 60s total timeout).
     // In record mode, use a fixed 15s sleep.
     if ctx.recording().test_mode() == TestMode::Live {
@@ -238,21 +238,21 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
             );
             time::sleep(Duration::from_secs(5)).await;
         }
-    } else if ctx.recording().test_mode() == TestMode::Record {
-        time::sleep(Duration::from_secs(15)).await;
+    } else {
+        if ctx.recording().test_mode() == TestMode::Record {
+            time::sleep(Duration::from_secs(15)).await;
+        }
+        let blobs: Vec<_> = service_client
+            .find_blobs_by_tags("\"foo\"='bar'", None)?
+            .try_collect()
+            .await?;
+        assert!(
+            blobs
+                .iter()
+                .any(|blob| blob.name.as_ref().unwrap() == &blob1_name),
+            "Failed to find \"{blob1_name}\" in filtered blob results."
+        );
     }
-
-    // Find "hello world" blob by its tag {"foo": "bar"}
-    let blobs: Vec<_> = service_client
-        .find_blobs_by_tags("\"foo\"='bar'", None)?
-        .try_collect()
-        .await?;
-    assert!(
-        blobs
-            .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob1_name),
-        "Failed to find \"{blob1_name}\" in filtered blob results."
-    );
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
     let blobs: Vec<_> = service_client
