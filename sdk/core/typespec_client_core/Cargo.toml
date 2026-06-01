@@ -37,6 +37,8 @@ uuid.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["fs"] }
+tokio-stream.workspace = true
+tokio-util = { workspace = true, features = ["compat"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 typespec_macros.workspace = true
