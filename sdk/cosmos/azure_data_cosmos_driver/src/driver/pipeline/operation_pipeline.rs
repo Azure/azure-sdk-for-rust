@@ -615,11 +615,18 @@ fn resolve_endpoint(
         .unwrap_or_else(|| {
             if retry_state.is_dataplane {
                 // Data-plane operations must always use a regional endpoint.
+                // preferred_write_endpoints is guaranteed non-empty by
+                // build_account_endpoint_state. During normal operation it
+                // contains regional endpoints; during initial bootstrap
+                // (before account metadata is fetched) it may contain the
+                // global default_endpoint — but data-plane operations should
+                // not run before topology discovery completes. The
+                // debug_assert below guards this invariant.
                 account
                     .preferred_write_endpoints
                     .first()
-                    .cloned()
-                    .unwrap_or_else(|| account.default_endpoint.clone())
+                    .expect("preferred_write_endpoints is always non-empty")
+                    .clone()
             } else {
                 // Metadata operations (e.g., GetDatabaseAccount) may use the
                 // global endpoint — it is the canonical entry point for
@@ -2076,7 +2083,10 @@ mod tests {
     }
 
     #[test]
-    fn resolve_endpoint_dataplane_falls_back_to_hub_when_all_excluded() {
+    fn resolve_endpoint_dataplane_excluded_read_region_routes_to_hub() {
+        // Only the read region is excluded — the hub write region is still
+        // available, so resolve_endpoint should pick it directly from the
+        // write endpoint list (not via the last-resort fallback path).
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::read_item(item);
         let default_endpoint =
@@ -2116,7 +2126,6 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
         };
-        // Simulate the pipeline setting is_dataplane after construction.
         retry_state.is_dataplane = true;
 
         let routing = super::resolve_endpoint(
@@ -2126,8 +2135,66 @@ mod tests {
             false,
             Duration::from_secs(60),
         );
-        // Data-plane operations must fall back to the hub/primary write
-        // region, NOT the global endpoint.
+        assert_eq!(routing.endpoint, hub_endpoint);
+        assert!(!routing.endpoint.is_global());
+    }
+
+    #[test]
+    fn resolve_endpoint_dataplane_all_regions_excluded_falls_back_to_hub() {
+        // Both the read region AND the hub write region are excluded.
+        // resolve_endpoint must still use the hub write region via the
+        // last-resort fallback (preferred_write_endpoints[0]), never the
+        // global endpoint.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+        let default_endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
+        let hub_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: default_endpoint.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 3,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
+            excluded_regions: vec!["westus2".into(), "eastus".into()],
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
+        };
+        retry_state.is_dataplane = true;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        // Even with all regions excluded, the hub write region is used as
+        // the last-resort fallback for data-plane operations.
         assert_eq!(routing.endpoint, hub_endpoint);
         assert!(!routing.endpoint.is_global());
     }
