@@ -22,4 +22,11 @@
     "editor.defaultFormatter": "ms-vscode.powershell",
   },
   "cmake.ignoreCMakeListsMissing": true,
+  "yaml.schemas": {
+    "file:///c%3A/Users/heaths/.vscode/extensions/docsmsft.docs-yaml-1.0.5/dist/toc.schema.json": "/toc\\.yml/i",
+    "https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/master/service-schema.json": [
+      "file:///home/heaths/src/azure-sdk-for-rust2/eng/pipelines/templates/jobs/fetch.yml",
+      "file:///home/heaths/src/azure-sdk-for-rust2/eng/pipelines/fetch.yml"
+    ]
+  },
 }

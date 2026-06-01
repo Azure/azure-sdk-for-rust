@@ -1,0 +1,6 @@
+[registries]
+azure-sdk-for-rust = { index = "sparse+https://pkgs.dev.azure.com/azure-sdk/_packaging/azure-sdk-for-rust/Cargo/index/" }
+
+# To use the Azure Artifacts feed, run `eng/scripts/use-registry.rs azure`.
+# [source.crates-io]
+# replace-with = "azure-sdk-for-rust"
