@@ -440,10 +440,32 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
         .await?;
     }
 
-    // Sleep in live mode to allow tags to be indexed on the service
-    if ctx.recording().test_mode() == TestMode::Live
-        || ctx.recording().test_mode() == TestMode::Record
-    {
+    // Sleeping to allow for tag indexing.
+    // In live mode, poll until tags are indexed (up to 60s total timeout).
+    // In record mode, use a fixed 15s sleep.
+    if ctx.recording().test_mode() == TestMode::Live {
+        let deadline = time::Instant::now() + Duration::from_secs(60);
+        loop {
+            let mut pager = container_client
+                .find_blobs_by_tags("\"foo\"='bar'", None)?
+                .into_pages();
+            if let Some(resp) = pager.try_next().await? {
+                let segment = resp.into_model()?;
+                if segment
+                    .blob_items
+                    .iter()
+                    .any(|b| b.name.as_ref().unwrap() == &blob1_name)
+                {
+                    break;
+                }
+            }
+            assert!(
+                time::Instant::now() < deadline,
+                "Timed out after 60s waiting for blob tag indexing"
+            );
+            time::sleep(Duration::from_secs(5)).await;
+        }
+    } else if ctx.recording().test_mode() == TestMode::Record {
         time::sleep(Duration::from_secs(15)).await;
     }
 
