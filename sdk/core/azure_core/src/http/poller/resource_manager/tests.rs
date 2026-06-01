@@ -1,7 +1,7 @@
-use super::new_poller;
+use super::{new_poller, AZURE_ASYNC_OPERATION, LOCATION};
 use crate::{
     http::{
-        headers::{HeaderName, Headers, RETRY_AFTER_MS},
+        headers::{Headers, RETRY_AFTER_MS},
         AsyncRawResponse, ClientOptions, Context, HttpClient, JsonFormat, Method, Pipeline, Poller,
         Request, StatusCode, Transport, Url,
     },
@@ -11,11 +11,9 @@ use crate::{
 use azure_core_test::http::MockHttpClient;
 use futures::FutureExt as _;
 use std::sync::{Arc, Mutex};
+use typespec_client_core::fmt::SafeDebug;
 
-const AZURE_ASYNC_OPERATION: HeaderName = HeaderName::from_static("azure-asyncoperation");
-const LOCATION: HeaderName = HeaderName::from_static("location");
-
-#[derive(Debug, serde::Deserialize)]
+#[derive(SafeDebug, serde::Deserialize)]
 struct ArmOperationStatus {
     #[serde(default)]
     status: Option<PollerStatus>,
@@ -23,13 +21,13 @@ struct ArmOperationStatus {
     properties: Option<ArmOperationProperties>,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(SafeDebug, serde::Deserialize)]
 struct ArmOperationProperties {
     #[serde(default, rename = "provisioningState")]
     provisioning_state: Option<PollerStatus>,
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(SafeDebug, serde::Deserialize)]
 struct ArmResource {
     id: String,
 }
