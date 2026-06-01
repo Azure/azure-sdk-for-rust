@@ -7,6 +7,7 @@
 ### Breaking Changes
 
 ### Bugs Fixed
+- Data-plane operations now fall back to the hub/primary write region endpoint instead of the global account endpoint when all regional endpoints are excluded or unavailable. Metadata operations (e.g., account topology discovery) continue to use the global endpoint. ([#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503))
 
 ### Other Changes
 
@@ -42,7 +43,6 @@
 
 ### Bugs Fixed
 
-- Data-plane operations now fall back to the hub/primary write region endpoint instead of the global account endpoint when all regional endpoints are excluded or unavailable. Metadata operations (e.g., account topology discovery) continue to use the global endpoint. ([#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503))
 - `build_transport_error` (the abort wrap on the retry-budget-exhausted transport path) now forwards the inner cosmos error's diagnostics onto the synthesized outer error. Previously the wrap passed `None`, so `outer.diagnostics()` returned `None` even when the underlying transport error carried a full `Arc<DiagnosticsContext>`; consumers had to walk `source().diagnostics()` to recover it. The operation diagnostics are now reachable directly on the error surfaced to callers.
 - Aborted operations now carry the operation's completed `DiagnosticsContext` (retry history, region attempts, per-request events) onto the returned `Error`. Previously the abort branch of the operation pipeline mutated the local `DiagnosticsContextBuilder` and dropped it, so `err.diagnostics()` returned `None` on every aborted operation even though the success path had always attached diagnostics to the `CosmosResponse`. Added a builder path to re-decorate an existing error with diagnostics — `CosmosError::builder().from_error(err).with_diagnostics(ctx).build()` — so the abort site can attach the operation's completed `DiagnosticsContext` without losing the original error's wire payload, headers, status, or source chain.
 - `infer_request_sent_status` now classifies `TRANSPORT_DNS_FAILED` and `TRANSPORT_HTTP2_INCOMPATIBLE` (HTTP/2 protocol-negotiation failures such as `HTTP_1_1_REQUIRED`) as `RequestSentStatus::NotSent`, alongside the existing `TRANSPORT_CONNECTION_FAILED` case. Both failure modes provably precede any request bytes going onto the wire (DNS resolution happens before connect; H2 negotiation happens during the preface, before the request frame is emitted), so non-idempotent writes (Create / Replace / PATCH) may be retried safely. This restores the pre-refactor contract that callers used to rely on under `azure_core::ErrorKind::Connection`; the new typed boundary mapper had been refining those same chains into the more specific sub-statuses, which were falling through to `RequestSentStatus::Unknown` and disabling safe retries. Generic `TRANSPORT_IO_FAILED` continues to map to `Unknown` (it can fire mid-stream after request bytes left the socket).
