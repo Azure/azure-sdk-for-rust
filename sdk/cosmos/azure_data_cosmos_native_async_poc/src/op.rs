@@ -12,38 +12,41 @@
 //!
 //! ## Invariant I5 — release vs cancel
 //!
-//! `cosmos_cancel` flips a flag and aborts the Tokio task; it does **not**
-//! release the host's reference. `cosmos_op_release` releases the host's
-//! reference; it does **not** cancel the operation (the task continues to
-//! completion and its result is dropped into the CQ as usual).
+//! `cosmos_cancel` flips a flag and notifies the cooperative cancel signal;
+//! it does **not** release the host's reference. `cosmos_op_release`
+//! releases the host's reference; it does **not** cancel the operation (the
+//! task continues to completion and its result is dropped into the CQ as
+//! usual).
 //!
 //! The spec's single `cosmos_cancel` conflates these two concerns. Splitting
 //! them is the design-finding to file as a spec-edit comment on PR #4461.
+//!
+//! ## Why a Notify, not AbortHandle (lesson from .NET POC integration)
+//!
+//! A previous version used `tokio::task::AbortHandle::abort()` to cancel the
+//! spawned read. Aborting drops the task immediately, which means **no
+//! completion is ever pushed to the CQ** — the host's TCS hangs forever.
+//! The cooperative `Notify` model lets the task observe the cancel via
+//! `tokio::select!` and **always** push exactly one completion (Invariant I2).
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
-use tokio::task::AbortHandle;
+use tokio::sync::Notify;
 
 use crate::ffi_guard;
 
 pub struct OpState {
     pub(crate) cancelled: AtomicBool,
-    pub(crate) abort: Mutex<Option<AbortHandle>>,
+    pub(crate) cancel_signal: Notify,
 }
 
 impl OpState {
     pub fn new() -> Arc<Self> {
         Arc::new(Self {
             cancelled: AtomicBool::new(false),
-            abort: Mutex::new(None),
+            cancel_signal: Notify::new(),
         })
-    }
-
-    pub fn install_abort(&self, handle: AbortHandle) {
-        if let Ok(mut g) = self.abort.lock() {
-            *g = Some(handle);
-        }
     }
 
     pub fn is_cancelled(&self) -> bool {
@@ -55,7 +58,7 @@ impl Default for OpState {
     fn default() -> Self {
         Self {
             cancelled: AtomicBool::new(false),
-            abort: Mutex::new(None),
+            cancel_signal: Notify::new(),
         }
     }
 }
@@ -67,11 +70,9 @@ pub struct CosmosOp {
     pub(crate) state: Arc<OpState>,
 }
 
-/// Marks the operation as cancelled and aborts the underlying Tokio task.
-/// A `Cancelled` completion **will** be pushed to the CQ unless the task
-/// has already pushed its own completion (Invariant I2: exactly one
-/// completion per operation, races are resolved in favor of "first to
-/// reach the channel").
+/// Marks the operation as cancelled. The spawned task is selecting on the
+/// cancel signal alongside the read future — when this fires, the task
+/// wins the race, pushes a `Cancelled` completion to the CQ, and exits.
 ///
 /// # Safety
 ///
@@ -84,11 +85,7 @@ pub unsafe extern "C" fn cosmos_cancel(op: *mut CosmosOp) {
     ffi_guard!((), {
         let op_ref = &*op;
         op_ref.state.cancelled.store(true, Ordering::SeqCst);
-        if let Ok(g) = op_ref.state.abort.lock() {
-            if let Some(handle) = g.as_ref() {
-                handle.abort();
-            }
-        }
+        op_ref.state.cancel_signal.notify_waiters();
     })
 }
 

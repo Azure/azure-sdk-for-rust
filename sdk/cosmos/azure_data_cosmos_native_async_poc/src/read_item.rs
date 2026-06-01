@@ -96,10 +96,9 @@ pub unsafe extern "C" fn cosmos_read_item(
         let state = OpState::new();
         let state_for_task = state.clone();
 
-        let handle = runtime.spawn(async move {
-            // Cooperative cancel check before the I/O begins. Aborting the
-            // task is the authoritative cancel path; this check just shaves
-            // a microsecond if the host cancelled before we got scheduled.
+        runtime.spawn(async move {
+            // Cooperative cancel check before the I/O begins. Saves the
+            // round trip when the host cancels before scheduling.
             if state_for_task.is_cancelled() {
                 let _ = cq_tx.send(Completion {
                     user_data,
@@ -108,7 +107,7 @@ pub unsafe extern "C" fn cosmos_read_item(
                 return;
             }
 
-            let result = async {
+            let read_future = async {
                 let db_client = client.database_client(&db);
                 let container_client = db_client.container_client(&container).await?;
                 let resp = container_client.read_item(&pk, &id, None).await?;
@@ -123,26 +122,32 @@ pub unsafe extern "C" fn cosmos_read_item(
                     status: status_u16,
                     body: bytes,
                 })
-            }
-            .await;
+            };
 
-            // Re-check cancel: if cancellation was requested *and* the
-            // result is an aborted/error path, prefer reporting `Cancelled`
-            // so the host's `TaskCompletionSource.SetCanceled()` lights up
-            // the right exception. Success paths still report success
-            // because that's the actual semantics (race won by the I/O).
-            let outcome = match result {
-                Ok(resp) => CompletionOutcome::Success(Box::new(resp)),
-                Err(_) if state_for_task.is_cancelled() => {
+            // Race the read against the cooperative cancel signal. We
+            // deliberately do not `abort()` the task — see op.rs for why
+            // (a previous version did, and the .NET POC's TCS hung
+            // forever because aborted tasks never push to the CQ).
+            // Tokio cancels the read future at the next .await point when
+            // we drop it out of the select! arm.
+            let outcome = tokio::select! {
+                biased;
+                _ = state_for_task.cancel_signal.notified() => {
                     CompletionOutcome::Failure(FfiError::Cancelled)
                 }
-                Err(e) => CompletionOutcome::Failure(FfiError::from(e)),
+                result = read_future => {
+                    match result {
+                        Ok(resp) => CompletionOutcome::Success(Box::new(resp)),
+                        Err(_) if state_for_task.is_cancelled() => {
+                            CompletionOutcome::Failure(FfiError::Cancelled)
+                        }
+                        Err(e) => CompletionOutcome::Failure(FfiError::from(e)),
+                    }
+                }
             };
 
             let _ = cq_tx.send(Completion { user_data, outcome });
         });
-
-        state.install_abort(handle.abort_handle());
 
         let op_handle = Box::new(CosmosOp { state });
         *out_op = Box::into_raw(op_handle);
