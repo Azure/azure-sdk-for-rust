@@ -18,7 +18,6 @@ pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
-mod cosmos_status;
 mod etag;
 mod finite_f64;
 pub(crate) mod partition_key;
@@ -56,8 +55,12 @@ pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
 pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
-pub use cosmos_status::CosmosStatus;
-pub use cosmos_status::SubStatusCode;
+pub(crate) use cosmos_response::CosmosResponsePayload;
+// Cosmos status types are owned by `crate::error::cosmos_status` (canonical home,
+// tightly coupled to the typed Cosmos error). Re-exported here for ergonomic access
+// via the historic `crate::models::CosmosStatus` path used throughout the driver
+// internals.
+pub use crate::error::cosmos_status::{CosmosStatus, SubStatusCode};
 pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
 pub use feed_range::FeedRange;
@@ -647,7 +650,7 @@ impl SessionToken {
     ///
     /// This is the primary API for combining session tokens without exposing
     /// internal token format details.
-    pub fn merge(&self, other: &Self) -> azure_core::Result<Self> {
+    pub fn merge(&self, other: &Self) -> crate::error::Result<Self> {
         use std::collections::HashMap;
 
         let mut pk_order: Vec<String> = Vec::new();

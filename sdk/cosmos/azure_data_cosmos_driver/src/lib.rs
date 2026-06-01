@@ -22,6 +22,7 @@
 
 pub mod diagnostics;
 pub mod driver;
+pub mod error;
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection;
 #[cfg(feature = "__internal_in_memory_emulator")]
@@ -59,5 +60,6 @@ pub mod testing;
 // Re-export key types at crate root
 pub use diagnostics::{DiagnosticsContext, ExecutionContext, RequestDiagnostics, RequestHandle};
 pub use driver::{CosmosDriver, CosmosDriverRuntime, CosmosDriverRuntimeBuilder, OperationPlan};
-pub use models::{ActivityId, CosmosResponse, CosmosStatus, RequestCharge, ResponseBody};
+pub use error::{CosmosError, CosmosErrorBuilder, CosmosStatus, Result, SubStatusCode};
+pub use models::{ActivityId, CosmosResponse, RequestCharge, ResponseBody};
 pub use options::{DiagnosticsOptions, DiagnosticsVerbosity, DriverOptions};

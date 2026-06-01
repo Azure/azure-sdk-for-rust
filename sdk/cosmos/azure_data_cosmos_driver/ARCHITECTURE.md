@@ -29,7 +29,7 @@ flowchart TB
 ### Layer Responsibilities
 
 | Layer | Crate                      | Responsibility                                       | Support Level    |
-|-------|----------------------------|------------------------------------------------------|------------------|
+| ----- | -------------------------- | ---------------------------------------------------- | ---------------- |
 | 1     | `azure_data_cosmos_driver` | Transport, routing, protocol, retries                | Community/GitHub |
 | 2     | `azure_data_cosmos_native` | C-FFI wrapper for non-Rust languages                 | Internal         |
 | 3     | `azure_data_cosmos`        | Idiomatic Rust API with serde (uses driver directly) | Microsoft 24x7   |
@@ -140,7 +140,7 @@ use azure_data_cosmos_driver::{
 use url::Url;
 
 #[tokio::main]
-async fn main() -> azure_core::Result<()> {
+async fn main() -> azure_data_cosmos_driver::error::Result<()> {
     // Create runtime (typically once per application)
     let runtime = CosmosDriverRuntime::builder().build().await?;
 
@@ -207,7 +207,7 @@ use std::time::Duration;
 use std::sync::Arc;
 
 #[tokio::main]
-async fn main() -> azure_core::Result<()> {
+async fn main() -> azure_data_cosmos_driver::error::Result<()> {
     // Build runtime with custom options
     let runtime = CosmosDriverRuntime::builder()
         .driver_options(
@@ -314,7 +314,7 @@ flowchart TD
 #### What We **Cannot** Track (reqwest limitation)
 
 | Metric                      | Java SDK (Reactor Netty) | Rust SDK (reqwest)     |
-|-----------------------------|--------------------------|------------------------|
+| --------------------------- | ------------------------ | ---------------------- |
 | DNS resolution time         | ✅ Separate event         | ❌ Bundled in transport |
 | Connection pool acquisition | ✅ Separate event         | ❌ Not exposed          |
 | New connection vs reused    | ✅ Separate event         | ❌ Not exposed          |
@@ -325,7 +325,7 @@ flowchart TD
 #### What We **Can** Track
 
 | Event                     | Description                                                          |
-|---------------------------|----------------------------------------------------------------------|
+| ------------------------- | -------------------------------------------------------------------- |
 | `TransportStart`          | Request handed to reqwest - DNS/connect/TLS/send all happen opaquely |
 | `ResponseHeadersReceived` | Response headers received (confirms request was sent)                |
 | `TransportComplete`       | Headers + body fully received                                        |
@@ -338,7 +338,7 @@ flowchart TD
 The diagnostics output can be formatted at two verbosity levels:
 
 | Level      | Description                         | Use Case                                          |
-|------------|-------------------------------------|---------------------------------------------------|
+| ---------- | ----------------------------------- | ------------------------------------------------- |
 | `Detailed` | Full output with every request      | Deep debugging, local development                 |
 | `Summary`  | Compacted output with deduplication | Production logging, size-constrained environments |
 
@@ -581,7 +581,7 @@ Same operation with deduplication applied:
 **Key Differences:**
 
 | Aspect              | Detailed          | Summary                       |
-|---------------------|-------------------|-------------------------------|
+| ------------------- | ----------------- | ----------------------------- |
 | Size                | ~2.8 KB           | ~0.8 KB                       |
 | Individual requests | All 11 shown      | First + Last only             |
 | Middle requests     | Full details each | Grouped as 1 entry with stats |
@@ -596,7 +596,7 @@ Same operation with deduplication applied:
 #### Core Types
 
 | Type                         | Description                                           |
-|------------------------------|-------------------------------------------------------|
+| ---------------------------- | ----------------------------------------------------- |
 | `CosmosDriverRuntime`        | Entry point; manages drivers, pools, background tasks |
 | `CosmosDriverRuntimeBuilder` | Builder for `CosmosDriverRuntime`                     |
 | `CosmosDriver`               | Per-account driver for executing operations           |
@@ -612,7 +612,7 @@ Configuration types with builder pattern throughout.
 #### Option Types
 
 | Type                           | Description                         |
-|--------------------------------|-------------------------------------|
+| ------------------------------ | ----------------------------------- |
 | `DriverOptions`                | Top-level driver configuration      |
 | `DriverOptionsBuilder`         | Builder for `DriverOptions`         |
 | `RetryOptions`                 | Retry policy configuration          |
@@ -657,7 +657,7 @@ Resource definitions and metadata types.
 #### Account & Connection
 
 | Type                | Description                                                   |
-|---------------------|---------------------------------------------------------------|
+| ------------------- | ------------------------------------------------------------- |
 | `AccountReference`  | Account endpoint + credentials                                |
 | `AccountProperties` | Account metadata (regions, capabilities)                      |
 | `ConsistencyLevel`  | Strong, BoundedStaleness, Session, Eventual, ConsistentPrefix |
@@ -665,7 +665,7 @@ Resource definitions and metadata types.
 #### Database & Container
 
 | Type                            | Description                          |
-|---------------------------------|--------------------------------------|
+| ------------------------------- | ------------------------------------ |
 | `DatabaseProperties`            | Database metadata                    |
 | `ContainerProperties`           | Container configuration              |
 | `ContainerPropertiesBuilder`    | Builder for `ContainerProperties`    |
@@ -676,7 +676,7 @@ Resource definitions and metadata types.
 #### Indexing
 
 | Type                    | Description                      |
-|-------------------------|----------------------------------|
+| ----------------------- | -------------------------------- |
 | `IndexingPolicy`        | Container indexing configuration |
 | `IndexingPolicyBuilder` | Builder for `IndexingPolicy`     |
 | `IndexingMode`          | Consistent, Lazy, None           |
@@ -689,7 +689,7 @@ Resource definitions and metadata types.
 #### Throughput & Scaling
 
 | Type                          | Description                         |
-|-------------------------------|-------------------------------------|
+| ----------------------------- | ----------------------------------- |
 | `ThroughputProperties`        | Provisioned or autoscale throughput |
 | `ThroughputPropertiesBuilder` | Builder for `ThroughputProperties`  |
 | `AutoscaleSettings`           | Autoscale max throughput            |
@@ -697,7 +697,7 @@ Resource definitions and metadata types.
 #### Conflicts & TTL
 
 | Type                              | Description                    |
-|-----------------------------------|--------------------------------|
+| --------------------------------- | ------------------------------ |
 | `ConflictResolutionPolicy`        | LastWriterWins, Custom, Manual |
 | `ConflictResolutionPolicyBuilder` | Builder for conflict policy    |
 | `DefaultTimeToLive`               | Off, NoDefault, Seconds(i32)   |
@@ -711,7 +711,7 @@ Operational telemetry for debugging and monitoring.
 #### Core Diagnostics
 
 | Type                   | Description                     |
-|------------------------|---------------------------------|
+| ---------------------- | ------------------------------- |
 | `CosmosDiagnostics`    | Top-level diagnostics container |
 | `OperationDiagnostics` | Per-operation summary           |
 | `RequestDiagnostics`   | Per-HTTP-request details        |
@@ -719,7 +719,7 @@ Operational telemetry for debugging and monitoring.
 #### Metrics & Timing
 
 | Type            | Description                                   |
-|-----------------|-----------------------------------------------|
+| --------------- | --------------------------------------------- |
 | `RequestCharge` | RU consumption (total, per-request breakdown) |
 | `RetryInfo`     | Retry count, reasons, delays                  |
 | `TimingInfo`    | Request/response timing breakdown             |
@@ -728,7 +728,7 @@ Operational telemetry for debugging and monitoring.
 #### Request Tracking
 
 | Type                | Description                                                |
-|---------------------|------------------------------------------------------------|
+| ------------------- | ---------------------------------------------------------- |
 | `RequestSentStatus` | Sent, NotSent, Unknown - tracks if request left the client |
 | `RequestEvent`      | Lifecycle events (headers received, body buffered, etc.)   |
 
@@ -762,7 +762,7 @@ struct RequestDiagnostics {
 Fluent builders for complex type construction.
 
 | Type               | Description                  |
-|--------------------|------------------------------|
+| ------------------ | ---------------------------- |
 | `PointReadBuilder` | Build point read operations  |
 | `QueryBuilder`     | Build query operations       |
 | `UpsertBuilder`    | Build upsert operations      |
@@ -775,7 +775,7 @@ Fluent builders for complex type construction.
 ### Enums Summary
 
 | Enum                  | Variants                                                      | Description             |
-|-----------------------|---------------------------------------------------------------|-------------------------|
+| --------------------- | ------------------------------------------------------------- | ----------------------- |
 | `ConsistencyLevel`    | Strong, BoundedStaleness, Session, Eventual, ConsistentPrefix | Read consistency        |
 | `PartitionKeyKind`    | Hash, Range, MultiHash                                        | Partition strategy      |
 | `IndexingMode`        | Consistent, Lazy, None                                        | When to index           |
@@ -787,16 +787,24 @@ Fluent builders for complex type construction.
 
 ## Error Handling
 
-All fallible operations return `azure_core::Result<T>` (alias for `Result<T, azure_core::Error>`).
+All fallible operations return `azure_data_cosmos_driver::error::Result<T>` (alias for
+`Result<T, azure_data_cosmos_driver::error::Error>`). The typed `Error` always
+exposes the Cosmos `CosmosStatus` (HTTP status + sub-status, including synthetic
+client-side codes), parsed response headers, response body, shared
+`DiagnosticsContext`, and a stable categorical `Kind`. Any underlying
+third-party error (transport, credential, deserialization) is reachable via
+`std::error::Error::source()`.
 
-### Error Categories
+### Error Categories (`Kind`)
 
-| Category             | When                          | Retryable?        |
-|----------------------|-------------------------------|-------------------|
-| `HttpError`          | Network/transport failures    | Usually yes       |
-| `ServiceError`       | Cosmos DB returned error      | Depends on status |
-| `CredentialError`    | Auth token acquisition failed | Usually no        |
-| `ConfigurationError` | Invalid options/setup         | No                |
+| `Kind`           | When                              | Retryable?        |
+| ---------------- | --------------------------------- | ----------------- |
+| `Transport`      | Network / transport failures      | Usually yes       |
+| `Service`        | Cosmos DB returned an error       | Depends on status |
+| `Authentication` | Auth token acquisition failed     | Usually no        |
+| `Configuration`  | Invalid options / setup           | No                |
+| `Client`         | Caller misuse / precondition      | No                |
+| `Serialization`  | Response body could not be parsed | No                |
 
 ### Status Code Handling
 

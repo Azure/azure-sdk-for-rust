@@ -186,7 +186,7 @@ impl DiagnosticsOptionsBuilder {
     /// Returns an error if:
     /// - `max_summary_size_bytes` is less than 4096
     /// - Environment variable parsing fails
-    pub fn build(self) -> azure_core::Result<DiagnosticsOptions> {
+    pub fn build(self) -> crate::error::Result<DiagnosticsOptions> {
         let max_summary_size_bytes = parse_from_env(
             self.max_summary_size_bytes,
             "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES",
@@ -198,13 +198,14 @@ impl DiagnosticsOptionsBuilder {
             Some(v) => v,
             None => match std::env::var("AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY") {
                 Ok(v) => v.parse().map_err(|e: String| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        format!(
-                            "Failed to parse AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY: {}",
-                            e
-                        ),
-                    )
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(format!(
+                            "Failed to parse AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY: {e}"
+                        ))
+                        .build()
                 })?,
                 Err(_) => DiagnosticsVerbosity::Detailed,
             },

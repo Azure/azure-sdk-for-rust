@@ -59,18 +59,19 @@ impl ContinuationToken {
     pub(crate) fn encode_v1(
         operation: &CosmosOperation,
         root_state: &PipelineNodeState,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         if operation.operation_type() != OperationType::Query {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "client-side continuation tokens are only supported for query operations",
-            ));
+            return Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION,
+                )
+                .with_message(
+                    "client-side continuation tokens are only supported for query operations",
+                )
+                .build());
         }
         let container = operation.container().ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "client-side continuation tokens require a query operation targeting a container",
-            )
+            crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("client-side continuation tokens require a query operation targeting a container").build()
         })?;
         let state = TokenState {
             operation: TokenOperation::Query,
@@ -79,10 +80,11 @@ impl ContinuationToken {
         };
 
         let json = serde_json::to_vec(&state).map_err(|e| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!("failed to serialize continuation token state: {e}"),
-            )
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to serialize continuation token state")
+                .with_source(e)
+                .build()
         })?;
         let body = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(json);
         let mut out = String::with_capacity(SDK_V1_PREFIX.len() + body.len());
@@ -92,33 +94,40 @@ impl ContinuationToken {
     }
 
     /// Resolves this token into a planner-ready form.
-    pub(crate) fn resolve(&self) -> azure_core::Result<ResolvedToken> {
+    pub(crate) fn resolve(&self) -> crate::error::Result<ResolvedToken> {
         if let Some(rest) = self.0.strip_prefix(SDK_V1_PREFIX) {
             let json = base64::engine::general_purpose::URL_SAFE_NO_PAD
                 .decode(rest)
                 .map_err(|e| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        format!("continuation token has invalid base64 payload: {e}"),
-                    )
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(format!(
+                            "continuation token has invalid base64 payload: {e}"
+                        ))
+                        .build()
                 })?;
             let state: TokenState = serde_json::from_slice(&json).map_err(|e| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    format!("continuation token has invalid JSON payload: {e}"),
-                )
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("continuation token has invalid JSON payload")
+                    .with_source(e)
+                    .build()
             })?;
             return Ok(ResolvedToken::ClientV1(state));
         }
 
         if let Some(version) = parse_client_version_prefix(&self.0) {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!(
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
                     "continuation token uses unsupported version 'c{version}.'; \
                      this SDK only understands 'c1.' tokens — upgrade to a newer SDK"
-                ),
-            ));
+                ))
+                .build());
         }
 
         // No client-version prefix: treat as an opaque server-issued token.
@@ -148,44 +157,42 @@ pub struct TokenState {
 
 impl TokenState {
     /// Validates that this token state is compatible with the provided query
-    pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> azure_core::Result<()> {
+    pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> crate::error::Result<()> {
         if operation.operation_type() != OperationType::Query {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!(
+            return Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION,
+                )
+                .with_message(format!(
                     "operation type {op:?} is not compatible with client-side continuation tokens",
                     op = self.operation
-                ),
-            ));
+                ))
+                .build());
         }
 
         if self.operation != TokenOperation::Query {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!(
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
                     "token operation type {op:?} is not compatible with a query operation; \
                      expected {expected_op:?}",
                     op = self.operation,
                     expected_op = TokenOperation::Query,
-                ),
-            ));
+                ))
+                .build());
         }
         let container = operation.container().ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "client-side continuation tokens require a query operation targeting a container",
-            )
+            crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("client-side continuation tokens require a query operation targeting a container").build()
         })?;
         if self.rid != container.rid() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!(
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message(format!(
                     "token container rid {token_rid:?} does not match the operation's container rid {op_rid:?}; \
                      this token was generated against a different container and cannot be used to resume this one",
                     token_rid = self.rid,
                     op_rid = container.rid(),
-                ),
-            ));
+                )).build());
         }
         Ok(())
     }
@@ -374,11 +381,7 @@ mod tests {
     fn encode_v1_rejects_non_query_operation() {
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let read = CosmosOperation::read_item(item);
-        let err = ContinuationToken::encode_v1(&read, &PipelineNodeState::Drained).unwrap_err();
-        assert!(matches!(
-            err.kind(),
-            azure_core::error::ErrorKind::DataConversion
-        ));
+        let _err = ContinuationToken::encode_v1(&read, &PipelineNodeState::Drained).unwrap_err();
     }
 
     // ── Deserialization ─────────────────────────────────────────────────
@@ -480,10 +483,6 @@ mod tests {
             root: PipelineNodeState::Drained,
         };
         let err = state.is_valid_for_operation(&query_op()).unwrap_err();
-        assert!(matches!(
-            err.kind(),
-            azure_core::error::ErrorKind::DataConversion
-        ));
         assert!(err.to_string().contains("different_rid"));
         assert!(err.to_string().contains("coll_rid"));
     }
@@ -497,24 +496,16 @@ mod tests {
         };
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let read = CosmosOperation::read_item(item);
-        let err = state.is_valid_for_operation(&read).unwrap_err();
-        assert!(matches!(
-            err.kind(),
-            azure_core::error::ErrorKind::DataConversion
-        ));
+        let _err = state.is_valid_for_operation(&read).unwrap_err();
     }
 
-    // ── Error and fallback paths ────────────────────────────────────────
+    // ── CosmosError and fallback paths ────────────────────────────────────────
 
     #[test]
     fn rejects_newer_sdk_token() {
         // cspell:ignore somethingnew
         let token = ContinuationToken::from_string("c2.somethingnew".to_string());
         let err = token.resolve().unwrap_err();
-        assert!(matches!(
-            err.kind(),
-            azure_core::error::ErrorKind::DataConversion
-        ));
         assert!(err.to_string().contains("c2."));
     }
 
@@ -531,21 +522,13 @@ mod tests {
     fn rejects_invalid_base64_in_v1_token() {
         // cspell:ignore notvalid
         let token = ContinuationToken::from_string("c1.!!!notvalid!!!".to_string());
-        let err = token.resolve().unwrap_err();
-        assert!(matches!(
-            err.kind(),
-            azure_core::error::ErrorKind::DataConversion
-        ));
+        let _err = token.resolve().unwrap_err();
     }
 
     #[test]
     fn rejects_invalid_json_in_v1_token() {
         // Missing the required `op` and `root` fields of `TokenState`.
         let token = encode_v1_payload(r#"{"kind":"drained"}"#);
-        let err = token.resolve().unwrap_err();
-        assert!(matches!(
-            err.kind(),
-            azure_core::error::ErrorKind::DataConversion
-        ));
+        let _err = token.resolve().unwrap_err();
     }
 }

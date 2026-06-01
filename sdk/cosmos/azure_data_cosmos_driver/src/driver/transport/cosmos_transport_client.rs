@@ -72,30 +72,33 @@ pub struct HttpResponse {
 }
 
 // ----------------------------------------------------------------------------
-// Error
+// CosmosError
 // ----------------------------------------------------------------------------
 
 /// Transport-level error with metadata for retry classification.
 ///
-/// Wraps the underlying `azure_core::Error` and adds flags that the retry
-/// layer uses to decide whether and how to retry:
+/// Wraps the typed Cosmos [`crate::error::CosmosError`] and adds flags that the
+/// retry layer uses to decide whether and how to retry:
 ///
 /// * [`request_sent`](Self::request_sent) — tri-state indicator of whether the
 ///   request reached the wire.
 pub struct TransportError {
-    /// The underlying error, preserved as `azure_core::Error` for public API
-    /// compatibility.
-    pub error: azure_core::Error,
+    /// The underlying typed Cosmos error.
+    pub error: crate::error::CosmosError,
 
     /// Whether the request was definitely sent, not sent, or unknown.
     pub request_sent: RequestSentStatus,
 }
 
 impl TransportError {
-    /// Creates a new [`TransportError`].
-    pub fn new(error: azure_core::Error, request_sent: RequestSentStatus) -> Self {
+    /// Creates a new [`TransportError`] from anything convertible into the
+    /// typed Cosmos [`crate::error::CosmosError`].
+    pub fn new(
+        error: impl Into<crate::error::CosmosError>,
+        request_sent: RequestSentStatus,
+    ) -> Self {
         Self {
-            error,
+            error: error.into(),
             request_sent,
         }
     }

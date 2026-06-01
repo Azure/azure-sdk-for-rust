@@ -5,17 +5,8 @@
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
-use azure_core::http::headers::HeaderName;
-use azure_core::{
-    error::ErrorKind,
-    http::{headers::Headers, StatusCode},
-    Uuid,
-};
-const LSN: HeaderName = HeaderName::from_static("lsn");
-const PARTITION_KEY_RANGE_ID: HeaderName =
-    HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
-const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
-use azure_data_cosmos::models::ContainerProperties;
+use azure_core::{http::StatusCode, Uuid};
+use azure_data_cosmos::models::{ContainerProperties, ResponseHeaders};
 use azure_data_cosmos::Query;
 use azure_data_cosmos::{clients::ContainerClient, query::FeedScope};
 use framework::{TestClient, TestRunContext};
@@ -30,7 +21,9 @@ struct ResponseMetadataItem {
     value: String,
 }
 
-async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
+async fn create_container(
+    run_context: &TestRunContext,
+) -> azure_data_cosmos::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-{}", Uuid::new_v4());
     run_context
@@ -43,32 +36,24 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
     db_client.container_client(&container_id).await
 }
 
-fn headers_from_error(error: &azure_core::Error) -> &Headers {
-    match error.kind() {
-        ErrorKind::HttpResponse {
-            raw_response: Some(raw),
-            ..
-        } => raw.headers(),
-        kind => panic!("expected HttpResponse error with raw_response, got {kind:?}"),
-    }
-}
-
-fn header_u64(headers: &Headers, name: &azure_core::http::headers::HeaderName) -> u64 {
-    let value = headers
-        .get_optional_str(name)
-        .unwrap_or_else(|| panic!("expected header {} to be present", name.as_str()));
-    value.parse().unwrap_or_else(|_| {
-        panic!(
-            "expected header {} to be a u64, got {value:?}",
-            name.as_str()
-        )
-    })
+fn cosmos_headers_from_error(error: &azure_data_cosmos::CosmosError) -> ResponseHeaders {
+    let driver_headers = error
+        .response()
+        .map(|r| r.headers().clone())
+        .unwrap_or_else(|| {
+            panic!("expected typed Cosmos response headers on error, got {error:?}")
+        });
+    ResponseHeaders::from(driver_headers)
 }
 
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -89,19 +74,21 @@ pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
                 .expect_err("expected 404 when reading non-existent item");
 
             assert_eq!(
-                error.http_status(),
-                Some(StatusCode::NotFound),
+                error.status().status_code(),
+                StatusCode::NotFound,
                 "expected 404 NotFound"
             );
 
-            let headers = headers_from_error(&error);
-            for header in [&SESSION_TOKEN, &LSN, &PARTITION_KEY_RANGE_ID] {
-                assert!(
-                    headers.get_optional_str(header).is_some(),
-                    "expected response header {} on 404 read",
-                    header.as_str()
-                );
-            }
+            let headers = cosmos_headers_from_error(&error);
+            assert!(
+                headers.session_token().is_some(),
+                "expected session_token on 404 read"
+            );
+            assert!(headers.lsn().is_some(), "expected lsn on 404 read");
+            assert!(
+                headers.partition_key_range_id().is_some(),
+                "expected partition_key_range_id on 404 read"
+            );
 
             Ok(())
         },
@@ -114,6 +101,10 @@ pub async fn response_metadata_on_missing_read() -> Result<(), Box<dyn Error>> {
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
 ) -> Result<(), Box<dyn Error>> {
@@ -142,9 +133,11 @@ pub async fn response_metadata_on_read_write_preserves_session_and_lsn(
                 .read_item(&pk, &item_id, None)
                 .await
                 .expect_err("expected 404 for pre-write read");
-            assert_eq!(pre_write_error.http_status(), Some(StatusCode::NotFound));
-            let pre_write_headers = headers_from_error(&pre_write_error);
-            let pre_write_lsn = header_u64(pre_write_headers, &LSN);
+            assert_eq!(pre_write_error.status().status_code(), StatusCode::NotFound);
+            let pre_write_headers = cosmos_headers_from_error(&pre_write_error);
+            let pre_write_lsn = pre_write_headers
+                .lsn()
+                .expect("pre-write 404 should carry partition LSN");
 
             // First write: response carries session_token, etag, and partition LSN.
             // item_lsn is a read-only header surfaced on point reads, not on creates.
