@@ -5,12 +5,11 @@ use std::sync::{Arc, OnceLock};
 
 use azure_core::{http::Url, Bytes};
 use azure_core_test::{
-    perf::{
-        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        PerfTestOptionKind,
-    },
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
     TestContext,
 };
+
+use super::options;
 use azure_storage_blob::BlobContainerClient;
 use azure_storage_blob_test::get_test_credential;
 use futures::FutureExt;
@@ -41,27 +40,7 @@ impl UploadBlobTest {
         PerfTestMetadata {
             name: "upload_blob",
             description: "Upload blobs to a container",
-            options: vec![
-                PerfTestOption {
-                    name: "endpoint",
-                    display_message: "The endpoint of the blob storage",
-                    mandatory: false,
-                    short_activator: Some('e'),
-                    long_activator: "endpoint",
-                    expected_args_len: 1,
-                    ..Default::default()
-                },
-                PerfTestOption {
-                    name: "size",
-                    display_message: "The size of each blob in bytes",
-                    mandatory: true,
-                    short_activator: Some('s'),
-                    long_activator: "size",
-                    expected_args_len: 1,
-                    option_type: PerfTestOptionKind::Usize,
-                    ..Default::default()
-                },
-            ],
+            options: vec![options::size(), options::endpoint()],
             create_test: Self::create_upload_blob_test,
         }
     }

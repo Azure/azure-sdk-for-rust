@@ -8,12 +8,11 @@ use std::{
 
 use azure_core::{error::ErrorKind, http::Url, Bytes};
 use azure_core_test::{
-    perf::{
-        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        PerfTestOptionKind,
-    },
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
     TestContext,
 };
+
+use super::options;
 use azure_storage_blob::{BlobClient, BlobContainerClient};
 use azure_storage_blob_test::get_test_credential;
 use bytes::BytesMut;
@@ -75,45 +74,10 @@ impl DownloadBlobTest {
             name: "download_blob",
             description: "Download blobs from a container",
             options: vec![
-                PerfTestOption {
-                    name: "count",
-                    display_message: "The number of blobs to download",
-                    mandatory: false,
-                    short_activator: Some('c'),
-                    long_activator: "count",
-                    expected_args_len: 1,
-                    option_type: PerfTestOptionKind::Uint32,
-                    ..Default::default()
-                },
-                PerfTestOption {
-                    name: "collect",
-                    display_message: "Collect the blob contents instead of streaming them",
-                    mandatory: false,
-                    short_activator: None,
-                    long_activator: "collect",
-                    expected_args_len: 1,
-                    option_type: PerfTestOptionKind::String,
-                    ..Default::default()
-                },
-                PerfTestOption {
-                    name: "size",
-                    display_message: "The size of each blob in bytes",
-                    mandatory: true,
-                    short_activator: Some('s'),
-                    long_activator: "size",
-                    expected_args_len: 1,
-                    option_type: PerfTestOptionKind::Usize,
-                    ..Default::default()
-                },
-                PerfTestOption {
-                    name: "endpoint",
-                    display_message: "The endpoint of the blob storage",
-                    mandatory: false,
-                    short_activator: Some('e'),
-                    long_activator: "endpoint",
-                    expected_args_len: 1,
-                    ..Default::default()
-                },
+                options::count(),
+                options::collect(),
+                options::size(),
+                options::endpoint(),
             ],
             create_test: Self::create_download_blob_test,
         }
