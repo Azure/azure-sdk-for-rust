@@ -162,6 +162,13 @@ For retryable errors on writes:
 
 Cross-region retry is the natural behavior for multi-write accounts since any write region can accept writes.
 
+### Endpoint Exhaustion Fallback
+
+When all regional endpoints are excluded or unavailable, the driver falls back differently for data-plane vs metadata operations:
+
+- **Data-plane operations**: Fall back to the hub (write region) endpoint for single-write accounts, or the first entry in `preferred_write_endpoints` for multi-write accounts. The global account endpoint is **never** used for data-plane traffic.
+- **Metadata operations** (e.g., account topology discovery): Fall back to the global account endpoint.
+
 ## Per-Partition Automatic Failover (PPAF)
 
 PPAF is an **opt-in** feature for **single-master write accounts only**. When enabled (via server account flag `enable_per_partition_failover_behavior`):
