@@ -17,6 +17,7 @@ members = [
   "sdk/cosmos/azure_data_cosmos_benchmarks",
   "sdk/cosmos/azure_data_cosmos_driver",
   "sdk/cosmos/azure_data_cosmos_macros",
+  "sdk/cosmos/azure_data_cosmos_native_async_poc",
   "sdk/cosmos/azure_data_cosmos_perf",
   "sdk/identity/azure_identity",
   "sdk/eventhubs/azure_messaging_eventhubs",

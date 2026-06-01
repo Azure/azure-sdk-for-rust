@@ -1,0 +1,46 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+[package]
+name = "azure_data_cosmos_native_async_poc"
+version = "0.0.1"
+description = "Async-FFI feasibility spike for the planned azure_data_cosmos_driver_native C ABI"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lib]
+name = "cosmos_async_poc"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+azure_data_cosmos = { path = "../azure_data_cosmos", default-features = false, features = [
+  "reqwest",
+  "rustls",
+  "key_auth",
+  "allow_invalid_certificates",
+] }
+azure_core = { workspace = true }
+tokio = { workspace = true, features = [
+  "macros",
+  "time",
+  "rt-multi-thread",
+  "sync",
+] }
+crossbeam = { workspace = true, features = ["std"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = [
+  "macros",
+  "time",
+  "rt-multi-thread",
+  "sync",
+] }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(test_category, values("emulator"))',
+] }
