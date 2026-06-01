@@ -14,9 +14,9 @@ use crate::{
 use serde::de::DeserializeOwned;
 use super::{PollerContinuation, PollerOptions, PollerResult, PollerState, PollerStatus, StatusMonitor};
 
-const AZURE_ASYNC_OPERATION: HeaderName = HeaderName::from_static("azure-asyncoperation");
+pub(super) const AZURE_ASYNC_OPERATION: HeaderName = HeaderName::from_static("azure-asyncoperation");
 const OPERATION_LOCATION: HeaderName = HeaderName::from_static("operation-location");
-const LOCATION: HeaderName = HeaderName::from_static("location");
+pub(super) const LOCATION: HeaderName = HeaderName::from_static("location");
 
 /// Creates an ARM heuristic poller that supports async, body, and location polling.
 pub fn new_poller<'a, M>(
