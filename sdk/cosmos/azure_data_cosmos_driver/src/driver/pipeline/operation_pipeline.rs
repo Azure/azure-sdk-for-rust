@@ -605,8 +605,27 @@ fn resolve_endpoint(
             &[],
             endpoint_unavailability_ttl,
         )
-        .unwrap_or_else(|| account.default_endpoint.clone())
+        .unwrap_or_else(|| {
+            if retry_state.is_dataplane {
+                // Data-plane operations must always use a regional endpoint.
+                account
+                    .preferred_write_endpoints
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| account.default_endpoint.clone())
+            } else {
+                // Metadata operations (e.g., GetDatabaseAccount) may use the
+                // global endpoint — it is the canonical entry point for
+                // account topology discovery.
+                account.default_endpoint.clone()
+            }
+        })
     });
+    debug_assert!(
+        !retry_state.is_dataplane || !selected.is_global(),
+        "data-plane operation resolved to global endpoint; \
+         this should never happen — data-plane requests must use regional endpoints"
+    );
     let use_gateway20 = selected.uses_gateway20(prefer_gateway20);
     let transport_mode = if use_gateway20 {
         TransportMode::Gateway20
@@ -1984,7 +2003,7 @@ mod tests {
     }
 
     #[test]
-    fn resolve_endpoint_falls_back_to_global_when_all_excluded() {
+    fn resolve_endpoint_metadata_falls_back_to_global_when_all_excluded() {
         let operation = CosmosOperation::read_all_databases(test_account());
         let default_endpoint =
             CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
@@ -2027,8 +2046,137 @@ mod tests {
             false,
             Duration::from_secs(60),
         );
-        // When all endpoints are excluded, the global endpoint is the only option.
+        // Metadata operations fall back to the global endpoint when all
+        // regional endpoints are excluded.
         assert_eq!(routing.endpoint, default_endpoint);
+    }
+
+    #[test]
+    fn resolve_endpoint_dataplane_falls_back_to_hub_when_all_excluded() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+        let default_endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
+        let hub_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: default_endpoint.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 3,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
+            excluded_regions: vec!["westus2".into()],
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
+        };
+        // Simulate the pipeline setting is_dataplane after construction.
+        retry_state.is_dataplane = true;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        // Data-plane operations must fall back to the hub/primary write
+        // region, NOT the global endpoint.
+        assert_eq!(routing.endpoint, hub_endpoint);
+        assert!(!routing.endpoint.is_global());
+    }
+
+    #[test]
+    fn resolve_endpoint_dataplane_excluded_and_unavailable_still_uses_hub() {
+        // When a read endpoint is both user-excluded AND marked unavailable,
+        // the data-plane fallback must still use the hub write region.
+        // Note: if an endpoint is only unavailable (not excluded),
+        // try_select_endpoint already returns it as a deprioritized fallback
+        // — this test validates the combined exclusion + unavailability case.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+        let default_endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
+        let hub_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let read_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        // Mark the only read endpoint as unavailable.
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            read_endpoint.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![read_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: default_endpoint.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 3,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
+            excluded_regions: vec!["westus2".into()],
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
+        };
+        retry_state.is_dataplane = true;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        // Excluded + unavailable: data-plane op must get the hub write
+        // region, not the global endpoint.
+        assert_eq!(routing.endpoint, hub_endpoint);
+        assert!(!routing.endpoint.is_global());
     }
 
     #[test]
