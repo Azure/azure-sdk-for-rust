@@ -9,6 +9,7 @@ mod account_reference;
 pub mod clients;
 mod constants;
 mod credential;
+mod error;
 mod feed;
 pub mod options;
 pub mod query;
@@ -26,8 +27,15 @@ pub use account_endpoint::AccountEndpoint;
 pub use account_reference::AccountReference;
 pub use clients::ThroughputPoller;
 pub use credential::CosmosCredential;
+pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
+
+/// Internal alias for the driver's `CosmosError`. Used at error-construction
+/// sites inside this crate so they can call the driver's
+/// `CosmosError::builder()` directly and then `.into()` the result into the
+/// public [`CosmosError`] newtype. Not exposed in the public API.
+pub(crate) use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 pub use models::{
-    BatchResponse, CosmosNumber, CosmosStatus, DiagnosticsContext, ItemResponse, PatchInstructions,
+    BatchResponse, CosmosNumber, DiagnosticsContext, ItemResponse, PatchInstructions,
     PatchOperation, ResourceResponse, ResponseBody, ResponseHeaders,
 };
 pub use options::*;
@@ -42,7 +50,6 @@ pub use transactional_batch::{
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
     ContinuationToken, EffectivePartitionKey, FeedRange, PartitionKey, PartitionKeyValue,
-    SubStatusCode,
 };
 
 pub use feed::{FeedPage, QueryFeedPage, QueryItemIterator, QueryPageIterator};

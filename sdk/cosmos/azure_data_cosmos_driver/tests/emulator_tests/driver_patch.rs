@@ -1018,7 +1018,7 @@ pub async fn cosmos_patch_412_retry() -> Result<(), Box<dyn Error>> {
 ///
 /// Fault injection returns a synthetic 412 on every `ReplaceItem`. With
 /// `max_attempts(2)` the handler dispatches Read1 -> Replace1 (412) ->
-/// Read2 -> Replace2 (412) -> Error.
+/// Read2 -> Replace2 (412) -> CosmosError.
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
@@ -1065,19 +1065,19 @@ pub async fn cosmos_patch_412_exhaustion() -> Result<(), Box<dyn Error>> {
                 .expect_err("PATCH should fail with 412 after exhausting max_attempts");
 
             // Check the typed status code rather than the message string:
-            // `exhaustion_error` builds an `ErrorKind::HttpResponse { status:
-            // PreconditionFailed, .. }` whose `Display` is the human-readable
+            // the exhaustion error is constructed with status
+            // `PreconditionFailed` but its `Display` is the human-readable
             // attempts-count message (not "412" / "PreconditionFailed"), so
-            // callers identify the 412 via `err.http_status()` — the same
-            // accessor every other SDK caller uses. The framework wraps the
-            // driver's `azure_core::Error` in a `Box<dyn Error>` via `?`, so
-            // downcast to recover the typed accessor.
-            let azure_err = err
-                .downcast_ref::<azure_core::Error>()
-                .expect("framework wraps an azure_core::Error from execute_operation");
+            // callers identify the 412 via `CosmosError::status_code()`. The
+            // framework wraps the driver's `crate::error::Error` in a
+            // `Box<dyn Error>` via `?`, so downcast to recover the typed
+            // accessor.
+            let cosmos_err = err
+                .downcast_ref::<azure_data_cosmos_driver::error::CosmosError>()
+                .expect("framework wraps an azure_data_cosmos_driver::error::CosmosError from execute_operation");
             assert_eq!(
-                azure_err.http_status(),
-                Some(azure_core::http::StatusCode::PreconditionFailed),
+                cosmos_err.status().status_code(),
+                azure_core::http::StatusCode::PreconditionFailed,
                 "exhausted error should be a 412 / PreconditionFailed; got: {err}",
             );
 

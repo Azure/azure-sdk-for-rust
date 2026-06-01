@@ -1399,7 +1399,10 @@ fn plan_with_params(sql: &str, params: &[(&str, serde_json::Value)]) -> QueryPla
     generate_query_plan_with_parameters(&p.query, &["/pk"], &owned).unwrap()
 }
 
-fn plan_with_params_err(sql: &str, params: &[(&str, serde_json::Value)]) -> azure_core::Error {
+fn plan_with_params_err(
+    sql: &str,
+    params: &[(&str, serde_json::Value)],
+) -> crate::error::CosmosError {
     let p = crate::query::parse(sql).unwrap();
     let owned: Vec<(String, serde_json::Value)> = params
         .iter()

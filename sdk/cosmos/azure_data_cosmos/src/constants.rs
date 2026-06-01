@@ -6,11 +6,8 @@
 
 //! Constants defining HTTP headers and other values used internally by the SDK.
 
+#[cfg(test)]
 use azure_core::http::headers::HeaderName;
-
-pub const OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
-pub const OFFER_AUTOPILOT_SETTINGS: HeaderName =
-    HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
 
 #[cfg(test)]
 pub const OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-replace-pending");

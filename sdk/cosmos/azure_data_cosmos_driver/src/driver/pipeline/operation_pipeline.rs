@@ -77,7 +77,7 @@ impl OperationOverrides {
     pub fn apply_headers(
         &self,
         headers: &mut azure_core::http::headers::Headers,
-    ) -> azure_core::Result<()> {
+    ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
             if feed_range.min_inclusive() != &EffectivePartitionKey::MIN {
                 headers.insert(
@@ -149,7 +149,7 @@ pub(crate) async fn execute_operation_pipeline(
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<&ThroughputControlGroupSnapshot>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
-) -> azure_core::Result<CosmosResponse> {
+) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
@@ -403,7 +403,7 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
             OperationAction::SessionRetry { new_state } => {
                 // Retry to a different region — the 404/1002 is likely a
@@ -418,9 +418,9 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
-                enforce_deadline_or_timeout(deadline, options, &mut diagnostics)?;
+                diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
-            OperationAction::Abort { error, status } => {
+            OperationAction::Abort { error } => {
                 // Flush deferred write-path effects if the abort status
                 // confirms the region processed the request (e.g., 409
                 // Conflict, 412 Precondition Failed). On non-confirming
@@ -428,7 +428,8 @@ pub(crate) async fn execute_operation_pipeline(
                 // the buffered effects are discarded — we never proved any
                 // region was actually healthy, so polluting routing state
                 // would be wrong.
-                let confirming = status.as_ref().is_some_and(is_region_confirming_status);
+                let cosmos_status = error.status();
+                let confirming = is_region_confirming_status(&cosmos_status);
                 if confirming {
                     flush_pending_write_effects(&mut retry_state, location_state_store).await;
                 } else {
@@ -437,7 +438,7 @@ pub(crate) async fn execute_operation_pipeline(
 
                 tracing::error!(
                     activity_id = %activity_id,
-                    status = ?status,
+                    status = ?cosmos_status,
                     error = %error,
                     operation_type = ?operation.operation_type(),
                     resource_type = ?operation.resource_type(),
@@ -448,13 +449,19 @@ pub(crate) async fn execute_operation_pipeline(
                     pk_range_id = ?retry_state.partition_key_range_id,
                     "operation aborted",
                 );
-                if let Some(cosmos_status) = status {
-                    diagnostics.set_operation_status(
-                        cosmos_status.status_code(),
-                        cosmos_status.sub_status(),
-                    );
-                }
-                return Err(error);
+                diagnostics
+                    .set_operation_status(cosmos_status.status_code(), cosmos_status.sub_status());
+                // Graft the completed operation diagnostics (retry history,
+                // region attempts, per-request events) onto the error before
+                // returning. Without this, callers reading
+                // `error.diagnostics()` would see `None` on every aborted
+                // operation even though the pipeline tracked everything —
+                // the only path that attaches diagnostics in the
+                // non-aborted case is `build_cosmos_response`.
+                let diagnostics_ctx = Arc::new(diagnostics.complete());
+                return Err(crate::error::CosmosErrorBuilder::from_error(error)
+                    .with_diagnostics(diagnostics_ctx)
+                    .build());
             }
         }
     }
@@ -827,7 +834,7 @@ fn build_transport_request(
     overrides: &OperationOverrides,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     ctx: &TransportRequestContext<'_>,
-) -> azure_core::Result<TransportRequest> {
+) -> crate::error::Result<TransportRequest> {
     let paths = operation.compute_resource_paths();
     let url = {
         let mut base = ctx.routing.selected_url.clone();
@@ -976,7 +983,7 @@ fn build_transport_request(
 fn build_cosmos_response(
     result: Box<TransportResult>,
     mut diagnostics: DiagnosticsContextBuilder,
-) -> azure_core::Result<CosmosResponse> {
+) -> crate::error::Result<CosmosResponse> {
     match result.outcome {
         TransportOutcome::Success {
             status,
@@ -995,11 +1002,12 @@ fn build_cosmos_response(
             ))
         }
         _ => {
-            // This should only be called with a Complete(Success) result
-            Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "build_cosmos_response called with non-success result",
-            ))
+            // This should only be called with a Complete(Success) result.
+            // Treat as a programmer-error invariant violation.
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE)
+                .with_message("build_cosmos_response called with non-success result")
+                .build())
         }
     }
 }
@@ -1186,17 +1194,27 @@ fn advance_to_next_attempt(
 ///
 /// On timeout, the diagnostics builder is updated with
 /// `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` so downstream telemetry
+/// Enforces the operation's end-to-end deadline, surfacing a typed
+/// `408 / CLIENT_OPERATION_TIMEOUT` error when exceeded so callers
 /// can distinguish a client-side end-to-end timeout from a service 408.
+///
+/// Takes the [`DiagnosticsContextBuilder`] by value so the timeout-error
+/// path can finalize diagnostics and graft them onto the synthesized
+/// error in one step (without that graft, callers reading
+/// `error.diagnostics()` would see `None` on every end-to-end-timeout
+/// outcome even though the pipeline tracked every attempt). The builder
+/// is returned unchanged on the happy path so the caller can keep
+/// mutating it on subsequent iterations.
 fn enforce_deadline_or_timeout(
     deadline: Option<Instant>,
     options: &OperationOptionsView<'_>,
-    diagnostics: &mut DiagnosticsContextBuilder,
-) -> azure_core::Result<()> {
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> Result<DiagnosticsContextBuilder, crate::error::CosmosError> {
     let Some(d) = deadline else {
-        return Ok(());
+        return Ok(diagnostics);
     };
     if Instant::now() < d {
-        return Ok(());
+        return Ok(diagnostics);
     }
 
     let timeout_duration = options
@@ -1208,10 +1226,17 @@ fn enforce_deadline_or_timeout(
         azure_core::http::StatusCode::RequestTimeout,
         Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
     );
-    Err(azure_core::Error::new(
-        azure_core::error::ErrorKind::Other,
-        format!("end-to-end operation timeout exceeded ({timeout_duration:?})"),
-    ))
+    let diagnostics_ctx = Arc::new(diagnostics.complete());
+    Err(crate::error::CosmosError::builder()
+        .with_status(crate::models::CosmosStatus::from_parts(
+            azure_core::http::StatusCode::RequestTimeout,
+            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        ))
+        .with_message(format!(
+            "end-to-end operation timeout exceeded ({timeout_duration:?})"
+        ))
+        .with_diagnostics(diagnostics_ctx)
+        .build())
 }
 
 /// On a successful PPCB probe request, removes the `ProbeCandidate` entry
@@ -1802,7 +1827,7 @@ mod tests {
     }
 
     mod should_capture_session_token_from_status_tests {
-        use azure_core::http::{headers::Headers, StatusCode};
+        use azure_core::http::StatusCode;
 
         use crate::{
             driver::pipeline::components::TransportOutcome,
@@ -1822,7 +1847,6 @@ mod tests {
         fn http_error_outcome(status: StatusCode) -> TransportOutcome {
             TransportOutcome::HttpError {
                 status: CosmosStatus::new(status),
-                headers: Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: Vec::new(),
                 request_sent: crate::diagnostics::RequestSentStatus::Sent,
@@ -3298,32 +3322,38 @@ mod tests {
     #[test]
     fn enforce_deadline_none_is_ok() {
         let options = empty_options_view();
-        let mut diagnostics = test_diagnostics();
-        let result = super::enforce_deadline_or_timeout(None, &options, &mut diagnostics);
+        let diagnostics = test_diagnostics();
+        let result = super::enforce_deadline_or_timeout(None, &options, diagnostics);
         assert!(result.is_ok());
     }
 
     #[test]
     fn enforce_deadline_in_future_is_ok() {
         let options = empty_options_view();
-        let mut diagnostics = test_diagnostics();
+        let diagnostics = test_diagnostics();
         let deadline = std::time::Instant::now() + Duration::from_secs(60);
-        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, diagnostics);
         assert!(result.is_ok());
     }
 
     #[test]
-    fn enforce_deadline_in_past_returns_timeout_error() {
+    fn enforce_deadline_in_past_returns_timeout_error_with_diagnostics() {
         let options = empty_options_view();
-        let mut diagnostics = test_diagnostics();
+        let diagnostics = test_diagnostics();
         let deadline = std::time::Instant::now() - Duration::from_millis(1);
-        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, &mut diagnostics);
+        let result = super::enforce_deadline_or_timeout(Some(deadline), &options, diagnostics);
         let err = result.expect_err("past deadline should produce an error");
-        assert!(matches!(err.kind(), azure_core::error::ErrorKind::Other));
         let msg = err.to_string();
         assert!(
             msg.contains("end-to-end operation timeout exceeded"),
             "unexpected error message: {msg}"
+        );
+        // Diagnostics must be attached so callers reading
+        // `error.diagnostics()` on a timeout outcome get the
+        // pipeline's tracked retry history rather than `None`.
+        assert!(
+            err.diagnostics().is_some(),
+            "timeout error must carry finalized diagnostics"
         );
     }
 }

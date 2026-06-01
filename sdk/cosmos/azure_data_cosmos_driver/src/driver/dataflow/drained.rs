@@ -20,7 +20,7 @@ impl PipelineNode for DrainedLeaf {
     async fn next_page(
         &mut self,
         _context: &mut PipelineContext<'_>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         Ok(PageResult::Drained)
     }
 

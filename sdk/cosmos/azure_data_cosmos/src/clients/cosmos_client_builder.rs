@@ -266,7 +266,8 @@ impl CosmosClientBuilder {
     /// Builds the [`CosmosClient`] with the specified account reference and region selection strategy.
     ///
     /// The account reference bundles an endpoint and credential. Construct one using
-    /// [`AccountReference::with_credential()`] or [`AccountReference::with_authentication_key()`].
+    /// [`AccountReference::with_credential()`] or [`AccountReference::with_authentication_key()`]
+    /// (the latter requires the `key_auth` feature).
     ///
     /// # Arguments
     ///
@@ -280,7 +281,7 @@ impl CosmosClientBuilder {
         self,
         account: AccountReference,
         routing_strategy: RoutingStrategy,
-    ) -> azure_core::Result<CosmosClient> {
+    ) -> crate::Result<CosmosClient> {
         let (account_endpoint, credential) = account.into_parts();
         let endpoint = account_endpoint.into_url();
 
@@ -366,10 +367,10 @@ impl CosmosClientBuilder {
             driver_runtime_builder = driver_runtime_builder
                 .register_throughput_control_group(group)
                 .map_err(|e| {
-                    azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        format!("failed to register throughput control group: {e}"),
-                    )
+                    crate::DriverCosmosError::builder()
+                        .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
+                        .with_message(format!("failed to register throughput control group: {e}"))
+                        .build()
                 })?;
         }
         let driver_runtime = driver_runtime_builder.build().await?;
@@ -554,7 +555,7 @@ mod tests {
         );
     }
 
-    fn dummy_account() -> azure_data_cosmos_driver::models::AccountReference {
+    fn test_account() -> azure_data_cosmos_driver::models::AccountReference {
         azure_data_cosmos_driver::models::AccountReference::with_master_key(
             "https://test.documents.azure.com/".parse().unwrap(),
             "dGVzdA==",
@@ -566,7 +567,7 @@ mod tests {
     #[test]
     fn proximity_to_known_region_starts_with_source() {
         let opts = build_driver_options(
-            dummy_account(),
+            test_account(),
             RoutingStrategy::ProximityTo(Region::EAST_US),
         );
         let regions = opts.preferred_regions();
@@ -582,7 +583,7 @@ mod tests {
     #[test]
     fn proximity_to_unknown_region_returns_empty_list() {
         let opts = build_driver_options(
-            dummy_account(),
+            test_account(),
             RoutingStrategy::ProximityTo(Region::from("not-a-real-region")),
         );
         assert!(
@@ -596,7 +597,7 @@ mod tests {
     fn preferred_regions_passes_through_unchanged() {
         let input = vec![Region::WEST_US, Region::EAST_US, Region::WEST_EUROPE];
         let opts = build_driver_options(
-            dummy_account(),
+            test_account(),
             RoutingStrategy::PreferredRegions(input.clone()),
         );
         assert_eq!(opts.preferred_regions(), input.as_slice());

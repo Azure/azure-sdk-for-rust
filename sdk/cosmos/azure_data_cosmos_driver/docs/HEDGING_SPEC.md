@@ -88,15 +88,15 @@ design review.
 
 ### Operation-type scope (phased)
 
-| Operation type | Phase 1 | Phase 2 | Future |
-|---|:---:|:---:|:---:|
-| Document point reads (GetItem) | ✅ | ✅ | ✅ |
-| Queries (`QueryItems`) — page-level | ❌ | ✅ | ✅ |
-| `ReadMany` — page-level | ❌ | ✅ | ✅ |
-| Change feed — page-level | ❌ | ✅ | ✅ |
-| Metadata operations (Database / Container / Offer / Throughput) | ❌ | ✅ | ✅ |
-| Document writes (Create/Replace/Upsert/Delete/Patch) — any topology | ❌ | ❌ | ❌ |
-| Stored procedure execution (`ExecuteJavaScript`) | ❌ | ❌ | 🟡 candidate |
+| Operation type                                                      | Phase 1 | Phase 2 |   Future    |
+| ------------------------------------------------------------------- | :-----: | :-----: | :---------: |
+| Document point reads (GetItem)                                      |    ✅    |    ✅    |      ✅      |
+| Queries (`QueryItems`) — page-level                                 |    ❌    |    ✅    |      ✅      |
+| `ReadMany` — page-level                                             |    ❌    |    ✅    |      ✅      |
+| Change feed — page-level                                            |    ❌    |    ✅    |      ✅      |
+| Metadata operations (Database / Container / Offer / Throughput)     |    ❌    |    ✅    |      ✅      |
+| Document writes (Create/Replace/Upsert/Delete/Patch) — any topology |    ❌    |    ❌    |      ❌      |
+| Stored procedure execution (`ExecuteJavaScript`)                    |    ❌    |    ❌    | 🟡 candidate |
 
 > **Triggers and UDFs** are not standalone operations — they ride along
 > as request headers on document operations and are therefore hedged
@@ -135,11 +135,11 @@ requestOptions.AvailabilityStrategy = AvailabilityStrategy.DisabledStrategy();
 
 ### 2.2 Configuration Model
 
-| Parameter | Description | Default | Constraints |
-|-----------|-------------|---------|-------------|
-| `threshold` | Delay before firing the first hedge request | (required) | `> 0` |
-| `thresholdStep` | Delay between subsequent hedge requests | (required) | `> 0` |
-| `enableMultiWriteRegionHedge` | Allow hedging for writes on multi-write accounts | `false` | Opt-in; increases 409/412 risk |
+| Parameter                     | Description                                      | Default    | Constraints                    |
+| ----------------------------- | ------------------------------------------------ | ---------- | ------------------------------ |
+| `threshold`                   | Delay before firing the first hedge request      | (required) | `> 0`                          |
+| `thresholdStep`               | Delay between subsequent hedge requests          | (required) | `> 0`                          |
+| `enableMultiWriteRegionHedge` | Allow hedging for writes on multi-write accounts | `false`    | Opt-in; increases 409/412 risk |
 
 ### 2.3 Eligibility — `ShouldHedge()`
 
@@ -193,17 +193,17 @@ Hedging applies **only** to document-level operations:
 
 A response is "final" (non-transient) if:
 
-| Condition | Final? |
-|-----------|--------|
-| Any 1xx, 2xx, 3xx | Yes |
-| 400 Bad Request | Yes |
-| 401 Unauthorized | Yes |
-| 405 Method Not Allowed | Yes |
-| 409 Conflict | Yes |
-| 412 Precondition Failed | Yes |
-| 413 Request Entity Too Large | Yes |
-| 404 with sub-status 0 (Unknown) | Yes |
-| All other 4xx/5xx | **No** (transient) |
+| Condition                       | Final?             |
+| ------------------------------- | ------------------ |
+| Any 1xx, 2xx, 3xx               | Yes                |
+| 400 Bad Request                 | Yes                |
+| 401 Unauthorized                | Yes                |
+| 405 Method Not Allowed          | Yes                |
+| 409 Conflict                    | Yes                |
+| 412 Precondition Failed         | Yes                |
+| 413 Request Entity Too Large    | Yes                |
+| 404 with sub-status 0 (Unknown) | Yes                |
+| All other 4xx/5xx               | **No** (transient) |
 
 Non-final (transient) responses do NOT terminate hedging — the SDK keeps waiting
 for other in-flight requests that might succeed.
@@ -537,10 +537,10 @@ pub struct OperationOptions {
 
 ### 4.4 Environment Variable Support
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `AZURE_COSMOS_HEDGING_THRESHOLD_MS` | Overrides the driver default threshold in milliseconds. Zero or non-numeric values are ignored. | (driver default — see §5.2) |
-| `AZURE_COSMOS_HEDGING_DISABLED` | When `true`, disables hedging entirely at runtime regardless of code-level config. Useful as a deployment-time kill switch. | `false` |
+| Variable                            | Description                                                                                                                 | Default                     |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `AZURE_COSMOS_HEDGING_THRESHOLD_MS` | Overrides the driver default threshold in milliseconds. Zero or non-numeric values are ignored.                             | (driver default — see §5.2) |
+| `AZURE_COSMOS_HEDGING_DISABLED`     | When `true`, disables hedging entirely at runtime regardless of code-level config. Useful as a deployment-time kill switch. | `false`                     |
 
 The env-var threshold sits at priority 3 in the resolution order
 (§11.3.1) — it overrides the built-in default but is overridden by any
@@ -582,14 +582,14 @@ fn should_hedge(
 
 **Decision matrix** — evaluated in order; first matching row wins:
 
-| # | Condition | Hedge? |
-|---:|-----------|--------|
-| 1 | No strategy resolved (or `AvailabilityStrategy::Disabled`) | No |
-| 2 | Application preferred-region list empty | No |
-| 3 | `ResourceType` not in the **phase-allowed set** † | No |
-| 4 | Operation is a write (any topology) | No |
-| 5 | Applicable `preferred_read_endpoints` (after `ExcludeRegions`) has < 2 entries | No |
-| 6 | Read with ≥ 2 applicable read endpoints | **Yes** |
+|    # | Condition                                                                      | Hedge?  |
+| ---: | ------------------------------------------------------------------------------ | ------- |
+|    1 | No strategy resolved (or `AvailabilityStrategy::Disabled`)                     | No      |
+|    2 | Application preferred-region list empty                                        | No      |
+|    3 | `ResourceType` not in the **phase-allowed set** †                              | No      |
+|    4 | Operation is a write (any topology)                                            | No      |
+|    5 | Applicable `preferred_read_endpoints` (after `ExcludeRegions`) has < 2 entries | No      |
+|    6 | Read with ≥ 2 applicable read endpoints                                        | **Yes** |
 
 The "≥ 2 applicable endpoints" check is computed against the
 post-`ExcludeRegions` list, not the raw account region count — a user
@@ -704,7 +704,7 @@ async fn execute_hedged(
     credential: &Credential,
     diagnostics: &mut DiagnosticsContextBuilder,
     deadline: Option<Instant>,
-) -> azure_core::Result<CosmosResponse>;
+) -> crate::error::Result<CosmosResponse>;
 ```
 
 `execute_hedged()` fires **at most two** concurrent transport
@@ -739,10 +739,10 @@ This is computed by the evaluator when it builds the
 `secondary_routing: RoutingDecision`; `execute_hedged()` itself does
 no routing math.
 
-| Request | ExcludeRegions | Target |
-|---|---|---|
-| Primary | (the user's original exclusion set, if any) | regions[0] (normal routing) |
-| Secondary | user-original ∪ `(all_regions \ regions[1])` | regions[1] |
+| Request   | ExcludeRegions                               | Target                      |
+| --------- | -------------------------------------------- | --------------------------- |
+| Primary   | (the user's original exclusion set, if any)  | regions[0] (normal routing) |
+| Secondary | user-original ∪ `(all_regions \ regions[1])` | regions[1]                  |
 
 This piggybacks on the existing `ExcludeRegions` mechanism in
 `resolve_endpoint()` (TPS §4.1 STAGE 2), requiring no changes to the
@@ -826,7 +826,7 @@ async fn execute_hedged(
     //    A transient result on either side keeps the *other* side racing.
     //    Application cancellation is observed by the surrounding
     //    `select!` arms via the deadline — no CancellationToken tree. ──
-    let mut last_transient: Option<(Side, azure_core::Error)> = None;
+    let mut last_transient: Option<(Side, crate::error::Error)> = None;
     let mut primary_done = false;
     let mut secondary_done = false;
 
@@ -886,9 +886,9 @@ async fn execute_hedged(
 
     // ── Both sides terminated transient — surface the most recent error. ──
     Err(last_transient.map(|(_, e)| e).unwrap_or_else(|| {
-        azure_core::Error::message(
-            azure_core::error::ErrorKind::Other,
+        crate::error::Error::client(
             "hedging completed without producing a response",
+            None,
         )
     }))
 }
@@ -898,9 +898,9 @@ async fn execute_hedged(
 
 ```rust
 enum Side { Primary, Secondary }
-enum Outcome { Final(CosmosResponse), Transient(azure_core::Error) }
+enum Outcome { Final(CosmosResponse), Transient(crate::error::Error) }
 
-fn classify(r: Result<CosmosResponse, azure_core::Error>) -> Outcome {
+fn classify(r: crate::error::Result<CosmosResponse>) -> Outcome {
     match r {
         Ok(resp) if is_final_result(resp.status()) => Outcome::Final(resp),
         Ok(resp) => Outcome::Transient(transient_from_response(resp)),
@@ -1066,25 +1066,25 @@ fn is_final_result(status: &CosmosStatus) -> bool {
 
 ### 7.2 Transient vs. Non-Transient Responses
 
-| Status | Sub-Status | Transient? | Rationale |
-|--------|------------|------------|-----------|
-| 200 | * | No (final) | Success |
-| 304 | * | No (final) | Not Modified |
-| 400 | * | No (final) | Client error — won't succeed in another region |
-| 401 | * | No (final) | Auth failure — same credentials everywhere |
-| 403 | 0 (no sub) | **Yes** | Forbidden — may indicate a regional failover in progress; another region may serve |
-| 403 | 3 | **Yes** | WriteForbidden — region may be failing over |
-| 404 | 0 | No (final) | Resource genuinely not found |
-| 404 | 1002 | **Yes** | ReadSessionNotAvailable — session lag |
-| 405 | * | No (final) | Wrong HTTP method |
-| 408 | * | **Yes** | Timeout — another region may be faster |
-| 409 | * | No (final) | Conflict — deterministic |
-| 410 | * | **Yes** | Gone — partition may have moved |
-| 412 | * | No (final) | Precondition — deterministic |
-| 413 | * | No (final) | Payload too large — same everywhere |
-| 429 | * | **Yes** | Throttled — another region may have capacity |
-| 500 | * | **Yes** | Internal error — may be region-specific |
-| 503 | * | **Yes** | Unavailable — another region may be healthy |
+| Status | Sub-Status | Transient? | Rationale                                                                          |
+| ------ | ---------- | ---------- | ---------------------------------------------------------------------------------- |
+| 200    | *          | No (final) | Success                                                                            |
+| 304    | *          | No (final) | Not Modified                                                                       |
+| 400    | *          | No (final) | Client error — won't succeed in another region                                     |
+| 401    | *          | No (final) | Auth failure — same credentials everywhere                                         |
+| 403    | 0 (no sub) | **Yes**    | Forbidden — may indicate a regional failover in progress; another region may serve |
+| 403    | 3          | **Yes**    | WriteForbidden — region may be failing over                                        |
+| 404    | 0          | No (final) | Resource genuinely not found                                                       |
+| 404    | 1002       | **Yes**    | ReadSessionNotAvailable — session lag                                              |
+| 405    | *          | No (final) | Wrong HTTP method                                                                  |
+| 408    | *          | **Yes**    | Timeout — another region may be faster                                             |
+| 409    | *          | No (final) | Conflict — deterministic                                                           |
+| 410    | *          | **Yes**    | Gone — partition may have moved                                                    |
+| 412    | *          | No (final) | Precondition — deterministic                                                       |
+| 413    | *          | No (final) | Payload too large — same everywhere                                                |
+| 429    | *          | **Yes**    | Throttled — another region may have capacity                                       |
+| 500    | *          | **Yes**    | Internal error — may be region-specific                                            |
+| 503    | *          | **Yes**    | Unavailable — another region may be healthy                                        |
 
 > **Note on 403 sub-statuses.** The driver classifies any 403 (with or
 > without `WriteForbidden` sub-status `3`) as **transient** for hedging
@@ -1250,11 +1250,11 @@ rest of the pipeline dispatch in `operation_pipeline.rs`.
 
 Hedging and partition-level failover are **complementary**:
 
-| System | Handles | Trigger |
-|--------|---------|---------|
-| Hedging | Latency | Timer (threshold exceeded) |
-| PPAF | Write failures (single-master) | 403/3 from service |
-| PPCB | Read/write failures | Failure count threshold |
+| System  | Handles                        | Trigger                    |
+| ------- | ------------------------------ | -------------------------- |
+| Hedging | Latency                        | Timer (threshold exceeded) |
+| PPAF    | Write failures (single-master) | 403/3 from service         |
+| PPCB    | Read/write failures            | Failure count threshold    |
 
 **No interference:** Each hedged pipeline invocation has its own
 `OperationRetryState`. Partition-level effects (`LocationEffect::MarkPartitionUnavailable`)
@@ -1552,10 +1552,10 @@ The shared latch is populated only when all of the following are true
 at the point the alternate hedge is about to spawn inside
 `execute_hedged()`:
 
-| Condition | Why |
-|---|---|
-| Operation is data-plane (`is_dataplane`) | Mirrors the §1.5 scope of `HUB_REGION_PROCESSING_HEADER_SPEC.md`. |
-| Account is single-master (`!can_use_multiple_write_locations`) | Mirrors AC-4 of `HUB_REGION_PROCESSING_HEADER_SPEC.md`; multi-master accounts have a separate recovery path and the header is never emitted. |
+| Condition                                                         | Why                                                                                                                                          |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Operation is data-plane (`is_dataplane`)                          | Mirrors the §1.5 scope of `HUB_REGION_PROCESSING_HEADER_SPEC.md`.                                                                            |
+| Account is single-master (`!can_use_multiple_write_locations`)    | Mirrors AC-4 of `HUB_REGION_PROCESSING_HEADER_SPEC.md`; multi-master accounts have a separate recovery path and the header is never emitted. |
 | Hedging actually fans out (threshold elapsed → secondary spawned) | When `execute_hedged()` returns from the happy path (§6.4 — primary wins before the threshold), there is no second pipeline to propagate to. |
 
 When any condition fails, `shared_hub_region_latch` is `None` and the
@@ -1629,13 +1629,13 @@ for the operation — i.e. `should_hedge()` returned `true` and the
 
 **Field semantics when the primary wins before the first hedge fires:**
 
-| Field | Value |
-|---|---|
-| `strategy_config` | The active strategy config (always populated) |
-| `regions_contacted` | `vec![regions[0]]` (just the primary) |
-| `response_region` | `regions[0]` |
-| `total_requests_launched` | `1` |
-| `was_hedge` | `false` |
+| Field                     | Value                                         |
+| ------------------------- | --------------------------------------------- |
+| `strategy_config`         | The active strategy config (always populated) |
+| `regions_contacted`       | `vec![regions[0]]` (just the primary)         |
+| `response_region`         | `regions[0]`                                  |
+| `total_requests_launched` | `1`                                           |
+| `was_hedge`               | `false`                                       |
 
 This lets callers distinguish *"hedging was active and the primary won
 amongst the launched requests"* from *"hedging was active but no hedge
@@ -1730,27 +1730,27 @@ breaking changes.
 
 **Reserved `tracing` event names** (under target `cosmos.hedge`):
 
-| Event | Level | Fields | Emitted when |
-|---|---|---|---|
-| `cosmos.hedge.enabled_for_operation` | DEBUG | `threshold_ms`, `region_count` | `evaluate_transport_result` decides to hedge a specific operation |
-| `cosmos.hedge.alternate_spawned` | DEBUG | `target_region`, `elapsed_ms` | The threshold elapsed and the alternate hedge was spawned |
-| `cosmos.hedge.canceled` | DEBUG | `which` (`primary` / `alternate`), `target_region`, `reason` (`winner_found` / `deadline` / `app_canceled`) | A losing pipeline is canceled |
-| `cosmos.hedge.won` | INFO | `winner_region`, `elapsed_ms`, `was_hedge` | A response is selected as final |
-| `cosmos.hedge.both_transient` | WARN | `last_status_code` | Both primary and alternate returned transient responses |
-| `cosmos.hedge.recorded_alternate_win` | DEBUG | `primary_region`, `partition` | `execute_hedged()` recorded an alternate-region win for PPCB feedback (§9.5) |
+| Event                                 | Level | Fields                                                                                                      | Emitted when                                                                 |
+| ------------------------------------- | ----- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `cosmos.hedge.enabled_for_operation`  | DEBUG | `threshold_ms`, `region_count`                                                                              | `evaluate_transport_result` decides to hedge a specific operation            |
+| `cosmos.hedge.alternate_spawned`      | DEBUG | `target_region`, `elapsed_ms`                                                                               | The threshold elapsed and the alternate hedge was spawned                    |
+| `cosmos.hedge.canceled`               | DEBUG | `which` (`primary` / `alternate`), `target_region`, `reason` (`winner_found` / `deadline` / `app_canceled`) | A losing pipeline is canceled                                                |
+| `cosmos.hedge.won`                    | INFO  | `winner_region`, `elapsed_ms`, `was_hedge`                                                                  | A response is selected as final                                              |
+| `cosmos.hedge.both_transient`         | WARN  | `last_status_code`                                                                                          | Both primary and alternate returned transient responses                      |
+| `cosmos.hedge.recorded_alternate_win` | DEBUG | `primary_region`, `partition`                                                                               | `execute_hedged()` recorded an alternate-region win for PPCB feedback (§9.5) |
 
 **Reserved metric names** (intentionally namespaced; not emitted in
 Phase 1, awaiting an `azure_core` metrics surface):
 
-| Metric | Type | Labels | Description |
-|---|---|---|---|
-| `cosmos.hedge.operations_total` | counter | `result` (`primary_won` / `alternate_won` / `both_transient` / `disabled`) | Hedging-eligible operations grouped by outcome |
-| `cosmos.hedge.alternate_spawned_total` | counter |  | Total alternate hedges spawned (i.e., operations where the threshold elapsed) |
-| `cosmos.hedge.first_response_latency_ms` | histogram | `was_hedge` (bool) | Latency from `execute_hedged()` entry to the winning response |
-| `cosmos.hedge.canceled_total` | counter | `reason` (`winner_found` / `deadline` / `app_canceled`) | Pipelines canceled before completion |
-| `cosmos.hedge.ru_charge_winner` | histogram | `was_hedge` | RU of the winning response; this is the caller-visible RU charge |
-| `cosmos.hedge.ru_charge_total` | histogram | `winner_region` | Total RU consumed across primary + alternate, including the loser; operator-facing only |
-| `cosmos.hedge.consecutive_alternate_wins` | gauge | `partition`, `primary_region` | Current PPCB-feedback counter value for a (partition, primary-region) pair (§9.5) |
+| Metric                                    | Type      | Labels                                                                     | Description                                                                             |
+| ----------------------------------------- | --------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `cosmos.hedge.operations_total`           | counter   | `result` (`primary_won` / `alternate_won` / `both_transient` / `disabled`) | Hedging-eligible operations grouped by outcome                                          |
+| `cosmos.hedge.alternate_spawned_total`    | counter   |                                                                            | Total alternate hedges spawned (i.e., operations where the threshold elapsed)           |
+| `cosmos.hedge.first_response_latency_ms`  | histogram | `was_hedge` (bool)                                                         | Latency from `execute_hedged()` entry to the winning response                           |
+| `cosmos.hedge.canceled_total`             | counter   | `reason` (`winner_found` / `deadline` / `app_canceled`)                    | Pipelines canceled before completion                                                    |
+| `cosmos.hedge.ru_charge_winner`           | histogram | `was_hedge`                                                                | RU of the winning response; this is the caller-visible RU charge                        |
+| `cosmos.hedge.ru_charge_total`            | histogram | `winner_region`                                                            | Total RU consumed across primary + alternate, including the loser; operator-facing only |
+| `cosmos.hedge.consecutive_alternate_wins` | gauge     | `partition`, `primary_region`                                              | Current PPCB-feedback counter value for a (partition, primary-region) pair (§9.5)       |
 
 Notes:
 
@@ -1817,13 +1817,13 @@ hedging strategy.
 The driver picks the effective strategy in the following priority order
 (highest first):
 
-| Priority | Source | Notes |
-|:---:|---|---|
-| 1 | Operation `availability_strategy` (incl. `Disabled`) | Per-request override |
-| 2 | Client / runtime `availability_strategy` | Applies to all requests |
-| 3 | Environment variables (§4.4) | Deploy-time intent; `AZURE_COSMOS_HEDGING_DISABLED` short-circuits to `Disabled`; `AZURE_COSMOS_HEDGING_THRESHOLD_MS` overrides the default threshold but only if no code-level strategy is set |
-| 4 | **Driver default** (§5.2) | Default-on for accounts with ≥ 2 applicable preferred regions; threshold = `min(1000ms, request_timeout / 2)`; independent of PPAF/PPCB |
-| 5 | None | Hedging off (single-region account or insufficient region config) |
+| Priority | Source                                               | Notes                                                                                                                                                                                           |
+| :------: | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|    1     | Operation `availability_strategy` (incl. `Disabled`) | Per-request override                                                                                                                                                                            |
+|    2     | Client / runtime `availability_strategy`             | Applies to all requests                                                                                                                                                                         |
+|    3     | Environment variables (§4.4)                         | Deploy-time intent; `AZURE_COSMOS_HEDGING_DISABLED` short-circuits to `Disabled`; `AZURE_COSMOS_HEDGING_THRESHOLD_MS` overrides the default threshold but only if no code-level strategy is set |
+|    4     | **Driver default** (§5.2)                            | Default-on for accounts with ≥ 2 applicable preferred regions; threshold = `min(1000ms, request_timeout / 2)`; independent of PPAF/PPCB                                                         |
+|    5     | None                                                 | Hedging off (single-region account or insufficient region config)                                                                                                                               |
 
 The resolved strategy is consumed by `evaluate_transport_result`
 (TPS §3.4), which calls `should_hedge()` (§5.1) and (when eligible)
@@ -2003,62 +2003,62 @@ also transient, §14.1 applies.
 
 ### 15.1 Unit Tests
 
-| Test | Validates |
-|------|-----------|
-| `should_hedge_read_multi_region` | Reads eligible on multi-region account with ≥ 2 applicable preferred regions |
-| `should_hedge_read_single_region` | Reads NOT eligible on single-region account |
-| `should_hedge_excluded_to_one_region` | Reads NOT eligible when `ExcludeRegions` leaves < 2 applicable read endpoints |
-| `should_hedge_no_preferred_regions` | NOT eligible when application-preferred-region list is empty |
-| `should_hedge_write_never` | Writes (Create / Replace / Upsert / Delete / Patch) NEVER hedged regardless of topology |
-| `should_hedge_non_document` | Non-Document `ResourceType`s excluded in Phase 1 |
-| `should_hedge_disabled_override` | Per-operation `AvailabilityStrategy::Disabled` overrides client-level hedging |
-| `should_hedge_env_disabled` | `AZURE_COSMOS_HEDGING_DISABLED=true` suppresses driver default + env-var threshold |
-| `is_final_result_success` | 200 → final |
-| `is_final_result_conflict` | 409 → final |
-| `is_final_result_503` | 503 → transient |
-| `is_final_result_404_0` | 404/0 → final |
-| `is_final_result_404_1002` | 404/1002 → transient |
-| `is_final_result_429` | 429 → transient |
-| `hedge_threshold_rejects_zero` | `HedgeThreshold::new(Duration::ZERO)` returns `None` (matches the §4.1 newtype contract) |
-| `hedge_threshold_accepts_positive` | `HedgeThreshold::new(Duration::from_millis(1))` is `Some(_)` |
-| `alternate_region_pin_excludes_primary` | Alternate hedge's `ExcludeRegions` contains the primary region |
-| `alternate_region_pin_unions_user_excludes` | When the user supplied `ExcludeRegions = {X}`, the alternate hedge's set is `{X} ∪ (all_regions \ regions[1])` |
-| `exclude_regions_honored_by_every_retry_trigger` | For each retry trigger class — PPAF write retry, PPCB markdown failback, transport-layer 503, throttling 429, session-token 1002 — fault-inject the trigger inside the alternate hedge and assert the retry attempt does **not** route to a region listed in the hedge's `ExcludeRegions`. Encodes the §8.4 cross-cutting invariant. |
-| `app_cancel_preserves_hedge_diagnostics` | Cancel the application token while both pipelines are racing; assert the returned error carries `HedgeDiagnostics` from the most-advanced pipeline (covers §6.5 invariant #7). |
-| `record_hedge_win_increments_ppcb_counter` | An alternate-region win calls `record_consecutive_hedge_win` exactly once on the primary partition (§9.5). |
-| `primary_win_resets_hedge_win_counter` | A direct primary-region win clears the consecutive-hedge-win counter on that partition. |
-| `zero_overhead_happy_path_no_allocs` | When the primary returns before the threshold timer fires, `execute_hedged()` allocates no per-hedge state (no `CancellationToken`, no cloned `OperationOptions`, no `ExcludeRegions` recompute). Backed by `dhat-rs` allocation count. |
-| `shared_hub_region_latch_initialized_when_eligible` | `execute_hedged()` invoked on a data-plane / single-master operation; the threshold elapses and a secondary is spawned. Assert both the primary's and the secondary's `OperationRetryState.shared_hub_region_latch` are `Some(_)` and point to the same `Arc<AtomicBool>` instance (encodes §9.6.2 / §9.6.3). |
-| `shared_hub_region_latch_none_on_zero_overhead_happy_path` | Primary returns before the threshold; assert no `Arc<AtomicBool>` was ever constructed and the per-state latch remains the only mechanism — preserves §6.5 invariant #3 and the [#4389][pr-4389] baseline allocator behavior (§9.6.2). |
-| `shared_hub_region_latch_none_on_multi_master_or_metadata` | Multi-master *or* metadata pipeline; assert `shared_hub_region_latch` is `None` even when the alternate spawns, matching `HUB_REGION_PROCESSING_HEADER_SPEC.md` §5 account-level / §1.5 data-plane gates (§9.6.3). |
+| Test                                                          | Validates                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `should_hedge_read_multi_region`                              | Reads eligible on multi-region account with ≥ 2 applicable preferred regions                                                                                                                                                                                                                                                                                                                                                                       |
+| `should_hedge_read_single_region`                             | Reads NOT eligible on single-region account                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `should_hedge_excluded_to_one_region`                         | Reads NOT eligible when `ExcludeRegions` leaves < 2 applicable read endpoints                                                                                                                                                                                                                                                                                                                                                                      |
+| `should_hedge_no_preferred_regions`                           | NOT eligible when application-preferred-region list is empty                                                                                                                                                                                                                                                                                                                                                                                       |
+| `should_hedge_write_never`                                    | Writes (Create / Replace / Upsert / Delete / Patch) NEVER hedged regardless of topology                                                                                                                                                                                                                                                                                                                                                            |
+| `should_hedge_non_document`                                   | Non-Document `ResourceType`s excluded in Phase 1                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `should_hedge_disabled_override`                              | Per-operation `AvailabilityStrategy::Disabled` overrides client-level hedging                                                                                                                                                                                                                                                                                                                                                                      |
+| `should_hedge_env_disabled`                                   | `AZURE_COSMOS_HEDGING_DISABLED=true` suppresses driver default + env-var threshold                                                                                                                                                                                                                                                                                                                                                                 |
+| `is_final_result_success`                                     | 200 → final                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `is_final_result_conflict`                                    | 409 → final                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `is_final_result_503`                                         | 503 → transient                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `is_final_result_404_0`                                       | 404/0 → final                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `is_final_result_404_1002`                                    | 404/1002 → transient                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `is_final_result_429`                                         | 429 → transient                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `hedge_threshold_rejects_zero`                                | `HedgeThreshold::new(Duration::ZERO)` returns `None` (matches the §4.1 newtype contract)                                                                                                                                                                                                                                                                                                                                                           |
+| `hedge_threshold_accepts_positive`                            | `HedgeThreshold::new(Duration::from_millis(1))` is `Some(_)`                                                                                                                                                                                                                                                                                                                                                                                       |
+| `alternate_region_pin_excludes_primary`                       | Alternate hedge's `ExcludeRegions` contains the primary region                                                                                                                                                                                                                                                                                                                                                                                     |
+| `alternate_region_pin_unions_user_excludes`                   | When the user supplied `ExcludeRegions = {X}`, the alternate hedge's set is `{X} ∪ (all_regions \ regions[1])`                                                                                                                                                                                                                                                                                                                                     |
+| `exclude_regions_honored_by_every_retry_trigger`              | For each retry trigger class — PPAF write retry, PPCB markdown failback, transport-layer 503, throttling 429, session-token 1002 — fault-inject the trigger inside the alternate hedge and assert the retry attempt does **not** route to a region listed in the hedge's `ExcludeRegions`. Encodes the §8.4 cross-cutting invariant.                                                                                                               |
+| `app_cancel_preserves_hedge_diagnostics`                      | Cancel the application token while both pipelines are racing; assert the returned error carries `HedgeDiagnostics` from the most-advanced pipeline (covers §6.5 invariant #7).                                                                                                                                                                                                                                                                     |
+| `record_hedge_win_increments_ppcb_counter`                    | An alternate-region win calls `record_consecutive_hedge_win` exactly once on the primary partition (§9.5).                                                                                                                                                                                                                                                                                                                                         |
+| `primary_win_resets_hedge_win_counter`                        | A direct primary-region win clears the consecutive-hedge-win counter on that partition.                                                                                                                                                                                                                                                                                                                                                            |
+| `zero_overhead_happy_path_no_allocs`                          | When the primary returns before the threshold timer fires, `execute_hedged()` allocates no per-hedge state (no `CancellationToken`, no cloned `OperationOptions`, no `ExcludeRegions` recompute). Backed by `dhat-rs` allocation count.                                                                                                                                                                                                            |
+| `shared_hub_region_latch_initialized_when_eligible`           | `execute_hedged()` invoked on a data-plane / single-master operation; the threshold elapses and a secondary is spawned. Assert both the primary's and the secondary's `OperationRetryState.shared_hub_region_latch` are `Some(_)` and point to the same `Arc<AtomicBool>` instance (encodes §9.6.2 / §9.6.3).                                                                                                                                      |
+| `shared_hub_region_latch_none_on_zero_overhead_happy_path`    | Primary returns before the threshold; assert no `Arc<AtomicBool>` was ever constructed and the per-state latch remains the only mechanism — preserves §6.5 invariant #3 and the [#4389][pr-4389] baseline allocator behavior (§9.6.2).                                                                                                                                                                                                             |
+| `shared_hub_region_latch_none_on_multi_master_or_metadata`    | Multi-master *or* metadata pipeline; assert `shared_hub_region_latch` is `None` even when the alternate spawns, matching `HUB_REGION_PROCESSING_HEADER_SPEC.md` §5 account-level / §1.5 data-plane gates (§9.6.3).                                                                                                                                                                                                                                 |
 | `shared_hub_region_latch_propagates_first_1002_across_hedges` | Drive 1002 through `build_session_retry_state` on the primary; assert (a) the primary's per-state `hub_region_processing_only` is `true`, (b) the shared `Arc<AtomicBool>` is `true`, (c) on the next transport attempt the alternate — whose per-state latch is still `false` — has `apply_hub_region_header` emit the header. Rust counterpart of .NET PR #5815's `CrossRegionAvailabilityContext_PropagatesHubHeaderFlagToHedgedRequests` test. |
-| `shared_hub_region_latch_no_1002_emits_no_header` | Neither side observes 1002; assert no transport attempt calls `apply_hub_region_header` with the header set, regardless of `shared_hub_region_latch` presence. |
+| `shared_hub_region_latch_no_1002_emits_no_header`             | Neither side observes 1002; assert no transport attempt calls `apply_hub_region_header` with the header set, regardless of `shared_hub_region_latch` presence.                                                                                                                                                                                                                                                                                     |
 
 ### 15.2 Integration Tests (Fault Injection)
 
-| Test | Setup | Validates |
-|------|-------|-----------|
-| `hedging_read_primary_slow` | 2s delay on Region A reads, threshold 200ms | Alternate Region B wins; diagnostics show `was_hedge=true`, `total_requests_launched=2` |
-| `hedging_read_primary_fast` | No faults | Primary wins before threshold; `hedge_diagnostics=Some(_)` with `was_hedge=false` and `total_requests_launched=1` |
-| `hedging_read_primary_503` | 503 on Region A reads | Alternate Region B wins with success |
-| `hedging_read_both_regions_slow` | 2s delay on both regions | Whichever responds first wins (graceful degradation) |
-| `hedging_write_not_hedged` | 2s delay on writes on a multi-master account | NO alternate hedge fires; write returns after the delay |
-| `hedging_disabled_per_operation` | Client hedging on; operation `Disabled` | No alternate hedge; normal path |
-| `hedging_respects_deadline` | threshold > deadline | No alternate fires; deadline error |
-| `hedging_with_ppcb_existing_failures` | Region A primary has prior PPCB failures | Hedging still fires; PPCB and hedging compose without interference |
-| `hedging_cancels_loser` | Delay on Region A | Region B wins; verify Region A transport task observed cancellation (hit_count ≤ 1) |
-| `hedging_failback_to_primary` | Region A initially slow, then fast | First few reads hedged; subsequent reads complete on primary before the threshold |
-| `hedging_exclude_regions_under_503_retry` | Alternate hedge gets a 503 (triggers transport retry) while a third region is healthy and excluded by that hedge's `ExcludeRegions` | Alternate hedge's retry stays pinned to its region (does NOT fall back to the third region) — fault-injection counterpart to the §8.4 invariant unit test. |
-| `hedging_alternate_wins_trip_ppcb` | Force N consecutive alternate-region wins on the same partition | PPCB transitions the primary partition to `Unhealthy` after the configured threshold (§9.5). |
+| Test                                                 | Setup                                                                                                                                                                                 | Validates                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hedging_read_primary_slow`                          | 2s delay on Region A reads, threshold 200ms                                                                                                                                           | Alternate Region B wins; diagnostics show `was_hedge=true`, `total_requests_launched=2`                                                                                                                                                                                                                                                                                                                 |
+| `hedging_read_primary_fast`                          | No faults                                                                                                                                                                             | Primary wins before threshold; `hedge_diagnostics=Some(_)` with `was_hedge=false` and `total_requests_launched=1`                                                                                                                                                                                                                                                                                       |
+| `hedging_read_primary_503`                           | 503 on Region A reads                                                                                                                                                                 | Alternate Region B wins with success                                                                                                                                                                                                                                                                                                                                                                    |
+| `hedging_read_both_regions_slow`                     | 2s delay on both regions                                                                                                                                                              | Whichever responds first wins (graceful degradation)                                                                                                                                                                                                                                                                                                                                                    |
+| `hedging_write_not_hedged`                           | 2s delay on writes on a multi-master account                                                                                                                                          | NO alternate hedge fires; write returns after the delay                                                                                                                                                                                                                                                                                                                                                 |
+| `hedging_disabled_per_operation`                     | Client hedging on; operation `Disabled`                                                                                                                                               | No alternate hedge; normal path                                                                                                                                                                                                                                                                                                                                                                         |
+| `hedging_respects_deadline`                          | threshold > deadline                                                                                                                                                                  | No alternate fires; deadline error                                                                                                                                                                                                                                                                                                                                                                      |
+| `hedging_with_ppcb_existing_failures`                | Region A primary has prior PPCB failures                                                                                                                                              | Hedging still fires; PPCB and hedging compose without interference                                                                                                                                                                                                                                                                                                                                      |
+| `hedging_cancels_loser`                              | Delay on Region A                                                                                                                                                                     | Region B wins; verify Region A transport task observed cancellation (hit_count ≤ 1)                                                                                                                                                                                                                                                                                                                     |
+| `hedging_failback_to_primary`                        | Region A initially slow, then fast                                                                                                                                                    | First few reads hedged; subsequent reads complete on primary before the threshold                                                                                                                                                                                                                                                                                                                       |
+| `hedging_exclude_regions_under_503_retry`            | Alternate hedge gets a 503 (triggers transport retry) while a third region is healthy and excluded by that hedge's `ExcludeRegions`                                                   | Alternate hedge's retry stays pinned to its region (does NOT fall back to the third region) — fault-injection counterpart to the §8.4 invariant unit test.                                                                                                                                                                                                                                              |
+| `hedging_alternate_wins_trip_ppcb`                   | Force N consecutive alternate-region wins on the same partition                                                                                                                       | PPCB transitions the primary partition to `Unhealthy` after the configured threshold (§9.5).                                                                                                                                                                                                                                                                                                            |
 | `hedging_hub_region_header_propagates_across_hedges` | 2-region single-master data-plane account; fault-inject `404/1002` on the primary's first attempt against Region A, healthy 200 on the alternate against Region B after the threshold | Primary's retry against Region A emits `x-ms-cosmos-hub-region-processing-only: True` (per-state latch) **and** the alternate against Region B emits the same header on every attempt — without itself ever observing a 1002 (per the shared `Arc<AtomicBool>` from §9.6). Encodes the cross-hedge propagation invariant under fault injection; counterpart of .NET PR #5815's emulator-level coverage. |
 
 ### 15.3 Multi-Region Live Tests
 
 Gated by `test_category = "multi_region"`:
 
-| Test | Account Type | Validates |
-|------|-------------|-----------|
-| `hedging_read_cross_region` | 2-region SM | Read hedged to satellite when primary slow |
+| Test                                 | Account Type                                  | Validates                                                                                                                                           |
+| ------------------------------------ | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hedging_read_cross_region`          | 2-region SM                                   | Read hedged to satellite when primary slow                                                                                                          |
 | `hedging_ppcb_feedback_cross_region` | 2-region SM with primary partition under load | Repeated alternate wins trip PPCB; subsequent reads route directly to the alternate without hedging until PPCB probes the primary back to `Healthy` |
 
 ---
@@ -2069,14 +2069,14 @@ The phased rollout introduced in §1 ("Operation-type scope (phased)")
 maps onto the implementation milestones below. Each phase is auditable
 against the §1 Goals.
 
-| §1 Goal | Phase that closes it |
-|---|---|
-| **G1. Reduce tail latency** (p99/p99.9 bounded by `threshold + RTT`) | Phase 1 (point reads). Phase 2 widens to feed-style operations + metadata. |
-| **G2. Transparent to application** (single `CosmosResponse`; opt-in diagnostics) | Phase 1 (`HedgeDiagnostics`, `DiagnosticsContext` integration). |
-| **G3. Configurable** (single `threshold` knob at client and per-operation levels; explicit opt-out) | Phase 1. |
-| **G4. Complementary to failover** (composes with PPAF/PPCB; feeds PPCB) | Phase 1 (lock-free `LocationStateStore` interaction §9.1 + PPCB feedback callsite §9.5). |
-| **G5. Resource-safe** (≤ 2 concurrent pipelines, loser cancelled promptly) | Phase 1 (single-`select!` `execute_hedged()` §6.4 + structural drop-the-future cancellation §12). |
-| **G6. Zero-overhead happy path** (no per-hedge state when primary wins early) | Phase 1 (gated by `zero_overhead_happy_path_no_allocs` test §15.1). |
+| §1 Goal                                                                                             | Phase that closes it                                                                              |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **G1. Reduce tail latency** (p99/p99.9 bounded by `threshold + RTT`)                                | Phase 1 (point reads). Phase 2 widens to feed-style operations + metadata.                        |
+| **G2. Transparent to application** (single `CosmosResponse`; opt-in diagnostics)                    | Phase 1 (`HedgeDiagnostics`, `DiagnosticsContext` integration).                                   |
+| **G3. Configurable** (single `threshold` knob at client and per-operation levels; explicit opt-out) | Phase 1.                                                                                          |
+| **G4. Complementary to failover** (composes with PPAF/PPCB; feeds PPCB)                             | Phase 1 (lock-free `LocationStateStore` interaction §9.1 + PPCB feedback callsite §9.5).          |
+| **G5. Resource-safe** (≤ 2 concurrent pipelines, loser cancelled promptly)                          | Phase 1 (single-`select!` `execute_hedged()` §6.4 + structural drop-the-future cancellation §12). |
+| **G6. Zero-overhead happy path** (no per-hedge state when primary wins early)                       | Phase 1 (gated by `zero_overhead_happy_path_no_allocs` test §15.1).                               |
 
 §1 Non-Goals (single-region hedging, write hedging, multi-region
 fan-out > 1 alternate, automatic threshold tuning, PPAF coupling)
@@ -2320,14 +2320,14 @@ of them constitutes a new goal and requires a spec amendment.
 
 ## Appendix B: Glossary
 
-| Term | Definition |
-|------|-----------|
-| Hedging | Sending the same request to a primary region and (after a threshold) one alternate region; first non-transient response wins |
-| Threshold | Time before the alternate-region hedge fires |
-| Alternate region | The single fallback region targeted by the hedge — `applicable_read_endpoints[1]` after `ExcludeRegions` filtering |
-| Final result | A response that is definitively non-transient (success or permanent error) — see §7.1 |
-| Transient result | A response that might succeed in another region (5xx, timeout, 404/1002, 429, 403, 410) — see §7.2 |
-| PPAF | Per-Partition Automatic Failover (write failover on single-master). Independent of hedging in this driver. |
-| PPCB | Per-Partition Circuit Breaker (read/write failover on failure threshold). Receives signal from hedging on repeated alternate-region wins (§9.5). |
-| MM | Multi-master (multi-write-region) account |
-| SM | Single-master account |
+| Term             | Definition                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hedging          | Sending the same request to a primary region and (after a threshold) one alternate region; first non-transient response wins                     |
+| Threshold        | Time before the alternate-region hedge fires                                                                                                     |
+| Alternate region | The single fallback region targeted by the hedge — `applicable_read_endpoints[1]` after `ExcludeRegions` filtering                               |
+| Final result     | A response that is definitively non-transient (success or permanent error) — see §7.1                                                            |
+| Transient result | A response that might succeed in another region (5xx, timeout, 404/1002, 429, 403, 410) — see §7.2                                               |
+| PPAF             | Per-Partition Automatic Failover (write failover on single-master). Independent of hedging in this driver.                                       |
+| PPCB             | Per-Partition Circuit Breaker (read/write failover on failure threshold). Receives signal from hedging on repeated alternate-region wins (§9.5). |
+| MM               | Multi-master (multi-write-region) account                                                                                                        |
+| SM               | Single-master account                                                                                                                            |

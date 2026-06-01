@@ -128,7 +128,7 @@ impl CosmosClient {
         &self,
         query: impl Into<Query>,
         options: Option<QueryDatabasesOptions>,
-    ) -> azure_core::Result<QueryItemIterator<DatabaseProperties>> {
+    ) -> crate::Result<QueryItemIterator<DatabaseProperties>> {
         let options = options.unwrap_or_default();
         let query = query.into();
         let account = self.context.driver.account().clone();
@@ -161,7 +161,7 @@ impl CosmosClient {
         &self,
         id: &str,
         options: Option<CreateDatabaseOptions>,
-    ) -> azure_core::Result<ResourceResponse<DatabaseProperties>> {
+    ) -> crate::Result<ResourceResponse<DatabaseProperties>> {
         let options = options.unwrap_or_default();
         #[derive(Serialize)]
         struct RequestBody<'a> {
