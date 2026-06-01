@@ -22,6 +22,8 @@ Set-StrictMode -Version 2.0
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
+$resolvedToolchain = [Channels]::Resolve($Toolchain)
+
 Write-Host @"
 Analyzing code with
     RUSTFLAGS: '${env:RUSTFLAGS}'
@@ -147,7 +149,7 @@ if (!$SkipPackageAnalysis) {
     Invoke-LoggedCommand "&$verifyKeywordsScript $packageManifestPath" -GroupOutput
 
     if ($Toolchain -eq 'nightly') {
-      Invoke-LoggedCommand "cargo +nightly docs-rs --manifest-path $packageManifestPath" -GroupOutput
+      Invoke-LoggedCommand "cargo +$resolvedToolchain docs-rs --manifest-path $packageManifestPath" -GroupOutput
     }
 
     if ($checkApiSupersetCrates -contains $package.Name) {

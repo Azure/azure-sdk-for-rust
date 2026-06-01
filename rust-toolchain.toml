@@ -1,4 +1,5 @@
 [toolchain]
+channel = "1.95"
 components = [
   "rustc",
   "rustfmt",
