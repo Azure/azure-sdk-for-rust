@@ -53,3 +53,27 @@ pub fn collect() -> PerfTestOption {
         ..Default::default()
     }
 }
+
+pub fn concurrency() -> PerfTestOption {
+    PerfTestOption {
+        name: "concurrency",
+        display_message: "Number of concurrent network transfers",
+        mandatory: false,
+        long_activator: "concurrency",
+        expected_args_len: 1,
+        option_type: PerfTestOptionKind::Usize,
+        ..Default::default()
+    }
+}
+
+pub fn partition_size() -> PerfTestOption {
+    PerfTestOption {
+        name: "partition-size",
+        display_message: "Size in bytes to partition data into for each transfer",
+        mandatory: false,
+        long_activator: "partition-size",
+        expected_args_len: 1,
+        option_type: PerfTestOptionKind::Usize,
+        ..Default::default()
+    }
+}
