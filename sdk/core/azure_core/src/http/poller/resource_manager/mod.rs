@@ -32,7 +32,7 @@ pub(super) const LOCATION: HeaderName = HeaderName::from_static("location");
 ///    header (if present) or the original resource URL.
 /// 3. `location` header: Polls the URL from the `location` response header,
 ///    which doubles as the final resource URL once polling completes.
-/// 4. Falls back to polling the original resource URL, reading operation status from
+/// 4. Response body fallback: Falls back to polling the original resource URL, reading operation status from
 ///    the response body's `status` or `properties.provisioningState` field.
 pub fn new_poller<'a, M>(
     pipeline: Pipeline,
@@ -74,11 +74,15 @@ where
                 };
                 let response: Response<M> =
                     RawResponse::from_bytes(status_code, headers.clone(), body).into();
-                let mut status = monitor
-                    .as_ref()
-                    .map(|monitor| monitor.status())
-                    .unwrap_or_else(|| PollerStatus::UnknownValue("unknown".to_owned()));
-                if matches!(status, PollerStatus::UnknownValue(_)) {
+                let mut status = match monitor.as_ref() {
+                    Some(monitor) => monitor.status(),
+                    None => match status_code {
+                        StatusCode::Accepted | StatusCode::Created => PollerStatus::InProgress,
+                        StatusCode::Ok | StatusCode::NoContent => PollerStatus::Succeeded,
+                        _ => PollerStatus::UnknownValue(String::new()),
+                    },
+                };
+                if monitor.is_some() && matches!(status, PollerStatus::UnknownValue(_)) {
                     status = match status_code {
                         StatusCode::Accepted | StatusCode::Created => PollerStatus::InProgress,
                         StatusCode::Ok | StatusCode::NoContent => PollerStatus::Succeeded,
