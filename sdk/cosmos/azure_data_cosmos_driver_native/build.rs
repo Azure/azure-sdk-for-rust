@@ -83,6 +83,16 @@ fn generate_c_header() {
             "partition_key_builder_t".into(),
         ),
         ("CosmosOperation".into(), "operation_t".into()),
+        ("OperationDescHandle".into(), "operation_t".into()),
+        ("OperationOptions".into(), "operation_options_t".into()),
+        (
+            "OperationOptionsHandle".into(),
+            "operation_options_t".into(),
+        ),
+        (
+            "OperationOptionsBuilderHandle".into(),
+            "operation_options_builder_t".into(),
+        ),
         ("CosmosResponse".into(), "response_t".into()),
         ("DiagnosticsContext".into(), "diagnostics_t".into()),
         ("CompletionQueue".into(), "cq_t".into()),
@@ -109,6 +119,11 @@ fn generate_c_header() {
             "operation_handle_state_t".into(),
         ),
         ("CosmosErrorCode".into(), "error_code_t".into()),
+        ("CosmosReadConsistency".into(), "read_consistency_t".into()),
+        (
+            "CosmosContentResponseOnWrite".into(),
+            "content_response_on_write_t".into(),
+        ),
     ]);
 
     let config = cbindgen::Config {

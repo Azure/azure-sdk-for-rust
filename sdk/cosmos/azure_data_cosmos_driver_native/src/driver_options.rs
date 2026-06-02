@@ -270,6 +270,35 @@ pub extern "C" fn cosmos_driver_options_builder_with_preferred_regions(
     CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
 }
 
+/// Sets the per-driver default operation options.
+///
+/// Mirrors [`DriverOptionsBuilder::with_operation_options`]. The supplied
+/// `cosmos_operation_options_t` is **cloned** into the builder; the caller
+/// retains ownership of the source handle and must `_free` it
+/// independently. NULL `options` is rejected with `INVALID_ARGUMENT` —
+/// pass a fresh handle from `cosmos_operation_options_builder_build` or
+/// don't call this setter at all to inherit the driver defaults.
+///
+/// Wires the Phase 3 deferral noted in [`crate::driver_options`].
+#[no_mangle]
+pub extern "C" fn cosmos_driver_options_builder_with_operation_options(
+    builder: *mut DriverOptionsBuilderHandle,
+    options: *const crate::operation_options::OperationOptionsHandle,
+) -> i32 {
+    let Some(inner) = DriverOptionsBuilderHandle::inner_mut(builder) else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    let Some(options_inner) = crate::operation_options::OperationOptionsHandle::inner_arc(options)
+    else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    let Some(taken) = inner.builder.take() else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    inner.builder = Some(taken.with_operation_options(options_inner.inner.clone()));
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // FFI: build
 // ─────────────────────────────────────────────────────────────────────────────
