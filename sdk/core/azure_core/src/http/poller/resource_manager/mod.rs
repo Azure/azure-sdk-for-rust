@@ -95,6 +95,15 @@ where
                     PollerState::More(PollerContinuation::Links { final_link, .. }) => final_link,
                 };
 
+                if matches!(status, PollerStatus::Failed | PollerStatus::Canceled) {
+                    let message = if matches!(status, PollerStatus::Failed) {
+                        "resource manager long-running operation failed"
+                    } else {
+                        "resource manager long-running operation was canceled"
+                    };
+                    return Err(crate::Error::new(ErrorKind::Other, message));
+                }
+
                 Ok(match status {
                     PollerStatus::InProgress => {
                         let (next_link, final_link) = get_poll_links(
