@@ -29,6 +29,7 @@ pub mod bytes;
 pub mod completion;
 pub mod error;
 pub mod runtime;
+pub mod runtime_builder;
 
 // We want this value to be present as a string in the compiled binary so that
 // build provenance can be recovered from a stripped library. Exposing it as a

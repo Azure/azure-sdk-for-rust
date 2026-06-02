@@ -63,6 +63,7 @@ fn generate_c_header() {
     // phases start adding types.
     let rename = HashMap::from([
         ("RuntimeContext".into(), "runtime_t".into()),
+        ("RuntimeBuilderHandle".into(), "runtime_builder_t".into()),
         ("CosmosDriver".into(), "driver_t".into()),
         ("AccountReference".into(), "account_ref_t".into()),
         ("DatabaseReference".into(), "database_ref_t".into()),

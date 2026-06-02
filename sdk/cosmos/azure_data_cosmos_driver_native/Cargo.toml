@@ -21,8 +21,13 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 # Path-only — the driver crate is not (yet) a workspace dependency.
 # The wrapper opts into the `tokio` feature so it can drive Tokio-backed
-# completion delivery on top of the same runtime model the driver uses.
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = ["tokio"] }
+# completion delivery on top of the same runtime model the driver uses;
+# Phase 2 adds `rustls` so `CosmosDriverRuntimeBuilder::build()` can
+# actually construct an HTTP client (the driver's default factory needs
+# either `rustls` or `native_tls` — `rustls` matches the driver's own
+# default and avoids the OpenSSL-on-Windows breakage that bites
+# `native_tls`).
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = ["tokio", "rustls"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros"] }
 tracing.workspace = true
 

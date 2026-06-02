@@ -336,10 +336,11 @@ typedef struct cosmos_cq_t {
  * Opaque C ABI handle for the async runtime.
  *
  * The struct body is intentionally opaque to cbindgen — the real state
- * lives behind a `Box<RuntimeContextInner>` accessed through the
- * `_unused` field's tag. Construction always goes through
- * [`RuntimeContext::new_default`] (Phase 1) or the public builder
- * (Phase 2+); never construct one directly.
+ * lives behind a `Box<RuntimeContextStorage>` whose first field is the same
+ * `_opaque: [u8; 0]` marker. Construction always goes through
+ * [`RuntimeContext::new_default`] (test path) or
+ * [`RuntimeContext::new_with_builder`] (production path called from the
+ * public `cosmos_runtime_builder_build`).
  */
 typedef struct cosmos_runtime_t {
   uint8_t _opaque[0];
@@ -383,6 +384,18 @@ typedef struct cosmos_operation_handle_t {
 typedef struct cosmos_error_t {
   uint8_t _opaque[0];
 } cosmos_error_t;
+
+/**
+ * Opaque C ABI handle for a runtime builder.
+ *
+ * Storage pun: see the matching pattern on [`RuntimeContext`] in
+ * [`crate::runtime`]. The public `#[repr(C)]` struct only carries the
+ * `_opaque` marker; the real state lives in the trailing
+ * [`RuntimeBuilderStorage`] field.
+ */
+typedef struct cosmos_runtime_builder_t {
+  uint8_t _opaque[0];
+} cosmos_runtime_builder_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -673,13 +686,115 @@ void cosmos_set_backtrace_options(uint32_t max_captures_per_second,
  * against this runtime continue to function until their own `Arc` references
  * are dropped, but no new queues can be created from the now-freed handle.
  * NULL is a no-op.
- *
- * Phase 1 has no public `cosmos_runtime_create` (the builder lands in
- * Phase 2). This entry exists so the lifecycle contract is documented up
- * front and so internal test-only constructors can be paired with the same
- * `_free` consumers will use.
  */
 void cosmos_runtime_free(struct cosmos_runtime_t *runtime);
+
+/**
+ * Lifecycle: allocate a new `cosmos_runtime_builder_t`.
+ *
+ * The returned handle must be freed via [`cosmos_runtime_builder_free`] if
+ * `cosmos_runtime_builder_build` is never called on it. Successful
+ * `_build` consumes the handle.
+ */
+struct cosmos_runtime_builder_t *cosmos_runtime_builder_new(void);
+
+/**
+ * Lifecycle: free a `cosmos_runtime_builder_t *` that was never consumed
+ * by [`cosmos_runtime_builder_build`].
+ *
+ * Calling `_free` on a builder after a successful `_build` is undefined
+ * behavior. NULL is a no-op.
+ */
+void cosmos_runtime_builder_free(struct cosmos_runtime_builder_t *builder);
+
+/**
+ * Sets the workload identifier.
+ *
+ * Valid range: 1–50. Out-of-range values return `INVALID_OPTION_VALUE`
+ * with no mutation to the builder.
+ */
+int32_t cosmos_runtime_builder_with_workload_id(struct cosmos_runtime_builder_t *builder,
+                                                uint8_t workload_id);
+
+/**
+ * Sets the correlation ID for client-side metrics.
+ *
+ * Constraints: ≤50 characters, HTTP-header-safe (alphanumeric, hyphen,
+ * underscore, dot, tilde). Strings outside this contract return
+ * `INVALID_OPTION_VALUE` with no mutation.
+ */
+int32_t cosmos_runtime_builder_with_correlation_id(struct cosmos_runtime_builder_t *builder,
+                                                   const char *correlation_id);
+
+/**
+ * Sets the user-agent suffix.
+ *
+ * Constraints: ≤25 characters, HTTP-header-safe (alphanumeric, hyphen,
+ * underscore, dot, tilde). Strings outside this contract return
+ * `INVALID_OPTION_VALUE` with no mutation.
+ */
+int32_t cosmos_runtime_builder_with_user_agent_suffix(struct cosmos_runtime_builder_t *builder,
+                                                      const char *suffix);
+
+/**
+ * Sets a wrapping-SDK identifier prepended to the User-Agent header.
+ *
+ * Per the driver contract, the value is sanitized server-side (non-ASCII
+ * stripped, whitespace trimmed); empty / whitespace-only is treated as
+ * "unset". The FFI does not pre-validate the contents — any UTF-8 string
+ * is accepted and forwarded to the driver's normalizer.
+ */
+int32_t cosmos_runtime_builder_with_wrapping_sdk_identifier(struct cosmos_runtime_builder_t *builder,
+                                                            const char *identifier);
+
+/**
+ * Sets the CPU/memory monitoring refresh interval (milliseconds).
+ *
+ * Valid range: 1000–60000 ms (1–60 seconds). Out-of-range values return
+ * `INVALID_OPTION_VALUE` with no mutation.
+ *
+ * The FFI rejects values outside the documented range up-front — even
+ * though the merged driver does not itself validate, surfacing the
+ * constraint here gives external language SDKs an early deterministic
+ * error rather than opaque behavior at the first sampling tick.
+ */
+int32_t cosmos_runtime_builder_with_cpu_refresh_interval_ms(struct cosmos_runtime_builder_t *builder,
+                                                            uint64_t interval_ms);
+
+/**
+ * Consumes the builder, constructs the underlying
+ * [`azure_data_cosmos_driver::driver::CosmosDriverRuntime`], and returns it
+ * as a fresh `cosmos_runtime_t *`.
+ *
+ * # Lifetime
+ *
+ * `cosmos_runtime_builder_build` **consumes** the builder regardless of
+ * success or failure. Callers must NOT call
+ * [`cosmos_runtime_builder_free`] on the same pointer afterwards.
+ *
+ * # Parameters
+ *
+ * - `builder` — the builder to consume. Must be non-NULL.
+ * - `out_runtime` — on success, receives the new runtime handle. Must be
+ *   non-NULL.
+ * - `out_error` — optional. On `RUNTIME_BUILD_FAILED`, receives a rich
+ *   `cosmos_error_t *` describing the driver-side failure. If NULL the
+ *   rich error is dropped. The slot is never populated on success.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_runtime` populated.
+ * - `INVALID_ARGUMENT` (1) when `builder` or `out_runtime` is NULL. In
+ *   the `builder == NULL` case nothing is freed; in the `out_runtime ==
+ *   NULL` case the builder is still consumed (the driver-side builder
+ *   has been moved out and a fresh runtime would otherwise leak).
+ * - `RUNTIME_BUILD_FAILED` (4015) when the underlying
+ *   `CosmosDriverRuntimeBuilder::build()` returned an error. `*out_error`
+ *   is populated when non-NULL.
+ */
+int32_t cosmos_runtime_builder_build(struct cosmos_runtime_builder_t *builder,
+                                     struct cosmos_runtime_t **out_runtime,
+                                     struct cosmos_error_t **out_error);
 
 #ifdef __cplusplus
 }  // extern "C"
