@@ -18,11 +18,8 @@ use crate::{
     producer::DEFAULT_EVENTHUBS_APPLICATION,
     RetryOptions,
 };
-use async_lock::Mutex as AsyncMutex;
-use azure_core::{
-    credentials::TokenCredential, error::ErrorKind as AzureErrorKind, http::Url, time::Duration,
-    Uuid,
-};
+use async_lock::{Mutex as AsyncMutex, OnceCell, RwLock};
+use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
@@ -80,8 +77,13 @@ pub(crate) struct RecoverableConnection {
     custom_endpoint: Option<Url>,
     mgmt_client: AsyncMutex<Option<Arc<AmqpManagement>>>,
     receiver_instances: AsyncMutex<HashMap<Url, Arc<AmqpReceiver>>>,
-    sender_instances: AsyncMutex<HashMap<Url, Arc<AmqpSender>>>,
-    session_instances: AsyncMutex<HashMap<Url, Arc<AmqpSession>>>,
+    // The sender and session caches are keyed by path. Each entry is an
+    // independently-initialized `OnceCell`, so concurrent sends to *different*
+    // partitions never serialize on a shared lock, and the expensive attach
+    // (authorize + session begin + link attach) happens without holding the
+    // map-wide lock. See issue #2243.
+    sender_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSender>>>>>,
+    session_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSession>>>>>,
     pub(super) authorizer: Arc<Authorizer>,
     connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
     connection_name: String,
@@ -116,8 +118,8 @@ impl RecoverableConnection {
                 custom_endpoint,
                 retry_options,
                 connections: AsyncMutex::new(None),
-                session_instances: AsyncMutex::new(HashMap::new()),
-                sender_instances: AsyncMutex::new(HashMap::new()),
+                session_instances: RwLock::new(HashMap::new()),
+                sender_instances: RwLock::new(HashMap::new()),
                 receiver_instances: AsyncMutex::new(HashMap::new()),
                 mgmt_client: AsyncMutex::new(None),
                 authorizer,
@@ -186,9 +188,16 @@ impl RecoverableConnection {
             }
         }
 
-        let mut sender_instances = self.sender_instances.lock().await;
-        for (path, sender) in sender_instances.drain() {
+        let mut sender_instances = self.sender_instances.write().await;
+        for (path, cell) in sender_instances.drain() {
             trace!("Detaching sender for path {}.", path);
+            let Some(sender) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
+                trace!(
+                    "Failed to detach sender for path {}, references exist.",
+                    path
+                );
+                continue;
+            };
             if let Ok(sender) = Arc::try_unwrap(sender) {
                 trace!("Detaching sender for path {}.", path);
                 sender.detach().await?;
@@ -214,9 +223,16 @@ impl RecoverableConnection {
             }
         }
 
-        let mut session_instances = self.session_instances.lock().await;
-        for (session_id, session) in session_instances.drain() {
+        let mut session_instances = self.session_instances.write().await;
+        for (session_id, cell) in session_instances.drain() {
             trace!("Detaching session for ID {}.", session_id);
+            let Some(session) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
+                trace!(
+                    "Failed to detach session for ID {}, references exist.",
+                    session_id
+                );
+                continue;
+            };
             if let Ok(session) = Arc::try_unwrap(session) {
                 session.end().await?;
             } else {
@@ -342,35 +358,46 @@ impl RecoverableConnection {
         self: &Arc<Self>,
         source_url: &Url,
     ) -> azure_core_amqp::Result<Arc<AmqpSession>> {
-        let mut session_instances = self.session_instances.lock().await;
-        if !session_instances.contains_key(source_url) {
-            debug!("Creating session for partition: {:?}", source_url);
-            let connection = self.ensure_connection().await?;
+        // Resolve the per-path cell while holding the map lock only briefly, then
+        // initialize (which may begin a new AMQP session) without holding it, so
+        // that sessions for other partitions can be created concurrently.
+        let cell = self.session_cell(source_url).await;
+        let session = cell
+            .get_or_try_init(|| async {
+                debug!("Creating session for partition: {:?}", source_url);
+                let connection = self.ensure_connection().await?;
 
-            let session = AmqpSession::new();
-            session
-                .begin(
-                    connection.as_ref(),
-                    Some(AmqpSessionOptions {
-                        incoming_window: Some(u32::MAX),
-                        outgoing_window: Some(u32::MAX),
-                        ..Default::default()
-                    }),
-                )
-                .await?;
-            session_instances.insert(source_url.clone(), Arc::new(session));
-        }
-        let rv = session_instances
-            .get(source_url)
-            .ok_or_else(|| {
-                AmqpError::from(azure_core::Error::with_message(
-                    AzureErrorKind::Other,
-                    "Could not find session",
-                ))
-            })?
-            .clone();
+                let session = AmqpSession::new();
+                session
+                    .begin(
+                        connection.as_ref(),
+                        Some(AmqpSessionOptions {
+                            incoming_window: Some(u32::MAX),
+                            outgoing_window: Some(u32::MAX),
+                            ..Default::default()
+                        }),
+                    )
+                    .await?;
+                Ok::<_, AmqpError>(Arc::new(session))
+            })
+            .await?;
         debug!("Cloning session for partition {:?}", source_url);
-        Ok(rv)
+        Ok(session.clone())
+    }
+
+    /// Returns the `OnceCell` that owns the session for `source_url`, inserting an
+    /// uninitialized one if absent. The read path is taken first so steady-state
+    /// lookups share a read lock; only first-time inserts take the write lock.
+    async fn session_cell(&self, source_url: &Url) -> Arc<OnceCell<Arc<AmqpSession>>> {
+        if let Some(cell) = self.session_instances.read().await.get(source_url) {
+            return cell.clone();
+        }
+        self.session_instances
+            .write()
+            .await
+            .entry(source_url.clone())
+            .or_insert_with(|| Arc::new(OnceCell::new()))
+            .clone()
     }
 
     async fn create_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
@@ -479,39 +506,52 @@ impl RecoverableConnection {
         self: &Arc<Self>,
         path: &Url,
     ) -> azure_core_amqp::Result<Arc<AmqpSender>> {
-        let mut sender_instances = self.sender_instances.lock().await;
-        if !sender_instances.contains_key(path) {
-            // Ensure that we are authorized to access the senders path.
-            self.authorizer.authorize_path(self, path).await?;
+        // Resolve the per-path cell while holding the map lock only briefly, then
+        // attach (authorize + session begin + link attach) without holding it, so
+        // that senders for other partitions can be created concurrently and
+        // steady-state sends never serialize on a shared lock. See issue #2243.
+        let cell = self.sender_cell(path).await;
+        let sender = cell
+            .get_or_try_init(|| async {
+                // Ensure that we are authorized to access the senders path.
+                self.authorizer.authorize_path(self, path).await?;
 
-            // Retrieve a session for the sender from the session cache.
-            let session = self.get_session(path).await?;
-            let sender = AmqpSender::new();
-            sender
-                .attach(
-                    &session,
-                    format!(
-                        "{}-rust-sender",
-                        self.application_id
-                            .as_ref()
-                            .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
-                    ),
-                    path.to_string(),
-                    None,
-                )
-                .await?;
-            sender_instances.insert(path.clone(), Arc::new(sender));
+                // Retrieve a session for the sender from the session cache.
+                let session = self.get_session(path).await?;
+                let sender = AmqpSender::new();
+                sender
+                    .attach(
+                        &session,
+                        format!(
+                            "{}-rust-sender",
+                            self.application_id
+                                .as_ref()
+                                .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
+                        ),
+                        path.to_string(),
+                        None,
+                    )
+                    .await?;
+                Ok::<_, AmqpError>(Arc::new(sender))
+            })
+            .await?;
+
+        Ok(sender.clone())
+    }
+
+    /// Returns the `OnceCell` that owns the sender for `path`, inserting an
+    /// uninitialized one if absent. The read path is taken first so steady-state
+    /// lookups share a read lock; only first-time inserts take the write lock.
+    async fn sender_cell(&self, path: &Url) -> Arc<OnceCell<Arc<AmqpSender>>> {
+        if let Some(cell) = self.sender_instances.read().await.get(path) {
+            return cell.clone();
         }
-
-        Ok(sender_instances
-            .get(path)
-            .ok_or_else(|| {
-                AmqpError::from(azure_core::Error::with_message(
-                    AzureErrorKind::Other,
-                    "Missing message sender",
-                ))
-            })?
-            .clone())
+        self.sender_instances
+            .write()
+            .await
+            .entry(path.clone())
+            .or_insert_with(|| Arc::new(OnceCell::new()))
+            .clone()
     }
 
     pub(super) async fn recover_from_error(
@@ -535,22 +575,22 @@ impl RecoverableConnection {
                 debug!("Recovering from connection error: {:?}", reason);
                 connection.connections.lock().await.take();
                 connection.authorizer.clear().await;
-                connection.session_instances.lock().await.clear();
-                connection.sender_instances.lock().await.clear();
+                connection.session_instances.write().await.clear();
+                connection.sender_instances.write().await.clear();
                 connection.receiver_instances.lock().await.clear();
             }
             ErrorRecoveryAction::ReconnectSession => {
                 debug!("Recovering from session error: {:?}", reason);
                 // Recreate the session and sender/receiver as needed.
-                connection.session_instances.lock().await.clear();
-                connection.sender_instances.lock().await.clear();
+                connection.session_instances.write().await.clear();
+                connection.sender_instances.write().await.clear();
                 connection.receiver_instances.lock().await.clear();
             }
             ErrorRecoveryAction::ReconnectLink => {
                 debug!("Recovering from link error: {:?}", reason);
                 // Recreate the session and sender/receiver as needed.
-                connection.session_instances.lock().await.clear();
-                connection.sender_instances.lock().await.clear();
+                connection.session_instances.write().await.clear();
+                connection.sender_instances.write().await.clear();
                 connection.receiver_instances.lock().await.clear();
                 connection.mgmt_client.lock().await.take();
             }
@@ -715,6 +755,45 @@ mod tests {
         ));
 
         assert!(!connection_manager.connections.lock_blocking().is_some());
+    }
+
+    // The per-path sender/session caches must hand out one shared `OnceCell` per
+    // path (so concurrent first-sends to a partition attach exactly once) and
+    // distinct cells for distinct paths (so sends to different partitions never
+    // share a cell and can initialize concurrently). See issue #2243.
+    #[tokio::test]
+    async fn sender_and_session_cells_are_keyed_by_path() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+        );
+
+        let path_a = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+        let path_b = Url::parse("amqps://example.com/eh/Partitions/1").unwrap();
+
+        // Same path resolves to the same cell, both for senders and sessions.
+        assert!(Arc::ptr_eq(
+            &connection.sender_cell(&path_a).await,
+            &connection.sender_cell(&path_a).await
+        ));
+        assert!(Arc::ptr_eq(
+            &connection.session_cell(&path_a).await,
+            &connection.session_cell(&path_a).await
+        ));
+
+        // Different paths resolve to different cells.
+        assert!(!Arc::ptr_eq(
+            &connection.sender_cell(&path_a).await,
+            &connection.sender_cell(&path_b).await
+        ));
+
+        // Cells are uninitialized until an attach succeeds.
+        assert!(connection.sender_cell(&path_a).await.get().is_none());
+        assert!(connection.session_cell(&path_a).await.get().is_none());
     }
 
     // The RecoverableConnection supports using a custom endpoint for connecting to Event Hubs proxies.

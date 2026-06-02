@@ -18,6 +18,8 @@
 
 ### Other Changes
 
+- Improved multithreaded throughput when a single `ProducerClient` is shared across threads. The per-path sender and session caches no longer serialize on a single connection-wide lock, so sends to different partitions can be set up concurrently and the link attach no longer blocks unrelated sends.
+
 ## 0.14.0 (Unreleased)
 
 ### Features Added
