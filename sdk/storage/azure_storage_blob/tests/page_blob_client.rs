@@ -5,9 +5,9 @@ use azure_core::http::{headers::CONTENT_TYPE, RequestContent, StatusCode};
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     BlobClientGetPropertiesResultHeaders, BlobType, HttpRange, PageBlobClientCreateOptions,
-    PageBlobClientSetSequenceNumberOptions, PageBlobClientSetSequenceNumberResultHeaders,
-    PageBlobClientUploadPagesFromUrlOptions, PageBlobClientUploadPagesOptions,
-    SequenceNumberActionType,
+    PageBlobClientGetPageRangesOptions, PageBlobClientSetSequenceNumberOptions,
+    PageBlobClientSetSequenceNumberResultHeaders, PageBlobClientUploadPagesFromUrlOptions,
+    PageBlobClientUploadPagesOptions, PageListHeaders, SequenceNumberActionType,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
 use std::{collections::HashMap, error::Error};
@@ -609,6 +609,87 @@ async fn test_upload_pages_from_url_source_if_match(
         StatusCode::NotModified,
         response.unwrap_err().http_status().unwrap()
     );
+
+    container_client.delete(None).await?;
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let container_client =
+        get_container_client(recording, true, StorageAccount::Standard, None).await?;
+    let blob_client = container_client.blob_client(&get_blob_name(recording));
+    let page_blob_client = blob_client.page_blob_client();
+
+    // Create a 2048-byte page blob and upload first range
+    page_blob_client.create(2048, None).await?;
+    let data = vec![b'A'; 512];
+    page_blob_client
+        .upload_pages(
+            RequestContent::from(data.clone()),
+            512,
+            HttpRange::new(0, 512),
+            None,
+        )
+        .await?;
+
+    // Single Range Scenario
+    let response = page_blob_client.get_page_ranges(None).await?;
+    let blob_content_length = response.blob_content_length()?;
+    assert_eq!(Some(2048), blob_content_length);
+    assert!(response.etag()?.is_some());
+
+    let page_list = response.into_model()?;
+    let ranges = page_list.page_range.unwrap();
+    assert_eq!(1, ranges.len());
+    assert_eq!(Some(0), ranges[0].start);
+    assert_eq!(Some(511), ranges[0].end);
+
+    // Multiple Non-Contiguous Ranges Scenario
+    let data2 = vec![b'B'; 512];
+    page_blob_client
+        .upload_pages(
+            RequestContent::from(data2),
+            512,
+            HttpRange::new(1024, 512),
+            None,
+        )
+        .await?;
+
+    let response = page_blob_client.get_page_ranges(None).await?;
+    let page_list = response.into_model()?;
+    let ranges = page_list.page_range.unwrap();
+    assert_eq!(2, ranges.len());
+    assert_eq!(Some(0), ranges[0].start);
+    assert_eq!(Some(511), ranges[0].end);
+    assert_eq!(Some(1024), ranges[1].start);
+    assert_eq!(Some(1535), ranges[1].end);
+
+    // Filtered By Range Option Scenario
+    let options = PageBlobClientGetPageRangesOptions {
+        range: Some(HttpRange::new(0, 512)),
+        ..Default::default()
+    };
+    let response = page_blob_client.get_page_ranges(Some(options)).await?;
+    let page_list = response.into_model()?;
+    let ranges = page_list.page_range.unwrap();
+    assert_eq!(1, ranges.len());
+    assert_eq!(Some(0), ranges[0].start);
+    assert_eq!(Some(511), ranges[0].end);
+
+    // After Clear Scenario
+    page_blob_client
+        .clear_pages(HttpRange::new(0, 512), None)
+        .await?;
+
+    let response = page_blob_client.get_page_ranges(None).await?;
+    let page_list = response.into_model()?;
+    let ranges = page_list.page_range.unwrap();
+    assert_eq!(1, ranges.len());
+    assert_eq!(Some(1024), ranges[0].start);
+    assert_eq!(Some(1535), ranges[0].end);
 
     container_client.delete(None).await?;
     Ok(())
