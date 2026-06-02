@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Poller helpers for ARM (resource manager) long-running operations.
+//! Poller helpers for Azure Resource Manager (ARM) long-running operations (LRO).
 
 use super::{
     PollerContinuation, PollerOptions, PollerResult, PollerState, PollerStatus, StatusMonitor,
@@ -15,14 +15,15 @@ use crate::{
     json,
 };
 use serde::de::DeserializeOwned;
+use typespec_client_core::http::UrlExt;
 
 pub(super) const AZURE_ASYNC_OPERATION: HeaderName =
     HeaderName::from_static("azure-asyncoperation");
 const OPERATION_LOCATION: HeaderName = HeaderName::from_static("operation-location");
 pub(super) const LOCATION: HeaderName = HeaderName::from_static("location");
 
-/// Creates an ARM heuristic poller that supports the following polling modes, applied in
-/// priority order:
+/// Creates heuristic poller that supports the following Azure Resource Manager polling modes,
+/// applied in priority order:
 ///
 /// 1. `azure-asyncoperation` header: Polls the operation URL from the
 ///    `azure-asyncoperation` response header, then fetches the final resource from the `location`
@@ -34,9 +35,12 @@ pub(super) const LOCATION: HeaderName = HeaderName::from_static("location");
 ///    which doubles as the final resource URL once polling completes.
 /// 4. Response body fallback: Falls back to polling the original resource URL, reading operation status from
 ///    the response body's `status` or `properties.provisioningState` field.
+///
+/// The initial `api-version` query parameter will always be set on the request URL per
+/// [Azure REST API guidelines](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#lro-operation-location-includes-api-version).
 pub fn new_poller<'a, M>(
     pipeline: Pipeline,
-    initial_request: Request,
+    request: Request,
     options: Option<PollerOptions<'a>>,
 ) -> Poller<M>
 where
@@ -44,22 +48,38 @@ where
     M::Output: DeserializeOwned + Send + 'static,
     M::Format: Send + 'static,
 {
+    const API_VERSION_HEADER_NAME: &str = "api-version";
     let options = options.map(PollerOptions::into_owned);
 
     Poller::new(
         move |poller_state, poller_options| {
             let pipeline = pipeline.clone();
-            let resource_url = initial_request.url().clone();
-            let mut request = match &poller_state {
-                PollerState::Initial => initial_request.clone(),
-                PollerState::More(PollerContinuation::Links { next_link, .. }) => {
-                    let mut request = Request::new(next_link.clone(), Method::Get);
-                    request.insert_header(crate::http::headers::ACCEPT, "application/json");
-                    request
+            let resource_url = request.url().clone();
+            let api_version = resource_url.query_pairs().find_map(|(k, v)| {
+                if k.eq_ignore_ascii_case(API_VERSION_HEADER_NAME) {
+                    return Some(v.into_owned());
                 }
-            };
+                None
+            });
             let context = poller_options.context.clone();
+            let mut request = request.clone();
+
             Box::pin(async move {
+                if let PollerState::More(ref continuation) = poller_state {
+                    let mut next_link = match continuation {
+                        PollerContinuation::Links { next_link, .. } => next_link.clone(),
+                    };
+
+                    // Make sure the original api-version is always set.
+                    if let Some(api_version) = api_version.as_deref() {
+                        let mut qb = next_link.query_builder();
+                        qb.set_pair(API_VERSION_HEADER_NAME, api_version);
+                        qb.build();
+                    }
+                    *request.url_mut() = next_link;
+                    request.set_method(Method::Get);
+                }
+
                 let response = pipeline.send(&context, &mut request, None).await?;
                 let (status_code, headers, body) = response.deconstruct();
                 let retry_after = crate::http::poller::get_retry_after(
@@ -90,16 +110,16 @@ where
                     };
                 }
 
-                let previous_final_link = match poller_state {
+                let final_link = match poller_state {
                     PollerState::Initial => None,
                     PollerState::More(PollerContinuation::Links { final_link, .. }) => final_link,
                 };
 
                 if matches!(status, PollerStatus::Failed | PollerStatus::Canceled) {
                     let message = if status == PollerStatus::Failed {
-                        "resource manager long-running operation failed"
+                        "Resource Manager long-running operation failed"
                     } else {
-                        "resource manager long-running operation was canceled"
+                        "Resource Manager long-running operation was canceled"
                     };
                     return Err(crate::Error::new(ErrorKind::Other, message));
                 }
@@ -110,7 +130,7 @@ where
                             &headers,
                             request.url(),
                             &resource_url,
-                            previous_final_link.as_ref(),
+                            final_link.as_ref(),
                         )?;
                         PollerResult::InProgress {
                             response,
@@ -123,7 +143,7 @@ where
                     }
                     PollerStatus::Succeeded => {
                         let final_link = get_location(&headers, request.url())?
-                            .or(previous_final_link)
+                            .or(final_link)
                             .or_else(|| Some(resource_url.clone()));
                         PollerResult::Succeeded {
                             response,
@@ -131,12 +151,20 @@ where
                                 let pipeline = pipeline.clone();
                                 let context = context.clone();
                                 Box::pin(async move {
-                                    let Some(final_link) = final_link else {
+                                    let Some(mut final_link) = final_link else {
                                         return Err(crate::Error::new(
                                             ErrorKind::DataConversion,
-                                            "missing final link for ARM LRO",
+                                            "missing final link for Resource Manager long-running operation",
                                         ));
                                     };
+
+                                    // Make sure the original api-version is always set.
+                                    if let Some(api_version) = api_version.as_deref() {
+                                        let mut qb = final_link.query_builder();
+                                        qb.set_pair(API_VERSION_HEADER_NAME, api_version);
+                                        qb.build();
+                                    }
+
                                     let mut request = Request::new(final_link, Method::Get);
                                     request.insert_header(
                                         crate::http::headers::ACCEPT,
@@ -207,7 +235,10 @@ fn get_header_url(
         crate::Error::with_error(
             ErrorKind::DataConversion,
             error,
-            format!("invalid ARM LRO URL in '{header_name:?}': {value}"),
+            format!(
+                "invalid Resource Manager long-running operation URL in '{}': {value}",
+                header_name.as_str(),
+            ),
         )
     })
 }
