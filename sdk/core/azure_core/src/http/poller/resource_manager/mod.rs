@@ -191,7 +191,7 @@ fn get_header_url(
         crate::Error::with_error(
             ErrorKind::DataConversion,
             error,
-            format!("invalid ARM LRO URL in '{header_name:?}': {value}",),
+            format!("invalid ARM LRO URL in '{header_name:?}': {value}"),
         )
     })
 }

@@ -368,6 +368,16 @@ async fn new_poller_body_pattern_synchronous_completion() {
     let response = poller.await.unwrap();
     let model: ArmResource = response.into_model().unwrap();
     assert_eq!(model.id, "resource-6");
+
+    // Exactly two requests: the initial PUT and one final GET to the resource URL.
+    let requests = requests.lock().unwrap().clone();
+    assert_eq!(
+        requests,
+        vec![
+            "https://example.com/resources/6",
+            "https://example.com/resources/6",
+        ]
+    );
 }
 
 /// Based on Go SDK TestPollFailed (async): when the operation status poll returns "Failed",
