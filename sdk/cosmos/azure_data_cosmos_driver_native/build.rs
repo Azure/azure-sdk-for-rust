@@ -77,6 +77,11 @@ fn generate_c_header() {
             "driver_options_builder_t".into(),
         ),
         ("PartitionKey".into(), "partition_key_t".into()),
+        ("PartitionKeyHandle".into(), "partition_key_t".into()),
+        (
+            "PartitionKeyBuilderHandle".into(),
+            "partition_key_builder_t".into(),
+        ),
         ("CosmosOperation".into(), "operation_t".into()),
         ("CosmosResponse".into(), "response_t".into()),
         ("DiagnosticsContext".into(), "diagnostics_t".into()),

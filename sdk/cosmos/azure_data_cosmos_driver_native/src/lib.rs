@@ -32,6 +32,7 @@ pub mod database_ref;
 pub mod driver;
 pub mod driver_options;
 pub mod error;
+pub mod partition_key;
 pub mod runtime;
 pub mod runtime_builder;
 

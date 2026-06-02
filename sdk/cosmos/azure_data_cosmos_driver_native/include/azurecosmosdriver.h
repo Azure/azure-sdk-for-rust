@@ -436,6 +436,26 @@ typedef struct cosmos_driver_options_builder_t {
 } cosmos_driver_options_builder_t;
 
 /**
+ * Opaque C ABI handle for an incrementally-populated partition-key
+ * builder.
+ *
+ * Storage pun: same shape as the other Phase 2/3 builders.
+ */
+typedef struct cosmos_partition_key_builder_t {
+  uint8_t _opaque[0];
+} cosmos_partition_key_builder_t;
+
+/**
+ * Opaque C ABI handle for an immutable partition key.
+ *
+ * Storage pun: same shape as `AccountRefHandle`. Cloning is a cheap
+ * atomic refcount bump on a single `Arc`.
+ */
+typedef struct cosmos_partition_key_t {
+  uint8_t _opaque[0];
+} cosmos_partition_key_t;
+
+/**
  * Opaque C ABI handle for a runtime builder.
  *
  * Storage pun: see the matching pattern on [`RuntimeContext`] in
@@ -937,6 +957,115 @@ void cosmos_error_free(struct cosmos_error_t *e);
  */
 void cosmos_set_backtrace_options(uint32_t max_captures_per_second,
                                   uint32_t max_resolutions_per_second);
+
+/**
+ * Allocates a new partition-key builder. Always succeeds; the returned
+ * handle holds an empty component list.
+ */
+struct cosmos_partition_key_builder_t *cosmos_partition_key_builder_new(void);
+
+/**
+ * Frees a builder that was never consumed by [`cosmos_partition_key_builder_build`].
+ * NULL is a no-op.
+ */
+void cosmos_partition_key_builder_free(struct cosmos_partition_key_builder_t *builder);
+
+/**
+ * Appends a string component to the partition key.
+ */
+int32_t cosmos_partition_key_builder_add_string(struct cosmos_partition_key_builder_t *builder,
+                                                const char *value);
+
+/**
+ * Appends a numeric component to the partition key. Rejects NaN and
+ * ±∞ with `INVALID_OPTION_VALUE`.
+ */
+int32_t cosmos_partition_key_builder_add_number(struct cosmos_partition_key_builder_t *builder,
+                                                double value);
+
+/**
+ * Appends a boolean component to the partition key.
+ */
+int32_t cosmos_partition_key_builder_add_bool(struct cosmos_partition_key_builder_t *builder,
+                                              bool value);
+
+/**
+ * Appends an explicit `null` component to the partition key.
+ */
+int32_t cosmos_partition_key_builder_add_null(struct cosmos_partition_key_builder_t *builder);
+
+/**
+ * Appends an `undefined` (missing-value) component to the partition
+ * key.
+ */
+int32_t cosmos_partition_key_builder_add_undefined(struct cosmos_partition_key_builder_t *builder);
+
+/**
+ * Consumes the builder and returns an immutable
+ * `cosmos_partition_key_t *`.
+ *
+ * # Lifetime
+ *
+ * `_build` consumes the builder regardless of success or failure.
+ * Callers must NOT call [`cosmos_partition_key_builder_free`] on the
+ * same pointer afterwards.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_pk` populated.
+ * - `INVALID_ARGUMENT` (1) when `builder` or `out_pk` is NULL. In
+ *   the NULL-`out_pk` case the builder is still consumed to avoid
+ *   leaking the inner allocation.
+ * - `INVALID_PARTITION_KEY` (4004) when no components were added.
+ *   The driver's `EMPTY` partition key has a specific meaning
+ *   (cross-partition fan-out) and host SDKs cannot construct it via
+ *   the builder by accident; if you need it explicitly, use
+ *   `cosmos_partition_key_empty` (also added by this phase).
+ */
+int32_t cosmos_partition_key_builder_build(struct cosmos_partition_key_builder_t *builder,
+                                           struct cosmos_partition_key_t **out_pk);
+
+/**
+ * Returns a fresh handle for the special cross-partition / "empty"
+ * partition key (driver constant
+ * `azure_data_cosmos_driver::models::PartitionKey::EMPTY`).
+ *
+ * This is the only way to obtain an empty key through the FFI — the
+ * builder rejects empty-build with `INVALID_PARTITION_KEY` to catch
+ * accidental misuse.
+ */
+struct cosmos_partition_key_t *cosmos_partition_key_empty(void);
+
+/**
+ * Clones an existing partition-key handle. Cheap — an atomic refcount
+ * bump on a single `Arc`.
+ */
+int32_t cosmos_partition_key_clone(const struct cosmos_partition_key_t *pk,
+                                   struct cosmos_partition_key_t **out_clone);
+
+/**
+ * Frees a partition-key handle. NULL is a no-op.
+ */
+void cosmos_partition_key_free(struct cosmos_partition_key_t *pk);
+
+/**
+ * Returns the number of components in this partition key.
+ *
+ * Returns `0` for NULL (matches the driver's `EMPTY` semantics, but
+ * also serves as a safe default for callers that pass a freed or
+ * uninitialized pointer — distinguish from a genuinely-empty key by
+ * checking for NULL up-front).
+ */
+uintptr_t cosmos_partition_key_component_count(const struct cosmos_partition_key_t *pk);
+
+/**
+ * Returns `true` when this partition key has zero components.
+ *
+ * Returns `true` for NULL (a NULL handle has no components by
+ * definition; the contract mirrors `cosmos_partition_key_component_count`
+ * returning `0`).
+ */
+bool cosmos_partition_key_is_empty(const struct cosmos_partition_key_t *pk);
 
 /**
  * Lifecycle: free a `cosmos_runtime_t *` previously returned by the runtime
