@@ -1,0 +1,28 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+[package]
+name = "azure_data_cosmos_driver_native"
+description = "C ABI wrapper for the Azure Cosmos DB driver crate (azure_data_cosmos_driver). Exposes a schema-agnostic completion-queue-style FFI for cross-language SDK reuse (.NET, Java, Go, Python, native C/C++)."
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+keywords = ["sdk", "internal"]
+categories = ["api-bindings"]
+
+[lib]
+name = "azurecosmosdriver"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+tracing.workspace = true
+
+[build-dependencies]
+cbindgen = "0.29.2"
+
+[lints]
+workspace = true

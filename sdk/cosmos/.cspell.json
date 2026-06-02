@@ -13,6 +13,7 @@
     "autonumber",
     "autoscale",
     "azurecosmos",
+    "azurecosmosdriver",
     "backoff",
     "backpressure",
     "brazilsouth",
