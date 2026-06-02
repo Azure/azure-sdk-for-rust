@@ -37,6 +37,9 @@ impl std::fmt::Debug for QueryPlanProvider {
     }
 }
 
+// SAFETY: The native library's service provider handle is thread-safe.
+// All exported functions are documented as safe for concurrent use across
+// threads and internally synchronize their state.
 unsafe impl Send for QueryPlanProvider {}
 unsafe impl Sync for QueryPlanProvider {}
 
@@ -64,7 +67,6 @@ impl QueryPlanProvider {
     }
 
     /// Updates the service provider with new configuration.
-    #[allow(dead_code)] // Will be used when driver passes real query engine config.
     pub fn update(&self, config_json: &str) -> Result<(), QueryPlanError> {
         let lib = query_plan_native::query_plan_native_lib()?;
         let c_config = CString::new(config_json).map_err(|_| QueryPlanError::InvalidArgument {
@@ -84,7 +86,7 @@ impl QueryPlanProvider {
     ///
     /// Returns the driver's [`QueryPlan`] type, which is the same JSON format
     /// that the Cosmos DB Gateway returns. The native DLL serializes to
-    /// identical JSON, so we deserialize directly into the driver's model.
+    /// compatible JSON, so we deserialize directly into the driver's model.
     pub fn get_partition_key_ranges(
         &self,
         query_spec_json: &str,
@@ -96,8 +98,12 @@ impl QueryPlanProvider {
 
         let query_spec_native = to_native_string(query_spec_json);
 
-        let (token_segments, token_counts) = tokenize_partition_key_paths(partition_key_paths);
-        let all_token_ptrs: Vec<*const WChar> = token_segments.iter().map(|w| w.as_ptr()).collect();
+        let (flat_tokens, token_offsets, token_counts) =
+            tokenize_partition_key_paths(partition_key_paths);
+        let all_token_ptrs: Vec<*const WChar> = token_offsets
+            .iter()
+            .map(|&off| unsafe { flat_tokens.as_ptr().add(off) })
+            .collect();
 
         let vector_policy = vector_embedding_policy_json.map(to_native_string);
         let (vec_policy_ptr, vec_policy_len) = match &vector_policy {
@@ -224,22 +230,26 @@ fn to_native_string(s: &str) -> Vec<WChar> {
 /// Splits partition key paths into individual segments (tokens) and encodes
 /// them as null-terminated wide strings for the native API.
 ///
-/// The native API expects a flat array of segment pointers and a parallel
-/// array of segment counts per path. For example, `["/tenantId", "/a/b"]`
-/// becomes tokens `["tenantId", "a", "b"]` with counts `[1, 2]`.
+/// Returns a single flat buffer of all segments (each null-terminated,
+/// concatenated), the byte offset of each segment within that buffer,
+/// and per-path segment counts. For example, `["/tenantId", "/a/b"]`
+/// produces a flat buffer with `"tenantId\0a\0b\0"`, offsets pointing to
+/// the start of each segment, and counts `[1, 2]`.
 ///
 /// This matches the .NET SDK's `PathParser.GetPathParts()` behavior.
-fn tokenize_partition_key_paths(paths: &[&str]) -> (Vec<Vec<WChar>>, Vec<u32>) {
-    let mut token_segments: Vec<Vec<WChar>> = Vec::new();
-    let mut token_counts: Vec<u32> = Vec::with_capacity(paths.len());
+fn tokenize_partition_key_paths(paths: &[&str]) -> (Vec<WChar>, Vec<usize>, Vec<u32>) {
+    let mut flat_buf: Vec<WChar> = Vec::new();
+    let mut offsets: Vec<usize> = Vec::new();
+    let mut counts: Vec<u32> = Vec::with_capacity(paths.len());
 
     for path in paths {
         let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-        token_counts.push(segments.len() as u32);
+        counts.push(segments.len() as u32);
         for seg in &segments {
-            token_segments.push(to_native_string(seg));
+            offsets.push(flat_buf.len());
+            flat_buf.extend_from_slice(&to_native_string(seg));
         }
     }
 
-    (token_segments, token_counts)
+    (flat_buf, offsets, counts)
 }

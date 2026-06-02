@@ -2,6 +2,9 @@
 
 Native FFI query plan provider using the QueryPlanInterop C++ library.
 
+Gated behind the `__internal_native_query_plan` feature flag. When disabled,
+the module is not compiled and the driver uses the Gateway for all query plans.
+
 ## Library loading
 
 The native library is loaded lazily on first query plan request.
@@ -15,7 +18,7 @@ Search order:
 Call chain:
 ```
 cosmos_driver::plan_operation()
-  -> try_native_query_plan()
+  -> NativeQueryPlanProvider::get_query_plan()
      -> OnceLock: cached QueryPlanProvider (created once, reused)
         -> QueryPlanProvider::new(config)
            -> query_plan_native_lib()  [OnceLock: loaded once per process]
@@ -29,24 +32,25 @@ cosmos_driver::plan_operation()
         -> provider.get_partition_key_ranges(query, pk_paths, options)
            -> calls GetPartitionKeyRangesFromQuery4(...) via resolved pointer
            -> deserialize JSON -> QueryPlan
-  -> if Err: fall through to trivial check, then Gateway
+  -> if Err: fall through to gateway_query_plan()
 ```
 
 | Platform | Library name |
 |----------|-------------|
 | Windows  | `Cosmos.QueryPlanInterop.dll` |
-| Linux    | `libQueryPlanInterop.so` |
-| macOS    | `libQueryPlanInterop.dylib` |
+| Linux    | `libqueryplaninterop.so` |
+| macOS    | `libqueryplaninterop.dylib` |
 
 ## Running tests
 
 ```bash
-# Unit tests (no native DLL needed)
-cargo test -p azure_data_cosmos_driver --lib query_plan_native
+# Unit tests (no native DLL needed, feature must be enabled)
+cargo test -p azure_data_cosmos_driver --lib query_plan_native \
+    --features __internal_native_query_plan
 
 # Integration tests (requires native DLL on PATH or QUERY_PLAN_INTEROP_LIB_DIR)
 cargo test -p azure_data_cosmos_driver --lib query_plan_native \
-    --features __query_plan_native_integration -- --test-threads=1
+    --features __internal_native_query_plan -- --test-threads=1
 ```
 
 ## Regenerating bindgen bindings

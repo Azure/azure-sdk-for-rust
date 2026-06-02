@@ -134,10 +134,10 @@ pub struct CosmosDriver {
     /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
-    /// Cached native query plan provider. Lazily initialized on first use.
-    /// `None` if the native library is not available on this platform.
-    native_query_plan_provider:
-        std::sync::OnceLock<Option<crate::query_plan_native::provider::QueryPlanProvider>>,
+    /// Native FFI query plan provider. Lazily loads the native library on
+    /// first use; returns errors if unavailable.
+    #[cfg(feature = "__internal_native_query_plan")]
+    native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider,
 }
 
 impl CosmosDriver {
@@ -870,7 +870,8 @@ impl CosmosDriver {
             pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
-            native_query_plan_provider: std::sync::OnceLock::new(),
+            #[cfg(feature = "__internal_native_query_plan")]
+            native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider::new(),
         }
     }
 
@@ -1641,42 +1642,19 @@ impl CosmosDriver {
             },
         };
 
-        // 1. Try native FFI query plan provider (fastest, no network call).
-        //    Falls through silently if the native library is not available
-        //    or if the query plan generation fails.
-        if let Some(container) = operation.container() {
-            if let Some(query_spec_bytes) = operation.body() {
-                if let Ok(query_spec_json) = std::str::from_utf8(query_spec_bytes) {
-                    if let Ok(query_plan) = self.try_native_query_plan(query_spec_json, container) {
-                        tracing::debug!("using native FFI query plan");
-                        let container_ref = container.clone();
-                        let mut topology = CachedTopologyProvider::new(
-                            &self.pk_range_cache,
-                            container_ref,
-                            |container, continuation| {
-                                self.fetch_pk_ranges_from_service(container, continuation)
-                            },
-                        );
-                        let pipeline = planner::build_sequential_drain(
-                            &query_plan,
-                            &mut topology,
-                            &operation,
-                            resume_state,
-                        )
-                        .await?;
-                        return Ok(OperationPlan::new(pipeline, operation));
-                    }
-                }
-            }
-        }
-
-        // 2. Trivial plan: anything that isn't a cross-partition query.
+        // 1. Trivial plan: anything that isn't a cross-partition query.
+        //    The internal pipeline only supports projection and filtering over
+        //    a sequential drain, with no support for ordering. Trivial
+        //    operations (targeting a single logical partition) are sent directly
+        //    to the gateway without query planning.
         if operation.is_trivial() {
             let pipeline = planner::build_trivial_pipeline(operation.clone(), resume_state)?;
             return Ok(OperationPlan::new(pipeline, operation));
         }
 
-        // 3. Cross-partition query: fetch query plan from backend (Gateway).
+        // 2. Cross-partition query: obtain a query plan and build the fan-out
+        //    pipeline. Try the native FFI provider first (no network call),
+        //    falling back to the Gateway if unavailable.
         let container = operation.container().ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
@@ -1684,7 +1662,63 @@ impl CosmosDriver {
             )
         })?;
 
-        // Currently, we don't support any extra query features (like ordering, etc.)
+        #[cfg(feature = "__internal_native_query_plan")]
+        let query_plan = {
+            // Fetch the query engine configuration from the account metadata cache.
+            let account = operation.resource_reference().account();
+            let account_endpoint = AccountEndpoint::from(account);
+            let query_engine_config = self
+                .runtime
+                .account_metadata_cache()
+                .get(&account_endpoint)
+                .await
+                .map(|props| props.query_engine_configuration.clone())
+                .unwrap_or_default();
+
+            let native_result = operation
+                .body()
+                .and_then(|b| std::str::from_utf8(b).ok())
+                .map(|json| self.try_native_query_plan(json, container, &query_engine_config));
+
+            match native_result {
+                Some(Ok(plan)) => {
+                    tracing::debug!("using native FFI query plan");
+                    plan
+                }
+                _ => {
+                    tracing::debug!("using gateway query plan");
+                    self.gateway_query_plan(container, &operation, options)
+                        .await?
+                }
+            }
+        };
+
+        #[cfg(not(feature = "__internal_native_query_plan"))]
+        let query_plan = self
+            .gateway_query_plan(container, &operation, options)
+            .await?;
+
+        // Build the fan-out pipeline using the query plan.
+        let container_ref = container.clone();
+        let mut topology = CachedTopologyProvider::new(
+            &self.pk_range_cache,
+            container_ref,
+            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
+        );
+
+        let pipeline =
+            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
+                .await?;
+        Ok(OperationPlan::new(pipeline, operation))
+    }
+
+    /// Fetches a query plan from the Gateway backend.
+    async fn gateway_query_plan(
+        &self,
+        container: &ContainerReference,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> azure_core::Result<QueryPlan> {
         let query_plan_operation = CosmosOperation::query_plan(container.clone(), "".into())
             .with_body(operation.body().unwrap_or_default().to_vec());
 
@@ -1705,66 +1739,32 @@ impl CosmosDriver {
                 ));
             }
         };
-        let query_plan: QueryPlan = serde_json::from_slice(&query_plan_body).map_err(|e| {
+        serde_json::from_slice(&query_plan_body).map_err(|e| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 format!("failed to parse query plan response: {e}"),
             )
-        })?;
-
-        // Build the fan-out pipeline using the query plan.
-        let container_ref = container.clone();
-        let mut topology = CachedTopologyProvider::new(
-            &self.pk_range_cache,
-            container_ref,
-            |container, continuation| self.fetch_pk_ranges_from_service(container, continuation),
-        );
-
-        let pipeline =
-            planner::build_sequential_drain(&query_plan, &mut topology, &operation, resume_state)
-                .await?;
-        Ok(OperationPlan::new(pipeline, operation))
+        })
     }
 
     /// Attempts to generate a query plan using the native FFI provider.
     /// Returns `Err` if the native library is not available or if plan
     /// generation fails for any reason. The caller should fall through
     /// to the Gateway path on error.
+    #[cfg(feature = "__internal_native_query_plan")]
     fn try_native_query_plan(
         &self,
         query_spec_json: &str,
         container: &ContainerReference,
+        query_engine_config: &str,
     ) -> Result<QueryPlan, crate::query_plan_native::error::QueryPlanError> {
-        use crate::query_plan_native::error::QueryPlanError;
-        use crate::query_plan_native::provider::{QueryPlanOptions, QueryPlanProvider};
-
-        // Lazily create the provider on first use. Once created, it is
-        // reused for all subsequent queries. If the native DLL is not
-        // available, `None` is cached so we don't retry on every call.
-        let provider = self
-            .native_query_plan_provider
-            .get_or_init(|| {
-                // TODO(query-plan-native-wire-up): use the actual
-                // query_engine_configuration from the account metadata
-                // cache instead of the default config.
-                QueryPlanProvider::new("{}").ok()
-            })
-            .as_ref()
-            .ok_or_else(|| QueryPlanError::LibraryNotAvailable {
-                message: "native query plan library not available".to_string(),
-            })?;
-
         let pk_def = container.partition_key_definition();
         let pk_paths: Vec<&str> = pk_def.paths().iter().map(|p| p.as_ref()).collect();
-
-        // TODO(query-plan-native-wire-up): derive QueryPlanOptions from the
-        // operation/account capabilities so the native and Gateway paths
-        // produce equivalent plans. Today both paths use defaults.
-        provider.get_partition_key_ranges(
+        self.native_query_plan_provider.get_query_plan(
             query_spec_json,
             &pk_paths,
-            &QueryPlanOptions::default(),
-            None,
+            pk_def.kind(),
+            query_engine_config,
         )
     }
 

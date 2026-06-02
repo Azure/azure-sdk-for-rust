@@ -167,7 +167,7 @@ mod platform {
         // Try QUERY_PLAN_INTEROP_LIB_DIR if set.
         if let Ok(dir) = std::env::var("QUERY_PLAN_INTEROP_LIB_DIR") {
             if let Ok(c_dir) = CString::new(dir) {
-                // SAFETY: c_dir is a valid null-terminated string.
+                // SAFETY: CString guarantees a valid nul-terminated string.
                 unsafe {
                     SetDllDirectoryA(c_dir.as_ptr().cast());
                 }
@@ -176,7 +176,7 @@ mod platform {
 
         // Fall back to OS default search (PATH).
         let c_name = CString::new(name).ok()?;
-        // SAFETY: c_name is a valid null-terminated string.
+        // SAFETY: CString guarantees a valid nul-terminated string.
         let h = unsafe { LoadLibraryA(c_name.as_ptr().cast()) };
         if h.is_null() {
             None
@@ -190,7 +190,8 @@ mod platform {
     /// `lib` must be a valid library handle from `load_library`.
     pub unsafe fn get_proc(lib: LibHandle, name: &str) -> Option<*mut c_void> {
         let c_name = CString::new(name).ok()?;
-        // SAFETY: lib is a valid module handle, c_name is null-terminated.
+        // SAFETY: lib is a valid module handle from load_library;
+        // CString guarantees a valid nul-terminated string.
         let p = unsafe { GetProcAddress(lib, c_name.as_ptr().cast()) };
         if p.is_null() {
             None
@@ -241,6 +242,7 @@ mod platform {
         if let Ok(dir) = std::env::var("QUERY_PLAN_INTEROP_LIB_DIR") {
             let full_path = format!("{}/{}", dir.trim_end_matches('/'), name);
             if let Ok(c_path) = CString::new(full_path) {
+                // SAFETY: CString guarantees a valid nul-terminated string.
                 let h = unsafe { dlopen(c_path.as_ptr(), RTLD_NOW | RTLD_LOCAL) };
                 if !h.is_null() {
                     return Some(h);
@@ -250,6 +252,7 @@ mod platform {
 
         // Fall back to OS default search.
         let c_name = CString::new(name).ok()?;
+        // SAFETY: CString guarantees a valid nul-terminated string.
         let h = unsafe { dlopen(c_name.as_ptr(), RTLD_NOW | RTLD_LOCAL) };
         if h.is_null() {
             None
@@ -263,7 +266,8 @@ mod platform {
     /// `lib` must be a valid library handle from `load_library`.
     pub unsafe fn get_proc(lib: LibHandle, name: &str) -> Option<*mut c_void> {
         let c_name = CString::new(name).ok()?;
-        // SAFETY: lib is a valid handle, c_name is null-terminated.
+        // SAFETY: lib is a valid handle from load_library;
+        // CString guarantees a valid nul-terminated string.
         let p = unsafe { dlsym(lib, c_name.as_ptr()) };
         if p.is_null() {
             None
@@ -284,9 +288,9 @@ mod platform {
     }
 
     #[cfg(target_os = "linux")]
-    pub const LIB_NAME: &str = "libQueryPlanInterop.so";
+    pub const LIB_NAME: &str = "libqueryplaninterop.so";
     #[cfg(target_os = "macos")]
-    pub const LIB_NAME: &str = "libQueryPlanInterop.dylib";
+    pub const LIB_NAME: &str = "libqueryplaninterop.dylib";
 }
 
 // -------------------------------------------------------------------------

@@ -44,13 +44,95 @@ pub(crate) mod native;
 #[allow(dead_code)]
 pub(crate) mod provider;
 
-#[cfg(all(test, feature = "__query_plan_native_integration"))]
+#[cfg(all(test, feature = "__internal_native_query_plan"))]
 mod integration_tests;
 
 // Re-export the driver's query plan model types for use by integration tests
 // and future callers within the crate. The native DLL outputs the same JSON
 // format as the Gateway, so both deserialize into these types.
-#[cfg(all(test, feature = "__query_plan_native_integration"))]
+#[cfg(all(test, feature = "__internal_native_query_plan"))]
 pub(crate) use crate::driver::dataflow::query_plan::{
     DistinctType, QueryInfo, QueryPlan, SortOrder,
 };
+
+/// High-level entry point for native query plan generation.
+///
+/// Encapsulates all lazy-initialization logic: the inner
+/// [`QueryPlanProvider`](provider::QueryPlanProvider) is created on first use
+/// and cached for the process lifetime. If the native library is unavailable,
+/// `None` is cached so subsequent calls fail fast without retrying.
+///
+/// The query engine configuration is accepted per-call and the provider is
+/// updated when it changes (e.g. after an account metadata refresh).
+///
+/// The driver holds an instance of this type and calls
+/// [`get_query_plan`](NativeQueryPlanProvider::get_query_plan) -- no `OnceLock`
+/// or `Option` handling leaks into the driver code.
+pub(crate) struct NativeQueryPlanProvider {
+    inner: std::sync::OnceLock<Option<provider::QueryPlanProvider>>,
+    last_config: std::sync::Mutex<String>,
+}
+
+impl std::fmt::Debug for NativeQueryPlanProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NativeQueryPlanProvider")
+            .field("initialized", &self.inner.get().is_some())
+            .finish()
+    }
+}
+
+impl NativeQueryPlanProvider {
+    pub fn new() -> Self {
+        Self {
+            inner: std::sync::OnceLock::new(),
+            last_config: std::sync::Mutex::new(String::new()),
+        }
+    }
+
+    /// Generates a query plan using the native FFI provider.
+    ///
+    /// On first call, lazily loads the native library and creates the
+    /// service provider with the given `query_engine_config`. On subsequent
+    /// calls, if the config has changed the provider is updated via
+    /// `UpdateServiceProvider`.
+    pub fn get_query_plan(
+        &self,
+        query_spec_json: &str,
+        partition_key_paths: &[&str],
+        partition_key_kind: crate::models::PartitionKeyKind,
+        query_engine_config: &str,
+    ) -> Result<crate::driver::dataflow::query_plan::QueryPlan, error::QueryPlanError> {
+        let provider = self
+            .inner
+            .get_or_init(|| provider::QueryPlanProvider::new(query_engine_config).ok())
+            .as_ref()
+            .ok_or_else(|| error::QueryPlanError::LibraryNotAvailable {
+                message: "native query plan library not available".to_string(),
+            })?;
+
+        // Update the provider if the query engine configuration changed
+        // (e.g. after an account metadata refresh).
+        {
+            let mut last = self.last_config.lock().unwrap_or_else(|e| e.into_inner());
+            if *last != query_engine_config {
+                if let Err(e) = provider.update(query_engine_config) {
+                    tracing::warn!("failed to update native query plan config: {e}");
+                } else {
+                    *last = query_engine_config.to_string();
+                }
+            }
+        }
+
+        let partition_kind = match partition_key_kind {
+            crate::models::PartitionKeyKind::MultiHash => native::PartitionKind::MultiHash,
+            _ => native::PartitionKind::Hash,
+        };
+
+        let options = provider::QueryPlanOptions {
+            partition_kind,
+            ..provider::QueryPlanOptions::default()
+        };
+
+        provider.get_partition_key_ranges(query_spec_json, partition_key_paths, &options, None)
+    }
+}

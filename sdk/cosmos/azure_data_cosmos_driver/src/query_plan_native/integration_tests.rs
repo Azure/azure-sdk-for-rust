@@ -1,10 +1,18 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore nopk startswith codegen inlist
+
 //! Integration tests for the QueryPlanInterop native library.
 //!
 //! These tests mirror the .NET SDK's `QueryPlanBaselineTests` and validate
 //! that the Rust FFI bindings produce equivalent query plans.
+//!
+//! Every test asserts the **entire** `QueryInfo` struct so that any
+//! regression in any field is caught immediately. Engine-version-dependent
+//! text fields (`rewritten_query`, `order_by_expressions`, `group_by_*`)
+//! are normalised before comparison -- only their *presence* and *counts*
+//! are checked.
 //!
 //! Gated behind the `integration` feature. The native library must be
 //! discoverable by the OS loader (e.g. via `PATH` on Windows or
@@ -15,15 +23,17 @@
 //! ```powershell
 //! # Windows
 //! $env:QUERY_PLAN_INTEROP_LIB_DIR = "Q:\QueryPlanInterop"
-//!  cargo test -p azure_data_cosmos_driver --lib query_plan_native --features __query_plan_native_integration
+//!  cargo test -p azure_data_cosmos_driver --lib query_plan_native --features __internal_native_query_plan
 //!
 //! # Linux
-//! QUERY_PLAN_INTEROP_LIB_DIR=/path/to/lib cargo test -p azure_data_cosmos_driver --lib query_plan_native --features __query_plan_native_integration
+//! QUERY_PLAN_INTEROP_LIB_DIR=/path/to/lib cargo test -p azure_data_cosmos_driver --lib query_plan_native --features __internal_native_query_plan
 //! ```
+#![allow(clippy::needless_update)]
 
 use super::native::PartitionKind;
 use super::provider::{QueryPlanOptions, QueryPlanProvider};
 use super::{DistinctType, QueryInfo, QueryPlan, SortOrder};
+use std::collections::HashMap;
 
 // -------------------------------------------------------------------------
 // Configuration -- matches QueryPartitionProviderTestInstance in the .NET SDK
@@ -104,16 +114,25 @@ fn multi_hash_options() -> QueryPlanOptions {
     }
 }
 
-/// Returns true if the query has any aggregate operators, checking both
-/// the `aggregates` array (VALUE aggregates) and `groupByAliasToAggregateType`
-/// map (non-VALUE aggregates). The native DLL only populates `aggregates`
-/// for `SELECT VALUE` queries; non-value aggregates go into the map.
-fn has_aggregates(qi: &QueryInfo) -> bool {
-    !qi.aggregates.is_empty()
-        || qi
-            .group_by_alias_to_aggregate_type
-            .values()
-            .any(|v| !v.is_null() && v.as_str() != Some(""))
+/// Shorthand: the default QueryInfo with all fields at their zero/empty/false values.
+fn qi() -> QueryInfo {
+    QueryInfo::default()
+}
+
+/// Asserts the actual [`QueryInfo`] matches expected, normalising only
+/// `rewritten_query` (the native DLL always returns `Some`, and the exact
+/// text varies across engine versions). All other fields -- including
+/// `order_by_expressions`, `group_by_expressions`, `group_by_aliases`, and
+/// `group_by_alias_to_aggregate_type` -- are compared **exactly**.
+///
+/// Dedicated tests like `rewritten_query_for_order_by` check `rewritten_query`
+/// content explicitly where it matters.
+fn assert_query_info(actual: &QueryInfo, mut expected: QueryInfo) {
+    // Normalise rewritten_query (always Some from DLL, text varies by version)
+    expected.rewritten_query = actual.rewritten_query.clone();
+
+    // Full structural comparison on all fields
+    assert_eq!(actual, &expected);
 }
 
 // =========================================================================
@@ -149,7 +168,6 @@ fn basic_select_top_constant() {
             None,
         )
         .expect("SELECT TOP 2 5 should succeed");
-    // No FROM clause -- top may or may not be populated depending on version.
     assert!(!info.query_ranges.is_empty());
 }
 
@@ -165,6 +183,7 @@ fn basic_select_star() {
         )
         .expect("SELECT * FROM c should succeed");
     assert!(!info.query_ranges.is_empty());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -178,7 +197,7 @@ fn basic_where_true() {
             None,
         )
         .expect("WHERE true should succeed");
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -192,8 +211,8 @@ fn basic_where_false() {
             None,
         )
         .expect("WHERE false should succeed");
-    // The query should succeed; range semantics depend on engine version.
     assert!(!info.query_ranges.is_empty());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 // =========================================================================
@@ -211,10 +230,13 @@ fn top_just_top() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.top, Some(5));
-    assert!(qi.order_by.is_empty());
-    assert!(qi.distinct_type == DistinctType::None);
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            top: Some(5),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -227,8 +249,13 @@ fn top_parameterized() {
     let info = provider
         .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.top, Some(42));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            top: Some(42),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -242,8 +269,13 @@ fn top_with_non_partition_filter() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.top, Some(5));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            top: Some(5),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -257,8 +289,13 @@ fn top_with_partition_filter() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.top, Some(5));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            top: Some(5),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -272,9 +309,15 @@ fn top_with_order_by() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.top, Some(5));
-    assert!(!qi.order_by.is_empty());
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            top: Some(5),
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.blah".into()],
+            ..qi()
+        },
+    );
 }
 
 // =========================================================================
@@ -292,10 +335,16 @@ fn offset_limit_basic() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.offset, Some(5));
-    assert_eq!(qi.limit, Some(10));
-    assert!(!qi.order_by.is_empty());
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            offset: Some(5),
+            limit: Some(10),
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.blah".into()],
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -311,9 +360,16 @@ fn offset_limit_parameterized() {
     let info = provider
         .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.offset, Some(10));
-    assert_eq!(qi.limit, Some(20));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            offset: Some(10),
+            limit: Some(20),
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.blah".into()],
+            ..qi()
+        },
+    );
 }
 
 // =========================================================================
@@ -331,10 +387,14 @@ fn order_by_non_partition_key_asc() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(!qi.order_by.is_empty());
-    assert_eq!(qi.order_by[0], SortOrder::Ascending);
-    assert!(qi.rewritten_query.as_ref().map_or(false, |q| !q.is_empty()));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.blah".into()],
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -348,8 +408,14 @@ fn order_by_partition_key() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(!qi.order_by.is_empty());
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.key".into()],
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -363,8 +429,14 @@ fn order_by_desc() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.order_by[0], SortOrder::Descending);
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            order_by: vec![SortOrder::Descending],
+            order_by_expressions: vec!["c.blah".into()],
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -378,10 +450,14 @@ fn multi_order_by() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.order_by.len(), 2);
-    assert_eq!(qi.order_by[0], SortOrder::Ascending);
-    assert_eq!(qi.order_by[1], SortOrder::Descending);
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            order_by: vec![SortOrder::Ascending, SortOrder::Descending],
+            order_by_expressions: vec!["c.a".into(), "c.b".into()],
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -395,9 +471,15 @@ fn order_by_with_top_and_projection() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert_eq!(qi.top, Some(5));
-    assert!(!qi.order_by.is_empty());
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            top: Some(5),
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.blah".into()],
+            ..qi()
+        },
+    );
 }
 
 // =========================================================================
@@ -415,9 +497,13 @@ fn distinct_select_star() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(qi.distinct_type != DistinctType::None);
-    assert_eq!(qi.distinct_type, DistinctType::Unordered);
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            distinct_type: DistinctType::Unordered,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -431,8 +517,18 @@ fn distinct_field() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(qi.distinct_type != DistinctType::None);
+    let actual = info.query_info.unwrap();
+    assert!(
+        actual.distinct_type != DistinctType::None,
+        "DISTINCT should set distinct_type"
+    );
+    assert_query_info(
+        &actual,
+        QueryInfo {
+            distinct_type: actual.distinct_type.clone(),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -446,10 +542,16 @@ fn distinct_value_with_order_by() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(qi.distinct_type != DistinctType::None);
-    assert_eq!(qi.distinct_type, DistinctType::Ordered);
-    assert!(!qi.order_by.is_empty());
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            distinct_type: DistinctType::Ordered,
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.blah".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 // =========================================================================
@@ -467,9 +569,14 @@ fn aggregate_avg() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(has_aggregates(&qi));
-    assert!(qi.aggregates.contains(&"Average".to_string()));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["Average".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -483,8 +590,14 @@ fn aggregate_min() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(qi.aggregates.contains(&"Min".to_string()));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["Min".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -498,8 +611,14 @@ fn aggregate_max() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(qi.aggregates.contains(&"Max".to_string()));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["Max".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -513,8 +632,14 @@ fn aggregate_sum() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(qi.aggregates.contains(&"Sum".to_string()));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["Sum".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -528,8 +653,14 @@ fn aggregate_count() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(qi.aggregates.contains(&"Count".to_string()));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["Count".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -543,8 +674,14 @@ fn aggregate_makelist() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(qi.aggregates.contains(&"MakeList".to_string()));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["MakeList".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -558,8 +695,14 @@ fn aggregate_makeset() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(qi.aggregates.contains(&"MakeSet".to_string()));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["MakeSet".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -573,8 +716,14 @@ fn aggregate_no_partition_key() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(has_aggregates(&qi));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["Average".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -588,8 +737,14 @@ fn aggregate_with_filter() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(has_aggregates(&qi));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["Average".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -603,8 +758,14 @@ fn aggregate_with_join() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(has_aggregates(&qi));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["Average".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -618,13 +779,23 @@ fn aggregate_with_top() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(has_aggregates(&qi));
-    assert!(qi.top.is_some());
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            top: Some(5),
+            aggregates: vec!["Average".into()],
+            has_select_value: true,
+            ..qi()
+        },
+    );
 }
 
 // =========================================================================
 // Non-value aggregates (mirrors QueryPlanBaselineTests.NonValueAggregates)
+//
+// Non-value aggregates (e.g. `SELECT MIN(c.x) FROM c` without VALUE)
+// populate `group_by_alias_to_aggregate_type` and `group_by_aliases`
+// instead of `aggregates`.
 // =========================================================================
 
 #[test]
@@ -638,8 +809,17 @@ fn non_value_aggregate_min() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(has_aggregates(&qi));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            group_by_aliases: vec!["$1".into()],
+            group_by_alias_to_aggregate_type: HashMap::from([(
+                "$1".into(),
+                serde_json::json!("Min"),
+            )]),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -653,8 +833,17 @@ fn non_value_aggregate_multiple() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(has_aggregates(&qi));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            group_by_aliases: vec!["$1".into(), "$2".into()],
+            group_by_alias_to_aggregate_type: HashMap::from([
+                ("$1".into(), serde_json::json!("Min")),
+                ("$2".into(), serde_json::json!("Max")),
+            ]),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -668,8 +857,17 @@ fn non_value_aggregate_with_alias() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(has_aggregates(&qi));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            group_by_aliases: vec!["minBlah".into()],
+            group_by_alias_to_aggregate_type: HashMap::from([(
+                "minBlah".into(),
+                serde_json::json!("Min"),
+            )]),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -683,8 +881,17 @@ fn non_value_aggregate_with_partition_filter() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(has_aggregates(&qi));
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            group_by_aliases: vec!["$1".into()],
+            group_by_alias_to_aggregate_type: HashMap::from([(
+                "$1".into(),
+                serde_json::json!("Min"),
+            )]),
+            ..qi()
+        },
+    );
 }
 
 // =========================================================================
@@ -702,8 +909,18 @@ fn group_by_simple() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(!qi.group_by_expressions.is_empty());
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            group_by_expressions: vec!["c.age".into(), "c.name".into()],
+            group_by_aliases: vec!["age".into(), "name".into()],
+            group_by_alias_to_aggregate_type: HashMap::from([
+                ("age".into(), serde_json::json!("")),
+                ("name".into(), serde_json::json!("")),
+            ]),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -719,10 +936,19 @@ fn group_by_with_aggregates() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(!qi.group_by_expressions.is_empty());
-    assert!(has_aggregates(&qi));
-    assert!(!qi.group_by_alias_to_aggregate_type.is_empty());
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            group_by_expressions: vec!["c.team".into()],
+            group_by_aliases: vec!["team".into(), "count".into(), "avg_age".into()],
+            group_by_alias_to_aggregate_type: HashMap::from([
+                ("team".into(), serde_json::json!("")),
+                ("count".into(), serde_json::json!("Count")),
+                ("avg_age".into(), serde_json::json!("Average")),
+            ]),
+            ..qi()
+        },
+    );
 }
 
 #[test]
@@ -736,26 +962,42 @@ fn group_by_value_count() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(!qi.group_by_expressions.is_empty());
-    assert!(has_aggregates(&qi));
-    assert!(qi.has_select_value);
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            aggregates: vec!["Count".into()],
+            has_select_value: true,
+            group_by_expressions: vec!["c.age".into()],
+            ..qi()
+        },
+    );
 }
 
 #[test]
 fn group_by_arbitrary_scalar() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT UPPER(c.name) AS name, AVG(c.income) AS income FROM c GROUP BY UPPER(c.name)"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
-    let qi = info.query_info.unwrap();
-    assert!(!qi.group_by_expressions.is_empty());
-    assert!(has_aggregates(&qi));
+        .get_partition_key_ranges(
+            &query_spec(
+                "SELECT UPPER(c.name) AS name, AVG(c.income) AS income FROM c GROUP BY UPPER(c.name)",
+            ),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
+    assert_query_info(
+        &info.query_info.unwrap(),
+        QueryInfo {
+            group_by_expressions: vec!["UPPER(c.name)".into()],
+            group_by_aliases: vec!["name".into(), "income".into()],
+            group_by_alias_to_aggregate_type: HashMap::from([
+                ("name".into(), serde_json::json!("")),
+                ("income".into(), serde_json::json!("Average")),
+            ]),
+            ..qi()
+        },
+    );
 }
 
 // =========================================================================
@@ -773,7 +1015,7 @@ fn like_simple() {
             None,
         )
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -786,7 +1028,7 @@ fn like_parameterized() {
     let info = provider
         .get_partition_key_ranges(&spec, &["/key"], &hash_options(), None)
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -800,7 +1042,7 @@ fn like_with_partition_key_filter() {
             None,
         )
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 // =========================================================================
@@ -819,6 +1061,7 @@ fn multi_key_is_defined() {
         )
         .unwrap();
     assert!(!info.query_ranges.is_empty());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -833,6 +1076,7 @@ fn multi_key_point_lookup() {
         )
         .unwrap();
     assert!(!info.query_ranges.is_empty());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -847,6 +1091,7 @@ fn multi_hash_point_lookup() {
         )
         .unwrap();
     assert!(!info.query_ranges.is_empty());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 // =========================================================================
@@ -864,8 +1109,11 @@ fn in_list_produces_multiple_ranges() {
             None,
         )
         .unwrap();
-    let ranges = info.query_ranges;
-    assert!(ranges.len() >= 3, "IN list should produce multiple ranges");
+    assert!(
+        info.query_ranges.len() >= 3,
+        "IN list should produce multiple ranges"
+    );
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -879,8 +1127,8 @@ fn or_filter_produces_ranges() {
             None,
         )
         .unwrap();
-    let ranges = info.query_ranges;
-    assert!(ranges.len() >= 2);
+    assert!(info.query_ranges.len() >= 2);
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 // =========================================================================
@@ -898,7 +1146,7 @@ fn subquery_basic() {
             None,
         )
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -912,7 +1160,7 @@ fn subquery_with_filter_in_outer_query() {
             None,
         )
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -926,21 +1174,23 @@ fn subquery_with_filter_in_inner_query() {
             None,
         )
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
 fn subquery_as_filter() {
     require_native_dll!(provider);
     let info = provider
-            .get_partition_key_ranges(
-                &query_spec("SELECT * FROM c WHERE (c.blah = (SELECT * FROM c WHERE c.key = 42 and c.id = 5)) and c.key = 32"),
-                &["/key"],
-                &hash_options(),
-                None,
-            )
-            .unwrap();
-    assert!(info.query_info.is_some());
+        .get_partition_key_ranges(
+            &query_spec(
+                "SELECT * FROM c WHERE (c.blah = (SELECT * FROM c WHERE c.key = 42 and c.id = 5)) and c.key = 32",
+            ),
+            &["/key"],
+            &hash_options(),
+            None,
+        )
+        .unwrap();
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 // =========================================================================
@@ -958,8 +1208,12 @@ fn point_range_string_equality() {
             None,
         )
         .unwrap();
-    let ranges = info.query_ranges;
-    assert_eq!(ranges.len(), 1, "equality should produce a single range");
+    assert_eq!(
+        info.query_ranges.len(),
+        1,
+        "equality should produce a single range"
+    );
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -973,8 +1227,8 @@ fn point_range_number_equality() {
             None,
         )
         .unwrap();
-    let ranges = info.query_ranges;
-    assert_eq!(ranges.len(), 1);
+    assert_eq!(info.query_ranges.len(), 1);
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -988,8 +1242,8 @@ fn point_range_null_equality() {
             None,
         )
         .unwrap();
-    let ranges = info.query_ranges;
-    assert_eq!(ranges.len(), 1);
+    assert_eq!(info.query_ranges.len(), 1);
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -1003,8 +1257,8 @@ fn point_range_bool_equality() {
             None,
         )
         .unwrap();
-    let ranges = info.query_ranges;
-    assert_eq!(ranges.len(), 1);
+    assert_eq!(info.query_ranges.len(), 1);
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 // =========================================================================
@@ -1022,7 +1276,7 @@ fn system_function_abs() {
             None,
         )
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
@@ -1036,7 +1290,7 @@ fn system_function_is_defined() {
             None,
         )
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 // =========================================================================
@@ -1070,10 +1324,21 @@ fn rewritten_query_for_order_by() {
             None,
         )
         .unwrap();
-    let qi = info.query_info.unwrap();
+    let actual = info.query_info.unwrap();
     assert!(
-        qi.rewritten_query.as_ref().map_or(false, |q| !q.is_empty()),
-        "cross-partition ORDER BY should produce a rewritten query"
+        actual
+            .rewritten_query
+            .as_ref()
+            .map_or(false, |q| !q.is_empty()),
+        "cross-partition ORDER BY should produce a non-empty rewritten query"
+    );
+    assert_query_info(
+        &actual,
+        QueryInfo {
+            order_by: vec![SortOrder::Ascending],
+            order_by_expressions: vec!["c.name".into()],
+            ..qi()
+        },
     );
 }
 
@@ -1105,7 +1370,6 @@ fn query_plan_json_round_trip() {
 #[test]
 fn unicode_bmp_characters_in_query() {
     require_native_dll!(provider);
-    // BMP characters: Chinese, Japanese, emoji (BMP range)
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.name = '\u{4e16}\u{754c}'"),
@@ -1114,13 +1378,12 @@ fn unicode_bmp_characters_in_query() {
             None,
         )
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
 fn unicode_surrogate_pair_in_query() {
     require_native_dll!(provider);
-    // U+1F600 (grinning face) requires a surrogate pair in UTF-16
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c WHERE c.name = '\u{1F600}'"),
@@ -1129,13 +1392,12 @@ fn unicode_surrogate_pair_in_query() {
             None,
         )
         .unwrap();
-    assert!(info.query_info.is_some());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }
 
 #[test]
 fn unicode_partition_key_path() {
     require_native_dll!(provider);
-    // Partition key path with non-ASCII characters
     let info = provider
         .get_partition_key_ranges(
             &query_spec("SELECT * FROM c"),
@@ -1145,4 +1407,5 @@ fn unicode_partition_key_path() {
         )
         .unwrap();
     assert!(!info.query_ranges.is_empty());
+    assert_query_info(&info.query_info.unwrap(), qi());
 }

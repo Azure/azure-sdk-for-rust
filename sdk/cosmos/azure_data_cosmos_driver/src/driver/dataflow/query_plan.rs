@@ -112,7 +112,7 @@ pub(crate) struct HybridSearchQueryInfo {
 }
 
 /// The kind of DISTINCT tracking required by the query.
-#[derive(Debug, Deserialize, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Deserialize, Default, PartialEq, Eq, Serialize)]
 pub(crate) enum DistinctType {
     /// No deduplication required.
     #[default]
