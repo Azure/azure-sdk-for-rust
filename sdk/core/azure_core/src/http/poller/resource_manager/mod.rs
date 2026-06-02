@@ -54,7 +54,7 @@ where
                 PollerState::Initial => initial_request.clone(),
                 PollerState::More(PollerContinuation::Links { next_link, .. }) => {
                     let mut request = Request::new(next_link.clone(), Method::Get);
-                    request.insert_header("accept", "application/json");
+                    request.insert_header(crate::http::headers::ACCEPT, "application/json");
                     request
                 }
             };
@@ -129,7 +129,7 @@ where
                                         ));
                                     };
                                     let mut request = Request::new(final_link, Method::Get);
-                                    request.insert_header("accept", "application/json");
+                                    request.insert_header(crate::http::headers::ACCEPT, "application/json");
                                     let response =
                                         pipeline.send(&context, &mut request, None).await?;
                                     let (status, headers, body) = response.deconstruct();
