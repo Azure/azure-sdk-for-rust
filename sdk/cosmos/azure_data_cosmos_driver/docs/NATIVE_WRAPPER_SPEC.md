@@ -155,7 +155,7 @@ Achieving that requires the wrapper's `cbindgen.toml` to:
 
 - Restrict the items cbindgen exports to those explicitly defined in this spec (`export.item_types = ["functions", "constants", "enums", "structs", "opaque", "typedefs"]` plus an `include_list` / `exclude` policy). Driver-internal types such as `CosmosStatus`, `SubStatusCode`, `ResponseHeaders`, etc. must **not** leak into the generated header — they are surfaced (where needed) through explicit wrapper-defined accessors with `cosmos_*` names.
 
-- Keep `rename_variants = "QualifiedScreamingSnakeCase"` for enums (e.g. `COSMOS_ERROR_KIND_TRANSPORT`, `COSMOS_READ_CONSISTENCY_SESSION`).
+- Keep `rename_variants = "QualifiedScreamingSnakeCase"` for enums (e.g. `COSMOS_COMPLETION_OUTCOME_OK`, `COSMOS_READ_CONSISTENCY_SESSION`).
 
 A CI check should diff the regenerated header against `include/azurecosmosdriver.h` and fail the build on any unrenamed `cosmos_cosmos_*`-style identifier, any missing `_t` suffix on the types above, or any newly-exported driver-internal type. This is what keeps §4's surface inventory and the actual ABI in sync over time.
 
@@ -172,6 +172,8 @@ Several of these patterns are inherited from earlier work — but the inheritanc
 When this spec says "inherited from the original wrapper" elsewhere, it means PR #2906 specifically. Patterns introduced in later PRs are called out by PR number at the point of use.
 
 ### 3.1 Invocation model — completion queues
+
+> **Visual overview:** see [`ASYNC_INVOCATION_ARCHITECTURE.md`](./ASYNC_INVOCATION_ARCHITECTURE.md) for the picture-first walkthrough of every flow described below (component layout, submission lifecycle, two-handle ownership, cancellation, queue states, per-language pinning).
 
 Every operation that touches the network in this wrapper is **asynchronous and non-blocking at the FFI boundary**. Submitting a request returns a lightweight in-flight handle (`cosmos_operation_handle_t`); the response (or error) is delivered later on a caller-owned **completion queue** (`cosmos_cq_t`). Host SDKs spin one or more "receive loop" threads that wait on a queue, dequeue completed operations, and dispatch them — typically by carrying the host-language continuation (e.g. a .NET `TaskCompletionSource`) through the `void *user_data` field round-trip.
 
@@ -568,7 +570,14 @@ The wrapper's error surface is built on two complementary types — a coarse `co
 - **Failure-class routing.** Host SDKs translate `cosmos_error_is_not_found(e)` / `_is_conflict(e)` / `_is_precondition_failed(e)` / `_is_throttled(e)` etc. into their language-native exceptions (`CosmosException` subclasses in Java, dedicated error variants in Go, `CosmosException.StatusCode` in .NET). Routing is **classification**, not retry.
 - **What host SDKs do NOT do.** They do **not** drive retry loops, back-off timers, conditional-write recovery, or cross-region failover off the wrapper's error surface — those are owned by the driver's pipeline (`transport_pipeline.rs`, the throttle / failover / circuit-breaker components, and the `OperationOptions` retry knobs). A host SDK that re-implements any of these on top of the wrapper is defeating the whole point of the driver split.
 
-> **Landing prerequisites — read this before implementing.** The §3.5.2 rich-error surface and the §6 error-semantics chapter both depend on PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442) ("Refactoring to use `Error` instead of `azure_core::Error`") landing first. On `main` today `execute_singleton_operation` still returns `azure_core::Result<…>`, so none of the `cosmos_error_*` accessors below can be wired until #4442 merges. Predicate placement, backtrace-knob naming, and the `Service` / `Transport` / `Client` / `Authentication` / `Serialization` / `Configuration` `Kind` taxonomy are all owned by #4442 — verify the final shape against the merged commit before lifting this section out of draft. Sub-status synthetic codes (`20008`, `20912`, `20010..=20015`, `20020..=20021`, `20030`, `20402`) are also defined in #4442.
+> **Landing prerequisites — read this before implementing.** §3.5.2 below and §6 mirror the **actually merged** shape of [`azure_data_cosmos_driver::error::CosmosError`](../src/error/mod.rs) from PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442) (now on `main`). Notable departures from earlier drafts of this spec:
+>
+> - There is **no `Kind` enum** on the merged `CosmosError` — the type is monomorphic. Failure-class taxonomy is encoded entirely through the `CosmosStatus` HTTP status code + optional [`SubStatusCode`](../src/error/cosmos_status.rs) (16-bit, with synthetic values such as `TRANSPORT_GENERATED_503 = 20003`, `CLIENT_OPERATION_TIMEOUT = 20008` for client-side categories). The spec therefore exposes no `cosmos_error_kind_t` enum or `cosmos_error_kind(e)` accessor; host SDKs route on `(status_code, sub_status)` directly. The earlier `COSMOS_ERROR_KIND_*` taxonomy has been removed from this section.
+> - **Predicates live on `CosmosStatus`, invoked as `err.status().is_*()`.** The wrapper still exposes them as flat `cosmos_error_is_*(e)` calls for caller ergonomics, but only mirrors the predicates that actually exist on the merged `CosmosStatus`. See §3.5.2 for the exact list.
+> - **Header accessors (`activity_id`, `session_token`, `etag`, retry-after) do not live on `CosmosError`.** They are reachable via `err.response().headers()` when a wire response was received. The wrapper exposes them as `cosmos_error_*` convenience accessors that internally walk through `cosmos_error_response(e)`; they return NULL / -1 for non-wire errors (transport, client, configuration).
+> - **Backtrace tuning is process-global, not per-runtime / per-driver.** The driver exposes [`error::set_backtrace_options(BacktraceOptions { max_captures_per_second, max_resolutions_per_second })`](../src/error/backtrace.rs) as a free function, not as a `CosmosDriverRuntimeBuilder` / `CosmosDriverBuilder` method. The wrapper therefore exposes a single `cosmos_set_backtrace_options(captures, resolutions)` entry at module scope instead of the per-runtime / per-driver setters earlier drafts described. See §6.4.
+>
+> Sub-status synthetic codes (`20003`, `20008`, `20010..=20015`, `20020`, `20402`, `20912`, ...) are defined as `pub const` on [`SubStatusCode`](../src/error/cosmos_status.rs); the wrapper re-exports them verbatim through the `COSMOS_SUB_STATUS_*` constants described in §3.5.2.
 
 #### 3.5.1 `cosmos_error_code_t`
 
@@ -610,79 +619,83 @@ A coarse numeric return value for every fallible C function. The layout retains 
 
 The wrapper **must not** invent 4xxx codes for things that already correspond to a `cosmos_error_t::kind()` — those go through the rich error type instead.
 
-#### 3.5.2 `cosmos_error_t` (rich payload, mirrors `azure_data_cosmos::Error`)
+#### 3.5.2 `cosmos_error_t` (rich payload, mirrors `azure_data_cosmos_driver::error::CosmosError`)
 
-The driver's new `Error` type (PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442)) carries structured information that every host SDK needs in order to implement correct retry policies and conditional-write recovery. The wrapper mirrors that surface 1:1 through accessor functions on `cosmos_error_t`:
+The driver's `CosmosError` ([`azure_data_cosmos_driver::error::CosmosError`](../src/error/mod.rs)) carries structured information host SDKs need for correct retry / throttle / conditional-write handling. The wrapper mirrors that surface 1:1 through accessor functions on `cosmos_error_t`:
 
 ```c
-/* Kind — mirrors azure_data_cosmos::Kind. #[non_exhaustive] on the Rust side,
- * so consumers MUST treat unknown values as COSMOS_ERROR_KIND_UNKNOWN. */
-typedef enum cosmos_error_kind {
-    COSMOS_ERROR_KIND_SERVICE        = 0,
-    COSMOS_ERROR_KIND_TRANSPORT      = 1,
-    COSMOS_ERROR_KIND_CLIENT         = 2,
-    COSMOS_ERROR_KIND_AUTHENTICATION = 3,
-    COSMOS_ERROR_KIND_SERIALIZATION  = 4,
-    COSMOS_ERROR_KIND_CONFIGURATION  = 5,
-    /* Sentinel: any non-zero value not in the list above. The wrapper maps
-     * unknown driver Kind variants to this so that older C clients keep
-     * compiling when the driver grows new variants. */
-    COSMOS_ERROR_KIND_UNKNOWN        = 255,
-} cosmos_error_kind_t;
+/* Status / categorical accessors. `cosmos_error_status_code(e)` is always
+ * populated, including for synthetic client-side errors (which carry
+ * placeholder HTTP codes such as 503 via CosmosStatus::TRANSPORT_GENERATED_503).
+ * `cosmos_error_sub_status(e)` returns -1 when no sub-status is present,
+ * otherwise the SubStatusCode value (driver-side u16, surfaced as int32_t so
+ * the -1 sentinel is safe). */
+uint16_t cosmos_error_status_code(const cosmos_error_t *e);
+int32_t  cosmos_error_sub_status(const cosmos_error_t *e);
 
-/* Categorical & status accessors. Always populated, including for client-side
- * synthetic errors (where status is a synthetic CosmosStatus). */
-cosmos_error_kind_t cosmos_error_kind(const cosmos_error_t *e);
-uint16_t            cosmos_error_status_code(const cosmos_error_t *e);
-/* sub_status: -1 if absent; otherwise a non-negative integer (e.g. 20008 for
- * CLIENT_OPERATION_TIMEOUT, 20010 for TRANSPORT_CONNECTION_FAILED, etc.).
- * The wrapper does NOT enumerate the sub-status space — see the driver's
- * SubStatusCode for the authoritative list. */
-int32_t             cosmos_error_sub_status(const cosmos_error_t *e);
+/* True iff the error originated from a service wire response (status() carries
+ * an Authentic HTTP response, response() is Some). Mirrors
+ * `CosmosError::is_from_wire`. Use this to distinguish a 404 the gateway
+ * returned (true) from a synthetic 404 the client created (false). */
+bool cosmos_error_is_from_wire(const cosmos_error_t *e);
 
 /* Message — borrowed UTF-8, valid until the error is freed. */
 const char *cosmos_error_message(const cosmos_error_t *e);
 
-/* Raw service-error response body (e.g. the JSON returned by the gateway on a
- * 4xx/5xx). Returns {NULL, 0} for client-side / transport / serialization
- * errors that don't have a service response. */
-cosmos_bytes_view_t cosmos_error_response_body(const cosmos_error_t *e);
+/* Borrowed access to the wire response that produced this error, or NULL when
+ * `is_from_wire(e) == false`. Lifetime = until cosmos_error_free. The
+ * convenience header / body accessors below walk through this same pointer. */
+const cosmos_response_t *cosmos_error_response(const cosmos_error_t *e);
 
-/* Diagnostics for the request that produced this error. Returns a NEW handle
- * that must be freed via cosmos_diagnostics_free. Returns NULL when not
- * available (e.g. some Configuration errors). */
-cosmos_diagnostics_t *cosmos_error_diagnostics(const cosmos_error_t *e);
-
-/* Backtrace — rate-limited rendered string (Option<&str> on the Rust side).
- * Returns NULL when no backtrace was captured (e.g. budget exhausted). */
-const char *cosmos_error_backtrace(const cosmos_error_t *e);
-
-/* Typed header accessors for service errors. All return NULL for non-service
- * errors. Borrowed strings, valid until the error is freed. */
+/* Convenience accessors that walk through `cosmos_error_response(e)` so host
+ * SDKs do not have to dereference the response handle for the four
+ * highest-traffic headers. Each returns NULL (or -1 for retry-after) when
+ * either:
+ *   • the error has no wire response (Transport / Client / Configuration); or
+ *   • the wire response did not carry that header.
+ * Borrowed UTF-8, valid until the error is freed. */
 const char *cosmos_error_activity_id(const cosmos_error_t *e);
 const char *cosmos_error_session_token(const cosmos_error_t *e);
 const char *cosmos_error_etag(const cosmos_error_t *e);
-/* retry_after: -1 if not present; otherwise milliseconds. */
 int64_t     cosmos_error_retry_after_ms(const cosmos_error_t *e);
 
-/* Predicates — flat namespace on cosmos_error_t for caller ergonomics. As of
- * PR #4442, the equivalent helpers on the Rust side live on the inner
- * azure_data_cosmos::CosmosStatus type (invoked as `err.status().is_*()`),
- * not directly on Error. The wrapper hides that detail: every predicate below
- * forwards internally to the corresponding CosmosStatus method, returning
- * false for errors that have no associated status (rare — most Client / Config
- * errors still carry a synthetic status). */
-bool cosmos_error_is_transient(const cosmos_error_t *e);
-bool cosmos_error_is_throttled(const cosmos_error_t *e);
-bool cosmos_error_is_not_found(const cosmos_error_t *e);
-bool cosmos_error_is_conflict(const cosmos_error_t *e);
-bool cosmos_error_is_precondition_failed(const cosmos_error_t *e);
-bool cosmos_error_is_timeout(const cosmos_error_t *e);
-bool cosmos_error_is_gone(const cosmos_error_t *e);
-/* True iff Kind == Service (i.e. the error originated from a non-2xx HTTP
- * response from the gateway, as opposed to client / transport / config
- * failures). Mirrors CosmosStatus::is_service_error. */
-bool cosmos_error_is_service_error(const cosmos_error_t *e);
+/* Raw service-error response body, sourced from `cosmos_error_response(e)`.
+ * Returns {NULL, 0} when there is no wire response. */
+cosmos_bytes_view_t cosmos_error_response_body(const cosmos_error_t *e);
+
+/* Diagnostics for the request that produced this error. Returns a NEW handle
+ * that must be freed via cosmos_diagnostics_free. Returns NULL when no
+ * diagnostics were attached (e.g. some Configuration / construction-time
+ * errors). Mirrors `CosmosError::diagnostics`. */
+cosmos_diagnostics_t *cosmos_error_diagnostics(const cosmos_error_t *e);
+
+/* Backtrace — rate-limited rendered string (Option<Arc<str>> on the Rust
+ * side). Returns NULL when no backtrace was captured (e.g. capture budget
+ * exhausted, or backtraces disabled). Capture / rendering rate is bounded by
+ * `cosmos_set_backtrace_options` — see §6.4. */
+const char *cosmos_error_backtrace(const cosmos_error_t *e);
+
+/* Predicates — flat namespace on cosmos_error_t for caller ergonomics. Each
+ * forwards internally to the corresponding `err.status().is_*()` method on
+ * [`CosmosStatus`](../src/error/cosmos_status.rs). The set below mirrors the
+ * predicates actually implemented on the merged CosmosStatus; consult that
+ * file for the exact decision rules per status / sub-status combination. */
+bool cosmos_error_is_success(const cosmos_error_t *e);              /* status in 2xx */
+bool cosmos_error_is_throttled(const cosmos_error_t *e);            /* 429 */
+bool cosmos_error_is_not_found(const cosmos_error_t *e);            /* 404 */
+bool cosmos_error_is_conflict(const cosmos_error_t *e);             /* 409 */
+bool cosmos_error_is_precondition_failed(const cosmos_error_t *e);  /* 412 */
+bool cosmos_error_is_timeout(const cosmos_error_t *e);              /* 408 + CLIENT_OPERATION_TIMEOUT */
+bool cosmos_error_is_gone(const cosmos_error_t *e);                 /* 410 */
+bool cosmos_error_is_bad_request(const cosmos_error_t *e);          /* 400 */
+bool cosmos_error_is_unauthorized(const cosmos_error_t *e);         /* 401 */
+bool cosmos_error_is_forbidden(const cosmos_error_t *e);            /* 403 */
+bool cosmos_error_is_service_unavailable(const cosmos_error_t *e);  /* 503 (excluding transport-generated) */
+bool cosmos_error_is_transient(const cosmos_error_t *e);            /* 408 / 429 / 503 family */
+bool cosmos_error_is_write_forbidden(const cosmos_error_t *e);              /* 403 / WRITE_FORBIDDEN */
+bool cosmos_error_is_read_session_not_available(const cosmos_error_t *e);   /* 404 / READ_SESSION_NOT_AVAILABLE */
+bool cosmos_error_is_partition_key_range_gone(const cosmos_error_t *e);     /* 410 / PARTITION_KEY_RANGE_GONE */
+bool cosmos_error_is_transport_generated_503(const cosmos_error_t *e);      /* synthetic 503 / TRANSPORT_GENERATED_503 */
 
 /* Free a cosmos_error_t obtained from cosmos_completion_take_error or from a
  * synchronous `out_error` slot. Errors borrowed from a completion via
@@ -698,28 +711,41 @@ void cosmos_error_free(cosmos_error_t *e);
 
 **Wrapper does NOT construct `cosmos_error_t`.** Errors are only ever *received* from the driver; no `cosmos_error_create_*` API is exposed.
 
-**Synthetic sub-status codes** for client-side failures (see PR #4442 for the authoritative list, e.g. `CLIENT_OPERATION_TIMEOUT = 20008`, `CLOSED_CLIENT = 20912`, transport `20010..=20015`, serialization `20020..=20021`, configuration `20030`, authentication `20402`) are surfaced verbatim through `cosmos_error_sub_status` — the wrapper does not re-number them.
+**Synthetic sub-status codes** for client-side / transport / serialization failures are surfaced verbatim through `cosmos_error_sub_status` — the wrapper does not re-number them. Authoritative names + values live on [`SubStatusCode`](../src/error/cosmos_status.rs) in the driver. The currently-defined `20xxx` set is:
+>
+> - `TRANSPORT_GENERATED_503 = 20003` (transport-synthesized 503 in the response pipeline)
+> - `CLIENT_OPERATION_TIMEOUT = 20008` (end-to-end deadline exceeded on the client)
+> - `TRANSPORT_CONNECTION_FAILED = 20010`
+> - `TRANSPORT_IO_FAILED = 20011`
+> - `TRANSPORT_DNS_FAILED = 20012`
+> - `TRANSPORT_BODY_READ_FAILED = 20014`
+> - `TRANSPORT_HTTP2_INCOMPATIBLE = 20015`
+> - `SERIALIZATION_RESPONSE_BODY_INVALID = 20020`
+> - `AUTHENTICATION_TOKEN_ACQUISITION_FAILED = 20402`
+>
+> Plus the `20912` "closed client" value the driver currently displays without a `pub const` (tracked in §9 Q17 below as a driver-side cleanup before the wrapper re-exports it). Earlier drafts of this spec listed `TRANSPORT_REQUEST_TIMEOUT`, `TRANSPORT_RESPONSE_TIMEOUT`, `TRANSPORT_RESPONSE_BODY_FAILED`, `TRANSPORT_TLS_FAILURE`, `SERIALIZATION_REQUEST_FAILED`, and `CONFIGURATION_INVALID` — those names are **not** on the merged `SubStatusCode` and have been removed; if a wrapper-side consumer needs a code for any of those concepts, it must be added to the driver first and then re-exported.
 
-**Substatus codes are emitted as named C constants in `azurecosmosdriver.h`.** Per analogrelay's review feedback on this spec, language-binding authors should not have to hand-transcribe the synthetic substatus integers into their own SDK in order to switch on them — that is fragile and silently rots when the driver adds new variants. The wrapper therefore emits the **full** synthetic substatus set as `#define` constants (or a `cosmos_substatus_t` enum, whichever cbindgen produces cleanly for a `pub const` group of `i32` literals) in the generated header, sourced from a single Rust module that mirrors the driver's `SubStatusCode` constants 1:1:
+**Substatus codes are emitted as named C constants in `azurecosmosdriver.h`.** Per analogrelay's review feedback on this spec, language-binding authors should not have to hand-transcribe the synthetic substatus integers into their own SDK in order to switch on them — that is fragile and silently rots when the driver adds new variants. The wrapper therefore emits the **full** synthetic substatus set as `#define` constants (or a `cosmos_substatus_t` enum, whichever cbindgen produces cleanly for a `pub const` group of `u16` literals) in the generated header, sourced from a single Rust module that mirrors the driver's `SubStatusCode` constants 1:1:
 
 ```rust
-// src/error/substatus_constants.rs (wrapper-side, codegen-fed into the header)
-pub const COSMOS_SUB_STATUS_CLIENT_OPERATION_TIMEOUT:      i32 = 20008;
-pub const COSMOS_SUB_STATUS_CLOSED_CLIENT:                 i32 = 20912;
-pub const COSMOS_SUB_STATUS_TRANSPORT_CONNECTION_FAILED:   i32 = 20010;
-pub const COSMOS_SUB_STATUS_TRANSPORT_REQUEST_TIMEOUT:     i32 = 20011;
-pub const COSMOS_SUB_STATUS_TRANSPORT_RESPONSE_TIMEOUT:    i32 = 20012;
-pub const COSMOS_SUB_STATUS_TRANSPORT_RESPONSE_BODY_FAILED: i32 = 20013;
-pub const COSMOS_SUB_STATUS_TRANSPORT_DNS_FAILURE:         i32 = 20014;
-pub const COSMOS_SUB_STATUS_TRANSPORT_TLS_FAILURE:         i32 = 20015;
-pub const COSMOS_SUB_STATUS_SERIALIZATION_REQUEST_FAILED:  i32 = 20020;
-pub const COSMOS_SUB_STATUS_SERIALIZATION_RESPONSE_FAILED: i32 = 20021;
-pub const COSMOS_SUB_STATUS_CONFIGURATION_INVALID:         i32 = 20030;
-pub const COSMOS_SUB_STATUS_AUTHENTICATION_FAILED:         i32 = 20402;
-// ... every named SubStatusCode variant the driver exposes
+// src/error/substatus_constants.rs (wrapper-side, codegen-fed into the header).
+// Each constant pulls its value from the driver-side const so there is a single
+// source of truth and the CI check in §2.2 catches drift.
+use azure_data_cosmos_driver::error::SubStatusCode;
+pub const COSMOS_SUB_STATUS_TRANSPORT_GENERATED_503:           u16 = SubStatusCode::TRANSPORT_GENERATED_503.value();
+pub const COSMOS_SUB_STATUS_CLIENT_OPERATION_TIMEOUT:          u16 = SubStatusCode::CLIENT_OPERATION_TIMEOUT.value();
+pub const COSMOS_SUB_STATUS_TRANSPORT_CONNECTION_FAILED:       u16 = SubStatusCode::TRANSPORT_CONNECTION_FAILED.value();
+pub const COSMOS_SUB_STATUS_TRANSPORT_IO_FAILED:               u16 = SubStatusCode::TRANSPORT_IO_FAILED.value();
+pub const COSMOS_SUB_STATUS_TRANSPORT_DNS_FAILED:              u16 = SubStatusCode::TRANSPORT_DNS_FAILED.value();
+pub const COSMOS_SUB_STATUS_TRANSPORT_BODY_READ_FAILED:        u16 = SubStatusCode::TRANSPORT_BODY_READ_FAILED.value();
+pub const COSMOS_SUB_STATUS_TRANSPORT_HTTP2_INCOMPATIBLE:      u16 = SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE.value();
+pub const COSMOS_SUB_STATUS_SERIALIZATION_RESPONSE_BODY_INVALID: u16 = SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.value();
+pub const COSMOS_SUB_STATUS_AUTHENTICATION_TOKEN_ACQUISITION_FAILED: u16 = SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED.value();
+// Service-error substatus mirrors (LSN/session/etc.) emitted under the
+// same naming rule from the corresponding pub const SubStatusCode definitions.
 ```
 
-The cbindgen `export.item_types` policy in §2.2 explicitly includes `"constants"` so these emit as `#define` (C) / `static const` (C++) in `azurecosmosdriver.h`. The same Rust module is the single source of truth — a CI check (extending the header-diff check in §2.2) compares the wrapper's `COSMOS_SUB_STATUS_*` constants against the driver's `SubStatusCode` variants by name and fails if any driver-side variant is missing a wrapper-side mirror. This lets language-binding generators (the .NET `T4` template, the Java `cosmos-driver-bindgen` step, etc.) read the C header and emit language-native constants without re-typing integer literals. **Service-error HTTP-status substatus codes** (e.g. `LSN_IN_SESSION_TOKEN_IS_HIGHER = 1002`, `READ_SESSION_NOT_AVAILABLE = 1006`) follow the same emission rule.
+The cbindgen `export.item_types` policy in §2.2 explicitly includes `"constants"` so these emit as `#define` (C) / `static const` (C++) in `azurecosmosdriver.h`. The same Rust module is the single source of truth — a CI check (extending the header-diff check in §2.2) compares the wrapper's `COSMOS_SUB_STATUS_*` constants against the driver's `SubStatusCode` variants by name and fails if any driver-side variant is missing a wrapper-side mirror. This lets language-binding generators (the .NET `T4` template, the Java `cosmos-driver-bindgen` step, etc.) read the C header and emit language-native constants without re-typing integer literals. **Service-error HTTP-status substatus codes** (e.g. `READ_SESSION_NOT_AVAILABLE = 1002`, `PARTITION_KEY_RANGE_GONE = 1002`) follow the same emission rule.
 
 Status-code main values follow the same approach via the existing `cosmos_error_code_t` enum (§3.5.1) plus the standard HTTP status codes the wrapper surfaces through `cosmos_error_status_code(e)` — host SDKs that switch on HTTP status either use their language-standard `HttpStatusCode` enum or define their own constants from `cosmos_error_status_code`'s `uint16_t` return; the wrapper does **not** re-export the standard HTTP code values as `COSMOS_HTTP_*` constants to avoid polluting the header with values that are already standardized across every language.
 
@@ -760,24 +786,17 @@ const cosmos_operation_handle_t *cosmos_completion_op_handle(const cosmos_comple
  * suppressed via include_error_details = false. Population rules:
  *   • outcome = OK         → SUCCESS (0).
  *   • outcome = CANCELLED  → COSMOS_ERROR_CODE_OPERATION_CANCELLED (4012).
- *   • outcome = ERROR and rich error was captured (include_error_details =
- *     true, the default) → derived from the inner azure_data_cosmos::Error:
- *       - Kind::Service        → the HTTP status code (e.g. 404, 409, 429,
- *                                 500). When the status falls in the
- *                                 Cosmos-specific 2xxx band the wrapper uses
- *                                 the existing 2xxx assignment instead.
- *       - Kind::Transport      → COSMOS_ERROR_CODE_TRANSPORT_FAILURE (per
- *                                 §3.5.1, mapped from the inner sub-status).
- *       - Kind::Client         → 2008 for CLIENT_OPERATION_TIMEOUT, otherwise
- *                                 the closest §3.5.1 plumbing/cosmos code.
- *       - Kind::Authentication → corresponding 1xxx auth code.
- *       - Kind::Serialization  → corresponding 1xxx conversion code.
- *       - Kind::Configuration  → 3xxx FFI plumbing code.
- *   • outcome = ERROR and rich error was suppressed → the SAME code as above
- *     — the wrapper preserves the kind-derived status even when it does not
- *     materialize the full cosmos_error_t payload. Host SDKs that only care
- *     about the coarse code can therefore disable include_error_details
- *     without losing routing information. */
+ *   • outcome = ERROR      → derived from the inner CosmosError's
+ *     (status, sub_status) pair per the routing table in §6.3. Examples:
+ *       — a wire error with HTTP 429 → COSMOS_ERROR_CODE_THROTTLED;
+ *       — a wire error with HTTP 404 → COSMOS_ERROR_CODE_NOT_FOUND;
+ *       — a synthetic 503 with sub_status TRANSPORT_GENERATED_503 →
+ *         COSMOS_ERROR_CODE_TRANSPORT_FAILURE;
+ *       — a synthetic 408 with sub_status CLIENT_OPERATION_TIMEOUT →
+ *         COSMOS_ERROR_CODE_TIMEOUT.
+ *     The wrapper preserves the same routing when include_error_details =
+ *     false, so host SDKs that only care about the coarse code can disable
+ *     rich capture without losing routing information. */
 cosmos_error_code_t cosmos_completion_status(const cosmos_completion_t *c);
 
 /* True iff the caller invoked cosmos_operation_handle_cancel on this
@@ -1522,7 +1541,7 @@ If a host SDK needs to resume a query from a continuation token (the typical EPK
  * by collapsing the Option<CosmosResponse> returned by the underlying
  * execute_operation (src/driver/cosmos_driver.rs:1242,1246). If the inner
  * future yields Ok(None) (a feed page with no data on a non-feed request
- * path) the driver returns `ErrorKind::Other` in release builds and
+ * path) the driver returns a generic CosmosError in release builds and
  * debug_asserts in debug; the wrapper detects this exact case and
  * re-classifies the completion as outcome = ERROR with status =
  * COSMOS_ERROR_CODE_FEED_EXHAUSTED (4007), preserving the rich error
@@ -1683,7 +1702,7 @@ cosmos_diagnostics_t *cosmos_response_diagnostics(const cosmos_response_t *r);
 void cosmos_response_free(cosmos_response_t *r);
 ```
 
-The error-payload accessors (`cosmos_error_kind`, `cosmos_error_status_code`, `cosmos_error_sub_status`, `cosmos_error_is_throttled`, etc.) are defined in §3.5.2 and live on `cosmos_error_t` — they are **not** redundantly re-exposed on `cosmos_response_t`. A completion whose `outcome == OK` yields a `cosmos_response_t` whose `cosmos_response_status_code` may still be a Cosmos-success status (200, 201, 204, ...); a completion whose `outcome == ERROR` yields a `cosmos_error_t` whose accessors expose the equivalent service-error fields.
+The error-payload accessors (`cosmos_error_status_code`, `cosmos_error_sub_status`, `cosmos_error_is_throttled`, etc.) are defined in §3.5.2 and live on `cosmos_error_t` — they are **not** redundantly re-exposed on `cosmos_response_t`. A completion whose `outcome == OK` yields a `cosmos_response_t` whose `cosmos_response_status_code` may still be a Cosmos-success status (200, 201, 204, ...); a completion whose `outcome == ERROR` yields a `cosmos_error_t` whose accessors expose the equivalent service-error fields.
 
 ### 4.8 Diagnostics (`src/handles/diagnostics.rs`)
 
@@ -1774,53 +1793,76 @@ Each line is intentionally a checklist item rather than prose — Phase 0 accept
 
 ## 6. Error Semantics
 
-The driver moved to a structured error type in PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442): `azure_data_cosmos::Result<T>` with a rich `Error` carrying a `Kind` enum (Service / Transport / Client / Authentication / Serialization / Configuration; `#[non_exhaustive]`), typed accessors (status, sub_status, headers, diagnostics, response body, backtrace, source), and predicates (`is_throttled`, `is_not_found`, `is_conflict`, `is_precondition_failed`, `is_timeout`, `is_gone`, `is_transient`). Synthetic sub-status codes (e.g. `CLIENT_OPERATION_TIMEOUT = 20008`, `CLOSED_CLIENT = 20912`, transport `20010..=20015`, serialization `20020..=20021`, configuration `20030`, authentication `20402`) make every client-side failure observable through the same typed surface as service errors.
+The driver moved to a structured error type in PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442): [`azure_data_cosmos_driver::error::CosmosError`](../src/error/mod.rs) plus `Result<T> = std::result::Result<T, CosmosError>`. `CosmosError` is monomorphic — it carries a [`CosmosStatus`](../src/error/cosmos_status.rs) (HTTP status code + optional [`SubStatusCode`](../src/error/cosmos_status.rs)), the originating [`CosmosResponse`](../src/models/cosmos_response.rs) when a wire response was received, an `Arc<DiagnosticsContext>`, a human message, an optional `source` chain, and an optional rate-limited `Arc<str>` backtrace. There is no `Kind` enum on the merged type; failure-class taxonomy is encoded entirely through the `(status_code, sub_status)` pair. Synthetic sub-status codes (e.g. `TRANSPORT_GENERATED_503 = 20003`, `CLIENT_OPERATION_TIMEOUT = 20008`, transport `20010..=20015`, serialization `20020`, authentication `20402`) make every client-side failure observable through the same typed surface as service errors.
 
 The wrapper's contract is shaped by that decision:
 
 ### 6.1 Return-type mapping
 
 - `cosmos_driver_submit` binds to `CosmosDriver::execute_singleton_operation` (`src/driver/cosmos_driver.rs:1281`), which returns `Result<CosmosResponse>` by collapsing the `Option<CosmosResponse>` returned by `execute_operation` (`src/driver/cosmos_driver.rs:1242,1246`). The submission returns a `cosmos_operation_handle_t*`; the eventual completion delivers one of three outcomes:
-  - **`Ok(CosmosResponse)`** → return `COSMOS_ERROR_CODE_SUCCESS`, populate `*out_response`. The response may itself carry a Cosmos non-success HTTP status (404, 409, 412, 429, ...) only when the driver's policy explicitly does not error on it — see §6.2 below.
-  - **`Err(azure_data_cosmos::Error)`** → return the mapped `cosmos_error_code_t` (see §6.3), write the structured `cosmos_error_t` into `ctx`, leave `*out_response = NULL`. The operation handle is **not** consumed (see §4.6.3 point 4).
-  - **`execute_singleton_operation` is never expected to surface the `Ok(None)` case**; if the underlying operation is mis-categorized and the driver hands back `None`, the wrapper returns `COSMOS_ERROR_CODE_FEED_EXHAUSTED` (4007) for diagnosability rather than fabricating an empty response.
+  - **`Ok(CosmosResponse)`** → completion outcome = OK, `cosmos_completion_take_response` returns the populated `cosmos_response_t`. The response may itself carry a Cosmos non-success HTTP status (404, 409, 412, 429, ...) only when the driver's policy explicitly does not error on it — see §6.2 below.
+  - **`Err(CosmosError)`** → completion outcome = ERROR, `cosmos_completion_status` returns the mapped `cosmos_error_code_t` (see §6.3), `cosmos_completion_take_error` returns the structured `cosmos_error_t`. The operation handle is consumed regardless (see §4.6.3).
+  - **`execute_singleton_operation` is never expected to surface the `Ok(None)` case**; if the underlying operation is mis-categorized and the driver hands back `None`, the wrapper synthesizes a completion with outcome = ERROR and `cosmos_completion_status = COSMOS_ERROR_CODE_FEED_EXHAUSTED` (4007) for diagnosability rather than fabricating an empty response.
 
 - `cosmos_driver_submit_pager` binds to `execute_operation` directly and surfaces `Ok(None)` as `COSMOS_ERROR_CODE_FEED_EXHAUSTED` on the *pager* completion, not the initial submit completion — see Phase 8.
 
 ### 6.2 Service errors vs. successful "non-2xx" responses
 
-The driver classifies *every* non-2xx HTTP status that the gateway returns as an `Error` of `Kind::Service` (this is a behavior change from the old wrapper, which returned 404 / 409 / 412 / 429 as a successful `CosmosResponse`). Accordingly:
+The driver classifies *every* non-2xx HTTP status that the gateway returns as a `CosmosError` (this is a behavior change from the old wrapper, which returned 404 / 409 / 412 / 429 as a successful `CosmosResponse`). Accordingly:
 
-- The wrapper does **not** return 404 / 409 / 412 / 429 as `COSMOS_ERROR_CODE_SUCCESS` with a non-2xx `cosmos_response_status_code`. Those surface as `Err` with `cosmos_error_kind() == COSMOS_ERROR_KIND_SERVICE` and the appropriate `cosmos_error_status_code()`.
+- The wrapper does **not** return 404 / 409 / 412 / 429 as `COSMOS_ERROR_CODE_SUCCESS` with a non-2xx `cosmos_response_status_code`. Those surface as completion outcome = ERROR with `cosmos_error_is_from_wire(err) == true` and the appropriate `cosmos_error_status_code(err)`.
 - Host SDKs implement "expected 404" semantics by checking `cosmos_error_is_not_found(err)`; "expected 412 / 409" via `cosmos_error_is_precondition_failed(err)` / `cosmos_error_is_conflict(err)`; 429 retry-after via `cosmos_error_is_throttled(err)` + `cosmos_error_retry_after_ms(err)`. See §3.5.2 for the full accessor surface.
-- The auth / metadata initialization path can still surface `azure_core::Error::HttpResponse` errors before the operation is dispatched (`src/driver/cosmos_driver.rs:1104-1114`); those propagate through the same `Kind::Authentication` / `Kind::Service` channels.
+- The auth / metadata initialization path can still surface auth-bootstrap failures before the operation is dispatched (`src/driver/cosmos_driver.rs:1104-1114`); those propagate through the same `CosmosError` channel — typically with `cosmos_error_is_from_wire(err) == false` and a synthetic `CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED` carrying sub-status `20402`.
 
 ### 6.3 `cosmos_error_code_t` ↔ `cosmos_error_t` mapping
 
-When `execute_operation` returns `Err(Error)`, the wrapper picks a coarse `cosmos_error_code_t` based on `Kind` *and* always populates the rich `cosmos_error_t` for full detail:
+When `execute_operation` returns `Err(CosmosError)`, the wrapper picks a coarse `cosmos_error_code_t` based on the `(status_code, sub_status)` pair *and* always populates the rich `cosmos_error_t` for full detail. The routing rule below is *not* a strict pattern-match — the wrapper checks the more specific conditions (sub-status presence, synthetic vs. wire) first, then falls through to the generic HTTP-status branch:
 
-| `Kind` | Coarse `cosmos_error_code_t` |
+| Condition (matched top-to-bottom) | Coarse `cosmos_error_code_t` |
 |---|---|
-| `Kind::Service` | A code from the existing `2001..=2999` Cosmos range, chosen by `status_code` (e.g. 429 → `COSMOS_ERROR_CODE_THROTTLED`, 404 → `COSMOS_ERROR_CODE_NOT_FOUND`, 409 → `COSMOS_ERROR_CODE_CONFLICT`, 412 → `COSMOS_ERROR_CODE_PRECONDITION_FAILED`); unmapped service statuses fall through to `COSMOS_ERROR_CODE_SERVICE_ERROR`. |
-| `Kind::Transport` | `COSMOS_ERROR_CODE_TRANSPORT_ERROR` |
-| `Kind::Client` | `COSMOS_ERROR_CODE_CLIENT_ERROR` (covers operation-timeout, closed-client, generic client-side failures) |
-| `Kind::Authentication` | `COSMOS_ERROR_CODE_AUTHENTICATION_FAILED` |
-| `Kind::Serialization` | `COSMOS_ERROR_CODE_SERIALIZATION_FAILED` |
-| `Kind::Configuration` | `COSMOS_ERROR_CODE_CONFIGURATION_ERROR` |
-| any unknown variant introduced after this spec | `COSMOS_ERROR_CODE_DRIVER_ERROR` (sentinel for `#[non_exhaustive]` future-proofing); `cosmos_error_kind() == COSMOS_ERROR_KIND_UNKNOWN` |
+| `is_from_wire == false` and `sub_status == AUTHENTICATION_TOKEN_ACQUISITION_FAILED (20402)` | `COSMOS_ERROR_CODE_AUTHENTICATION_FAILED` |
+| `is_from_wire == false` and `sub_status ∈ 20010..=20015 ∪ {20003}` (transport synthesized) | `COSMOS_ERROR_CODE_TRANSPORT_FAILURE` |
+| `is_from_wire == false` and `sub_status == CLIENT_OPERATION_TIMEOUT (20008)` | `COSMOS_ERROR_CODE_CLIENT_OPERATION_TIMEOUT` |
+| `is_from_wire == false` and `sub_status == SERIALIZATION_RESPONSE_BODY_INVALID (20020)` | `COSMOS_ERROR_CODE_SERIALIZATION_FAILED` |
+| `is_from_wire == false` (everything else — generic synthetic) | `COSMOS_ERROR_CODE_CLIENT_ERROR` |
+| Wire status 429 | `COSMOS_ERROR_CODE_THROTTLED` |
+| Wire status 404 | `COSMOS_ERROR_CODE_NOT_FOUND` |
+| Wire status 409 | `COSMOS_ERROR_CODE_CONFLICT` |
+| Wire status 412 | `COSMOS_ERROR_CODE_PRECONDITION_FAILED` |
+| Wire status 408 | `COSMOS_ERROR_CODE_TIMEOUT` |
+| Wire status 410 | `COSMOS_ERROR_CODE_GONE` |
+| Wire status 401 | `COSMOS_ERROR_CODE_UNAUTHORIZED` |
+| Wire status 403 (incl. `WRITE_FORBIDDEN`) | `COSMOS_ERROR_CODE_FORBIDDEN` |
+| Wire status 400 | `COSMOS_ERROR_CODE_BAD_REQUEST` |
+| Wire status 503 (driver-classified, **not** transport-synthesized) | `COSMOS_ERROR_CODE_SERVICE_UNAVAILABLE` |
+| Any other wire status (5xx, unmapped 4xx) | `COSMOS_ERROR_CODE_SERVICE_ERROR` |
 
-The coarse code is **only** for the common dispatch path (switch in C, "expected vs unexpected" branch). All structured detail — including the synthetic sub-status codes — lives on `cosmos_error_t` and is the source of truth.
+The coarse code is **only** for the common dispatch path (switch in C, "expected vs unexpected" branch). All structured detail — including the synthetic sub-status codes — lives on `cosmos_error_t` and is the source of truth. Note in particular that the wrapper does **not** introduce a `COSMOS_ERROR_CODE_CONFIGURATION_ERROR` distinct from `COSMOS_ERROR_CODE_CLIENT_ERROR`: the merged driver does not surface a configuration-vs-client distinction at the error-type level, so the wrapper does not invent one. Configuration-time failures (invalid endpoint URL, missing credential parts, etc.) surface as the pre-flight 4014 / 4015 codes from §3.5.1 plus the rich `cosmos_error_t` with `is_from_wire == false`.
 
 ### 6.4 Backtrace rate-limit knobs
 
-The driver's `Error` carries an optional backtrace whose capture rate **and** rendering rate are independently bounded — capture (collecting the raw stack) and resolution (symbolicating it) are different operations with different costs. The wrapper mirrors **both** knobs:
+The driver's `CosmosError` carries an optional backtrace whose capture rate **and** rendering rate are independently bounded — capture (collecting the raw stack) and resolution (symbolicating it) are different operations with different costs. The merged driver exposes both knobs as a **process-global** function:
 
-| Knob | Per-driver setter | Per-runtime default | Environment override |
-|---|---|---|---|
-| Backtrace **captures** per second (bounds how often a raw backtrace is grabbed inside an `Error`) | `cosmos_driver_set_max_error_backtrace_captures_per_second(driver, double rate)` | `cosmos_runtime_set_max_error_backtrace_captures_per_second(runtime, double rate)` | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` |
-| Backtrace **resolutions** per second (bounds how often a captured backtrace is symbolicated for `cosmos_error_backtrace`) | `cosmos_driver_set_max_error_backtrace_resolutions_per_second(driver, double rate)` | `cosmos_runtime_set_max_error_backtrace_resolutions_per_second(runtime, double rate)` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` |
+```rust
+pub fn azure_data_cosmos_driver::error::set_backtrace_options(BacktraceOptions {
+    max_captures_per_second: u32,    // 0 disables capture
+    max_resolutions_per_second: u32, // 0 disables resolution
+});
+```
 
-Each setter maps 1:1 to the corresponding driver method introduced in #4442 (`CosmosDriverBuilder::with_max_error_backtrace_captures_per_second` / `…_resolutions_per_second` and the `CosmosDriverRuntimeBuilder` equivalents). The environment variables are honored as-is by the driver — the wrapper does not intercept them. Consult the driver's `Error` module for the authoritative default values.
+The limits are process-global atomics inside the error-construction path (see [`src/error/backtrace.rs`](../src/error/backtrace.rs)); they are *not* attached to `CosmosDriverRuntimeBuilder` or any driver instance, because per-runtime state on the hot error-construction path is not viable. The wrapper therefore exposes a single module-scope C entry point that mirrors the driver function 1:1:
+
+```c
+/* Process-global. Last-writer-wins semantics across concurrent calls. Pass
+ * 0 to either parameter to disable that knob. Environment-derived defaults
+ * (RUST_LIB_BACKTRACE, RUST_BACKTRACE, AZURE_COSMOS_BACKTRACE_*) are
+ * **overridden** for the rest of the process once this is called — see the
+ * `set_backtrace_options` Rust docs for the precedence rule. */
+void cosmos_set_backtrace_options(uint32_t max_captures_per_second,
+                                  uint32_t max_resolutions_per_second);
+```
+
+There are no per-runtime / per-driver setters — host SDKs that need to gate backtraces per workload should do so at the host-SDK layer, not via the FFI.
 
 ---
 
@@ -1872,15 +1914,15 @@ Each phase is independently shippable, has explicit acceptance criteria, and end
 - `cosmos_cq_create` / `_free` / `_wait` / `_try_wait` / `_wait_batch` / `_wait_writable` / `_shutdown` / `_state`.
 - `cosmos_completion_*` accessors (outcome / status / user_data / op_handle / was_cancel_requested / take_response / take_error / response / error / free).
 - `cosmos_operation_handle_cancel` / `_state` / `_free`.
-- Error-handling C tests (null-pointer rejection, error-detail string lifecycle, `cosmos_error_*` accessor coverage, `Kind::Unknown` future-proofing fallback).
+- Error-handling C tests (null-pointer rejection, error-detail string lifecycle, `cosmos_error_*` accessor coverage, forward-compat behavior for sub-status values introduced after this spec).
 
-**Done when:** Calling APIs with `NULL` runtime, `NULL` queue, etc. produce the right pre-flight `cosmos_error_code_t`; submitting and dequeuing a synthetic completion round-trips `user_data` and the rich error payload; every `cosmos_error_kind_t` variant + every predicate is exercised by at least one synthetic test (no emulator needed).
+**Done when:** Calling APIs with `NULL` runtime, `NULL` queue, etc. produce the right pre-flight `cosmos_error_code_t`; submitting and dequeuing a synthetic completion round-trips `user_data` and the rich error payload; every `cosmos_error_is_*` predicate is exercised by at least one synthetic test (no emulator needed).
 
 ### Phase 2 — Runtime *(Goal: a single shared `CosmosDriverRuntime` reachable from C)*
 
 - Implement `runtime/tokio.rs`: owns a `Runtime` **and** an `Arc<CosmosDriverRuntime>` built via `CosmosDriverRuntimeBuilder::new().build()`.
 - Expose `cosmos_runtime_builder_*` mirror of `CosmosDriverRuntimeBuilder` (workload id, correlation id, user-agent suffix, connection pool options, operation-option defaults, worker thread count, **Tokio thread-name prefix** introduced in #4452, `allow_emulator_invalid_certs` — see §4.1 / §4.2 on why this lives on the runtime and not on `DriverOptions`), plus `cosmos_runtime_builder_new` / `_free` / `_build` and `cosmos_runtime_free`.
-- Expose `cosmos_runtime_set_max_error_backtrace_captures_per_second` and `cosmos_runtime_set_max_error_backtrace_resolutions_per_second` per §6.4.
+- Expose `cosmos_set_backtrace_options(max_captures_per_second, max_resolutions_per_second)` per §6.4 (process-global, no per-runtime variant on the merged driver).
 - `c_tests/runtime_lifecycle.c`: create/free runtime in loop; submit-and-drain a synthetic op against a `cosmos_cq_t` from multiple producer threads with a single consumer; verify clean shutdown via `cosmos_cq_shutdown` + drain.
 
 **Done when:** Multiple producer threads can submit against one `cosmos_cq_t` while a single consumer drains, and `cosmos_cq_shutdown` cleanly cancels in-flight ops and drains the queue.
@@ -1894,7 +1936,7 @@ Each phase is independently shippable, has explicit acceptance criteria, and end
 - `cosmos_driver_get_or_create_blocking` — synchronous convenience for startup-init paths (submits to a private internal queue and drains one completion). Cache-hit advisory surfaces via the return code + `out_error` slot.
 - `cosmos_driver_initialize_submit` for the explicit re-initialization path (§4.4). Normally unnecessary because `_get_or_create_*` already awaits `initialize()`.
 - `cosmos_response_take_driver` (§4.4) extracts the driver handle from the degenerate response delivered by `cosmos_driver_get_or_create_submit`.
-- `cosmos_driver_set_max_error_backtrace_captures_per_second` and `cosmos_driver_set_max_error_backtrace_resolutions_per_second` per §6.4.
+- Backtrace tuning ships in Phase 2 (§6.4 is process-global, not per-driver); no per-driver backtrace setter exists.
 - `cosmos_driver_free`.
 - `c_tests/driver_init.c`: emulator-backed test that creates a driver (via `_blocking` for setup ergonomics), then runs a second `_submit` against the same endpoint with non-NULL `options` and asserts the cache-hit advisory fires on the delivered completion (`status == 5001`, `outcome == OK`, advisory rich error present).
 
@@ -1934,7 +1976,7 @@ Each phase is independently shippable, has explicit acceptance criteria, and end
 - `c_tests/item_crud.c`: create / read / replace / upsert / delete / patch against the emulator, driven by a single shared `cosmos_cq_t` and a dedicated receive-loop helper thread that translates completions into per-call C condition-variable signals.
 - Cross-partition `read_all_items` / `query_items` / `batch` are **not** wired into `cosmos_driver_submit` in this phase — they belong to Phase 8 (pager) and Phase 9 (batch).
 
-**Done when:** Full single-item CRUD passes against the emulator; per §6.2, a 404 read-after-delete surfaces as a completion whose `outcome == ERROR` with `cosmos_error_kind() == COSMOS_ERROR_KIND_SERVICE`, `cosmos_error_status_code() == 404`, and `cosmos_error_is_not_found() == true` — **not** as `OK` with a 404 response.
+**Done when:** Full single-item CRUD passes against the emulator; per §6.2, a 404 read-after-delete surfaces as a completion whose `outcome == ERROR` with `cosmos_error_is_from_wire(err) == true`, `cosmos_error_status_code(err) == 404`, and `cosmos_error_is_not_found(err) == true` — **not** as `OK` with a 404 response.
 
 ### Phase 7 — Diagnostics surface *(Goal: language SDKs can log + emit OTel from C)*
 
