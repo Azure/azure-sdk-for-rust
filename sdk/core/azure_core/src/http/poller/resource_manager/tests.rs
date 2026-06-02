@@ -124,8 +124,8 @@ async fn new_poller_supports_async_pattern() {
         requests,
         vec![
             "https://example.com/resources/1?api-version=2024-01-01",
-            "https://example.com/operations/1",
-            "https://example.com/resources/1",
+            "https://example.com/operations/1?api-version=2024-01-01",
+            "https://example.com/resources/1?api-version=2024-01-01",
         ]
     );
 }
@@ -174,7 +174,9 @@ async fn new_poller_supports_body_pattern() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/2".parse().unwrap(),
+            "https://example.com/resources/2?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Put,
         ),
         None,
@@ -188,9 +190,9 @@ async fn new_poller_supports_body_pattern() {
     assert_eq!(
         requests,
         vec![
-            "https://example.com/resources/2",
-            "https://example.com/resources/2",
-            "https://example.com/resources/2",
+            "https://example.com/resources/2?api-version=2024-01-01",
+            "https://example.com/resources/2?api-version=2024-01-01",
+            "https://example.com/resources/2?api-version=2024-01-01",
         ]
     );
 }
@@ -315,7 +317,9 @@ async fn new_poller_supports_location_pattern() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/3".parse().unwrap(),
+            "https://example.com/resources/3?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Delete,
         ),
         None,
@@ -329,9 +333,9 @@ async fn new_poller_supports_location_pattern() {
     assert_eq!(
         requests,
         vec![
-            "https://example.com/resources/3",
-            "https://example.com/operations/3",
-            "https://example.com/resources/3",
+            "https://example.com/resources/3?api-version=2024-01-01",
+            "https://example.com/operations/3?api-version=2024-01-01",
+            "https://example.com/resources/3?api-version=2024-01-01",
         ]
     );
 }
@@ -384,7 +388,9 @@ async fn new_poller_async_pattern_no_location_uses_resource_url() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/5".parse().unwrap(),
+            "https://example.com/resources/5?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Post,
         ),
         None,
@@ -398,9 +404,9 @@ async fn new_poller_async_pattern_no_location_uses_resource_url() {
     assert_eq!(
         requests,
         vec![
-            "https://example.com/resources/5",
-            "https://example.com/operations/5",
-            "https://example.com/resources/5",
+            "https://example.com/resources/5?api-version=2024-01-01",
+            "https://example.com/operations/5?api-version=2024-01-01",
+            "https://example.com/resources/5?api-version=2024-01-01",
         ]
     );
 }
@@ -428,7 +434,9 @@ async fn new_poller_body_pattern_synchronous_completion() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/6".parse().unwrap(),
+            "https://example.com/resources/6?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Put,
         ),
         None,
@@ -445,8 +453,8 @@ async fn new_poller_body_pattern_synchronous_completion() {
     assert_eq!(
         requests,
         vec![
-            "https://example.com/resources/6",
-            "https://example.com/resources/6",
+            "https://example.com/resources/6?api-version=2024-01-01",
+            "https://example.com/resources/6?api-version=2024-01-01",
         ]
     );
 }
@@ -488,7 +496,9 @@ async fn new_poller_async_pattern_failed() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/7".parse().unwrap(),
+            "https://example.com/resources/7?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Delete,
         ),
         None,
@@ -497,7 +507,7 @@ async fn new_poller_async_pattern_failed() {
     let err = poller.await.unwrap_err();
     assert_eq!(
         err.to_string(),
-        "resource manager long-running operation failed"
+        "Resource Manager long-running operation failed"
     );
 }
 
@@ -538,7 +548,9 @@ async fn new_poller_async_pattern_poll_error() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/7".parse().unwrap(),
+            "https://example.com/resources/7?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Delete,
         ),
         None,
@@ -585,7 +597,9 @@ async fn new_poller_body_pattern_failed() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/8".parse().unwrap(),
+            "https://example.com/resources/8?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Patch,
         ),
         None,
@@ -632,7 +646,9 @@ async fn new_poller_body_pattern_poll_error() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/8".parse().unwrap(),
+            "https://example.com/resources/8?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Patch,
         ),
         None,
@@ -681,7 +697,9 @@ async fn new_poller_body_pattern_204_no_content() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/9".parse().unwrap(),
+            "https://example.com/resources/9?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Put,
         ),
         None,
@@ -694,9 +712,9 @@ async fn new_poller_body_pattern_204_no_content() {
     assert_eq!(
         requests,
         vec![
-            "https://example.com/resources/9",
-            "https://example.com/resources/9",
-            "https://example.com/resources/9",
+            "https://example.com/resources/9?api-version=2024-01-01",
+            "https://example.com/resources/9?api-version=2024-01-01",
+            "https://example.com/resources/9?api-version=2024-01-01",
         ]
     );
 }
@@ -739,7 +757,9 @@ async fn new_poller_location_pattern_failed() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/10".parse().unwrap(),
+            "https://example.com/resources/10?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Delete,
         ),
         None,
@@ -787,7 +807,9 @@ async fn new_poller_location_pattern_failed_with_provisioning_state() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/10".parse().unwrap(),
+            "https://example.com/resources/10?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Delete,
         ),
         None,
@@ -837,7 +859,9 @@ async fn new_poller_location_pattern_204_no_content() {
     let poller: Poller<ArmOperationStatus> = new_poller(
         pipeline_with(mock),
         Request::new(
-            "https://example.com/resources/11".parse().unwrap(),
+            "https://example.com/resources/11?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
             Method::Delete,
         ),
         None,
@@ -850,9 +874,9 @@ async fn new_poller_location_pattern_204_no_content() {
     assert_eq!(
         requests,
         vec![
-            "https://example.com/resources/11",
-            "https://example.com/operations/11",
-            "https://example.com/operations/11",
+            "https://example.com/resources/11?api-version=2024-01-01",
+            "https://example.com/operations/11?api-version=2024-01-01",
+            "https://example.com/operations/11?api-version=2024-01-01",
         ]
     );
 }
