@@ -1,4 +1,4 @@
-use super::{new_poller, AZURE_ASYNC_OPERATION, LOCATION};
+use super::{new_poller, AZURE_ASYNC_OPERATION, LOCATION, OPERATION_LOCATION};
 use crate::{
     http::poller::{PollerStatus, StatusMonitor},
     http::{
@@ -191,6 +191,77 @@ async fn new_poller_supports_body_pattern() {
             "https://example.com/resources/2",
             "https://example.com/resources/2",
             "https://example.com/resources/2",
+        ]
+    );
+}
+
+/// When the initial response has a relative `operation-location` header, the poll URL is resolved
+/// against the request URL and the final GET uses the original resource URL when no `location`
+/// header is present.
+#[tokio::test]
+async fn new_poller_supports_operation_location_pattern() {
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let calls = Arc::new(Mutex::new(0usize));
+    let requests_for_mock = requests.clone();
+    let calls_for_mock = calls.clone();
+    let mock = Arc::new(MockHttpClient::new(move |request| {
+        let requests = requests_for_mock.clone();
+        let calls = calls_for_mock.clone();
+        let url = request.url().to_string();
+        async move {
+            requests.lock().unwrap().push(url);
+            let mut call = calls.lock().unwrap();
+            *call += 1;
+
+            let response = match *call {
+                1 => {
+                    let mut headers = Headers::new();
+                    headers.insert(OPERATION_LOCATION, "/operations/4?api-version=2024-01-01");
+                    headers.insert(RETRY_AFTER_MS, "0");
+                    AsyncRawResponse::from_bytes(
+                        StatusCode::Accepted,
+                        headers,
+                        br#"{"status":"InProgress"}"#.to_vec(),
+                    )
+                }
+                2 => AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    br#"{"status":"Succeeded"}"#.to_vec(),
+                ),
+                _ => AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    br#"{"id":"resource-4"}"#.to_vec(),
+                ),
+            };
+            Ok(response)
+        }
+        .boxed()
+    })) as Arc<dyn HttpClient>;
+
+    let poller: Poller<ArmOperationStatus> = new_poller(
+        pipeline_with(mock),
+        Request::new(
+            "https://example.com/resources/4?api-version=2024-01-01"
+                .parse()
+                .unwrap(),
+            Method::Put,
+        ),
+        None,
+    );
+
+    let response = poller.await.unwrap();
+    let model: ArmResource = response.into_model().unwrap();
+    assert_eq!(model.id, "resource-4");
+
+    let requests = requests.lock().unwrap().clone();
+    assert_eq!(
+        requests,
+        vec![
+            "https://example.com/resources/4?api-version=2024-01-01",
+            "https://example.com/operations/4?api-version=2024-01-01",
+            "https://example.com/resources/4?api-version=2024-01-01",
         ]
     );
 }
