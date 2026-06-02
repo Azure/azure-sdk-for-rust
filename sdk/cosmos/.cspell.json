@@ -97,6 +97,7 @@
     "Kusto",
     "libclang",
     "LIBCLANG",
+    "libqueryplaninterop",
     "linearizability",
     "LLZA",
     "makelist",

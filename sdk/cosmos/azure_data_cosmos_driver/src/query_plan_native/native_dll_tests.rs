@@ -10,7 +10,7 @@
 //!
 //! Every test asserts the **entire** `QueryInfo` struct so that any
 //! regression in any field is caught immediately. The `rewritten_query` field
-//! is normalised (the native DLL always returns `Some`, text varies by version).
+//! is normalized (the native DLL always returns `Some`, text varies by version).
 //!
 //! Tests are ignored by default. Opt in with `test_category`:
 //!
@@ -101,7 +101,7 @@ fn qi() -> QueryInfo {
     QueryInfo::default()
 }
 
-/// Asserts the actual [`QueryInfo`] matches expected, normalising only
+/// Asserts the actual [`QueryInfo`] matches expected, normalizing only
 /// `rewritten_query` (the native DLL always returns `Some`, and the exact
 /// text varies across engine versions). All other fields -- including
 /// `order_by_expressions`, `group_by_expressions`, `group_by_aliases`, and
@@ -110,7 +110,7 @@ fn qi() -> QueryInfo {
 /// Dedicated tests like `rewritten_query_for_order_by` check `rewritten_query`
 /// content explicitly where it matters.
 fn assert_query_info(actual: &QueryInfo, mut expected: QueryInfo) {
-    // Normalise rewritten_query (always Some from DLL, text varies by version)
+    // Normalize rewritten_query (always Some from DLL, text varies by version)
     expected.rewritten_query = actual.rewritten_query.clone();
 
     // Full structural comparison on all fields
