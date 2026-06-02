@@ -129,7 +129,10 @@ where
                                         ));
                                     };
                                     let mut request = Request::new(final_link, Method::Get);
-                                    request.insert_header(crate::http::headers::ACCEPT, "application/json");
+                                    request.insert_header(
+                                        crate::http::headers::ACCEPT,
+                                        "application/json",
+                                    );
                                     let response =
                                         pipeline.send(&context, &mut request, None).await?;
                                     let (status, headers, body) = response.deconstruct();
