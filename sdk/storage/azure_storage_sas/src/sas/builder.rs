@@ -60,7 +60,7 @@ use crate::{
 /// }
 /// ```
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas>
 pub struct UserDelegationSasBuilder<R: Resource, K = ()> {
     account: String,
     resource: R,
@@ -85,7 +85,7 @@ impl<R: Resource, K> UserDelegationSasBuilder<R, K> {
     pub const MAX_KEY_EXPIRY: Duration = Duration::days(7);
 
     /// Overrides the API version sent in the `sv` parameter and `x-ms-version` header.
-    /// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-the-signed-version-field>
+    /// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signed-version-field>
     ///
     /// Defaults to the minimum required version for the chosen resource type
     /// - [`crate::blob::BLOB_DEFAULT_VERSION`]
@@ -159,7 +159,7 @@ impl<R: Resource + sealed::BlobService, K> UserDelegationSasBuilder<R, K> {
     ///
     /// Only available for Blob Storage and Data Lake resources.
     ///
-    /// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
+    /// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
     pub fn authorized_user_object_id(mut self, oid: Uuid) -> Self {
         self.authorized_user_object_id = Some(oid);
         self
@@ -171,7 +171,7 @@ impl<R: Resource + sealed::BlobService, K> UserDelegationSasBuilder<R, K> {
     ///
     /// Only available for Blob Storage and Data Lake resources.
     ///
-    /// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
+    /// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
     pub fn unauthorized_user_object_id(mut self, oid: Uuid) -> Self {
         self.unauthorized_user_object_id = Some(oid);
         self

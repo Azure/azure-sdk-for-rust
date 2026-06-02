@@ -42,7 +42,7 @@ pub(crate) mod sealed {
     /// [`crate::UserDelegationSasBuilder::unauthorized_user_object_id`], which are
     /// Blob-specific and absent from Queue, Table, and File formats.
     ///
-    /// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
+    /// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
     pub(crate) trait BlobService {}
 
     /// Marker for Queue, Table, and File resource types.

@@ -11,7 +11,7 @@
 //!
 //! Requires API version [`FILE_MIN_VERSION`] or later.
 //!
-//! <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-the-signed-resource-field-azure-files-only>
+//! <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signed-resource-field-azure-files-only>
 
 use std::fmt;
 
@@ -33,8 +33,8 @@ pub const FILE_MIN_VERSION: &str = "2025-07-05";
 ///
 /// Permissions are emitted in spec order: `rwd`
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#permissions-for-a-file>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#permissions-for-a-file>
 #[derive(Default)]
 pub struct FileSasPermissions {
     /// Read file content, properties, and metadata.
@@ -60,7 +60,7 @@ impl fmt::Display for FileSasPermissions {
     }
 }
 
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
 pub(crate) struct FileStringToSign<'a> {
     pub ctx: &'a SasSigningContext<'a>,
     pub cache_control: Option<&'a str>,
@@ -118,7 +118,7 @@ impl std::fmt::Display for FileStringToSign<'_> {
 /// }
 /// ```
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
 #[derive(Default)]
 pub struct FileResourceOptions {
     /// Override `Cache-Control` response header (`rscc`).

@@ -8,7 +8,7 @@
 //!
 //! Requires API version [`TABLE_MIN_VERSION`] or later.
 //!
-//! <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-the-table-name-table-storage-only>
+//! <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-table-name-table-storage-only>
 
 use std::fmt;
 
@@ -27,7 +27,7 @@ pub const TABLE_MIN_VERSION: &str = "2025-07-05";
 ///
 /// Permissions are emitted in spec order: `raud`
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
 #[derive(Default)]
 pub struct TableSasPermissions {
     /// Read entities in a table.

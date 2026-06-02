@@ -12,7 +12,7 @@
 //!
 //! Permissions are expressed with [`Resource::Permissions`](crate::resource::Resource::Permissions) and encoded in spec order (`racwdxyltmeopi`).
 //!
-//! <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-the-signed-resource-field-blob-storage-only>
+//! <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signed-resource-field-blob-storage-only>
 
 use std::fmt;
 
@@ -51,8 +51,8 @@ pub(crate) fn format_blob_time(dt: OffsetDateTime) -> String {
 ///
 /// Permissions are emitted in spec order: `racwdxyltmeopi`
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#permissions-for-a-directory-container-or-blob>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#permissions-for-a-directory-container-or-blob>
 #[derive(Default)]
 pub struct BlobSasPermissions {
     /// Read content, blocklist, properties, and metadata.
@@ -144,7 +144,7 @@ impl fmt::Display for BlobSasPermissions {
 /// }
 /// ```
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
 #[derive(Default)]
 pub struct BlobResourceOptions {
     /// Signed correlation ID (`scid`) — ties the SAS to a specific request for auditing.
@@ -176,7 +176,7 @@ pub struct BlobResourceOptions {
     pub signed_request_query_parameters: Vec<(String, String)>,
 }
 
-/// https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
 pub(crate) struct BlobStringToSign<'a> {
     pub ctx: &'a SasSigningContext<'a>,
     pub sr: &'a str,

@@ -24,7 +24,7 @@ pub const QUEUE_MIN_VERSION: &str = "2025-07-05";
 ///
 /// Permissions are emitted in spec order: `raup`
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
 #[derive(Default)]
 pub struct QueueSasPermissions {
     /// Read messages and peek at messages in a queue.

@@ -13,8 +13,8 @@ use crate::{
 ///
 /// Permissions are emitted in spec order: `racwdxyltmeopi`
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#permissions-for-a-directory-container-or-blob>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#permissions-for-a-directory-container-or-blob>
 #[derive(Default)]
 pub struct ContainerSasPermissions {
     /// Read content, blocklist, properties, and metadata.

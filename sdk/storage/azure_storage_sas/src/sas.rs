@@ -42,7 +42,7 @@ pub(crate) struct SasUrlParams<'a> {
 
 /// Shared fields passed to each resource's `string_to_sign` implementation.
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-the-duration-of-signature-validity>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-duration-of-signature-validity>
 pub(crate) struct SasSigningContext<'a> {
     pub permissions: &'a str,
     pub start: &'a str,

@@ -13,8 +13,8 @@ use crate::{
 ///
 /// Permissions are emitted in spec order: `racwdxyltmeopi`
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#permissions-for-a-directory-container-or-blob>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-permissions>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#permissions-for-a-directory-container-or-blob>
 #[derive(Default)]
 pub struct DirectorySasPermissions {
     /// Read content, blocklist, properties, and metadata.
@@ -81,7 +81,7 @@ impl fmt::Display for DirectorySasPermissions {
 /// Requires Azure Data Lake Storage Gen2 (HNS enabled). The signed directory depth
 /// (`sdd`) is derived automatically from the number of segments in `path`.
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-query-parameters-to-override-response-headers-blob-storage-and-azure-files-only>
 pub struct DirectoryResource {
     pub container: String,
     /// Directory path within the container (e.g. `"logs/2024/01"`).

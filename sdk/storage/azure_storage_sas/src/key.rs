@@ -23,8 +23,8 @@ pub(crate) fn format_sas_time(dt: OffsetDateTime) -> Result<String, time::error:
 /// that window. Obtain one via [`UserDelegationKeyFetcher::fetch`] or [`crate::UserDelegationSasBuilder::fetch_key`] and pass it to
 /// subsequent builders with [`crate::UserDelegationSasBuilder::with_key`].
 ///
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#request-the-user-delegation-key>
-/// <https://learn.microsoft.com/en-us/rest/api/storageservices/get-user-delegation-key>
+/// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#request-the-user-delegation-key>
+/// <https://learn.microsoft.com/rest/api/storageservices/get-user-delegation-key>
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct UserDelegationKey {
@@ -102,7 +102,7 @@ impl UserDelegationKey {
 
     /// Signs `string_to_sign` with HMAC-SHA256 using this key's value.
     ///
-    /// <https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas#specify-the-signature>
+    /// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signature>
     pub(crate) fn compute_signature(&self, string_to_sign: &str) -> Result<String, SasError> {
         let key_bytes = STANDARD.decode(&self.value)?;
         let mut mac =
