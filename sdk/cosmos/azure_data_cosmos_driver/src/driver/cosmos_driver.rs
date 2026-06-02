@@ -1780,40 +1780,8 @@ impl CosmosDriver {
                 .build()
         })?;
 
-        #[cfg(feature = "__internal_native_query_plan")]
-        let query_plan = {
-            // Fetch the query engine configuration from the account metadata cache.
-            let account = operation.resource_reference().account();
-            let account_endpoint = AccountEndpoint::from(account);
-            let query_engine_config = self
-                .runtime
-                .account_metadata_cache()
-                .get(&account_endpoint)
-                .await
-                .map(|props| props.query_engine_configuration.clone())
-                .unwrap_or_default();
-
-            let native_result = operation
-                .body()
-                .and_then(|b| std::str::from_utf8(b).ok())
-                .map(|json| self.try_native_query_plan(json, container, &query_engine_config));
-
-            match native_result {
-                Some(Ok(plan)) => {
-                    tracing::debug!("using native FFI query plan");
-                    plan
-                }
-                _ => {
-                    tracing::debug!("using gateway query plan");
-                    self.gateway_query_plan(container, &operation, options)
-                        .await?
-                }
-            }
-        };
-
-        #[cfg(not(feature = "__internal_native_query_plan"))]
         let query_plan = self
-            .gateway_query_plan(container, &operation, options)
+            .resolve_query_plan(container, &operation, options)
             .await?;
 
         // Build the fan-out pipeline using the query plan.
@@ -1866,6 +1834,64 @@ impl CosmosDriver {
                 .build()
         })?;
         Ok(query_plan)
+    }
+
+    /// Resolves a query plan, trying the native FFI provider first and
+    /// falling back to the Gateway if unavailable or if generation fails.
+    #[cfg(feature = "__internal_native_query_plan")]
+    async fn resolve_query_plan(
+        &self,
+        container: &ContainerReference,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<QueryPlan> {
+        // Fetch the query engine configuration from the account metadata cache.
+        let account = operation.resource_reference().account();
+        let account_endpoint = AccountEndpoint::from(account);
+        let query_engine_config = self
+            .runtime
+            .account_metadata_cache()
+            .get(&account_endpoint)
+            .await
+            .map(|props| props.query_engine_configuration.clone())
+            .unwrap_or_default();
+
+        let native_result = operation
+            .body()
+            .and_then(|b| std::str::from_utf8(b).ok())
+            .map(|json| self.try_native_query_plan(json, container, &query_engine_config));
+
+        match native_result {
+            Some(Ok(plan)) => {
+                tracing::debug!("using native FFI query plan");
+                Ok(plan)
+            }
+            Some(Err(crate::query_plan_native::error::QueryPlanError::LibraryNotAvailable {
+                ..
+            })) => {
+                tracing::debug!("native query plan library not available, falling back to gateway");
+                self.gateway_query_plan(container, operation, options).await
+            }
+            Some(Err(e)) => {
+                tracing::warn!(error = %e, "native query plan generation failed, falling back to gateway");
+                self.gateway_query_plan(container, operation, options).await
+            }
+            None => {
+                tracing::debug!("using gateway query plan");
+                self.gateway_query_plan(container, operation, options).await
+            }
+        }
+    }
+
+    /// Resolves a query plan from the Gateway backend.
+    #[cfg(not(feature = "__internal_native_query_plan"))]
+    async fn resolve_query_plan(
+        &self,
+        container: &ContainerReference,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> crate::error::Result<QueryPlan> {
+        self.gateway_query_plan(container, operation, options).await
     }
 
     /// Attempts to generate a query plan using the native FFI provider.
