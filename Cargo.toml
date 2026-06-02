@@ -29,7 +29,7 @@ members = [
   "sdk/canary/azure_canary",
   "sdk/storage/azure_storage_blob",
   "sdk/storage/azure_storage_queue",
-  "sdk/storage/azure_storage_sas"
+  "sdk/storage/azure_storage_sas",
 ]
 exclude = [
   "eng/scripts/",
