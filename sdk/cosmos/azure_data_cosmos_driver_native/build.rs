@@ -72,12 +72,29 @@ fn generate_c_header() {
         ("CosmosResponse".into(), "response_t".into()),
         ("DiagnosticsContext".into(), "diagnostics_t".into()),
         ("CompletionQueue".into(), "cq_t".into()),
+        ("CompletionQueueInner".into(), "cq_inner_t".into()),
         ("OperationHandle".into(), "operation_handle_t".into()),
+        ("OperationInner".into(), "operation_inner_t".into()),
         ("Completion".into(), "completion_t".into()),
         ("CosmosError".into(), "error_t".into()),
-        ("CosmosErrorCode".into(), "error_code_t".into()),
+        ("CosmosErrorHandle".into(), "error_t".into()),
         // Wrapper-defined types whose Rust names don't follow the spec's C name.
         ("CosmosBytes".into(), "bytes_t".into()),
+        // Phase 1 enums / option structs. Variant prefixes are baked into
+        // the Rust variant names (e.g. `CqStateRunning`,
+        // `CompletionOutcomeOk`) so the `ScreamingSnakeCase` enum rule
+        // produces the spec-mandated `COSMOS_CQ_STATE_RUNNING` etc.
+        ("CosmosCqState".into(), "cq_state_t".into()),
+        ("CosmosCqOptions".into(), "cq_options_t".into()),
+        (
+            "CosmosCompletionOutcome".into(),
+            "completion_outcome_t".into(),
+        ),
+        (
+            "CosmosOperationHandleState".into(),
+            "operation_handle_state_t".into(),
+        ),
+        ("CosmosErrorCode".into(), "error_code_t".into()),
     ]);
 
     let config = cbindgen::Config {
@@ -93,7 +110,12 @@ fn generate_c_header() {
         },
         style: cbindgen::Style::Both,
         enumeration: cbindgen::EnumConfig {
-            rename_variants: cbindgen::RenameRule::QualifiedScreamingSnakeCase,
+            // We bake the variant prefix into the Rust variant names (e.g.
+            // `CqStateRunning`, `CompletionOutcomeOk`) so we can use the
+            // simple `ScreamingSnakeCase` rule here. Switching to the
+            // `Qualified*` rule would generate `<TYPE>_<VARIANT>` and
+            // produce `_T_` infixes when the enum type ends in `_t`.
+            rename_variants: cbindgen::RenameRule::ScreamingSnakeCase,
             ..Default::default()
         },
         documentation_length: cbindgen::DocumentationLength::Full,

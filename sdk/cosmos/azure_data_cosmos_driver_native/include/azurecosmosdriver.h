@@ -14,6 +14,302 @@
 #define AZURECOSMOSDRIVER_H_VERSION "0.1.0"
 
 /**
+ * Per spec §3.1.3, the three queue-lifecycle states.
+ */
+enum cosmos_cq_state_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Submits and waits both succeed.
+   */
+  COSMOS_CQ_STATE_RUNNING = 0,
+  /**
+   * `cosmos_cq_shutdown` has been called; submits fail pre-flight; pending
+   * completions can still be drained via `_wait` until empty.
+   */
+  COSMOS_CQ_STATE_SHUTDOWN = 1,
+  /**
+   * Shutdown + queue empty + no in-flight ops. Safe to `_free` without
+   * blocking.
+   */
+  COSMOS_CQ_STATE_DRAINED = 2,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_cq_state_t cosmos_cq_state_t;
+#else
+typedef int32_t cosmos_cq_state_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Per spec §3.6.1, every completion has exactly one of these outcomes.
+ *
+ * `CosmosCompletionOutcomeUnknown` is a forward-compat sentinel — older C clients
+ * linked against a newer runtime that grew a variant see this value and can
+ * route it through their default branch.
+ */
+enum cosmos_completion_outcome_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * The operation completed successfully; `cosmos_completion_take_response`
+   * returns the populated `cosmos_response_t`.
+   */
+  COSMOS_COMPLETION_OUTCOME_OK = 0,
+  /**
+   * The operation failed; `cosmos_completion_take_error` returns the rich
+   * `cosmos_error_t` (when `include_error_details` is on for the queue).
+   */
+  COSMOS_COMPLETION_OUTCOME_ERROR = 1,
+  /**
+   * The operation was cancelled via [`cosmos_operation_handle_cancel`] or
+   * [`cosmos_cq_shutdown`].
+   */
+  COSMOS_COMPLETION_OUTCOME_CANCELLED = 2,
+  /**
+   * Reserved sentinel for any non-zero outcome introduced after this spec.
+   */
+  COSMOS_COMPLETION_OUTCOME_UNKNOWN = 255,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_completion_outcome_t cosmos_completion_outcome_t;
+#else
+typedef int32_t cosmos_completion_outcome_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Coarse numeric return value for every fallible C function.
+ *
+ * Per spec §3.5.1, the layout retains the FFI / Cosmos-specific bands
+ * established by the old wrapper:
+ *
+ * - `0` — success.
+ * - `1..=999` — FFI / argument-validation errors.
+ * - `1001..=1999` — auth / conversion errors.
+ * - `2001..=2999` — Cosmos-specific errors mapped from wire HTTP status.
+ * - `3001..=3999` — FFI plumbing errors.
+ * - `4001..=4999` — driver-wrapper-specific fatal codes (new in this crate).
+ * - `5001..=5999` — non-fatal warnings (`out_*` populated; rich error advisory).
+ *
+ * Phase 1 only populates the codes the completion / queue / handle FFI
+ * actively produces. The rest are reserved and will be added phase-by-phase
+ * as their producing surfaces land. Consumers must treat unknown codes per
+ * their band: `4xxx` = fatal-but-recoverable, `5xxx` = warning with
+ * populated `out_*`.
+ */
+enum cosmos_error_code_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Operation completed successfully.
+   */
+  COSMOS_ERROR_CODE_SUCCESS = 0,
+  /**
+   * A required pointer argument was `NULL`. Reserved Phase-0/1 code that
+   * every accessor checks for before dereferencing.
+   */
+  COSMOS_ERROR_CODE_INVALID_ARGUMENT = 1,
+  /**
+   * A `*const c_char` argument contained bytes that were not valid UTF-8.
+   */
+  COSMOS_ERROR_CODE_INVALID_UTF8 = 2,
+  /**
+   * Mapped from a wire response with HTTP 404.
+   */
+  COSMOS_ERROR_CODE_NOT_FOUND = 2404,
+  /**
+   * Mapped from a wire response with HTTP 409.
+   */
+  COSMOS_ERROR_CODE_CONFLICT = 2409,
+  /**
+   * Mapped from a wire response with HTTP 412.
+   */
+  COSMOS_ERROR_CODE_PRECONDITION_FAILED = 2412,
+  /**
+   * Mapped from a wire response with HTTP 429.
+   */
+  COSMOS_ERROR_CODE_THROTTLED = 2429,
+  /**
+   * Mapped from a wire response with HTTP 410.
+   */
+  COSMOS_ERROR_CODE_GONE = 2410,
+  /**
+   * Mapped from a wire response with HTTP 408 (or synthetic
+   * `CLIENT_OPERATION_TIMEOUT` substatus 20008).
+   */
+  COSMOS_ERROR_CODE_TIMEOUT = 2408,
+  /**
+   * Mapped from a wire response with HTTP 401.
+   */
+  COSMOS_ERROR_CODE_UNAUTHORIZED = 2401,
+  /**
+   * Mapped from a wire response with HTTP 403.
+   */
+  COSMOS_ERROR_CODE_FORBIDDEN = 2403,
+  /**
+   * Mapped from a wire response with HTTP 400.
+   */
+  COSMOS_ERROR_CODE_BAD_REQUEST = 2400,
+  /**
+   * Mapped from a wire response with HTTP 503 (excluding transport-
+   * synthesized 503, which falls under [`TransportFailure`](Self::CosmosErrorCodeTransportFailure)).
+   */
+  COSMOS_ERROR_CODE_SERVICE_UNAVAILABLE = 2503,
+  /**
+   * Any other wire-side error (5xx, unmapped 4xx).
+   */
+  COSMOS_ERROR_CODE_SERVICE_ERROR = 2999,
+  /**
+   * A driver client-side / synthetic failure with no specific 2xxx mapping.
+   */
+  COSMOS_ERROR_CODE_CLIENT_ERROR = 3001,
+  /**
+   * A driver transport-layer failure (connection / DNS / TLS / IO).
+   */
+  COSMOS_ERROR_CODE_TRANSPORT_FAILURE = 3002,
+  /**
+   * A driver client-side serialization failure.
+   */
+  COSMOS_ERROR_CODE_SERIALIZATION_FAILED = 3003,
+  /**
+   * A driver client-side authentication failure (e.g. token acquisition).
+   */
+  COSMOS_ERROR_CODE_AUTHENTICATION_FAILED = 3004,
+  /**
+   * A driver client-side operation timeout
+   * (`SubStatusCode::CLIENT_OPERATION_TIMEOUT` = 20008).
+   */
+  COSMOS_ERROR_CODE_CLIENT_OPERATION_TIMEOUT = 3005,
+  /**
+   * Operation issued before `initialize()` completed.
+   */
+  COSMOS_ERROR_CODE_DRIVER_NOT_INITIALIZED = 4002,
+  /**
+   * Account endpoint URL or credential could not be parsed.
+   */
+  COSMOS_ERROR_CODE_INVALID_ACCOUNT_REFERENCE = 4003,
+  /**
+   * `PartitionKey` builder produced an empty / inconsistent key.
+   */
+  COSMOS_ERROR_CODE_INVALID_PARTITION_KEY = 4004,
+  /**
+   * A mutator or second submit was called after the operation handle was
+   * already consumed by an earlier successful submit.
+   */
+  COSMOS_ERROR_CODE_OPERATION_CONSUMED = 4005,
+  /**
+   * `cosmos_response_into_*` called twice on the same response.
+   */
+  COSMOS_ERROR_CODE_RESPONSE_CONSUMED = 4006,
+  /**
+   * Single-shot submit yielded `Ok(None)` from a feed-style operation.
+   */
+  COSMOS_ERROR_CODE_FEED_EXHAUSTED = 4007,
+  /**
+   * Second precondition setter on an operation that already has one.
+   */
+  COSMOS_ERROR_CODE_PRECONDITION_ALREADY_SET = 4008,
+  /**
+   * A mutator only meaningful for a specific operation kind was rejected.
+   */
+  COSMOS_ERROR_CODE_UNSUPPORTED_OPERATION_FOR_MUTATOR = 4009,
+  /**
+   * `cosmos_operation_with_request_header` passed a non-ASCII / control-
+   * character header name or value.
+   */
+  COSMOS_ERROR_CODE_INVALID_HEADER = 4010,
+  /**
+   * A submit targeted a `cosmos_cq_t` that had already been shut down via
+   * `cosmos_cq_shutdown`. Pre-flight rejection — no completion is posted.
+   */
+  COSMOS_ERROR_CODE_QUEUE_SHUTDOWN = 4011,
+  /**
+   * Surfaced via `cosmos_completion_status` on a completion whose outcome
+   * is `CANCELLED`. Triggered by `cosmos_operation_handle_cancel` or by
+   * `cosmos_cq_shutdown`.
+   */
+  COSMOS_ERROR_CODE_OPERATION_CANCELLED = 4012,
+  /**
+   * A submit targeted a `cosmos_cq_t` whose hard capacity is already
+   * reached. Pre-flight rejection — no completion is posted.
+   */
+  COSMOS_ERROR_CODE_QUEUE_FULL = 4013,
+  /**
+   * A builder setter was passed a value outside the documented range.
+   */
+  COSMOS_ERROR_CODE_INVALID_OPTION_VALUE = 4014,
+  /**
+   * `cosmos_runtime_builder_build` could not construct the underlying
+   * `CosmosDriverRuntime`.
+   */
+  COSMOS_ERROR_CODE_RUNTIME_BUILD_FAILED = 4015,
+  /**
+   * `cosmos_driver_get_or_create` called with non-NULL options while a
+   * driver for the same account endpoint was already cached. The cached
+   * instance is still delivered.
+   */
+  COSMOS_ERROR_CODE_OPTIONS_IGNORED_ON_CACHE_HIT = 5001,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_error_code_t cosmos_error_code_t;
+#else
+typedef int32_t cosmos_error_code_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Per spec §3.6.2, the four lifecycle states an operation handle observes.
+ */
+enum cosmos_operation_handle_state_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Submission succeeded; no completion has been posted yet.
+   */
+  COSMOS_OPERATION_HANDLE_STATE_IN_FLIGHT = 0,
+  /**
+   * Completion was posted with `outcome == CosmosCompletionOutcomeOk`.
+   */
+  COSMOS_OPERATION_HANDLE_STATE_COMPLETED = 1,
+  /**
+   * Completion was posted with `outcome == CosmosCompletionOutcomeError`.
+   */
+  COSMOS_OPERATION_HANDLE_STATE_FAILED = 2,
+  /**
+   * Completion was posted with `outcome == CosmosCompletionOutcomeCancelled`.
+   */
+  COSMOS_OPERATION_HANDLE_STATE_CANCELLED = 3,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_operation_handle_state_t cosmos_operation_handle_state_t;
+#else
+typedef int32_t cosmos_operation_handle_state_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Internal storage of a `cosmos_completion_t`.
+ *
+ * Phase 1 carries no response payload — Phase 6 adds `Option<CosmosResponse>`.
+ * `take_response` / `response` therefore always return NULL in Phase 1; the
+ * FFI surface still exposes them so the header is stable.
+ */
+typedef struct cosmos_completion_t cosmos_completion_t;
+
+/**
  * Opaque byte-buffer handle owned by the library.
  *
  * Internal representation: boxed `Vec<u8>`. The struct is intentionally
@@ -23,6 +319,70 @@
 typedef struct cosmos_bytes_t {
   uint8_t _opaque[0];
 } cosmos_bytes_t;
+
+/**
+ * Opaque C ABI handle for a completion queue.
+ *
+ * Storage pun: see the comment on [`OperationHandle`] — the public
+ * `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
+ * state lives in a trailing `CompletionQueueStorage` field allocated by
+ * [`CompletionQueue::new_raw`].
+ */
+typedef struct cosmos_cq_t {
+  uint8_t _opaque[0];
+} cosmos_cq_t;
+
+/**
+ * Opaque C ABI handle for the async runtime.
+ *
+ * The struct body is intentionally opaque to cbindgen — the real state
+ * lives behind a `Box<RuntimeContextInner>` accessed through the
+ * `_unused` field's tag. Construction always goes through
+ * [`RuntimeContext::new_default`] (Phase 1) or the public builder
+ * (Phase 2+); never construct one directly.
+ */
+typedef struct cosmos_runtime_t {
+  uint8_t _opaque[0];
+} cosmos_runtime_t;
+
+/**
+ * Layout of the `cosmos_cq_options_t` struct as it appears at the C ABI
+ * boundary. Caller-owned, pass-by-value (per §3.1.2 the layout is published
+ * for inputs).
+ */
+typedef struct cosmos_cq_options_t {
+  uint32_t capacity_hint;
+  uint32_t max_capacity;
+  bool include_error_details;
+} cosmos_cq_options_t;
+
+/**
+ * Opaque C ABI handle for an in-flight (or just-completed) operation.
+ *
+ * Storage pun: see the comment on [`CompletionQueue`] — the public
+ * `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
+ * state lives in a trailing `OperationHandleStorage` field allocated by
+ * [`OperationHandle::new_raw`].
+ */
+typedef struct cosmos_operation_handle_t {
+  uint8_t _opaque[0];
+} cosmos_operation_handle_t;
+
+/**
+ * Opaque heap-allocated wrapper around an `Arc<CosmosErrorInner>`.
+ *
+ * The FFI hands out `*mut CosmosErrorHandle` as `cosmos_error_t *`. Cloning
+ * the underlying `Arc` is cheap and is how the `Completion` borrow accessor
+ * shares the payload with the `take_error` ownership accessor.
+ *
+ * Storage pun: see the matching pattern on `CompletionQueue` /
+ * `OperationHandle` in `completion.rs` — the public struct only carries the
+ * `_opaque` marker; the real `Arc` lives in a trailing
+ * `CosmosErrorHandleStorage` field allocated by [`Self::into_raw`].
+ */
+typedef struct cosmos_error_t {
+  uint8_t _opaque[0];
+} cosmos_error_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +437,249 @@ uintptr_t cosmos_bytes_len(const struct cosmos_bytes_t *b);
  * or calling twice on the same handle, is undefined behavior.
  */
 void cosmos_bytes_free(struct cosmos_bytes_t *b);
+
+/**
+ * Create a completion queue bound to `runtime`. Returns NULL if `runtime`
+ * is NULL.
+ */
+struct cosmos_cq_t *cosmos_cq_create(const struct cosmos_runtime_t *runtime,
+                                     const struct cosmos_cq_options_t *options);
+
+/**
+ * Free a completion queue. NULL is a no-op.
+ *
+ * Phase 1 contract: no Tokio-side producers spawn against the queue, so
+ * "blocks until in-flight ops drain" is trivially satisfied. The check
+ * remains in place so the contract documented in spec §3.1.2 is observable:
+ * if anyone enqueued completions but never drained, this drops them (and
+ * thus their `Box`-allocated `Completion`s).
+ */
+void cosmos_cq_free(struct cosmos_cq_t *queue);
+
+/**
+ * Returns the runtime the queue was bound to.
+ */
+const struct cosmos_runtime_t *cosmos_cq_runtime(const struct cosmos_cq_t *queue);
+
+/**
+ * Block until a completion is available or `timeout_ms` elapses.
+ *
+ * - `timeout_ms == 0` → poll once and return immediately, NULL if empty.
+ * - `timeout_ms == UINT32_MAX` → wait without a timeout. Returns NULL only
+ *   on shutdown / drained / spurious wake.
+ * - otherwise → wait up to that many milliseconds.
+ *
+ * The returned `cosmos_completion_t *` must be freed via
+ * [`cosmos_completion_free`].
+ */
+struct cosmos_completion_t *cosmos_cq_wait(struct cosmos_cq_t *queue, uint32_t timeout_ms);
+
+/**
+ * Non-blocking poll. Equivalent to `cosmos_cq_wait(queue, 0)`.
+ */
+struct cosmos_completion_t *cosmos_cq_try_wait(struct cosmos_cq_t *queue);
+
+/**
+ * Drains up to `max_count` completions in a single call. Blocks until at
+ * least one completion is available or `timeout_ms` elapses, then drains
+ * additional already-queued completions without blocking again.
+ *
+ * Returns the number of completions written into
+ * `out_completions[0..max_count]`. The caller MUST free each one via
+ * [`cosmos_completion_free`].
+ */
+uint32_t cosmos_cq_wait_batch(struct cosmos_cq_t *queue,
+                              struct cosmos_completion_t **out_completions,
+                              uint32_t max_count,
+                              uint32_t timeout_ms);
+
+/**
+ * Block until the queue has room for at least one more pending completion,
+ * or `timeout_ms` elapses.
+ */
+bool cosmos_cq_wait_writable(struct cosmos_cq_t *queue, uint32_t timeout_ms);
+
+/**
+ * Signal shutdown: marks the queue as shutting down, cancels in-flight ops
+ * (Phase 1 has none from public API), and wakes any thread blocked in
+ * `cosmos_cq_wait` / `_wait_writable` / `_wait_batch`. Idempotent.
+ */
+void cosmos_cq_shutdown(struct cosmos_cq_t *queue);
+
+/**
+ * Returns the queue's current lifecycle state.
+ */
+cosmos_cq_state_t cosmos_cq_state(const struct cosmos_cq_t *queue);
+
+/**
+ * Returns the completion's outcome. Returns `Unknown` if `c` is NULL.
+ */
+cosmos_completion_outcome_t cosmos_completion_outcome(const struct cosmos_completion_t *c);
+
+/**
+ * Returns the `user_data` the caller supplied at submit time. NULL is
+ * preserved verbatim.
+ */
+void *cosmos_completion_user_data(const struct cosmos_completion_t *c);
+
+/**
+ * Returns a borrowed pointer to the operation handle that produced this
+ * completion. Lifetime = until [`cosmos_completion_free`].
+ */
+const struct cosmos_operation_handle_t *cosmos_completion_op_handle(const struct cosmos_completion_t *c);
+
+/**
+ * Coarse status code (always populated even when rich detail is suppressed).
+ */
+cosmos_error_code_t cosmos_completion_status(const struct cosmos_completion_t *c);
+
+/**
+ * True iff `cosmos_operation_handle_cancel` was observed on the producing
+ * handle before the completion was posted.
+ */
+bool cosmos_completion_was_cancel_requested(const struct cosmos_completion_t *c);
+
+/**
+ * Take ownership of the response. Phase 1 always returns NULL — Phase 6
+ * adds the real response payload.
+ */
+void *cosmos_completion_take_response(struct cosmos_completion_t *c);
+
+/**
+ * Borrowed access to the response. Phase 1 always returns NULL.
+ */
+const void *cosmos_completion_response(const struct cosmos_completion_t *c);
+
+/**
+ * Take ownership of the rich error payload. Returns NULL when
+ * `outcome != Error`, when the queue was created with
+ * `include_error_details = false`, or after a previous `_take_error` call.
+ */
+struct cosmos_error_t *cosmos_completion_take_error(struct cosmos_completion_t *c);
+
+/**
+ * Borrowed access to the rich error payload. NULL on `Ok` / `Cancelled`,
+ * when details are suppressed, or after a previous `_take_error` call.
+ */
+const struct cosmos_error_t *cosmos_completion_error(const struct cosmos_completion_t *c);
+
+/**
+ * Free a completion record. Any pointer obtained via
+ * [`cosmos_completion_error`] (borrowed) becomes invalid; ownership obtained
+ * via [`cosmos_completion_take_error`] remains valid until that handle's
+ * own `_free` call.
+ */
+void cosmos_completion_free(struct cosmos_completion_t *c);
+
+/**
+ * Request cooperative cancellation. Idempotent and non-blocking. Phase 1
+ * only flips the cancel-requested flag and (if the operation has not yet
+ * reached a terminal state) transitions the state to `Cancelled` so the
+ * state poller reflects it. Phase 6 wires the flag into the real
+ * `tokio::select!` cancel branch.
+ */
+void cosmos_operation_handle_cancel(struct cosmos_operation_handle_t *op);
+
+/**
+ * Poll the operation's lifecycle state. Returns `InFlight` if `op` is NULL.
+ */
+cosmos_operation_handle_state_t cosmos_operation_handle_state(const struct cosmos_operation_handle_t *op);
+
+/**
+ * Free the FFI handle. Does NOT cancel the operation — call
+ * `cosmos_operation_handle_cancel` first if needed. NULL is a no-op.
+ *
+ * Drops this handle's `Arc` reference. If the completion record still holds
+ * its own reference, the inner operation state stays alive.
+ */
+void cosmos_operation_handle_free(struct cosmos_operation_handle_t *op);
+
+/**
+ * HTTP status code (always populated, including for synthetic errors).
+ */
+uint16_t cosmos_error_status_code(const struct cosmos_error_t *e);
+
+/**
+ * Sub-status code. Returns -1 when absent. Driver-side `SubStatusCode` is
+ * `u16`; widening to `i32` lets us reserve -1 for "no sub-status" without
+ * clipping any real value.
+ */
+int32_t cosmos_error_sub_status(const struct cosmos_error_t *e);
+
+/**
+ * True iff the error originated from a service wire response. Mirrors
+ * `CosmosError::is_from_wire`.
+ */
+bool cosmos_error_is_from_wire(const struct cosmos_error_t *e);
+
+/**
+ * Borrowed message string. Returns NULL only when `e` is NULL.
+ *
+ * Lifetime = until [`cosmos_error_free`].
+ */
+const char *cosmos_error_message(const struct cosmos_error_t *e);
+
+/**
+ * Borrowed activity id from the wire response headers (or NULL when there
+ * is no wire response or no activity id was present).
+ */
+const char *cosmos_error_activity_id(const struct cosmos_error_t *e);
+
+/**
+ * Borrowed session token from the wire response headers (or NULL).
+ */
+const char *cosmos_error_session_token(const struct cosmos_error_t *e);
+
+/**
+ * Borrowed ETag from the wire response headers (or NULL).
+ */
+const char *cosmos_error_etag(const struct cosmos_error_t *e);
+
+/**
+ * Retry-after duration in milliseconds, or -1 when absent / no wire response.
+ */
+int64_t cosmos_error_retry_after_ms(const struct cosmos_error_t *e);
+
+/**
+ * Borrowed backtrace string (rate-limited per
+ * [`cosmos_set_backtrace_options`]).
+ * Returns NULL when no backtrace was captured.
+ */
+const char *cosmos_error_backtrace(const struct cosmos_error_t *e);
+
+/**
+ * Free a `cosmos_error_t *` obtained via `cosmos_completion_take_error` or
+ * a synchronous `out_error` slot. NULL is a no-op. Calling on a borrowed
+ * pointer (e.g. `cosmos_completion_error` result) is undefined behavior.
+ */
+void cosmos_error_free(struct cosmos_error_t *e);
+
+/**
+ * Sets process-global backtrace capture / resolution rate limits.
+ *
+ * Last-writer-wins across concurrent calls. Pass `0` to either parameter to
+ * disable that knob. Environment-derived defaults (`RUST_LIB_BACKTRACE`,
+ * `RUST_BACKTRACE`, `AZURE_COSMOS_BACKTRACE_*`) are overridden for the rest
+ * of the process once this is called. See spec §6.4.
+ */
+void cosmos_set_backtrace_options(uint32_t max_captures_per_second,
+                                  uint32_t max_resolutions_per_second);
+
+/**
+ * Lifecycle: free a `cosmos_runtime_t *` previously returned by the runtime
+ * builder.
+ *
+ * Drops the FFI handle's `Arc` reference. Any completion queues created
+ * against this runtime continue to function until their own `Arc` references
+ * are dropped, but no new queues can be created from the now-freed handle.
+ * NULL is a no-op.
+ *
+ * Phase 1 has no public `cosmos_runtime_create` (the builder lands in
+ * Phase 2). This entry exists so the lifecycle contract is documented up
+ * front and so internal test-only constructors can be paired with the same
+ * `_free` consumers will use.
+ */
+void cosmos_runtime_free(struct cosmos_runtime_t *runtime);
 
 #ifdef __cplusplus
 }  // extern "C"

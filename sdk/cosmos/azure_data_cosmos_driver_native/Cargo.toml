@@ -19,7 +19,17 @@ name = "azurecosmosdriver"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
+# Path-only — the driver crate is not (yet) a workspace dependency.
+# The wrapper opts into the `tokio` feature so it can drive Tokio-backed
+# completion delivery on top of the same runtime model the driver uses.
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = ["tokio"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros"] }
 tracing.workspace = true
+
+[dev-dependencies]
+# Path-only — the driver crate is not (yet) a workspace dependency.
+azure_core = { workspace = true, default-features = false }
+tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros", "test-util"] }
 
 [build-dependencies]
 cbindgen = "0.29.2"

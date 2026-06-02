@@ -26,6 +26,9 @@ use std::ffi::{c_char, CStr};
 #[macro_use]
 pub mod string;
 pub mod bytes;
+pub mod completion;
+pub mod error;
+pub mod runtime;
 
 // We want this value to be present as a string in the compiled binary so that
 // build provenance can be recovered from a stripped library. Exposing it as a
