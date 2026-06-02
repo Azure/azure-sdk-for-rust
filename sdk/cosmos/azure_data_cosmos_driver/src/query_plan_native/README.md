@@ -3,7 +3,8 @@
 Native FFI query plan provider using the QueryPlanInterop C++ library.
 
 Gated behind the `__internal_native_query_plan` feature flag. When disabled,
-the module is not compiled and the driver uses the Gateway for all query plans.
+the driver uses the Gateway for all query plans. The module itself always
+compiles so that tests can run independently of the feature flag.
 
 ## Library loading
 
@@ -44,13 +45,20 @@ cosmos_driver::plan_operation()
 ## Running tests
 
 ```bash
-# Unit tests (no native DLL needed, feature must be enabled)
-cargo test -p azure_data_cosmos_driver --lib query_plan_native \
-    --features __internal_native_query_plan
+# Unit tests (no native DLL needed, always compiled)
+cargo test -p azure_data_cosmos_driver --lib query_plan_native
 
 # Integration tests (requires native DLL on PATH or QUERY_PLAN_INTEROP_LIB_DIR)
-cargo test -p azure_data_cosmos_driver --lib query_plan_native \
-    --features __internal_native_query_plan -- --test-threads=1
+# Tests are ignored by default; opt in via test_category:
+RUSTFLAGS='--cfg test_category="native_query_plan"' \
+    cargo test -p azure_data_cosmos_driver --lib query_plan_native
+```
+
+On Windows (PowerShell):
+```powershell
+$env:QUERY_PLAN_INTEROP_LIB_DIR = "Q:\QueryPlanInterop"
+$env:RUSTFLAGS = '--cfg test_category="native_query_plan"'
+cargo test -p azure_data_cosmos_driver --lib query_plan_native
 ```
 
 ## Regenerating bindgen bindings

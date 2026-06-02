@@ -44,13 +44,11 @@ pub(crate) mod native;
 #[allow(dead_code)]
 pub(crate) mod provider;
 
-#[cfg(all(test, feature = "__internal_native_query_plan"))]
-mod integration_tests;
+#[cfg(test)]
+mod native_dll_tests;
 
-// Re-export the driver's query plan model types for use by integration tests
-// and future callers within the crate. The native DLL outputs the same JSON
-// format as the Gateway, so both deserialize into these types.
-#[cfg(all(test, feature = "__internal_native_query_plan"))]
+// Re-export the driver's query plan model types for use by integration tests.
+#[cfg(test)]
 pub(crate) use crate::driver::dataflow::query_plan::{
     DistinctType, QueryInfo, QueryPlan, SortOrder,
 };
