@@ -130,8 +130,6 @@ impl<'de> Deserialize<'de> for PollerStatus {
 /// Options to create the [`Poller`].
 #[derive(Debug, Clone)]
 pub struct PollerOptions<'a> {
-    /// The initial state of the poller.
-    pub state: PollerState,
     /// Allows customization of the method call.
     pub context: Context<'a>,
     /// The time to wait between polling intervals in absence of a `retry-after` header.
@@ -143,7 +141,6 @@ pub struct PollerOptions<'a> {
 impl Default for PollerOptions<'_> {
     fn default() -> Self {
         Self {
-            state: PollerState::Initial,
             frequency: DEFAULT_RETRY_TIME,
             context: Context::new(),
         }
@@ -155,7 +152,6 @@ impl<'a> PollerOptions<'a> {
     #[must_use]
     pub fn into_owned(self) -> PollerOptions<'static> {
         PollerOptions {
-            state: self.state,
             context: self.context.into_owned(),
             frequency: self.frequency,
         }
@@ -595,10 +591,7 @@ where
     let stream = unfold(
         // We flow the `make_request` callback through the state value to avoid cloning.
         StreamState::<M, Fun> {
-            state: match options.state.clone() {
-                PollerState::Initial => State::Init,
-                PollerState::More(continuation) => State::InProgress(continuation),
-            },
+            state: State::Init,
             make_request,
             target_tx: Some(target_tx),
             options,

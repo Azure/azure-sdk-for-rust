@@ -3,6 +3,9 @@
 
 //! Poller helpers for ARM (resource manager) long-running operations.
 
+use super::{
+    PollerContinuation, PollerOptions, PollerResult, PollerState, PollerStatus, StatusMonitor,
+};
 use crate::{
     error::ErrorKind,
     http::{
@@ -12,13 +15,25 @@ use crate::{
     json,
 };
 use serde::de::DeserializeOwned;
-use super::{PollerContinuation, PollerOptions, PollerResult, PollerState, PollerStatus, StatusMonitor};
 
-pub(super) const AZURE_ASYNC_OPERATION: HeaderName = HeaderName::from_static("azure-asyncoperation");
+pub(super) const AZURE_ASYNC_OPERATION: HeaderName =
+    HeaderName::from_static("azure-asyncoperation");
 const OPERATION_LOCATION: HeaderName = HeaderName::from_static("operation-location");
 pub(super) const LOCATION: HeaderName = HeaderName::from_static("location");
 
-/// Creates an ARM heuristic poller that supports async, body, and location polling.
+/// Creates an ARM heuristic poller that supports the following polling modes, applied in
+/// priority order:
+///
+/// 1. **async** ([`azure-asyncoperation`] header): Polls the operation URL from the
+///    `azure-asyncoperation` response header, then fetches the final resource from the `location`
+///    header (if present) or the original resource URL.
+/// 2. **operation-location** ([`operation-location`] header): Polls the operation URL from the
+///    `operation-location` response header, then fetches the final resource from the `location`
+///    header (if present) or the original resource URL.
+/// 3. **location** ([`location`] header): Polls the URL from the `location` response header,
+///    which doubles as the final resource URL once polling completes.
+/// 4. **body**: Falls back to polling the original resource URL, reading operation status from
+///    the response body's `status` or `properties.provisioningState` field.
 pub fn new_poller<'a, M>(
     pipeline: Pipeline,
     initial_request: Request,
@@ -29,14 +44,13 @@ where
     M::Output: DeserializeOwned + Send + 'static,
     M::Format: Send + 'static,
 {
-    let resource_url = initial_request.url().clone();
     let initial_request = initial_request.clone();
     let options = options.map(PollerOptions::into_owned);
 
     Poller::new(
         move |poller_state, poller_options| {
             let pipeline = pipeline.clone();
-            let resource_url = resource_url.clone();
+            let resource_url = initial_request.url().clone();
             let mut request = match &poller_state {
                 PollerState::Initial => initial_request.clone(),
                 PollerState::More(PollerContinuation::Links { next_link, .. }) => {
@@ -54,18 +68,20 @@ where
                     &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
                     &poller_options,
                 );
-                let monitor: M = json::from_json(&body)?;
+                let monitor: M = if body.is_empty() {
+                    // For responses with no body (e.g., 204 No Content), attempt deserialization
+                    // of an empty JSON object so that status falls through to the HTTP status code check.
+                    json::from_json(b"{}")?
+                } else {
+                    json::from_json(&body)?
+                };
                 let response: Response<M> =
                     RawResponse::from_bytes(status_code, headers.clone(), body).into();
                 let mut status = monitor.status();
                 if matches!(status, PollerStatus::UnknownValue(_)) {
                     status = match status_code {
-                        StatusCode::Accepted | StatusCode::Created => {
-                            PollerStatus::InProgress
-                        }
-                        StatusCode::Ok | StatusCode::NoContent => {
-                            PollerStatus::Succeeded
-                        }
+                        StatusCode::Accepted | StatusCode::Created => PollerStatus::InProgress,
+                        StatusCode::Ok | StatusCode::NoContent => PollerStatus::Succeeded,
                         _ => status,
                     };
                 }
@@ -93,8 +109,9 @@ where
                         }
                     }
                     PollerStatus::Succeeded => {
-                        let final_link =
-                            get_location(&headers, request.url())?.or(previous_final_link);
+                        let final_link = get_location(&headers, request.url())?
+                            .or(previous_final_link)
+                            .or_else(|| Some(resource_url.clone()));
                         PollerResult::Succeeded {
                             response,
                             target: Box::new(move || {
@@ -174,9 +191,7 @@ fn get_header_url(
         crate::Error::with_error(
             ErrorKind::DataConversion,
             error,
-            format!(
-                "invalid ARM LRO URL in '{header_name:?}': {value}",
-            ),
+            format!("invalid ARM LRO URL in '{header_name:?}': {value}",),
         )
     })
 }
