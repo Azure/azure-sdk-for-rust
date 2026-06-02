@@ -9,6 +9,8 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . "$PSScriptRoot/../common/scripts/common.ps1"
 
+$resolvedToolchain = [Channels]::Nightly()
+
 # Helper function to run cargo test with JSON output
 function Invoke-CargoTestWithJsonOutput (
   [string]$TestParams,
@@ -21,7 +23,7 @@ function Invoke-CargoTestWithJsonOutput (
   # and uploaded to DevOps for display in the Tests tab
   # (requires -Z unstable-options)
   $result = Invoke-LoggedCommand `
-    "cargo +nightly test $TestParams --manifest-path $ManifestPath --all-features --no-fail-fast -- --format json -Z unstable-options" `
+    "cargo +$resolvedToolchain test $TestParams --manifest-path $ManifestPath --all-features --no-fail-fast -- --format json -Z unstable-options" `
     -GroupOutput `
     -DoNotExitOnFailedExitCode
 

@@ -5,6 +5,12 @@
 //!
 //! Verifies that the driver can bootstrap via a backup endpoint when the
 //! primary global endpoint is unreachable.
+//!
+//! These tests are gated on `test_category = "emulator"` only — they are
+//! intentionally not run against `test_category = "emulator_vnext"` because
+//! the vnext (Linux) emulator exposes a single gateway endpoint and does not
+//! model the multi-endpoint topology backup-endpoint fallback is designed to
+//! exercise.
 
 use crate::framework::resolve_test_env;
 use azure_data_cosmos_driver::{
@@ -81,7 +87,7 @@ async fn driver_operations_work_after_backup_boot() -> Result<(), Box<dyn Error>
     let operation = CosmosOperation::create_database(account.clone()).with_body(body.into_bytes());
 
     let result = driver
-        .execute_operation(operation, OperationOptions::default())
+        .execute_singleton_operation(operation, OperationOptions::default())
         .await;
 
     assert!(
@@ -93,7 +99,7 @@ async fn driver_operations_work_after_backup_boot() -> Result<(), Box<dyn Error>
     // Cleanup
     let db_ref = DatabaseReference::from_name(account, db_name);
     let _ = driver
-        .execute_operation(
+        .execute_singleton_operation(
             CosmosOperation::delete_database(db_ref),
             OperationOptions::default(),
         )

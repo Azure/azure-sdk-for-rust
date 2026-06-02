@@ -3,12 +3,56 @@
 
 //! Models and components used to represents and execute queries.
 
+use azure_data_cosmos_driver::models::{FeedRange, PartitionKey, PartitionKeyDefinition};
 use serde::Serialize;
 
-pub(crate) mod executor;
+/// Represents the scope of a query, which determines which partitions it targets.
+///
+/// The Cosmos DB backend can only execute queries against a single physical partition at a time,
+/// so it is important to choose the appropriate scope for your query to ensure it is executed efficiently.
+/// Queries that cross physical partition boundaries require the client to fan out the query to
+/// multiple partitions and aggregate the results, which can be expensive and slow for large datasets.
+#[derive(Clone)]
+#[non_exhaustive]
+pub enum FeedScope {
+    Partition(PartitionKey),
+    Range(FeedRange),
+}
 
-pub use executor::QueryExecutor;
-pub(crate) use executor::QueryExecutorConfig;
+impl FeedScope {
+    /// Returns a [`FeedScope`] that represents the given partition key, which is used for targeting a specific partition in the container.
+    ///
+    /// The provided [`PartitionKey`] MUST specify all levels of the hierarchy (e.g. in a multi-level hierarchical partition key, you must provide values for all levels, not just a prefix).
+    /// Use [`range()`](FeedScope::range) with a [`FeedRange`] that covers the desired partition(s) to specify anything beyond a single logical partition.
+    pub fn partition(pk: impl Into<PartitionKey>) -> Self {
+        Self::Partition(pk.into())
+    }
+
+    /// Returns a [`FeedScope`] that represents the given feed range, which can be used for partition-specific or cross-partition queries depending on the feed range provided.
+    ///
+    /// WARNING: Using a feed range that covers multiple partitions may result in a full scan of those partitions, which can be expensive and slow for large datasets. Use with caution.
+    pub fn range(fr: impl Into<FeedRange>) -> Self {
+        Self::Range(fr.into())
+    }
+
+    /// Returns a [`FeedScope`] that represents the full container, which is used for cross-partition queries.
+    ///
+    /// WARNING: Using this query scope may result in a full scan of the container, which can be expensive and slow for large datasets. Use with caution.
+    pub fn full_container() -> Self {
+        Self::Range(FeedRange::full())
+    }
+
+    /// Converts this [`FeedScope`] into a [`FeedRange`] that can be used for query execution, using the provided partition key definition to compute effective partition keys as needed.
+    pub(crate) fn into_feed_range(
+        self,
+        partition_key_definition: &PartitionKeyDefinition,
+    ) -> FeedRange {
+        match self {
+            FeedScope::Partition(pk) => FeedRange::for_partition(pk, partition_key_definition),
+            FeedScope::Range(fr) => fr,
+        }
+    }
+}
 
 /// Represents a Cosmos DB Query, with optional parameters.
 ///
@@ -94,7 +138,7 @@ impl Query {
         mut self,
         name: impl Into<String>,
         value: impl Serialize,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::Result<Self> {
         let parameter = QueryParameter {
             name: name.into(),
             value: serde_json::to_value(value)?,

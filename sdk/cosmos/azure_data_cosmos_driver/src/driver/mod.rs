@@ -13,6 +13,7 @@
 
 pub(crate) mod cache;
 mod cosmos_driver;
+pub(crate) mod dataflow;
 pub(crate) mod jitter;
 pub(crate) mod pipeline;
 pub(crate) mod routing;
@@ -20,13 +21,17 @@ mod runtime;
 pub(crate) mod transport;
 
 pub use cosmos_driver::CosmosDriver;
+pub use dataflow::OperationPlan;
 pub use runtime::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 
 /// Walks an error's `.source()` chain and joins all distinct messages into a
 /// single colon-separated string. Duplicate consecutive messages (common when
 /// error wrappers repeat the inner message) are collapsed.
-pub(crate) fn error_chain_summary(error: &azure_core::Error) -> String {
-    use std::error::Error as _;
+///
+/// Accepts any `std::error::Error` so callers can pass any error type
+/// (typed `crate::error::CosmosError`, transport-layer errors, etc.) without
+/// conversion.
+pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> String {
     let mut parts = vec![error.to_string()];
     let mut source = error.source();
     while let Some(cause) = source {
@@ -42,44 +47,61 @@ pub(crate) fn error_chain_summary(error: &azure_core::Error) -> String {
 #[cfg(test)]
 mod tests {
     use super::error_chain_summary;
+    use crate::error::CosmosError;
+    use crate::models::CosmosStatus;
+    use std::error::Error as StdError;
+    use std::sync::Arc;
 
     #[test]
-    fn error_chain_summary_single_error() {
-        let error = azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "top-level failure",
-        );
-        assert_eq!(error_chain_summary(&error), "top-level failure");
+    fn returns_top_level_display_when_no_source() {
+        // No source chain → the summary is exactly the error's own
+        // `Display` string (`status: message`).
+        let error = CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("top-level failure")
+            .build();
+        assert_eq!(error_chain_summary(&error), "400: top-level failure");
     }
 
     #[test]
-    fn error_chain_summary_with_source_chain() {
-        let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
-        let error = azure_core::Error::with_error(
-            azure_core::error::ErrorKind::Io,
-            inner,
-            "reqwest transport failed",
+    fn joins_chain_with_colon_separator() {
+        // Outer transport error wrapping a stdlib `io::Error` as source.
+        // The summary is the outer `Display` joined with each subsequent
+        // source's `Display` by `": "`.
+        let inner_io = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
+        let error = CosmosError::builder()
+            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+            .with_message("outer transport failure")
+            .with_source(inner_io)
+            .build();
+        assert_eq!(
+            error_chain_summary(&error),
+            "503/20011: outer transport failure: socket reset"
         );
-        let summary = error_chain_summary(&error);
-        assert!(summary.contains("reqwest transport failed"));
-        assert!(summary.contains("socket reset"));
     }
 
     #[test]
-    fn error_chain_summary_deduplicates_consecutive_messages() {
-        // When a wrapper repeats the inner message, only one copy should appear.
-        let inner = azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "connection refused",
+    fn collapses_consecutive_duplicate_messages() {
+        // Two equivalent client errors render to byte-identical `Display`
+        // strings — the dedup collapses them so the summary is the single
+        // `Display` string, not duplicated.
+        let inner: Arc<dyn StdError + Send + Sync + 'static> = Arc::new(
+            CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("duplicate")
+                .build(),
         );
-        // Wrap with the same message text.
-        let outer = azure_core::Error::with_error(
-            azure_core::error::ErrorKind::Connection,
-            inner,
-            "connection refused",
-        );
-        let summary = error_chain_summary(&outer);
-        // "connection refused" should appear only once, not "connection refused: connection refused".
-        assert_eq!(summary, "connection refused");
+        let outer = CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("duplicate")
+            .with_arc_source(Arc::clone(&inner))
+            .build();
+        assert_eq!(error_chain_summary(&outer), "400: duplicate");
     }
 }

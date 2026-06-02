@@ -353,7 +353,7 @@ pub(crate) enum TransportOutcome {
     },
     /// Failed with a transport/connection error.
     TransportError {
-        error: azure_core::Error,
+        error: crate::error::Error,
         request_sent: RequestSentStatus,
     },
 }
@@ -464,7 +464,7 @@ pub(crate) enum OperationAction {
         secondary_routing: RoutingDecision,
     },
     /// Abort the operation with this error.
-    Abort(azure_core::Error),
+    Abort(crate::error::Error),
 }
 
 /// A mutation to apply to location state.

@@ -3,9 +3,38 @@
 
 //! Helpers for merging and managing session tokens across feed ranges.
 
-use crate::feed_range::FeedRange;
-use azure_core::error::ErrorKind;
+use crate::FeedRange;
 use azure_data_cosmos_driver::models::{SessionToken, SessionTokenSegment};
+
+/// Returns `true` if `a` and `b` can be combined into a single bounding feed range.
+///
+/// Two ranges can be combined when they overlap or are adjacent (one's max equals
+/// the other's min). Logical-partition feed ranges are never mergeable, even with
+/// themselves, because they carry implicit single-partition targeting semantics
+/// that are lost when combined with arbitrary EPK ranges.
+fn can_merge(a: &FeedRange, b: &FeedRange) -> bool {
+    if a.is_logical_partition() || b.is_logical_partition() {
+        return false;
+    }
+    a.overlaps(b)
+        || a.max_exclusive() == b.min_inclusive()
+        || b.max_exclusive() == a.min_inclusive()
+}
+
+/// Combines two mergeable feed ranges into the smallest bounding range.
+///
+/// Caller must ensure [`can_merge`] returns `true` for `a` and `b`.
+fn merge_ranges(a: &FeedRange, b: &FeedRange) -> FeedRange {
+    debug_assert!(
+        can_merge(a, b),
+        "merge_ranges called on disjoint ranges or logical-partition range: a={:?}, b={:?}",
+        a,
+        b,
+    );
+    let min = std::cmp::min(a.min_inclusive(), b.min_inclusive()).clone();
+    let max = std::cmp::max(a.max_exclusive(), b.max_exclusive()).clone();
+    FeedRange::new(min, max).expect("min_inclusive <= max_exclusive after merge")
+}
 
 /// Returns `true` if the session token string contains multiple comma-separated segments.
 fn is_compound(token: &str) -> bool {
@@ -16,7 +45,7 @@ fn is_compound(token: &str) -> bool {
 ///
 /// When the tokens have different partition key range IDs, keeps the ID from
 /// the token with the higher global LSN (the more recent topology).
-fn merge_tokens_same_range(token1: &str, token2: &str) -> azure_core::Result<String> {
+fn merge_tokens_same_range(token1: &str, token2: &str) -> crate::Result<String> {
     let mut seg1: SessionTokenSegment = token1.parse()?;
     let seg2: SessionTokenSegment = token2.parse()?;
 
@@ -32,7 +61,7 @@ fn merge_tokens_same_range(token1: &str, token2: &str) -> azure_core::Result<Str
 }
 
 /// Phase 1: merge session tokens that share the exact same feed range (non-compound only).
-fn merge_same_ranges(overlapping: &mut Vec<(FeedRange, String)>) -> azure_core::Result<()> {
+fn merge_same_ranges(overlapping: &mut Vec<(FeedRange, String)>) -> crate::Result<()> {
     let mut i = 0;
     while i < overlapping.len() {
         let mut j = i + 1;
@@ -95,13 +124,13 @@ enum MergeAction {
 /// before their children, regardless of the caller's input order.
 fn merge_ranges_with_subsets(
     mut overlapping: Vec<(FeedRange, String)>,
-) -> azure_core::Result<Vec<(FeedRange, String)>> {
+) -> crate::Result<Vec<(FeedRange, String)>> {
     // Sort by range size descending: larger ranges (parents) first.
     // Primary: max_exclusive descending, secondary: min_inclusive ascending.
     overlapping.sort_by(|(a, _), (b, _)| {
-        b.max_exclusive
-            .cmp(&a.max_exclusive)
-            .then(a.min_inclusive.cmp(&b.min_inclusive))
+        b.max_exclusive()
+            .cmp(a.max_exclusive())
+            .then(a.min_inclusive().cmp(b.min_inclusive()))
     });
 
     let mut processed = Vec::new();
@@ -185,10 +214,10 @@ fn analyze_subsets(
     parent_seg: &SessionTokenSegment,
     parent_token: &str,
     subsets: &[(usize, FeedRange, String)],
-) -> azure_core::Result<MergeAction> {
+) -> crate::Result<MergeAction> {
     // Sort subsets by min_inclusive so adjacent children are always in order
     let mut sorted_subsets = subsets.to_vec();
-    sorted_subsets.sort_by(|a, b| a.1.min_inclusive.cmp(&b.1.min_inclusive));
+    sorted_subsets.sort_by(|a, b| a.1.min_inclusive().cmp(b.1.min_inclusive()));
 
     for start_idx in 0..sorted_subsets.len() {
         let mut merged_range = sorted_subsets[start_idx].1.clone();
@@ -199,8 +228,8 @@ fn analyze_subsets(
             if k == start_idx {
                 continue;
             }
-            if merged_range.can_merge(fr) {
-                merged_range = merged_range.merge_with(fr);
+            if can_merge(&merged_range, fr) {
+                merged_range = merge_ranges(&merged_range, fr);
                 tokens.push(tok.clone());
                 indices.push(*idx);
             }
@@ -268,7 +297,7 @@ fn split_compound_tokens(ranges_and_tokens: &[(FeedRange, String)]) -> Vec<Strin
 ///
 /// Delegates to `SessionToken::merge()` on the driver side so that token format
 /// details stay encapsulated.
-fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<SessionToken> {
+fn merge_tokens_by_partition(tokens: Vec<String>) -> crate::Result<SessionToken> {
     let mut result = SessionToken::new(tokens[0].clone());
     for t in &tokens[1..] {
         result = result.merge(&SessionToken::new(t.clone()))?;
@@ -300,7 +329,7 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<SessionT
 ///
 /// ```rust,no_run
 /// # use azure_data_cosmos::{clients::ContainerClient, FeedRange, SessionToken};
-/// # async fn example(container: ContainerClient) -> azure_core::Result<()> {
+/// # async fn example(container: ContainerClient) -> azure_data_cosmos::Result<()> {
 /// // After read/write operations, capture session tokens from response headers.
 /// // When using multiple clients against the same container, merge their tokens
 /// // to get the most up-to-date session state.
@@ -319,7 +348,7 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<SessionT
 pub(crate) fn get_latest_session_token(
     feed_ranges_to_session_tokens: &[(FeedRange, SessionToken)],
     target_feed_range: &FeedRange,
-) -> azure_core::Result<SessionToken> {
+) -> crate::Result<SessionToken> {
     // Step 1: Filter to overlapping feed ranges
     let mut overlapping: Vec<(FeedRange, String)> = feed_ranges_to_session_tokens
         .iter()
@@ -328,10 +357,17 @@ pub(crate) fn get_latest_session_token(
         .collect();
 
     if overlapping.is_empty() {
-        return Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "no overlapping feed ranges with the target feed range",
-        ));
+        // The target feed range does not overlap any of the supplied
+        // session-token ranges — most commonly because the underlying
+        // partition has split / merged since the tokens were captured,
+        // making the original ranges stale. `410 Gone` is the
+        // service-style signal that the resource the caller is
+        // referencing no longer exists in the requested shape.
+        return Err(crate::DriverCosmosError::builder()
+            .with_status(crate::CosmosStatus::CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN)
+            .with_message("no overlapping feed ranges with the target feed range")
+            .build()
+            .into());
     }
 
     // Step 2: Merge session tokens for identical feed ranges
@@ -354,13 +390,10 @@ pub(crate) fn get_latest_session_token(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hash::EffectivePartitionKey;
+    use azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey as DriverEpk;
 
     fn fr(min: &str, max: &str) -> FeedRange {
-        FeedRange {
-            min_inclusive: EffectivePartitionKey::from(min),
-            max_exclusive: EffectivePartitionKey::from(max),
-        }
+        FeedRange::new(DriverEpk::from(min), DriverEpk::from(max)).unwrap()
     }
 
     fn st(s: &str) -> SessionToken {
@@ -656,29 +689,48 @@ mod tests {
     fn can_merge_adjacent() {
         let a = fr("AA", "BB");
         let b = fr("BB", "DD");
-        assert!(a.can_merge(&b));
-        assert!(b.can_merge(&a));
+        assert!(can_merge(&a, &b));
+        assert!(can_merge(&b, &a));
     }
 
     #[test]
     fn can_merge_overlapping() {
         let a = fr("AA", "CC");
         let b = fr("BB", "DD");
-        assert!(a.can_merge(&b));
+        assert!(can_merge(&a, &b));
     }
 
     #[test]
     fn cannot_merge_disjoint() {
         let a = fr("AA", "BB");
         let b = fr("CC", "DD");
-        assert!(!a.can_merge(&b));
+        assert!(!can_merge(&a, &b));
     }
 
     #[test]
-    fn merge_with_produces_bounding_range() {
+    fn can_merge_rejects_logical_partition_ranges_symmetrically() {
+        use azure_data_cosmos_driver::models::{PartitionKey, PartitionKeyDefinition};
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let logical = FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
+        let explicit = fr("", "FF");
+        assert!(!can_merge(&logical, &explicit));
+        assert!(!can_merge(&explicit, &logical));
+        assert!(!can_merge(&logical, &logical));
+    }
+
+    #[test]
+    fn merge_ranges_produces_bounding_range() {
         let a = fr("AA", "BB");
         let b = fr("BB", "DD");
-        let merged = a.merge_with(&b);
+        let merged = merge_ranges(&a, &b);
         assert_eq!(merged, fr("AA", "DD"));
+    }
+
+    #[test]
+    fn merge_ranges_overlapping_uses_outermost_bounds() {
+        let a = fr("00", "50");
+        let b = fr("30", "FF");
+        let merged = merge_ranges(&a, &b);
+        assert_eq!(merged, fr("00", "FF"));
     }
 }

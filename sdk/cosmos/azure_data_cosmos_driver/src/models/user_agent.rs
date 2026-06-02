@@ -22,8 +22,10 @@ const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// User agent string for HTTP requests.
 ///
 /// The user agent is automatically computed with a static prefix containing:
+/// - Optional wrapping-SDK identifier (e.g., `azsdk-rust-cosmos/0.34.0`),
+///   prepended when the driver is used through a higher-level SDK
 /// - Azure SDK identifier (`azsdk-rust-`)
-/// - SDK name and version
+/// - Driver name and version
 /// - OS name and architecture
 /// - Rust version (compile time)
 ///
@@ -32,8 +34,14 @@ const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 ///
 /// # Example
 ///
-/// Without suffix: `azsdk-rust-cosmos-driver/0.1.0 windows/x86_64 rustc/1.85.0`
-/// With suffix: `azsdk-rust-cosmos-driver/0.1.0 windows/x86_64 rustc/1.85.0 myapp-westus2`
+/// Driver used directly, no suffix:
+/// `azsdk-rust-cosmos-driver/0.1.0 windows/x86_64 rustc/1.85.0`
+///
+/// Driver used directly, with suffix:
+/// `azsdk-rust-cosmos-driver/0.1.0 windows/x86_64 rustc/1.85.0 myapp-westus2`
+///
+/// Wrapped by a higher-level SDK:
+/// `azsdk-rust-cosmos/0.34.0 azsdk-rust-cosmos-driver/0.1.0 windows/x86_64 rustc/1.85.0 myapp-westus2`
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UserAgent {
@@ -45,15 +53,15 @@ pub struct UserAgent {
 
 impl Default for UserAgent {
     fn default() -> Self {
-        Self::new(None::<&str>)
+        Self::new(None::<&str>, None::<&str>)
     }
 }
 
 impl UserAgent {
-    /// Returns the base user agent prefix (without suffix).
+    /// Returns the driver-owned base user agent (without wrapping SDK or suffix).
     ///
     /// Format: `azsdk-rust-{sdk-name}/{version} {os}/{arch} rustc/{rust-version}`
-    fn base_user_agent() -> String {
+    fn driver_base_user_agent() -> String {
         let os_name = std::env::consts::OS;
         let os_arch = std::env::consts::ARCH;
 
@@ -90,14 +98,71 @@ impl UserAgent {
         value
     }
 
-    /// Creates a new user agent with an optional suffix.
+    /// Builds the user agent prefix, optionally prepending a wrapping-SDK
+    /// identifier (e.g., `azsdk-rust-cosmos/0.34.0`).
     ///
-    /// The suffix is appended to the base user agent, separated by a space.
-    /// If the resulting string exceeds 255 characters, the suffix is truncated.
-    fn new(suffix: Option<impl Into<String>>) -> Self {
+    /// The wrapping identifier is ASCII-stripped and trimmed; an empty or
+    /// whitespace-only value is treated as absent.
+    fn base_user_agent(wrapping_sdk_identifier: Option<&str>) -> String {
+        let driver = Self::driver_base_user_agent();
+        let wrapping = wrapping_sdk_identifier
+            .map(strip_non_ascii)
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+
+        match wrapping {
+            Some(mut w) => {
+                // Reserve room for the driver base + a separator and, when
+                // possible, also reserve the maximum-allowed suffix length
+                // (`UserAgentSuffix::MAX_LENGTH` + separator). The suffix
+                // typically carries the operator-supplied telemetry tag, so
+                // we prefer to truncate a pathologically long wrapping
+                // identifier rather than silently drop the suffix. The driver
+                // portion is required and is never truncated.
+                let reserved_for_suffix = UserAgentSuffix::MAX_LENGTH + 1;
+                let driver_with_sep = driver.len() + 1;
+                let preferred_max_wrap =
+                    MAX_USER_AGENT_LENGTH.saturating_sub(driver_with_sep + reserved_for_suffix);
+                let absolute_max_wrap = MAX_USER_AGENT_LENGTH.saturating_sub(driver_with_sep);
+                // Fall back to the absolute cap if the preferred cap would be
+                // zero (e.g., a future driver base big enough to leave no
+                // suffix headroom). This still guarantees the final string
+                // fits in `MAX_USER_AGENT_LENGTH`.
+                let max_wrap = if preferred_max_wrap == 0 {
+                    absolute_max_wrap
+                } else {
+                    preferred_max_wrap
+                };
+                if w.len() > max_wrap {
+                    w.truncate(max_wrap);
+                }
+                if w.is_empty() {
+                    return driver;
+                }
+                let mut value = String::with_capacity(w.len() + 1 + driver.len());
+                value.push_str(&w);
+                value.push(' ');
+                value.push_str(&driver);
+                value
+            }
+            None => driver,
+        }
+    }
+
+    /// Creates a new user agent with optional wrapping-SDK identifier and suffix.
+    ///
+    /// The wrapping identifier is prepended to the driver's base prefix; the
+    /// suffix is appended after the base, separated by a space. If the
+    /// resulting string exceeds 255 characters, the suffix is truncated.
+    fn new(
+        wrapping_sdk_identifier: Option<impl AsRef<str>>,
+        suffix: Option<impl Into<String>>,
+    ) -> Self {
         // Normalize to ASCII once; this makes byte-length checks safe and avoids
         // reprocessing after we build the final string.
-        let base = strip_non_ascii(&Self::base_user_agent());
+        let base = strip_non_ascii(&Self::base_user_agent(
+            wrapping_sdk_identifier.as_ref().map(AsRef::as_ref),
+        ));
         let normalized_suffix = suffix.map(Into::into).map(|s| strip_non_ascii(&s));
 
         let max_suffix_len = MAX_USER_AGENT_LENGTH.saturating_sub(base.len() + 1);
@@ -124,19 +189,36 @@ impl UserAgent {
         }
     }
 
+    /// Creates a user agent with only a wrapping-SDK identifier (no suffix).
+    pub(crate) fn from_wrapping_sdk_identifier(wrapping_sdk_identifier: Option<&str>) -> Self {
+        Self::new(wrapping_sdk_identifier, None::<&str>)
+    }
+
     /// Creates a user agent from a [`UserAgentSuffix`].
-    pub(crate) fn from_suffix(suffix: &UserAgentSuffix) -> Self {
-        Self::new(Some(suffix.as_str()))
+    pub(crate) fn from_suffix(
+        wrapping_sdk_identifier: Option<&str>,
+        suffix: &UserAgentSuffix,
+    ) -> Self {
+        Self::new(wrapping_sdk_identifier, Some(suffix.as_str()))
     }
 
     /// Creates a user agent from a [`WorkloadId`].
-    pub(crate) fn from_workload_id(workload_id: WorkloadId) -> Self {
-        Self::new(Some(format!("w{}", workload_id.value())))
+    pub(crate) fn from_workload_id(
+        wrapping_sdk_identifier: Option<&str>,
+        workload_id: WorkloadId,
+    ) -> Self {
+        Self::new(
+            wrapping_sdk_identifier,
+            Some(format!("w{}", workload_id.value())),
+        )
     }
 
     /// Creates a user agent from a [`CorrelationId`].
-    pub(crate) fn from_correlation_id(correlation_id: &CorrelationId) -> Self {
-        Self::new(Some(correlation_id.as_str()))
+    pub(crate) fn from_correlation_id(
+        wrapping_sdk_identifier: Option<&str>,
+        correlation_id: &CorrelationId,
+    ) -> Self {
+        Self::new(wrapping_sdk_identifier, Some(correlation_id.as_str()))
     }
 
     /// Returns the full user agent string.
@@ -170,6 +252,29 @@ fn strip_non_ascii(input: &str) -> String {
         .collect()
 }
 
+/// Normalizes a wrapping-SDK identifier the same way [`UserAgent`] would when
+/// rendering the prefix: strips non-ASCII, trims surrounding whitespace, and
+/// returns `None` for empty / whitespace-only input.
+///
+/// Used at builder set-time so a runtime accessor like
+/// `CosmosDriverRuntime::wrapping_sdk_identifier()` returns the same value
+/// that ultimately appears in the `User-Agent` header.
+pub(crate) fn normalize_wrapping_sdk_identifier(value: &str) -> Option<String> {
+    // Trim whitespace (including \t, \n) before ASCII normalization so a
+    // whitespace-only input collapses to `None` instead of a string of
+    // underscores produced by `strip_non_ascii`.
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let normalized = strip_non_ascii(trimmed);
+    if normalized.is_empty() {
+        None
+    } else {
+        Some(normalized)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,7 +288,7 @@ mod tests {
 
     #[test]
     fn user_agent_with_suffix() {
-        let ua = UserAgent::new(Some("my-app"));
+        let ua = UserAgent::new(None::<&str>, Some("my-app"));
         assert!(ua.as_str().contains("my-app"));
         assert_eq!(ua.suffix(), Some("my-app"));
     }
@@ -191,21 +296,21 @@ mod tests {
     #[test]
     fn user_agent_from_user_agent_suffix() {
         let suffix = UserAgentSuffix::new("myapp-westus2");
-        let ua = UserAgent::from_suffix(&suffix);
+        let ua = UserAgent::from_suffix(None, &suffix);
         assert!(ua.as_str().contains("myapp-westus2"));
     }
 
     #[test]
     fn user_agent_from_workload_id() {
         let workload_id = WorkloadId::new(25);
-        let ua = UserAgent::from_workload_id(workload_id);
+        let ua = UserAgent::from_workload_id(None, workload_id);
         assert!(ua.as_str().contains("w25"));
     }
 
     #[test]
     fn user_agent_from_correlation_id() {
         let correlation_id = CorrelationId::new("aks-prod-eastus");
-        let ua = UserAgent::from_correlation_id(&correlation_id);
+        let ua = UserAgent::from_correlation_id(None, &correlation_id);
         assert!(ua.as_str().contains("aks-prod-eastus"));
     }
 
@@ -215,5 +320,81 @@ mod tests {
         let input = "test café";
         let stripped = strip_non_ascii(input);
         assert!(stripped.is_ascii());
+    }
+
+    #[test]
+    fn user_agent_with_wrapping_sdk_identifier_prepends() {
+        let ua = UserAgent::from_wrapping_sdk_identifier(Some("azsdk-rust-cosmos/0.34.0"));
+        assert!(
+            ua.as_str()
+                .starts_with("azsdk-rust-cosmos/0.34.0 azsdk-rust-cosmos-driver/"),
+            "unexpected user agent: {}",
+            ua.as_str()
+        );
+        assert!(ua.suffix().is_none());
+    }
+
+    #[test]
+    fn user_agent_wrapping_plus_suffix() {
+        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let ua = UserAgent::from_suffix(Some("azsdk-rust-cosmos/0.34.0"), &suffix);
+        let s = ua.as_str();
+        assert!(
+            s.starts_with("azsdk-rust-cosmos/0.34.0 azsdk-rust-cosmos-driver/"),
+            "missing wrapping prefix in: {s}"
+        );
+        assert!(s.ends_with(" myapp-westus2"), "missing suffix in: {s}");
+    }
+
+    #[test]
+    fn user_agent_wrapping_identifier_strips_non_ascii() {
+        let ua = UserAgent::from_wrapping_sdk_identifier(Some("azsdk-rust-café/0.1.0"));
+        assert!(ua.as_str().is_ascii());
+        assert!(ua.as_str().starts_with("azsdk-rust-caf_/0.1.0 "));
+    }
+
+    #[test]
+    fn user_agent_empty_wrapping_identifier_treated_as_absent() {
+        let ua_empty = UserAgent::from_wrapping_sdk_identifier(Some(""));
+        let ua_ws = UserAgent::from_wrapping_sdk_identifier(Some("   "));
+        let ua_default = UserAgent::default();
+        assert_eq!(ua_empty.as_str(), ua_default.as_str());
+        assert_eq!(ua_ws.as_str(), ua_default.as_str());
+    }
+
+    #[test]
+    fn user_agent_respects_max_length_with_wrapping_and_suffix() {
+        // Force a long wrapping identifier and a long suffix; total must still be capped.
+        let long_wrap = format!("azsdk-rust-{}", "x".repeat(200));
+        let suffix = UserAgentSuffix::new("a".repeat(25));
+        let ua = UserAgent::from_suffix(Some(&long_wrap), &suffix);
+        assert!(
+            ua.as_str().len() <= MAX_USER_AGENT_LENGTH,
+            "len={} value={}",
+            ua.as_str().len(),
+            ua.as_str()
+        );
+    }
+
+    #[test]
+    fn user_agent_preserves_suffix_when_wrapping_is_pathological() {
+        // Regression: a pathologically long wrapping identifier must not
+        // silently displace the operator-supplied suffix, which is the
+        // primary telemetry-tag carrier. The wrapping identifier is
+        // truncated instead.
+        let long_wrap = format!("azsdk-rust-{}", "x".repeat(500));
+        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let ua = UserAgent::from_suffix(Some(&long_wrap), &suffix);
+        assert!(
+            ua.as_str().len() <= MAX_USER_AGENT_LENGTH,
+            "exceeded cap: {}",
+            ua.as_str()
+        );
+        assert_eq!(ua.suffix(), Some("myapp-westus2"));
+        assert!(
+            ua.as_str().ends_with(" myapp-westus2"),
+            "suffix lost: {}",
+            ua.as_str()
+        );
     }
 }

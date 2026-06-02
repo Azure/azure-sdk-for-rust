@@ -4,7 +4,10 @@
 
 //! Partition key types for Cosmos DB operations.
 
-use crate::models::FiniteF64;
+use crate::models::{
+    effective_partition_key::EffectivePartitionKey, FiniteF64, PartitionKeyKind,
+    PartitionKeyVersion,
+};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use std::{borrow::Cow, hash::Hash};
 
@@ -151,6 +154,15 @@ impl From<InnerPartitionKeyValue> for PartitionKeyValue {
 }
 
 impl PartitionKeyValue {
+    /// The Null partition key value.
+    pub const NULL: Self = Self(InnerPartitionKeyValue::Null);
+
+    /// The Undefined partition key value.
+    pub const UNDEFINED: Self = Self(InnerPartitionKeyValue::Undefined);
+
+    /// The special Infinity sentinel partition key value, used for EPK boundary calculations.
+    pub const INFINITY: Self = Self(InnerPartitionKeyValue::Infinity);
+
     /// Writes this value into a byte buffer using the V2 hashing encoding.
     ///
     /// Used by the effective partition key computation for MurmurHash3-128.
@@ -190,19 +202,6 @@ impl PartitionKeyValue {
             }
             _ => self.clone(),
         }
-    }
-
-    /// Creates the special Infinity sentinel value, used for EPK boundary calculations.
-    #[cfg(test)]
-    pub(crate) fn infinity() -> Self {
-        InnerPartitionKeyValue::Infinity.into()
-    }
-
-    /// Creates the Undefined partition key value.
-    ///
-    /// Represents items with no partition key property set.
-    pub fn undefined() -> Self {
-        InnerPartitionKeyValue::Undefined.into()
     }
 }
 
@@ -300,6 +299,12 @@ impl Default for PartitionKey {
 }
 
 impl PartitionKey {
+    /// A single null partition key value.
+    pub const NULL: PartitionKeyValue = PartitionKeyValue::NULL;
+
+    /// A single undefined partition key value.
+    pub const UNDEFINED: PartitionKeyValue = PartitionKeyValue::UNDEFINED;
+
     /// An empty partition key, used to signal a cross-partition operation.
     pub const EMPTY: PartitionKey = PartitionKey(Vec::new());
 
@@ -322,10 +327,31 @@ impl PartitionKey {
     pub fn values(&self) -> &[PartitionKeyValue] {
         &self.0
     }
+
+    /// Returns a hex string representation of the partition key hash.
+    pub fn get_hashed_partition_key_string(
+        &self,
+        kind: PartitionKeyKind,
+        version: u8,
+    ) -> EffectivePartitionKey {
+        let version = match version {
+            1 => PartitionKeyVersion::V1,
+            2 => PartitionKeyVersion::V2,
+            unsupported => {
+                tracing::warn!(
+                    "Partition key hashing version {} is unsupported in SDK API; defaulting to V2",
+                    unsupported
+                );
+                PartitionKeyVersion::V2
+            }
+        };
+
+        EffectivePartitionKey::compute(&self.0, kind, version)
+    }
 }
 
 impl AsHeaders for PartitionKey {
-    type Error = azure_core::Error;
+    type Error = crate::error::CosmosError;
     type Iter = std::iter::Once<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Result<Self::Iter, Self::Error> {
@@ -389,10 +415,14 @@ impl AsHeaders for PartitionKey {
                 }
                 InnerPartitionKeyValue::Infinity => {
                     // Internal sentinel — should never appear in a user-facing partition key.
-                    return Err(azure_core::Error::new(
-                        azure_core::error::ErrorKind::Other,
-                        "Infinity is not a valid partition key value for serialization",
-                    ));
+                    return Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message(
+                            "Infinity is not a valid partition key value for serialization",
+                        )
+                        .build());
                 }
                 InnerPartitionKeyValue::Undefined => {
                     // Items with no partition key property.

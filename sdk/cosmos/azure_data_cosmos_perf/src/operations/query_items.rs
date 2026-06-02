@@ -7,8 +7,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::Query;
+use azure_data_cosmos::{clients::ContainerClient, query::FeedScope};
 use futures::StreamExt;
 
 use super::{extract_backend_duration, Operation};
@@ -32,7 +32,10 @@ impl Operation for QueryItemsOperation {
         "QueryItems"
     }
 
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<Option<Duration>> {
+    async fn execute(
+        &self,
+        container: &ContainerClient,
+    ) -> azure_data_cosmos::Result<Option<Duration>> {
         let item = self.items.random();
         let pk = &item.partition_key;
 
@@ -40,7 +43,8 @@ impl Operation for QueryItemsOperation {
             Query::from("SELECT * FROM c WHERE c.partition_key = @pk").with_parameter("@pk", pk)?;
 
         let mut stream = container
-            .query_items::<serde_json::Value>(query, pk, None)?
+            .query_items::<serde_json::Value>(query, FeedScope::partition(pk), None)
+            .await?
             .into_pages();
 
         // Sum backend durations across pages so a multi-page query reports

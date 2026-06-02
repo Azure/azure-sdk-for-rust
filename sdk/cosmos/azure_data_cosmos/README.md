@@ -59,15 +59,15 @@ Instantiate a `DeveloperToolsCredential` to pass to the client. The same instanc
 ```rust
 use azure_identity::DeveloperToolsCredential;
 use azure_data_cosmos::{
-    CosmosClient, CosmosAccountReference, CosmosAccountEndpoint, RoutingStrategy,
+    CosmosClient, AccountReference, AccountEndpoint, RoutingStrategy,
 };
 
 async fn example() -> Result<(), Box<dyn std::error::Error>> {
     let credential: std::sync::Arc<dyn azure_core::credentials::TokenCredential> =
         DeveloperToolsCredential::new(None)?;
-    let endpoint: CosmosAccountEndpoint = "https://myaccount.documents.azure.com/"
+    let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/"
         .parse()?;
-    let account = CosmosAccountReference::with_credential(endpoint, credential);
+    let account = AccountReference::with_credential(endpoint, credential);
     let cosmos_client = CosmosClient::builder()
         .build(account, RoutingStrategy::ProximityTo("East US".into()))
         .await?;
@@ -89,7 +89,7 @@ For more information, see the [API reference documentation].
 
 ```rust
 use serde::{Serialize, Deserialize};
-use azure_data_cosmos::CosmosClient;
+use azure_data_cosmos::{CosmosClient, PatchInstructions, PatchOperation};
 
 #[derive(Serialize, Deserialize)]
 struct Item {
@@ -119,12 +119,8 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
     // Replace an item
     container.replace_item("partition1", "1", item, None).await?;
 
-    // Patch an item: apply a list of JSON-PATCH-style ops driver-side.
-    // The driver handles Read-Modify-Write internally and retries on 412.
-    // PATCH always returns the post-image (the locally merged document) — no
-    // extra round trip is required to read it back.
-    let patch = azure_data_cosmos::PatchSpec::new(vec![
-        azure_data_cosmos::PatchOp::set("/value", serde_json::json!("4")),
+    let patch = PatchInstructions::from(vec![
+        PatchOperation::set("/value", serde_json::json!("4")),
     ]);
     let patched: Item = container
         .patch_item("partition1", "1", patch, None)

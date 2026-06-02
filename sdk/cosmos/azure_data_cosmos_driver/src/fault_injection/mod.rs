@@ -7,7 +7,7 @@
 //! transport layer, below the retry policy. When a fault is injected, it triggers the same
 //! retry and failover behavior as a real service error. This enables testing of:
 //!
-//! - Error handling for various HTTP status codes (503, 500, 429, 408, etc.)
+//! - CosmosError handling for various HTTP status codes (503, 500, 429, 408, etc.)
 //! - Retry logic and backoff behavior
 //! - Regional failover scenarios
 //! - Operation-specific error handling
@@ -20,7 +20,7 @@
 //!   and probability.
 //! - [`FaultInjectionRule`] — Combines a condition with a result and additional controls
 //!   like timing windows (`start_time`/`end_time`), `hit_limit`, and `probability`.
-//! - [`FaultClient`] — An [`HttpClient`](azure_core::http::HttpClient)
+//! - [`FaultClient`] — A `TransportClient`
 //!   implementation that evaluates rules and injects faults.
 //! - `FaultInjectingHttpClientFactory` — An `HttpClientFactory`
 //!   decorator that wraps created clients with fault injection.
@@ -97,10 +97,12 @@ pub enum FaultInjectionErrorType {
     /// 403-1008 Forbidden from server.
     DatabaseAccountNotFound,
     /// Simulates a connection failure (e.g., connection refused, DNS failure).
-    /// Produces an `ErrorKind::Connection` error, not an HTTP response error.
+    /// Produces a transport error with `TRANSPORT_CONNECTION_FAILED`
+    /// sub-status, not an HTTP response error.
     ConnectionError,
     /// Simulates a response timeout (request sent but no response received).
-    /// Produces an `ErrorKind::Io` error, not an HTTP response error.
+    /// Produces a transport error with `TRANSPORT_IO_FAILED` sub-status,
+    /// not an HTTP response error.
     ResponseTimeout,
 }
 
@@ -201,7 +203,7 @@ impl fmt::Display for FaultOperationType {
 }
 
 impl FromStr for FaultOperationType {
-    type Err = azure_core::Error;
+    type Err = crate::error::CosmosError;
 
     /// Parses a string into a `FaultOperationType`.
     ///
@@ -221,10 +223,12 @@ impl FromStr for FaultOperationType {
             "MetadataReadDatabaseAccount" => Ok(FaultOperationType::MetadataReadDatabaseAccount),
             "MetadataQueryPlan" => Ok(FaultOperationType::MetadataQueryPlan),
             "MetadataPartitionKeyRanges" => Ok(FaultOperationType::MetadataPartitionKeyRanges),
-            _ => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!("unknown fault operation type: {s}"),
-            )),
+            _ => Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!("unknown fault operation type: {s}"))
+                .build()),
         }
     }
 }
@@ -247,7 +251,7 @@ impl fmt::Display for FaultInjectionErrorType {
 }
 
 impl FromStr for FaultInjectionErrorType {
-    type Err = azure_core::Error;
+    type Err = crate::error::CosmosError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -261,10 +265,12 @@ impl FromStr for FaultInjectionErrorType {
             "DatabaseAccountNotFound" => Ok(Self::DatabaseAccountNotFound),
             "ConnectionError" => Ok(Self::ConnectionError),
             "ResponseTimeout" => Ok(Self::ResponseTimeout),
-            _ => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!("unknown fault injection error type: {s}"),
-            )),
+            _ => Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!("unknown fault injection error type: {s}"))
+                .build()),
         }
     }
 }

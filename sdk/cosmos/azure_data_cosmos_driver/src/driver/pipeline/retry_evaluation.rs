@@ -16,12 +16,10 @@
 //! - 500 (reads only) → FailoverRetry + mark partition/endpoint unavailable
 //! - Other HTTP errors → Abort
 
-use azure_core::http::headers::Headers;
-
 use crate::{
     diagnostics::RequestSentStatus,
     driver::routing::{CosmosEndpoint, LocationEffect, UnavailablePartition, UnavailableReason},
-    models::{CosmosOperation, CosmosStatus, SubStatusCode},
+    models::{CosmosOperation, CosmosResponseHeaders, CosmosStatus, SubStatusCode},
 };
 
 use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
@@ -194,16 +192,15 @@ pub(crate) fn evaluate_transport_result(
 
         TransportOutcome::HttpError {
             status,
-            headers,
+            cosmos_headers,
             body,
             request_sent,
-            ..
         } => evaluate_http_outcome(
             operation,
             endpoint,
             retry_state,
             status,
-            headers,
+            cosmos_headers,
             body,
             request_sent,
         ),
@@ -235,12 +232,13 @@ pub(crate) fn evaluate_transport_result(
 /// (5xx). The first handler that recognizes the response returns
 /// `Some(action, effects)`; if none match, the response is aborted with a
 /// rich HTTP error.
+#[allow(clippy::too_many_arguments)]
 fn evaluate_http_outcome(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: CosmosStatus,
-    headers: Headers,
+    cosmos_headers: CosmosResponseHeaders,
     body: Vec<u8>,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
@@ -249,7 +247,7 @@ fn evaluate_http_outcome(
     }
 
     if let Some(result) =
-        try_handle_read_session_not_available(retry_state, &status, &headers, &body)
+        try_handle_read_session_not_available(retry_state, &status, &cosmos_headers, &body)
     {
         return result;
     }
@@ -259,7 +257,7 @@ fn evaluate_http_outcome(
         endpoint,
         retry_state,
         &status,
-        &headers,
+        &cosmos_headers,
         &body,
         request_sent,
     ) {
@@ -272,8 +270,7 @@ fn evaluate_http_outcome(
 
     (
         OperationAction::Abort {
-            error: build_http_error(&status, &headers, &body),
-            status: Some(status),
+            error: build_service_error(&status, &cosmos_headers, &body),
         },
         Vec::new(),
     )
@@ -327,7 +324,7 @@ fn try_handle_write_forbidden(
 fn try_handle_read_session_not_available(
     retry_state: &OperationRetryState,
     status: &CosmosStatus,
-    headers: &Headers,
+    cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     if !(status.is_read_session_not_available() && retry_state.can_retry_session()) {
@@ -337,8 +334,7 @@ fn try_handle_read_session_not_available(
     if !retry_state.can_use_multiple_write_locations && retry_state.session_token_retry_count >= 2 {
         return Some((
             OperationAction::Abort {
-                error: build_http_error(status, headers, body),
-                status: Some(*status),
+                error: build_service_error(status, cosmos_headers, body),
             },
             Vec::new(),
         ));
@@ -403,12 +399,13 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
 ///    updated routing state.
 /// 3. **Sent + (read || idempotent || PPAF write)** — failover retry with
 ///    the same routing-state effects.
+#[allow(clippy::too_many_arguments)]
 fn try_handle_retry_trigger_group(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: &CosmosStatus,
-    headers: &Headers,
+    cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
     request_sent: RequestSentStatus,
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
@@ -416,7 +413,8 @@ fn try_handle_retry_trigger_group(
         && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE);
     let is_service_unavailable =
         status.status_code() == azure_core::http::StatusCode::ServiceUnavailable;
-    let is_gone = status.is_gone();
+    // Partition Topology changes (410 with sub-status 1009) are handled by the dataflow layer, not classified as retry triggers here. Only non-topology 410s trigger retries.
+    let is_gone = status.is_gone() && !status.is_partition_topology_change();
     let is_request_timeout = status.status_code() == azure_core::http::StatusCode::RequestTimeout;
 
     let in_trigger_group =
@@ -461,8 +459,7 @@ fn try_handle_retry_trigger_group(
         }
         return Some((
             OperationAction::Abort {
-                error: build_http_error(status, headers, body),
-                status: Some(*status),
+                error: build_service_error(status, cosmos_headers, body),
             },
             effects,
         ));
@@ -535,7 +532,7 @@ fn evaluate_transport_layer_outcome(
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: CosmosStatus,
-    error: azure_core::Error,
+    error: crate::error::CosmosError,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
     if request_sent.definitely_not_sent() && retry_state.can_retry_failover() {
@@ -577,7 +574,6 @@ fn evaluate_transport_layer_outcome(
     (
         OperationAction::Abort {
             error: build_transport_error(&status, error),
-            status: Some(status),
         },
         effects,
     )
@@ -593,61 +589,108 @@ fn evaluate_transport_layer_outcome(
 fn evaluate_deadline_exceeded_outcome(
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
-    let message = if request_sent.definitely_not_sent() {
+    let message: &'static str = if request_sent.definitely_not_sent() {
         "end-to-end operation timeout exceeded before request was sent"
     } else {
         "end-to-end operation timeout exceeded"
     };
 
-    (
-        OperationAction::Abort {
-            error: azure_core::Error::new(azure_core::error::ErrorKind::Other, message),
-            status: Some(CosmosStatus::from_parts(
-                azure_core::http::StatusCode::RequestTimeout,
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-            )),
-        },
-        Vec::new(),
-    )
+    // Build the typed end-to-end timeout error (carries
+    // `RequestTimeout` + `CLIENT_OPERATION_TIMEOUT` on `error.status()`)
+    // and abort. The operation pipeline propagates
+    // `crate::error::CosmosError` directly via `OperationAction::Abort.error`.
+    let cosmos_err = crate::error::CosmosError::builder()
+        .with_status(CosmosStatus::from_parts(
+            azure_core::http::StatusCode::RequestTimeout,
+            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        ))
+        .with_message(message)
+        .build();
+
+    (OperationAction::Abort { error: cosmos_err }, Vec::new())
 }
 
-/// Builds an `azure_core::Error` from a Cosmos HTTP error status.
-///
-/// Attaches the response body and headers as a `raw_response` so callers
-/// can match on `ErrorKind::HttpResponse { raw_response: Some(_), .. }`
-/// and inspect the service error payload.
-fn build_http_error(status: &CosmosStatus, headers: &Headers, body: &[u8]) -> azure_core::Error {
-    let status_code = status.status_code();
-    let name = status.name().unwrap_or("Unknown");
+/// Formats the human-readable message for a Cosmos HTTP error status.
+fn service_error_message(status: &CosmosStatus) -> String {
     let sub_status_str = match status.sub_status() {
         Some(s) => format!("/{}", s.value()),
         None => String::new(),
     };
-    let message = format!(
+    format!(
         "Cosmos DB returned HTTP {}{}: {}",
-        u16::from(status_code),
+        u16::from(status.status_code()),
         sub_status_str,
-        name,
-    );
-
-    let error_code: Option<String> = status
-        .sub_status()
-        .map(|s: SubStatusCode| s.value().to_string());
-
-    let raw_response =
-        azure_core::http::RawResponse::from_bytes(status_code, headers.clone(), body.to_vec());
-
-    azure_core::Error::new(
-        azure_core::error::ErrorKind::HttpResponse {
-            status: status_code,
-            error_code,
-            raw_response: Some(Box::new(raw_response)),
-        },
-        message,
+        status.name().unwrap_or("Unknown"),
     )
 }
 
-fn build_transport_error(status: &CosmosStatus, error: azure_core::Error) -> azure_core::Error {
+/// Builds a typed [`CosmosError`] for a Cosmos HTTP error response.
+///
+/// Captures the parsed response headers and the raw response body bytes
+/// (e.g. the JSON error payload returned by the service for a 400 /
+/// BadRequest) on the resulting `CosmosError`. The error propagates through the
+/// pipeline as `crate::error::CosmosError` end-to-end. Callers inspect the wire
+/// payload directly via [`CosmosError::status`](crate::error::CosmosError::status),
+/// [`CosmosError::cosmos_headers`](crate::error::CosmosError::cosmos_headers), and
+/// [`CosmosError::response_body`](crate::error::CosmosError::response_body).
+///
+/// The returned error carries **no** `DiagnosticsContext`. The operation
+/// pipeline's abort branch (the only production caller of this helper, via
+/// [`OperationAction::Abort`]) grafts the completed operation diagnostics
+/// onto the error via `CosmosError::builder().from_error(err).with_diagnostics(ctx).build()`
+/// before it leaves the pipeline. Keeping this module free of any diagnostics plumbing preserves
+/// `evaluate_transport_result` as a pure function over its inputs and
+/// avoids constructing a throw-away diagnostics value that would
+/// immediately be overwritten downstream.
+fn build_service_error(
+    status: &CosmosStatus,
+    cosmos_headers: &CosmosResponseHeaders,
+    body: &[u8],
+) -> crate::error::CosmosError {
+    // Some gateway versions return HTTP 400 for cross-partition queries with
+    // unsupported features (ORDER BY, aggregates, GROUP BY, ...) without
+    // emitting the `x-ms-substatus: 1004` header that the .NET / Java SDKs
+    // rely on. Detect that case from the response body and synthesize the
+    // canonical [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] so
+    // callers get a consistent typed status regardless of gateway version.
+    let effective_status = synthesize_cross_partition_query_status(*status, body);
+    crate::error::CosmosError::builder()
+        .with_status(effective_status)
+        .with_message(service_error_message(&effective_status))
+        .with_response_parts(crate::models::CosmosResponsePayload::new(
+            body.to_vec(),
+            cosmos_headers.clone(),
+        ))
+        .build()
+}
+
+/// Returns [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] when `status`
+/// is a bare HTTP 400 (no sub-status) and `body` is the gateway's
+/// "unsupported query features" rejection. Otherwise returns `status`
+/// unchanged.
+fn synthesize_cross_partition_query_status(status: CosmosStatus, body: &[u8]) -> CosmosStatus {
+    use azure_core::http::StatusCode;
+    if status.status_code() != StatusCode::BadRequest || status.sub_status().is_some() {
+        return status;
+    }
+    let Ok(text) = std::str::from_utf8(body) else {
+        return status;
+    };
+
+    // Match the gateway's well-known message rather than parsing JSON to
+    // avoid a serde dependency on the hot error path. The fragment is
+    // stable across .NET / Java / Python emulator gateways.
+    if text.contains("unsupported features") && text.contains("Upgrade your SDK") {
+        crate::error::CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE
+    } else {
+        status
+    }
+}
+
+fn build_transport_error(
+    status: &CosmosStatus,
+    error: crate::error::CosmosError,
+) -> crate::error::CosmosError {
     let status_code = status.status_code();
     let name = status.name().unwrap_or("Unknown");
     let sub_status_str = match status.sub_status() {
@@ -657,15 +700,26 @@ fn build_transport_error(status: &CosmosStatus, error: azure_core::Error) -> azu
 
     let detail_summary = crate::driver::error_chain_summary(&error);
     let message = format!(
-        "Cosmos DB transport failure HTTP {}{}: {} (kind: {}). Details: {}",
+        "Cosmos DB transport failure HTTP {}{}: {}. Details: {}",
         u16::from(status_code),
         sub_status_str,
         name,
-        error.kind(),
         detail_summary,
     );
 
-    azure_core::Error::with_error(error.kind().clone(), error, message)
+    // Wrap into a fresh transport-kind error carrying the enriched message
+    // and the original Cosmos error as source. Forward the inner error's
+    // diagnostics so `outer.diagnostics()` is not silently `None` — callers
+    // should not have to walk `source()` to recover the operation's
+    // diagnostic context.
+    let mut b = crate::error::CosmosError::builder()
+        .with_status(*status)
+        .with_message(message)
+        .with_arc_source(std::sync::Arc::new(error.clone()));
+    if let Some(diag) = error.diagnostics() {
+        b = b.with_diagnostics(diag);
+    }
+    b.build()
 }
 
 #[cfg(test)]
@@ -712,10 +766,10 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
-                error: azure_core::Error::new(
-                    azure_core::error::ErrorKind::Connection,
-                    "connection refused",
-                ),
+                error: crate::error::CosmosError::builder()
+                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_message("connection refused")
+                    .build(),
                 request_sent: sent,
             },
         }
@@ -725,7 +779,17 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::new(status_code),
-                headers: azure_core::http::headers::Headers::new(),
+                cosmos_headers: CosmosResponseHeaders::default(),
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        }
+    }
+
+    fn make_http_error_status(status: CosmosStatus) -> TransportResult {
+        TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status,
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -790,8 +854,8 @@ mod tests {
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         match action {
-            OperationAction::Abort { status, .. } => {
-                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
+            OperationAction::Abort { error } => {
+                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
             }
             other => panic!("expected abort, got {other:?}"),
         }
@@ -804,16 +868,49 @@ mod tests {
     }
 
     #[test]
+    fn build_transport_error_forwards_inner_diagnostics() {
+        // The wrap performed by `build_transport_error` must not silently
+        // drop the inner error's diagnostics: callers reading
+        // `outer.diagnostics()` should see the same `Arc<DiagnosticsContext>`
+        // that was attached to the inner cosmos error, not `None`.
+        let diag: std::sync::Arc<crate::diagnostics::DiagnosticsContext> = std::sync::Arc::new(
+            crate::diagnostics::DiagnosticsContextBuilder::new(
+                crate::models::ActivityId::new_uuid(),
+                std::sync::Arc::new(crate::options::DiagnosticsOptions::default()),
+            )
+            .complete(),
+        );
+        let inner = crate::error::CosmosError::builder()
+            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_message("inner transport failure")
+            .with_diagnostics(std::sync::Arc::clone(&diag))
+            .build();
+
+        let outer = build_transport_error(&CosmosStatus::TRANSPORT_GENERATED_503, inner);
+
+        let outer_diag = outer
+            .diagnostics()
+            .expect("outer error must inherit inner diagnostics");
+        assert!(
+            std::sync::Arc::ptr_eq(&outer_diag, &diag),
+            "outer diagnostics must be the same Arc as the inner's"
+        );
+    }
+
+    #[test]
     fn transport_abort_error_includes_status_kind_and_details() {
         let op = make_create_operation();
         let result = TransportResult {
             outcome: TransportOutcome::TransportError {
                 status: CosmosStatus::TRANSPORT_GENERATED_503,
-                error: azure_core::Error::with_error(
-                    azure_core::error::ErrorKind::Io,
-                    std::io::Error::new(std::io::ErrorKind::BrokenPipe, "socket reset"),
-                    "failed to execute `reqwest` request",
-                ),
+                error: crate::error::CosmosError::builder()
+                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_message("failed to execute `reqwest` request")
+                    .with_source(std::io::Error::new(
+                        std::io::ErrorKind::BrokenPipe,
+                        "socket reset",
+                    ))
+                    .build(),
                 request_sent: RequestSentStatus::Unknown,
             },
         };
@@ -825,13 +922,16 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
 
         match action {
-            OperationAction::Abort { status, error } => {
-                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
-                assert_eq!(error.kind(), &azure_core::error::ErrorKind::Io);
+            OperationAction::Abort { error } => {
+                // `error` is the typed Cosmos error directly. The fact
+                // that `.status()` resolves at all is itself the proof:
+                // that accessor only exists on `crate::error::CosmosError`, so
+                // any regression that downgraded the abort site to a
+                // foreign error type would fail to compile.
+                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
                 let text = error.to_string();
                 assert!(text.contains("HTTP 503/20003"));
                 assert!(text.contains("TransportGenerated503"));
-                assert!(text.contains("kind: Io"));
                 assert!(text.contains("failed to execute `reqwest` request"));
                 assert!(text.contains("socket reset"));
             }
@@ -866,8 +966,8 @@ mod tests {
         );
         let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         match action {
-            OperationAction::Abort { status, .. } => {
-                assert_eq!(status, Some(CosmosStatus::TRANSPORT_GENERATED_503));
+            OperationAction::Abort { error } => {
+                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
             }
             other => panic!("expected abort, got {other:?}"),
         }
@@ -887,12 +987,58 @@ mod tests {
     }
 
     #[test]
+    fn partition_topology_gone_aborts_for_dataflow_handling() {
+        let op = make_read_operation();
+        let result = make_http_error_status(
+            CosmosStatus::new(StatusCode::Gone)
+                .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value()),
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        match action {
+            OperationAction::Abort { error, .. } => {
+                assert_eq!(
+                    error.status(),
+                    CosmosStatus::new(StatusCode::Gone)
+                        .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value())
+                );
+            }
+            other => panic!("expected abort, got {other:?}"),
+        }
+        assert!(effects.is_empty());
+    }
+
+    #[test]
+    fn non_topology_gone_still_retries() {
+        let op = make_read_operation();
+        let result = make_http_error_status(
+            CosmosStatus::new(StatusCode::Gone)
+                .with_sub_status(SubStatusCode::NAME_CACHE_STALE.value()),
+        );
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
     fn write_forbidden_triggers_failover_and_refresh_effect() {
         let op = make_create_operation();
         let result = TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::WRITE_FORBIDDEN,
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -916,7 +1062,6 @@ mod tests {
         let result = TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -1022,8 +1167,8 @@ mod tests {
 
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         match action {
-            OperationAction::Abort { status, .. } => {
-                let status = status.expect("timeout status should be set");
+            OperationAction::Abort { error } => {
+                let status = error.status();
                 assert_eq!(status.status_code(), StatusCode::RequestTimeout);
                 assert_eq!(
                     status.sub_status(),
@@ -1166,7 +1311,7 @@ mod tests {
         // Explicit 404/0 (sub-status 0) construction — same outcome.
         assert!(is_region_confirming_status(&status_with_substatus(
             StatusCode::NotFound,
-            SubStatusCode::from(0u32)
+            SubStatusCode::from(0u16)
         )));
     }
 
@@ -1365,7 +1510,6 @@ mod tests {
         TransportResult {
             outcome: TransportOutcome::HttpError {
                 status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
-                headers: azure_core::http::headers::Headers::new(),
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
