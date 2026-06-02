@@ -34,7 +34,7 @@ use std::borrow::Cow;
 /// use azure_data_cosmos_driver::options::OperationOptions;
 /// use url::Url;
 ///
-/// # async fn example() -> azure_core::Result<()> {
+/// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
 /// // 1. Set up runtime and driver
 /// let runtime = CosmosDriverRuntime::builder().build().await?;
 /// let account = AccountReference::with_master_key(
@@ -175,7 +175,7 @@ impl CosmosOperation {
     /// (the `x-ms-max-item-count` request header).
     ///
     /// Applies to feed-style operations such as queries and read-feed.
-    pub fn with_max_item_count(mut self, max_item_count: crate::models::MaxItemCount) -> Self {
+    pub fn with_max_item_count(mut self, max_item_count: crate::models::MaxItemCountHint) -> Self {
         self.request_headers.max_item_count = Some(max_item_count);
         self
     }
@@ -389,7 +389,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
     ///
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     /// let account = AccountReference::with_master_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
@@ -473,7 +473,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
     ///
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     /// let account = AccountReference::with_master_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
@@ -513,7 +513,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::options::OperationOptions;
     /// use url::Url;
     ///
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     /// let account = AccountReference::with_master_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
@@ -580,7 +580,7 @@ impl CosmosOperation {
     /// it reads the current item, applies the requested patch operations to
     /// the local JSON document, and issues an ETag-guarded
     /// [`OperationType::Replace`]. The PATCH operation itself is never sent on
-    /// the wire; callers build a [`crate::models::PatchSpec`] and pass it as
+    /// the wire; callers build a [`crate::models::PatchInstructions`] and pass it as
     /// the operation body (via [`with_body`](Self::with_body)) — the patch
     /// handler deserializes it before issuing the underlying transport
     /// operations.

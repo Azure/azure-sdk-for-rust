@@ -192,7 +192,7 @@ impl HttpClientFactory for MockHttpClientFactory {
         &self,
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
+    ) -> azure_data_cosmos_driver::error::Result<Arc<dyn TransportClient>> {
         Ok(Arc::new(MockTransportClient::new()))
     }
 }
@@ -332,15 +332,15 @@ pub async fn setup_live() -> (Arc<CosmosDriver>, ItemReference) {
 /// Used during setup to ignore "resource already exists" responses when
 /// creating the benchmark database, container, and item.
 fn ignore_conflict(
-    result: azure_core::Result<Option<azure_data_cosmos_driver::CosmosResponse>>,
-) -> azure_core::Result<()> {
+    result: azure_data_cosmos_driver::error::Result<
+        Option<azure_data_cosmos_driver::CosmosResponse>,
+    >,
+) -> azure_data_cosmos_driver::error::Result<()> {
     match result {
         Ok(_) => Ok(()),
         Err(e) => {
-            if let azure_core::error::ErrorKind::HttpResponse { status, .. } = e.kind() {
-                if *status == azure_core::http::StatusCode::Conflict {
-                    return Ok(());
-                }
+            if e.status().is_conflict() {
+                return Ok(());
             }
             Err(e)
         }

@@ -18,7 +18,6 @@ pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
-mod cosmos_status;
 mod etag;
 mod finite_f64;
 pub(crate) mod partition_key;
@@ -50,19 +49,23 @@ pub use continuation_token::ContinuationToken;
 pub(crate) use continuation_token::ResolvedToken;
 pub use cosmos_headers::{
     AutoscaleAutoUpgradePolicy, AutoscaleThroughputPolicy, CosmosRequestHeaders,
-    CosmosResponseHeaders, MaxItemCount, OfferAutoscaleSettings,
+    CosmosResponseHeaders, MaxItemCountHint, OfferAutoscaleSettings,
 };
 pub use cosmos_operation::CosmosOperation;
 pub use cosmos_resource_reference::CosmosResourceReference;
 pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
-pub use cosmos_status::CosmosStatus;
-pub use cosmos_status::SubStatusCode;
+pub(crate) use cosmos_response::CosmosResponsePayload;
+// Cosmos status types are owned by `crate::error::cosmos_status` (canonical home,
+// tightly coupled to the typed Cosmos error). Re-exported here for ergonomic access
+// via the historic `crate::models::CosmosStatus` path used throughout the driver
+// internals.
+pub use crate::error::cosmos_status::{CosmosStatus, SubStatusCode};
 pub use effective_partition_key::EffectivePartitionKey;
 pub use etag::{ETag, Precondition};
 pub use feed_range::FeedRange;
 pub use partition_key::{PartitionKey, PartitionKeyValue};
-pub use patch::{IncrValue, PatchOp, PatchSpec};
+pub use patch::{CosmosNumber, PatchInstructions, PatchOperation};
 pub use request_charge::RequestCharge;
 pub use resource_reference::ContainerReference;
 pub use resource_reference::{DatabaseReference, ItemReference};
@@ -71,6 +74,7 @@ pub use resource_reference::{
 };
 pub use response_body::ResponseBody;
 pub use session_token_segment::SessionTokenSegment;
+pub(crate) use user_agent::normalize_wrapping_sdk_identifier;
 pub use user_agent::UserAgent;
 
 pub(crate) use account_reference::AccountEndpoint;
@@ -172,6 +176,21 @@ impl PartitionKeyDefinition {
     pub fn is_complete(&self, pk: &PartitionKey) -> bool {
         pk.len() == self.paths.len()
     }
+
+    /// Overrides the [`PartitionKeyKind`] inferred by [`new`](Self::new).
+    ///
+    /// Most callers should rely on the automatic inference; this setter is for
+    /// the rare case where the wire-side kind must differ from the path count.
+    pub fn with_kind(mut self, kind: PartitionKeyKind) -> Self {
+        self.kind = kind;
+        self
+    }
+
+    /// Overrides the [`PartitionKeyVersion`] (defaults to [`PartitionKeyVersion::V2`]).
+    pub fn with_version(mut self, version: PartitionKeyVersion) -> Self {
+        self.version = version;
+        self
+    }
 }
 
 /// Creates a single-path [`PartitionKeyDefinition`] from a string slice.
@@ -238,6 +257,7 @@ fn default_pk_version() -> PartitionKeyVersion {
 /// - `2` -> `V2`
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(try_from = "u32", into = "u32")]
+#[non_exhaustive]
 pub enum PartitionKeyVersion {
     /// Partition key version 1.
     V1,
@@ -630,7 +650,7 @@ impl SessionToken {
     ///
     /// This is the primary API for combining session tokens without exposing
     /// internal token format details.
-    pub fn merge(&self, other: &Self) -> azure_core::Result<Self> {
+    pub fn merge(&self, other: &Self) -> crate::error::Result<Self> {
         use std::collections::HashMap;
 
         let mut pk_order: Vec<String> = Vec::new();

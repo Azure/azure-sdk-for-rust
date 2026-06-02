@@ -83,19 +83,28 @@ impl IndexingPolicy {
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum IndexingMode {
     Consistent,
     None,
 }
 
 /// Represents a JSON path.
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct PropertyPath {
     // The path to the property referenced in this index.
     pub path: String,
+}
+
+impl PropertyPath {
+    /// Sets the path of this `PropertyPath`.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
 }
 
 impl<T: Into<String>> From<T> for PropertyPath {
@@ -117,10 +126,27 @@ pub struct SpatialIndex {
     pub types: Vec<SpatialType>,
 }
 
+impl SpatialIndex {
+    /// Creates a new [`SpatialIndex`] over the given path with no spatial types.
+    pub fn new(path: impl Into<String>) -> Self {
+        Self {
+            path: path.into(),
+            types: Vec::new(),
+        }
+    }
+
+    /// Appends `spatial_type` to the index's list of spatial types.
+    pub fn with_type(mut self, spatial_type: SpatialType) -> Self {
+        self.types.push(spatial_type);
+        self
+    }
+}
+
 /// Defines the types of spatial data that can be indexed.
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "PascalCase")]
+#[non_exhaustive]
 pub enum SpatialType {
     Point,
     Polygon,
@@ -129,13 +155,21 @@ pub enum SpatialType {
 }
 
 /// Represents a composite index
-#[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(transparent)]
 #[non_exhaustive]
 pub struct CompositeIndex {
     /// The properties in this composite index
     pub properties: Vec<CompositeIndexProperty>,
+}
+
+impl CompositeIndex {
+    /// Appends `property` to the composite index.
+    pub fn with_property(mut self, property: CompositeIndexProperty) -> Self {
+        self.properties.push(property);
+        self
+    }
 }
 
 /// Describes a single property in a composite index.
@@ -154,10 +188,33 @@ pub struct CompositeIndexProperty {
     pub order: CompositeIndexOrder,
 }
 
+impl CompositeIndexProperty {
+    /// Creates a new [`CompositeIndexProperty`] with the given path and order.
+    pub fn new(path: impl Into<String>, order: CompositeIndexOrder) -> Self {
+        Self {
+            path: path.into(),
+            order,
+        }
+    }
+
+    /// Sets the path of this composite index property.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
+
+    /// Sets the order of this composite index property.
+    pub fn with_order(mut self, order: CompositeIndexOrder) -> Self {
+        self.order = order;
+        self
+    }
+}
+
 /// Ordering values available for composite indexes.
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum CompositeIndexOrder {
     Ascending,
     Descending,
@@ -179,10 +236,33 @@ pub struct VectorIndex {
     pub index_type: VectorIndexType,
 }
 
+impl VectorIndex {
+    /// Creates a new [`VectorIndex`] with the given path and index type.
+    pub fn new(path: impl Into<String>, index_type: VectorIndexType) -> Self {
+        Self {
+            path: path.into(),
+            index_type,
+        }
+    }
+
+    /// Sets the path of this vector index.
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        self.path = path.into();
+        self
+    }
+
+    /// Sets the type of this vector index.
+    pub fn with_index_type(mut self, index_type: VectorIndexType) -> Self {
+        self.index_type = index_type;
+        self
+    }
+}
+
 /// Types of vector indexes supported by Cosmos DB
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub enum VectorIndexType {
     /// Represents the `flat` vector index type.
     Flat,

@@ -29,6 +29,7 @@ use azure_data_cosmos_driver::models::{
 /// `into_driver_headers` helper) so the driver representation is not part of
 /// the SDK's public surface.
 #[derive(Clone, Debug, Default)]
+#[non_exhaustive]
 pub struct ResponseHeaders(DriverCosmosResponseHeaders);
 
 impl ResponseHeaders {

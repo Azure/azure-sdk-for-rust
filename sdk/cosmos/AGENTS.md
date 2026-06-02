@@ -45,7 +45,7 @@ impl MyType {
 
 // ✅ GOOD: Implement the standard trait
 impl std::str::FromStr for MyType {
-    type Err = azure_core::Error;
+    type Err = azure_data_cosmos::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> { /* ... */ }
 }
 
@@ -66,7 +66,7 @@ If you need a non-fallible parse internally, create a **private** helper method 
 
 #### Error Handling
 
-- Use `azure_core::Result<T>` for all fallible operations
+- Use `azure_data_cosmos::Result<T>` (SDK) or `azure_data_cosmos_driver::error::Result<T>` (driver) for all fallible operations — both alias `Result<T, crate::Error>` over the typed Cosmos error.
 - **Prefer returning `Result::Err` over panicking** in public methods whose inputs could originate from user-constructed types (even indirectly). Callers can then decide whether to propagate, log, or handle — rather than crashing their application. Use `assert!`/`panic!` only for true invariant violations that indicate programmer error in internal code.
 - Cosmos-specific errors should provide:
   - HTTP status code
@@ -190,7 +190,7 @@ pub async fn create_item<T: Serialize>(
     &self,
     item: &T,
     options: &CreateItemOptions,
-) -> azure_core::Result<ItemResponse<T>>
+) -> azure_data_cosmos::Result<ItemResponse<T>>
 where
     T: for<'de> Deserialize<'de>,
 {
@@ -222,7 +222,7 @@ where
 
 - ✅ **Management/metadata resource representations**: Account properties, offers, database properties, container properties, partition key ranges (NOT data plane documents/items)
 - ✅ **Supporting structures**: Types that are properties of models (IndexingPolicy, PartitionKeyDefinition, VectorEmbeddingPolicy, consistency levels, indexing modes, connection modes)
-- ✅ **Operation-specific envelopes**: Structures created for operation support (TransactionalBatch, PatchDocument, BulkOperations)
+- ✅ **Operation-specific envelopes**: Structures created for operation support (TransactionalBatch, PatchInstructions, BulkOperations)
 - ✅ **Header/wire values**: Types serialized into request headers or body (ETag, SessionToken, PartitionKey, TriggerReference, ThroughputControlGroupName)
 
 **Exclude from `models/` (use dedicated modules)**:
@@ -355,7 +355,7 @@ pub mod builders {
             endpoint: impl Into<String>,
             credential: impl TokenCredential,
             options: DriverOptions,
-        ) -> azure_core::Result<Driver> {
+        ) -> azure_data_cosmos_driver::error::Result<Driver> {
             // ... construction logic
         }
     }
@@ -469,6 +469,22 @@ Before considering any task complete, run the following checks **in order** on a
 5. **Test check** (if tests exist): `cargo test -p <crate-name> --all-features`
    - Tests gated by `test_category` (e.g., emulator tests) are always compiled but are **ignored at runtime** unless the corresponding cfg is set via `RUSTFLAGS`.
    - To actually run emulator tests: `RUSTFLAGS='--cfg test_category="emulator"' cargo test -p <crate-name> --tests`
+   - To run against the new **vnext (Linux) emulator** instead, point at a vnext container and use the `emulator_vnext` cfg:
+
+     ```bash
+     # Start the vnext emulator in Docker (HTTP mode):
+     docker run -d --name cosmosdb-emulator-vnext \
+         -p 8081:8081 -p 8080:8080 \
+         -e ENABLE_EXPLORER=false \
+         mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
+
+     # Point the test framework at it and select the vnext-compatible test set:
+     export AZURE_COSMOS_CONNECTION_STRING='AccountEndpoint=http://localhost:8081;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==;'
+     RUSTFLAGS='--cfg test_category="emulator_vnext"' \
+         cargo test -p azure_data_cosmos_driver --test emulator -- --test-threads=1
+     ```
+
+     A subset of emulator tests (backup-endpoint fallback, partition failover) are intentionally not gated on `"emulator_vnext"` because they rely on multi-endpoint topology the vnext gateway does not model. See the per-file module headers for the exclusion rationale.
 
 **Common documentation link errors to avoid**:
 

@@ -299,8 +299,8 @@ impl ContainerRoutingMap {
     fn validate_and_build_index(
         sorted: &[PartitionKeyRange],
     ) -> Result<(i32, HashMap<String, PartitionKeyRange>), RoutingMapError> {
-        let min_epk = EffectivePartitionKey::min();
-        let max_epk = EffectivePartitionKey::max();
+        let min_epk = EffectivePartitionKey::MIN.clone();
+        let max_epk = EffectivePartitionKey::MAX.clone();
         let mut expected_min = min_epk.as_str();
         for range in sorted {
             match range.min_inclusive.as_str().cmp(expected_min) {
