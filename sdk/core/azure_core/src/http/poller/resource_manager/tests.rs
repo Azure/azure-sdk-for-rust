@@ -494,9 +494,10 @@ async fn new_poller_async_pattern_failed() {
         None,
     );
 
-    assert!(
-        poller.await.is_err(),
-        "failed operation should return an error"
+    let err = poller.await.unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "resource manager long-running operation failed"
     );
 }
 
