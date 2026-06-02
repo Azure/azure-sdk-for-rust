@@ -26,6 +26,7 @@ use std::{
     task::{Context as TaskContext, Poll},
 };
 
+#[cfg(feature = "resource_manager")]
 pub mod resource_manager;
 
 /// Default retry time for long-running operations if no retry-after header is present

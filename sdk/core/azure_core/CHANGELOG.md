@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `resource_manager` feature to support Azure Resource Manager (ARM)-specific functionality.
+- Added `http::poller::resource_manager::new_poller` to create a `Poller` using ARM-specific heuristics.
 - `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 
 ### Breaking Changes
