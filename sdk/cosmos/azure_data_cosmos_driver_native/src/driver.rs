@@ -39,14 +39,9 @@ use crate::error::{CosmosErrorCode, CosmosErrorHandle};
 use crate::runtime::RuntimeContext;
 
 pub(crate) struct DriverInner {
-    /// First non-test consumer arrives in Phase 6
-    /// (`cosmos_driver_submit`), which clones it onto each spawned
-    /// task. Phase 3 keeps the field warm so the handle's storage shape
-    /// is fixed across phases.
-    #[allow(
-        dead_code,
-        reason = "first non-test caller arrives in Phase 6 (cosmos_driver_submit)"
-    )]
+    /// Consumed by Phase 6 (`cosmos_driver_submit`,
+    /// `cosmos_driver_resolve_container_*`) which `Arc::clone`s it
+    /// onto each spawned task.
     pub(crate) inner: Arc<CosmosDriver>,
 }
 
@@ -73,10 +68,16 @@ impl DriverHandle {
         Box::into_raw(storage).cast::<DriverHandle>()
     }
 
-    #[allow(
-        dead_code,
-        reason = "first non-test caller arrives in Phase 6 (cosmos_driver_submit)"
-    )]
+    /// Allocates a fresh FFI handle that shares an existing
+    /// [`DriverInner`] `Arc`. Used by
+    /// [`crate::response::cosmos_response_take_driver`] to mint a
+    /// public `cosmos_driver_t *` from a degenerate response's stashed
+    /// side payload.
+    pub(crate) fn from_arc_into_raw(inner: Arc<DriverInner>) -> *mut Self {
+        let storage = Box::new(DriverStorage { _opaque: [], inner });
+        Box::into_raw(storage).cast::<DriverHandle>()
+    }
+
     pub(crate) fn inner_arc(p: *const DriverHandle) -> Option<Arc<DriverInner>> {
         if p.is_null() {
             return None;

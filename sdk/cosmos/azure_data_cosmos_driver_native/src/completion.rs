@@ -167,6 +167,19 @@ impl OperationHandle {
         Box::into_raw(storage).cast::<OperationHandle>()
     }
 
+    /// Allocates a fresh handle (same as `new_raw`) but exposed to
+    /// `crate::submit` so the submit pipeline can mint the producer-side
+    /// handle that pairs with the in-flight task.
+    pub(crate) fn allocate() -> *mut Self {
+        Self::new_raw()
+    }
+
+    /// Returns a cloned `Arc<OperationInner>` for the submit pipeline's
+    /// tokio-side task to consult / write to.
+    pub(crate) fn inner_arc(p: *const OperationHandle) -> Option<Arc<OperationInner>> {
+        Self::storage(p).map(|s| Arc::clone(&s.inner))
+    }
+
     /// Build a fresh handle that shares the inner state of an existing handle.
     #[allow(
         dead_code,
@@ -194,7 +207,7 @@ impl OperationHandle {
         Self::storage(p).map(|s| -> &OperationInner { &s.inner })
     }
 
-    fn drop_raw(p: *mut OperationHandle) {
+    pub(crate) fn drop_raw(p: *mut OperationHandle) {
         if p.is_null() {
             return;
         }
@@ -211,9 +224,10 @@ impl OperationHandle {
 
 /// Internal storage of a `cosmos_completion_t`.
 ///
-/// Phase 1 carries no response payload — Phase 6 adds `Option<CosmosResponse>`.
-/// `take_response` / `response` therefore always return NULL in Phase 1; the
-/// FFI surface still exposes them so the header is stable.
+/// Phase 1 carried no response payload; Phase 6 adds the optional
+/// `response` slot which `cosmos_completion_take_response` detaches
+/// from. The slot is `None` on every error / cancelled completion and
+/// on every Phase 1 test-synthesized completion.
 pub struct Completion {
     outcome: CosmosCompletionOutcome,
     status: CosmosErrorCode,
@@ -234,6 +248,11 @@ pub struct Completion {
     /// while leaving the borrowed `cosmos_completion_error` accessor working
     /// against a `None` slot.
     error: Mutex<Option<Arc<CosmosErrorInner>>>,
+    /// Detachable response. Populated only on `OK` completions emitted
+    /// by Phase 6 submit paths; absent on every other completion.
+    /// `cosmos_completion_take_response` moves the contained handle out
+    /// (subsequent calls return NULL).
+    pub(crate) response: Mutex<Option<*mut crate::response::ResponseHandle>>,
 }
 
 // SAFETY: `user_data` is an opaque `void *` that the wrapper round-trips
@@ -251,6 +270,13 @@ impl Drop for Completion {
         if let Some(handle) = self.cached_error_handle.lock().unwrap().take() {
             crate::error::CosmosErrorHandle::drop_raw(handle);
         }
+        // Free the response if it was never taken via
+        // `cosmos_completion_take_response`. The slot owns the raw
+        // pointer; freeing here mirrors how `cached_error_handle` is
+        // freed above.
+        if let Some(response) = self.response.lock().unwrap().take() {
+            crate::response::cosmos_response_free(response);
+        }
     }
 }
 
@@ -263,6 +289,30 @@ impl Completion {
             // / `_try_wait` / `_wait_batch` and has not been freed.
             Some(unsafe { &*p })
         }
+    }
+
+    /// Builds a `Box<Completion>` ready for [`CompletionQueue::enqueue`].
+    /// Used by [`crate::submit`] to publish the result of a spawned
+    /// driver call.
+    pub(crate) fn new_for_publish(
+        outcome: CosmosCompletionOutcome,
+        status: CosmosErrorCode,
+        user_data: *mut c_void,
+        op_inner: Arc<OperationInner>,
+        error: Option<Arc<CosmosErrorInner>>,
+        response: Option<*mut crate::response::ResponseHandle>,
+    ) -> Box<Completion> {
+        Box::new(Completion {
+            outcome,
+            status,
+            user_data,
+            op_inner,
+            cached_op_handle: Mutex::new(None),
+            cached_error_handle: Mutex::new(None),
+            was_cancel_requested: false,
+            error: Mutex::new(error),
+            response: Mutex::new(response),
+        })
     }
 }
 
@@ -319,7 +369,7 @@ impl From<CosmosCqOptions> for CqOptions {
 }
 
 /// Internal `Arc`-shared queue state.
-struct CompletionQueueInner {
+pub(crate) struct CompletionQueueInner {
     inner: Mutex<QueueInner>,
     /// Signalled whenever a new completion is enqueued.
     data_available: Condvar,
@@ -327,9 +377,33 @@ struct CompletionQueueInner {
     /// producer waiting on `_wait_writable` can wake).
     space_available: Condvar,
     options: CqOptions,
-    /// Keep the runtime alive for the queue's lifetime. Phase 1 does not yet
-    /// spawn work on it (no submit pipeline), but Phase 2+ relies on this.
-    _runtime: Arc<RuntimeContextInner>,
+    /// Keep the runtime alive for the queue's lifetime. Phase 6's
+    /// submit pipeline clones this Arc to spawn per-operation tasks.
+    pub(crate) runtime: Arc<RuntimeContextInner>,
+}
+
+impl CompletionQueueInner {
+    /// Borrows the runtime backing this queue. Used by
+    /// [`crate::submit`] to spawn per-operation tasks on the same
+    /// Tokio runtime the queue was built against.
+    pub(crate) fn runtime(&self) -> &Arc<RuntimeContextInner> {
+        &self.runtime
+    }
+
+    /// Returns this queue's capacity hard cap (0 = unbounded).
+    pub(crate) fn max_capacity(&self) -> u32 {
+        self.options.max_capacity
+    }
+
+    /// Snapshots the current queue length under the mutex.
+    pub(crate) fn current_len(&self) -> usize {
+        self.inner.lock().unwrap().deque.len()
+    }
+
+    /// Returns whether this queue captures rich error payloads.
+    pub(crate) fn include_error_details(&self) -> bool {
+        self.options.include_error_details
+    }
 }
 
 /// Opaque C ABI handle for a completion queue.
@@ -361,10 +435,18 @@ impl CompletionQueue {
                 data_available: Condvar::new(),
                 space_available: Condvar::new(),
                 options,
-                _runtime: runtime,
+                runtime,
             }),
         });
         Box::into_raw(storage).cast::<CompletionQueue>()
+    }
+
+    /// Borrows the inner queue state for the submit pipeline. Returns
+    /// `None` on NULL input; otherwise the caller can clone the runtime
+    /// `Arc`, inspect capacity / state, and route through
+    /// [`CompletionQueue::enqueue`] when the spawned task finishes.
+    pub(crate) fn inner_arc(p: *const CompletionQueue) -> Option<Arc<CompletionQueueInner>> {
+        Self::storage(p).map(|s| Arc::clone(&s.inner))
     }
 
     fn storage<'a>(p: *const CompletionQueue) -> Option<&'a CompletionQueueStorage> {
@@ -389,12 +471,23 @@ impl CompletionQueue {
         }
     }
 
-    /// Internal: pushes a completion onto the queue.
-    pub(crate) fn enqueue(p: *const CompletionQueue, mut c: Box<Completion>) -> CosmosErrorCode {
+    /// Internal: pushes a completion onto the queue identified by the
+    /// raw pointer.
+    pub(crate) fn enqueue(p: *const CompletionQueue, c: Box<Completion>) -> CosmosErrorCode {
         let Some(storage) = Self::storage(p) else {
             return CosmosErrorCode::CosmosErrorCodeInvalidArgument;
         };
-        let inner = &storage.inner;
+        Self::enqueue_into_inner(&storage.inner, c)
+    }
+
+    /// Internal: pushes a completion onto the queue identified by an
+    /// already-cloned `Arc<CompletionQueueInner>`. Used by the submit
+    /// pipeline's spawned tasks so they survive concurrent
+    /// `cosmos_cq_free` from the producer side.
+    pub(crate) fn enqueue_into_inner(
+        inner: &Arc<CompletionQueueInner>,
+        mut c: Box<Completion>,
+    ) -> CosmosErrorCode {
         let mut guard = inner.inner.lock().unwrap();
         if guard.state != CosmosCqState::CosmosCqStateRunning {
             return CosmosErrorCode::CosmosErrorCodeQueueShutdown;
@@ -743,19 +836,43 @@ pub extern "C" fn cosmos_completion_was_cancel_requested(c: *const Completion) -
     Completion::from_ptr(c).is_some_and(|co| co.was_cancel_requested)
 }
 
-/// Take ownership of the response. Phase 1 always returns NULL — Phase 6
-/// adds the real response payload.
+/// Takes ownership of the response delivered by an `Ok` completion.
+/// Returns NULL on `Error` / `Cancelled` completions, on NULL input,
+/// and on every subsequent call after the first successful take.
+///
+/// Caller must free the returned handle via `cosmos_response_free`.
 #[no_mangle]
-pub extern "C" fn cosmos_completion_take_response(c: *mut Completion) -> *mut std::ffi::c_void {
-    let _ = c;
-    std::ptr::null_mut()
+pub extern "C" fn cosmos_completion_take_response(
+    c: *mut Completion,
+) -> *mut crate::response::ResponseHandle {
+    let Some(co) = Completion::from_ptr(c) else {
+        return std::ptr::null_mut();
+    };
+    if co.outcome != CosmosCompletionOutcome::CosmosCompletionOutcomeOk {
+        return std::ptr::null_mut();
+    }
+    let mut slot = co.response.lock().unwrap();
+    slot.take().unwrap_or(std::ptr::null_mut())
 }
 
-/// Borrowed access to the response. Phase 1 always returns NULL.
+/// Borrowed access to the response payload. Returns NULL when the
+/// completion outcome is not `Ok`, when no response was attached, or
+/// after `_take_response` already moved ownership out.
+///
+/// Lifetime: until the next `_take_response` call or until the
+/// completion itself is freed.
 #[no_mangle]
-pub extern "C" fn cosmos_completion_response(c: *const Completion) -> *const std::ffi::c_void {
-    let _ = c;
-    std::ptr::null()
+pub extern "C" fn cosmos_completion_response(
+    c: *const Completion,
+) -> *const crate::response::ResponseHandle {
+    let Some(co) = Completion::from_ptr(c) else {
+        return std::ptr::null();
+    };
+    if co.outcome != CosmosCompletionOutcome::CosmosCompletionOutcomeOk {
+        return std::ptr::null();
+    }
+    let guard = co.response.lock().unwrap();
+    guard.map_or(std::ptr::null(), |p| p as *const _)
 }
 
 /// Take ownership of the rich error payload. Returns NULL when
@@ -915,6 +1032,7 @@ pub fn __test_only_enqueue_completion(
         cached_error_handle: Mutex::new(None),
         was_cancel_requested: false,
         error: Mutex::new(stored_error),
+        response: Mutex::new(None),
     });
     CompletionQueue::enqueue(queue, completion)
 }

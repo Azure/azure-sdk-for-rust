@@ -126,6 +126,31 @@ impl OperationDescHandle {
         let storage = unsafe { &*(p as *const OperationDescStorage) };
         Some(&storage.inner)
     }
+
+    /// Used by [`crate::submit::cosmos_driver_submit`] to take the
+    /// inner [`CosmosOperation`] out of the FFI handle. Returns
+    /// `Err(INVALID_ARGUMENT)` on NULL and `Err(OPERATION_CONSUMED)`
+    /// when the operation has already been taken (re-submit attempt).
+    pub(crate) fn take_inner(
+        p: *mut OperationDescHandle,
+    ) -> Result<CosmosOperation, CosmosErrorCode> {
+        let inner = Self::inner_mut(p).ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
+        inner
+            .op
+            .take()
+            .ok_or(CosmosErrorCode::CosmosErrorCodeOperationConsumed)
+    }
+
+    /// Restores the inner [`CosmosOperation`] after a pre-flight
+    /// failure in the submit pipeline. Per spec §4.6.3 #4, pre-flight
+    /// rejection must NOT consume the operation; the submit code calls
+    /// this when the queue check fails so the caller can mutate and
+    /// retry. Has no observable effect on NULL.
+    pub(crate) fn restore_inner(p: *mut OperationDescHandle, op: CosmosOperation) {
+        if let Some(inner) = Self::inner_mut(p) {
+            inner.op = Some(op);
+        }
+    }
 }
 
 /// Frees an operation handle. Idempotent only in the sense that the
@@ -295,6 +320,169 @@ database_factory!(cosmos_operation_read_all_containers, read_all_containers);
 database_factory!(cosmos_operation_query_containers, query_containers);
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FFI: factories (container-scope, Phase 6)
+// ─────────────────────────────────────────────────────────────────────────────
+
+macro_rules! container_factory {
+    ($fn_name:ident, $driver_factory:ident) => {
+        /// Container-scope operation factory.
+        #[no_mangle]
+        pub extern "C" fn $fn_name(
+            container: *const crate::container_ref::ContainerRefHandle,
+            out_op: *mut *mut OperationDescHandle,
+        ) -> i32 {
+            let Some(container_inner) =
+                crate::container_ref::ContainerRefHandle::inner_arc(container)
+            else {
+                return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+            };
+            let op = CosmosOperation::$driver_factory(container_inner.inner.clone());
+            write_op_handle(out_op, op)
+        }
+    };
+}
+
+container_factory!(cosmos_operation_read_container, read_container);
+container_factory!(cosmos_operation_replace_container, replace_container);
+container_factory!(cosmos_operation_delete_container, delete_container);
+container_factory!(
+    cosmos_operation_read_all_items_cross_partition,
+    read_all_items_cross_partition
+);
+
+/// Single-partition feed read. Mirrors
+/// [`CosmosOperation::read_all_items`].
+#[no_mangle]
+pub extern "C" fn cosmos_operation_read_all_items(
+    container: *const crate::container_ref::ContainerRefHandle,
+    pk: *const crate::partition_key::PartitionKeyHandle,
+    out_op: *mut *mut OperationDescHandle,
+) -> i32 {
+    let Some(container_inner) = crate::container_ref::ContainerRefHandle::inner_arc(container)
+    else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    let Some(pk_inner) = crate::partition_key::PartitionKeyHandle::inner_arc(pk) else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    let op = CosmosOperation::read_all_items(container_inner.inner.clone(), pk_inner.inner.clone());
+    write_op_handle(out_op, op)
+}
+
+/// Query operation. NULL `feed_range` targets the entire container
+/// (equivalent to `cosmos_feed_range_full`).
+#[no_mangle]
+pub extern "C" fn cosmos_operation_query_items(
+    container: *const crate::container_ref::ContainerRefHandle,
+    feed_range: *const crate::feed_range::FeedRangeHandle,
+    out_op: *mut *mut OperationDescHandle,
+) -> i32 {
+    let Some(container_inner) = crate::container_ref::ContainerRefHandle::inner_arc(container)
+    else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    let fr_owned = if feed_range.is_null() {
+        None
+    } else {
+        crate::feed_range::FeedRangeHandle::inner_arc(feed_range).map(|arc| arc.inner.clone())
+    };
+    let op = CosmosOperation::query_items(container_inner.inner.clone(), fr_owned);
+    write_op_handle(out_op, op)
+}
+
+/// Query-plan fetch. `supported_features_mask` is the comma-separated
+/// header value the driver sends as
+/// `x-ms-cosmos-supported-query-features`. Most language SDKs never
+/// call this directly — exposed for parity with the driver surface.
+///
+/// **Note (Phase 6+ follow-up):** the driver crate's
+/// `CosmosOperation::query_plan` exists but signature reconciliation
+/// with the spec's `query_plan_for_features` is still in flight. This
+/// FFI entry point reserves the name and returns
+/// `INVALID_ARGUMENT` until the driver-side shape stabilises.
+#[no_mangle]
+pub extern "C" fn cosmos_operation_query_plan_for_features(
+    container: *const crate::container_ref::ContainerRefHandle,
+    supported_features_mask: *const c_char,
+    out_op: *mut *mut OperationDescHandle,
+) -> i32 {
+    let _ = (container, supported_features_mask, out_op);
+    // Mirrors a deliberate Phase 6 deferral: the driver-side shape of
+    // `query_plan` does not currently match the spec's
+    // `query_plan_for_features` (driver takes a typed feature set, spec
+    // takes a header string). Reserve the FFI symbol so external SDKs
+    // know it exists; routing lands when the driver / spec reconcile.
+    CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
+}
+
+/// Transactional batch. Sub-operation accumulation lands in Phase 9;
+/// Phase 6 reserves the factory.
+#[no_mangle]
+pub extern "C" fn cosmos_operation_batch(
+    container: *const crate::container_ref::ContainerRefHandle,
+    pk: *const crate::partition_key::PartitionKeyHandle,
+    out_op: *mut *mut OperationDescHandle,
+) -> i32 {
+    let Some(container_inner) = crate::container_ref::ContainerRefHandle::inner_arc(container)
+    else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    let Some(pk_inner) = crate::partition_key::PartitionKeyHandle::inner_arc(pk) else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    let op = CosmosOperation::batch(container_inner.inner.clone(), pk_inner.inner.clone());
+    write_op_handle(out_op, op)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FFI: factories (item-scope, Phase 6)
+// ─────────────────────────────────────────────────────────────────────────────
+
+macro_rules! item_factory {
+    ($fn_name:ident, $driver_factory:ident) => {
+        /// Item-scope operation factory. The partition key is baked
+        /// into the underlying `ItemReference` at construction; both
+        /// the container ref and the partition key are cloned into the
+        /// operation, so callers may free both immediately after this
+        /// call returns.
+        #[no_mangle]
+        pub extern "C" fn $fn_name(
+            container: *const crate::container_ref::ContainerRefHandle,
+            item_id: *const c_char,
+            pk: *const crate::partition_key::PartitionKeyHandle,
+            out_op: *mut *mut OperationDescHandle,
+        ) -> i32 {
+            let Some(container_inner) =
+                crate::container_ref::ContainerRefHandle::inner_arc(container)
+            else {
+                return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+            };
+            let item_id_str = match try_cstr_to_str(item_id) {
+                Ok(s) => s,
+                Err(code) => return code.as_i32(),
+            };
+            let Some(pk_inner) = crate::partition_key::PartitionKeyHandle::inner_arc(pk) else {
+                return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+            };
+            let item_ref = azure_data_cosmos_driver::models::ItemReference::from_name(
+                &container_inner.inner,
+                pk_inner.inner.clone(),
+                item_id_str.to_owned(),
+            );
+            let op = CosmosOperation::$driver_factory(item_ref);
+            write_op_handle(out_op, op)
+        }
+    };
+}
+
+item_factory!(cosmos_operation_create_item, create_item);
+item_factory!(cosmos_operation_read_item, read_item);
+item_factory!(cosmos_operation_upsert_item, upsert_item);
+item_factory!(cosmos_operation_replace_item, replace_item);
+item_factory!(cosmos_operation_delete_item, delete_item);
+item_factory!(cosmos_operation_patch_item, patch_item);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // FFI: mutators
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -444,6 +632,38 @@ where
     }
     let etag = ETag::new(s.to_owned());
     apply_mutator(op, move |o| o.with_precondition(construct(etag)))
+}
+
+/// Caps the number of Read-Modify-Write attempts the patch handler
+/// may make for a `patch_item` operation. `max_attempts == 0` returns
+/// `INVALID_ARGUMENT`; calling on a non-patch operation returns
+/// `UNSUPPORTED_OPERATION_FOR_MUTATOR` (4009).
+#[no_mangle]
+pub extern "C" fn cosmos_operation_with_patch_max_attempts(
+    op: *mut OperationDescHandle,
+    max_attempts: u8,
+) -> i32 {
+    if max_attempts == 0 {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    }
+    let Some(nz) = std::num::NonZeroU8::new(max_attempts) else {
+        // Unreachable given the zero-check above, but kept defensive.
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    };
+    // Verify the operation is a patch before mutating. The driver
+    // accepts the setter on any operation but silently ignores it for
+    // non-patch kinds; the FFI surface rejects up-front so callers see
+    // a deterministic error.
+    let is_patch = match mutator_pre_flight(op) {
+        Ok(inner) => {
+            inner.operation_type() == azure_data_cosmos_driver::models::OperationType::Patch
+        }
+        Err(code) => return code.as_i32(),
+    };
+    if !is_patch {
+        return CosmosErrorCode::CosmosErrorCodeUnsupportedOperationForMutator.as_i32();
+    }
+    apply_mutator(op, move |o| o.with_patch_max_attempts(nz))
 }
 
 #[cfg(test)]

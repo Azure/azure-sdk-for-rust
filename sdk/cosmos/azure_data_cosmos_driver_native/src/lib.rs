@@ -28,15 +28,19 @@ pub mod string;
 pub mod account_ref;
 pub mod bytes;
 pub mod completion;
+pub mod container_ref;
 pub mod database_ref;
 pub mod driver;
 pub mod driver_options;
 pub mod error;
+pub mod feed_range;
 pub mod operation;
 pub mod operation_options;
 pub mod partition_key;
+pub mod response;
 pub mod runtime;
 pub mod runtime_builder;
+pub mod submit;
 
 // We want this value to be present as a string in the compiled binary so that
 // build provenance can be recovered from a stripped library. Exposing it as a

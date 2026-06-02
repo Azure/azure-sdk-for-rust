@@ -71,6 +71,7 @@ fn generate_c_header() {
         ("DatabaseReference".into(), "database_ref_t".into()),
         ("DatabaseRefHandle".into(), "database_ref_t".into()),
         ("ContainerReference".into(), "container_ref_t".into()),
+        ("ContainerRefHandle".into(), "container_ref_t".into()),
         ("DriverOptionsHandle".into(), "driver_options_t".into()),
         (
             "DriverOptionsBuilderHandle".into(),
@@ -94,6 +95,9 @@ fn generate_c_header() {
             "operation_options_builder_t".into(),
         ),
         ("CosmosResponse".into(), "response_t".into()),
+        ("ResponseHandle".into(), "response_t".into()),
+        ("FeedRange".into(), "feed_range_t".into()),
+        ("FeedRangeHandle".into(), "feed_range_t".into()),
         ("DiagnosticsContext".into(), "diagnostics_t".into()),
         ("CompletionQueue".into(), "cq_t".into()),
         ("CompletionQueueInner".into(), "cq_inner_t".into()),

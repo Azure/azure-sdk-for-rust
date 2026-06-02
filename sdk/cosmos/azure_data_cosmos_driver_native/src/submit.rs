@@ -1,0 +1,517 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
+
+//! Generic submit pipeline.
+//!
+//! Phase 6's [`cosmos_driver_submit`] (item-CRUD), plus the deferred
+//! Phase 3 async driver-creation paths
+//! ([`cosmos_driver_get_or_create_submit`],
+//! [`cosmos_driver_resolve_container_submit`]) all share the same
+//! shape:
+//!
+//! 1. Borrow the runtime, queue, and required handles.
+//! 2. Allocate a fresh producer-side `cosmos_operation_handle_t *` and
+//!    take a strong reference to its inner state.
+//! 3. `tokio::spawn` a task that runs the driver-side async work and,
+//!    when it completes, publishes a `Completion` to the queue.
+//! 4. Return the producer-side handle (or NULL + a coarse code in
+//!    `out_pre_error` on pre-flight failure).
+//!
+//! The common machinery is internal (`SpawnContext` + `spawn_oneshot`);
+//! the per-API entry points are thin wrappers that provide the
+//! driver-side future.
+
+use std::ffi::c_void;
+use std::future::Future;
+use std::sync::Arc;
+
+use azure_data_cosmos_driver::driver::CosmosDriver;
+use azure_data_cosmos_driver::models::{AccountReference, CosmosResponse};
+
+use crate::account_ref::AccountRefHandle;
+use crate::completion::{
+    Completion, CompletionQueue, CompletionQueueInner, CosmosCompletionOutcome, OperationHandle,
+    OperationInner,
+};
+use crate::container_ref::ContainerRefInner;
+use crate::driver::{DriverHandle, DriverInner};
+use crate::driver_options::DriverOptionsHandle;
+use crate::error::{CosmosErrorCode, CosmosErrorInner};
+use crate::operation::OperationDescHandle;
+use crate::operation_options::OperationOptionsHandle;
+use crate::response::ResponseHandle;
+use crate::runtime::RuntimeContext;
+
+/// Send-safe encoding of the opaque `user_data` pointer round-tripped
+/// to the completion. Storing as `usize` instead of `*mut c_void`
+/// avoids the async-block auto-trait analysis flagging the raw
+/// pointer as `!Send` — the wrapper does not dereference it, and the
+/// host owns its threading semantics.
+#[derive(Clone, Copy)]
+struct UserData(usize);
+
+impl UserData {
+    fn new(p: *mut c_void) -> Self {
+        Self(p as usize)
+    }
+    fn as_ptr(self) -> *mut c_void {
+        self.0 as *mut c_void
+    }
+}
+
+/// Resources captured into every spawned submit task.
+///
+/// Holding `Arc<CompletionQueueInner>` and `Arc<OperationInner>`
+/// directly lets the spawned task survive a concurrent `cosmos_cq_free`
+/// or `cosmos_operation_handle_free` from the producer side — the
+/// queue's deque drops back-pressured completions cleanly, and the
+/// operation-handle state stays consistent through Phase 1's existing
+/// `Arc` plumbing.
+struct SpawnContext {
+    queue: Arc<CompletionQueueInner>,
+    op_inner: Arc<OperationInner>,
+    user_data: UserData,
+    include_error_details: bool,
+}
+
+// SAFETY: `UserData` is `usize`-backed, the other fields are `Arc`s.
+unsafe impl Send for SpawnContext {}
+
+/// Pre-flight: builds a [`SpawnContext`] + a fresh producer-side
+/// `cosmos_operation_handle_t *`. Returns `Err(coarse_code)` on
+/// validation failure so the caller can write the coarse code into
+/// `out_pre_error` and return NULL.
+fn pre_flight_spawn(
+    queue: *mut CompletionQueue,
+    user_data: *mut c_void,
+) -> Result<(SpawnContext, *mut OperationHandle), CosmosErrorCode> {
+    let Some(queue_inner) = CompletionQueue::inner_arc(queue) else {
+        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+    };
+    // Pre-flight queue state. The spawned task does a second check
+    // inside the lock when it finally enqueues — this is just an early
+    // bailout so we don't spend a spawn on a doomed submit.
+    // `current_len() >= max_capacity` is the doomed case for
+    // capacity-bounded queues.
+    if queue_inner.max_capacity() > 0
+        && queue_inner.current_len() as u32 >= queue_inner.max_capacity()
+    {
+        return Err(CosmosErrorCode::CosmosErrorCodeQueueFull);
+    }
+
+    let op_handle = OperationHandle::allocate();
+    let op_inner = match OperationHandle::inner_arc(op_handle) {
+        Some(a) => a,
+        None => {
+            // Should not happen — `allocate` returns non-NULL.
+            OperationHandle::drop_raw(op_handle);
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        }
+    };
+    let include_error_details = queue_inner.include_error_details();
+    Ok((
+        SpawnContext {
+            queue: queue_inner,
+            op_inner,
+            user_data: UserData::new(user_data),
+            include_error_details,
+        },
+        op_handle,
+    ))
+}
+
+/// Routes one driver-side `Future<Output = Result<R, CosmosError>>`
+/// through the standard submit-and-publish pipeline. `to_response`
+/// converts the success value into the `(response, side_payloads)` the
+/// completion delivers; on `Err`, the rich `CosmosError` is converted
+/// to the FFI's coarse code + optional rich-error payload per the
+/// queue's `include_error_details` option.
+fn spawn_oneshot<Fut, R>(
+    ctx: SpawnContext,
+    runtime: Arc<crate::runtime::RuntimeContextInner>,
+    fut: Fut,
+    to_response: impl FnOnce(R) -> *mut ResponseHandle + Send + 'static,
+) where
+    Fut: Future<Output = azure_data_cosmos_driver::error::Result<R>> + Send + 'static,
+    R: Send + 'static,
+{
+    runtime.tokio.spawn(async move {
+        let outcome = fut.await;
+        let completion = match outcome {
+            Ok(value) => {
+                let response = to_response(value);
+                Completion::new_for_publish(
+                    CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+                    CosmosErrorCode::CosmosErrorCodeSuccess,
+                    ctx.user_data.as_ptr(),
+                    ctx.op_inner.clone(),
+                    None,
+                    Some(response),
+                )
+            }
+            Err(err) => {
+                let coarse = CosmosErrorCode::from_driver_error(&err);
+                let stored_error = if ctx.include_error_details {
+                    Some(Arc::new(CosmosErrorInner::new(err)))
+                } else {
+                    None
+                };
+                Completion::new_for_publish(
+                    CosmosCompletionOutcome::CosmosCompletionOutcomeError,
+                    coarse,
+                    ctx.user_data.as_ptr(),
+                    ctx.op_inner.clone(),
+                    stored_error,
+                    None,
+                )
+            }
+        };
+        let rc = CompletionQueue::enqueue_into_inner(&ctx.queue, completion);
+        if rc != CosmosErrorCode::CosmosErrorCodeSuccess {
+            // The queue rejected the completion (shutdown / full). The
+            // completion is dropped — its side payloads (if any) are
+            // freed by `Completion::drop`.
+            tracing::warn!(
+                rc = ?rc,
+                "submit: completion dropped (queue shutdown or full)",
+            );
+        }
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FFI: cosmos_driver_submit
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Submits a singleton operation for asynchronous execution.
+///
+/// Per spec §4.7, this binds to
+/// [`CosmosDriver::execute_singleton_operation`]: the operation runs
+/// off-thread on the wrapper's Tokio runtime, and when it completes a
+/// [`Completion`] lands on `queue`. Inspect the completion's outcome
+/// (`OK` / `ERROR` / `CANCELLED`), then call
+/// [`cosmos_completion_take_response`] or
+/// [`cosmos_completion_take_error`] as appropriate.
+///
+/// # Parameters
+///
+/// - `driver` — non-NULL driver handle (obtained from
+///   `cosmos_driver_get_or_create_*`).
+/// - `op` — non-NULL operation handle. **Consumed** on successful
+///   submit; subsequent mutators / re-submits return
+///   `OPERATION_CONSUMED` (4005).
+/// - `options` — optional per-call operation options.
+/// - `queue` — non-NULL completion queue. The runtime that backs the
+///   queue is used to spawn the task.
+/// - `user_data` — opaque pointer round-tripped verbatim onto the
+///   completion.
+/// - `out_pre_error` — receives the coarse code on pre-flight failure
+///   (returns NULL). NULL is accepted (the code is dropped).
+///
+/// # Returns
+///
+/// On success: a fresh `cosmos_operation_handle_t *` representing the
+/// in-flight operation. The caller must `cosmos_operation_handle_free`
+/// it when no longer needed (typically after observing the completion).
+///
+/// On pre-flight failure: NULL. `*out_pre_error` (if non-NULL)
+/// receives one of `INVALID_ARGUMENT` (NULL inputs),
+/// `QUEUE_SHUTDOWN` (queue already shut down), `QUEUE_FULL` (queue at
+/// hard capacity), or `OPERATION_CONSUMED` (operation already
+/// submitted).
+///
+/// [`cosmos_completion_take_response`]: crate::completion::cosmos_completion_take_response
+/// [`cosmos_completion_take_error`]: crate::completion::cosmos_completion_take_error
+#[no_mangle]
+pub extern "C" fn cosmos_driver_submit(
+    driver: *const DriverHandle,
+    op: *mut OperationDescHandle,
+    options: *const OperationOptionsHandle,
+    queue: *mut CompletionQueue,
+    user_data: *mut c_void,
+    out_pre_error: *mut CosmosErrorCode,
+) -> *mut OperationHandle {
+    let write_err = |code: CosmosErrorCode| {
+        if !out_pre_error.is_null() {
+            // SAFETY: caller-supplied writable slot.
+            unsafe {
+                *out_pre_error = code;
+            }
+        }
+    };
+
+    // Bind driver + options (options is optional).
+    let Some(driver_inner) = DriverHandle::inner_arc(driver) else {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    };
+    let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
+    let options_owned = if options.is_null() {
+        azure_data_cosmos_driver::options::OperationOptions::default()
+    } else {
+        match OperationOptionsHandle::inner_arc(options) {
+            Some(arc) => arc.inner.clone(),
+            None => {
+                write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+                return std::ptr::null_mut();
+            }
+        }
+    };
+
+    // Take the inner CosmosOperation out of the FFI handle. Subsequent
+    // mutators / submits on the same handle observe `None` and return
+    // OPERATION_CONSUMED.
+    let inner_op = match crate::operation::OperationDescHandle::take_inner(op) {
+        Ok(o) => o,
+        Err(code) => {
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
+        Ok(pair) => pair,
+        Err(code) => {
+            // Re-stash the operation on the handle so callers can mutate
+            // and retry per spec §4.6.3 #4 (pre-flight failure does NOT
+            // consume the operation).
+            crate::operation::OperationDescHandle::restore_inner(op, inner_op);
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let runtime = Arc::clone(ctx.queue.runtime());
+    spawn_oneshot(
+        ctx,
+        runtime,
+        async move {
+            driver_arc
+                .execute_singleton_operation(inner_op, options_owned)
+                .await
+        },
+        |response: CosmosResponse| ResponseHandle::into_raw(response),
+    );
+    op_handle
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FFI: cosmos_driver_get_or_create_submit (Phase 3 deferral)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].
+///
+/// Bridges `CosmosDriverRuntime::get_or_create_driver` through the
+/// submit pipeline; the completion delivers a degenerate
+/// `cosmos_response_t` from which
+/// [`crate::response::cosmos_response_take_driver`] extracts the new
+/// driver handle.
+///
+/// Closes the Phase 3 deferral.
+#[no_mangle]
+pub extern "C" fn cosmos_driver_get_or_create_submit(
+    runtime: *const RuntimeContext,
+    account: *const AccountRefHandle,
+    options: *const DriverOptionsHandle,
+    queue: *mut CompletionQueue,
+    user_data: *mut c_void,
+    out_pre_error: *mut CosmosErrorCode,
+) -> *mut OperationHandle {
+    let write_err = |code: CosmosErrorCode| {
+        if !out_pre_error.is_null() {
+            // SAFETY: caller-supplied writable slot.
+            unsafe {
+                *out_pre_error = code;
+            }
+        }
+    };
+
+    let Some(runtime_inner) = RuntimeContext::inner_arc(runtime) else {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    };
+    let Some(account_inner) = AccountRefHandle::inner_arc(account) else {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    };
+    let options_owned = if options.is_null() {
+        None
+    } else {
+        DriverOptionsHandle::inner_arc(options).map(|arc| arc.inner.clone())
+    };
+
+    let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
+        Ok(pair) => pair,
+        Err(code) => {
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let driver_runtime: Arc<azure_data_cosmos_driver::driver::CosmosDriverRuntime> =
+        Arc::clone(&runtime_inner.driver);
+    let account_owned: AccountReference = account_inner.inner.clone();
+    let task_runtime = Arc::clone(ctx.queue.runtime());
+
+    spawn_oneshot(
+        ctx,
+        task_runtime,
+        async move {
+            driver_runtime
+                .get_or_create_driver(account_owned, options_owned)
+                .await
+        },
+        |driver_arc: Arc<CosmosDriver>| {
+            // The submit's "response" is a degenerate shell; the real
+            // payload is the driver Arc carried in the side-payload
+            // slot. `_take_driver` extracts it; the scalar / header
+            // accessors return defaults.
+            let driver_inner = Arc::new(DriverInner { inner: driver_arc });
+            ResponseHandle::into_raw_with_driver(driver_inner)
+        },
+    );
+    op_handle
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FFI: cosmos_driver_resolve_container_submit
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Asynchronous variant of
+/// [`crate::container_ref::cosmos_driver_resolve_container_blocking`].
+///
+/// Same shape as the get-or-create variant — the completion delivers a
+/// degenerate response from which
+/// [`crate::response::cosmos_response_take_container`] extracts the
+/// resolved container handle.
+#[no_mangle]
+pub extern "C" fn cosmos_driver_resolve_container_submit(
+    driver: *const DriverHandle,
+    database_id: *const std::os::raw::c_char,
+    container_id: *const std::os::raw::c_char,
+    queue: *mut CompletionQueue,
+    user_data: *mut c_void,
+    out_pre_error: *mut CosmosErrorCode,
+) -> *mut OperationHandle {
+    let write_err = |code: CosmosErrorCode| {
+        if !out_pre_error.is_null() {
+            // SAFETY: caller-supplied writable slot.
+            unsafe {
+                *out_pre_error = code;
+            }
+        }
+    };
+
+    let Some(driver_inner) = DriverHandle::inner_arc(driver) else {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    };
+    let db_id = match try_cstr_to_string(database_id) {
+        Ok(s) => s,
+        Err(code) => {
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+    let container_id = match try_cstr_to_string(container_id) {
+        Ok(s) => s,
+        Err(code) => {
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
+        Ok(pair) => pair,
+        Err(code) => {
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
+    let task_runtime = Arc::clone(ctx.queue.runtime());
+
+    spawn_oneshot(
+        ctx,
+        task_runtime,
+        async move {
+            driver_arc
+                .resolve_container_by_name(&db_id, &container_id)
+                .await
+        },
+        |container_ref: azure_data_cosmos_driver::models::ContainerReference| {
+            let container_inner = Arc::new(ContainerRefInner {
+                inner: container_ref,
+            });
+            ResponseHandle::into_raw_with_container(container_inner)
+        },
+    );
+    op_handle
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+fn try_cstr_to_string(p: *const std::os::raw::c_char) -> Result<String, CosmosErrorCode> {
+    if p.is_null() {
+        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+    }
+    // SAFETY: caller contract.
+    let cstr = unsafe { std::ffi::CStr::from_ptr(p) };
+    cstr.to_str()
+        .map(|s| s.to_owned())
+        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ptr;
+
+    #[test]
+    fn submit_rejects_null_driver() {
+        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let h = cosmos_driver_submit(
+            ptr::null(),
+            ptr::null_mut(),
+            ptr::null(),
+            ptr::null_mut(),
+            ptr::null_mut(),
+            &mut err,
+        );
+        assert!(h.is_null());
+        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+    }
+
+    #[test]
+    fn get_or_create_submit_rejects_null_runtime() {
+        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let h = cosmos_driver_get_or_create_submit(
+            ptr::null(),
+            ptr::null(),
+            ptr::null(),
+            ptr::null_mut(),
+            ptr::null_mut(),
+            &mut err,
+        );
+        assert!(h.is_null());
+        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+    }
+
+    #[test]
+    fn resolve_container_submit_rejects_null_driver() {
+        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let h = cosmos_driver_resolve_container_submit(
+            ptr::null(),
+            ptr::null(),
+            ptr::null(),
+            ptr::null_mut(),
+            ptr::null_mut(),
+            &mut err,
+        );
+        assert!(h.is_null());
+        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+    }
+}
