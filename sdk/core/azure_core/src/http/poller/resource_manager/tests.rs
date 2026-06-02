@@ -265,8 +265,8 @@ async fn new_poller_supports_location_pattern() {
     );
 }
 
-/// Based on Go SDK TestFinalGetOrigin: when the initial response has `azure-asyncoperation` but
-/// no `location` header, the final GET uses the original resource URL.
+/// When the initial response has `azure-asyncoperation` but no `location` header, the final GET
+/// uses the original resource URL.
 #[tokio::test]
 async fn new_poller_async_pattern_no_location_uses_resource_url() {
     let requests = Arc::new(Mutex::new(Vec::new()));
@@ -334,8 +334,8 @@ async fn new_poller_async_pattern_no_location_uses_resource_url() {
     );
 }
 
-/// Based on Go SDK TestSynchronousCompletion: when the initial PUT response already contains a
-/// terminal `provisioningState`, the poller completes without additional polling.
+/// When the initial PUT response already contains a terminal `provisioningState`, the poller
+/// completes without additional polling.
 #[tokio::test]
 async fn new_poller_body_pattern_synchronous_completion() {
     let requests = Arc::new(Mutex::new(Vec::new()));
@@ -380,8 +380,7 @@ async fn new_poller_body_pattern_synchronous_completion() {
     );
 }
 
-/// Based on Go SDK TestPollFailed (async): when the operation status poll returns "Failed",
-/// the poller returns an error.
+/// When the operation status poll returns "Failed", the poller returns an error.
 #[tokio::test]
 async fn new_poller_async_pattern_failed() {
     let calls = Arc::new(Mutex::new(0usize));
@@ -430,8 +429,56 @@ async fn new_poller_async_pattern_failed() {
     );
 }
 
-/// Based on Go SDK TestPollFailed (body): when the provisioning state is "Failed",
-/// the poller returns an error.
+/// When the operation status poll returns a non-success HTTP status, the poller returns an error.
+#[tokio::test]
+async fn new_poller_async_pattern_poll_error() {
+    let calls = Arc::new(Mutex::new(0usize));
+    let calls_for_mock = calls.clone();
+    let mock = Arc::new(MockHttpClient::new(move |_request| {
+        let calls = calls_for_mock.clone();
+        async move {
+            let mut call = calls.lock().unwrap();
+            *call += 1;
+
+            let response = match *call {
+                1 => {
+                    let mut headers = Headers::new();
+                    headers.insert(AZURE_ASYNC_OPERATION, "https://example.com/operations/7");
+                    headers.insert(LOCATION, "https://example.com/resources/7");
+                    headers.insert(RETRY_AFTER_MS, "0");
+                    AsyncRawResponse::from_bytes(
+                        StatusCode::Accepted,
+                        headers,
+                        br#"{"status":"InProgress"}"#.to_vec(),
+                    )
+                }
+                _ => AsyncRawResponse::from_bytes(
+                    StatusCode::NotFound,
+                    Headers::new(),
+                    br#"{"error":{"code":"NotFound","message":"missing"}}"#.to_vec(),
+                ),
+            };
+            Ok(response)
+        }
+        .boxed()
+    })) as Arc<dyn HttpClient>;
+
+    let poller: Poller<ArmOperationStatus> = new_poller(
+        pipeline_with(mock),
+        Request::new(
+            "https://example.com/resources/7".parse().unwrap(),
+            Method::Delete,
+        ),
+        None,
+    );
+
+    assert!(
+        poller.await.is_err(),
+        "non-success polling status should return an error"
+    );
+}
+
+/// When the provisioning state is "Failed", the poller returns an error.
 #[tokio::test]
 async fn new_poller_body_pattern_failed() {
     let calls = Arc::new(Mutex::new(0usize));
@@ -478,8 +525,54 @@ async fn new_poller_body_pattern_failed() {
     );
 }
 
-/// Based on Go SDK TestUpdateNoProvState204 (body): a 204 No Content response with empty body
-/// is treated as a successful terminal state.
+/// When body-pattern polling returns a non-success HTTP status, the poller returns an error.
+#[tokio::test]
+async fn new_poller_body_pattern_poll_error() {
+    let calls = Arc::new(Mutex::new(0usize));
+    let calls_for_mock = calls.clone();
+    let mock = Arc::new(MockHttpClient::new(move |_request| {
+        let calls = calls_for_mock.clone();
+        async move {
+            let mut call = calls.lock().unwrap();
+            *call += 1;
+
+            let response = match *call {
+                1 => {
+                    let mut headers = Headers::new();
+                    headers.insert(RETRY_AFTER_MS, "0");
+                    AsyncRawResponse::from_bytes(
+                        StatusCode::Accepted,
+                        headers,
+                        br#"{"properties":{"provisioningState":"InProgress"}}"#.to_vec(),
+                    )
+                }
+                _ => AsyncRawResponse::from_bytes(
+                    StatusCode::NotFound,
+                    Headers::new(),
+                    br#"{"error":{"code":"NotFound","message":"missing"}}"#.to_vec(),
+                ),
+            };
+            Ok(response)
+        }
+        .boxed()
+    })) as Arc<dyn HttpClient>;
+
+    let poller: Poller<ArmOperationStatus> = new_poller(
+        pipeline_with(mock),
+        Request::new(
+            "https://example.com/resources/8".parse().unwrap(),
+            Method::Patch,
+        ),
+        None,
+    );
+
+    assert!(
+        poller.await.is_err(),
+        "non-success polling status should return an error"
+    );
+}
+
+/// A 204 No Content response with empty body is treated as a successful terminal state.
 #[tokio::test]
 async fn new_poller_body_pattern_204_no_content() {
     let requests = Arc::new(Mutex::new(Vec::new()));
@@ -536,8 +629,8 @@ async fn new_poller_body_pattern_204_no_content() {
     );
 }
 
-/// Based on Go SDK TestUpdateFailed (loc): when a location-pattern poll response returns a
-/// non-success HTTP status, the poller treats it as a failed operation.
+/// When a location-pattern poll response returns a non-success HTTP status, the poller treats it
+/// as a failed operation.
 #[tokio::test]
 async fn new_poller_location_pattern_failed() {
     let calls = Arc::new(Mutex::new(0usize));
@@ -586,8 +679,55 @@ async fn new_poller_location_pattern_failed() {
     );
 }
 
-/// Based on Go SDK TestUpdateSucceeded (loc): a 204 No Content at the location URL signals
-/// successful completion of a DELETE-like operation.
+/// When location-pattern polling reports failed provisioning state, the poller returns an error.
+#[tokio::test]
+async fn new_poller_location_pattern_failed_with_provisioning_state() {
+    let calls = Arc::new(Mutex::new(0usize));
+    let calls_for_mock = calls.clone();
+    let mock = Arc::new(MockHttpClient::new(move |_request| {
+        let calls = calls_for_mock.clone();
+        async move {
+            let mut call = calls.lock().unwrap();
+            *call += 1;
+
+            let response = match *call {
+                1 => {
+                    let mut headers = Headers::new();
+                    headers.insert(LOCATION, "https://example.com/operations/10");
+                    headers.insert(RETRY_AFTER_MS, "0");
+                    AsyncRawResponse::from_bytes(
+                        StatusCode::Accepted,
+                        headers,
+                        br#"{"status":"InProgress"}"#.to_vec(),
+                    )
+                }
+                _ => AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    br#"{"properties":{"provisioningState":"Failed"}}"#.to_vec(),
+                ),
+            };
+            Ok(response)
+        }
+        .boxed()
+    })) as Arc<dyn HttpClient>;
+
+    let poller: Poller<ArmOperationStatus> = new_poller(
+        pipeline_with(mock),
+        Request::new(
+            "https://example.com/resources/10".parse().unwrap(),
+            Method::Delete,
+        ),
+        None,
+    );
+
+    assert!(
+        poller.await.is_err(),
+        "failed provisioning state during location polling should return an error"
+    );
+}
+
+/// A 204 No Content at the location URL signals successful completion of a DELETE-like operation.
 #[tokio::test]
 async fn new_poller_location_pattern_204_no_content() {
     let requests = Arc::new(Mutex::new(Vec::new()));

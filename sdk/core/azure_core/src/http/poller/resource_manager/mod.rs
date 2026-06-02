@@ -24,15 +24,15 @@ pub(super) const LOCATION: HeaderName = HeaderName::from_static("location");
 /// Creates an ARM heuristic poller that supports the following polling modes, applied in
 /// priority order:
 ///
-/// 1. **async** ([`azure-asyncoperation`] header): Polls the operation URL from the
+/// 1. `azure-asyncoperation` header: Polls the operation URL from the
 ///    `azure-asyncoperation` response header, then fetches the final resource from the `location`
 ///    header (if present) or the original resource URL.
-/// 2. **operation-location** ([`operation-location`] header): Polls the operation URL from the
+/// 2. `operation-location` header: Polls the operation URL from the
 ///    `operation-location` response header, then fetches the final resource from the `location`
 ///    header (if present) or the original resource URL.
-/// 3. **location** ([`location`] header): Polls the URL from the `location` response header,
+/// 3. `location` header: Polls the URL from the `location` response header,
 ///    which doubles as the final resource URL once polling completes.
-/// 4. **body**: Falls back to polling the original resource URL, reading operation status from
+/// 4. Falls back to polling the original resource URL, reading operation status from
 ///    the response body's `status` or `properties.provisioningState` field.
 pub fn new_poller<'a, M>(
     pipeline: Pipeline,
@@ -44,7 +44,6 @@ where
     M::Output: DeserializeOwned + Send + 'static,
     M::Format: Send + 'static,
 {
-    let initial_request = initial_request.clone();
     let options = options.map(PollerOptions::into_owned);
 
     Poller::new(
@@ -68,16 +67,17 @@ where
                     &[RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS, RETRY_AFTER],
                     &poller_options,
                 );
-                let monitor: M = if body.is_empty() {
-                    // For responses with no body (e.g., 204 No Content), attempt deserialization
-                    // of an empty JSON object so that status falls through to the HTTP status code check.
-                    json::from_json(b"{}")?
+                let monitor: Option<M> = if body.is_empty() {
+                    None
                 } else {
-                    json::from_json(&body)?
+                    Some(json::from_json(&body)?)
                 };
                 let response: Response<M> =
                     RawResponse::from_bytes(status_code, headers.clone(), body).into();
-                let mut status = monitor.status();
+                let mut status = monitor
+                    .as_ref()
+                    .map(|monitor| monitor.status())
+                    .unwrap_or_else(|| PollerStatus::UnknownValue("unknown".to_owned()));
                 if matches!(status, PollerStatus::UnknownValue(_)) {
                     status = match status_code {
                         StatusCode::Accepted | StatusCode::Created => PollerStatus::InProgress,
