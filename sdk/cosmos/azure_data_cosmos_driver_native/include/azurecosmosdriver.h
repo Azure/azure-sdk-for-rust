@@ -310,6 +310,34 @@ typedef int32_t cosmos_operation_handle_state_t;
 typedef struct cosmos_completion_t cosmos_completion_t;
 
 /**
+ * Opaque C ABI handle for [`AccountRefInner`].
+ *
+ * Storage pun: see the matching pattern on `RuntimeContext` and
+ * `RuntimeBuilderHandle`. The public `#[repr(C)]` struct only carries the
+ * `_opaque` marker; the real `Arc` lives in the trailing
+ * `AccountRefStorage` field allocated by [`AccountRefHandle::into_raw`].
+ */
+typedef struct cosmos_account_ref_t {
+  uint8_t _opaque[0];
+} cosmos_account_ref_t;
+
+/**
+ * Opaque heap-allocated wrapper around an `Arc<CosmosErrorInner>`.
+ *
+ * The FFI hands out `*mut CosmosErrorHandle` as `cosmos_error_t *`. Cloning
+ * the underlying `Arc` is cheap and is how the `Completion` borrow accessor
+ * shares the payload with the `take_error` ownership accessor.
+ *
+ * Storage pun: see the matching pattern on `CompletionQueue` /
+ * `OperationHandle` in `completion.rs` — the public struct only carries the
+ * `_opaque` marker; the real `Arc` lives in a trailing
+ * `CosmosErrorHandleStorage` field allocated by [`Self::into_raw`].
+ */
+typedef struct cosmos_error_t {
+  uint8_t _opaque[0];
+} cosmos_error_t;
+
+/**
  * Opaque byte-buffer handle owned by the library.
  *
  * Internal representation: boxed `Vec<u8>`. The struct is intentionally
@@ -370,20 +398,42 @@ typedef struct cosmos_operation_handle_t {
 } cosmos_operation_handle_t;
 
 /**
- * Opaque heap-allocated wrapper around an `Arc<CosmosErrorInner>`.
+ * Opaque C ABI handle for [`DatabaseRefInner`].
  *
- * The FFI hands out `*mut CosmosErrorHandle` as `cosmos_error_t *`. Cloning
- * the underlying `Arc` is cheap and is how the `Completion` borrow accessor
- * shares the payload with the `take_error` ownership accessor.
- *
- * Storage pun: see the matching pattern on `CompletionQueue` /
- * `OperationHandle` in `completion.rs` — the public struct only carries the
- * `_opaque` marker; the real `Arc` lives in a trailing
- * `CosmosErrorHandleStorage` field allocated by [`Self::into_raw`].
+ * Storage pun: see the matching pattern on `AccountRefHandle`.
  */
-typedef struct cosmos_error_t {
+typedef struct cosmos_database_ref_t {
   uint8_t _opaque[0];
-} cosmos_error_t;
+} cosmos_database_ref_t;
+
+/**
+ * Opaque C ABI handle for a [`CosmosDriver`].
+ *
+ * Storage pun: same shape as the other reference handles.
+ */
+typedef struct cosmos_driver_t {
+  uint8_t _opaque[0];
+} cosmos_driver_t;
+
+/**
+ * Opaque C ABI handle for a built [`DriverOptions`] value.
+ *
+ * Storage pun: same shape as `AccountRefHandle`.
+ */
+typedef struct cosmos_driver_options_t {
+  uint8_t _opaque[0];
+} cosmos_driver_options_t;
+
+/**
+ * Opaque C ABI handle for a `DriverOptionsBuilder`.
+ *
+ * Setters mutate in place (the underlying `with_*` consume `self` so each
+ * setter does a `mem::take` / call / store dance — mirrors
+ * `cosmos_runtime_builder_t`).
+ */
+typedef struct cosmos_driver_options_builder_t {
+  uint8_t _opaque[0];
+} cosmos_driver_options_builder_t;
 
 /**
  * Opaque C ABI handle for a runtime builder.
@@ -418,6 +468,53 @@ const char *cosmos_version(void);
  * [`cosmos_version`]: crate::cosmos_version
  */
 void cosmos_string_free(const char *s);
+
+/**
+ * Creates an account reference authenticated by a Cosmos master key.
+ *
+ * Mirrors
+ * [`azure_data_cosmos_driver::models::AccountReference::with_master_key`].
+ *
+ * # Parameters
+ *
+ * - `endpoint` — NUL-terminated UTF-8 service endpoint URL (e.g.
+ *   `https://myaccount.documents.azure.com:443/`). Must be non-NULL.
+ * - `key` — NUL-terminated UTF-8 master key. Must be non-NULL. The
+ *   key is copied into a [`Secret`] on the Rust side; the caller may
+ *   free its copy immediately after this call returns.
+ * - `out_account` — receives the new FFI handle on success. Must be
+ *   non-NULL.
+ * - `out_error` — optional. On `INVALID_*` failures receives a rich
+ *   `cosmos_error_t *` describing the failure. NULL silently drops it.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_account` populated.
+ * - `INVALID_ARGUMENT` (1) when `endpoint`, `key`, or `out_account` is
+ *   NULL.
+ * - `INVALID_UTF8` (2) when `endpoint` or `key` is not valid UTF-8.
+ * - `INVALID_ACCOUNT_REFERENCE` (4003) when `endpoint` is not a parsable
+ *   URL. `*out_error` is populated when non-NULL.
+ */
+int32_t cosmos_account_ref_with_master_key(const char *endpoint,
+                                           const char *key,
+                                           struct cosmos_account_ref_t **out_account,
+                                           struct cosmos_error_t **out_error);
+
+/**
+ * Clones an existing account reference into a fresh FFI handle that
+ * shares the underlying state.
+ *
+ * Cheap — an atomic refcount bump on a single `Arc`. Never touches the
+ * network.
+ */
+int32_t cosmos_account_ref_clone(const struct cosmos_account_ref_t *account,
+                                 struct cosmos_account_ref_t **out_clone);
+
+/**
+ * Frees an account-reference handle. NULL is a no-op.
+ */
+void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
 
 /**
  * Returns a borrowed pointer to the start of the byte buffer's payload.
@@ -606,6 +703,169 @@ cosmos_operation_handle_state_t cosmos_operation_handle_state(const struct cosmo
  * its own reference, the inner operation state stays alive.
  */
 void cosmos_operation_handle_free(struct cosmos_operation_handle_t *op);
+
+/**
+ * Creates a name-based database reference parented to `account`.
+ *
+ * Mirrors `DatabaseReference::from_name`. Pure value-type construction;
+ * never touches the network. The supplied `account` is cloned into the
+ * new database reference, so freeing `account` after this call does not
+ * invalidate the database handle.
+ *
+ * # Parameters
+ *
+ * - `account` — parent account reference. Must be non-NULL.
+ * - `database_id` — NUL-terminated UTF-8 database name. Must be
+ *   non-NULL.
+ * - `out_database` — receives the new FFI handle on success. Must be
+ *   non-NULL.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_database` populated.
+ * - `INVALID_ARGUMENT` (1) when `account`, `database_id`, or
+ *   `out_database` is NULL.
+ * - `INVALID_UTF8` (2) when `database_id` is not valid UTF-8.
+ */
+int32_t cosmos_database_ref_create(const struct cosmos_account_ref_t *account,
+                                   const char *database_id,
+                                   struct cosmos_database_ref_t **out_database);
+
+/**
+ * Clones an existing database reference into a fresh FFI handle that
+ * shares the underlying state.
+ *
+ * Cheap — an atomic refcount bump on a single `Arc`.
+ */
+int32_t cosmos_database_ref_clone(const struct cosmos_database_ref_t *database,
+                                  struct cosmos_database_ref_t **out_clone);
+
+/**
+ * Frees a database-reference handle. NULL is a no-op.
+ */
+void cosmos_database_ref_free(struct cosmos_database_ref_t *database);
+
+/**
+ * Frees a driver handle. Drops the FFI-side `Arc` reference; the
+ * underlying driver remains alive in the runtime's cache until the
+ * owning `cosmos_runtime_t` is freed (spec §4.4.1). NULL is a no-op.
+ */
+void cosmos_driver_free(struct cosmos_driver_t *driver);
+
+/**
+ * Synchronously gets or creates the driver for the supplied account.
+ *
+ * Bridges
+ * `CosmosDriverRuntime::get_or_create_driver` through the wrapper's
+ * own multi-threaded Tokio runtime via `block_on`. Suitable for
+ * startup-time initialization; for runtime use prefer the async
+ * `_submit` variant (lands in Phase 6).
+ *
+ * # Cache behavior (spec §4.4.1)
+ *
+ * - The runtime caches drivers by endpoint URL. A second call with the
+ *   same endpoint returns the cached driver and **silently ignores**
+ *   `options`.
+ * - Two `AccountReference`s with the same endpoint but different
+ *   credentials collide in the cache — first credential wins.
+ * - Cache eviction happens only when the owning `cosmos_runtime_t` is
+ *   freed; freeing a `cosmos_driver_t` does not evict.
+ *
+ * Phase 3 does not emit the `5001` `OPTIONS_IGNORED_ON_CACHE_HIT`
+ * advisory described in spec §4.4.1 — see the module-level
+ * `Cache-hit advisory` note for the rationale.
+ *
+ * # Parameters
+ *
+ * - `runtime` — non-NULL runtime handle.
+ * - `account` — non-NULL account reference.
+ * - `options` — optional driver options. NULL means "use the driver's
+ *   defaults" (matches passing `None` to the underlying API).
+ * - `out_driver` — non-NULL slot that receives the new driver handle
+ *   on success.
+ * - `out_error` — optional. Receives a rich `cosmos_error_t *` on
+ *   driver-side failure (e.g. network errors during
+ *   `CosmosDriver::initialize`). NULL silently drops it.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_driver` populated.
+ * - `INVALID_ARGUMENT` (1) when `runtime`, `account`, or `out_driver`
+ *   is NULL.
+ * - One of the `2xxx` / `3xxx` codes derived from the driver-side
+ *   error per spec §3.5.1 when the underlying
+ *   `get_or_create_driver` returns an error.
+ */
+int32_t cosmos_driver_get_or_create_blocking(const struct cosmos_runtime_t *runtime,
+                                             const struct cosmos_account_ref_t *account,
+                                             const struct cosmos_driver_options_t *options,
+                                             struct cosmos_driver_t **out_driver,
+                                             struct cosmos_error_t **out_error);
+
+/**
+ * Frees a built `cosmos_driver_options_t *`. NULL is a no-op.
+ */
+void cosmos_driver_options_free(struct cosmos_driver_options_t *options);
+
+/**
+ * Allocates a new builder bound to the supplied account reference.
+ *
+ * The account is cloned into the builder, so freeing `account` after
+ * this call does not invalidate the builder. Returns NULL if `account`
+ * is NULL.
+ */
+struct cosmos_driver_options_builder_t *cosmos_driver_options_builder_new(const struct cosmos_account_ref_t *account);
+
+/**
+ * Frees a builder that was never consumed by `_build`. NULL is a no-op.
+ */
+void cosmos_driver_options_builder_free(struct cosmos_driver_options_builder_t *builder);
+
+/**
+ * Sets the preferred regions for routing.
+ *
+ * Mirrors [`DriverOptionsBuilder::with_preferred_regions`].
+ *
+ * # Parameters
+ *
+ * - `builder` — non-NULL builder.
+ * - `regions` — pointer to an array of NUL-terminated UTF-8 region
+ *   names. May be NULL when `regions_len == 0`.
+ * - `regions_len` — number of entries in `regions`.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) on success.
+ * - `INVALID_ARGUMENT` (1) when `builder` is NULL or `regions` is NULL
+ *   but `regions_len > 0`.
+ * - `INVALID_UTF8` (2) when any region name is not valid UTF-8.
+ *
+ * Each call replaces the previously configured list (mirrors the
+ * driver's `with_*` semantics). Calling with `regions_len == 0` clears
+ * the list.
+ */
+int32_t cosmos_driver_options_builder_with_preferred_regions(struct cosmos_driver_options_builder_t *builder,
+                                                             const char *const *regions,
+                                                             uintptr_t regions_len);
+
+/**
+ * Consumes the builder and returns a fresh `cosmos_driver_options_t *`.
+ *
+ * # Lifetime
+ *
+ * `_build` consumes the builder regardless of success or failure.
+ * Callers must NOT call [`cosmos_driver_options_builder_free`] on the
+ * same pointer afterwards.
+ *
+ * # Returns
+ *
+ * - `SUCCESS` (0) with `*out_options` populated.
+ * - `INVALID_ARGUMENT` (1) when `builder` or `out_options` is NULL. In
+ *   the NULL-`out_options` case the builder is still consumed to avoid
+ *   leaking the inner allocation.
+ */
+int32_t cosmos_driver_options_builder_build(struct cosmos_driver_options_builder_t *builder,
+                                            struct cosmos_driver_options_t **out_options);
 
 /**
  * HTTP status code (always populated, including for synthetic errors).

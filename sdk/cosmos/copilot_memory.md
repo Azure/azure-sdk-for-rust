@@ -11,9 +11,9 @@
 
 # Copilot session memory — `azure_data_cosmos_driver_native`
 
-**Last updated:** 2026-06-02 (Phase 1 committed + pushed)
+**Last updated:** 2026-06-02 (Phase 3 committed locally — Phase 2 + 3 not yet pushed)
 **Active branch:** `users/kundadebdatta/4372_cosmos_driver_native_crate_async_impl`
-**Remote:** `origin/users/kundadebdatta/4372_cosmos_driver_native_crate_async_impl`
+**Remote:** `origin/users/kundadebdatta/4372_cosmos_driver_native_crate_async_impl` (ahead by 2 commits; push at end of session)
 **Workspace path on previous machine:** `D:\stash\azure-sdk-for-rust\` (Windows + PowerShell)
 
 If you are an AI assistant picking this up: read this file end-to-end before
@@ -47,121 +47,131 @@ optional advanced surface). See §8 of the spec for the full plan.
 |---|---|---|
 | `be825b8eb` | Phase 0 — scaffolding | New crate + `Cargo.toml` + `build.rs` (cbindgen) + checked-in `azurecosmosdriver.h` + CMake harness + `cosmos_version` + `cosmos_string_free` + `cosmos_bytes_*`. Workspace plumbing (Cargo member, deny.toml MPL-2.0, dict, cspell). |
 | `6c57b6775` | Phase 1 — error + async primitives | `src/error.rs` + `src/runtime.rs` + `src/completion.rs`. 34-variant `CosmosErrorCode`, opaque `cosmos_error_t` with 8 accessors + 16 `is_*` predicates, `cosmos_set_backtrace_options`, Tokio-backed `cosmos_runtime_t` (opaque), `cosmos_cq_*` (create/free/wait/try_wait/wait_batch/wait_writable/shutdown/state/runtime), `cosmos_completion_*` (10 accessors + free), `cosmos_operation_handle_*` (cancel/state/free). **23 Rust tests pass.** |
+| `2ef559f40` | Phase 2 — runtime builder | New `src/runtime_builder.rs` exposes opaque `cosmos_runtime_builder_t` with `_new` / `_free` / `_build` + 5 primitive setters (`workload_id`, `correlation_id`, `user_agent_suffix`, `wrapping_sdk_identifier`, `cpu_refresh_interval_ms`). `RuntimeContextInner` grows `Arc<CosmosDriverRuntime>` alongside the Tokio runtime. `Cargo.toml` adds the `rustls` driver feature so `build()` actually constructs an HTTP client. C harness `c_tests/runtime_lifecycle.c`. **35 Rust tests pass (23 + 12 new).** |
+| Phase 3 (pending push) | Phase 3 — account / database refs + driver options + driver `_blocking` | New `src/account_ref.rs` (`with_master_key` + `_clone` + `_free`), `src/database_ref.rs` (`_create` + `_clone` + `_free`), `src/driver_options.rs` (builder + `_with_preferred_regions` + `_build` + `_free`), `src/driver.rs` (`_get_or_create_blocking` + `_free`). `Cargo.toml` adds `azure_core` + `url` runtime deps (needed for `Secret` + `Url::parse`). C harness `c_tests/account_and_driver_options.c`. **55 Rust tests pass (35 + 20 new; 1 ignored network test).** |
 
-Both commits are pushed to `origin`. Phase 0 separately landed earlier on
-the spec branch as commit `a7931b1bb` — that branch
-(`users/kundadebdatta/4372_cosmos_driver_native_crate_spec`) carries
-the spec + diagrams + the original Phase 0 commit. The current impl branch
-re-lands Phase 0 cleanly without depending on the spec branch's git
-ancestry.
+Phases 0 and 1 are pushed to `origin`; **Phase 2 is committed locally but not yet pushed** — push at the end of the session (or after Phase 3 commits). Phase 0 separately landed earlier on the spec branch as commit `a7931b1bb` — that branch (`users/kundadebdatta/4372_cosmos_driver_native_crate_spec`) carries the spec + diagrams + the original Phase 0 commit. The current impl branch re-lands Phase 0 cleanly without depending on the spec branch's git ancestry.
 
-### 2.2 Validation status (Phase 0 + Phase 1)
+### 2.2 Validation status (Phase 0 + Phase 1 + Phase 2)
 
 | Check | Status |
 |---|---|
 | `cargo build -p azure_data_cosmos_driver_native` | ✅ clean |
 | `cargo fmt -p azure_data_cosmos_driver_native` | ✅ clean |
 | `cargo clippy -p azure_data_cosmos_driver_native --all-targets` | ✅ zero wrapper-side warnings (3 pre-existing driver-side warnings in `transport/cosmos_transport_client.rs` + `transport/http_client_factory.rs` are not ours) |
-| `cargo doc -p azure_data_cosmos_driver_native --no-deps` | ✅ no broken intra-doc links |
-| `cargo test -p azure_data_cosmos_driver_native` | ✅ 23/23 pass |
+| `cargo doc -p azure_data_cosmos_driver_native --no-deps` | ⚠️ 6 'public-doc links to private item' warnings, all matching the Phase 1 pattern (cross-references useful when reading with `--document-private-items`). Not blocking. |
+| `cargo test -p azure_data_cosmos_driver_native` | ✅ 35/35 pass |
 | C test harness (`cmake -B build && cmake --build build && ctest`) | ⚠️ not exercised locally — CMake is not installed on the previous Windows machine; CI runs this on Linux/macOS |
 
-### 2.3 What an external SDK can do right now (after Phase 1)
+### 2.3 What an external SDK can do right now (after Phase 3)
 
 - Phase 0: dlopen the .so/.dll, call `cosmos_version()`, exercise the
   null-safe `cosmos_string_free` / `cosmos_bytes_free`.
-- Phase 1: **internal Rust scaffold only**. The public C entry points
-  (`cosmos_cq_create`, etc.) are wired and would work, but they require a
-  `cosmos_runtime_t *` that has no public constructor yet. Phase 2 adds
-  `cosmos_runtime_builder_*` and unblocks the first real cross-language
-  end-to-end test.
+- Phase 1: internal Rust scaffold only (covered by the 23 lib tests).
+- Phase 2: stand up a real `cosmos_runtime_t *` from C via
+  `cosmos_runtime_builder_new` → setters → `cosmos_runtime_builder_build`,
+  then create completion queues against it.
+- Phase 3: **stand up a real `cosmos_driver_t *` against a Cosmos
+  endpoint** via `cosmos_account_ref_with_master_key` →
+  `cosmos_driver_get_or_create_blocking`. Database refs (name-based)
+  are constructible; container refs are not (deferred to Phase 6 —
+  driver requires async resolution). The async `_submit` driver
+  variant is also deferred to Phase 6 alongside the generic
+  submit pipeline. The `5001 OPTIONS_IGNORED_ON_CACHE_HIT` advisory
+  is **not** emitted (Phase 3+ follow-up; needs driver-side
+  cooperation — see §3.3 Phase 3 deferrals).
 
-The first phase where another language SDK can prove the async pattern
-works end-to-end is **Phase 2** (runtime builder + synthetic round-trip
-via the internal `__test_only_*` helpers wired against a real runtime).
-**Phase 3** is when they can hit a real Cosmos account.
+**Phase 4** is the first phase that adds partition keys (pure value
+type, no network); **Phase 5** is the operation-construction surface;
+**Phase 6** is when full CRUD lands.
 
 ---
 
-## 3. Next steps — Phase 2
+## 3. Next steps — Phase 4
 
-**Goal:** ship `cosmos_runtime_builder_*` mirroring
-[`CosmosDriverRuntimeBuilder`](azure_data_cosmos_driver/src/driver/runtime.rs)
-plus `cosmos_runtime_create_*` and the C test harness for runtime lifecycle.
+**Goal:** ship the partition-key builder so callers can construct every
+shape of partition key the driver supports. All operations gated on a
+partition key in Phase 5 will require this surface.
 
 ### 3.1 Spec section to implement
 
-[`NATIVE_WRAPPER_SPEC.md` §4.1 + §8 Phase 2](azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md).
-Phase 2 done-when criterion: "Multiple producer threads can submit against
-one `cosmos_cq_t` while a single consumer drains, and `cosmos_cq_shutdown`
-cleanly cancels in-flight ops and drains the queue."
+[`NATIVE_WRAPPER_SPEC.md` §4.5 + §8 Phase 4](azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md). Phase 4 done-when criterion: "Round-trip: build → debug-print via a Rust-side test helper → assert the wire value matches the gateway baseline `PartitionKeyHashBaselineTest.*.xml` files already in the driver `testdata/`."
 
 ### 3.2 Surface to add
 
-- `cosmos_runtime_builder_t` opaque builder + lifecycle
-  (`cosmos_runtime_builder_new` / `_free` / `_build`).
-- Mirror the driver's `CosmosDriverRuntimeBuilder` setters that are
-  actually present today — confirm against
-  [`runtime.rs:398-756`](azure_data_cosmos_driver/src/driver/runtime.rs)
-  before writing FFI. The known ones (per spec §4.1):
-  - `cosmos_runtime_builder_with_worker_threads(u32)` — sanity-cap input;
-    return `INVALID_OPTION_VALUE` (4014) on values > 4096.
-  - `cosmos_runtime_builder_with_thread_name_prefix(const char *)` —
-    NUL-checked, ≤64 chars.
-  - `cosmos_runtime_builder_with_workload_id(const char *)`
-  - `cosmos_runtime_builder_with_correlation_id(const char *)`
-  - `cosmos_runtime_builder_with_user_agent_suffix(const char *)`
-  - `cosmos_runtime_builder_with_connection_pool_*(...)` (3-4 sub-knobs;
-    enumerate against the actual driver API)
-  - `cosmos_runtime_builder_with_allow_emulator_invalid_certs(bool)`
-- Probably DON'T ship: `cosmos_runtime_create(...)` — keep the path
-  through the builder, since `CosmosDriverRuntimeBuilder::build()` is
-  `pub async fn` and does network I/O. See spec §4.1 rationale.
-- Per spec §6.4 the backtrace knob (`cosmos_set_backtrace_options`)
-  already landed in Phase 1 — no per-runtime / per-driver variant.
+- **`cosmos_partition_key_builder_*`** (opaque builder):
+  - `cosmos_partition_key_builder_new()` — returns a fresh builder.
+  - `cosmos_partition_key_builder_add_string(builder, value)`.
+  - `cosmos_partition_key_builder_add_number(builder, value_f64)`.
+  - `cosmos_partition_key_builder_add_bool(builder, value)`.
+  - `cosmos_partition_key_builder_add_null(builder)`.
+  - `cosmos_partition_key_builder_add_undefined(builder)`.
+  - `cosmos_partition_key_builder_build(builder, out_pk)` — consumes;
+    returns `INVALID_PARTITION_KEY` (4004) on empty builder.
+  - `cosmos_partition_key_builder_free(builder)`.
+  - `cosmos_partition_key_clone(pk, out_clone)` / `_free(pk)`.
+- **Accessors** (for tests + future diagnostics):
+  - `cosmos_partition_key_component_count(pk) -> usize`.
+  - `cosmos_partition_key_is_empty(pk) -> bool`.
 
 ### 3.3 Tactical implementation notes
 
-- **The build is `async fn`.** `cosmos_runtime_builder_build` will need to
-  spawn a single-threaded "bootstrap" Tokio runtime, call
-  `CosmosDriverRuntimeBuilder::build().await`, and either:
-  - Hand the resulting `Runtime` + `Arc<CosmosDriverRuntime>` into a new
-    `RuntimeContextStorage`; or
-  - Use the `Runtime` *itself* as the "bootstrap" runtime and shutdown the
-    bootstrap one after. The cleanest answer is "build the multi-thread
-    Runtime first, then `runtime.block_on(driver_builder.build())`".
-- The current `RuntimeContextInner` carries only `tokio: Runtime`. In
-  Phase 2 it must grow `driver: Arc<CosmosDriverRuntime>`. Update both
-  the field set and the storage pun.
-- The completion queue does NOT currently use Tokio to deliver
-  completions (Phase 1's internal helper enqueues directly). That's
-  fine — when Phase 6 wires real submit, it'll call into the queue's
-  `enqueue` from a Tokio worker thread, which is already covered by the
-  MPSC mutex.
-- Update `RuntimeContext::from_ptr` — currently `#[allow(dead_code)]` —
-  to drop the allowlist once Phase 2 wires `cosmos_runtime_builder_build`
-  to use it.
+- The driver's `PartitionKey` lives in `models::partition_key.rs`
+  alongside `PartitionKeyValue`. Both are simple value types — no
+  builder needed on the driver side, but the FFI benefits from one
+  (incrementally populating components across multiple FFI calls is
+  the ergonomic shape for cross-language SDKs).
+- The `INVALID_PARTITION_KEY` coarse code (4004) already exists in
+  `error.rs`; just route the empty-builder case through it.
+- For Phase 4, do NOT pull in the hash-baseline test — that requires
+  the driver's `testdata/` round-tripping, which is a separate test
+  harness. The done-when criterion can be satisfied by Rust-side
+  unit tests asserting the constructed `PartitionKey` matches the
+  one built directly via the driver API.
 
-### 3.4 Test coverage to add in Phase 2
+### 3.4 Test coverage to add in Phase 4
 
-- C test `c_tests/runtime_lifecycle.c`: create runtime via builder →
-  create queue → submit-and-drain a synthetic op from multiple producer
-  threads with a single consumer → shut down → assert
-  `cosmos_cq_state() == DRAINED`.
-- Rust integration test: builder rejects out-of-range
-  `worker_threads` with `INVALID_OPTION_VALUE`; builder rejects
-  NUL-containing prefixes; clean shutdown of runtime drops the inner Arc
-  even if a queue is still alive (queue keeps it alive until the queue is
-  freed).
+- Rust unit tests per value kind + empty-builder rejection.
+- C harness `c_tests/partition_key.c` covers all 5 value kinds, single
+  + hierarchical keys, and the empty-key error path.
 
-### 3.5 Sequenced phase plan after Phase 2
+### 3.5 Phase 3 deferrals worth tracking
+
+1. **Cache-hit advisory** (`OPTIONS_IGNORED_ON_CACHE_HIT` / `5001`).
+   Spec §4.4.1 mandates this; current implementation always returns
+   `SUCCESS`. Needs either a driver-side `was_cached` signal or a
+   wrapper-side cache shadow. **Recommend**: open an upstream issue to
+   add `CosmosDriverRuntime::get_or_create_driver_detailed(...) ->
+   Result<(Arc<CosmosDriver>, bool /* was_cached */)>`.
+2. **Async submit path for driver creation**
+   (`cosmos_driver_get_or_create_submit`,
+   `cosmos_driver_initialize_submit`, `cosmos_response_take_driver`).
+   Deferred to Phase 6 where the generic
+   `tokio::spawn` → `cq_enqueue` plumbing lands once for all
+   operations.
+3. **Token-credential and resource-token account constructors**
+   (`cosmos_account_ref_with_credential`,
+   `cosmos_account_ref_with_resource_token`). Bridging
+   `Arc<dyn TokenCredential>` (async trait) through FFI is non-trivial
+   — needs a callback-driven `TokenCredential` impl on the Rust side
+   plus a Tokio bridge that channels the response back. Could be a
+   small standalone phase.
+4. **Container references** (`cosmos_container_ref_*`). Driver's
+   `ContainerReference::new` is `pub(crate)`-only and requires the
+   RID + partition-key definition that only `resolve_container`
+   produces. Phase 6 lands it alongside the resolved-container
+   response.
+5. **Driver options operation-options setter**
+   (`cosmos_driver_options_builder_with_operation_options`). Requires
+   the full `cosmos_operation_options_*` builder; lands in Phase 5
+   with the per-call operation options.
+
+### 3.6 Sequenced phase plan after Phase 4
 
 | Phase | Notes |
 |---|---|
-| 3 | Account / resource refs + driver instance (first **real network** end-to-end test) |
-| 4 | Partition key builder (5 value kinds; spec §4.5) |
-| 5 | Operation factories + mutators (no execute yet) |
-| 6 | `cosmos_driver_submit` + response surface (first **full CRUD** from external SDK) |
+| 5 | Operation factories + mutators (no execute yet); ~10 factories + ~6 mutators + `cosmos_operation_options_*` builder with 17+ option fields. **Biggest remaining phase.** |
+| 6 | `cosmos_driver_submit` + response surface (first **full CRUD** from external SDK) — also lands `cosmos_container_ref_*`, the async driver submit variants, and reuses the generic submit-helper for Phase 3's deferred async driver creation. |
 | 7 | Diagnostics surface |
 | 8 | Pagination (read-feeds + query) |
 | 9 | Patch + transactional batch |
@@ -230,11 +240,32 @@ cleanly cancels in-flight ops and drains the queue."
 - Phase 1 exposes this as `cosmos_set_backtrace_options(captures, resolutions)`.
 
 ### 4.7 cargo features
-- The wrapper's `Cargo.toml` opts into `azure_data_cosmos_driver/tokio`
+- The wrapper's `Cargo.toml` opts into `azure_data_cosmos_driver/{tokio, rustls}`
   + the wrapper-local `tokio = { workspace = true, features = [...] }`.
+- **`rustls` was added in Phase 2** — without it the driver's
+  `DefaultHttpClientFactory::new()` can't construct an HTTP client and
+  `CosmosDriverRuntimeBuilder::build()` fails. Do NOT switch to
+  `native_tls` without testing on Windows first (see §5.2).
 - `azure_data_cosmos_driver` is referenced via **path** rather than as a
   workspace dependency, because there is no `[workspace.dependencies.azure_data_cosmos_driver]`
-  entry in the root `Cargo.toml`. Phase 2+ can keep this path-dep style.
+  entry in the root `Cargo.toml`. Phase 3+ can keep this path-dep style.
+
+### 4.8 Phase 2 deferrals (Phase 2+ follow-ups)
+- **Complex nested setters on `cosmos_runtime_builder_t`:**
+  `with_client_options`, `with_connection_pool`, `with_operation_options`,
+  `register_throughput_control_group`, `with_fault_injection_rules`
+  (gated on the `fault_injection` driver feature, which the wrapper does
+  not currently enable). Each requires its own FFI builder surface that
+  would dwarf the Phase 2 commit. Pull them in opportunistically when
+  Phase 3's `cosmos_driver_options_builder_*` lands the
+  `OperationOptions` surface — both share the same builder pattern.
+- **`cosmos_runtime_builder_with_worker_threads` / `_with_thread_name_prefix`:**
+  the spec lists these but the merged `CosmosDriverRuntimeBuilder` does
+  NOT expose them; the Tokio runtime is built with hard-coded defaults
+  inside `RuntimeContext::new_with_builder`. If we ever want to expose
+  them at the FFI surface, they'll be Tokio-side knobs only (not
+  forwarded to the driver), which is a different shape of API and worth
+  thinking through before shipping.
 
 ---
 

@@ -28,6 +28,12 @@ crate-type = ["cdylib", "staticlib"]
 # default and avoids the OpenSSL-on-Windows breakage that bites
 # `native_tls`).
 azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = ["tokio", "rustls"] }
+# Required at runtime for Phase 3 — `Secret` (master-key auth) lives in
+# `azure_core::credentials` and `Url::parse` is the gate for the account
+# endpoint. Both are zero-cost wrappers around existing driver deps so
+# they don't grow the closure.
+azure_core = { workspace = true, default-features = false }
+url = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros"] }
 tracing.workspace = true
 

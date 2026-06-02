@@ -25,8 +25,12 @@ use std::ffi::{c_char, CStr};
 
 #[macro_use]
 pub mod string;
+pub mod account_ref;
 pub mod bytes;
 pub mod completion;
+pub mod database_ref;
+pub mod driver;
+pub mod driver_options;
 pub mod error;
 pub mod runtime;
 pub mod runtime_builder;

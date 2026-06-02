@@ -553,6 +553,7 @@ dependencies = [
  "cbindgen",
  "tokio",
  "tracing",
+ "url",
 ]
 
 [[package]]
