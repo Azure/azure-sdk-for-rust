@@ -111,7 +111,7 @@ sequenceDiagram
     Sub->>Tok: spawn driver.execute_singleton_operation(op)
     Sub-->>App: cosmos_operation_handle_t* (in-flight)
     App-->>App: return Task / Future / chan to caller
-    Note over App: App now `await`s; no thread is blocked.
+    Note over App: App now awaits; no thread is blocked.
 
     Tok->>Drv: poll until ready
     Drv-->>Tok: Ok(CosmosResponse) | Err(CosmosError)
@@ -212,7 +212,7 @@ sequenceDiagram
     autonumber
     participant App as App / CancellationToken
     participant OH as cosmos_operation_handle_t
-    participant Sel as tokio::select! { fut, cancel }
+    participant Sel as Tokio select (future vs cancel)
     participant Drv as CosmosDriver future
     participant CQ as cosmos_cq_t
     participant Rcv as Receive-loop
@@ -220,16 +220,16 @@ sequenceDiagram
     App->>OH: cosmos_operation_handle_cancel(op)
     OH->>Sel: cancel_notify.notify_one()
     alt cancel won the race
-        Sel-->>Sel: select selects the cancel branch
+        Sel-->>Sel: select picks the cancel branch
         Sel->>Drv: drop the future (reqwest aborts in Drop)
-        Sel->>CQ: enqueue Completion { CANCELLED, was_cancel_requested=true }
+        Sel->>CQ: enqueue Completion CANCELLED with was_cancel_requested=true
     else operation completed before cancel observed
-        Sel-->>Sel: select selects the future branch
-        Sel->>CQ: enqueue Completion { OK | ERROR, was_cancel_requested=true }
+        Sel-->>Sel: select picks the future branch
+        Sel->>CQ: enqueue Completion OK or ERROR with was_cancel_requested=true
     end
     CQ-->>Rcv: cosmos_completion_t*
     Rcv->>Rcv: cosmos_completion_outcome + cosmos_completion_was_cancel_requested
-    Note over Rcv: Host distinguishes "cancel succeeded" from "cancel lost the race".
+    Note over Rcv: Host distinguishes cancel-succeeded from cancel-lost-the-race.
 ```
 
 **Caveats** &mdash; flagged here for visibility, fully documented in
