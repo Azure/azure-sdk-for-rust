@@ -96,12 +96,10 @@ where
                 };
 
                 if matches!(status, PollerStatus::Failed | PollerStatus::Canceled) {
-                    let message = match status {
-                        PollerStatus::Failed => "resource manager long-running operation failed",
-                        PollerStatus::Canceled => {
-                            "resource manager long-running operation was canceled"
-                        }
-                        _ => unreachable!("checked failed/canceled terminal statuses above"),
+                    let message = if status == PollerStatus::Failed {
+                        "resource manager long-running operation failed"
+                    } else {
+                        "resource manager long-running operation was canceled"
                     };
                     return Err(crate::Error::new(ErrorKind::Other, message));
                 }
