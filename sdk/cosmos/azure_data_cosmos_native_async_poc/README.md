@@ -9,50 +9,17 @@
 
 ## TL;DR (for the standup)
 
-The committed PR ([Azure/azure-sdk-for-rust#4461](https://github.com/Azure/azure-sdk-for-rust/pull/4461)) specs a **synchronous** C ABI for the planned `azure_data_cosmos_driver_native` crate. That means every in-flight Cosmos operation a .NET / Java / Go / Python client makes through this ABI burns **one OS thread for the duration of the I/O**. At realistic production fan-out (hundreds–thousands of in-flight reads) that's a non-starter.
+This spike implements the smallest possible **completion-queue async ABI** for the planned `azure_data_cosmos_driver_native` crate (see [Azure/azure-sdk-for-rust#4461](https://github.com/Azure/azure-sdk-for-rust/pull/4461)) and consumes it from a real .NET 8 console host. Submission is non-blocking; results are drained by a single dedicated host pump thread that dispatches each completion to the right `TaskCompletionSource`.
 
-This spike implements the smallest possible **completion-queue async ABI** in a new standalone Rust crate, consumes it from a real .NET 8 console host, and measures whether the design works end-to-end against the Cosmos DB emulator.
+The design borrows directly from three battle-tested precedents:
 
-**Result: it works.** A single dedicated host thread drains 1,000 concurrent reads in **~6 ms** vs **~25 ms** for the per-op-thread baseline (≈ **4.2× speedup**, no thread count growth). Cancellation, panic safety, and exactly-once completion delivery all hold. The model is ready to graduate from spike to spec input on PR #4461.
-
----
-
-## The problem in one picture
-
-```mermaid
-flowchart LR
-    subgraph "❌ Spec as written (sync ABI)"
-        A1[".NET task #1"] -- "blocks 25 ms" --> R1["Rust read_item (sync)"]
-        A2[".NET task #2"] -- "blocks 25 ms" --> R2["Rust read_item (sync)"]
-        A3[".NET task #N"] -- "blocks 25 ms" --> R3["Rust read_item (sync)"]
-        style A1 fill:#fdd
-        style A2 fill:#fdd
-        style A3 fill:#fdd
-        note1["1 OS thread per in-flight op<br/>1000 ops = 1000 blocked threads"]:::bad
-    end
-
-    subgraph "✅ Spike proposal (async ABI)"
-        B1[".NET task #1"] -- "submit + await" --> CQ
-        B2[".NET task #2"] -- "submit + await" --> CQ
-        B3[".NET task #N"] -- "submit + await" --> CQ
-        CQ["Completion Queue<br/>(Rust)"] -- "one pump thread<br/>drains all completions" --> PUMP[(cq pump thread)]
-        PUMP -. "resolves TCS" .-> B1
-        PUMP -. "resolves TCS" .-> B2
-        PUMP -. "resolves TCS" .-> B3
-        style B1 fill:#dfd
-        style B2 fill:#dfd
-        style B3 fill:#dfd
-    end
-
-    classDef bad fill:#fee,stroke:#c00,stroke-width:1px
-```
-
-The picture on the right is the same pattern used by:
 - **gRPC C-core** — `grpc_completion_queue_next`
 - **libuv / IOCP / io_uring** — kernel-level CQs drained by one host thread
 - **V3 .NET SDK's Rntbd2 transport** — `Connection.ReceiveLoopAsync` dispatches frames to per-request `TaskCompletionSource`s by activity id
 
 Same pattern, **one layer up** (FFI boundary instead of TCP boundary).
+
+**Result: it works.** 1,000 concurrent reads complete in **~6 ms** on a single pump thread. Cancellation, panic safety, and exactly-once completion delivery all hold. Ready to graduate to spec input on PR #4461.
 
 ---
 
@@ -92,6 +59,76 @@ flowchart TD
 ```
 
 **Key principle**: the production `azure_data_cosmos` crate is **untouched**. The new cdylib wraps it behind a small C ABI. If the spec changes, only the FFI shim changes.
+
+### Lifetime hierarchy of the FFI types
+
+This is the **mental model** every team member needs to internalize before reading the code. Every opaque type has a clear parent, a clear lifetime window, and a clear "who frees it" rule.
+
+```mermaid
+graph TD
+    R["<b>cosmos_runtime_t</b><br/>──────<br/>Owns Tokio multi-thread pool<br/><i>1 per process · created first · freed last</i>"]
+    D["<b>cosmos_driver_t</b><br/>──────<br/>CosmosClient bound to an account<br/><i>1+ per runtime · 1 per account+region+cred</i>"]
+    CQ["<b>cosmos_cq_t</b><br/>──────<br/>Bounded channel + shutdown flag<br/><i>1+ per process · typically 1 · independent of driver</i>"]
+    OP["<b>cosmos_op_t</b><br/>──────<br/>Arc&lt;OpState&gt; — cancel flag + Notify<br/><i>1 per in-flight call · submit → release</i>"]
+    RESP["<b>cosmos_response_t</b><br/>──────<br/>{ u16 status, Vec&lt;u8&gt; body }<br/><i>1 per delivered completion · cq_wait → response_free</i>"]
+
+    R -- "hosts" --> D
+    R -. "runs spawned tasks for" .-> CQ
+    D -- "submits" --> OP
+    OP == "pushes exactly 1 completion onto" ==> CQ
+    CQ == "yields" ==> RESP
+
+    classDef longLived fill:#d0e8ff,stroke:#1a5
+    classDef shortLived fill:#ffe8d0,stroke:#a52
+    class R,D,CQ longLived
+    class OP,RESP shortLived
+```
+
+Blue = long-lived (live for minutes / the whole process). Orange = short-lived (live for the duration of one operation).
+
+#### Read it top-down
+
+```
+cosmos_runtime_t                        process startup
+  │ (constructed once via cosmos_runtime_new)
+  │ holds the Tokio worker pool — every Cosmos op eventually runs on these threads
+  │
+  ├── cosmos_driver_t                   per Cosmos account
+  │     │ (constructed via cosmos_driver_new — the ONE call that blocks; primes the region cache)
+  │     │ holds an Arc<Runtime> so the runtime cannot be freed while a driver exists
+  │     │
+  │     └── cosmos_op_t                 per in-flight operation
+  │           │ (constructed via cosmos_read_item; returns immediately)
+  │           │ host MUST call exactly one of { cosmos_cancel, cosmos_op_release } — Invariant I5
+  │           │ Arc<OpState>: one ref to spawned Tokio task, one ref to host
+  │           │
+  │           └── (when task finishes) pushes 1 Completion ───────────►
+  │                                                                    │
+  └── cosmos_cq_t                       per host pump thread            │
+        │ (constructed via cosmos_cq_new — sibling of driver, not child)│
+        │ bounded channel; receiver held under tokio::sync::Mutex (I4)  │
+        │                                                               ▼
+        │                                                       takes pushed completion
+        │                                                               │
+        └── cosmos_response_t           per completed op                ▼
+              (yielded by cosmos_cq_wait; host owns and must call cosmos_response_free)
+```
+
+#### Free order (reverse of construction)
+
+When tearing down, the host MUST release in this order, or risk use-after-free or leaks:
+
+```
+1.  cosmos_op_release        for every still-outstanding op (cancel first if needed)
+2.  cosmos_response_free     for every response handed out by cq_wait that hasn't been freed
+3.  cosmos_cq_shutdown       tell the CQ "no more waits coming"
+4.  drain remaining completions with cq_wait until QueueShutdown
+5.  cosmos_cq_free           release the CQ
+6.  cosmos_driver_free       release each driver
+7.  cosmos_runtime_free      release the runtime LAST (it joins the worker pool)
+```
+
+The `CompletionQueueLoop.Dispose()` in the .NET host implements steps 3–5 automatically.
 
 ### File map — Rust crate (~1,250 LOC)
 
@@ -239,6 +276,184 @@ sequenceDiagram
 
 ---
 
+## How `CompletionQueueLoop` works (the .NET pump)
+
+`CompletionQueueLoop` is the heart of the .NET host — the single class that turns the C completion queue into resolved `Task<T>`s. Every other piece of the .NET POC (`NativeCosmosClient`, `Program.cs`) is just glue around it. Here it is, dissected.
+
+### The four fields
+
+```csharp
+public sealed class CompletionQueueLoop : IDisposable
+{
+    private readonly IntPtr cqHandle;                                                    // ① the Rust CQ
+    private readonly Thread pumpThread;                                                  // ② the one pump
+    private readonly ConcurrentDictionary<ulong, TaskCompletionSource<RawResponse>> pending; // ③ in-flight map
+    private long nextUserData;                                                            // ④ token allocator
+    private int  disposed;                                                                // shutdown flag
+}
+```
+
+| # | Field | What it is | Why it exists |
+|---|---|---|---|
+| ① | `cqHandle` | Opaque `IntPtr` returned by `cosmos_cq_new` | Identifies the Rust-side bounded channel; passed back on every native call |
+| ② | `pumpThread` | A regular CLR `Thread` with `IsBackground = true`, name `cosmos-native-cq-pump` | The one and only host thread that calls `cosmos_cq_wait`. Marked background so it doesn't prevent process exit. |
+| ③ | `pending` | Map from `user_data` (ulong) → the awaiting TCS | The dispatcher. When a completion comes back carrying token `T`, we look up the TCS in this map and resolve it. |
+| ④ | `nextUserData` | Monotonic counter | Generates a fresh, unique token per submission. `Interlocked.Increment` makes it thread-safe under heavy concurrent submission. |
+
+### The constructor — startup sequence
+
+```csharp
+public CompletionQueueLoop(uint capacity = 1024)
+{
+    this.cqHandle = cosmos_cq_new(capacity);                          // ① ask Rust for a CQ
+    if (this.cqHandle == IntPtr.Zero) throw new InvalidOperationException(...);
+    this.pending  = new ConcurrentDictionary<...>();                  // ② alloc dispatcher map
+    this.pumpThread = new Thread(this.Pump) {
+        IsBackground = true,
+        Name = "cosmos-native-cq-pump",
+    };
+    this.pumpThread.Start();                                          // ③ launch the pump
+}
+```
+
+Three steps: allocate the Rust resource, allocate the .NET dispatcher state, launch the pump thread. After the ctor returns, the pump is already running and waiting for completions — but `pending` is empty, so the pump just blocks in `cq_wait` until something gets registered.
+
+### `Register` — how a TCS gets into the pending map
+
+```csharp
+public ulong Register(TaskCompletionSource<RawResponse> tcs)
+{
+    ulong token = (ulong)Interlocked.Increment(ref this.nextUserData);
+    this.pending[token] = tcs;
+    return token;
+}
+```
+
+Called by `NativeCosmosClient.ReadItemAsync` right before it invokes `cosmos_read_item`. The returned `token` is the `user_data` payload — Rust will hand it back verbatim when the operation finishes. **This is Invariant I1 in action**: Rust never inspects the bytes, only round-trips them.
+
+### The pump loop — the actual event loop
+
+```csharp
+private void Pump()
+{
+    while (Volatile.Read(ref this.disposed) == 0)
+    {
+        CosmosStatus waitRc = cosmos_cq_wait(
+            this.cqHandle,
+            timeoutMs: 200,
+            out UIntPtr userDataNative,
+            out CosmosStatus opStatus,
+            out IntPtr responseHandle);
+
+        // ── BRANCH 1: timeout, no completion yet
+        if (waitRc == CosmosStatus.Cancelled) continue;
+
+        // ── BRANCH 2: shutdown signaled
+        if (waitRc == CosmosStatus.QueueShutdown)
+        {
+            foreach (var kvp in this.pending)
+                kvp.Value.TrySetException(new InvalidOperationException("Completion queue was shut down"));
+            this.pending.Clear();
+            return;
+        }
+
+        // ── BRANCH 3: real completion delivered
+        // ... dispatch to TCS ...
+    }
+}
+```
+
+#### Branch 1 — Timeout (200 ms tick)
+
+`cq_wait` with `timeoutMs: 200` returns `Cancelled` if nothing arrived in 200 ms. This isn't a real "cancellation" event — it's a heartbeat. The pump uses it to re-check the `disposed` flag, so `Dispose()` doesn't have to wait an unbounded time for a completion to arrive. Without this tick, a CQ with no in-flight ops would hang shutdown forever.
+
+#### Branch 2 — `QueueShutdown` (orderly drain)
+
+Triggered when `Dispose()` called `cosmos_cq_shutdown(cqHandle)`. The pump sees the shutdown sentinel, then walks every still-pending TCS and fails it with an exception. **This prevents orphaned `await`s**: callers who submitted ops just before shutdown won't hang forever — they'll see an `InvalidOperationException`. After draining, the pump thread returns and the `Thread.Join` in `Dispose` succeeds.
+
+#### Branch 3 — Real completion (the happy path)
+
+```csharp
+ulong userData = userDataNative.ToUInt64();
+if (!this.pending.TryRemove(userData, out var tcs))
+{
+    // Defensive: shouldn't happen if I1 is upheld, but free the response anyway.
+    if (responseHandle != IntPtr.Zero) cosmos_response_free(responseHandle);
+    Console.Error.WriteLine($"completion for unknown user_data 0x{userData:X16} dropped");
+    continue;
+}
+
+try
+{
+    RawResponse raw = ReadRawResponseAndFree(responseHandle);
+    if      (opStatus == CosmosStatus.Ok)        tcs.TrySetResult(raw);
+    else if (opStatus == CosmosStatus.Cancelled) tcs.TrySetCanceled();
+    else                                          tcs.TrySetException(new CosmosNativeException(opStatus, raw));
+}
+catch (Exception ex)
+{
+    tcs.TrySetException(ex);
+}
+```
+
+Three concerns are happening here in order:
+
+1. **Demultiplex.** `pending.TryRemove(userData, ...)` atomically pulls the TCS out of the dispatcher map and returns it. **`TryRemove` not `TryGet`**: this is the single point at which a token is consumed, guaranteeing exactly-once dispatch (the host-side companion to Rust's Invariant I2).
+2. **Marshal.** `ReadRawResponseAndFree` (next section) copies the Rust-owned body bytes into a managed `byte[]` and immediately frees the Rust allocation.
+3. **Resolve.** Pick the right TCS method based on the Rust-side status — `TrySetResult` for success, `TrySetCanceled` for I-cancelled-it, `TrySetException` wrapping a `CosmosNativeException` for everything else. **`Try*` not raw `Set*`**: defensive against double-completion, even though Invariant I2 should prevent it.
+
+The `tcs.TrySet*` call is what schedules the user's `await` continuation back onto the ThreadPool. The TCS was created with `TaskCreationOptions.RunContinuationsAsynchronously` in `NativeCosmosClient`, which is the **critical** detail: it prevents the continuation from running synchronously on the pump thread. If we forgot that flag, a slow user continuation would block the pump and starve every other in-flight op.
+
+### `ReadRawResponseAndFree` — memory marshaling
+
+```csharp
+private static RawResponse ReadRawResponseAndFree(IntPtr responseHandle)
+{
+    if (responseHandle == IntPtr.Zero) return new RawResponse(0, Array.Empty<byte>());
+    try
+    {
+        ushort http = cosmos_response_status(responseHandle);
+        cosmos_response_body(responseHandle, out IntPtr bodyPtr, out UIntPtr bodyLenNative);
+        int len = (int)bodyLenNative.ToUInt32();
+        byte[] copy = new byte[len];
+        if (len > 0) Marshal.Copy(bodyPtr, copy, 0, len);
+        return new RawResponse(http, copy);
+    }
+    finally
+    {
+        cosmos_response_free(responseHandle);      // ALWAYS, even on exception
+    }
+}
+```
+
+Two C calls into Rust to read the data (status + body pointer/len), one `Marshal.Copy` to lift the bytes into a managed `byte[]`, and a guaranteed `cosmos_response_free` in `finally`. **The `finally` is non-negotiable**: the body bytes were allocated by Rust's global allocator, not the C runtime's `malloc`, so the only correct way to free them on Windows is to hand the pointer back to Rust. If we leaked the handle, the body and its `Vec<u8>` would stay alive in the Rust heap forever.
+
+### `Dispose` — orderly shutdown
+
+```csharp
+public void Dispose()
+{
+    if (Interlocked.Exchange(ref this.disposed, 1) != 0) return;     // idempotent
+    cosmos_cq_shutdown(this.cqHandle);                               // tell Rust no more waits
+    this.pumpThread.Join(TimeSpan.FromSeconds(5));                   // wait for pump to drain
+    cosmos_cq_free(this.cqHandle);                                   // release the Rust CQ
+}
+```
+
+The three steps map directly onto the free-order rules from the lifetime hierarchy section:
+1. **Set the disposed flag** atomically so the pump exits its `while` even if no completion arrives.
+2. **Shutdown the CQ** so any `cq_wait` in progress returns `QueueShutdown` (which triggers Branch 2's fail-all-pending logic).
+3. **Join the pump thread** with a 5-second cap — long enough for any in-flight completion to drain, short enough to fail fast if something deadlocked.
+4. **Free the CQ handle** so Rust drops the bounded channel and any still-queued completions are dropped.
+
+After `Dispose`, the surrounding code is responsible for freeing the driver and runtime (in that order).
+
+### One-paragraph summary
+
+`CompletionQueueLoop` owns three things: a Rust CQ handle, a single pump thread, and a `ConcurrentDictionary` mapping integer tokens to `TaskCompletionSource`s. `Register` adds an entry; `cosmos_read_item` (called by the user-facing wrapper) tells Rust to push the same token back when the op finishes; the pump thread sits in `cq_wait` and uses the token to look up the matching TCS and resolve it. The 200 ms timeout is purely a shutdown heartbeat. `Dispose` is the orderly teardown. **That's it.** Every other piece of the .NET host is just sugar around this loop.
+
+---
+
 ## A real worked example
 
 The driver loop in `Program.cs` runs four feasibility checks against the emulator. Here's **F3** — the headline measurement — narrated end-to-end. Database `pocdb`, container `items` (pk `/pk`), one seeded item `{ "id":"x", "pk":"p", "hello":"from native async poc" }`.
@@ -270,7 +485,7 @@ await Task.WhenAll(tasks);
 | 5 | Tokio (B) | As each response arrives, the task wakes, packages a `Completion { user_data: token, outcome: Success(boxed_response) }` and `cq_tx.send`s it onto the channel |
 | 6 | Pump (C) | The single pump thread, sitting in `cq_wait(timeout=200ms)`, pops completions one at a time. Per completion: dictionary lookup → `Marshal.Copy` the body bytes (~0.5 KB) into a managed `byte[]` → `cosmos_response_free` → `tcs.TrySetResult(raw)` |
 | 7 | ThreadPool (A) | Each `TrySetResult` schedules the awaiting continuation back on the ThreadPool. `await Task.WhenAll(tasks)` finally unblocks. |
-| **Total** | — | **~6 ms wall time** for 1,000 reads. Compared to **~25 ms** for the same load through the .NET HTTP gateway baseline running in-process. |
+| **Total** | — | **~6 ms wall time** for 1,000 reads on a single pump thread. |
 
 ### Why it's faster
 
@@ -396,7 +611,7 @@ item:     { "id": "x", "pk": "p", "hello": "from native async poc" }
 |---|---|---|---|
 | **F1** | A single read flows end-to-end through `cosmos_read_item` → CQ → TCS | ✅ PASS | 200-status, body bytes match seed |
 | **F2** | `cosmos_read_item` does not block the calling thread | ✅ PASS | Submit returns in **~53 µs** (P50) |
-| **F3** | 1,000 concurrent reads scale on the pump thread | ✅ PASS | **~6 ms vs ~25 ms** baseline → **4.2×** speedup |
+| **F3** | 1,000 concurrent reads scale on the pump thread | ✅ PASS | **~6 ms** total; no thread growth |
 | **F4** | Cancellation always yields exactly one completion (Invariant I2) | ✅ PASS | 100 / 100 cancel-mid-flight cases produced exactly one `Cancelled` completion |
 
 Full verdict + raw numbers: `Q:\src\.files\poc-async-ffi-verdict.md` (ready to paste as a comment on PR #4461).
