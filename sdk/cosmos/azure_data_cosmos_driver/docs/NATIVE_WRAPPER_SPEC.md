@@ -500,7 +500,19 @@ Pre-flight rejections never touch the network and never enqueue anything; runtim
 Because the driver is schema-agnostic, request/response bodies are raw bytes, not C strings. The wrapper exposes two distinct types — a **view-by-value** for caller-owned inputs and an **opaque handle** for SDK-owned outputs:
 
 ```c
-// Caller-owned input: caller keeps memory live for the duration of the call.
+// Caller-owned input: caller keeps memory live for the duration of the
+// synchronous FFI call that consumes the view. Any function that needs the
+// bytes to outlive the call (notably submit-into-async paths like
+// cosmos_operation_with_body — see §4.6.2) MUST document that it copies the
+// view's contents into wrapper-owned storage before returning. The default
+// rule "caller may release the source memory immediately after the call
+// returns SUCCESS" therefore holds uniformly across both Pattern A (§3.2)
+// synchronous calls AND Pattern B async submits — even though the network
+// I/O for a submit happens later, the input bytes have already been copied
+// in by the time submit returns. See §9 Q17 for the open question on
+// reintroducing zero-copy borrow-until-completion semantics behind a
+// driver-owned buffer pool.
+//
 // Layout is published because this is pass-by-value across the ABI.
 typedef struct cosmos_bytes_view {
     const uint8_t *data;
@@ -550,7 +562,11 @@ Rationale:
 
 ### 3.5 Error model
 
-The wrapper's error surface is built on two complementary types — a coarse `cosmos_error_code_t` numeric return value for the C function contract, and a rich `cosmos_error_t` payload that mirrors the driver's `azure_data_cosmos::Error` (introduced in [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442)). Both **must** be exposed so language SDKs can implement retry policies, throttling backoff, and conditional-write recovery without re-parsing HTTP headers.
+The wrapper's error surface is built on two complementary types — a coarse `cosmos_error_code_t` numeric return value for the C function contract, and a rich `cosmos_error_t` payload that mirrors the driver's `azure_data_cosmos::Error` (introduced in [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442)). Both **must** be exposed because the host SDKs sitting on top of this wrapper need full error fidelity for **diagnosability** and for **routing failure classes into language-native exception types** — they do **not** re-implement retry / throttling / conditional-write recovery (that's the driver's responsibility, by design — see [`ARCHITECTURE.md`](../ARCHITECTURE.md) "Schema-Agnostic Data Plane"). Concretely:
+
+- **Diagnosability.** `400 Bad Request` is the canonical example: callers cannot debug it without the gateway response body, headers (`x-ms-activity-id`, `x-ms-substatus`), and the driver's `DiagnosticsContext` for the failed attempt. The rich payload exposes all three.
+- **Failure-class routing.** Host SDKs translate `cosmos_error_is_not_found(e)` / `_is_conflict(e)` / `_is_precondition_failed(e)` / `_is_throttled(e)` etc. into their language-native exceptions (`CosmosException` subclasses in Java, dedicated error variants in Go, `CosmosException.StatusCode` in .NET). Routing is **classification**, not retry.
+- **What host SDKs do NOT do.** They do **not** drive retry loops, back-off timers, conditional-write recovery, or cross-region failover off the wrapper's error surface — those are owned by the driver's pipeline (`transport_pipeline.rs`, the throttle / failover / circuit-breaker components, and the `OperationOptions` retry knobs). A host SDK that re-implements any of these on top of the wrapper is defeating the whole point of the driver split.
 
 > **Landing prerequisites — read this before implementing.** The §3.5.2 rich-error surface and the §6 error-semantics chapter both depend on PR [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442) ("Refactoring to use `Error` instead of `azure_core::Error`") landing first. On `main` today `execute_singleton_operation` still returns `azure_core::Result<…>`, so none of the `cosmos_error_*` accessors below can be wired until #4442 merges. Predicate placement, backtrace-knob naming, and the `Service` / `Transport` / `Client` / `Authentication` / `Serialization` / `Configuration` `Kind` taxonomy are all owned by #4442 — verify the final shape against the merged commit before lifting this section out of draft. Sub-status synthetic codes (`20008`, `20912`, `20010..=20015`, `20020..=20021`, `20030`, `20402`) are also defined in #4442.
 
@@ -683,6 +699,29 @@ void cosmos_error_free(cosmos_error_t *e);
 **Wrapper does NOT construct `cosmos_error_t`.** Errors are only ever *received* from the driver; no `cosmos_error_create_*` API is exposed.
 
 **Synthetic sub-status codes** for client-side failures (see PR #4442 for the authoritative list, e.g. `CLIENT_OPERATION_TIMEOUT = 20008`, `CLOSED_CLIENT = 20912`, transport `20010..=20015`, serialization `20020..=20021`, configuration `20030`, authentication `20402`) are surfaced verbatim through `cosmos_error_sub_status` — the wrapper does not re-number them.
+
+**Substatus codes are emitted as named C constants in `azurecosmosdriver.h`.** Per analogrelay's review feedback on this spec, language-binding authors should not have to hand-transcribe the synthetic substatus integers into their own SDK in order to switch on them — that is fragile and silently rots when the driver adds new variants. The wrapper therefore emits the **full** synthetic substatus set as `#define` constants (or a `cosmos_substatus_t` enum, whichever cbindgen produces cleanly for a `pub const` group of `i32` literals) in the generated header, sourced from a single Rust module that mirrors the driver's `SubStatusCode` constants 1:1:
+
+```rust
+// src/error/substatus_constants.rs (wrapper-side, codegen-fed into the header)
+pub const COSMOS_SUB_STATUS_CLIENT_OPERATION_TIMEOUT:      i32 = 20008;
+pub const COSMOS_SUB_STATUS_CLOSED_CLIENT:                 i32 = 20912;
+pub const COSMOS_SUB_STATUS_TRANSPORT_CONNECTION_FAILED:   i32 = 20010;
+pub const COSMOS_SUB_STATUS_TRANSPORT_REQUEST_TIMEOUT:     i32 = 20011;
+pub const COSMOS_SUB_STATUS_TRANSPORT_RESPONSE_TIMEOUT:    i32 = 20012;
+pub const COSMOS_SUB_STATUS_TRANSPORT_RESPONSE_BODY_FAILED: i32 = 20013;
+pub const COSMOS_SUB_STATUS_TRANSPORT_DNS_FAILURE:         i32 = 20014;
+pub const COSMOS_SUB_STATUS_TRANSPORT_TLS_FAILURE:         i32 = 20015;
+pub const COSMOS_SUB_STATUS_SERIALIZATION_REQUEST_FAILED:  i32 = 20020;
+pub const COSMOS_SUB_STATUS_SERIALIZATION_RESPONSE_FAILED: i32 = 20021;
+pub const COSMOS_SUB_STATUS_CONFIGURATION_INVALID:         i32 = 20030;
+pub const COSMOS_SUB_STATUS_AUTHENTICATION_FAILED:         i32 = 20402;
+// ... every named SubStatusCode variant the driver exposes
+```
+
+The cbindgen `export.item_types` policy in §2.2 explicitly includes `"constants"` so these emit as `#define` (C) / `static const` (C++) in `azurecosmosdriver.h`. The same Rust module is the single source of truth — a CI check (extending the header-diff check in §2.2) compares the wrapper's `COSMOS_SUB_STATUS_*` constants against the driver's `SubStatusCode` variants by name and fails if any driver-side variant is missing a wrapper-side mirror. This lets language-binding generators (the .NET `T4` template, the Java `cosmos-driver-bindgen` step, etc.) read the C header and emit language-native constants without re-typing integer literals. **Service-error HTTP-status substatus codes** (e.g. `LSN_IN_SESSION_TOKEN_IS_HIGHER = 1002`, `READ_SESSION_NOT_AVAILABLE = 1006`) follow the same emission rule.
+
+Status-code main values follow the same approach via the existing `cosmos_error_code_t` enum (§3.5.1) plus the standard HTTP status codes the wrapper surfaces through `cosmos_error_status_code(e)` — host SDKs that switch on HTTP status either use their language-standard `HttpStatusCode` enum or define their own constants from `cosmos_error_status_code`'s `uint16_t` return; the wrapper does **not** re-export the standard HTTP code values as `COSMOS_HTTP_*` constants to avoid polluting the header with values that are already standardized across every language.
 
 ### 3.6 Completion records & operation handles
 
@@ -1355,7 +1394,18 @@ The partition key passed to a factory is **cloned** into the operation — the c
 #### 4.6.2 Mutators
 
 ```c
-/* Body — UTF-8 JSON bytes. Replaces any previously-set body. */
+/* Body — UTF-8 JSON bytes. Replaces any previously-set body.
+ *
+ * Lifetime: the wrapper COPIES the bytes into an internal driver-owned
+ * buffer before returning. Once cosmos_operation_with_body returns SUCCESS
+ * the caller is free to release / overwrite / unpin the source memory
+ * immediately, including before the eventual cosmos_driver_submit and the
+ * async completion. Rationale: this is the only contract that interoperates
+ * cleanly with host-language GCs (pinned .NET buffers, Java DirectByteBuffer,
+ * Go []byte, etc.) without forcing the caller to keep the source alive across
+ * the whole submit→completion window. See §9 Q17 for the open question on
+ * whether a future revision adds a zero-copy "borrow until completion" variant
+ * (cosmos_operation_with_body_borrowed) backed by a driver-owned buffer pool. */
 cosmos_error_code_t cosmos_operation_with_body(
     cosmos_operation_t *op, cosmos_bytes_view_t body);
 
@@ -1943,6 +1993,167 @@ Each item below is independent; ship as feature-gated when ready.
 14. **Pager ownership: wrapper-side vs. driver-side.** §4.7 documents that `cosmos_pager_t` is a wrapper-owned opaque type built on top of `(OperationPlan, execute_plan)`, because the driver crate has no `Pager` / `PageStream` type. Two consequences: (a) the wrapper has to keep the originating `CosmosDriver` Arc-cloned for the pager's lifetime so `execute_plan` can re-enter the driver per page, and (b) any host SDK that wants prefetched/pipelined pages has to issue multiple pagers because a single `cosmos_pager_t` is strictly sequential. Decide whether to (i) keep the wrapper-side pager as the long-term contract, (ii) push for a driver-side `Pager` type that owns the `OperationPlan` and exposes `async fn next_page()` (cleaner ownership, opens the door to driver-side prefetch), or (iii) wait for the streaming-feed redesign tracked elsewhere. Resolve before Phase 8 ships.
 15. **Runtime API: keep builder, or eventually add a fast-path constructor?** §4.1 ships only the `cosmos_runtime_builder_*` family — there is no `cosmos_runtime_create(options)` shortcut, because `CosmosDriverRuntimeBuilder::build()` is async + does network I/O and the runtime carries too many knobs for a flat options struct. For host SDKs that pass nothing but defaults the builder is a 3-call dance (`_new` / `_build` / `_free`). Decide whether to (a) leave the builder as the only entry point permanently — clean, mirrors the driver crate — or (b) once the runtime stabilizes, add a `cosmos_runtime_default(out_runtime, out_error)` convenience that internally does `_new` + `_build`. Not blocking on v1; revisit when host-SDK author feedback arrives.
 16. **Mid-flight diagnostics snapshot.** §3.6.2 removes the v0 `cosmos_operation_handle_diagnostics_snapshot` accessor because the driver's `DiagnosticsContext` is constructed inside the executing future's stack frame, not in a shared `Arc<Mutex<…>>` the wrapper can clone while the future is still running (`CosmosResponse::diagnostics()` at `models/cosmos_response.rs:109` is only reachable post-completion). Two driver-side options would re-enable mid-flight snapshots: (a) refactor the pipeline to thread an `Arc<RwLock<DiagnosticsContext>>` (or equivalent lock-free append-only structure) through every stage, allowing concurrent readers, or (b) emit a snapshot eagerly to a per-operation shared-memory ring buffer the wrapper exports. Decide whether stuck-op observability is a v1.x must-have (and which driver-side mechanism is preferred) or a v2 nice-to-have. Until resolved, host SDKs that need stuck-op visibility must rely on `cosmos_operation_handle_state` polling plus external instrumentation (request timestamps captured at submit time).
+17. **Driver-owned buffer pool for request bodies.** §3.3 / §4.6.2 currently specify that `cosmos_operation_with_body` **copies** the caller's `cosmos_bytes_view_t` into wrapper-owned storage, because that contract interoperates cleanly with host-language GCs (pinned .NET buffers, Java `DirectByteBuffer`, Go `[]byte`, etc.) — the caller can release the source memory immediately. Both reviewers (analogrelay #12, FabianMeiswinkel #16) flagged that for high-traffic workloads this copy is the obvious hot spot, and that a **driver-owned buffer pool** would let host SDKs write request bodies directly into pool-allocated memory and hand the buffer back via FFI without an intermediate copy. The conceptual API shape:
+
+    ```c
+    /* Acquire a writable buffer from the driver's per-driver (or per-runtime?
+     * — open sub-question) body buffer pool. Returns a wrapper-owned buffer
+     * the caller can write into for up to `min_capacity` bytes. */
+    cosmos_error_code_t cosmos_driver_acquire_request_buffer(
+        const cosmos_driver_t *driver,
+        size_t min_capacity,
+        cosmos_request_buffer_t **out_buffer,
+        cosmos_error_t *out_error);
+
+    /* Borrow the writable region. Lifetime = until cosmos_operation_with_body_pooled
+     * consumes the buffer, OR cosmos_request_buffer_release returns it to the pool
+     * without submitting. */
+    uint8_t *cosmos_request_buffer_data(cosmos_request_buffer_t *b);
+    size_t   cosmos_request_buffer_capacity(const cosmos_request_buffer_t *b);
+    cosmos_error_code_t cosmos_request_buffer_set_len(
+        cosmos_request_buffer_t *b, size_t actual_len);
+
+    /* Attach the pooled buffer as the operation's body. The buffer is consumed
+     * (Box<Option<...>> sentinel pattern, like cosmos_operation_t in §4.6.3) —
+     * ownership transfers to the operation, which returns it to the pool when
+     * the operation completes (success / error / cancel — all three paths). */
+    cosmos_error_code_t cosmos_operation_with_body_pooled(
+        cosmos_operation_t *op, cosmos_request_buffer_t *buf);
+
+    /* Return a pool buffer that won't be submitted (caller decided not to send). */
+    void cosmos_request_buffer_release(cosmos_request_buffer_t *b);
+    ```
+
+    Open sub-questions: (a) pool granularity — per-driver, per-runtime, or process-global? (b) pool eviction policy — bounded LRU per size class, or simple bucketed free-list? (c) interaction with the existing `cosmos_bytes_view_t` path — keep both as parallel APIs, or deprecate the copy path once the pool stabilizes? (d) similar story on the **response** side: today `cosmos_response_body` returns a borrowed view that lives until `cosmos_response_free` (one allocation per response), and `cosmos_response_into_body` takes ownership of a `cosmos_bytes_t` — a response-side pool could let host SDKs return the buffer to the pool explicitly via `cosmos_response_release_body_to_pool(...)` instead of `cosmos_bytes_free`. This is a v1.x feature, not v1; the v1 contract per §3.3 + §4.6.2 (copy on `cosmos_operation_with_body`) is stable and host SDKs can build on it today.
+
+18. **Driver→SDK logging callback.** FabianMeiswinkel (review comment #17) raised that the driver currently logs via the `tracing` crate, but host SDK customers expect driver-emitted logs to appear in **their** logger (.NET `ILogger`, Java SLF4J, Go `slog`, Python `logging`, etc.), with their formatting, sink, and filtering. The wrapper today exposes `cosmos_enable_tracing()` (Phase 10) which just bootstraps the driver's internal `tracing-subscriber` and writes to stderr — that is not what host SDKs want. The conceptual API shape:
+
+    ```c
+    typedef enum cosmos_log_level {
+        COSMOS_LOG_LEVEL_TRACE = 0,
+        COSMOS_LOG_LEVEL_DEBUG = 1,
+        COSMOS_LOG_LEVEL_INFO  = 2,
+        COSMOS_LOG_LEVEL_WARN  = 3,
+        COSMOS_LOG_LEVEL_ERROR = 4,
+    } cosmos_log_level_t;
+
+    /* Callback invoked from inside the Tokio runtime on whatever worker
+     * thread emitted the log record. Host SDKs must NOT block in this
+     * callback — push records onto a host-side MPSC channel and have a
+     * separate thread drain them into the host logger. */
+    typedef void (*cosmos_log_callback)(
+        void *user_data,
+        cosmos_log_level_t level,
+        const char *target,         /* tracing target, NUL-terminated UTF-8 */
+        const char *message,        /* rendered message, NUL-terminated UTF-8 */
+        const char *fields_json,    /* tracing fields as JSON object, NUL-terminated; NULL when no fields */
+        uint64_t timestamp_nanos);  /* nanoseconds since UNIX epoch */
+
+    /* Install a host-provided log sink for the runtime. Replaces any previously
+     * installed sink. NULL callback uninstalls the sink (falls back to the
+     * driver's default tracing-subscriber, or silence if cosmos_enable_tracing
+     * was not called). */
+    cosmos_error_code_t cosmos_runtime_set_log_callback(
+        cosmos_runtime_t *runtime,
+        cosmos_log_callback callback,
+        void *user_data,
+        void (*user_data_free)(void *user_data),
+        cosmos_log_level_t min_level);
+    ```
+
+    Open sub-questions: (a) sink scope — per-runtime (proposed above) or per-driver? Per-runtime is simpler because the `tracing` subscriber is process-global today; per-driver would require a custom subscriber that demultiplexes by span context. (b) field marshalling — JSON (proposed) or a structured visitor callback? JSON is straightforward but adds an alloc per record. (c) overhead — `tracing` already gates by level cheaply when no subscriber is interested; this callback would need to be similarly cheap when the host SDK installs a `WARN` filter and the driver emits `DEBUG`. (d) interaction with `cosmos_enable_tracing()` (Phase 10) — does installing a callback uninstall the default subscriber, or are they composed? Decide before Phase 10 ships, because shipping `cosmos_enable_tracing()` first without thinking about the callback path locks the wrapper into a global-subscriber model that's harder to retrofit later.
+
+19. **`cosmos_operation_options_t` shape: builder vs. flat C struct.** §4.2 and §4.6.2 / Phase 5 currently mirror the driver's `OperationOptionsBuilder` 1:1 (17+ `cosmos_operation_options_with_<field>` setters). analogrelay (review comment #11) and FabianMeiswinkel (#15) both flagged that for a **per-call** options bag — invoked once per CRUD operation in tight loops — the builder pattern is the worst-case FFI shape: 17 round-trips per submit, all to write into wrapper-side heap memory the driver then has to copy back into a Rust struct. The conceptual alternative is a **flat, ABI-stable C struct** that the host SDK populates in its own memory and passes by pointer to `cosmos_driver_submit`:
+
+    ```c
+    /* Layout is published and stable. Field reordering / removal is an ABI
+     * break (requires major version bump per §7). NEW fields are appended at
+     * the end of the struct and protected by an explicit version word; older
+     * consumers reading a newer struct are bounded by `struct_size_bytes`. */
+    typedef struct cosmos_operation_options_v1 {
+        uint32_t struct_size_bytes;            /* sizeof(this) at consumer compile time */
+        uint32_t flags;                        /* bitmask of which optional fields are set; one bit per Option<T> driver field */
+
+        /* Consistency / regions */
+        cosmos_read_consistency_t consistency_level;     /* see §3.5 enum; flag bit 0 = present */
+        const char *session_token;                       /* NUL-terminated; flag bit 1 = present */
+        const char *const *excluded_regions;             /* array of NUL-terminated strings; flag bit 2 = present */
+        size_t excluded_regions_len;
+
+        /* Response shape & paging */
+        bool content_response_on_write;                  /* flag bit 3 = present */
+        cosmos_priority_level_t priority_level;          /* flag bit 4 = present */
+        uint64_t end_to_end_timeout_millis;              /* flag bit 5 = present */
+
+        /* Throughput control & QoS */
+        const char *throughput_control_group_name;       /* flag bit 6 = present */
+
+        /* Per-partition circuit-breaker (8 knobs) */
+        bool partition_level_circuit_breaker_enabled;    /* flag bit 7 = present */
+        uint32_t partition_level_cb_failure_threshold;   /* flag bit 8 */
+        uint64_t partition_level_cb_recovery_window_ms;  /* flag bit 9 */
+        uint32_t partition_level_cb_min_request_volume;  /* flag bit 10 */
+        uint32_t partition_level_cb_consecutive_failures_threshold;  /* flag bit 11 */
+        uint64_t partition_level_cb_open_window_ms;      /* flag bit 12 */
+        uint32_t partition_level_cb_half_open_max_requests;  /* flag bit 13 */
+        double   partition_level_cb_failure_rate_threshold;   /* flag bit 14 */
+
+        /* Retry tuning */
+        uint32_t max_failover_retry_count;               /* flag bit 15 */
+        uint32_t max_session_retry_count;                /* flag bit 16 */
+
+        /* Session capture */
+        bool session_capturing_disabled;                 /* flag bit 17 */
+
+        /* Region availability */
+        uint64_t endpoint_unavailability_ttl_ms;         /* flag bit 18 */
+
+        /* Custom headers — flat C array of (name, value) pairs */
+        const cosmos_header_pair_t *custom_headers;      /* flag bit 19 = present */
+        size_t custom_headers_len;
+    } cosmos_operation_options_v1_t;
+
+    typedef struct cosmos_header_pair {
+        const char *name;   /* NUL-terminated UTF-8 */
+        const char *value;  /* NUL-terminated UTF-8 */
+    } cosmos_header_pair_t;
+    ```
+
+    Submit signature would become:
+
+    ```c
+    cosmos_operation_handle_t *cosmos_driver_submit(
+        const cosmos_driver_t *driver,
+        cosmos_operation_t *op,
+        const cosmos_operation_options_v1_t *options,   /* flat struct, by pointer; nullable */
+        cosmos_cq_t *queue,
+        void *user_data,
+        cosmos_error_code_t *out_pre_error);
+    ```
+
+    The driver crate already has `OperationOptions` as a plain Rust struct (`src/options/operation_options.rs:41-188`), so the wrapper's job becomes "copy each present flag/field from the C struct into the Rust struct" on a single FFI boundary crossing — instead of 17 boundary crossings. Fabian's variant (#15) goes further: **the host SDK** merges runtime / driver / per-call defaults into one struct, and the wrapper just hands that struct verbatim to `execute_operation`. The wrapper would then **stop** exposing `cosmos_runtime_set_operation_options_default` / `cosmos_driver_options_builder_with_operation_options` as separate plumbing — those layering concerns move into the host SDK.
+
+    Open sub-questions: (a) flag-bit layout — bitmask (proposed) or `Option<>`-style sentinel (e.g. `UINT32_MAX` means "unset")? Bitmask is more compact and avoids "is this a real value or a sentinel?" ambiguity for fields whose valid range includes the sentinel. (b) ABI evolution — `struct_size_bytes` + appended-field rule (proposed) or v2/v3 versioned structs? The size-prefix rule is forward-compatible without requiring host-SDK recompiles, but requires every wrapper-side reader to bounds-check. (c) string lifetime — caller-owned for the duration of the synchronous `cosmos_driver_submit` call (and the wrapper copies into the operation's `OperationOptions`), matching the §3.3 rule for `cosmos_bytes_view_t`. (d) preserve the builder API as a convenience for non-hot-path startup options (driver init) — yes; `cosmos_driver_options_builder_*` stays as-is because it fires once per process. (e) timing — Phase 5 currently freezes the builder API; if the flat struct is the desired contract, Phase 5 should ship the flat struct **instead of** the builder, not in addition (decide before Phase 5 starts to avoid ABI churn).
+
+20. **Handle table for value-type references.** §3.4 documents that `cosmos_account_ref_t*` / `cosmos_database_ref_t*` / `cosmos_container_ref_t*` / `cosmos_partition_key_t*` / `cosmos_feed_range_t*` are heap-allocated handles, and §3.4 (post-#14 revision) notes they're immutable post-build so concurrent reads / clones / frees of **distinct** FFI handles are race-free. analogrelay (review comments #5 and #6) flagged a remaining ergonomic / safety concern: nothing in the C ABI prevents a caller from copying a `cosmos_account_ref_t*` value (a raw pointer) around their codebase, leading to (a) double-free if two copies are both `_free`'d, (b) use-after-free if one copy is `_free`'d while another is in use, and (c) (for any future stack-allocated value handles) dangling pointers from value moves. The proposed mitigation is a **handle table**: the wrapper stores `Arc<…>`s in a process-global slab, and the C ABI hands out **integer indices** (`uint64_t handle_id` plus a generation counter to detect use-after-free) instead of raw pointers:
+
+    ```c
+    typedef uint64_t cosmos_handle_id_t;   /* low 48 bits: slab slot; high 16 bits: generation */
+
+    cosmos_handle_id_t cosmos_account_ref_with_master_key_h(...);
+    /* All subsequent APIs take cosmos_handle_id_t instead of cosmos_account_ref_t*. */
+    cosmos_error_code_t cosmos_database_ref_create_h(
+        cosmos_handle_id_t account_id, const char *db_id,
+        cosmos_handle_id_t *out_db_id);
+    /* _free is idempotent (subsequent _free calls on the same id are no-ops),
+     * AND lookups on a freed id return a dedicated COSMOS_ERROR_CODE_INVALID_HANDLE
+     * (rather than UB) thanks to the generation counter. */
+    void cosmos_account_ref_free_h(cosmos_handle_id_t id);
+    ```
+
+    Trade-offs: (+) catches double-free / use-after-free / accidental pointer-copy aliasing without UB. (+) opens the door to stack-allocated value types in the future (the C side never sees the heap address). (−) every wrapper API call pays a slab lookup (one branch + one indirection — small but not zero, and harder to inline across the FFI boundary than a direct pointer deref). (−) doubles the number of APIs the wrapper has to expose during the transition (`_h` variants alongside the existing pointer variants), or breaks ABI by switching the whole surface over. (−) the slab is a process-global mutable shared structure — needs sharded RwLock or lock-free design to avoid becoming the FFI bottleneck.
+
+    Decide whether to (a) ship the v1 pointer-based surface (current spec) and add `_h` variants in a future revision if real-world use shows pointer-aliasing bugs in host SDKs, (b) switch the entire reference / partition-key / feed-range surface to handle-IDs in v1 (one-time ABI churn but cleaner long-term), or (c) hybrid — pointer-based for handles whose lifetime is single-owner-and-short (operations, completions, errors), handle-table for value types that callers might naturally want to copy around (`cosmos_account_ref_t`, `cosmos_partition_key_t`). Resolve before Phase 3 freezes the reference API.
 
 ---
 
