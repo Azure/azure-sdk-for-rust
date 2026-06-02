@@ -4,7 +4,6 @@
 //! Helpers for merging and managing session tokens across feed ranges.
 
 use crate::FeedRange;
-use azure_core::error::ErrorKind;
 use azure_data_cosmos_driver::models::{SessionToken, SessionTokenSegment};
 
 /// Returns `true` if `a` and `b` can be combined into a single bounding feed range.
@@ -46,7 +45,7 @@ fn is_compound(token: &str) -> bool {
 ///
 /// When the tokens have different partition key range IDs, keeps the ID from
 /// the token with the higher global LSN (the more recent topology).
-fn merge_tokens_same_range(token1: &str, token2: &str) -> azure_core::Result<String> {
+fn merge_tokens_same_range(token1: &str, token2: &str) -> crate::Result<String> {
     let mut seg1: SessionTokenSegment = token1.parse()?;
     let seg2: SessionTokenSegment = token2.parse()?;
 
@@ -62,7 +61,7 @@ fn merge_tokens_same_range(token1: &str, token2: &str) -> azure_core::Result<Str
 }
 
 /// Phase 1: merge session tokens that share the exact same feed range (non-compound only).
-fn merge_same_ranges(overlapping: &mut Vec<(FeedRange, String)>) -> azure_core::Result<()> {
+fn merge_same_ranges(overlapping: &mut Vec<(FeedRange, String)>) -> crate::Result<()> {
     let mut i = 0;
     while i < overlapping.len() {
         let mut j = i + 1;
@@ -125,7 +124,7 @@ enum MergeAction {
 /// before their children, regardless of the caller's input order.
 fn merge_ranges_with_subsets(
     mut overlapping: Vec<(FeedRange, String)>,
-) -> azure_core::Result<Vec<(FeedRange, String)>> {
+) -> crate::Result<Vec<(FeedRange, String)>> {
     // Sort by range size descending: larger ranges (parents) first.
     // Primary: max_exclusive descending, secondary: min_inclusive ascending.
     overlapping.sort_by(|(a, _), (b, _)| {
@@ -215,7 +214,7 @@ fn analyze_subsets(
     parent_seg: &SessionTokenSegment,
     parent_token: &str,
     subsets: &[(usize, FeedRange, String)],
-) -> azure_core::Result<MergeAction> {
+) -> crate::Result<MergeAction> {
     // Sort subsets by min_inclusive so adjacent children are always in order
     let mut sorted_subsets = subsets.to_vec();
     sorted_subsets.sort_by(|a, b| a.1.min_inclusive().cmp(b.1.min_inclusive()));
@@ -298,7 +297,7 @@ fn split_compound_tokens(ranges_and_tokens: &[(FeedRange, String)]) -> Vec<Strin
 ///
 /// Delegates to `SessionToken::merge()` on the driver side so that token format
 /// details stay encapsulated.
-fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<SessionToken> {
+fn merge_tokens_by_partition(tokens: Vec<String>) -> crate::Result<SessionToken> {
     let mut result = SessionToken::new(tokens[0].clone());
     for t in &tokens[1..] {
         result = result.merge(&SessionToken::new(t.clone()))?;
@@ -330,7 +329,7 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<SessionT
 ///
 /// ```rust,no_run
 /// # use azure_data_cosmos::{clients::ContainerClient, FeedRange, SessionToken};
-/// # async fn example(container: ContainerClient) -> azure_core::Result<()> {
+/// # async fn example(container: ContainerClient) -> azure_data_cosmos::Result<()> {
 /// // After read/write operations, capture session tokens from response headers.
 /// // When using multiple clients against the same container, merge their tokens
 /// // to get the most up-to-date session state.
@@ -349,7 +348,7 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> azure_core::Result<SessionT
 pub(crate) fn get_latest_session_token(
     feed_ranges_to_session_tokens: &[(FeedRange, SessionToken)],
     target_feed_range: &FeedRange,
-) -> azure_core::Result<SessionToken> {
+) -> crate::Result<SessionToken> {
     // Step 1: Filter to overlapping feed ranges
     let mut overlapping: Vec<(FeedRange, String)> = feed_ranges_to_session_tokens
         .iter()
@@ -358,10 +357,17 @@ pub(crate) fn get_latest_session_token(
         .collect();
 
     if overlapping.is_empty() {
-        return Err(azure_core::Error::with_message(
-            ErrorKind::Other,
-            "no overlapping feed ranges with the target feed range",
-        ));
+        // The target feed range does not overlap any of the supplied
+        // session-token ranges — most commonly because the underlying
+        // partition has split / merged since the tokens were captured,
+        // making the original ranges stale. `410 Gone` is the
+        // service-style signal that the resource the caller is
+        // referencing no longer exists in the requested shape.
+        return Err(crate::DriverCosmosError::builder()
+            .with_status(crate::CosmosStatus::CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN)
+            .with_message("no overlapping feed ranges with the target feed range")
+            .build()
+            .into());
     }
 
     // Step 2: Merge session tokens for identical feed ranges

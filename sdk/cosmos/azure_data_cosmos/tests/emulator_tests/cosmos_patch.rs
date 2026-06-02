@@ -32,7 +32,9 @@ struct PatchTestItem {
     deleted: bool,
 }
 
-async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
+async fn create_container(
+    run_context: &TestRunContext,
+) -> azure_data_cosmos::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-{}", Uuid::new_v4());
     run_context
@@ -160,8 +162,8 @@ pub async fn patch_item_missing_returns_not_found() -> Result<(), Box<dyn Error>
                 .await
                 .expect_err("expected NotFound, got Ok");
             assert_eq!(
-                err.http_status(),
-                Some(StatusCode::NotFound),
+                err.status().status_code(),
+                StatusCode::NotFound,
                 "expected 404 NotFound from the read leg; got: {err}",
             );
 
@@ -404,8 +406,8 @@ pub async fn patch_item_412_exhaustion_surfaces_precondition_failed() -> Result<
                 .await
                 .expect_err("PATCH should fail after exhausting max_attempts");
             assert_eq!(
-                err.http_status(),
-                Some(StatusCode::PreconditionFailed),
+                err.status().status_code(),
+                StatusCode::PreconditionFailed,
                 "exhausted PATCH should surface 412 PreconditionFailed; got: {err}"
             );
 

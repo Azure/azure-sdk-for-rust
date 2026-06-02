@@ -6,9 +6,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use azure_core::http::StatusCode;
 
-use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey, SubStatusCode};
+use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey};
 
 use super::{
     PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, PipelineNodeState,
@@ -150,7 +149,7 @@ impl PipelineNode for Request {
     async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         tracing::trace!(
             target = ?self.target,
             state = ?self.state,
@@ -173,7 +172,7 @@ impl PipelineNode for Request {
             .await
         {
             Ok(response) => Ok(self.handle_response(response)),
-            Err(error) if is_partition_topology_change(&error) => {
+            Err(error) if error.status().is_partition_topology_change() => {
                 self.handle_partition_topology_change(context, error, continuation)
                     .await
             }
@@ -241,9 +240,21 @@ impl Request {
     async fn handle_partition_topology_change(
         &mut self,
         context: &mut PipelineContext<'_>,
-        error: azure_core::Error,
+        error: crate::error::CosmosError,
         continuation: Option<String>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
+        // Capture the failed attempt's diagnostics before consuming the
+        // error. The per-operation pipeline that produced this error
+        // owns its own `DiagnosticsContext`; the dataflow retry below
+        // will spin up another full pipeline invocation with a fresh
+        // context. Without splicing the prior context onto the
+        // retry's response, callers reading
+        // `response.diagnostics().request_count()` would only see the
+        // final successful attempt — violating the
+        // "one operation = one `DiagnosticsContext` capturing every
+        // attempt" contract. Always capture, regardless of branch, so
+        // the splice happens uniformly on every successful retry path.
+        let prior_diagnostics = error.diagnostics();
         match &self.target {
             RequestTarget::NonPartitioned => {
                 // Non-partitioned resources don't have partition topology changes.
@@ -269,6 +280,16 @@ impl Request {
                             status = ?response.status(),
                             "retry after logical partition key topology change succeeded"
                         );
+                        // Splice the prior failed attempt's diagnostics
+                        // onto the retry's diagnostics so the surfaced
+                        // `CosmosResponse` reflects every attempt the
+                        // operation made (see `prior_diagnostics`
+                        // capture above for rationale).
+                        let response = if let Some(prior) = prior_diagnostics {
+                            response.with_aggregated_prior_diagnostics(&[prior])
+                        } else {
+                            response
+                        };
                         self.handle_response(response)
                     })
             }
@@ -278,6 +299,18 @@ impl Request {
                     .owned_range()
                     .expect("effective partition key range target must have an owned range")
                     .clone();
+                // TODO(diagnostics-aggregation): the split path replaces
+                // this node with one or more sub-range `Request` nodes
+                // that each execute independently in subsequent
+                // `next_page` calls. Splicing `prior_diagnostics` into
+                // every sub-node's first response would require
+                // threading the prior context through the replacement
+                // nodes; tracked as a follow-up. For now, prior
+                // attempts on the EPK-range split path are still
+                // captured by the replacement node when it triggers
+                // its own dataflow retry, but not aggregated onto the
+                // first successful sub-range response.
+                let _ = prior_diagnostics;
                 self.split_for_topology_change(context, &range).await
             }
         }
@@ -289,7 +322,7 @@ impl Request {
         &self,
         context: &mut PipelineContext<'_>,
         range: &FeedRange,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         let resolved = context
             .resolve_ranges(range, PartitionRoutingRefresh::ForceRefresh)
             .await?;
@@ -327,31 +360,6 @@ impl Request {
 
         Ok(PageResult::SplitRequired { replacement_nodes })
     }
-}
-
-// Partition topology changes are a specific subset of `Gone` substatus codes.
-// Other substatus mappings live in `pipeline::retry_evaluation`; this one stays
-// here because it drives pipeline-level repair (splitting a node into
-// replacements) rather than per-attempt retry.
-fn is_partition_topology_change(error: &azure_core::Error) -> bool {
-    match error.kind() {
-        azure_core::error::ErrorKind::HttpResponse {
-            status, error_code, ..
-        } if *status == StatusCode::Gone => error_code
-            .as_deref()
-            .and_then(|code| code.parse::<u32>().ok())
-            .is_some_and(is_partition_topology_change_substatus),
-        _ => false,
-    }
-}
-
-fn is_partition_topology_change_substatus(substatus: u32) -> bool {
-    matches!(
-        SubStatusCode::new(substatus),
-        SubStatusCode::PARTITION_KEY_RANGE_GONE
-            | SubStatusCode::COMPLETING_SPLIT
-            | SubStatusCode::COMPLETING_PARTITION_MIGRATION
-    )
 }
 
 #[cfg(test)]
@@ -395,7 +403,7 @@ mod tests {
             &'a mut self,
             range: &'a FeedRange,
             _refresh: PartitionRoutingRefresh,
-        ) -> futures::future::BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
+        ) -> futures::future::BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
             let resolved = self
                 .resolved_ranges
                 .iter()
@@ -408,10 +416,12 @@ mod tests {
 
             Box::pin(async move {
                 if resolved.is_empty() {
-                    Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        "scenario topology produced no overlapping ranges",
-                    ))
+                    Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message("scenario topology produced no overlapping ranges")
+                        .build())
                 } else {
                     Ok(resolved)
                 }
@@ -428,7 +438,7 @@ mod tests {
             _target: RequestTarget,
             _partition_routing_refresh: PartitionRoutingRefresh,
             _continuation: Option<String>,
-        ) -> futures::future::BoxFuture<'a, azure_core::Result<CosmosResponse>> {
+        ) -> futures::future::BoxFuture<'a, crate::error::Result<CosmosResponse>> {
             Box::pin(async { Err(gone_error()) })
         }
     }
@@ -601,7 +611,7 @@ mod tests {
 
         let error = request.next_page(&mut context).await.unwrap_err();
 
-        assert!(is_partition_topology_change(&error));
+        assert!(error.status().is_partition_topology_change());
         assert_eq!(
             executor.refresh_calls,
             vec![
@@ -621,7 +631,7 @@ mod tests {
 
         let error = request.next_page(&mut context).await.unwrap_err();
 
-        assert!(!is_partition_topology_change(&error));
+        assert!(!error.status().is_partition_topology_change());
         assert_eq!(
             executor.refresh_calls,
             vec![PartitionRoutingRefresh::UseCached]
@@ -787,14 +797,21 @@ mod tests {
     async fn topology_provider_error_propagates() {
         let mut request = Request::new(Arc::new(operation()), epk_range_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
-        let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "topology fetch failed",
-        ))]);
+        let mut topology =
+            MockTopologyProvider::new(vec![Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("topology fetch failed")
+                .build())]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "topology fetch failed");
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("topology fetch failed"),
+            "unexpected: {rendered}"
+        );
     }
 
     #[tokio::test]
@@ -805,6 +822,6 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();
-        assert!(is_partition_topology_change(&err));
+        assert!(err.status().is_partition_topology_change());
     }
 }

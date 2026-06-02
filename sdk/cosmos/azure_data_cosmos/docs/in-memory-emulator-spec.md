@@ -933,10 +933,11 @@ ContainerConfig::new()
 
 `with_partition_count` and `with_throughput` are infallible setters; all
 validation happens in a single `build()` step that returns
-`azure_core::Result<ContainerConfig>`. Use `build()?` inside a function
-that returns `azure_core::Result<_>` (or `unwrap()` in tests).
+`azure_data_cosmos_driver::error::Result<ContainerConfig>`. Use `build()?`
+inside a function that returns a compatible `Result<_, _>` (or `unwrap()`
+in tests).
 
-Minimum provisioned throughput is 400 RU/s; values below this and a partition count of `0` are rejected with an `azure_core::Error` from `build()`.
+Minimum provisioned throughput is 400 RU/s; values below this and a partition count of `0` are rejected with a `Client`-kind `azure_data_cosmos_driver::error::Error` from `build()`.
 
 ### Per-Partition Tracking
 

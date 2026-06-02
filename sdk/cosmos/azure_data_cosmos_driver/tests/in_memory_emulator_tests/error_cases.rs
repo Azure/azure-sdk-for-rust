@@ -4,7 +4,7 @@
 //! Error case integration tests (404, 409, 412, 404/1002).
 
 use super::*;
-use azure_core::http::HttpClient;
+
 use std::sync::Arc;
 use tokio::sync::Barrier;
 

@@ -244,10 +244,10 @@ impl AccountMetadataCache {
         &self,
         endpoint: AccountEndpoint,
         fetch_fn: F,
-    ) -> azure_core::Result<Arc<AccountProperties>>
+    ) -> crate::error::Result<Arc<AccountProperties>>
     where
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<AccountProperties>>,
+        Fut: std::future::Future<Output = crate::error::Result<AccountProperties>>,
     {
         // Fast path: return cached value.
         if let Some(cached) = self.cache.get(&endpoint).await {
