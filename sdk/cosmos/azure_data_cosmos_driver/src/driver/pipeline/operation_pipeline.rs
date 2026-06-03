@@ -603,6 +603,7 @@ pub(crate) async fn execute_operation_pipeline(
                 secondary_routing,
                 threshold,
                 strategy_config,
+                new_state,
             } => {
                 // Race the primary attempt against a single cross-region
                 // secondary via `execute_hedged`. Returns either a
@@ -615,6 +616,27 @@ pub(crate) async fn execute_operation_pipeline(
                 // each hedge attempt's sub-builder back into it and finalize
                 // the response (mirroring the `Complete` arm's
                 // `build_cosmos_response(result, diagnostics)` shape).
+                //
+                // Apply the post-transition `new_state` to `retry_state`
+                // BEFORE constructing `AttemptContext`. Without this the
+                // race would run against the pre-transition state and
+                // silently lose: (a) post-failover region exclusions
+                // (secondary could drift back to the just-failed region),
+                // (b) the `hub_region_processing_only` latch (the
+                // cross-hedge shared `Arc<AtomicBool>` would seed `false`
+                // even though a 1002 was already observed — directly
+                // breaks HEDGING_SPEC §9.6), and (c) the advanced
+                // `failover_retry_count` / `session_token_retry_count`
+                // that drive `try_advance_after_both_transient` budget
+                // accounting. Mirrors the same transition the
+                // `FailoverRetry` / `SessionRetry` arms perform via
+                // `advance_to_next_attempt`.
+                advance_to_next_attempt(
+                    &mut retry_state,
+                    new_state,
+                    location_state_store,
+                    operation.is_read_only(),
+                );
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
@@ -1774,6 +1796,16 @@ fn finalize_hedge_attempt(
 /// already signals a non-retryable error. `request_timeout` is passed to
 /// [`evaluate_hedge_eligibility`] so it can compute the driver default
 /// threshold (`min(1000ms, request_timeout / 2)`).
+///
+/// The `new_state` carried by the incoming `FailoverRetry` /
+/// `SessionRetry` is forwarded into the rewritten `Hedge` variant so the
+/// STAGE 7 dispatch arm can apply it to `retry_state` before building
+/// `AttemptContext`. Without this forwarding, the hedge race would run
+/// against the pre-transition state and silently lose: (a) the
+/// post-failover region exclusions, (b) the `hub_region_processing_only`
+/// latch that seeds the cross-hedge shared `Arc<AtomicBool>` (per spec
+/// §9.6), and (c) the advanced retry counters that drive
+/// `try_advance_after_both_transient` budget accounting.
 fn maybe_upgrade_to_hedge(
     action: OperationAction,
     operation: &CosmosOperation,
@@ -1782,12 +1814,13 @@ fn maybe_upgrade_to_hedge(
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
 ) -> OperationAction {
-    if !matches!(
-        &action,
-        OperationAction::FailoverRetry { .. } | OperationAction::SessionRetry { .. }
-    ) {
-        return action;
-    }
+    // Extract `new_state` from the retry-upgrade-eligible variants;
+    // return everything else unchanged.
+    let new_state = match &action {
+        OperationAction::FailoverRetry { new_state, .. } => new_state.clone(),
+        OperationAction::SessionRetry { new_state } => new_state.clone(),
+        _ => return action,
+    };
 
     match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
         Some(upgrade) => {
@@ -1799,12 +1832,14 @@ fn maybe_upgrade_to_hedge(
                 threshold_ms = upgrade.threshold.get().as_millis() as u64,
                 primary_region = ?primary.endpoint.region().map(crate::options::Region::as_str),
                 secondary_region = ?upgrade.secondary_routing.endpoint.region().map(crate::options::Region::as_str),
+                hub_region_processing_only = new_state.hub_region_processing_only,
                 "cosmos.hedge.enabled_for_operation",
             );
             OperationAction::Hedge {
                 secondary_routing: upgrade.secondary_routing,
                 threshold: upgrade.threshold,
                 strategy_config: upgrade.strategy_config,
+                new_state,
             }
         }
         None => action,

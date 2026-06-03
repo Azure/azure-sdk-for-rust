@@ -565,10 +565,29 @@ pub(crate) enum OperationAction {
     /// races the primary against the `secondary_routing` after
     /// `threshold` elapses. `strategy_config` rides along as the snapshot
     /// for the winning response's `HedgeDiagnostics`.
+    ///
+    /// `new_state` carries the post-transition `OperationRetryState` for
+    /// the retry-upgrade path. When `evaluate_transport_result` would
+    /// have returned `FailoverRetry { new_state, .. }` or
+    /// `SessionRetry { new_state }`, that `new_state` is forwarded into
+    /// the `Hedge` variant so the STAGE 7 dispatch arm can apply it to
+    /// the live `retry_state` **before** building `AttemptContext`. This
+    /// preserves: (a) the post-failover `excluded_regions` so the
+    /// secondary cannot drift back to the just-failed region, (b) the
+    /// `hub_region_processing_only` latch that seeds the cross-hedge
+    /// shared `Arc<AtomicBool>` (so a 1002 already observed by the
+    /// triggering attempt carries forward into both hedge legs per
+    /// `HEDGING_SPEC.md` §9.6), and (c) the advanced
+    /// `failover_retry_count` / `session_token_retry_count` so the
+    /// both-transient fallback's budget accounting stays accurate.
+    /// For the first-attempt (STAGE 2b) path, callers pass a
+    /// `new_state` equal to the live `retry_state` so the variant is
+    /// uniform.
     Hedge {
         secondary_routing: RoutingDecision,
         threshold: HedgeThreshold,
         strategy_config: HedgingStrategyConfig,
+        new_state: OperationRetryState,
     },
     /// Abort the operation with this error.
     ///
