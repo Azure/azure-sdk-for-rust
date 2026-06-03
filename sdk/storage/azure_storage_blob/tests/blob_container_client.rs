@@ -5,7 +5,7 @@ use azure_core::{
     http::{RequestContent, StatusCode},
     time::{parse_rfc3339, to_rfc3339, OffsetDateTime},
 };
-use azure_core_test::{recorded, Matcher, TestContext, TestMode, VarOptions};
+use azure_core_test::{recorded, Matcher, TestContext, VarOptions};
 use azure_storage_blob::format_filter_expression;
 use azure_storage_blob::models::{
     AccessPolicy, AccountKind, BlobContainerClientAcquireLeaseResultHeaders,
@@ -19,7 +19,7 @@ use azure_storage_blob::models::{
 use azure_storage_blob::StorageError;
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name, StorageAccount,
+    get_container_name, poll_until, StorageAccount,
 };
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error, time::Duration};
@@ -408,23 +408,11 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
 
     // Create Test Blobs with Distinct Tags
     let blob1_name = get_blob_name(ctx.recording());
+    let blob1_tags = HashMap::from([("fizz".to_string(), "buzz".to_string())]);
     create_test_blob(
         &container_client.blob_client(&blob1_name.clone()),
-        Some(RequestContent::from("hello world".as_bytes().into())),
-        Some(
-            BlockBlobClientUploadOptions::default().with_tags(HashMap::from([
-                ("foo".to_string(), "bar".to_string()),
-                ("alice".to_string(), "bob".to_string()),
-            ])),
-        ),
-    )
-    .await?;
-    let blob2_name = get_blob_name(ctx.recording());
-    let blob2_tags = HashMap::from([("fizz".to_string(), "buzz".to_string())]);
-    create_test_blob(
-        &container_client.blob_client(&blob2_name.clone()),
         Some(RequestContent::from("ferris the crab".as_bytes().into())),
-        Some(BlockBlobClientUploadOptions::default().with_tags(blob2_tags.clone())),
+        Some(BlockBlobClientUploadOptions::default().with_tags(blob1_tags.clone())),
     )
     .await?;
 
@@ -440,37 +428,73 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
         .await?;
     }
 
-    // Sleep in live mode to allow tags to be indexed on the service
-    if ctx.recording().test_mode() == TestMode::Live
-        || ctx.recording().test_mode() == TestMode::Record
-    {
-        time::sleep(Duration::from_secs(15)).await;
-    }
+    let blob2_name = get_blob_name(ctx.recording());
+    create_test_blob(
+        &container_client.blob_client(&blob2_name.clone()),
+        Some(RequestContent::from("hello world".as_bytes().into())),
+        Some(
+            BlockBlobClientUploadOptions::default().with_tags(HashMap::from([
+                ("foo".to_string(), "bar".to_string()),
+                ("alice".to_string(), "bob".to_string()),
+            ])),
+        ),
+    )
+    .await?;
 
-    // Find "hello world" blob by its tag {"foo": "bar"}
-    let mut pager = container_client
-        .find_blobs_by_tags("\"foo\"='bar'", None)?
-        .into_pages();
-    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
-    let blobs = &filter_blob_segment.blob_items;
-    assert!(
-        blobs
-            .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob1_name),
-        "Failed to find \"{blob1_name}\" in filtered blob results."
-    );
+    // Find "hello world" blob by its tag {"foo": "bar"}.
+    // In live mode, poll until tags are indexed (up to 60s total timeout).
+    // In record mode, use a fixed 15s sleep.
+    poll_until(ctx.recording(), || async {
+        let mut pager = container_client
+            .find_blobs_by_tags("\"foo\"='bar'", None)?
+            .into_pages();
+        if let Some(resp) = pager.try_next().await? {
+            let segment = resp.into_model()?;
+            if segment
+                .blob_items
+                .iter()
+                .any(|b| b.name.as_deref() == Some(blob2_name.as_str()))
+            {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    })
+    .await?;
+    // Final assertion (covers record/playback where poll_until doesn't check the condition)
+    {
+        let mut pager = container_client
+            .find_blobs_by_tags("\"foo\"='bar'", None)?
+            .into_pages();
+        let filter_blob_segment = pager
+            .try_next()
+            .await?
+            .expect("expected at least one page from find_blobs_by_tags")
+            .into_model()?;
+        let blobs = &filter_blob_segment.blob_items;
+        assert!(
+            blobs
+                .iter()
+                .any(|blob| blob.name.as_deref() == Some(blob2_name.as_str())),
+            "Failed to find \"{blob2_name}\" in filtered blob results."
+        );
+    }
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
     let mut pager = container_client
-        .find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)?
+        .find_blobs_by_tags(&format_filter_expression(&blob1_tags)?, None)?
         .into_pages();
-    let filter_blob_segment = pager.try_next().await?.unwrap().into_model()?;
+    let filter_blob_segment = pager
+        .try_next()
+        .await?
+        .expect("expected at least one page from find_blobs_by_tags")
+        .into_model()?;
     let blobs = &filter_blob_segment.blob_items;
     assert!(
         blobs
             .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob2_name),
-        "Failed to find \"{blob2_name}\" in filtered blob results."
+            .any(|blob| blob.name.as_deref() == Some(blob1_name.as_str())),
+        "Failed to find \"{blob1_name}\" in filtered blob results."
     );
 
     // Max Results Scenario
@@ -481,7 +505,11 @@ async fn test_find_blobs_by_tags(ctx: TestContext) -> Result<(), Box<dyn Error>>
     let mut pager = container_client
         .find_blobs_by_tags("\"env\"='test'", Some(options))?
         .into_pages();
-    let page = pager.try_next().await?.unwrap().into_model()?;
+    let page = pager
+        .try_next()
+        .await?
+        .expect("expected at least one page from find_blobs_by_tags")
+        .into_model()?;
     let blobs = &page.blob_items;
     assert!(
         blobs.len() <= 2,

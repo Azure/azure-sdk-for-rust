@@ -1,22 +1,26 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::sync::{Arc, OnceLock};
+use std::{
+    num::NonZero,
+    sync::{Arc, OnceLock},
+};
 
 use azure_core::{http::Url, Bytes};
 use azure_core_test::{
-    perf::{
-        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        PerfTestOptionKind,
-    },
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
     TestContext,
 };
-use azure_storage_blob::BlobContainerClient;
+
+use super::options;
+use azure_storage_blob::{models::BlobClientUploadOptions, BlobContainerClient};
 use azure_storage_blob_test::get_test_credential;
 use futures::FutureExt;
 
 pub struct UploadBlobTest {
     size: usize,
+    concurrency: Option<NonZero<usize>>,
+    partition_size: Option<NonZero<u64>>,
     upload_buffer: OnceLock<Bytes>,
     endpoint: Option<String>,
     client: OnceLock<BlobContainerClient>,
@@ -31,6 +35,12 @@ impl UploadBlobTest {
                 size: runner
                     .try_get_test_arg("size")?
                     .expect("'size' parameter is required."),
+                concurrency: runner
+                    .try_get_test_arg::<usize>("concurrency")?
+                    .and_then(NonZero::new),
+                partition_size: runner
+                    .try_get_test_arg::<usize>("partition-size")?
+                    .and_then(|v| NonZero::new(v as u64)),
                 upload_buffer: OnceLock::new(),
             }) as Box<dyn PerfTest>)
         }
@@ -42,25 +52,10 @@ impl UploadBlobTest {
             name: "upload_blob",
             description: "Upload blobs to a container",
             options: vec![
-                PerfTestOption {
-                    name: "endpoint",
-                    display_message: "The endpoint of the blob storage",
-                    mandatory: false,
-                    short_activator: Some('e'),
-                    long_activator: "endpoint",
-                    expected_args_len: 1,
-                    ..Default::default()
-                },
-                PerfTestOption {
-                    name: "size",
-                    display_message: "The size of each blob in bytes",
-                    mandatory: true,
-                    short_activator: Some('s'),
-                    long_activator: "size",
-                    expected_args_len: 1,
-                    option_type: PerfTestOptionKind::Usize,
-                    ..Default::default()
-                },
+                options::size(),
+                options::concurrency(),
+                options::partition_size(),
+                options::endpoint(),
             ],
             create_test: Self::create_upload_blob_test,
         }
@@ -103,7 +98,12 @@ impl PerfTest for UploadBlobTest {
     async fn run(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
         let blob_client = self.client.get().unwrap().blob_client("perf-blob");
         let data_bytes = self.upload_buffer.get().unwrap().clone();
-        blob_client.upload(data_bytes.into(), None).await?;
+        let options = BlobClientUploadOptions {
+            parallel: self.concurrency,
+            partition_size: self.partition_size,
+            ..Default::default()
+        };
+        blob_client.upload(data_bytes.into(), Some(options)).await?;
 
         Ok(())
     }
