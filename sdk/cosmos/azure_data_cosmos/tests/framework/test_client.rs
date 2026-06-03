@@ -8,7 +8,7 @@
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::fault_injection::FaultInjectionRule;
+use azure_data_cosmos::fault_injection::{FaultInjectionRule, TransportKind};
 use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
 use azure_data_cosmos::options::ItemReadOptions;
 use azure_data_cosmos::query::FeedScope;
@@ -44,6 +44,19 @@ pub const HUB_REGION: Region = Region::EAST_US_2;
 pub const SATELLITE_REGION: Region = Region::WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 pub const EMULATOR_HOST: &str = "127.0.0.1";
+
+/// Returns `true` if any request recorded in `diagnostics` was routed through
+/// Gateway 2.0. Used by `gateway20_*` tests to skip themselves cleanly when the
+/// pre-provisioned test account stops advertising any `thinClient*Locations`
+/// (the driver then transparently falls back to standard Gateway, and rules
+/// scoped to `TransportKind::Gateway20` could never fire).
+pub fn diagnostics_used_gateway20(diagnostics: &azure_data_cosmos::DiagnosticsContext) -> bool {
+    diagnostics
+        .requests()
+        .iter()
+        .any(|r| r.transport_kind() == TransportKind::Gateway20)
+}
+
 /// Asserts that the operation contacted `expected_region` at least once and
 /// that more than one request was tracked (i.e. some form of retry or
 /// failover happened). Does **not** require the *final* request to land on

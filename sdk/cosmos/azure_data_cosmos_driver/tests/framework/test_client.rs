@@ -6,7 +6,7 @@
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 use azure_data_cosmos_driver::{
-    diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
+    diagnostics::{DiagnosticsContext, PipelineType, TransportKind, TransportSecurity},
     driver::CosmosDriverRuntime,
     models::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
@@ -14,6 +14,22 @@ use azure_data_cosmos_driver::{
     },
     options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
 };
+
+/// Returns true if any tracked request in `response` was routed via Gateway 2.0.
+///
+/// Used by the `gateway20_*` fault-injection tests to detect when the test
+/// account is not actually advertising any Gateway 2.0 endpoint in its
+/// `AccountProperties`. In that case the driver falls back to standard
+/// Gateway and any fault rule scoped to `TransportKind::Gateway20` can never
+/// fire — the tests should skip gracefully rather than misreport a failure
+/// rooted in account configuration.
+pub fn response_used_gateway20(response: &CosmosResponse) -> bool {
+    response
+        .diagnostics()
+        .requests()
+        .iter()
+        .any(|r| r.transport_kind() == TransportKind::Gateway20)
+}
 use std::{error::Error, future::Future, sync::Arc};
 use tracing_subscriber::EnvFilter;
 use uuid::Uuid;

@@ -1046,6 +1046,22 @@ pub async fn gateway20_connection_error_fails_fast_after_all_regions_attempted(
                 .create_item(&pk, &item_id, &item, None)
                 .await?;
 
+            // Probe the non-fault client to detect whether the account is
+            // actually serving reads over Gateway 2.0. The pre-provisioned
+            // test account is supposed to advertise `thinClient*Locations`,
+            // but when it doesn't the driver transparently falls back to
+            // standard Gateway and a `TransportKind::Gateway20`-scoped rule
+            // could never fire — skip the test loudly so CI doesn't claim
+            // coverage that isn't real.
+            let probe = container_client.read_item(&pk, &item_id, None).await?;
+            if !crate::emulator_tests::framework::diagnostics_used_gateway20(&probe.diagnostics()) {
+                println!(
+                    "Skipping gateway20_connection_error_fails_fast_after_all_regions_attempted: \
+                     test account did not route the probe read via Gateway 2.0"
+                );
+                return Ok(());
+            }
+
             let fault_client = run_context
                 .fault_client()
                 .expect("fault client should be available");
@@ -1209,6 +1225,19 @@ pub async fn gateway20_449_retry_with_hit_limit() -> Result<(), Box<dyn Error>> 
             container_client
                 .create_item(&pk, &item_id, &item, None)
                 .await?;
+
+            // Probe the non-fault client to detect whether the account is
+            // actually serving reads over Gateway 2.0. See the comment in
+            // `gateway20_connection_error_fails_fast_after_all_regions_attempted`
+            // for why we skip when it isn't.
+            let probe = container_client.read_item(&pk, &item_id, None).await?;
+            if !crate::emulator_tests::framework::diagnostics_used_gateway20(&probe.diagnostics()) {
+                println!(
+                    "Skipping gateway20_449_retry_with_hit_limit: \
+                     test account did not route the probe read via Gateway 2.0"
+                );
+                return Ok(());
+            }
 
             let fault_client = run_context
                 .fault_client()

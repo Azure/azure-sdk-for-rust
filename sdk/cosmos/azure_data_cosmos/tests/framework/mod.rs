@@ -21,9 +21,9 @@ pub mod test_data;
 
 pub use test_client::{
     assert_local_retry_attempted_on_region, assert_region_contacted_with_retry,
-    get_effective_hub_endpoint, get_global_endpoint, resolve_connection_string, TestClient,
-    TestOptions, TestRunContext, CONNECTION_STRING_ENV_VAR, DEFAULT_TEST_TIMEOUT,
-    EMULATOR_CONNECTION_STRING, HUB_REGION, SATELLITE_REGION,
+    diagnostics_used_gateway20, get_effective_hub_endpoint, get_global_endpoint,
+    resolve_connection_string, TestClient, TestOptions, TestRunContext, CONNECTION_STRING_ENV_VAR,
+    DEFAULT_TEST_TIMEOUT, EMULATOR_CONNECTION_STRING, HUB_REGION, SATELLITE_REGION,
 };
 
 use serde::{Deserialize, Serialize};
