@@ -37,12 +37,12 @@ impl DownloadIntoBlobTest {
         async move {
             let endpoint = runner.try_get_test_arg("endpoint")?;
             let size = runner
-                .try_get_test_arg("blob_len")?
+                .try_get_test_arg("size")?
                 .expect("size argument is mandatory");
 
             Ok(Box::new(Self {
                 count: runner
-                    .try_get_test_arg("num_blobs")?
+                    .try_get_test_arg("count")?
                     .unwrap_or(DEFAULT_NUM_BLOBS),
                 size,
                 concurrency: runner
@@ -116,7 +116,7 @@ impl PerfTest for DownloadIntoBlobTest {
                 .await?;
             black_box(&self.buffer.lock().await);
         }
-        todo!()
+        Ok(())
     }
 
     async fn cleanup(&self, _context: Arc<TestContext>) -> azure_core::Result<()> {
