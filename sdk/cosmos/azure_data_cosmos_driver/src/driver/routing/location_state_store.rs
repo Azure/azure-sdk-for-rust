@@ -797,6 +797,86 @@ mod tests {
         assert_eq!(success_refreshes.load(Ordering::SeqCst), 1);
     }
 
+    /// Post-bootstrap regression for #4483: when a periodic background refresh
+    /// fails (e.g. account-metadata fetch hits a 5xx with a Cosmos error
+    /// envelope), the previously-cached `AccountProperties` must NOT be
+    /// replaced or evicted. Bootstrap succeeds and seeds the cache; the next
+    /// timer-driven refresh fails with the same shape the production fetch
+    /// helper now produces (typed upstream status + diagnostics envelope), and
+    /// the cache continues to serve the bootstrap value untouched.
+    #[tokio::test]
+    async fn refresh_failure_after_bootstrap_preserves_cached_properties() {
+        let endpoint = test_endpoint();
+        let default_endpoint = CosmosEndpoint::global(endpoint.url().clone());
+        let total_refreshes = Arc::new(AtomicUsize::new(0));
+        let total_refreshes_clone = Arc::clone(&total_refreshes);
+
+        // Call 1 succeeds (bootstrap seeds the cache); calls 2+ surface a
+        // typed 503 mirroring what `fetch_account_properties_with_transport`
+        // now produces on a 5xx account-metadata response.
+        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
+            let total = Arc::clone(&total_refreshes_clone);
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move {
+                    let n = total.fetch_add(1, Ordering::SeqCst);
+                    if n == 0 {
+                        Ok(payload)
+                    } else {
+                        Err(crate::error::CosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::ServiceUnavailable,
+                            ))
+                            .with_message("simulated 5xx on periodic account-metadata refresh")
+                            .build())
+                    }
+                });
+            fut
+        });
+
+        let cache = Arc::new(AccountMetadataCache::new());
+        let store = LocationStateStore::new(
+            Arc::clone(&cache),
+            endpoint.clone(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
+        );
+
+        // Bootstrap: succeeds, seeds the cache.
+        store.force_refresh_account_properties().await;
+        assert_eq!(total_refreshes.load(Ordering::SeqCst), 1);
+        let after_bootstrap = cache
+            .get(&endpoint)
+            .await
+            .expect("bootstrap should have populated the cache");
+        assert_eq!(
+            after_bootstrap.etag, "etag-1",
+            "bootstrap should install the v1 payload"
+        );
+
+        // Subsequent timer-driven refresh: fails. Cache must NOT be replaced
+        // or evicted — concurrent operations should keep serving the v1 value.
+        store.force_refresh_account_properties().await;
+        assert_eq!(total_refreshes.load(Ordering::SeqCst), 2);
+
+        let after_failed_refresh = cache
+            .get(&endpoint)
+            .await
+            .expect("failed refresh must NOT evict the cached entry");
+        assert_eq!(
+            after_failed_refresh.etag, "etag-1",
+            "failed refresh must NOT overwrite the previously-cached v1 payload",
+        );
+        assert!(
+            Arc::ptr_eq(&after_bootstrap, &after_failed_refresh),
+            "failed refresh must leave the exact same Arc in the cache",
+        );
+    }
+
     #[test]
     fn sync_account_properties_prunes_expired_marks_even_when_etag_is_unchanged() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
