@@ -160,14 +160,19 @@ pub(crate) struct HedgeUpgrade {
 /// when all eligibility gates hold.
 ///
 /// `primary` is the routing decision for the just-completed attempt; it is
-/// used to honor the same gateway-version preference when constructing the
-/// secondary [`RoutingDecision`]. `request_timeout` is plumbed through to
+/// used both to honor the same gateway-version preference when constructing
+/// the secondary [`RoutingDecision`] and to ensure the secondary targets a
+/// **different region** than the primary (the primary is not necessarily
+/// `preferred_read_endpoints[0]` once PPCB overrides, probe-candidate
+/// routing, location-index advancement, or prior retry state have moved
+/// it). `request_timeout` is plumbed through to
 /// [`resolve_availability_strategy`] so the driver default
 /// (`min(1000ms, request_timeout / 2)`) can be computed.
 ///
 /// Returns `None` when hedging is disabled, the operation is ineligible,
-/// or no alternate region can be selected — in all cases the caller falls
-/// back to its non-hedged decision (typically `FailoverRetry`).
+/// or no applicable region distinct from `primary` exists — in all cases
+/// the caller falls back to its non-hedged decision (typically
+/// `FailoverRetry`).
 pub(crate) fn evaluate_hedge_eligibility(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
@@ -187,7 +192,7 @@ pub(crate) fn evaluate_hedge_eligibility(
     }
 
     // Build the applicable list (preferred reads minus user exclusions).
-    // Order matches `preferred_read_endpoints`; index 1 is the alternate.
+    // Order matches `preferred_read_endpoints`.
     let applicable_regions: Vec<Region> = account_state
         .preferred_read_endpoints
         .iter()
@@ -201,11 +206,22 @@ pub(crate) fn evaluate_hedge_eligibility(
         return None;
     }
 
-    let secondary_region = applicable_regions[1].clone();
+    // Pick the first applicable region whose endpoint differs from the
+    // primary's. The primary is NOT guaranteed to be
+    // `preferred_read_endpoints[0]`: PPCB overrides, probe-candidate
+    // routing, location-index advancement, and prior retry state can route
+    // it to a later preferred endpoint. Defaulting to `applicable[1]`
+    // would, in those cases, hedge to the same region as the primary —
+    // doubling RU/load with zero availability benefit. Compare by both
+    // region identity and `endpoint_key` (the latter guards against
+    // distinct endpoints aliased to the same region name).
+    let primary_region = primary.endpoint.region().cloned();
+    let primary_key = primary.endpoint.endpoint_key();
     let secondary_ep = account_state
         .preferred_read_endpoints
         .iter()
-        .find(|ep| ep.region() == Some(&secondary_region))?
+        .filter(|ep| ep.region().is_some_and(|r| !user_excluded.contains(r)))
+        .find(|ep| ep.region() != primary_region.as_ref() && ep.endpoint_key() != primary_key)?
         .clone();
 
     // Match the primary's gateway-version preference so a Gateway20-capable
@@ -530,6 +546,24 @@ mod tests {
         }
     }
 
+    /// Builds a `RoutingDecision` targeting the preferred-read endpoint at
+    /// the given index. Used to simulate cases where the primary has been
+    /// promoted off `preferred_read_endpoints[0]` by PPCB / probe-candidate
+    /// routing / location-index advancement / prior retry state.
+    fn primary_routing_for_index(account: &AccountEndpointState, index: usize) -> RoutingDecision {
+        let ep = account
+            .preferred_read_endpoints
+            .get(index)
+            .cloned()
+            .expect("test fixture must supply enough preferred read endpoints");
+        let url = ep.selected_url(false).clone();
+        RoutingDecision {
+            selected_url: url,
+            transport_mode: TransportMode::Gateway,
+            endpoint: ep,
+        }
+    }
+
     #[test]
     fn evaluate_returns_some_for_eligible_read_multi_region() {
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
@@ -678,6 +712,76 @@ mod tests {
              caller must pass configured request_timeout (not remaining \
              deadline) so the §5.2 default does not shrink between \
              STAGE 2b and STAGE 5b",
+        );
+    }
+
+    /// Spec §6.3 regression — alternate selection must skip the primary.
+    ///
+    /// Before this fix, the alternate was unconditionally
+    /// `applicable_regions[1]`. When the primary had been promoted off
+    /// `preferred_read_endpoints[0]` (by PPCB overrides, probe-candidate
+    /// routing, location-index advancement, or prior retry state), this
+    /// could pick the **same region** as the primary — doubling RU/load
+    /// with zero availability benefit. The fix selects the first
+    /// applicable endpoint whose region/endpoint_key differs from the
+    /// primary's, regardless of index.
+    #[test]
+    fn evaluate_secondary_skips_primary_when_primary_is_not_index_zero() {
+        let state =
+            account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2, Region::CENTRAL_US]);
+        let op = read_item_operation();
+        // Primary has been promoted off index 0 → it is now WEST_US_2
+        // (index 1). The pre-fix code would have picked WEST_US_2 as
+        // alternate (== primary). The fix must pick EAST_US or CENTRAL_US.
+        let primary = primary_routing_for_index(&state, 1);
+
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+            .expect("eligible three-region read");
+
+        let secondary_region = upgrade.secondary_routing.endpoint.region().cloned();
+        assert_ne!(
+            secondary_region.as_ref(),
+            Some(&Region::WEST_US_2),
+            "alternate must not target the primary's region",
+        );
+        assert_ne!(
+            upgrade.secondary_routing.endpoint.endpoint_key(),
+            primary.endpoint.endpoint_key(),
+            "alternate must not target the primary's endpoint_key",
+        );
+        // Implementation chooses the first non-primary applicable region
+        // in `preferred_read_endpoints` order → EAST_US (index 0).
+        assert_eq!(secondary_region.as_ref(), Some(&Region::EAST_US));
+    }
+
+    /// Spec §6.3 regression — degenerate case: only the primary is
+    /// applicable (e.g. user excluded every other region, or every other
+    /// preferred endpoint aliases to the same region/endpoint_key).
+    /// `evaluate_hedge_eligibility` must return `None` rather than build a
+    /// same-region hedge.
+    #[test]
+    fn evaluate_returns_none_when_only_applicable_region_is_primary() {
+        let state =
+            account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2, Region::CENTRAL_US]);
+        let op = read_item_operation();
+        // Primary is EAST_US (index 0); user excludes the other two →
+        // no distinct alternate exists.
+        let primary = primary_routing_for(&state);
+
+        let mut op_opts = OperationOptions::default();
+        op_opts.excluded_regions = Some(
+            [Region::WEST_US_2, Region::CENTRAL_US]
+                .into_iter()
+                .collect(),
+        );
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        assert!(
+            evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none(),
+            "no distinct alternate exists — must fall back to non-hedged decision",
         );
     }
 }
