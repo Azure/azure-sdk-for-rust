@@ -20,7 +20,6 @@ url.workspace = true
 reqwest = { workspace = true, default-features = false, features = ["json", "rustls"] }
 quick-xml.workspace = true
 serde.workspace = true
-thiserror.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

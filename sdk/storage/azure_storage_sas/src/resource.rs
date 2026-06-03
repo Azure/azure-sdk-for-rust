@@ -18,10 +18,7 @@ pub trait Resource: sealed::Resource {
 }
 
 pub(crate) mod sealed {
-    use crate::{
-        error::SasError,
-        sas::{SasSigningContext, SasUrlParams},
-    };
+    use crate::sas::{SasSigningContext, SasUrlParams};
 
     /// Seals [`crate::Resource`] so only types in this crate can implement it.
     pub(crate) trait Resource {
@@ -33,7 +30,7 @@ pub(crate) mod sealed {
             &self,
             account_endpoint: &url::Url,
             params: &SasUrlParams<'_>,
-        ) -> Result<url::Url, SasError>;
+        ) -> azure_core::Result<url::Url>;
     }
 
     /// Marker for Blob Storage and Data Lake resource types.

@@ -4,7 +4,6 @@ use url::Url;
 
 use crate::{
     blob::{BlobResourceOptions, BlobStringToSign, BLOB_DEFAULT_VERSION},
-    error::SasError,
     resource::{sealed, Resource},
     sas::{append_common_sas_params, append_path, SasSigningContext, SasUrlParams},
 };
@@ -125,7 +124,11 @@ impl sealed::Resource for DirectoryResource {
         }
         .to_string()
     }
-    fn sas_url(&self, account_endpoint: &Url, params: &SasUrlParams<'_>) -> Result<Url, SasError> {
+    fn sas_url(
+        &self,
+        account_endpoint: &Url,
+        params: &SasUrlParams<'_>,
+    ) -> azure_core::Result<Url> {
         let depth = self.path.split('/').count().to_string();
         let mut url = append_path(
             account_endpoint,

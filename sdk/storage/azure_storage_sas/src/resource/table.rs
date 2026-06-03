@@ -15,7 +15,6 @@ use std::fmt;
 use url::Url;
 
 use crate::{
-    error::SasError,
     resource::{sealed, Resource},
     sas::{append_common_sas_params, append_path, SasSigningContext, SasUrlParams},
 };
@@ -151,7 +150,11 @@ impl sealed::Resource for TableResource {
         }
         .to_string()
     }
-    fn sas_url(&self, account_endpoint: &Url, params: &SasUrlParams<'_>) -> Result<Url, SasError> {
+    fn sas_url(
+        &self,
+        account_endpoint: &Url,
+        params: &SasUrlParams<'_>,
+    ) -> azure_core::Result<Url> {
         let mut url = append_path(account_endpoint, &self.table);
         let opts = self.options.as_ref();
         let mut q = url.query_pairs_mut();

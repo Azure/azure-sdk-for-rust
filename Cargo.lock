@@ -868,7 +868,6 @@ dependencies = [
  "reqwest",
  "serde",
  "sha2",
- "thiserror",
  "time",
  "url",
  "uuid",

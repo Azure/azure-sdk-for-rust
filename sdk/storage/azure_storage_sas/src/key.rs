@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use azure_core::credentials::{TokenCredential, TokenRequestOptions};
+use azure_core::{
+    credentials::{TokenCredential, TokenRequestOptions},
+    error::ErrorKind,
+};
 use base64::{engine::general_purpose::STANDARD, Engine};
 use hmac::{Hmac, Mac};
 use serde::Deserialize;
@@ -8,8 +11,6 @@ use sha2::Sha256;
 use time::{macros::format_description, Duration, OffsetDateTime};
 use url::Url;
 use uuid::Uuid;
-
-use crate::error::SasError;
 
 pub(crate) fn format_sas_time(dt: OffsetDateTime) -> Result<String, time::error::Format> {
     dt.format(format_description!(
@@ -57,7 +58,7 @@ impl UserDelegationKey {
         start_str: &str,
         expiry_str: &str,
         delegated_user_tid: Option<&str>,
-    ) -> Result<Self, SasError> {
+    ) -> azure_core::Result<Self> {
         let token = credential
             .get_token(
                 &["https://storage.azure.com/.default"],
@@ -87,26 +88,40 @@ impl UserDelegationKey {
             .header("Content-Type", "application/xml")
             .body(xml_body)
             .send()
-            .await?;
+            .await
+            .map_err(|e| azure_core::Error::new(ErrorKind::Connection, e))?;
 
         if !response.status().is_success() {
-            return Err(SasError::DelegationKeyError {
-                status: response.status().as_u16(),
-                message: response.text().await?,
-            });
+            let status = response.status().as_u16();
+            let message = response
+                .text()
+                .await
+                .map_err(|e| azure_core::Error::new(ErrorKind::Connection, e))?;
+            return Err(azure_core::Error::with_message(
+                ErrorKind::Other,
+                format!("user delegation key request failed with HTTP {status}: {message}"),
+            ));
         }
 
-        let xml = response.text().await?;
-        Ok(quick_xml::de::from_str(&xml)?)
+        let xml = response
+            .text()
+            .await
+            .map_err(|e| azure_core::Error::new(ErrorKind::Connection, e))?;
+        quick_xml::de::from_str(&xml)
+            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))
     }
 
     /// Signs `string_to_sign` with HMAC-SHA256 using this key's value.
     ///
     /// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signature>
-    pub(crate) fn compute_signature(&self, string_to_sign: &str) -> Result<String, SasError> {
+    pub(crate) fn compute_signature(&self, string_to_sign: &str) -> azure_core::Result<String> {
         let key_bytes = STANDARD.decode(&self.value)?;
-        let mut mac =
-            Hmac::<Sha256>::new_from_slice(&key_bytes).map_err(|_| SasError::HmacError)?;
+        let mut mac = Hmac::<Sha256>::new_from_slice(&key_bytes).map_err(|_| {
+            azure_core::Error::with_message(
+                ErrorKind::Other,
+                "HMAC key initialization failed: invalid key bytes",
+            )
+        })?;
         mac.update(string_to_sign.as_bytes());
         Ok(STANDARD.encode(mac.finalize().into_bytes()))
     }
@@ -212,18 +227,22 @@ impl UserDelegationKeyFetcher {
     ///
     /// # Errors
     ///
-    /// - [`SasError::KeyExpiryTooLong`] — `key_expiry` exceeds [`Self::MAX_KEY_EXPIRY`].
-    /// - [`SasError::TokenError`] — credential failed to produce a token.
-    /// - [`SasError::DelegationKeyError`] — the storage service rejected the key request.
-    /// - [`SasError::HttpError`] — a network error occurred.
-    pub async fn fetch(mut self) -> Result<UserDelegationKey, SasError> {
+    /// Returns an error if `key_expiry` exceeds [`Self::MAX_KEY_EXPIRY`], if the credential
+    /// fails to produce a token, if a network error occurs, or if the storage service rejects
+    /// the key request.
+    pub async fn fetch(mut self) -> azure_core::Result<UserDelegationKey> {
         if self.key_expiry > Self::MAX_KEY_EXPIRY {
-            return Err(SasError::KeyExpiryTooLong);
+            return Err(azure_core::Error::with_message(
+                ErrorKind::Other,
+                "key_expiry_duration exceeds the Azure-enforced maximum; see UserDelegationKeyFetcher::MAX_KEY_EXPIRY",
+            ));
         }
 
         let now = OffsetDateTime::now_utc();
-        let start_str = format_sas_time(now)?;
-        let expiry_str = format_sas_time(now + self.key_expiry)?;
+        let start_str = format_sas_time(now)
+            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
+        let expiry_str = format_sas_time(now + self.key_expiry)
+            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
 
         let endpoint = self.endpoint.unwrap_or_else(|| {
             Url::parse(&format!("https://{}.blob.core.windows.net", self.account))

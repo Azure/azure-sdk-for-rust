@@ -5,8 +5,9 @@ use time::{Duration, OffsetDateTime};
 use url::Url;
 use uuid::Uuid;
 
+use azure_core::error::ErrorKind;
+
 use crate::{
-    error::SasError,
     key::{format_sas_time, UserDelegationKey},
     resource::sealed,
     sas::{SasSigningContext, SasUrlParams, SignedProtocol},
@@ -244,21 +245,25 @@ impl<R: Resource> UserDelegationSasBuilder<R> {
     ///
     /// # Errors
     ///
-    /// - [`SasError::KeyExpiryTooLong`] — `key_expiry_duration` exceeds [`Self::MAX_KEY_EXPIRY`].
-    /// - [`SasError::TokenError`] — credential failed to produce a token.
-    /// - [`SasError::DelegationKeyError`] — the storage service rejected the key request.
-    /// - [`SasError::HttpError`] — a network error occurred.
+    /// Returns an error if `key_expiry_duration` exceeds [`Self::MAX_KEY_EXPIRY`], if the
+    /// credential fails to produce a token, if a network error occurs, or if the storage
+    /// service rejects the key request.
     pub async fn fetch_key(
         mut self,
         credential: Arc<dyn TokenCredential>,
-    ) -> Result<UserDelegationSasBuilder<R, UserDelegationKey>, SasError> {
+    ) -> azure_core::Result<UserDelegationSasBuilder<R, UserDelegationKey>> {
         if self.key_expiry > Self::MAX_KEY_EXPIRY {
-            return Err(SasError::KeyExpiryTooLong);
+            return Err(azure_core::Error::with_message(
+                ErrorKind::Other,
+                "key_expiry_duration exceeds the Azure-enforced maximum; see UserDelegationSasBuilder::MAX_KEY_EXPIRY",
+            ));
         }
 
         let now = OffsetDateTime::now_utc();
-        let key_start = format_sas_time(now)?;
-        let key_expiry_str = format_sas_time(now + self.key_expiry)?;
+        let key_start = format_sas_time(now)
+            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
+        let key_expiry_str = format_sas_time(now + self.key_expiry)
+            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
 
         // Each storage service exposes its own GetUserDelegationKey endpoint.
         let key_endpoint = if let Some(ref ep) = self.endpoint {
@@ -329,15 +334,19 @@ impl<R: Resource> UserDelegationSasBuilder<R, UserDelegationKey> {
     ///
     /// # Errors
     ///
-    /// - [`SasError::TimeError`] — internal time formatting failure.
-    /// - [`SasError::HmacError`] — the stored key's bytes are invalid.
-    /// - [`SasError::UrlError`] — the constructed URL could not be parsed.
-    pub fn build(self) -> Result<Url, SasError> {
+    /// Returns an error if time formatting fails, if the stored key's bytes are invalid,
+    /// or if the constructed URL could not be parsed.
+    pub fn build(self) -> azure_core::Result<Url> {
         let key = self.key;
         let permissions_str = self.permissions.to_string();
 
-        let start_str = self.start.map(format_sas_time).transpose()?;
-        let sas_expiry_str = format_sas_time(self.expiry)?;
+        let start_str = self
+            .start
+            .map(format_sas_time)
+            .transpose()
+            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
+        let sas_expiry_str = format_sas_time(self.expiry)
+            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
 
         let account_endpoint = if let Some(ep) = self.endpoint {
             ep

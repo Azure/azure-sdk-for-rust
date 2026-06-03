@@ -7,7 +7,6 @@ pub(crate) mod sas;
 #[cfg(test)]
 pub(crate) mod test_utils;
 
-pub mod error;
 pub use key::{UserDelegationKey, UserDelegationKeyFetcher};
 pub use resource::{blob, file, queue, table, Resource};
 pub use sas::builder::UserDelegationSasBuilder;

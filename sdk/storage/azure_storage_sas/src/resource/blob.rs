@@ -23,7 +23,6 @@ use uuid::Uuid;
 use url::Url;
 
 use crate::{
-    error::SasError,
     resource::{sealed, Resource},
     sas::{append_common_sas_params, append_path, SasSigningContext, SasUrlParams},
 };
@@ -299,7 +298,11 @@ impl sealed::Resource for BlobResource {
         }
         .to_string()
     }
-    fn sas_url(&self, account_endpoint: &Url, params: &SasUrlParams<'_>) -> Result<Url, SasError> {
+    fn sas_url(
+        &self,
+        account_endpoint: &Url,
+        params: &SasUrlParams<'_>,
+    ) -> azure_core::Result<Url> {
         let mut url = append_path(
             account_endpoint,
             &format!("{}/{}", self.container, self.blob),
