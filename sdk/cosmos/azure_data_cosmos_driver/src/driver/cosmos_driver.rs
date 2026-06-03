@@ -419,6 +419,12 @@ impl CosmosDriver {
         tracing::info!(
             endpoint = %endpoint,
             write_region = ?props.write_region(),
+            readable_locations = props.readable_locations.len(),
+            writable_locations = props.writable_locations.len(),
+            thin_client_readable_locations = props.thin_client_readable_locations.len(),
+            thin_client_writable_locations = props.thin_client_writable_locations.len(),
+            thin_client_readable_regions = ?props.gateway20_readable_regions(),
+            thin_client_writable_regions = ?props.gateway20_writable_regions(),
             "AccountProperties retrieved successfully"
         );
         Ok(props)
