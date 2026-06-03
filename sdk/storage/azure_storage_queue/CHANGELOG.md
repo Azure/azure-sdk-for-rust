@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added `ListOfSentMessage::into_message()` to extract the single `SentMessage` returned by `QueueClient::send_message()`.
+
 ### Breaking Changes
 
 ### Bugs Fixed

@@ -1,9 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_data_cosmos::{
-    CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, RoutingStrategy,
-};
+use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClient, RoutingStrategy};
 use azure_identity::DeveloperToolsCredential;
 use clap::Parser;
 use std::sync::Arc;
@@ -14,8 +12,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let credential: Arc<dyn azure_core::credentials::TokenCredential> =
         DeveloperToolsCredential::new(None)?;
-    let endpoint: CosmosAccountEndpoint = args.endpoint.parse()?;
-    let account = CosmosAccountReference::with_credential(endpoint, credential);
+    let endpoint: AccountEndpoint = args.endpoint.parse()?;
+    let account = AccountReference::with_credential(endpoint, credential);
 
     // No explicit TLS configuration is needed. Because we compiled reqwest
     // with the `native-tls` feature (and without `rustls`), the default

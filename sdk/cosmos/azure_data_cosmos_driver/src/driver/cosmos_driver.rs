@@ -27,7 +27,7 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        DatabaseProperties, DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
+        DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
@@ -840,39 +840,6 @@ impl CosmosDriver {
         let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
         let options = OperationOptions::default();
 
-        let db_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_database(db_ref.clone()),
-                options.clone(),
-            )
-            .await?;
-        let db_headers = db_result.headers().clone();
-        let db_diagnostics = db_result.diagnostics();
-        let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("failed to deserialize database response")
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    db_headers.clone(),
-                ))
-                .with_diagnostics(db_diagnostics.clone())
-                .with_source(e)
-                .build()
-        })?;
-        let db_rid = db_props.system_properties.rid.ok_or_else(|| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("database response missing _rid")
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    db_headers,
-                ))
-                .with_diagnostics(db_diagnostics)
-                .with_source(std::io::Error::other("missing _rid"))
-                .build()
-        })?;
-
         let container_result = self
             .execute_singleton_operation(
                 CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
@@ -904,92 +871,39 @@ impl CosmosDriver {
                     .with_message("container response missing _rid")
                     .with_response_parts(crate::models::CosmosResponsePayload::new(
                         crate::models::ResponseBody::NoPayload,
-                        container_headers,
+                        container_headers.clone(),
                     ))
-                    .with_diagnostics(container_diagnostics)
+                    .with_diagnostics(container_diagnostics.clone())
                     .with_source(std::io::Error::other("missing _rid"))
                     .build()
             })?;
 
-        Ok(ContainerReference::new(
-            self.account().clone(),
-            db_props.id.into_owned(),
-            db_rid,
-            container_props.id.clone().into_owned(),
-            container_rid,
-            &container_props,
-        ))
-    }
-
-    async fn fetch_container_by_rid(
-        &self,
-        db_rid: &str,
-        container_rid: &str,
-    ) -> crate::error::Result<ContainerReference> {
-        let db_ref = DatabaseReference::from_rid(self.account().clone(), db_rid.to_owned());
-        let options = OperationOptions::default();
-
-        let db_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_database(db_ref.clone()),
-                options.clone(),
-            )
-            .await?;
-        let db_headers = db_result.headers().clone();
-        let db_diagnostics = db_result.diagnostics();
-        let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message(format!(
-                    "failed to deserialize database response (db_rid='{db_rid}'): {e}"
-                ))
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    db_headers,
-                ))
-                .with_diagnostics(db_diagnostics)
-                .with_source(e)
-                .build()
-        })?;
-        let resolved_db_rid = db_props
-            .system_properties
-            .rid
-            .clone()
-            .unwrap_or_else(|| db_rid.to_owned());
-
-        let container_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_container_by_rid(db_ref, container_rid.to_owned()),
-                options,
-            )
-            .await?;
-        let container_headers = container_result.headers().clone();
-        let container_diagnostics = container_result.diagnostics();
-        let container_props: ContainerProperties = container_result
-            .into_body()
-            .into_single()
-            .map_err(|e| {
-                crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+        // Derive the database RID from the container RID's encoded byte
+        // layout. This avoids an extra `read_database` round-trip — the
+        // first 4 decoded bytes of the container RID are the parent database RID.
+        let db_rid = crate::models::resource_id::ResourceId::new(container_rid.clone())
+            .database_rid()
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
-                        "failed to deserialize container response (db_rid='{db_rid}', container_rid='{container_rid}'): {e}"
+                        "failed to extract database RID from container RID '{container_rid}'"
                     ))
-                    .with_response_parts(crate::models::CosmosResponsePayload::new(crate::models::ResponseBody::NoPayload, container_headers))
+                    .with_response_parts(crate::models::CosmosResponsePayload::new(
+                        crate::models::ResponseBody::NoPayload,
+                        container_headers,
+                    ))
                     .with_diagnostics(container_diagnostics)
-                    .with_source(e)
+                    .with_source(std::io::Error::other("invalid container _rid"))
                     .build()
             })?;
-        let resolved_container_rid = container_props
-            .system_properties
-            .rid
-            .clone()
-            .unwrap_or_else(|| container_rid.to_owned());
 
         Ok(ContainerReference::new(
             self.account().clone(),
-            db_props.id.into_owned(),
-            resolved_db_rid,
+            db_name.to_owned(),
+            db_rid.as_str().to_owned(),
             container_props.id.clone().into_owned(),
-            resolved_container_rid,
+            container_rid,
             &container_props,
         ))
     }
@@ -1753,36 +1667,6 @@ impl CosmosDriver {
                         crate::error::CosmosErrorBuilder::from_error(err)
                             .with_context(format!(
                                 "resolve container by name (db='{db_name_owned}', container='{container_name_owned}')"
-                            ))
-                            .build()
-                    })
-            })
-            .await?;
-
-        Ok(resolved.as_ref().clone())
-    }
-
-    /// Resolves a container by database RID and container RID. Resolves from `ContainerCache`
-    /// first; on miss, fetches metadata from the service and populates the cache.
-    pub async fn resolve_container_by_rid(
-        &self,
-        db_rid: &str,
-        container_rid: &str,
-    ) -> crate::error::Result<ContainerReference> {
-        let endpoint = self.account().endpoint().as_str().to_owned();
-        let db_rid_owned = db_rid.to_owned();
-        let container_rid_owned = container_rid.to_owned();
-
-        let resolved = self
-            .runtime
-            .container_cache()
-            .get_or_fetch_by_rid(&endpoint, container_rid, || async move {
-                self.fetch_container_by_rid(&db_rid_owned, &container_rid_owned)
-                    .await
-                    .map_err(|err| {
-                        crate::error::CosmosErrorBuilder::from_error(err)
-                            .with_context(format!(
-                                "resolve container by rid (db_rid='{db_rid_owned}', container_rid='{container_rid_owned}')"
                             ))
                             .build()
                     })
