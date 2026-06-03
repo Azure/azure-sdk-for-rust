@@ -12,10 +12,12 @@ use azure_core::http::{headers::HeaderName, request::options::ContentType};
 macro_rules! cosmos_headers {
     ($($name:ident => $value:literal),* $(,)?) => {
         $(
+            #[allow(dead_code)]
             pub const $name: HeaderName = HeaderName::from_static($value);
         )*
 
         /// A list of all Cosmos DB specific headers that should be allowed in logging.
+        #[allow(dead_code)]
         pub const COSMOS_ALLOWED_HEADERS: &[&HeaderName] = &[
             $(&$name,)*
             &azure_data_cosmos_driver::constants::GATEWAY20_OPERATION_TYPE,
@@ -194,8 +196,10 @@ cosmos_headers! {
     FAULT_INJECTION_CONTAINER_ID => "x-ms-fault-injection-container-id",
 }
 
+#[allow(dead_code)]
 pub const QUERY_CONTENT_TYPE: ContentType = ContentType::from_static("application/query+json");
 
+#[allow(dead_code)]
 pub const ACCOUNT_PROPERTIES_KEY: &str = "account_properties_key";
 
 // cSpell:enable
