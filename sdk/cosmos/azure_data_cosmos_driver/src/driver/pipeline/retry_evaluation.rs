@@ -226,6 +226,152 @@ pub(crate) fn evaluate_transport_result(
     }
 }
 
+/// Side effects observed by a single hedge leg's transport result.
+///
+/// Returned by [`evaluate_hedge_leg_effects`] so the hedge race coordinator
+/// (`execute_hedged`) can apply the same routing-state mutations and
+/// session-latch propagation that the non-hedged
+/// [`evaluate_transport_result`] path would apply — without consuming the
+/// `TransportResult` (which the race coordinator still needs in order to
+/// build the final operation outcome).
+///
+/// See HEDGING_SPEC.md §6.5 (concurrency invariants) and §9.6 (cross-hedge
+/// 1002 latch propagation) for the design rationale.
+#[derive(Debug, Default)]
+pub(crate) struct HedgeLegEvaluation {
+    /// `LocationEffect`s the race coordinator must apply to the shared
+    /// `LocationStateStore` before continuing the race. Identical in
+    /// composition to what `evaluate_transport_result` would have emitted
+    /// for the same `(operation, endpoint, retry_state, result)` tuple,
+    /// minus any effects that depend on consuming the response body
+    /// (currently none — `LocationEffect` carries no body).
+    pub(crate) effects: Vec<LocationEffect>,
+    /// `true` when this leg observed a 404/1002 `ReadSessionNotAvailable`
+    /// that would have triggered the `hub_region_processing_only` latch in
+    /// [`build_session_retry_state`]. The race coordinator forwards this
+    /// up via [`HedgedRaceResult::BothTransient`] so the upgrade-to-failover
+    /// boundary can flip `retry_state.hub_region_processing_only` (and the
+    /// shared latch) before the next pipeline attempt is built.
+    pub(crate) observed_session_unavailable: bool,
+}
+
+/// Non-consuming counterpart of [`evaluate_transport_result`] for the
+/// hedge race loop in `execute_hedged`.
+///
+/// **Why this exists.** The race loop must keep ownership of every leg's
+/// `TransportResult` until it knows which leg wins / how to classify both —
+/// the winning result is returned to the caller, and `classify_hedge_result`
+/// also borrows the result. So we can't just call `evaluate_transport_result`
+/// (which consumes its `TransportResult`). Per HEDGING_SPEC.md §6.5 each
+/// hedge leg is a real pipeline attempt; ignoring its `LocationEffect`s
+/// would diverge the hedged path from the non-hedged path and skip the
+/// PPCB / partition-unavailable / endpoint-unavailable bookkeeping that
+/// every other retry path performs.
+///
+/// **What is emitted.** Identical to `evaluate_transport_result` modulo:
+///   - The `OperationAction` is discarded (the race coordinator picks its
+///     own next-step action via `classify_hedge_result`).
+///   - For 404/1002 the function returns `observed_session_unavailable=true`
+///     instead of constructing a new `OperationRetryState`; the race
+///     coordinator applies the latch flip on the parent `retry_state` at
+///     the `BothTransient` upgrade boundary, mirroring `build_session_retry_state`.
+///   - `Abort`-only paths (e.g. unrecognized HTTP errors) emit no effects
+///     — same as the consuming path.
+pub(crate) fn evaluate_hedge_leg_effects(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    result: &TransportResult,
+) -> HedgeLegEvaluation {
+    let mut eval = HedgeLegEvaluation::default();
+    match &result.outcome {
+        TransportOutcome::Success { .. } => {}
+
+        TransportOutcome::HttpError {
+            status,
+            cosmos_headers,
+            body,
+            request_sent,
+        } => {
+            // Mirror `build_session_retry_state`'s four-condition latch
+            // trigger so cross-hedge propagation matches the non-hedged
+            // SessionRetry path exactly (HEDGING_SPEC.md §9.6,
+            // HUB_REGION_PROCESSING_HEADER_SPEC.md §7.1).
+            if status.is_read_session_not_available()
+                && retry_state.can_retry_session()
+                && retry_state.is_dataplane
+                && !retry_state.can_use_multiple_write_locations
+                && retry_state.session_token_retry_count == 0
+                && !retry_state.hub_region_processing_only
+            {
+                eval.observed_session_unavailable = true;
+            }
+
+            // Walk the same per-status-family helper chain that
+            // `evaluate_http_outcome` walks — in the same priority order —
+            // and take only the `LocationEffect`s. The `try_handle_*`
+            // helpers are local to this file and already take everything
+            // by reference, so they can be reused without modification.
+            //
+            // 404/1002 (`try_handle_read_session_not_available`) is
+            // deliberately skipped here: it returns an empty effects vec
+            // in the success branch and an `Abort` (also empty) in the
+            // exhausted branch. The cross-hedge signal we care about is
+            // captured above via `observed_session_unavailable`.
+            if let Some((_action, effects)) =
+                try_handle_write_forbidden(operation, endpoint, retry_state, status)
+            {
+                eval.effects = effects;
+            } else if let Some((_action, effects)) = try_handle_retry_trigger_group(
+                operation,
+                endpoint,
+                retry_state,
+                status,
+                cosmos_headers,
+                body,
+                *request_sent,
+            ) {
+                eval.effects = effects;
+            } else if let Some((_action, effects)) =
+                try_handle_server_error(operation, endpoint, retry_state, status)
+            {
+                eval.effects = effects;
+            }
+        }
+
+        TransportOutcome::TransportError { request_sent, .. } => {
+            // Mirrors `evaluate_transport_layer_outcome`'s effect emission.
+            // The `definitely_not_sent` branch emits no effects in the
+            // consuming path — we replicate that here. The "sent" branch
+            // unconditionally marks the partition unavailable, and also
+            // marks the endpoint unavailable when PPCB is not managing
+            // failover.
+            if !request_sent.definitely_not_sent() {
+                eval.effects.push(LocationEffect::MarkPartitionUnavailable(
+                    make_partition_unavailable(
+                        operation,
+                        endpoint,
+                        retry_state,
+                        operation.is_read_only(),
+                    ),
+                ));
+                if !is_ppcb_managed(operation, retry_state) {
+                    eval.effects.push(LocationEffect::MarkEndpointUnavailable {
+                        endpoint: endpoint.clone(),
+                        reason: UnavailableReason::TransportError,
+                    });
+                }
+            }
+        }
+
+        TransportOutcome::DeadlineExceeded { .. } => {
+            // Client-side end-to-end timeout — no routing-state effects
+            // (matches `evaluate_deadline_exceeded_outcome`).
+        }
+    }
+    eval
+}
+
 /// Classifies an HTTP error response by walking a chain of per-status-family
 /// handlers in priority order.
 ///
@@ -1837,6 +1983,186 @@ mod tests {
         assert!(
             shared.load(Ordering::Acquire),
             "shared latch must stay set across non-triggering retries",
+        );
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // `evaluate_hedge_leg_effects` — non-consuming hedge-leg evaluator
+    // ────────────────────────────────────────────────────────────────
+    //
+    // Mirrors the same `(operation, endpoint, retry_state, result)`
+    // tuple as `evaluate_transport_result` and emits the same
+    // `LocationEffect`s, minus the consumed `OperationAction`. These
+    // tests pin that mirror so a future refactor of either function
+    // can't silently diverge their side-effect surface.
+
+    /// Success transport result emits no effects and no session-retry
+    /// signal — same as `evaluate_transport_result`.
+    #[test]
+    fn hedge_leg_effects_success_is_empty() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_success_result();
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval.effects.is_empty());
+        assert!(!eval.observed_session_unavailable);
+    }
+
+    /// 503 ServiceUnavailable on a read emits `MarkPartitionUnavailable`
+    /// + `MarkEndpointUnavailable` — exactly what the non-hedged path
+    /// would have applied.
+    #[test]
+    fn hedge_leg_effects_503_emits_partition_and_endpoint_marks() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_http_error(StatusCode::ServiceUnavailable);
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval
+            .effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(eval
+            .effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!eval.observed_session_unavailable);
+    }
+
+    /// Transport error with `RequestSentStatus::Sent` on a read emits
+    /// the same `MarkPartitionUnavailable` + `MarkEndpointUnavailable`
+    /// pair the consuming path emits — see
+    /// `evaluate_transport_layer_outcome`.
+    #[test]
+    fn hedge_leg_effects_transport_sent_emits_marks() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_transport_error(RequestSentStatus::Sent);
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval
+            .effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(eval
+            .effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    /// Transport error with `RequestSentStatus::NotSent` emits NO
+    /// effects (the failure is purely client-side; failing over is safe
+    /// and incurs no routing-state consequences) — matches the
+    /// `definitely_not_sent` branch in `evaluate_transport_layer_outcome`.
+    #[test]
+    fn hedge_leg_effects_transport_not_sent_is_empty() {
+        let op = make_create_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_transport_error(RequestSentStatus::NotSent);
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(
+            eval.effects.is_empty(),
+            "not-sent transport error must not mark routing state",
+        );
+    }
+
+    /// 404/1002 on a single-master data-plane read with budget remaining
+    /// surfaces `observed_session_unavailable=true` AND emits no
+    /// effects (matches `try_handle_read_session_not_available`'s
+    /// empty-effects contract). The hedge race coordinator uses this
+    /// signal to flip the parent `hub_region_processing_only` latch at
+    /// the `BothTransient` upgrade boundary — HEDGING_SPEC.md §9.6.
+    #[test]
+    fn hedge_leg_effects_1002_signals_session_unavailable() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        let result = make_read_session_not_available_result();
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval.effects.is_empty());
+        assert!(
+            eval.observed_session_unavailable,
+            "first 1002 on single-master dataplane should signal session-unavailable",
+        );
+    }
+
+    /// 404/1002 on a multi-master account does NOT signal
+    /// `observed_session_unavailable` — matches
+    /// `build_session_retry_state`'s 4-condition trigger (AC-4
+    /// per HUB_REGION_PROCESSING_HEADER_SPEC.md §7.1).
+    #[test]
+    fn hedge_leg_effects_1002_multi_master_no_signal() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 3); // multi-master
+        state.is_dataplane = true;
+        let result = make_read_session_not_available_result();
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(
+            !eval.observed_session_unavailable,
+            "multi-master 1002 must not flip the latch (AC-4)",
+        );
+    }
+
+    /// Already-latched state does not re-signal `observed_session_unavailable`
+    /// — idempotency boundary matching the non-hedged path.
+    #[test]
+    fn hedge_leg_effects_1002_no_signal_when_already_latched() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true;
+        let result = make_read_session_not_available_result();
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(
+            !eval.observed_session_unavailable,
+            "already-latched state should not re-signal",
+        );
+    }
+
+    /// DeadlineExceeded transport result emits no effects — matches
+    /// `evaluate_deadline_exceeded_outcome`.
+    #[test]
+    fn hedge_leg_effects_deadline_exceeded_is_empty() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = TransportResult {
+            outcome: TransportOutcome::DeadlineExceeded {
+                request_sent: RequestSentStatus::Sent,
+            },
+        };
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval.effects.is_empty());
+        assert!(!eval.observed_session_unavailable);
+    }
+
+    /// Final HTTP errors that aren't classified by any per-status helper
+    /// (e.g. 409 Conflict) emit no effects from the hedge-leg
+    /// evaluator — same as the consuming path's `Abort` fallthrough.
+    #[test]
+    fn hedge_leg_effects_409_conflict_is_empty() {
+        let op = make_create_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_http_error(StatusCode::Conflict);
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(
+            eval.effects.is_empty(),
+            "409 Conflict has no per-status handler; emits no effects",
         );
     }
 }

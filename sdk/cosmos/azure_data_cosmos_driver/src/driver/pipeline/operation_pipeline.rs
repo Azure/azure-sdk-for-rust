@@ -45,8 +45,8 @@ use super::{
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
     hedging_eligibility::evaluate_hedge_eligibility,
     retry_evaluation::{
-        build_service_error, evaluate_transport_result, is_region_confirming_status,
-        partition_effects_for_deferral,
+        build_service_error, evaluate_hedge_leg_effects, evaluate_transport_result,
+        is_region_confirming_status, partition_effects_for_deferral,
     },
 };
 
@@ -334,6 +334,7 @@ pub(crate) async fn execute_operation_pipeline(
                     upgrade.threshold,
                     upgrade.strategy_config,
                     diagnostics,
+                    &retry_state,
                 )
                 .await
                 {
@@ -344,6 +345,7 @@ pub(crate) async fn execute_operation_pipeline(
                         last_error,
                         diagnostics: returned_diagnostics,
                         partition_key_range_id: race_pk_range_id,
+                        observed_session_unavailable: race_observed_1002,
                     } => {
                         // Both legs returned a retriable failure with
                         // budget remaining — fall back into the failover
@@ -370,6 +372,19 @@ pub(crate) async fn execute_operation_pipeline(
                         if retry_state.partition_key_range_id.is_none() {
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
+                        // Cross-hedge propagation upgrade boundary
+                        // (HEDGING_SPEC.md §9.6). At least one leg
+                        // observed a 404/1002 that would have triggered
+                        // the `hub_region_processing_only` latch on the
+                        // non-hedged path. Flip the per-state latch (and
+                        // the shared `Arc<AtomicBool>`, if attached) so
+                        // the next pipeline attempt emits the
+                        // `x-ms-cosmos-hub-region-processing-only`
+                        // header — without it, the failover-loop
+                        // fallback would re-issue against the next
+                        // region and burn another slot on a
+                        // guaranteed-repeat 1002.
+                        propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
                         try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
@@ -676,6 +691,7 @@ pub(crate) async fn execute_operation_pipeline(
                     threshold,
                     strategy_config,
                     diagnostics,
+                    &retry_state,
                 )
                 .await
                 {
@@ -686,6 +702,7 @@ pub(crate) async fn execute_operation_pipeline(
                         last_error,
                         diagnostics: returned_diagnostics,
                         partition_key_range_id: race_pk_range_id,
+                        observed_session_unavailable: race_observed_1002,
                     } => {
                         // Both legs returned a retriable failure with
                         // budget remaining — fall back into the failover
@@ -704,6 +721,14 @@ pub(crate) async fn execute_operation_pipeline(
                         if retry_state.partition_key_range_id.is_none() {
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
+                        // Cross-hedge propagation upgrade boundary
+                        // (HEDGING_SPEC.md §9.6). See the matching STAGE
+                        // 2b handler for rationale — flips the per-state
+                        // latch + any shared `Arc<AtomicBool>` so the
+                        // next pipeline attempt emits the
+                        // `x-ms-cosmos-hub-region-processing-only`
+                        // header.
+                        propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
                         try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
@@ -2202,7 +2227,77 @@ pub(crate) enum HedgedRaceResult {
         last_error: crate::error::CosmosError,
         diagnostics: DiagnosticsContextBuilder,
         partition_key_range_id: Option<PartitionKeyRangeId>,
+        /// `true` when at least one hedge leg observed a 404/1002
+        /// `ReadSessionNotAvailable` that would have triggered
+        /// `build_session_retry_state`'s `hub_region_processing_only`
+        /// latch on the non-hedged path. The surrounding failover loop
+        /// uses this to flip `retry_state.hub_region_processing_only`
+        /// (and the shared `Arc<AtomicBool>`, if any) before re-entering
+        /// — without it, the post-hedge fallback would issue further
+        /// attempts without the `x-ms-cosmos-hub-region-processing-only`
+        /// header even though session lag was definitely observed,
+        /// burning the next failover slot on a guaranteed-repeat 1002.
+        /// See HEDGING_SPEC.md §9.6 (cross-hedge propagation).
+        observed_session_unavailable: bool,
     },
+}
+
+/// Applies a single hedge leg's `LocationEffect`s to the shared
+/// `LocationStateStore` and accumulates the cross-leg session-retry
+/// signal so the surrounding race coordinator can flip the parent
+/// operation's `hub_region_processing_only` latch at the end.
+///
+/// Wraps [`evaluate_hedge_leg_effects`] so the same plumbing (apply
+/// effects, OR the bool, flip the shared `Arc<AtomicBool>` when a
+/// 1002 trigger fires) lives in one place. Called at every classify
+/// site inside [`execute_hedged`] before [`classify_hedge_result`]
+/// runs, so that:
+///
+///   1. `MarkPartitionUnavailable` / `MarkEndpointUnavailable` from
+///      this leg are reflected in the shared routing snapshot before
+///      the failover-loop fallback re-resolves the next region — i.e.
+///      the hedged path's routing-state mutation coverage matches the
+///      non-hedged path's (HEDGING_SPEC.md §14.1).
+///   2. The shared hub-region-processing-only `Arc<AtomicBool>` is
+///      flipped immediately on a 1002 trigger, so the sibling leg's
+///      next request build (if any) picks it up — without it, two
+///      sibling legs racing into the same 1002 each pay a separate
+///      session-retry round (HEDGING_SPEC.md §9.6 — symmetric
+///      propagation).
+///   3. The `race_observed_session_unavailable` flag accumulates so
+///      [`finalize_both_transient`] can surface it via
+///      `HedgedRaceResult::BothTransient`, letting the failover-loop
+///      fallback flip the parent `retry_state.hub_region_processing_only`
+///      before the next pipeline attempt is built.
+async fn apply_hedge_leg_effects(
+    ctx: &AttemptContext<'_>,
+    retry_state_snapshot: &OperationRetryState,
+    endpoint: &CosmosEndpoint,
+    result: &crate::error::Result<TransportResult>,
+    shared_hub_region_latch: Option<&Arc<AtomicBool>>,
+    race_observed_session_unavailable: &mut bool,
+) {
+    // Pre-transport / request-build errors carry no `TransportResult`
+    // and therefore no observable side effects to mirror — they fail
+    // before the transport pipeline classifies any response.
+    let Ok(transport_result) = result.as_ref() else {
+        return;
+    };
+    let eval = evaluate_hedge_leg_effects(
+        ctx.operation,
+        endpoint,
+        retry_state_snapshot,
+        transport_result,
+    );
+    if !eval.effects.is_empty() {
+        ctx.location_state_store.apply(&eval.effects).await;
+    }
+    if eval.observed_session_unavailable {
+        *race_observed_session_unavailable = true;
+        if let Some(latch) = shared_hub_region_latch {
+            latch.store(true, Ordering::Release);
+        }
+    }
 }
 
 /// Races a primary attempt against a single cross-region secondary
@@ -2259,6 +2354,14 @@ async fn execute_hedged(
     threshold: HedgeThreshold,
     strategy_config: HedgingStrategyConfig,
     mut parent_diagnostics: DiagnosticsContextBuilder,
+    // Per-leg LocationEffect application + cross-hedge 1002 latch
+    // propagation evaluate against the parent operation's retry_state
+    // as it stood at the moment hedging was dispatched. Borrowed (not
+    // cloned) — `execute_hedged` only reads; mutations to the parent
+    // retry_state happen post-race in the surrounding failover loop
+    // (STAGE 2b / STAGE 7) once `HedgedRaceResult` is destructured.
+    // See HEDGING_SPEC.md §6.5 (concurrency invariants) and §9.6.
+    retry_state_snapshot: &OperationRetryState,
 ) -> HedgedRaceResult {
     let primary_region = primary_routing.endpoint.region().cloned();
     let secondary_region = secondary_routing.endpoint.region().cloned();
@@ -2506,11 +2609,33 @@ async fn execute_hedged(
     // would run all subsequent attempts PK-less and silently break
     // PPCB attribution (see `pk_range_id_from_result`).
     let mut captured_pk_range_id: Option<PartitionKeyRangeId> = None;
+    // Cross-leg session-retry-trigger accumulator. Set to `true` by
+    // [`apply_hedge_leg_effects`] whenever any leg's response would
+    // have triggered the `hub_region_processing_only` latch in
+    // `build_session_retry_state`. Surfaced through
+    // `HedgedRaceResult::BothTransient::observed_session_unavailable`
+    // so the STAGE 2b / STAGE 7 fallback can flip the parent
+    // `retry_state.hub_region_processing_only` (and any shared latch)
+    // before the next pipeline attempt is built. Mirrors HEDGING_SPEC.md
+    // §9.6 — both `Final` and `BothTransient` paths flip the shared
+    // `Arc<AtomicBool>` immediately so siblings see it on their next
+    // request build; the `BothTransient` surface ALSO carries the bool
+    // up so the failover-loop fallback flips the per-state latch.
+    let mut race_observed_session_unavailable = false;
     match select(primary_attempt, secondary_attempt).await {
         Either::Left(((primary_result, primary_diag), secondary_remaining)) => {
             parent_diagnostics.merge_hedge_attempt(primary_diag);
             captured_pk_range_id =
                 captured_pk_range_id.or_else(|| pk_range_id_from_result(&primary_result));
+            apply_hedge_leg_effects(
+                ctx,
+                retry_state_snapshot,
+                &primary_routing.endpoint,
+                &primary_result,
+                shared_hub_region_latch.as_ref(),
+                &mut race_observed_session_unavailable,
+            )
+            .await;
             match classify_hedge_result(primary_result) {
                 HedgeClass::Final(tr) => {
                     // Primary won post-threshold; drop secondary.
@@ -2578,6 +2703,15 @@ async fn execute_hedged(
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
                     captured_pk_range_id =
                         captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
+                    apply_hedge_leg_effects(
+                        ctx,
+                        retry_state_snapshot,
+                        &secondary_routing.endpoint,
+                        &secondary_result,
+                        shared_hub_region_latch.as_ref(),
+                        &mut race_observed_session_unavailable,
+                    )
+                    .await;
                     match classify_hedge_result(secondary_result) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
@@ -2624,6 +2758,7 @@ async fn execute_hedged(
                                 secondary_region_for_diag.clone(),
                                 parent_diagnostics,
                                 captured_pk_range_id,
+                                race_observed_session_unavailable,
                             )
                         }
                     }
@@ -2634,6 +2769,15 @@ async fn execute_hedged(
             parent_diagnostics.merge_hedge_attempt(secondary_diag);
             captured_pk_range_id =
                 captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
+            apply_hedge_leg_effects(
+                ctx,
+                retry_state_snapshot,
+                &secondary_routing.endpoint,
+                &secondary_result,
+                shared_hub_region_latch.as_ref(),
+                &mut race_observed_session_unavailable,
+            )
+            .await;
             match classify_hedge_result(secondary_result) {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
@@ -2697,6 +2841,15 @@ async fn execute_hedged(
                     parent_diagnostics.merge_hedge_attempt(primary_diag);
                     captured_pk_range_id =
                         captured_pk_range_id.or_else(|| pk_range_id_from_result(&primary_result));
+                    apply_hedge_leg_effects(
+                        ctx,
+                        retry_state_snapshot,
+                        &primary_routing.endpoint,
+                        &primary_result,
+                        shared_hub_region_latch.as_ref(),
+                        &mut race_observed_session_unavailable,
+                    )
+                    .await;
                     match classify_hedge_result(primary_result) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(
@@ -2741,6 +2894,7 @@ async fn execute_hedged(
                                 secondary_region_for_diag.clone(),
                                 parent_diagnostics,
                                 captured_pk_range_id,
+                                race_observed_session_unavailable,
                             )
                         }
                     }
@@ -2809,9 +2963,17 @@ fn transient_outcome_error(
 /// can write it back to `retry_state.partition_key_range_id` before
 /// re-entering — without it, every subsequent attempt would run
 /// PK-less and silently break PPCB attribution.
+///
+/// `observed_session_unavailable` is the OR-accumulation across legs
+/// of [`evaluate_hedge_leg_effects`]'s `observed_session_unavailable`
+/// signal (accumulated by the caller via [`apply_hedge_leg_effects`]).
+/// Surfaced via `HedgedRaceResult::BothTransient` so the failover-loop
+/// fallback can flip `retry_state.hub_region_processing_only` (and the
+/// shared `Arc<AtomicBool>`, if any) before re-entering — see
+/// HEDGING_SPEC.md §9.6 (cross-hedge propagation).
 #[allow(
     clippy::too_many_arguments,
-    reason = "All nine values come from `execute_hedged`'s state and \
+    reason = "All ten values come from `execute_hedged`'s state and \
               are passed through to a single helper call site. Bundling \
               them into a struct would add an indirection without \
               improving readability — the two-region pairing (raw / \
@@ -2827,6 +2989,7 @@ fn finalize_both_transient(
     secondary_region_for_diag: Region,
     mut parent_diagnostics: DiagnosticsContextBuilder,
     partition_key_range_id: Option<PartitionKeyRangeId>,
+    observed_session_unavailable: bool,
 ) -> HedgedRaceResult {
     let deadline_was_elapsed = deadline_elapsed(deadline);
     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
@@ -2853,6 +3016,7 @@ fn finalize_both_transient(
             activity_id = %activity_id,
             primary_region = ?primary_region.as_ref().map(Region::as_str),
             secondary_region = ?secondary_region.as_ref().map(Region::as_str),
+            observed_session_unavailable,
             "execute_hedged: both legs transient; bubbling up for failover-loop fallback",
         );
         HedgedRaceResult::BothTransient {
@@ -2861,6 +3025,7 @@ fn finalize_both_transient(
             secondary_region,
             diagnostics: parent_diagnostics,
             partition_key_range_id,
+            observed_session_unavailable,
         }
     }
 }
@@ -2934,6 +3099,36 @@ fn try_advance_after_both_transient(
         "hedge both-transient: failover loop will continue against remaining regions",
     );
     Ok(())
+}
+
+/// Flips the per-state `hub_region_processing_only` latch (and the
+/// shared `Arc<AtomicBool>`, if attached) when at least one hedge leg
+/// observed a 404/1002 that would have triggered
+/// [`build_session_retry_state`]'s latch on the non-hedged path.
+///
+/// Mirrors `build_session_retry_state`'s `Release`-ordered shared-latch
+/// CAS so the failover-loop fallback after `BothTransient` issues its
+/// next attempt with the `x-ms-cosmos-hub-region-processing-only`
+/// header set — see HEDGING_SPEC.md §9.6 (cross-hedge propagation) and
+/// HUB_REGION_PROCESSING_HEADER_SPEC.md §7.1.
+///
+/// Idempotent: a `false` flag is a no-op (the no-1002 race path) and a
+/// `true` flag against an already-latched state preserves the latch.
+fn propagate_hedge_session_unavailable(
+    retry_state: &mut OperationRetryState,
+    observed_session_unavailable: bool,
+) {
+    if !observed_session_unavailable || retry_state.hub_region_processing_only {
+        return;
+    }
+    retry_state.hub_region_processing_only = true;
+    if let Some(shared) = retry_state.shared_hub_region_latch.as_ref() {
+        shared.store(true, Ordering::Release);
+    }
+    tracing::debug!(
+        "hedge both-transient: 1002 observed by at least one leg; \
+         flipped hub_region_processing_only latch for next attempt",
+    );
 }
 
 #[cfg(test)]
