@@ -343,6 +343,7 @@ pub(crate) async fn execute_operation_pipeline(
                         secondary_region,
                         last_error,
                         diagnostics: returned_diagnostics,
+                        partition_key_range_id: race_pk_range_id,
                     } => {
                         // Both legs returned a retriable failure with
                         // budget remaining — fall back into the failover
@@ -359,6 +360,16 @@ pub(crate) async fn execute_operation_pipeline(
                             "hedge race: both transient on STAGE 2b; attempting failover fallback",
                         );
                         diagnostics = returned_diagnostics;
+                        // Adopt the PK range ID captured by either hedge
+                        // leg (first non-`None` wins). Without this the
+                        // loop would re-enter with
+                        // `retry_state.partition_key_range_id = None`
+                        // even though one or both legs received responses
+                        // that carried the header, and subsequent PPCB
+                        // feedback would short-circuit on `partition.is_none()`.
+                        if retry_state.partition_key_range_id.is_none() {
+                            retry_state.partition_key_range_id = race_pk_range_id;
+                        }
                         try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
@@ -674,6 +685,7 @@ pub(crate) async fn execute_operation_pipeline(
                         secondary_region,
                         last_error,
                         diagnostics: returned_diagnostics,
+                        partition_key_range_id: race_pk_range_id,
                     } => {
                         // Both legs returned a retriable failure with
                         // budget remaining — fall back into the failover
@@ -686,6 +698,12 @@ pub(crate) async fn execute_operation_pipeline(
                             "hedge race: both transient on STAGE 7; attempting failover fallback",
                         );
                         diagnostics = returned_diagnostics;
+                        // Adopt the PK range ID captured by either hedge
+                        // leg (see the matching STAGE 2b handler for
+                        // rationale).
+                        if retry_state.partition_key_range_id.is_none() {
+                            retry_state.partition_key_range_id = race_pk_range_id;
+                        }
                         try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
@@ -1714,6 +1732,36 @@ fn result_is_final(tr: &TransportResult) -> bool {
     }
 }
 
+/// Peeks at a hedge-leg's [`TransportResult`] for the partition-key-range-id
+/// header without consuming the result.
+///
+/// The non-hedged STAGE 4 captures this id on first observation by
+/// pulling it out of `result.cosmos_headers()` and stashing it on
+/// `OperationRetryState::partition_key_range_id`. Hedge legs never
+/// performed the equivalent capture, so when [`execute_hedged`] returned
+/// [`HedgedRaceResult::BothTransient`] the surrounding loop re-entered
+/// with `retry_state.partition_key_range_id = None` even though one or
+/// both legs had received responses that carried the id. Subsequent
+/// PPCB feedback then short-circuited (`record_hedge_outcome` no-ops on
+/// `partition.is_none()`) and partition-level overrides could not be
+/// installed for later failures.
+///
+/// Called at each `classify_hedge_result` site in [`execute_hedged`] to
+/// accumulate the first non-`None` id observed across either leg, which
+/// is then surfaced via
+/// [`HedgedRaceResult::BothTransient::partition_key_range_id`] for the
+/// caller to write back into `retry_state` before the loop re-enters.
+fn pk_range_id_from_result(
+    result: &crate::error::Result<TransportResult>,
+) -> Option<PartitionKeyRangeId> {
+    result
+        .as_ref()
+        .ok()
+        .and_then(|tr| tr.cosmos_headers())
+        .and_then(|headers| headers.partition_key_range_id.as_deref())
+        .map(|s| PartitionKeyRangeId::from(s.to_owned()))
+}
+
 /// Converts a final-classified [`TransportResult`] (success or final HTTP
 /// error) into the response shape that `execute_operation_pipeline` would
 /// otherwise return from STAGE 7's `Complete` or `Abort` arms.
@@ -2137,11 +2185,23 @@ pub(crate) enum HedgedRaceResult {
     /// in the failed race) and to drive a future per-region skip-set
     /// the loop will consult when in-hedge retry lands. Today they are
     /// surfaced only via tracing.
+    ///
+    /// `partition_key_range_id` carries the PK-range-id observed by
+    /// either hedge leg (first non-`None` wins). The caller must write
+    /// it back into `retry_state.partition_key_range_id` (if currently
+    /// `None`) before re-entering the loop, otherwise subsequent PPCB
+    /// feedback short-circuits on `partition.is_none()` and the
+    /// partition-level overrides path stays unusable for the rest of
+    /// the operation. `None` here means neither leg's response carried
+    /// the header (e.g. both transports failed before any response, or
+    /// both responses were transient HTTP errors stripped of the
+    /// header).
     BothTransient {
         primary_region: Option<Region>,
         secondary_region: Option<Region>,
         last_error: crate::error::CosmosError,
         diagnostics: DiagnosticsContextBuilder,
+        partition_key_range_id: Option<PartitionKeyRangeId>,
     },
 }
 
@@ -2437,9 +2497,20 @@ async fn execute_hedged(
     // harvest path instead of blocking. The both-transient
     // terminal branches inspect the deadline to choose between
     // [`application_cancelled_error`] and [`transient_outcome_error`].
+    //
+    // Per-leg PK-range-id accumulator. Updated at every classify site
+    // with the first non-`None` id observed across either leg, and
+    // surfaced via `HedgedRaceResult::BothTransient::partition_key_range_id`
+    // so the surrounding loop can populate `retry_state.partition_key_range_id`
+    // before re-entering. Without this, the both-transient fallback
+    // would run all subsequent attempts PK-less and silently break
+    // PPCB attribution (see `pk_range_id_from_result`).
+    let mut captured_pk_range_id: Option<PartitionKeyRangeId> = None;
     match select(primary_attempt, secondary_attempt).await {
         Either::Left(((primary_result, primary_diag), secondary_remaining)) => {
             parent_diagnostics.merge_hedge_attempt(primary_diag);
+            captured_pk_range_id =
+                captured_pk_range_id.or_else(|| pk_range_id_from_result(&primary_result));
             match classify_hedge_result(primary_result) {
                 HedgeClass::Final(tr) => {
                     // Primary won post-threshold; drop secondary.
@@ -2505,6 +2576,8 @@ async fn execute_hedged(
                         return HedgedRaceResult::Terminal(Err(application_cancelled_error()));
                     };
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
+                    captured_pk_range_id =
+                        captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
                     match classify_hedge_result(secondary_result) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
@@ -2550,6 +2623,7 @@ async fn execute_hedged(
                                 primary_region_for_diag.clone(),
                                 secondary_region_for_diag.clone(),
                                 parent_diagnostics,
+                                captured_pk_range_id,
                             )
                         }
                     }
@@ -2558,6 +2632,8 @@ async fn execute_hedged(
         }
         Either::Right(((secondary_result, secondary_diag), primary_remaining)) => {
             parent_diagnostics.merge_hedge_attempt(secondary_diag);
+            captured_pk_range_id =
+                captured_pk_range_id.or_else(|| pk_range_id_from_result(&secondary_result));
             match classify_hedge_result(secondary_result) {
                 HedgeClass::Final(tr) => {
                     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::hedge_won(
@@ -2619,6 +2695,8 @@ async fn execute_hedged(
                         return HedgedRaceResult::Terminal(Err(application_cancelled_error()));
                     };
                     parent_diagnostics.merge_hedge_attempt(primary_diag);
+                    captured_pk_range_id =
+                        captured_pk_range_id.or_else(|| pk_range_id_from_result(&primary_result));
                     match classify_hedge_result(primary_result) {
                         HedgeClass::Final(tr) => {
                             parent_diagnostics.set_hedge_diagnostics(
@@ -2662,6 +2740,7 @@ async fn execute_hedged(
                                 primary_region_for_diag.clone(),
                                 secondary_region_for_diag.clone(),
                                 parent_diagnostics,
+                                captured_pk_range_id,
                             )
                         }
                     }
@@ -2722,9 +2801,17 @@ fn transient_outcome_error(
 /// [`HedgeDiagnostics::UNKNOWN_REGION_SENTINEL`] sentinels used at the
 /// `HedgeDiagnostics` attachment site so the attachment contract
 /// holds even on global-endpoint accounts.
+///
+/// `partition_key_range_id` is the first non-`None` PK-range-id
+/// observed across either leg (accumulated by the caller via
+/// [`pk_range_id_from_result`] at each classify site). Surfaced via
+/// `HedgedRaceResult::BothTransient` so the surrounding failover loop
+/// can write it back to `retry_state.partition_key_range_id` before
+/// re-entering — without it, every subsequent attempt would run
+/// PK-less and silently break PPCB attribution.
 #[allow(
     clippy::too_many_arguments,
-    reason = "All eight values come from `execute_hedged`'s state and \
+    reason = "All nine values come from `execute_hedged`'s state and \
               are passed through to a single helper call site. Bundling \
               them into a struct would add an indirection without \
               improving readability — the two-region pairing (raw / \
@@ -2739,6 +2826,7 @@ fn finalize_both_transient(
     primary_region_for_diag: Region,
     secondary_region_for_diag: Region,
     mut parent_diagnostics: DiagnosticsContextBuilder,
+    partition_key_range_id: Option<PartitionKeyRangeId>,
 ) -> HedgedRaceResult {
     let deadline_was_elapsed = deadline_elapsed(deadline);
     parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
@@ -2772,6 +2860,7 @@ fn finalize_both_transient(
             primary_region,
             secondary_region,
             diagnostics: parent_diagnostics,
+            partition_key_range_id,
         }
     }
 }
