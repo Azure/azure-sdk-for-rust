@@ -33,7 +33,7 @@ use crate::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
         ThroughputControlGroupSnapshot,
     },
-    ActivityId, CosmosResponse, DiagnosticsOptions,
+    ActivityId, CosmosResponse,
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
@@ -375,6 +375,36 @@ impl CosmosDriver {
             .expect("auth is always present when cloned from existing AccountReference")
     }
 
+    /// Builds the shared per-request `DiagnosticsContextBuilder` envelope used by both
+    /// the operation pipeline (`execute_operation_direct` Step 7) and the off-pipeline
+    /// account-properties bootstrap fetch. Returns the builder plus the resolved
+    /// `TransportSecurity` for the endpoint.
+    fn new_diagnostics_envelope(
+        runtime: &CosmosDriverRuntime,
+        activity_id: crate::models::ActivityId,
+        endpoint: &AccountEndpoint,
+    ) -> (DiagnosticsContextBuilder, TransportSecurity) {
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            activity_id,
+            Arc::new(crate::options::DiagnosticsOptions::default()),
+        );
+        diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
+        diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
+        #[cfg(feature = "fault_injection")]
+        if runtime.fault_injection_enabled() {
+            diagnostics.set_fault_injection_enabled(true);
+        }
+        let transport_security =
+            if bool::from(runtime.connection_pool().emulator_server_cert_validation())
+                && is_emulator_host(endpoint)
+            {
+                TransportSecurity::EmulatorWithInsecureCertificates
+            } else {
+                TransportSecurity::Secure
+            };
+        (diagnostics, transport_security)
+    }
+
     /// Fetches account properties using a specific adaptive transport. Off-pipeline by
     /// design (the driver / operation pipeline does not yet exist at bootstrap, nor for
     /// the 5-minute background refresh callback) but still produces a `DiagnosticsContext`
@@ -389,28 +419,13 @@ impl CosmosDriver {
         let endpoint_url = endpoint.join_path("/");
         let cosmos_endpoint = CosmosEndpoint::global(endpoint_url.clone());
 
-        // Build diagnostics. Mirrors `execute_operation` Step 7 — same fields, single
-        // request. `DiagnosticsOptions::default()` matches every other in-driver builder
-        // call site (operation pipeline, retry evaluation, patch handler, transport).
-        let mut diagnostics = DiagnosticsContextBuilder::new(
+        // Off-pipeline envelope: same shape as the operation pipeline's Step 7 so
+        // err.diagnostics() exposes the same fields data-plane callers see.
+        let (mut diagnostics, transport_security) = Self::new_diagnostics_envelope(
+            runtime,
             crate::models::ActivityId::new_uuid(),
-            Arc::new(crate::options::DiagnosticsOptions::default()),
+            &endpoint,
         );
-        diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
-        diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
-        #[cfg(feature = "fault_injection")]
-        if runtime.fault_injection_enabled() {
-            diagnostics.set_fault_injection_enabled(true);
-        }
-
-        let transport_security =
-            if bool::from(runtime.connection_pool().emulator_server_cert_validation())
-                && is_emulator_host(&endpoint)
-            {
-                TransportSecurity::EmulatorWithInsecureCertificates
-            } else {
-                TransportSecurity::Secure
-            };
         let request_handle = diagnostics.start_request(
             ExecutionContext::Initial,
             PipelineType::Metadata,
@@ -1627,32 +1642,14 @@ impl CosmosDriver {
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        // Step 7: Initialize diagnostics
-        let mut diagnostics_builder = DiagnosticsContextBuilder::new(
-            activity_id.clone(),
-            std::sync::Arc::new(DiagnosticsOptions::default()),
-        );
-        diagnostics_builder.set_cpu_monitor(self.runtime.cpu_monitor().clone());
-        diagnostics_builder.set_machine_id(Arc::clone(self.runtime.machine_id()));
-        if self.runtime.fault_injection_enabled() {
-            #[cfg(feature = "fault_injection")]
-            diagnostics_builder.set_fault_injection_enabled(true);
-        }
+        // Step 7: Initialize diagnostics (shared envelope shape with the bootstrap fetch).
+        let (diagnostics_builder, transport_security) =
+            Self::new_diagnostics_envelope(&self.runtime, activity_id.clone(), &endpoint);
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
         } else {
             PipelineType::Metadata
-        };
-        let transport_security = if bool::from(
-            self.runtime
-                .connection_pool()
-                .emulator_server_cert_validation(),
-        ) && is_emulator_host(&endpoint)
-        {
-            TransportSecurity::EmulatorWithInsecureCertificates
-        } else {
-            TransportSecurity::Secure
         };
 
         let user_agent = azure_core::http::headers::HeaderValue::from(
