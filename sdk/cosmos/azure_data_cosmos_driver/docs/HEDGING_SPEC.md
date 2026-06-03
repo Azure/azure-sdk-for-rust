@@ -900,23 +900,39 @@ fn classify(r: Result<CosmosResponse, azure_core::Error>) -> Outcome {
 /// Build the secondary `RoutingDecision` inside `evaluate_transport_result`.
 /// This is what populates `OperationAction::Hedge { secondary_routing }`;
 /// `execute_hedged()` does NOT compute routing.
+///
+/// **Region+endpoint distinctness contract (Phase 1).** The chosen
+/// secondary MUST differ from the resolved primary on BOTH
+/// `region` AND `endpoint_key`. Single-field distinctness is
+/// insufficient: a regional endpoint and its global-account alias may
+/// resolve to the same physical replica even when their `Region`
+/// strings differ, and two different region strings can also alias to
+/// the same TLS endpoint after applicable-region resolution. If no
+/// applicable endpoint satisfies BOTH conditions, this function returns
+/// `None` and the caller falls back to its non-hedged decision (i.e.
+/// `OperationAction::Hedge` is never produced when no distinct
+/// alternate exists). See `hedging_eligibility.rs` for the post-fix
+/// implementation introduced in commit `afb7baeb`.
 fn build_secondary_routing(
     primary: &RoutingDecision,
     user_excluded: &[Region],
     regions: &[Region],
-) -> RoutingDecision {
+) -> Option<RoutingDecision> {
     let mut excluded: Vec<Region> = user_excluded.to_vec();
     for (i, r) in regions.iter().enumerate() {
         if i != /* secondary index */ 1 && !excluded.contains(r) {
             excluded.push(r.clone());
         }
     }
-    RoutingDecision {
+    // Caller has already verified `regions[1]` differs from
+    // `primary.region` AND its endpoint_key differs from
+    // `primary.endpoint_key`; otherwise it returns None upstream.
+    Some(RoutingDecision {
         region: regions[1].clone(),
         excluded_regions: excluded,
         partition_key_range_id: primary.partition_key_range_id.clone(),
         // ... other RoutingDecision fields inherited from primary ...
-    }
+    })
 }
 
 fn decorate(
@@ -1021,6 +1037,34 @@ chain.
    (pre-request vs. post-classification) and are functionally
    equivalent. Operator-visible behavior — the hedge race itself, PPCB
    feedback, and diagnostics attachment — is identical.
+10. **Hedge legs apply LocationEffects symmetrically to the non-hedged
+    path.** Each leg's `TransportResult` is passed through a
+    non-consuming sibling of `evaluate_transport_result` —
+    `retry_evaluation::evaluate_hedge_leg_effects` — and the resulting
+    `Vec<LocationEffect>` is applied via
+    `location_state_store.apply(&effects).await` at each of the four
+    `classify_hedge_result` sites before `execute_hedged()` returns.
+    This restores parity with the non-hedged path: a 503 observed on
+    either leg marks the responsible (partition, endpoint) pair
+    unavailable, a 403/`WriteForbidden` triggers
+    `RefreshAccountProperties`, etc. Without this step, a hedge that
+    races against the non-hedged path could leak transient cluster
+    state by failing to mark a known-bad endpoint. The evaluator is
+    side-effect-free w.r.t. `OperationRetryState` — it only emits
+    effects and returns a separate `observed_session_unavailable`
+    signal consumed by §9.6's cross-hedge latch propagation.
+11. **Cross-hedge 1002 propagation is symmetric.** When either hedge
+    leg observes the four trigger conditions of §9.6.1, the
+    `BothTransient` finalizer surfaces an `observed_session_unavailable: bool`
+    flag back to the pipeline. The pipeline's STAGE 2b / STAGE 7
+    `BothTransient` handlers call `propagate_hedge_session_unavailable`,
+    which idempotently flips the parent `OperationRetryState`'s
+    `hub_region_processing_only` field AND `Release`-stores the same
+    bit on the shared `Arc<AtomicBool>` (§9.6.2). Without this fan-in,
+    the parent operation would re-issue its first post-hedge retry
+    without the hub-region header, paying the discovery cost a second
+    time even though one of the legs already discovered it. See §14.1
+    for the full both-transient state-mutation contract.
 
 ---
 
@@ -1126,7 +1170,9 @@ Each hedged invocation needs its own:
 
 Items shared (via `Arc` or reference):
 - `CosmosOperation` — immutable; body is `Bytes` (cheaply cloneable)
-- `LocationStateStore` — lock-free; multiple readers are safe
+- `LocationStateStore` — lock-free; multiple readers are safe; **both
+  legs apply LocationEffects to the same store** via
+  `evaluate_hedge_leg_effects` (§6.5 invariant #10)
 - `SessionManager` — designed for concurrent access
 - `Credential` — `Arc`-wrapped
 - **Hub-region-processing-only latch** — a single `Arc<AtomicBool>`
@@ -1140,6 +1186,15 @@ Items shared (via `Arc` or reference):
   [azure-cosmos-dotnet-v3 PR #5815][dotnet-pr-5815] via the
   `CrossRegionAvailabilityContext` shared object; the Rust driver
   adopts the equivalent shared signal.
+
+**Alternate-region distinctness.** Per §6.4.1's
+`build_secondary_routing` contract, the alternate must differ from the
+resolved primary on BOTH `region` AND `endpoint_key`. If no applicable
+endpoint satisfies BOTH conditions, the upstream returns no
+`OperationAction::Hedge` and the operation runs through the non-hedged
+path. This guards against the case where a regional endpoint and its
+global-account alias resolve to the same physical replica even though
+their `Region` strings differ.
 
 [pr-4389]: https://github.com/Azure/azure-sdk-for-rust/pull/4389
 [dotnet-pr-5815]: https://github.com/Azure/azure-cosmos-dotnet-v3/pull/5815
@@ -1213,6 +1268,23 @@ regional outage, defeating the hedge's purpose and inflating RU.
 
 This is a **cross-cutting invariant** that any new retry trigger added
 after Phase 1 must respect.
+
+**Relationship to §6.5 invariant #10 (LocationEffects).** Local-only
+*retries* and applying *LocationEffects* are independent contracts:
+
+- A hedge leg MUST NOT re-route to a different region on retry (this
+  section's contract — enforced via `ExcludeRegions`).
+- A hedge leg's `TransportResult` IS applied to the shared
+  `LocationStateStore` via `evaluate_hedge_leg_effects` so that the
+  parent operation (and any sibling operations sharing the same store)
+  observes endpoint-marks and `RefreshAccountProperties` requests
+  identically to the non-hedged path (§6.5 invariant #10).
+
+Effects are applied at the four `classify_hedge_result` sites *after*
+the race resolves, so they neither interfere with the in-flight
+`tokio::select!` nor delay a winning response. The two contracts
+together produce the .NET v3 behavior: *region-pinned legs that
+nonetheless feed the shared availability map.*
 
 ### 8.5 File Layout
 
@@ -1393,6 +1465,31 @@ fn record_hedge_win(
    PPCB module.
 4. **Updates are lock-free / CAS-based.** Matches the existing
    `LocationStateStore` contract (§9.1).
+5. **PK-range-id is captured even when both legs return transient.**
+   `execute_hedged()` peeks at each `TransportResult`'s
+   `CosmosResponseHeaders.partition_key_range_id` via the
+   non-consuming `pk_range_id_from_result` helper at all four
+   `classify_hedge_result` sites and accumulates the first non-`None`
+   id observed across either leg into `captured_pk_range_id`. When
+   the race finalizes as `HedgedRaceResult::BothTransient`, the
+   captured id is threaded through `finalize_both_transient` and
+   written back to `retry_state.partition_key_range_id` at the
+   `BothTransient` handlers (STAGE 2b and STAGE 7) **only when
+   currently `None`**, before `try_advance_after_both_transient`
+   runs. Without this capture, a transient hedge that nonetheless
+   surfaced a real PK-range-id (e.g. a `Gone/PartitionKeyRangeGone`
+   with the partition's actual id in the headers) would lose that
+   identity at the upgrade boundary, forcing a subsequent attempt to
+   re-resolve from scratch. Symmetric to how `evaluate_transport_result`
+   already captures `partition_key_range_id` on the non-hedged path —
+   the hedge race must not regress this signal. Introduced by
+   commit `827abc74d`.
+6. **Hedging-win feedback is in addition to, not in place of,
+   per-leg LocationEffects.** A secondary win still calls
+   `apply_hedge_leg_effects` for each leg's response (per §6.5
+   invariant #10) before invoking `record_hedge_win`. The PPCB
+   counter complements — it does not replace — the immediate
+   per-endpoint marks emitted by `evaluate_hedge_leg_effects`.
 
 **Status:** This contract crosses module boundaries; the exact PPCB
 state transition and threshold constant are out of scope for this
@@ -1595,6 +1692,81 @@ trigger paths or region-fallback edges are introduced.
   cancellation (cf. §14.2) may still observe and CAS-set the shared
   latch — this is benign: `execute_hedged()` has already returned a
   winner, and the next observer of the dropped `Arc` is no one.
+
+#### 9.6.6 Forwarding the upgrade-path retry-state transition
+
+The `OperationAction::Hedge` variant carries a `new_state: OperationRetryState`
+field (added by commit `2bb080d15`) that mirrors the same field on
+`FailoverRetry` and `SessionRetry`. In
+`maybe_upgrade_to_hedge`, when an underlying `FailoverRetry` /
+`SessionRetry` action is rewritten into `Hedge`, the new_state from the
+original action is destructured and forwarded into the rewritten
+`Hedge` variant.
+
+In the STAGE 7 `Hedge` dispatch arm, `new_state` is applied to the
+live `retry_state` via `advance_to_next_attempt` (same shape that
+`FailoverRetry` / `SessionRetry` use today) **before constructing
+`AttemptContext` and calling `execute_hedged`**. Without this step:
+
+- `hub_region_processing_only_initial` (the snapshot read by
+  `apply_hub_region_header` on the next attempt) would lag the latch
+  set by the just-classified 1002, defeating the §9.6.1 cycle bound.
+- `partition_key_range_id` captured by `evaluate_transport_result` on
+  the upgrade-triggering attempt would be discarded, forcing the
+  hedge legs to re-resolve from scratch.
+- The session-token retry counter would not advance, breaking the
+  AC-3 budget exhaustion check in
+  `HUB_REGION_PROCESSING_HEADER_SPEC.md` §7.1.
+
+The STAGE 2b pre-attempt path is unaffected — it never goes through
+`maybe_upgrade_to_hedge`, so its `retry_state` is the unmodified
+initial state.
+
+#### 9.6.7 Cross-hedge propagation on `BothTransient`
+
+The shared `Arc<AtomicBool>` (§9.6.2) handles the *forward*
+propagation: as soon as either leg observes the four-condition 1002
+trigger, both legs' subsequent in-leg retries see the latch via
+`apply_hub_region_header`. But when **both** legs return transient
+(`HedgedRaceResult::BothTransient`) and the operation falls back to the
+non-hedged retry path on the parent `retry_state`, the parent did NOT
+run any of the four-condition checks itself — it merely orchestrated
+the race. Without an explicit fan-in, the parent's first post-hedge
+retry attempt would re-issue WITHOUT the hub-region header, paying the
+discovery cost a second time.
+
+**Mechanism (commit pending — implements S2).**
+`evaluate_hedge_leg_effects` returns a `HedgeLegEvaluation { effects,
+observed_session_unavailable }` struct whose second field is set when
+the four-condition trigger of §9.6.1 would have fired for that leg's
+result and state snapshot. `execute_hedged` accumulates this across
+the four `classify_hedge_result` sites into
+`race_observed_session_unavailable: bool` and surfaces it via the new
+`HedgedRaceResult::BothTransient { observed_session_unavailable, .. }`
+field. The STAGE 2b and STAGE 7 `BothTransient` handlers then call
+`propagate_hedge_session_unavailable(&mut retry_state, observed_session_unavailable)`,
+which idempotently:
+
+1. Sets `retry_state.hub_region_processing_only = true` if it isn't
+   already.
+2. `Release`-stores `true` on `retry_state.shared_hub_region_latch`
+   (the same `Arc<AtomicBool>` the legs were sharing), so any
+   surviving observer (e.g. a sibling operation that obtained a clone)
+   also picks up the signal.
+
+The function is a no-op when `observed_session_unavailable == false`
+or when the latch was already flipped — matching the monotonic 0 → 1
+semantics of the per-state field.
+
+**Why a separate evaluator instead of reusing `evaluate_transport_result`.**
+The non-hedged evaluator consumes the `TransportResult`/`CosmosError`
+when building the `Abort` path. The hedge race cannot consume the
+result — it needs to keep classifying for `Outcome::Final` /
+`Outcome::Transient` and threading the response to the winner. The
+non-consuming `evaluate_hedge_leg_effects` is the minimal mirror:
+same `(operation, endpoint, retry_state, result)` tuple, same
+LocationEffects, plus the new `observed_session_unavailable` signal —
+but no `OperationAction` and no consumption of the underlying error.
 
 ---
 
@@ -2010,6 +2182,43 @@ If both the primary and the alternate return transient errors (e.g., 503
 on both regions), `execute_hedged()` returns the **last** response
 received. The retry logic within each pipeline invocation will have
 already attempted retries before surfacing the error.
+
+**State-mutation contract.** The `HedgedRaceResult::BothTransient`
+finalizer is the seam where the parent operation's `retry_state`
+absorbs everything the hedge race learned, so the next retry attempt
+on the parent `retry_state` behaves identically to a non-hedged
+attempt that observed the same conditions. Specifically:
+
+1. **LocationEffects (§6.5 #10).** Both legs' results have already
+   been routed through `evaluate_hedge_leg_effects` and applied via
+   `location_state_store.apply()` at their respective
+   `classify_hedge_result` sites. No additional apply happens at the
+   `BothTransient` boundary — the marks are already live in the
+   shared store by the time the race terminates.
+2. **Hub-region 1002 latch (§9.6.7).** The
+   `observed_session_unavailable` bool surfaced through
+   `BothTransient` is passed to `propagate_hedge_session_unavailable`,
+   which flips `retry_state.hub_region_processing_only` and
+   `Release`-stores `true` on the shared `Arc<AtomicBool>` so the
+   parent's next attempt emits the header.
+3. **PK-range-id capture (§9.5 invariant #5).** The
+   `partition_key_range_id` captured non-consumingly from either
+   leg's `CosmosResponseHeaders` is written into
+   `retry_state.partition_key_range_id` **only when currently
+   `None`**, before `try_advance_after_both_transient` runs. This
+   matches the capture the non-hedged path performs in
+   `evaluate_transport_result`.
+4. **Retry-counter accounting.** The retry counters on the parent
+   `retry_state` advance via `try_advance_after_both_transient`
+   exactly as they would for a single failed attempt. The race does
+   not double-charge; each leg's own per-leg retries (§8.4) consumed
+   that leg's budget, and the parent counts the race as one logical
+   attempt.
+
+After this fan-in, control returns to the normal pipeline loop in
+`execute_operation_pipeline` and the next attempt re-evaluates eligibility
+(hedge again, plain attempt, or abort) based on the now-updated
+`retry_state`.
 
 ### 14.2 Primary Succeeds After the Alternate Hedge Launched
 
