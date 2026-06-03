@@ -5,7 +5,7 @@
 
 [package]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.9.0"
+version = "0.10.0"
 description = "Azure Event Hubs checkpoint store implementation using Azure Blob Storage"
 readme = "README.md"
 license.workspace = true
@@ -21,7 +21,7 @@ rust-version.workspace = true
 [dependencies]
 async-trait.workspace = true
 azure_core.workspace = true
-azure_messaging_eventhubs = { path = "../azure_messaging_eventhubs", version = "0.15.0" }
+azure_messaging_eventhubs = { path = "../azure_messaging_eventhubs", version = "0.16.0" }
 azure_storage_blob.workspace = true
 futures.workspace = true
 serde = { workspace = true, features = ["derive"] }
