@@ -2,21 +2,8 @@
 // Licensed under the MIT License.
 // cspell:ignore serviceunavailable
 
-//! Integration coverage for account-metadata (`GET /`) fault behavior tested
-//! against the local emulator via fault injection.
-//!
-//! The account-metadata endpoint is hit on every client startup and every few
-//! minutes for the lifetime of every long-running process (background refresh
-//! loop), but it has no fault-injection coverage in the rest of the suite.
-//! The companion coverage for `MetadataPartitionKeyRanges` lives in
-//! `driver_partition_failover.rs`; this file mirrors that pattern but
-//! targets `FaultOperationType::MetadataReadDatabaseAccount` instead.
-//!
-//! This is the end-to-end emulator-level complement to the in-process unit
-//! test `fetch_account_properties_surfaces_5xx_body_as_status_error` in
-//! `src/driver/cosmos_driver.rs`: that one drives the parser directly with
-//! a scripted transport, while this one exercises the real fault-injecting
-//! HTTP client factory wired into the runtime.
+//! Emulator-level fault-injection coverage for the account-metadata (GET /) endpoint.
+//! Complements the in-process unit tests in `src/driver/cosmos_driver.rs`.
 
 #![cfg(feature = "fault_injection")]
 
@@ -25,29 +12,12 @@ use azure_data_cosmos_driver::fault_injection::*;
 use std::error::Error;
 use std::sync::Arc;
 
-/// Verifies that when `GET /` (the account-metadata endpoint) returns a
-/// persistent 503 with an error body, the surfaced error reflects the upstream
-/// HTTP status — it must NOT be relabeled as a
-/// `SERIALIZATION_RESPONSE_BODY_INVALID` (500.20020) `missing field \`_self\``
-/// serde failure.
-///
-/// This is the integration-level mirror of the in-process unit test
-/// `fetch_account_properties_surfaces_5xx_body_as_status_error` in
-/// `src/driver/cosmos_driver.rs`.
-///
-/// Run locally with:
-///
-/// ```sh
-/// cargo test -p azure_data_cosmos_driver \
-///   account_metadata_503_surfaces_as_status_error \
-///   --features fault_injection \
-///   -- --nocapture
-/// ```
+/// Persistent 503 on GET / must surface as upstream HTTP status — never relabeled as
+/// `SERIALIZATION_RESPONSE_BODY_INVALID` ("missing field `_self`").
 #[tokio::test]
 pub async fn account_metadata_503_surfaces_as_status_error() -> Result<(), Box<dyn Error>> {
-    // Inject a persistent 503 on ALL MetadataReadDatabaseAccount requests so
-    // that the very first call (driven by `get_or_create_driver` → account
-    // properties cache miss → `fetch_account_properties`) hits the fault.
+    // Persistent 503 on every MetadataReadDatabaseAccount so the first lazy fetch
+    // (via get_or_create_driver) hits the fault.
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::MetadataReadDatabaseAccount)
         .build();
@@ -64,27 +34,20 @@ pub async fn account_metadata_503_surfaces_as_status_error() -> Result<(), Box<d
     );
     let rules = vec![Arc::clone(&rule)];
 
-    // Use `run_with_fault_injection` (not the `_unique_db_` variant) so the
-    // harness does NOT preemptively create a database before our closure
-    // runs — we need to be the ones who first trigger the lazy account
-    // metadata fetch so we can inspect the resulting error directly.
+    // Use the variant without `_unique_db_`: the harness must NOT preemptively create
+    // a database before our closure runs — we need to drive the first lazy fetch.
     DriverTestClient::run_with_fault_injection(rules, async |context| {
         let db_name = context.unique_database_name();
 
-        // The first operation against the driver triggers the lazy account
-        // properties fetch via `runtime.get_or_create_driver(...)`. With the
-        // persistent 503 fault active, that fetch must fail with an upstream
-        // HTTP-status error — NOT a serde "missing field `_self`" error.
+        // First op on the driver triggers the lazy account-properties fetch via
+        // get_or_create_driver. Under a persistent 503 it must surface upstream HTTP status.
         let err = context.create_database(&db_name).await.expect_err(
             "create_database must fail when GET / is faulted with a persistent 503; \
                  the account-metadata fetch is the first network call and cannot succeed",
         );
 
-        // The harness wraps the typed error in `Box<dyn Error>`, so we
-        // inspect its Display/Debug representations for the bug signature.
-        // The existing scripted-transport unit test asserts on the typed
-        // error directly; this one asserts on the user-visible string shape
-        // that customers will see in logs.
+        // Harness wraps the typed error in Box<dyn Error>; inspect Display/Debug for the bug
+        // signature (the scripted-transport unit test asserts on the typed error directly).
         let rendered = format!("{err:?} | {err}");
 
         assert!(

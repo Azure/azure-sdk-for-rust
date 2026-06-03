@@ -1,37 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Integration coverage for Step 2 multi-region failover, exercised via fault
-//! injection at the HTTP transport layer.
-//!
-//! Two flavors of test live in this file:
-//!
-//! 1. **Metadata-path error-shape tests** — install a persistent fault on
-//!    `MetadataReadDatabaseAccount` and assert that the surfaced error
-//!    preserves the upstream HTTP status (and is NOT relabeled as a
-//!    `missing field \`_self\`` serde failure / synthetic
-//!    `SERIALIZATION_RESPONSE_BODY_INVALID`). These guard the account-
-//!    metadata parser invariant.
-//! 2. **Data-plane region-scoped failover tests** — install a fault scoped to
-//!    a single region on a customer-data operation (`CreateItem` / `ReadItem`)
-//!    with a finite `hit_limit`, then assert that the driver retried the
-//!    operation against a different region and the request eventually
-//!    succeeded.
-//!
-//! Both flavors are gated on:
-//!   * `feature = "fault_injection"` — to install transport-level fault rules
-//!     into the runtime via `CosmosDriverRuntime::builder().with_fault_injection_rules(...)`.
-//!   * Environment variables — the assertions about region failover only
-//!     have meaning against a real multi-region Cosmos topology. Each test
-//!     skips cleanly (with a stderr notice) when its prerequisites are not
-//!     provisioned; that keeps them green in CI today while still running
-//!     locally once an operator points the env at a real account.
-//!
-//! Deeper Step-8 assertions about internal state-machine effects
-//! (`RefreshAccountProperties`, `MarkEndpointUnavailable`, etc.) require
-//! observability hooks that do not yet exist on `CosmosDriver`; once those
-//! land, each test can be extended in place without changing its
-//! fault-injection setup.
+//! Integration coverage for multi-region failover via HTTP-transport fault injection.
+//! Gated on `feature = "fault_injection"` + env vars; tests skip cleanly when prereqs are absent.
 
 #![cfg(feature = "fault_injection")]
 
@@ -62,19 +33,8 @@ fn build_account_from_env() -> Option<AccountReference> {
     Some(AccountReference::with_master_key(url, key))
 }
 
-/// Builds an `AccountReference` authenticated via `DeveloperToolsCredential`
-/// (az login / azd login chain) for AAD-token coverage. Returns `None` if
-/// `AZURE_COSMOS_ENDPOINT` is unset OR the credential chain cannot be
-/// constructed in this environment.
-///
-/// Closes a long-standing test-coverage gap: every existing Cosmos
-/// integration test authenticates with master keys, which are HMAC-signed
-/// locally and never validated against AAD. The entire AAD-token error path
-/// (401 InvalidToken on token expiry, 403 from delayed RBAC propagation,
-/// 403 from data-plane RBAC misconfiguration, 503 from metadata-service
-/// hiccups during token acquisition) is therefore never exercised in CI —
-/// which is exactly the shape of the production account-metadata failures
-/// real customers see.
+/// `AccountReference` using `DeveloperToolsCredential` (az login chain) for AAD-token coverage.
+/// Returns `None` if `AZURE_COSMOS_ENDPOINT` is unset or no credential chain is available.
 fn build_account_with_token_credential_from_env() -> Option<AccountReference> {
     let endpoint = read_env("AZURE_COSMOS_ENDPOINT")?;
     let url = url::Url::parse(&endpoint).ok()?;
@@ -82,24 +42,8 @@ fn build_account_with_token_credential_from_env() -> Option<AccountReference> {
     Some(AccountReference::with_credential(url, credential))
 }
 
-/// Bundle of everything a data-plane region-scoped failover test needs:
-/// authenticated account, resolved container, partition-key value to use
-/// for the test item, and the `Region` the fault should be scoped to (i.e.
-/// the region the driver should *fail away from*).
-///
-/// Returns `None` (skip cleanly) if any of the required environment
-/// variables are unset, so the test exits as a pass in CI until an operator
-/// provisions a real multi-region account and points the env at it.
-///
-/// Required env vars:
-///   * `AZURE_COSMOS_ENDPOINT`, `AZURE_COSMOS_KEY` — account + auth
-///   * `AZURE_COSMOS_TEST_DATABASE` — pre-provisioned test database
-///   * `AZURE_COSMOS_TEST_CONTAINER` — pre-provisioned container inside it
-///   * `AZURE_COSMOS_TEST_PARTITION_KEY` — partition-key value to use for
-///     created/read items
-///   * `AZURE_COSMOS_TEST_REGION` — the region name the fault should be
-///     scoped to (e.g. `"East US"`). Must match a region in the account's
-///     account-properties payload.
+/// Account, container, partition-key value, and the region the fault should be scoped to.
+/// Env: ENDPOINT, KEY, TEST_DATABASE, TEST_CONTAINER, TEST_PARTITION_KEY, TEST_REGION.
 struct DataPlaneEnv {
     account: AccountReference,
     db_name: String,
@@ -123,24 +67,8 @@ fn build_data_plane_env() -> Option<DataPlaneEnv> {
     })
 }
 
-/// Installs a persistent fault that returns the given error type on every
-/// `MetadataReadDatabaseAccount` request (i.e. on `GET /`, the account
-/// properties endpoint).
-///
-/// `MetadataReadDatabaseAccount` is the right injection point for the
-/// account-metadata error-shape tests because:
-///   1. It fires unconditionally on `get_or_create_driver`, so the fault is
-///      guaranteed to be exercised regardless of which data-plane op runs
-///      afterward.
-///   2. It targets the exact endpoint behind the parser invariant under
-///      test, so the assertion that the error surfaces as an HTTP-status
-///      error (not a serde `missing field \`_self\`` failure) gives us the
-///      highest-value coverage per test.
-///
-/// `read_database` itself does not currently map to a `FaultOperationType`
-/// (see `FaultOperationType::from_operation_and_resource` in
-/// `src/fault_injection/mod.rs`) so we cannot target the data-plane request
-/// directly with an operation-type filter today.
+/// Persistent fault on every `MetadataReadDatabaseAccount` (GET /) request.
+/// Fires unconditionally on `get_or_create_driver`, regardless of the data-plane op that follows.
 fn build_account_metadata_fault_rule(
     id: &str,
     error_type: FaultInjectionErrorType,
@@ -161,23 +89,8 @@ fn build_account_metadata_fault_rule(
     )
 }
 
-/// Region-scoped, hit-limited fault on a customer-data operation.
-///
-/// Unlike `build_account_metadata_fault_rule` — which targets the metadata
-/// endpoint globally and persists indefinitely — this builder produces a
-/// rule that:
-///   * Targets a single data-plane operation type (e.g. `CreateItem`).
-///   * Is scoped to a single region via `with_region`, so requests routed to
-///     other regions are *not* faulted.
-///   * Has a finite `hit_limit`, so once the driver exhausts that many
-///     failed attempts in the faulted region the rule stops firing — any
-///     subsequent attempt against a different region will hit the real
-///     endpoint and succeed.
-///
-/// This is the precise shape needed to verify cross-region failover:
-/// `rule.hit_count() >= 1` proves the fault fired in the chosen region, and
-/// the operation's eventual `Ok` proves the driver successfully retried
-/// against a region where the fault was not in effect.
+/// Region-scoped, hit-limited fault on a data-plane op (e.g. `CreateItem`).
+/// After `hit_limit` failures in the target region, attempts in other regions hit the real endpoint.
 fn build_region_scoped_data_plane_fault_rule(
     id: &str,
     operation_type: FaultOperationType,
@@ -203,19 +116,8 @@ fn build_region_scoped_data_plane_fault_rule(
     )
 }
 
-/// Asserts that the surfaced error from a faulted `GET /` preserves the
-/// upstream HTTP status from the injected fault — i.e. it is NOT wrapped as
-/// the synthetic `SERIALIZATION_RESPONSE_BODY_INVALID` (500/20020) that the
-/// pre-fix account-metadata path produced when the body failed to deserialize
-/// as `AccountProperties`. That wrapping was the precise bug shape under
-/// fix here: any non-2xx body (whether plain text or a Cosmos JSON error
-/// envelope missing `_self`) would surface as a generic serialization
-/// failure instead of the upstream status.
-///
-/// Checking `status.status_code()` (and the sub-status when the fault sets
-/// one) is structurally precise — it does not depend on `Display` text or
-/// the exact body shape the fault injector chose to emit, both of which
-/// could change without changing the user-observable behavior under test.
+/// Asserts the error preserves the upstream HTTP status and is NOT relabeled as
+/// `SERIALIZATION_RESPONSE_BODY_INVALID` — the pre-fix bug shape for non-2xx bodies.
 fn assert_preserves_upstream_status(
     err: &CosmosError,
     expected_status: StatusCode,
@@ -252,11 +154,8 @@ async fn build_runtime_with_rule(rule: &Arc<FaultInjectionRule>) -> Arc<CosmosDr
         .expect("runtime should be created")
 }
 
-/// Runs the canonical "metadata fault preserves upstream status" assertion
-/// chain: install a persistent fault of `error_type` on
-/// `MetadataReadDatabaseAccount`, call `get_or_create_driver`, and assert
-/// the surfaced error preserves `(expected_status, expected_sub_status)`
-/// and the rule actually fired.
+/// Installs a persistent metadata fault, calls `get_or_create_driver`, and asserts the surfaced
+/// error preserves `(expected_status, expected_sub_status)` and the rule fired at least once.
 async fn run_metadata_fault_test(
     account: AccountReference,
     rule_id: &str,
@@ -284,9 +183,8 @@ fn make_item_body(id: &str, pk_value: &str) -> Vec<u8> {
     format!(r#"{{"id":"{}","pk":"{}"}}"#, id, pk_value).into_bytes()
 }
 
-/// Seeds an item under a clean runtime (no fault rules) so subsequent
-/// faulted-read tests have something to find. Panics on any failure —
-/// the seed must succeed before the test's read assertion is meaningful.
+/// Seeds an item under a clean (unfaulted) runtime so a later faulted-read test has something to find.
+/// Panics on any failure — the seed must succeed before the read assertion is meaningful.
 async fn seed_item(env: &DataPlaneEnv, id: &str) {
     let runtime = CosmosDriverRuntime::builder()
         .build()
@@ -312,13 +210,8 @@ async fn seed_item(env: &DataPlaneEnv, id: &str) {
         .expect("seed create_item must succeed before exercising the read fault");
 }
 
-/// Behavioral coverage for the WriteForbidden (403/3) error path on the
-/// account-metadata endpoint.
-///
-/// Injects a persistent 403 WriteForbidden on `GET /` and asserts that
-/// `get_or_create_driver` surfaces the upstream HTTP status — not a serde
-/// failure — to the caller. This pins the per-error-type slice of the
-/// account-metadata parser invariant for the WriteForbidden envelope.
+/// 403 WriteForbidden on GET / must surface as upstream HTTP status, not a serde failure.
+/// Pins the per-error-type slice of the account-metadata parser invariant.
 #[tokio::test]
 async fn write_forbidden_on_metadata_preserves_upstream_status() {
     let Some(account) = build_account_from_env() else {
@@ -338,13 +231,8 @@ async fn write_forbidden_on_metadata_preserves_upstream_status() {
     .await;
 }
 
-/// Behavioral coverage for the ReadSessionNotAvailable (404/1002) error
-/// path on the account-metadata endpoint.
-///
-/// Injects a persistent 404/1002 on `GET /` and asserts that
-/// `get_or_create_driver` surfaces the upstream HTTP status — not a serde
-/// failure. This pins the per-error-type slice of the account-metadata
-/// parser invariant for the ReadSessionNotAvailable envelope.
+/// 404/1002 ReadSessionNotAvailable on GET / must surface as upstream HTTP status, not a serde failure.
+/// Pins the per-error-type slice of the account-metadata parser invariant.
 #[tokio::test]
 async fn session_not_available_on_metadata_preserves_upstream_status() {
     let Some(account) = build_account_from_env() else {
@@ -364,40 +252,8 @@ async fn session_not_available_on_metadata_preserves_upstream_status() {
     .await;
 }
 
-/// AAD-credential + fault-injection coverage.
-///
-/// Drives `get_or_create_driver` against a real Cosmos endpoint using
-/// `DeveloperToolsCredential` (so the AAD token-acquisition + bearer-auth
-/// pipeline runs end-to-end) while a persistent `ServiceUnavailable` (503)
-/// fault is injected on `MetadataReadDatabaseAccount`.
-///
-/// Asserts:
-///   * `get_or_create_driver` returns `Err` (the metadata fetch cannot
-///     complete under a persistent 503).
-///   * The surfaced error reflects the upstream HTTP 503 — it must NOT be
-///     relabeled as a `missing field \`_self\`` serde failure.
-///   * The fault rule was actually exercised (`hit_count() > 0`), so we know
-///     the test really did drive the fault-injecting HTTP client.
-///
-/// Every other Cosmos integration test in this repo authenticates with
-/// master keys, which are HMAC-signed locally and never validated against
-/// AAD. The entire AAD-token error path (token-acquisition hiccups, 401
-/// `InvalidToken`, 403 RBAC propagation, 503 from IMDS) is therefore never
-/// exercised in CI — and that is exactly the shape of the production
-/// account-metadata failures real customers see.
-///
-/// The test skips cleanly with a stderr notice when either
-/// `AZURE_COSMOS_ENDPOINT` is unset or no `DeveloperToolsCredential` chain can
-/// be constructed in the current environment, so it stays green in CI until
-/// those prerequisites are provisioned. Run locally with:
-///
-/// ```sh
-/// AZURE_COSMOS_ENDPOINT=... \
-///   cargo test -p azure_data_cosmos_driver \
-///   aad_token_credential_account_metadata_smoke_test \
-///   --features fault_injection \
-///   -- --nocapture
-/// ```
+/// AAD smoke: drives `get_or_create_driver` under `DeveloperToolsCredential` with a persistent 503 fault.
+/// Closes the AAD-coverage gap — every other Cosmos integration test in this repo uses HMAC master keys only.
 #[tokio::test]
 async fn aad_token_credential_account_metadata_smoke_test() {
     let Some(account) = build_account_with_token_credential_from_env() else {
@@ -417,28 +273,8 @@ async fn aad_token_credential_account_metadata_smoke_test() {
     .await;
 }
 
-/// Behavioral coverage for cross-region failover on a region-local
-/// WriteForbidden (403/3) fault.
-///
-/// Injects a `WriteForbidden` fault scoped to a single region on
-/// `CreateItem`, with a finite `hit_limit` so once the driver exhausts that
-/// many attempts in the faulted region it can succeed against a different
-/// region. Asserts:
-///
-///   1. The fault was actually exercised in the chosen region
-///      (`rule.hit_count() >= 1`).
-///   2. The operation eventually succeeded (`result.is_ok()`), which proves
-///      the driver retried against a region where the fault was not in
-///      effect — i.e. it performed cross-region failover.
-///
-/// This complements the metadata-path error-shape tests above: those guard
-/// the parser invariant, this one guards the cross-region retry behavior
-/// the driver is supposed to apply on a 403/3 from the data plane.
-///
-/// Deeper assertions about internal effects (`RefreshAccountProperties`,
-/// `MarkEndpointUnavailable`) require observability hooks that do not yet
-/// exist on `CosmosDriver`; once those land, the test can be extended in
-/// place without changing its fault-injection setup.
+/// Region-scoped 403/3 fault on CreateItem with a hit limit; asserts the rule fired and the op
+/// eventually succeeded — proving the driver re-routed to a region where the fault was not in effect.
 #[tokio::test]
 async fn write_forbidden_triggers_refresh_and_failover() {
     let Some(env) = build_data_plane_env() else {
@@ -457,9 +293,7 @@ async fn write_forbidden_triggers_refresh_and_failover() {
         FaultOperationType::CreateItem,
         env.fault_region.clone(),
         FaultInjectionErrorType::WriteForbidden,
-        // 3 region-local failures is enough to prove the driver re-routes:
-        // once the limit is exhausted, the next attempt routes elsewhere and
-        // can succeed.
+        // 3 failures in the faulted region; the next attempt routes elsewhere.
         3,
     );
 
@@ -505,20 +339,8 @@ async fn write_forbidden_triggers_refresh_and_failover() {
     );
 }
 
-/// Behavioral coverage for the cross-region session-retry path.
-///
-/// Injects a `ReadSessionNotAvailable` fault scoped to a single region on
-/// `ReadItem`, with a finite `hit_limit`. Asserts:
-///
-///   1. The fault was actually exercised in the chosen region
-///      (`rule.hit_count() >= 1`).
-///   2. The read eventually succeeded (`result.is_ok()`), which proves the
-///      driver advanced to the next preferred region after the session
-///      retry was exhausted in the faulted region.
-///
-/// The test first seeds an item (no fault rule in scope for the seed) and
-/// then reads it back under the region-scoped fault, so a successful read
-/// against the failover region is unambiguous.
+/// Region-scoped 404/1002 fault on ReadItem with a hit limit, after seeding the item on a clean runtime.
+/// Asserts the rule fired and the read succeeded — proving cross-region session retry advanced.
 #[tokio::test]
 async fn session_not_available_retries_across_locations() {
     let Some(env) = build_data_plane_env() else {
@@ -531,10 +353,7 @@ async fn session_not_available_retries_across_locations() {
         return;
     };
 
-    // Seed an item under a clean runtime (no fault) so the read below has
-    // something to find. This also exercises the create path against the
-    // unfaulted account so failures here are not silently misattributed to
-    // failover behavior on the read.
+    // Seed an item under a clean runtime so the faulted read has something to find.
     let seed_id = format!("failover-read-{}", Uuid::new_v4());
     seed_item(&env, &seed_id).await;
 

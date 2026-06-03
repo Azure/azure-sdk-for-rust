@@ -368,11 +368,8 @@ impl CosmosDriver {
             .expect("auth is always present when cloned from existing AccountReference")
     }
 
-    /// Fetches account properties using a specific adaptive transport.
-    ///
-    /// This off-pipeline fetch can attach wire payload internally for cache and
-    /// test assertions, but it does not have a diagnostics context to promote
-    /// errors to externally visible `response()` / `diagnostics()` values.
+    /// Fetches account properties using a specific adaptive transport. Off-pipeline:
+    /// attaches wire payload but has no diagnostics context for `response()` / `diagnostics()`.
     async fn fetch_account_properties_with_transport(
         transport: &super::transport::adaptive_transport::AdaptiveTransport,
         account: &AccountReference,
@@ -412,15 +409,10 @@ impl CosmosDriver {
         })?;
         let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
 
-        // Gate parsing on HTTP status. Without this guard, non-2xx bodies
-        // (5xx envelopes, AAD 401/403, proxy text) would feed serde and surface
-        // as `SERIALIZATION_RESPONSE_BODY_INVALID` (500/20020), losing the
-        // upstream status. Mirror the data-plane pipeline: parse only on
-        // `is_success()`; otherwise propagate `(status, sub_status, headers,
-        // body)` verbatim.
+        // Gate parsing on HTTP status. Non-2xx bodies (5xx envelopes, AAD 401/403, proxy text)
+        // would otherwise serde-fail and surface as `SERIALIZATION_RESPONSE_BODY_INVALID`.
         let status_code = azure_core::http::StatusCode::from(response.status);
-        // 3xx responses are treated as non-success here; redirect following, if
-        // any, belongs to the transport layer below this response interpreter.
+        // 3xx is treated as non-success; redirect following is the transport's responsibility.
         if !status_code.is_success() {
             let cosmos_status =
                 crate::error::CosmosStatus::from_parts(status_code, cosmos_headers.substatus);
@@ -1691,10 +1683,8 @@ impl CosmosDriver {
         Ok(resolved.as_ref().clone())
     }
 
-    /// Resolves a container by database RID and container RID.
-    ///
-    /// Attempts to resolve from `ContainerCache` first. On cache miss, fetches
-    /// metadata from the service and populates the cache.
+    /// Resolves a container by database RID and container RID. Resolves from `ContainerCache`
+    /// first; on miss, fetches metadata from the service and populates the cache.
     pub async fn resolve_container_by_rid(
         &self,
         db_rid: &str,
@@ -1993,9 +1983,8 @@ mod tests {
         Success,
         Http2Incompatible,
         ConnectionError,
-        /// Verbatim 503 body the gateway can return: a Cosmos-flavored JSON
-        /// error envelope (no `_self` field). Without status-gated parsing the
-        /// driver would relabel it as a deserialization failure.
+        /// 503 body the gateway returns under load (Cosmos-flavored JSON, no `_self`).
+        /// Without status-gating the driver would relabel it as a deserialization failure.
         ServiceUnavailable503,
     }
 
@@ -2875,21 +2864,8 @@ mod tests {
         assert!(result.is_err(), "should fail without previous props");
     }
 
-    /// Regression test for the account-metadata 5xx-as-serde bug.
-    ///
-    /// Without status-gated parsing, `fetch_account_properties_with_transport`
-    /// would feed the raw response body to
-    /// `serde_json::from_slice::<AccountProperties>` without inspecting
-    /// `response.status`. Any non-2xx JSON envelope (e.g. the
-    /// 503 `{"code":"ServiceUnavailable",...}` body returned by an extension
-    /// that is still starting, or an AAD 401/403 envelope in prod) trips
-    /// serde with `missing field \`_self\`` and gets relabeled as
-    /// [`CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID`] (HTTP 500,
-    /// sub-status 20020), so the customer never sees the real upstream status.
-    ///
-    /// This test pins the post-fix invariant: the surfaced error reflects the
-    /// upstream HTTP status (`StatusCode::ServiceUnavailable`, 503) and is NOT
-    /// a `SERIALIZATION_RESPONSE_BODY_INVALID` deserialize error.
+    /// Regression: 503 with a Cosmos error envelope must surface as upstream HTTP status,
+    /// not relabeled as `SERIALIZATION_RESPONSE_BODY_INVALID` ("missing field `_self`").
     #[tokio::test]
     async fn fetch_account_properties_surfaces_5xx_body_as_status_error() {
         let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
@@ -2943,38 +2919,11 @@ mod tests {
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Account-metadata 5xx/4xx coverage-gap tests.
-    //
-    // The regression test above (`fetch_account_properties_surfaces_5xx_
-    // body_as_status_error`) pins the verbatim 503 body shape. The tests below
-    // exercise the *other* non-2xx shapes the status-gating fix has to handle
-    // correctly:
-    //
-    //   * 401 with an AAD-style JSON envelope (the production trigger for
-    //     RBAC-propagation / token-expiry / IMDS hiccups).
-    //   * 502 with a plain-text upstream-proxy body (LB / sidecar fault
-    //     injectors emit these — they are not JSON at all, so they used to
-    //     produce a particularly opaque `expected value at line 1 column 1`
-    //     serde error).
-    //   * Empty body on a non-2xx (some intermediaries strip bodies entirely).
-    //   * Body larger than the R6 truncation threshold (asserts the
-    //     `…[truncated]` suffix from the error builder).
-    //   * Successful 2xx whose body is not `AccountProperties` (regression
-    //     guard for the *other* branch — the fix must not change behavior
-    //     here; the surfaced error must remain
-    //     `SERIALIZATION_RESPONSE_BODY_INVALID`).
-    //
-    // The 2xx happy path is exercised transitively by the many existing
-    // tests in this module that drive `runtime.get_or_create_driver(...)`
-    // through `ScriptedFactory::new([ResponsePlan::Success, ...])`, so it is
-    // not re-asserted here.
-    // ─────────────────────────────────────────────────────────────────────
+    // Coverage for the other non-2xx shapes the status-gating fix must handle: AAD 401
+    // envelopes, plain-text proxy bodies, empty bodies, oversize bodies, and 2xx schema mismatches.
 
-    /// Minimal `TransportClient` that returns a single canned `(status, body)`
-    /// regardless of the request. Lets each coverage-gap test below declare
-    /// the exact wire response it needs without growing the shared
-    /// `ResponsePlan` enum.
+    /// Minimal `TransportClient` returning one canned `(status, body)`.
+    /// Lets each coverage-gap test declare its exact wire response without growing `ResponsePlan`.
     #[derive(Debug)]
     struct RawResponseClient {
         status: u16,
@@ -3008,13 +2957,8 @@ mod tests {
             .await
     }
 
-    /// Coverage gap: AAD 401 envelope on the account-metadata path (the
-    /// production trigger for RBAC propagation races, token expiry, IMDS
-    /// hiccups).
-    ///
-    /// Asserts the surfaced status is upstream HTTP 401 — not the synthetic
-    /// `SERIALIZATION_RESPONSE_BODY_INVALID` — and the `missing field
-    /// \`_self\`` serde detail does not leak into the user-visible error.
+    /// AAD 401 envelope on GET / (RBAC race / token expiry / IMDS hiccup) must surface
+    /// upstream HTTP 401, not the synthetic `SERIALIZATION_RESPONSE_BODY_INVALID`.
     #[tokio::test]
     async fn fetch_account_properties_surfaces_aad_401_envelope() {
         let body =
@@ -3043,11 +2987,8 @@ mod tests {
         );
     }
 
-    /// Coverage gap: non-2xx response whose body is plain text (no JSON at
-    /// all). Upstream LBs / sidecar proxies / in-process fault injectors
-    /// frequently emit these. Before the fix they tripped serde with
-    /// `expected value at line 1 column 1` — an opaque shape that masked
-    /// the real upstream status just as severely as the JSON-envelope case.
+    /// Plain-text non-2xx body (proxy / LB / fault injector) must surface upstream HTTP status,
+    /// not the opaque "expected value at line 1 column 1" serde error.
     #[tokio::test]
     async fn fetch_account_properties_surfaces_plain_text_non_2xx_body() {
         let err = drive_fetch_with(502, b"Bad Gateway - injected upstream proxy fault".to_vec())
@@ -3075,9 +3016,8 @@ mod tests {
         );
     }
 
-    /// Coverage gap: empty body on a non-2xx (some intermediaries strip the
-    /// body entirely). The fix must not panic on the empty slice and must
-    /// still surface the upstream status.
+    /// Empty body on a non-2xx (some intermediaries strip bodies entirely) must not panic
+    /// and must still surface the upstream HTTP status.
     #[tokio::test]
     async fn fetch_account_properties_surfaces_empty_non_2xx_body() {
         let err = drive_fetch_with(503, Vec::new())
@@ -3099,14 +3039,11 @@ mod tests {
         );
     }
 
-    /// Coverage gap (R6 — `should`): body excerpts in the error message
-    /// must be truncated at 512 bytes with a `…[truncated]` suffix so the
-    /// 5-minute background refresh loop (PR #4407) cannot flood logs with
-    /// arbitrarily large upstream bodies on a sustained outage.
+    /// Body excerpts must be truncated at 512 bytes with `…[truncated]` so the 5-minute
+    /// background refresh loop cannot flood logs on a sustained outage.
     #[tokio::test]
     async fn fetch_account_properties_truncates_large_non_2xx_body() {
-        // 600 bytes of `A` then a sentinel that MUST NOT appear in the
-        // rendered error message (it lives past the 512-byte cutoff).
+        // 600 bytes of `A` then a sentinel past the 512-byte cutoff that must not render.
         let mut body = vec![b'A'; 600];
         body.extend_from_slice(b"SHOULD_BE_TRUNCATED_AWAY");
         let err = drive_fetch_with(500, body.clone())
@@ -3130,9 +3067,8 @@ mod tests {
         );
     }
 
-    /// Regression guard for UTF-8 body excerpts: a multi-byte codepoint may
-    /// straddle byte 512, so truncation must operate on bytes before lossy
-    /// UTF-8 conversion instead of slicing the resulting `str` by byte index.
+    /// Multi-byte codepoints may straddle byte 512; truncation must operate on bytes
+    /// before lossy UTF-8 conversion (not slice the str by byte index).
     #[tokio::test]
     async fn fetch_account_properties_truncates_non_ascii_body_without_panicking() {
         let mut body = vec![b'A'; 511];
@@ -3154,12 +3090,8 @@ mod tests {
         );
     }
 
-    /// Regression guard for the *other* branch: a 2xx whose body is valid
-    /// JSON but not the `AccountProperties` shape must continue to surface
-    /// as `SERIALIZATION_RESPONSE_BODY_INVALID` — the status-gating fix
-    /// must NOT swallow legitimate schema mismatches as upstream errors.
-    /// Also verifies the parse-failure branch still attaches the response
-    /// headers (per R3) by checking the error carries a wire payload.
+    /// 2xx with valid JSON but wrong shape must still surface as `SERIALIZATION_RESPONSE_BODY_INVALID`
+    /// — the status-gating fix must not swallow legitimate schema mismatches.
     #[tokio::test]
     async fn fetch_account_properties_2xx_invalid_body_still_reports_serialization_error() {
         let err = drive_fetch_with(200, br#"{"unexpected":"shape"}"#.to_vec())

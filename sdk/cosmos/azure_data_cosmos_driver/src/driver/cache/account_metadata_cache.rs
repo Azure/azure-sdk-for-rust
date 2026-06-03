@@ -508,24 +508,8 @@ mod tests {
         assert!(props.readable_regions().is_empty());
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Coverage: non-2xx response bodies must not be parsed as
-    // `AccountProperties`.
-    //
-    // Without status-gated parsing, `fetch_account_properties_with_transport`
-    // would call `parse_account_properties_payload(&response.body)`
-    // unconditionally — without checking `response.status`. As a result, when
-    // the gateway returns a 4xx/5xx with a Cosmos error envelope (or a
-    // plain-text body from an upstream proxy / fault injector), the serde
-    // failure would surface as `missing field _self` /
-    // `SERIALIZATION_RESPONSE_BODY_INVALID` (status 500, sub-status 20020),
-    // masking the real status.
-    //
-    // The tests below pin down the parser's behavior on error-shaped bodies
-    // so that the call sites can rely on the fact that error-shaped bodies
-    // remain unparseable here (and must therefore be handled by the
-    // status-gating branch upstream of the parser).
-    // ─────────────────────────────────────────────────────────────────────
+    // Coverage: non-2xx response bodies must not parse as AccountProperties — the
+    // status-gating branch upstream of the parser is responsible for handling them.
 
     #[test]
     fn error_envelope_service_unavailable_does_not_parse_as_account_properties() {
@@ -533,8 +517,7 @@ mod tests {
         let body = r#"{"code":"ServiceUnavailable","message":"Service is currently unavailable."}"#;
         let err = serde_json::from_str::<AccountProperties>(body)
             .expect_err("503 error envelope must not deserialize as AccountProperties");
-        // The error has the `missing field _self` shape that the production
-        // bug observed being relabeled as a serialization error by the driver.
+        // Confirms the pre-fix surface: serde fails on missing AccountProperties fields.
         assert!(
             err.to_string().contains("_self") || err.to_string().contains("missing field"),
             "expected serde to fail on the missing AccountProperties fields, got: {err}"
@@ -543,9 +526,7 @@ mod tests {
 
     #[test]
     fn error_envelope_unauthorized_does_not_parse_as_account_properties() {
-        // Shape returned by the gateway for HTTP 401 (AAD InvalidToken,
-        // TokenExpired, RBAC propagation race, etc.) — the production
-        // trigger for the account-metadata-as-serde bug.
+        // Shape returned for HTTP 401 (AAD InvalidToken / TokenExpired / RBAC propagation race).
         let body = r#"{"code":"Unauthorized","message":"The input authorization token can't serve the request."}"#;
         serde_json::from_str::<AccountProperties>(body)
             .expect_err("401 error envelope must not deserialize as AccountProperties");
@@ -553,8 +534,7 @@ mod tests {
 
     #[test]
     fn error_envelope_forbidden_does_not_parse_as_account_properties() {
-        // Shape returned by the gateway for HTTP 403 (data-plane RBAC
-        // misconfiguration, WriteForbidden, DatabaseAccountNotFound, etc.).
+        // Shape returned for HTTP 403 (data-plane RBAC, WriteForbidden, firewall block, etc.).
         let body = r#"{"code":"Forbidden","message":"Request is blocked by your Cosmos DB account firewall settings."}"#;
         serde_json::from_str::<AccountProperties>(body)
             .expect_err("403 error envelope must not deserialize as AccountProperties");
@@ -570,10 +550,7 @@ mod tests {
 
     #[test]
     fn plain_text_error_body_does_not_parse_as_account_properties() {
-        // Some upstream proxies, load balancers, and the in-process fault
-        // injector emit plain-text non-JSON bodies on non-2xx responses.
-        // The parser today still attempts to deserialize them, producing a
-        // less recognizable `expected value at line 1 column 1` serde error.
+        // Some proxies / LBs / fault injectors emit plain-text non-JSON bodies on non-2xx.
         let body = "Service Unavailable - Injected fault";
         serde_json::from_str::<AccountProperties>(body)
             .expect_err("plain-text body must not deserialize as AccountProperties");
