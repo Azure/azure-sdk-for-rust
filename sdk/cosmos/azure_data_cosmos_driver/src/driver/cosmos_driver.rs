@@ -6,7 +6,8 @@
 
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
+        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestSentStatus,
+        TransportHttpVersion, TransportSecurity,
     },
     driver::{
         cache::{PartitionKeyRangeCache, PkRangeFetchResult},
@@ -222,6 +223,7 @@ impl CosmosDriver {
         )?;
         let user_agent = Self::user_agent_header(runtime);
         let props = Self::fetch_account_properties_with_transport(
+            runtime,
             &metadata_transport,
             account,
             &user_agent,
@@ -242,8 +244,13 @@ impl CosmosDriver {
         let metadata_transport = transport.get_metadata_transport(&endpoint)?;
         let user_agent =
             azure_core::http::headers::HeaderValue::from(runtime.user_agent().as_str().to_owned());
-        Self::fetch_account_properties_with_transport(&metadata_transport, account, &user_agent)
-            .await
+        Self::fetch_account_properties_with_transport(
+            runtime,
+            &metadata_transport,
+            account,
+            &user_agent,
+        )
+        .await
     }
 
     /// Probes the gateway's HTTP version and returns the negotiated version.
@@ -368,16 +375,53 @@ impl CosmosDriver {
             .expect("auth is always present when cloned from existing AccountReference")
     }
 
-    /// Fetches account properties using a specific adaptive transport. Off-pipeline:
-    /// attaches wire payload but has no diagnostics context for `response()` / `diagnostics()`.
+    /// Fetches account properties using a specific adaptive transport. Off-pipeline by
+    /// design (the driver / operation pipeline does not yet exist at bootstrap, nor for
+    /// the 5-minute background refresh callback) but still produces a `DiagnosticsContext`
+    /// matching the data-plane shape so error consumers see the same fields.
     async fn fetch_account_properties_with_transport(
+        runtime: &CosmosDriverRuntime,
         transport: &super::transport::adaptive_transport::AdaptiveTransport,
         account: &AccountReference,
         user_agent: &azure_core::http::headers::HeaderValue,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
+        let endpoint_url = endpoint.join_path("/");
+        let cosmos_endpoint = CosmosEndpoint::global(endpoint_url.clone());
+
+        // Build diagnostics. Mirrors `execute_operation` Step 7 — same fields, single
+        // request. `DiagnosticsOptions::default()` matches every other in-driver builder
+        // call site (operation pipeline, retry evaluation, patch handler, transport).
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            crate::models::ActivityId::new_uuid(),
+            Arc::new(crate::options::DiagnosticsOptions::default()),
+        );
+        diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
+        diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
+        #[cfg(feature = "fault_injection")]
+        if runtime.fault_injection_enabled() {
+            diagnostics.set_fault_injection_enabled(true);
+        }
+
+        let transport_security =
+            if bool::from(runtime.connection_pool().emulator_server_cert_validation())
+                && is_emulator_host(&endpoint)
+            {
+                TransportSecurity::EmulatorWithInsecureCertificates
+            } else {
+                TransportSecurity::Secure
+            };
+        let request_handle = diagnostics.start_request(
+            ExecutionContext::Initial,
+            PipelineType::Metadata,
+            transport_security,
+            transport.diagnostics_kind(),
+            transport.diagnostics_http_version(),
+            &cosmos_endpoint,
+        );
+
         let mut request = HttpRequest {
-            url: endpoint.join_path("/"),
+            url: endpoint_url,
             method: azure_core::http::Method::Get,
             headers: azure_core::http::headers::Headers::new(),
             body: None,
@@ -386,7 +430,7 @@ impl CosmosDriver {
             evaluation_collector: None,
         };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
-        request_signing::sign_request(
+        if let Err(err) = request_signing::sign_request(
             &mut request,
             account.auth(),
             &AuthorizationContext::new(
@@ -396,42 +440,77 @@ impl CosmosDriver {
             ),
         )
         .await
-        .map_err(|err| {
-            crate::error::CosmosErrorBuilder::from_error(err)
+        {
+            // Sign failure: request never went on the wire.
+            let sign_status = err.status();
+            diagnostics.fail_transport_request(
+                request_handle,
+                err.to_string(),
+                RequestSentStatus::NotSent,
+                sign_status,
+            );
+            diagnostics.set_operation_status(sign_status.status_code(), sign_status.sub_status());
+            return Err(crate::error::CosmosErrorBuilder::from_error(err)
                 .with_context(format!("AccountProperties sign_request for {endpoint}"))
-                .build()
-        })?;
+                .with_diagnostics(Arc::new(diagnostics.complete()))
+                .build());
+        }
 
-        let response = transport.send(&request).await.map_err(|e| {
-            crate::error::CosmosErrorBuilder::from_error(e.error)
-                .with_context(format!("AccountProperties fetch from {endpoint}"))
-                .build()
-        })?;
+        let response = match transport.send(&request).await {
+            Ok(r) => r,
+            Err(e) => {
+                let send_status = e.error.status();
+                diagnostics.fail_transport_request(
+                    request_handle,
+                    e.error.to_string(),
+                    e.request_sent,
+                    send_status,
+                );
+                diagnostics
+                    .set_operation_status(send_status.status_code(), send_status.sub_status());
+                return Err(crate::error::CosmosErrorBuilder::from_error(e.error)
+                    .with_context(format!("AccountProperties fetch from {endpoint}"))
+                    .with_diagnostics(Arc::new(diagnostics.complete()))
+                    .build());
+            }
+        };
         let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
+        let status_code = azure_core::http::StatusCode::from(response.status);
+        let sub_status = cosmos_headers.substatus;
+        let cosmos_status = crate::error::CosmosStatus::from_parts(status_code, sub_status);
+
+        // Mirrors `transport_pipeline::map_http_response_payload`.
+        diagnostics.update_request(request_handle, |req| {
+            if let Some(charge) = cosmos_headers.request_charge {
+                req.with_charge(charge);
+            }
+            if let Some(activity_id) = cosmos_headers.activity_id.clone() {
+                req.with_activity_id(activity_id);
+            }
+            if let Some(token) = cosmos_headers.session_token.clone() {
+                req.with_session_token(token.to_string());
+            }
+            if let Some(duration) = cosmos_headers.server_duration_ms {
+                req.with_server_duration_ms(duration);
+            }
+        });
+        diagnostics.complete_request(request_handle, status_code, sub_status);
+        diagnostics.set_operation_status(status_code, sub_status);
+        let diagnostics_arc = Arc::new(diagnostics.complete());
 
         // Gate parsing on HTTP status. Non-2xx bodies (5xx envelopes, AAD 401/403, proxy text)
         // would otherwise serde-fail and surface as `SERIALIZATION_RESPONSE_BODY_INVALID`.
-        let status_code = azure_core::http::StatusCode::from(response.status);
         // 3xx is treated as non-success; redirect following is the transport's responsibility.
         if !status_code.is_success() {
-            let cosmos_status =
-                crate::error::CosmosStatus::from_parts(status_code, cosmos_headers.substatus);
-            let body_truncated = response.body.len() > 512;
-            let body_excerpt =
-                String::from_utf8_lossy(&response.body[..response.body.len().min(512)]);
-            let body_excerpt = if body_truncated {
-                format!("{body_excerpt}…[truncated]")
-            } else {
-                body_excerpt.into_owned()
-            };
             return Err(crate::error::CosmosError::builder()
                 .with_status(cosmos_status)
                 .with_response_parts(crate::models::CosmosResponsePayload::new(
                     response.body,
                     cosmos_headers,
                 ))
+                .with_diagnostics(diagnostics_arc)
                 .with_message(format!(
-                    "AccountProperties fetch from {endpoint} returned HTTP {status_code}: {body_excerpt}"
+                    "AccountProperties fetch from {endpoint} returned HTTP {status_code}"
                 ))
                 .build());
         }
@@ -442,6 +521,7 @@ impl CosmosDriver {
                     crate::models::ResponseBody::NoPayload,
                     cosmos_headers,
                 ))
+                .with_diagnostics(diagnostics_arc)
                 .with_context(format!("AccountProperties payload from {endpoint}"))
                 .build()
         })?;
@@ -520,6 +600,7 @@ impl CosmosDriver {
 
         let user_agent = Self::user_agent_header(runtime);
         match Self::fetch_account_properties_with_transport(
+            runtime,
             &metadata_transport,
             account,
             &user_agent,
@@ -619,6 +700,7 @@ impl CosmosDriver {
 
             let user_agent = Self::user_agent_header(runtime);
             match Self::fetch_account_properties_with_transport(
+                runtime,
                 &regional_transport,
                 &regional_account,
                 &user_agent,
@@ -2874,10 +2956,12 @@ mod tests {
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 
         let err = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
             &transport,
             &account,
             &user_agent,
@@ -2913,9 +2997,27 @@ mod tests {
             None,
             "no x-ms-substatus header should remain None, not Some(0). Got: {status:?}"
         );
+        let diag = err.diagnostics().expect(
+            "Wire-attached diagnostics must be present once the metadata fetch is enveloped",
+        );
+        assert_eq!(
+            diag.requests().len(),
+            1,
+            "single bootstrap request must produce exactly one request record. Got: {diag:?}"
+        );
+        let req = &diag.requests()[0];
+        assert_eq!(
+            u16::from(req.status().status_code()),
+            503,
+            "request diagnostics must echo the upstream HTTP 503. Got: {req:?}"
+        );
         assert!(
-            err.response().is_none(),
-            "off-pipeline account metadata errors do not expose response() without diagnostics. Got: {err:?}"
+            req.endpoint().contains("test.documents.azure.com"),
+            "request diagnostics must record the regional endpoint contacted. Got: {req:?}"
+        );
+        assert!(
+            err.response().is_some(),
+            "with_response_parts + with_diagnostics must promote the error to Wire, exposing response(). Got: {err:?}"
         );
     }
 
@@ -2950,11 +3052,17 @@ mod tests {
         let transport =
             crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
 
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = signed_test_account("https://test.documents.azure.com:443/");
         let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
 
-        CosmosDriver::fetch_account_properties_with_transport(&transport, &account, &user_agent)
-            .await
+        CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            &user_agent,
+        )
+        .await
     }
 
     /// AAD 401 envelope on GET / (RBAC race / token expiry / IMDS hiccup) must surface
@@ -2988,7 +3096,9 @@ mod tests {
     }
 
     /// Plain-text non-2xx body (proxy / LB / fault injector) must surface upstream HTTP status,
-    /// not the opaque "expected value at line 1 column 1" serde error.
+    /// not the opaque "expected value at line 1 column 1" serde error. The body must be
+    /// reachable verbatim via `wire_payload()` for upstream-log correlation (the message
+    /// itself no longer embeds it now that diagnostics are wired in).
     #[tokio::test]
     async fn fetch_account_properties_surfaces_plain_text_non_2xx_body() {
         let err = drive_fetch_with(502, b"Bad Gateway - injected upstream proxy fault".to_vec())
@@ -3008,11 +3118,16 @@ mod tests {
             502,
             "expected upstream HTTP 502 to be preserved. Got status={status:?} err={rendered}"
         );
-        // The error message should include the plain-text body verbatim so
-        // operators can correlate it with upstream logs.
+        let payload = err
+            .wire_payload()
+            .expect("non-2xx must attach the upstream wire payload for correlation");
+        let body_text = match payload.body() {
+            crate::models::ResponseBody::Bytes(b) => std::str::from_utf8(b).unwrap_or_default(),
+            _ => "",
+        };
         assert!(
-            rendered.contains("Bad Gateway"),
-            "expected the upstream plain-text body to appear in the error. Got: {rendered}"
+            body_text.contains("Bad Gateway"),
+            "wire_payload() must preserve the upstream body verbatim. Got: {body_text}"
         );
     }
 
@@ -3039,59 +3154,75 @@ mod tests {
         );
     }
 
-    /// Body excerpts must be truncated at 512 bytes with `…[truncated]` so the 5-minute
-    /// background refresh loop cannot flood logs on a sustained outage.
+    /// Oversize bodies must be preserved verbatim via `wire_payload()` (no in-message
+    /// excerpting / truncation any more). Diagnostics still bounds log volume because
+    /// per-request entries don't carry the body — only headers, status, and timing.
     #[tokio::test]
-    async fn fetch_account_properties_truncates_large_non_2xx_body() {
-        // 600 bytes of `A` then a sentinel past the 512-byte cutoff that must not render.
+    async fn fetch_account_properties_preserves_large_non_2xx_body_via_wire_payload() {
         let mut body = vec![b'A'; 600];
-        body.extend_from_slice(b"SHOULD_BE_TRUNCATED_AWAY");
+        body.extend_from_slice(b"TAIL_SENTINEL");
         let err = drive_fetch_with(500, body.clone())
             .await
             .expect_err("500 must surface as an error");
 
         let rendered = format!("{err}");
-
         assert!(
-            rendered.contains("…[truncated]"),
-            "expected the truncation marker on a >512-byte body. Got: {rendered}"
+            !rendered.contains("…[truncated]"),
+            "error message must no longer embed a body excerpt or truncation marker. Got: {rendered}"
+        );
+        let payload = err
+            .wire_payload()
+            .expect("non-2xx must attach the wire payload");
+        let body_bytes: &[u8] = match payload.body() {
+            crate::models::ResponseBody::Bytes(b) => b.as_ref(),
+            _ => &[],
+        };
+        assert_eq!(
+            body_bytes.len(),
+            body.len(),
+            "wire_payload() must preserve the full upstream body verbatim"
         );
         assert!(
-            !rendered.contains("SHOULD_BE_TRUNCATED_AWAY"),
-            "tail of the body must be dropped, not just have a marker appended. Got: {rendered}"
+            body_bytes.ends_with(b"TAIL_SENTINEL"),
+            "wire_payload() must not truncate the tail of the body"
         );
         assert_eq!(
             u16::from(err.status().status_code()),
             500,
-            "upstream HTTP 500 must still be preserved alongside the truncated body. Got: {err:?}"
+            "upstream HTTP 500 must still be preserved alongside the body"
         );
     }
 
-    /// Multi-byte codepoints may straddle byte 512; truncation must operate on bytes
-    /// before lossy UTF-8 conversion (not slice the str by byte index).
+    /// Non-UTF-8-safe truncation used to require byte-then-lossy conversion; with diagnostics
+    /// wired in, the body is no longer rendered into the message at all, so multi-byte
+    /// codepoints simply round-trip through `wire_payload()`.
     #[tokio::test]
-    async fn fetch_account_properties_truncates_non_ascii_body_without_panicking() {
+    async fn fetch_account_properties_handles_non_ascii_body_without_panicking() {
         let mut body = vec![b'A'; 511];
         body.extend_from_slice("é".as_bytes());
         body.extend_from_slice(b"tail");
 
-        let err = drive_fetch_with(500, body)
+        let err = drive_fetch_with(500, body.clone())
             .await
             .expect_err("500 must surface as an error");
-        let rendered = format!("{err}");
 
-        assert!(
-            rendered.contains("…[truncated]"),
-            "expected the truncation marker on a >512-byte body. Got: {rendered}"
-        );
-        assert!(
-            !rendered.contains("tail"),
-            "tail of the body must be dropped after byte truncation. Got: {rendered}"
+        let payload = err
+            .wire_payload()
+            .expect("non-2xx must attach the wire payload");
+        let body_bytes: &[u8] = match payload.body() {
+            crate::models::ResponseBody::Bytes(b) => b.as_ref(),
+            _ => &[],
+        };
+        assert_eq!(
+            body_bytes,
+            body.as_slice(),
+            "multi-byte codepoints must round-trip through wire_payload() unchanged"
         );
     }
 
     /// 2xx with valid JSON but wrong shape must still surface as `SERIALIZATION_RESPONSE_BODY_INVALID`
-    /// — the status-gating fix must not swallow legitimate schema mismatches.
+    /// — the status-gating fix must not swallow legitimate schema mismatches. Diagnostics are
+    /// still attached so the call site is debuggable.
     #[tokio::test]
     async fn fetch_account_properties_2xx_invalid_body_still_reports_serialization_error() {
         let err = drive_fetch_with(200, br#"{"unexpected":"shape"}"#.to_vec())
@@ -3107,12 +3238,11 @@ mod tests {
         );
         assert!(
             err.wire_payload().is_some(),
-            "parse-failure branch must still attach CosmosResponseHeaders / payload (R3). \
-             Got: {err:?}"
+            "parse-failure branch must still attach CosmosResponseHeaders / payload. Got: {err:?}"
         );
         assert!(
-            err.response().is_none(),
-            "2xx parse-failure errors are built off-pipeline and do not expose response(). Got: {err:?}"
+            err.diagnostics().is_some(),
+            "parse-failure branch must also carry diagnostics now that the bootstrap fetch is enveloped. Got: {err:?}"
         );
     }
 }
