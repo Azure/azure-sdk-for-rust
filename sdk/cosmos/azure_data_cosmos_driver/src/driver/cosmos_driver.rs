@@ -412,19 +412,12 @@ impl CosmosDriver {
         })?;
         let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
 
-        // Gate parsing on HTTP status. Without this guard the account-metadata
-        // path would feed *every* response body to
-        // `serde_json::from_slice::<AccountProperties>`, which meant non-2xx
-        // bodies (a 503 `{"code":"ServiceUnavailable",...}` envelope, an AAD
-        // 401/403 envelope, a plain-text proxy body, etc.) all surfaced as
-        // `missing field _self` — relabeled as
-        // `SERIALIZATION_RESPONSE_BODY_INVALID` (HTTP 500 / sub-status 20020)
-        // — and the real upstream status was lost. Mirror the main data-plane
-        // pipeline: only parse on `is_success()`; otherwise propagate the
-        // upstream `(status_code, sub_status, headers, body)` verbatim so
-        // callers (including the periodic background refresh) can distinguish
-        // transient throttles, regional outages, and auth failures from
-        // genuine schema mismatches.
+        // Gate parsing on HTTP status. Without this guard, non-2xx bodies
+        // (5xx envelopes, AAD 401/403, proxy text) would feed serde and surface
+        // as `SERIALIZATION_RESPONSE_BODY_INVALID` (500/20020), losing the
+        // upstream status. Mirror the data-plane pipeline: parse only on
+        // `is_success()`; otherwise propagate `(status, sub_status, headers,
+        // body)` verbatim.
         let status_code = azure_core::http::StatusCode::from(response.status);
         // 3xx responses are treated as non-success here; redirect following, if
         // any, belongs to the transport layer below this response interpreter.

@@ -242,6 +242,76 @@ fn assert_preserves_upstream_status(
     }
 }
 
+/// Installs a fault rule into a fresh `CosmosDriverRuntime`.
+async fn build_runtime_with_rule(rule: &Arc<FaultInjectionRule>) -> Arc<CosmosDriverRuntime> {
+    CosmosDriverRuntime::builder()
+        .with_fault_injection_rules(vec![Arc::clone(rule)])
+        .expect("rule installation should succeed")
+        .build()
+        .await
+        .expect("runtime should be created")
+}
+
+/// Runs the canonical "metadata fault preserves upstream status" assertion
+/// chain: install a persistent fault of `error_type` on
+/// `MetadataReadDatabaseAccount`, call `get_or_create_driver`, and assert
+/// the surfaced error preserves `(expected_status, expected_sub_status)`
+/// and the rule actually fired.
+async fn run_metadata_fault_test(
+    account: AccountReference,
+    rule_id: &str,
+    error_type: FaultInjectionErrorType,
+    expected_status: StatusCode,
+    expected_sub_status: Option<SubStatusCode>,
+) {
+    let rule = build_account_metadata_fault_rule(rule_id, error_type);
+    let runtime = build_runtime_with_rule(&rule).await;
+
+    let err = runtime
+        .get_or_create_driver(account, None)
+        .await
+        .expect_err("get_or_create_driver must fail under a persistent metadata fault");
+
+    assert_preserves_upstream_status(&err, expected_status, expected_sub_status);
+    assert!(
+        rule.hit_count() > 0,
+        "MetadataReadDatabaseAccount fault should have been hit at least once"
+    );
+}
+
+/// Canonical item body for the data-plane failover tests.
+fn make_item_body(id: &str, pk_value: &str) -> Vec<u8> {
+    format!(r#"{{"id":"{}","pk":"{}"}}"#, id, pk_value).into_bytes()
+}
+
+/// Seeds an item under a clean runtime (no fault rules) so subsequent
+/// faulted-read tests have something to find. Panics on any failure —
+/// the seed must succeed before the test's read assertion is meaningful.
+async fn seed_item(env: &DataPlaneEnv, id: &str) {
+    let runtime = CosmosDriverRuntime::builder()
+        .build()
+        .await
+        .expect("seed runtime should be created");
+    let driver = runtime
+        .get_or_create_driver(env.account.clone(), None)
+        .await
+        .expect("seed driver should be created");
+    let container = driver
+        .resolve_container(&env.db_name, &env.container_name)
+        .await
+        .expect("seed container must resolve");
+    let pk = PartitionKey::from(env.partition_key_value.clone());
+    let item_ref = ItemReference::from_name(&container, pk, id.to_owned());
+    driver
+        .execute_singleton_operation(
+            CosmosOperation::create_item(item_ref)
+                .with_body(make_item_body(id, &env.partition_key_value)),
+            OperationOptions::default(),
+        )
+        .await
+        .expect("seed create_item must succeed before exercising the read fault");
+}
+
 /// Behavioral coverage for the WriteForbidden (403/3) error path on the
 /// account-metadata endpoint.
 ///
@@ -258,35 +328,14 @@ async fn write_forbidden_on_metadata_preserves_upstream_status() {
         return;
     };
 
-    let rule = build_account_metadata_fault_rule(
+    run_metadata_fault_test(
+        account,
         "multi-region-write-forbidden",
         FaultInjectionErrorType::WriteForbidden,
-    );
-
-    let runtime = CosmosDriverRuntime::builder()
-        .with_fault_injection_rules(vec![Arc::clone(&rule)])
-        .expect("rule installation should succeed")
-        .build()
-        .await
-        .expect("runtime should be created");
-
-    let err = runtime
-        .get_or_create_driver(account, None)
-        .await
-        .expect_err(
-            "get_or_create_driver must fail when GET / is faulted with a persistent 403 \
-             WriteForbidden — the account-metadata fetch cannot complete",
-        );
-
-    assert_preserves_upstream_status(
-        &err,
         StatusCode::Forbidden,
         Some(SubStatusCode::WRITE_FORBIDDEN),
-    );
-    assert!(
-        rule.hit_count() > 0,
-        "MetadataReadDatabaseAccount WriteForbidden fault should have been hit at least once"
-    );
+    )
+    .await;
 }
 
 /// Behavioral coverage for the ReadSessionNotAvailable (404/1002) error
@@ -305,35 +354,14 @@ async fn session_not_available_on_metadata_preserves_upstream_status() {
         return;
     };
 
-    let rule = build_account_metadata_fault_rule(
+    run_metadata_fault_test(
+        account,
         "multi-region-read-session-not-available",
         FaultInjectionErrorType::ReadSessionNotAvailable,
-    );
-
-    let runtime = CosmosDriverRuntime::builder()
-        .with_fault_injection_rules(vec![Arc::clone(&rule)])
-        .expect("rule installation should succeed")
-        .build()
-        .await
-        .expect("runtime should be created");
-
-    let err = runtime
-        .get_or_create_driver(account, None)
-        .await
-        .expect_err(
-            "get_or_create_driver must fail when GET / is faulted with a persistent 404/1002 \
-             ReadSessionNotAvailable — the account-metadata fetch cannot complete",
-        );
-
-    assert_preserves_upstream_status(
-        &err,
         StatusCode::NotFound,
         Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
-    );
-    assert!(
-        rule.hit_count() > 0,
-        "MetadataReadDatabaseAccount ReadSessionNotAvailable fault should have been hit at least once"
-    );
+    )
+    .await;
 }
 
 /// AAD-credential + fault-injection coverage.
@@ -379,37 +407,14 @@ async fn aad_token_credential_account_metadata_smoke_test() {
         return;
     };
 
-    let rule = build_account_metadata_fault_rule(
+    run_metadata_fault_test(
+        account,
         "aad-account-metadata-503",
         FaultInjectionErrorType::ServiceUnavailable,
-    );
-
-    let runtime = CosmosDriverRuntime::builder()
-        .with_fault_injection_rules(vec![Arc::clone(&rule)])
-        .expect("rule installation should succeed")
-        .build()
-        .await
-        .expect("runtime should be created");
-
-    // get_or_create_driver triggers the lazy account-metadata (`GET /`)
-    // fetch with the AAD bearer token. Under a persistent 503 it must
-    // surface the upstream HTTP status — never the synthetic
-    // `SERIALIZATION_RESPONSE_BODY_INVALID` (500/20020) that the pre-fix
-    // account-metadata path produced when the body couldn't be deserialized
-    // as `AccountProperties`.
-    let err = runtime
-        .get_or_create_driver(account, None)
-        .await
-        .expect_err(
-            "get_or_create_driver must fail under a persistent 503 fault on \
-             MetadataReadDatabaseAccount, even with an AAD credential",
-        );
-
-    assert_preserves_upstream_status(&err, StatusCode::ServiceUnavailable, None);
-    assert!(
-        rule.hit_count() > 0,
-        "MetadataReadDatabaseAccount fault should have been hit at least once"
-    );
+        StatusCode::ServiceUnavailable,
+        None,
+    )
+    .await;
 }
 
 /// Behavioral coverage for cross-region failover on a region-local
@@ -458,12 +463,7 @@ async fn write_forbidden_triggers_refresh_and_failover() {
         3,
     );
 
-    let runtime = CosmosDriverRuntime::builder()
-        .with_fault_injection_rules(vec![Arc::clone(&rule)])
-        .expect("rule installation should succeed")
-        .build()
-        .await
-        .expect("runtime should be created");
+    let runtime = build_runtime_with_rule(&rule).await;
 
     let driver = runtime
         .get_or_create_driver(env.account, None)
@@ -480,15 +480,10 @@ async fn write_forbidden_triggers_refresh_and_failover() {
     let pk = PartitionKey::from(env.partition_key_value.clone());
     let item_ref = ItemReference::from_name(&container, pk, item_id.clone());
 
-    let body = format!(
-        r#"{{"id":"{}","pk":"{}"}}"#,
-        item_id, env.partition_key_value
-    )
-    .into_bytes();
-
     let result = driver
         .execute_singleton_operation(
-            CosmosOperation::create_item(item_ref).with_body(body),
+            CosmosOperation::create_item(item_ref)
+                .with_body(make_item_body(&item_id, &env.partition_key_value)),
             OperationOptions::default(),
         )
         .await;
@@ -541,34 +536,7 @@ async fn session_not_available_retries_across_locations() {
     // unfaulted account so failures here are not silently misattributed to
     // failover behavior on the read.
     let seed_id = format!("failover-read-{}", Uuid::new_v4());
-    {
-        let seed_runtime = CosmosDriverRuntime::builder()
-            .build()
-            .await
-            .expect("seed runtime should be created");
-        let seed_driver = seed_runtime
-            .get_or_create_driver(env.account.clone(), None)
-            .await
-            .expect("seed driver should be created");
-        let seed_container = seed_driver
-            .resolve_container(&env.db_name, &env.container_name)
-            .await
-            .expect("seed container must resolve");
-        let seed_pk = PartitionKey::from(env.partition_key_value.clone());
-        let seed_item_ref = ItemReference::from_name(&seed_container, seed_pk, seed_id.clone());
-        let seed_body = format!(
-            r#"{{"id":"{}","pk":"{}"}}"#,
-            seed_id, env.partition_key_value
-        )
-        .into_bytes();
-        seed_driver
-            .execute_singleton_operation(
-                CosmosOperation::create_item(seed_item_ref).with_body(seed_body),
-                OperationOptions::default(),
-            )
-            .await
-            .expect("seed create_item must succeed before exercising the read fault");
-    }
+    seed_item(&env, &seed_id).await;
 
     let rule = build_region_scoped_data_plane_fault_rule(
         "data-plane-read-session-not-available-region-scoped",
@@ -580,12 +548,7 @@ async fn session_not_available_retries_across_locations() {
         5,
     );
 
-    let runtime = CosmosDriverRuntime::builder()
-        .with_fault_injection_rules(vec![Arc::clone(&rule)])
-        .expect("rule installation should succeed")
-        .build()
-        .await
-        .expect("runtime should be created");
+    let runtime = build_runtime_with_rule(&rule).await;
 
     let driver = runtime
         .get_or_create_driver(env.account, None)
