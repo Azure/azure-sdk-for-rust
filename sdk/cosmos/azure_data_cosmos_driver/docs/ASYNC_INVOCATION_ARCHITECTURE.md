@@ -111,7 +111,7 @@ sequenceDiagram
     Sub->>Tok: spawn driver.execute_singleton_operation(op)
     Sub-->>App: cosmos_operation_handle_t* (in-flight)
     App-->>App: return Task / Future / chan to caller
-    Note over App: App now awaits; no thread is blocked.
+    Note over App: App now awaits &mdash; no thread is blocked.
 
     Tok->>Drv: poll until ready
     Drv-->>Tok: Ok(CosmosResponse) | Err(CosmosError)
