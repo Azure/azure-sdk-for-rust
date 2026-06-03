@@ -642,10 +642,10 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     assert!(response.etag()?.is_some());
 
     let page_list = response.into_model()?;
-    let ranges = page_list.page_range.unwrap();
-    assert_eq!(1, ranges.len());
-    assert_eq!(Some(0), ranges[0].start);
-    assert_eq!(Some(511), ranges[0].end);
+    let page_ranges = page_list.page_range.unwrap();
+    assert_eq!(1, page_ranges.len());
+    assert_eq!(Some(0), page_ranges[0].start);
+    assert_eq!(Some(511), page_ranges[0].end);
 
     // Multiple Non-Contiguous Ranges Scenario
     let data2 = vec![b'B'; 512];
@@ -660,12 +660,12 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let response = page_blob_client.get_page_ranges(None).await?;
     let page_list = response.into_model()?;
-    let ranges = page_list.page_range.unwrap();
-    assert_eq!(2, ranges.len());
-    assert_eq!(Some(0), ranges[0].start);
-    assert_eq!(Some(511), ranges[0].end);
-    assert_eq!(Some(1024), ranges[1].start);
-    assert_eq!(Some(1535), ranges[1].end);
+    let page_ranges = page_list.page_range.unwrap();
+    assert_eq!(2, page_ranges.len());
+    assert_eq!(Some(0), page_ranges[0].start);
+    assert_eq!(Some(511), page_ranges[0].end);
+    assert_eq!(Some(1024), page_ranges[1].start);
+    assert_eq!(Some(1535), page_ranges[1].end);
 
     // Filtered By Range Option Scenario
     let options = PageBlobClientGetPageRangesOptions {
@@ -674,10 +674,10 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     };
     let response = page_blob_client.get_page_ranges(Some(options)).await?;
     let page_list = response.into_model()?;
-    let ranges = page_list.page_range.unwrap();
-    assert_eq!(1, ranges.len());
-    assert_eq!(Some(0), ranges[0].start);
-    assert_eq!(Some(511), ranges[0].end);
+    let page_ranges = page_list.page_range.unwrap();
+    assert_eq!(1, page_ranges.len());
+    assert_eq!(Some(0), page_ranges[0].start);
+    assert_eq!(Some(511), page_ranges[0].end);
 
     // After Clear Scenario
     page_blob_client
@@ -686,10 +686,10 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
 
     let response = page_blob_client.get_page_ranges(None).await?;
     let page_list = response.into_model()?;
-    let ranges = page_list.page_range.unwrap();
-    assert_eq!(1, ranges.len());
-    assert_eq!(Some(1024), ranges[0].start);
-    assert_eq!(Some(1535), ranges[0].end);
+    let page_ranges = page_list.page_range.unwrap();
+    assert_eq!(1, page_ranges.len());
+    assert_eq!(Some(1024), page_ranges[0].start);
+    assert_eq!(Some(1535), page_ranges[0].end);
 
     container_client.delete(None).await?;
     Ok(())
