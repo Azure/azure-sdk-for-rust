@@ -12,34 +12,6 @@ use std::error::Error;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-/// Probes whether the test account currently routes a read via Gateway 2.0
-/// and skips the calling test with a clear log line if it does not.
-///
-/// Disables `$rule` for the duration of the probe and re-enables it after,
-/// so `hit_count` is preserved for the real assertion. Used by the
-/// `gateway20_*` tests to stay green when the pre-provisioned account
-/// stops advertising any `thinClient*Locations` (the driver then falls back
-/// to standard Gateway and any rule scoped to `TransportKind::Gateway20`
-/// could never fire).
-macro_rules! skip_if_account_not_gateway20 {
-    ($context:expr, $container:expr, $item_id:expr, $pk:expr, $rule:expr, $test:expr) => {{
-        $rule.disable();
-        let probe = $context.read_item($container, $item_id, $pk).await;
-        $rule.enable();
-        let used_gw20 = probe
-            .as_ref()
-            .map(crate::framework::response_used_gateway20)
-            .unwrap_or(false);
-        if !used_gw20 {
-            println!(
-                "Skipping {}: test account did not route the probe read via Gateway 2.0",
-                $test
-            );
-            return Ok(());
-        }
-    }};
-}
-
 /// Tests that a rule with probability 0.0 never injects faults.
 ///
 /// A read operation should succeed because the fault never fires.
@@ -425,15 +397,6 @@ pub async fn gateway20_service_unavailable_triggers_regional_failover() -> Resul
             .create_item(&container, "item1", "pk1", item_json)
             .await?;
 
-        skip_if_account_not_gateway20!(
-            context,
-            &container,
-            "item1",
-            "pk1",
-            rule,
-            "gateway20_service_unavailable_triggers_regional_failover"
-        );
-
         // The read should fail (single region, fault always fires) but the
         // failover machinery must have been invoked. Once `RequestDiagnostics`
         // exposes per-attempt endpoint selection, assert that the diagnostics
@@ -491,15 +454,6 @@ pub async fn gateway20_request_timeout_cross_region_for_reads() -> Result<(), Bo
         context
             .create_item(&container, "item1", "pk1", item_json)
             .await?;
-
-        skip_if_account_not_gateway20!(
-            context,
-            &container,
-            "item1",
-            "pk1",
-            rule,
-            "gateway20_request_timeout_cross_region_for_reads"
-        );
 
         let read_result = context.read_item(&container, "item1", "pk1").await;
         assert!(
@@ -560,15 +514,6 @@ pub async fn gateway20_read_session_not_available_remote_preferred() -> Result<(
         context
             .create_item(&container, "item1", "pk1", item_json)
             .await?;
-
-        skip_if_account_not_gateway20!(
-            context,
-            &container,
-            "item1",
-            "pk1",
-            rule,
-            "gateway20_read_session_not_available_remote_preferred"
-        );
 
         let read_result = context.read_item(&container, "item1", "pk1").await;
         assert!(
@@ -649,21 +594,8 @@ pub async fn gateway20_unknown_rntbd_response_token_is_silently_skipped(
             .create_container(&database, &container_name, "/pk")
             .await?;
 
-        // Seed only to give the GW20 probe a real item to read; the rule is
-        // ReadItem-scoped so create_item never matches it.
-        context
-            .create_item(&container, "item1", "pk1", ITEM_JSON)
-            .await?;
-
-        skip_if_account_not_gateway20!(
-            context,
-            &container,
-            "item1",
-            "pk1",
-            rule,
-            "gateway20_unknown_rntbd_response_token_is_silently_skipped"
-        );
-
+        // No need to seed the item: the fault rule short-circuits the read
+        // with our synthetic response on every G2 attempt.
         let response = context.read_item(&container, "item1", "pk1").await.expect(
             "read must succeed: unknown RNTBD response token must be skipped, \
                  and the recognized tokens around it must still parse",
@@ -813,15 +745,6 @@ pub async fn gateway20_server_response_delay_is_injected() -> Result<(), Box<dyn
             .create_item(&container, "item1", "pk1", item_json)
             .await?;
 
-        skip_if_account_not_gateway20!(
-            context,
-            &container,
-            "item1",
-            "pk1",
-            rule,
-            "gateway20_server_response_delay_is_injected"
-        );
-
         let start = Instant::now();
         let read_result = context.read_item(&container, "item1", "pk1").await;
         let elapsed = start.elapsed();
@@ -889,15 +812,6 @@ pub async fn gateway20_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>
         context
             .create_item(&container, "item1", "pk1", item_json)
             .await?;
-
-        skip_if_account_not_gateway20!(
-            context,
-            &container,
-            "item1",
-            "pk1",
-            rule,
-            "gateway20_hit_limit_caps_fault_count"
-        );
 
         // Drive more reads than HIT_LIMIT. Reads may succeed (after the
         // rule stops firing) or fail (while the rule is active); we only
@@ -1058,15 +972,6 @@ pub async fn gateway20_449_retry_with_succeeds_after_hit_limit() -> Result<(), B
             context
                 .create_item(&container, "item1", "pk1", item_json)
                 .await?;
-
-            skip_if_account_not_gateway20!(
-                context,
-                &container,
-                "item1",
-                "pk1",
-                rule,
-                "gateway20_449_retry_with_succeeds_after_hit_limit"
-            );
 
             // The driver retries 449 in-region with exponential backoff. With
             // hit_limit=3 the rule fires three times — well within the ~30s

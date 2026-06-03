@@ -846,7 +846,7 @@ mod tests {
     }
 
     /// End-to-end coverage for the "service stops advertising Gateway 2.0"
-    /// fallback. The store is initialized with `gateway20_enabled=true`,
+    /// fallback. The store is initialised with `gateway20_enabled=true`,
     /// then fed two successive `AccountProperties` payloads via
     /// `sync_account_properties` (the same path exercised by both the
     /// event-driven refresh and the background 5-minute refresh loop):
