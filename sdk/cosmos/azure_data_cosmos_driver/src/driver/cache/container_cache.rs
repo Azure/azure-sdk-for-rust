@@ -68,8 +68,8 @@ impl ContainerRidKey {
 /// same container share one fetch operation.
 #[derive(Debug)]
 pub(crate) struct ContainerCache {
-    by_name: AsyncCache<ContainerNameKey, azure_core::Result<ContainerReference>>,
-    by_rid: AsyncCache<ContainerRidKey, azure_core::Result<ContainerReference>>,
+    by_name: AsyncCache<ContainerNameKey, crate::error::Result<ContainerReference>>,
+    by_rid: AsyncCache<ContainerRidKey, crate::error::Result<ContainerReference>>,
 }
 
 impl ContainerCache {
@@ -92,10 +92,10 @@ impl ContainerCache {
         db_name: &str,
         container_name: &str,
         fetch_fn: F,
-    ) -> azure_core::Result<Arc<ContainerReference>>
+    ) -> crate::error::Result<Arc<ContainerReference>>
     where
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
+        Fut: std::future::Future<Output = crate::error::Result<ContainerReference>>,
     {
         let key = ContainerNameKey {
             account_endpoint: account_endpoint.to_owned(),
@@ -103,28 +103,6 @@ impl ContainerCache {
             container_name: container_name.to_owned(),
         };
         self.get_or_fetch_impl(&self.by_name, key, fetch_fn).await
-    }
-
-    /// Looks up a container by RID, fetching if not cached.
-    ///
-    /// On a cache miss, calls `fetch_fn` to resolve the container from the
-    /// service. The resolved reference is then cross-populated into the
-    /// by-name cache. Concurrent requests for the same RID share one fetch.
-    pub(crate) async fn get_or_fetch_by_rid<F, Fut>(
-        &self,
-        account_endpoint: &str,
-        container_rid: &str,
-        fetch_fn: F,
-    ) -> azure_core::Result<Arc<ContainerReference>>
-    where
-        F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
-    {
-        let key = ContainerRidKey {
-            account_endpoint: account_endpoint.to_owned(),
-            container_rid: container_rid.to_owned(),
-        };
-        self.get_or_fetch_impl(&self.by_rid, key, fetch_fn).await
     }
 
     /// Returns a cached container looked up by name, or `None` if not cached.
@@ -163,14 +141,14 @@ impl ContainerCache {
     /// cross-populates on success, and invalidates on error.
     async fn get_or_fetch_impl<K, F, Fut>(
         &self,
-        cache: &AsyncCache<K, azure_core::Result<ContainerReference>>,
+        cache: &AsyncCache<K, crate::error::Result<ContainerReference>>,
         key: K,
         fetch_fn: F,
-    ) -> azure_core::Result<Arc<ContainerReference>>
+    ) -> crate::error::Result<Arc<ContainerReference>>
     where
         K: Eq + std::hash::Hash + Clone,
         F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = azure_core::Result<ContainerReference>>,
+        Fut: std::future::Future<Output = crate::error::Result<ContainerReference>>,
     {
         if let Some(cached) = self.get_from(cache, &key).await {
             return Ok(cached);
@@ -185,13 +163,9 @@ impl ContainerCache {
             }
             Err(error) => {
                 cache.invalidate(&key).await;
-                // The error is behind an Arc (from the cache) so we can't move
-                // it out. Reconstruct with the full source chain preserved as
-                // text so diagnostics remain actionable.
-                Err(azure_core::Error::with_message(
-                    error.kind().clone(),
-                    crate::driver::error_chain_summary(error),
-                ))
+                // The cached `crate::error::CosmosError` is `Clone` (cheap Arc
+                // refcount bump), so the typed payload propagates directly.
+                Err(error.clone())
             }
         }
     }
@@ -199,7 +173,7 @@ impl ContainerCache {
     /// Reads a cached value from one of the underlying caches.
     async fn get_from<K>(
         &self,
-        cache: &AsyncCache<K, azure_core::Result<ContainerReference>>,
+        cache: &AsyncCache<K, crate::error::Result<ContainerReference>>,
         key: &K,
     ) -> Option<Arc<ContainerReference>>
     where
@@ -341,39 +315,6 @@ mod tests {
 
         assert_eq!(resolved.name(), "mycoll");
         assert_eq!(counter.load(Ordering::SeqCst), 1);
-    }
-
-    // --- get_or_fetch_by_rid ---
-
-    #[tokio::test]
-    async fn fetch_by_rid_caches_and_cross_populates_name() {
-        let cache = ContainerCache::new();
-        let counter = Arc::new(AtomicUsize::new(0));
-
-        let container = test_container("mydb", "mycoll");
-        let container_rid = container.rid().to_owned();
-        let container_clone = container.clone();
-        let counter_clone = counter.clone();
-
-        let resolved = cache
-            .get_or_fetch_by_rid(ACCOUNT_ENDPOINT, &container_rid, || async move {
-                counter_clone.fetch_add(1, Ordering::SeqCst);
-                Ok(container_clone)
-            })
-            .await
-            .unwrap();
-
-        assert_eq!(resolved.name(), "mycoll");
-        assert_eq!(counter.load(Ordering::SeqCst), 1);
-
-        // Should be cross-populated and retrievable by name
-        let by_name = cache.get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll").await;
-        assert!(by_name.is_some());
-        assert_eq!(by_name.unwrap().rid(), container_rid);
-
-        // Should also be retrievable by RID
-        let by_rid = cache.get_by_rid(ACCOUNT_ENDPOINT, &container_rid).await;
-        assert!(by_rid.is_some());
     }
 
     // --- put ---

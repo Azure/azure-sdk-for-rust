@@ -1,0 +1,16 @@
+{
+  "displayNames": {
+    "vnext": "vnext_emulator"
+  },
+  "matrix": {
+    "Agent": {
+      "vnext": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": ["vnext"],
+    "ContinueOnError": ["true"]
+  }
+}

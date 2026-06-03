@@ -87,16 +87,30 @@ impl AuthorizationContext {
 }
 
 /// Generates the Cosmos DB authorization header value.
+///
+/// Returns a Cosmos-typed [`crate::error::CosmosError`]. Failures from the
+/// credential provider or HMAC routine are wrapped directly into an
+/// `Authentication`-kind error here, with the underlying `azure_core::Error`
+/// preserved as the `source()`.
 pub(crate) async fn generate_authorization(
     credential: &Credential,
     auth_ctx: &AuthorizationContext,
     date_string: &str,
-) -> azure_core::Result<String> {
+) -> crate::error::Result<String> {
     let token = match credential {
         Credential::TokenCredential(cred) => {
             let token = cred
                 .get_token(&[COSMOS_AAD_SCOPE], None)
-                .await?
+                .await
+                .map_err(|err| {
+                    crate::error::CosmosError::builder()
+                        .with_status(
+                            crate::error::CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
+                        )
+                        .with_message("failed to acquire AAD token for Cosmos DB")
+                        .with_source(err)
+                        .build()
+                })?
                 .token
                 .secret()
                 .to_string();
@@ -108,7 +122,17 @@ pub(crate) async fn generate_authorization(
         Credential::MasterKey(key) => {
             let string_to_sign = build_string_to_sign(auth_ctx, date_string);
             trace!(signature_payload = ?string_to_sign, "generating Cosmos auth signature");
-            let signature = azure_core::hmac::hmac_sha256(&string_to_sign, key)?;
+            let signature = azure_core::hmac::hmac_sha256(&string_to_sign, key).map_err(|err| {
+                crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
+                    )
+                    .with_message(
+                        "failed to compute HMAC-SHA256 signature for master-key authentication",
+                    )
+                    .with_source(err)
+                    .build()
+            })?;
             // HMAC-SHA256 base64 is always 44 bytes; fixed prefix is 24 bytes.
             let mut s = String::with_capacity(24 + signature.len());
             s.push_str("type=master&ver=1.0&sig=");

@@ -15,12 +15,10 @@ use crate::driver::transport::cosmos_transport_client::{
     HttpRequest, HttpResponse, TransportClient, TransportError,
 };
 use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
-use crate::models::SubStatusCode;
+use crate::models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode};
 use async_trait::async_trait;
-use azure_core::error::ErrorKind;
-use azure_core::http::headers::{HeaderName, Headers};
-use azure_core::http::{RawResponse, StatusCode};
+use azure_core::http::headers::HeaderName;
+use azure_core::http::StatusCode;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -224,27 +222,29 @@ impl FaultClient {
         // Evaluations are propagated via the evaluation collector attached to the request for all paths.
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
+                let cosmos_err = crate::error::CosmosError::builder()
+                    .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                    .with_message("Injected fault: connection error")
+                    .build();
                 return ApplyResult::Injected(Err(TransportError::new(
-                    azure_core::Error::with_message(
-                        ErrorKind::Connection,
-                        "Injected fault: connection error",
-                    ),
+                    cosmos_err,
                     RequestSentStatus::NotSent,
                 )));
             }
             FaultInjectionErrorType::ResponseTimeout => {
+                let cosmos_err = crate::error::CosmosError::builder()
+                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_message("Injected fault: response timeout")
+                    .build();
                 return ApplyResult::Injected(Err(TransportError::new(
-                    azure_core::Error::with_message(
-                        ErrorKind::Io,
-                        "Injected fault: response timeout",
-                    ),
+                    cosmos_err,
                     RequestSentStatus::Unknown,
                 )));
             }
             FaultInjectionErrorType::InternalServerError => (
                 StatusCode::InternalServerError,
                 None,
-                "Internal Server Error - Injected fault",
+                "Internal Server CosmosError - Injected fault",
             ),
             FaultInjectionErrorType::TooManyRequests => (
                 StatusCode::TooManyRequests,
@@ -288,26 +288,23 @@ impl FaultClient {
             ),
         };
 
-        let mut headers = Headers::new();
-        if let Some(ss) = sub_status {
-            headers.insert(SUBSTATUS, ss.value().to_string());
-        }
-        let raw_response = Box::new(RawResponse::from_bytes(
-            status_code,
-            headers.clone(),
-            vec![],
-        ));
+        let mut cosmos_headers = CosmosResponseHeaders::new();
+        cosmos_headers.substatus = sub_status;
 
-        let error = azure_core::Error::with_message(
-            ErrorKind::HttpResponse {
-                status: status_code,
-                error_code: Some("Injected Fault".to_string()),
-                raw_response: Some(raw_response),
-            },
-            message,
-        );
-
-        ApplyResult::Injected(Err(TransportError::new(error, RequestSentStatus::Sent)))
+        // HTTP-status faults are returned as a successful transport response
+        // carrying the injected status code, headers, and body. The retry
+        // pipeline then classifies them as `TransportOutcome::HttpError` and
+        // preserves the original status all the way to the caller. Returning
+        // them as `TransportError` instead would cause the transport layer to
+        // tag the outer outcome with the synthetic `TRANSPORT_GENERATED_503`
+        // (see `transport_error_result` in `transport_pipeline.rs`), which
+        // would mask the injected status with a generic 503 — defeating the
+        // purpose of HTTP-status fault injection.
+        ApplyResult::Injected(Ok(HttpResponse {
+            status: u16::from(status_code),
+            headers: cosmos_headers.to_raw_headers(),
+            body: message.as_bytes().to_vec(),
+        }))
     }
 }
 
@@ -411,15 +408,10 @@ mod tests {
         FaultInjectionRuleBuilder, FaultOperationType,
     };
     use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-    use crate::models::cosmos_headers::response_header_names::SUBSTATUS;
     use crate::models::SubStatusCode;
     use crate::options::Region;
     use async_trait::async_trait;
-    use azure_core::error::ErrorKind;
-    use azure_core::http::{
-        headers::{HeaderName, Headers},
-        Method, Url,
-    };
+    use azure_core::http::{headers::Headers, Method, StatusCode, Url};
     use std::sync::atomic::{AtomicU32, Ordering};
     use std::sync::Arc;
     use std::time::{Duration, Instant};
@@ -522,10 +514,20 @@ mod tests {
 
         // First two requests should hit the fault
         let result1 = fault_client.send(&request).await;
-        assert!(result1.is_err());
+        assert!(
+            result1
+                .as_ref()
+                .is_ok_and(|r| r.status == u16::from(StatusCode::InternalServerError)),
+            "first request should inject 500"
+        );
 
         let result2 = fault_client.send(&request).await;
-        assert!(result2.is_err());
+        assert!(
+            result2
+                .as_ref()
+                .is_ok_and(|r| r.status == u16::from(StatusCode::InternalServerError)),
+            "second request should inject 500"
+        );
 
         // Third request should pass through (hit limit reached)
         let result3 = fault_client.send(&request).await;
@@ -567,11 +569,14 @@ mod tests {
 
         let result = fault_client.send(&request).await;
 
-        assert!(result.is_err());
-        let err = result.unwrap_err();
+        // HTTP-status faults are surfaced as `Ok(HttpResponse)` so the
+        // pipeline classifies them as `TransportOutcome::HttpError` and
+        // preserves the injected status (rather than re-tagging the outer
+        // outcome as `TRANSPORT_GENERATED_503`).
+        let response = result.expect("expected Ok(HttpResponse) for HTTP-status fault");
         assert_eq!(
-            err.error.http_status(),
-            Some(azure_core::http::StatusCode::InternalServerError),
+            response.status,
+            u16::from(azure_core::http::StatusCode::InternalServerError),
             "expected InternalServerError status code"
         );
 
@@ -592,11 +597,10 @@ mod tests {
 
         let result = fault_client.send(&request).await;
 
-        assert!(result.is_err());
-        let err = result.unwrap_err();
+        let response = result.expect("expected Ok(HttpResponse) for HTTP-status fault");
         assert_eq!(
-            err.error.http_status(),
-            Some(azure_core::http::StatusCode::TooManyRequests),
+            response.status,
+            u16::from(azure_core::http::StatusCode::TooManyRequests),
             "expected TooManyRequests status code"
         );
     }
@@ -695,19 +699,13 @@ mod tests {
 
         // First request should hit the fault
         let result1 = fault_client.send(&request).await;
-        assert!(result1.is_err(), "first request should fail");
-        assert_eq!(
-            result1.unwrap_err().error.http_status(),
-            Some(azure_core::http::StatusCode::ServiceUnavailable)
-        );
+        let response1 = result1.expect("first request should inject HTTP-status fault");
+        assert_eq!(response1.status, u16::from(StatusCode::ServiceUnavailable));
 
         // Second request should also hit the fault
         let result2 = fault_client.send(&request).await;
-        assert!(result2.is_err(), "second request should fail");
-        assert_eq!(
-            result2.unwrap_err().error.http_status(),
-            Some(azure_core::http::StatusCode::ServiceUnavailable)
-        );
+        let response2 = result2.expect("second request should inject HTTP-status fault");
+        assert_eq!(response2.status, u16::from(StatusCode::ServiceUnavailable));
 
         // Third request should pass through (times limit reached)
         let result3 = fault_client.send(&request).await;
@@ -755,46 +753,35 @@ mod tests {
             let (request, _collector) = create_test_request();
 
             let result = fault_client.send(&request).await;
-            assert!(result.is_err(), "{:?} should produce an error", error_type);
-
-            let err = result.unwrap_err();
-            if let azure_core::error::ErrorKind::HttpResponse { raw_response, .. } =
-                err.error.kind()
-            {
-                let response = raw_response
-                    .as_ref()
-                    .unwrap_or_else(|| panic!("{:?} should have a raw_response", error_type));
-
-                match expected_substatus {
-                    Some(expected) => {
-                        let actual: u32 = response
-                            .headers()
-                            .get_as::<u32, std::num::ParseIntError>(&HeaderName::from_static(
-                                SUBSTATUS,
-                            ))
-                            .unwrap_or_else(|_| {
-                                panic!("{:?} should have x-ms-substatus header", error_type)
-                            });
-                        assert_eq!(
-                            SubStatusCode::new(actual),
-                            expected,
-                            "{:?}: substatus mismatch",
-                            error_type
-                        );
-                    }
-                    None => {
-                        let substatus_header = response
-                            .headers()
-                            .get_optional_str(&HeaderName::from_static(SUBSTATUS));
-                        assert!(
-                            substatus_header.is_none(),
-                            "{:?} should not have x-ms-substatus header",
-                            error_type
-                        );
-                    }
+            // HTTP-status faults are surfaced as `Ok(HttpResponse)` carrying
+            // the injected status code and `x-ms-substatus` header. Parse
+            // the raw header to verify the substatus matches.
+            let response = result.unwrap_or_else(|err| {
+                panic!(
+                    "{:?} should produce an Ok(HttpResponse), got error: {:?}",
+                    error_type, err
+                )
+            });
+            let raw_substatus = response.headers.get_optional_str(
+                &azure_core::http::headers::HeaderName::from_static("x-ms-substatus"),
+            );
+            match expected_substatus {
+                Some(expected) => {
+                    assert_eq!(
+                        raw_substatus.map(|s| s.to_owned()),
+                        Some(expected.value().to_string()),
+                        "{:?}: x-ms-substatus header mismatch",
+                        error_type
+                    );
                 }
-            } else {
-                panic!("{:?} should produce an HttpResponse error kind", error_type);
+                None => {
+                    assert!(
+                        raw_substatus.is_none(),
+                        "{:?} should not carry an x-ms-substatus header, got {:?}",
+                        error_type,
+                        raw_substatus
+                    );
+                }
             }
         }
     }
@@ -815,10 +802,12 @@ mod tests {
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
+        // Connection-error faults are constructed as transport errors
+        // with `TRANSPORT_CONNECTION_FAILED` sub-status.
         assert_eq!(
-            err.error.kind(),
-            &ErrorKind::Connection,
-            "connection error should have Connection ErrorKind"
+            err.error.status().sub_status(),
+            Some(crate::models::SubStatusCode::TRANSPORT_CONNECTION_FAILED),
+            "connection error should map to TRANSPORT_CONNECTION_FAILED"
         );
         assert_eq!(mock_client.call_count(), 0);
     }
@@ -839,10 +828,12 @@ mod tests {
         assert!(result.is_err(), "should produce an error");
 
         let err = result.unwrap_err();
+        // Response-timeout faults are constructed as transport errors
+        // with `TRANSPORT_IO_FAILED` sub-status.
         assert_eq!(
-            err.error.kind(),
-            &ErrorKind::Io,
-            "response timeout should have Io ErrorKind"
+            err.error.status().sub_status(),
+            Some(crate::models::SubStatusCode::TRANSPORT_IO_FAILED),
+            "response timeout should map to TRANSPORT_IO_FAILED"
         );
         assert_eq!(mock_client.call_count(), 0);
     }
@@ -895,10 +886,8 @@ mod tests {
             .insert(FAULT_INJECTION_OPERATION, "ReadItem");
 
         let result = fault_client.send(&request).await;
-        assert!(
-            result.is_err(),
-            "should inject fault for matching operation"
-        );
+        let response = result.expect("should inject HTTP-status fault for matching operation");
+        assert_eq!(response.status, u16::from(StatusCode::ServiceUnavailable));
         assert_eq!(mock_client.call_count(), 0);
     }
 
@@ -1140,7 +1129,8 @@ mod tests {
         let (request, _collector) = create_test_request();
         let result = fault_client.send(&request).await;
 
-        assert!(result.is_err());
+        let response = result.expect("rule should inject HTTP-status fault");
+        assert_eq!(response.status, u16::from(StatusCode::ServiceUnavailable));
         // Inner client must NOT have been called when a fault is injected.
         assert_eq!(mock_client.call_count(), 0);
     }

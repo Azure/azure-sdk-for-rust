@@ -138,7 +138,7 @@ impl CosmosTransport {
     pub(crate) fn for_tests(
         connection_pool: ConnectionPoolOptions,
         negotiated_version: TransportHttpVersion,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         let http_client_factory: Arc<dyn HttpClientFactory> =
             Arc::new(DefaultHttpClientFactory::new());
 
@@ -150,7 +150,7 @@ impl CosmosTransport {
         connection_pool: ConnectionPoolOptions,
         http_client_factory: Arc<dyn HttpClientFactory>,
         negotiated_version: TransportHttpVersion,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
         let metadata_transport = AdaptiveTransport::from_config(
             &connection_pool,
@@ -188,7 +188,7 @@ impl CosmosTransport {
         connection_pool: ConnectionPoolOptions,
         http_client_factory: Arc<dyn HttpClientFactory>,
         negotiated_version: TransportHttpVersion,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         let metadata_config = HttpClientConfig::metadata(&connection_pool, negotiated_version);
         let metadata_transport = AdaptiveTransport::unsharded(
             &connection_pool,
@@ -238,7 +238,7 @@ impl CosmosTransport {
     pub(crate) fn get_metadata_transport(
         &self,
         endpoint: &AccountEndpoint,
-    ) -> azure_core::Result<AdaptiveTransport> {
+    ) -> crate::error::Result<AdaptiveTransport> {
         let transport = if self.should_use_insecure_emulator_transport(endpoint) {
             match self.insecure_emulator_metadata_transport.get() {
                 Some(t) => t.clone(),
@@ -267,7 +267,7 @@ impl CosmosTransport {
         &self,
         endpoint: &AccountEndpoint,
         transport_mode: TransportMode,
-    ) -> azure_core::Result<AdaptiveTransport> {
+    ) -> crate::error::Result<AdaptiveTransport> {
         if self.should_use_insecure_emulator_transport(endpoint) {
             let transport = match self.insecure_emulator_dataplane_transport.get() {
                 Some(t) => t.clone(),

@@ -47,7 +47,7 @@ impl PipelineNode for SequentialDrain {
     async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         let mut split_retries = 0;
 
         loop {
@@ -85,13 +85,13 @@ impl PipelineNode for SequentialDrain {
                     if split_retries > MAX_SPLIT_RETRIES {
                         // This should be ridiculously rare.
                         // The topology provider already waits for splits to converge before returning.
-                        return Err(azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::Other,
-                            format!(
+                        return Err(crate::error::CosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED)
+                            .with_message(format!(
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"
-                            ),
-                        ));
+                            ))
+                            .build());
                     }
 
                     // Remove the split child and splice in replacements at the front.
@@ -236,17 +236,20 @@ mod tests {
 
     #[tokio::test]
     async fn propagates_child_error() {
-        let child = MockLeaf::with_pages(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "test error",
-        ))]);
+        let child = MockLeaf::with_pages(vec![Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("test error")
+            .build())]);
         let mut drain = SequentialDrain::new(vec![Box::new(child)]);
         let mut executor = NoopRequestExecutor;
         let mut topology = NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "test error");
+        let rendered = err.to_string();
+        assert!(rendered.ends_with("test error"), "unexpected: {rendered}");
     }
 
     #[tokio::test]
@@ -438,9 +441,10 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "exceeded maximum split retries (10) in SequentialDrain"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("exceeded maximum split retries (10) in SequentialDrain"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -524,10 +528,12 @@ mod tests {
             }),
             Ok(PageResult::Drained),
         ]);
-        let child2 = MockLeaf::with_pages(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "boom",
-        ))]);
+        let child2 = MockLeaf::with_pages(vec![Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("boom")
+            .build())]);
 
         let mut drain = SequentialDrain::new(vec![Box::new(child1), Box::new(child2)]);
         let mut executor = NoopRequestExecutor;
@@ -539,7 +545,8 @@ mod tests {
             b"ok"
         );
         let err = drain.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "boom");
+        let rendered = err.to_string();
+        assert!(rendered.ends_with("boom"), "unexpected: {rendered}");
     }
 
     #[tokio::test]

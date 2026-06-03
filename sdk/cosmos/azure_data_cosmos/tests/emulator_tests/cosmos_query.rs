@@ -7,9 +7,9 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     clients::DatabaseClient,
+    models::CosmosStatus,
     options::{MaxItemCountHint, QueryOptions},
     query::FeedScope,
     ContinuationToken, Query,
@@ -121,8 +121,8 @@ struct ItemProjection {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -150,8 +150,8 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -189,8 +189,8 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -224,8 +224,8 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -256,8 +256,12 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -276,42 +280,39 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
             else {
                 panic!("Expected query to fail due to cross-partition ORDER BY");
             };
+            assert_eq!(
+                err.status(),
+                CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE,
+                "Expected 400 / 1004 (CrossPartitionQueryNotServable) for cross-partition ORDER BY"
+            );
 
-            match err.kind() {
-                azure_core::error::ErrorKind::HttpResponse {
-                    status,
-                    raw_response,
-                    ..
-                } => {
-                    assert_eq!(
-                        *status,
-                        StatusCode::BadRequest,
-                        "Expected 400 Bad Request for cross-partition ORDER BY"
-                    );
-                    let raw_response = raw_response.as_ref().unwrap();
-                    let body = std::str::from_utf8(raw_response.body()).unwrap();
-                    #[derive(serde::Deserialize)]
-                    struct ErrorDetail {
-                        code: String,
-                        message: String,
-                    }
-                    let error_detail: ErrorDetail = serde_json::from_str(body).unwrap();
-                    assert_eq!(error_detail.code, "BadRequest");
-
-                    // Take only the first two lines of the message for comparison, since the full message may contain additional details that could change over time
-                    let clean_message = error_detail
-                        .message
-                        .lines()
-                        .take(2)
-                        .collect::<Vec<_>>()
-                        .join("\n");
-                    assert_eq!(
-                        clean_message,
-                        "Query contains 1 or more unsupported features. Upgrade your SDK to a version that does support the requested features:\nQuery contained OrderBy, which the calling client does not support."
-                    );
-                }
-                _ => panic!("Expected HTTP error response for cross-partition ORDER BY"),
+            let body = err
+                .response()
+                .and_then(|r| match r.body() {
+                    azure_data_cosmos_driver::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
+                    _ => None,
+                })
+                .expect("service error should carry a response body");
+            #[derive(serde::Deserialize)]
+            struct ErrorDetail {
+                code: String,
+                message: String,
             }
+            let error_detail: ErrorDetail =
+                serde_json::from_slice(body).expect("response body must be JSON");
+            assert_eq!(error_detail.code, "BadRequest");
+
+            // Take only the first two lines of the message for comparison, since the full message may contain additional details that could change over time
+            let clean_message = error_detail
+                .message
+                .lines()
+                .take(2)
+                .collect::<Vec<_>>()
+                .join("\n");
+            assert_eq!(
+                clean_message,
+                "Query contains 1 or more unsupported features. Upgrade your SDK to a version that does support the requested features:\nQuery contained OrderBy, which the calling client does not support."
+            );
             Ok(())
         },
         None,
@@ -321,8 +322,12 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -373,7 +378,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
 
             // Verify common response metadata is also available on QueryFeedPage
             assert!(
-                page.request_charge().is_some(),
+                page.headers().request_charge().is_some(),
                 "expected request charge on feed page"
             );
             let diagnostics = page.diagnostics();
@@ -399,7 +404,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
                 "expected positive total request charge in feed page diagnostics"
             );
             assert!(
-                page.session_token().is_some(),
+                page.headers().session_token().is_some(),
                 "expected session token on feed page"
             );
 
@@ -412,8 +417,8 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -448,8 +453,8 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

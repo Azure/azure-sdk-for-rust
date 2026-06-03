@@ -156,7 +156,7 @@ pub trait HttpClientFactory: fmt::Debug + Send + Sync {
         &self,
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>>;
+    ) -> crate::error::Result<Arc<dyn TransportClient>>;
 }
 
 #[derive(Debug)]
@@ -174,7 +174,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         &self,
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
+    ) -> crate::error::Result<Arc<dyn TransportClient>> {
         let mut builder = reqwest::Client::builder();
 
         builder =
@@ -226,10 +226,14 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         };
 
         let client = builder.build().map_err(|error| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("Failed to create HTTP client: {error}"),
-            )
+            // HTTP client construction is caller-controlled configuration
+            // (TLS / pool sizing / version pinning), so surface it as a typed
+            // configuration error.
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED)
+                .with_message("failed to create HTTP client")
+                .with_source(error)
+                .build()
         })?;
         Ok(Arc::new(
             super::reqwest_transport_client::ReqwestTransportClient::new(client),
@@ -243,10 +247,12 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         &self,
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
-        Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "azure_data_cosmos_driver requires the `reqwest` feature to construct the default transport",
-        ))
+    ) -> crate::error::Result<Arc<dyn TransportClient>> {
+        Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_REQWEST_FEATURE_REQUIRED)
+            .with_message(
+                "azure_data_cosmos_driver requires the `reqwest` feature to construct the default transport",
+            )
+            .build()
+            .into())
     }
 }

@@ -43,6 +43,8 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 . "$PSScriptRoot/../common/scripts/common.ps1"
 
+$resolvedToolchain = [Channels]::Nightly()
+
 Write-Host "Getting package properties for $PackageName in $ServiceDirectory."
 $pkgProperties = Get-PkgProperties -PackageName $PackageName -ServiceDirectory $ServiceDirectory
 
@@ -83,8 +85,8 @@ if ($content -ne $updated) {
   $updated | Set-Content -Path $tomlPath  -Encoding utf8 -NoNewLine
   Write-Host "Updated version in $tomlPath from $($pkgProperties.Version) to $packageSemVer."
 
-  Write-Host "Updaging dependencies in Cargo.toml files."
-  Invoke-LoggedCommand "cargo +nightly -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
+  Write-Host "Updating dependencies in Cargo.toml files."
+  Invoke-LoggedCommand "cargo +$resolvedToolchain -Zscript '$RepoRoot/eng/scripts/update-pathversions.rs' update" | Out-Null
 
   Write-Host "Updating Cargo.lock using 'cargo update --workspace'."
   Invoke-LoggedCommand "cargo update --workspace" | Out-Null

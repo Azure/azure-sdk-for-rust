@@ -552,7 +552,7 @@ The compute gateway rejects requests that carry both `x-ms-consistency-level` AN
 
 ##### GlobalStrong client-side validation
 
-When the resolved RCS is `GlobalStrong` and the account default consistency is **not** `Strong`, the driver MUST fail the operation **before** transport selection / serialization with a `BadRequestException`-equivalent (Rust: `azure_core::Error` with the appropriate `ErrorKind`). This avoids a wasted round-trip and matches Java's fail-fast semantics. The check uses the cached account properties already maintained by the driver; no additional metadata fetch is required.
+When the resolved RCS is `GlobalStrong` and the account default consistency is **not** `Strong`, the driver MUST fail the operation **before** transport selection / serialization with a `BadRequestException`-equivalent (Rust: `CosmosError` with the appropriate `ErrorKind`). This avoids a wasted round-trip and matches Java's fail-fast semantics. The check uses the cached account properties already maintained by the driver; no additional metadata fetch is required.
 
 ##### Implementation pitfall (Java bug class to avoid)
 
@@ -752,7 +752,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00F0` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
 | Consistency reconciliation: dual-header rejection | Yes | | | SDK never emits both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy` on V1; never emits both `ConsistencyLevel` and `ReadConsistencyStrategy` RNTBD tokens on V2. Verified across all 16 (CL × RCS, request-level × client-level) combinations. |
 | Consistency reconciliation: 4-source precedence | Yes | | | Request-RCS > Request-CL > Client-RCS > Client-CL > account default; `Default` at any RCS layer is a pass-through. Representative subset matching Java's data-provider tests. |
-| Consistency reconciliation: GlobalStrong validation | Yes | | | RCS=GlobalStrong on a non-Strong account produces a fail-fast `azure_core::Error` (no wire request emitted); on a Strong account the request proceeds normally. |
+| Consistency reconciliation: GlobalStrong validation | Yes | | | RCS=GlobalStrong on a non-Strong account produces a fail-fast `CosmosError` (no wire request emitted); on a Strong account the request proceeds normally. |
 | Consistency reconciliation: header-map immutability | Yes | | | Resolution does not mutate the operation's original request headers; an `applySessionToken`-equivalent rewrite cannot clobber `x-ms-consistency-level`. |
 | Consistency reconciliation: write-op behavior | Yes | | | Write op + RCS set → RCS is ignored, `ConsistencyLevel` (if any) flows through on the selected transport. |
 | Gateway 2.0 transport | Yes | Yes | | Correct HTTP/2 config, sharded pool selection |

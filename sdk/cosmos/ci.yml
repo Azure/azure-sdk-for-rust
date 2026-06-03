@@ -92,3 +92,15 @@ extends:
         Path: sdk/cosmos/live-platform-matrix.json
         Selection: sparse
         GenerateVMJobs: true
+    # Non-blocking vnext (Linux) emulator coverage. Adds a single extra job to
+    # the Build stage's matrix that runs the cosmos integration test suite
+    # against the local vnext Cosmos emulator container. The matrix entry
+    # carries `ContinueOnError: "true"` so failures here surface as
+    # "succeeded with issues" rather than blocking Release. Container
+    # lifecycle is owned by sdk/cosmos/eng/scripts/Invoke-CosmosTestSetup.ps1
+    # (started when AZURE_COSMOS_EMULATOR_FLAVOR=vnext is set on the leg).
+    AdditionalMatrixConfigs:
+      - Name: Cosmos_vnext_emulator
+        Path: sdk/cosmos/vnext-emulator-matrix.json
+        Selection: all
+        GenerateVMJobs: true

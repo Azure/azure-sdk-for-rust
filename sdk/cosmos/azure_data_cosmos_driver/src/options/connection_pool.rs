@@ -551,7 +551,7 @@ impl ConnectionPoolOptionsBuilder {
     /// - Any duration is less than 100 milliseconds
     /// - `max_idle_connections_per_endpoint` is zero
     /// - Environment variable parsing fails
-    pub fn build(self) -> azure_core::Result<ConnectionPoolOptions> {
+    pub fn build(self) -> crate::error::Result<ConnectionPoolOptions> {
         let effective_is_http2_allowed = parse_from_env(
             self.is_http2_allowed,
             "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED",
@@ -670,14 +670,11 @@ impl ConnectionPoolOptionsBuilder {
         )?;
 
         if min_http2_connections_per_endpoint > max_http2_connections_per_endpoint {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message(format!(
                     "min_http2_connections_per_endpoint must be less than or equal to max_http2_connections_per_endpoint, got {} > {}",
                     min_http2_connections_per_endpoint,
                     max_http2_connections_per_endpoint
-                ),
-            ));
+                )).build());
         }
 
         let idle_http2_client_timeout = parse_duration_millis_from_env(
@@ -797,13 +794,14 @@ impl ConnectionPoolOptionsBuilder {
                 Some(addr) => Some(addr),
                 None => match std::env::var("AZURE_COSMOS_LOCAL_ADDRESS") {
                     Ok(v) => Some(v.parse().map_err(|e| {
-                        azure_core::Error::with_message(
-                            azure_core::error::ErrorKind::DataConversion,
-                            format!(
-                                "Failed to parse AZURE_COSMOS_LOCAL_ADDRESS as IP address: {} ({})",
-                                v, e
-                            ),
-                        )
+                        crate::error::CosmosError::builder()
+                            .with_status(crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest,
+                            ))
+                            .with_message(format!(
+                            "Failed to parse AZURE_COSMOS_LOCAL_ADDRESS as IP address: {v} ({e})"
+                        ))
+                            .build()
                     })?),
                     Err(_) => None,
                 },

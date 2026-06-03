@@ -91,10 +91,10 @@ impl TransportClient for CapturingTransport {
             .push(request.clone());
 
         Err(TransportError::new(
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "capturing transport refuses every request",
-            ),
+            azure_data_cosmos_driver::error::CosmosError::builder()
+                .with_status(azure_data_cosmos_driver::CosmosStatus::TRANSPORT_IO_FAILED)
+                .with_message("capturing transport refuses every request")
+                .build(),
             azure_data_cosmos_driver::diagnostics::RequestSentStatus::NotSent,
         ))
     }
@@ -122,7 +122,7 @@ impl HttpClientFactory for CapturingFactory {
         &self,
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
+    ) -> azure_data_cosmos_driver::error::Result<Arc<dyn TransportClient>> {
         Ok(self.transport.clone() as Arc<dyn TransportClient>)
     }
 }

@@ -32,7 +32,10 @@ impl Operation for ReadItemOperation {
         "ReadItem"
     }
 
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<Option<Duration>> {
+    async fn execute(
+        &self,
+        container: &ContainerClient,
+    ) -> azure_data_cosmos::Result<Option<Duration>> {
         let item = self.items.random();
 
         let response = container

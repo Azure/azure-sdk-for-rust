@@ -38,7 +38,7 @@ impl RecoverableReceiver {
     }
 
     fn should_retry_receive_operation(e: &AmqpError) -> ErrorRecoveryAction {
-        RecoverableConnection::should_retry_amqp_error(e)
+        RecoverableConnection::should_retry_receive_error(e)
     }
 }
 

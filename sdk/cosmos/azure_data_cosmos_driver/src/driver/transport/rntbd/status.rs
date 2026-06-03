@@ -18,7 +18,7 @@ pub(crate) fn map_rntbd_status_to_cosmos_status(
     let status = StatusCode::from(http_status as u16);
     let mut cosmos_status = CosmosStatus::new(status);
     if let Some(sub_status) = sub_status {
-        cosmos_status = cosmos_status.with_sub_status(sub_status);
+        cosmos_status = cosmos_status.with_sub_status(sub_status as u16);
     }
     cosmos_status
 }

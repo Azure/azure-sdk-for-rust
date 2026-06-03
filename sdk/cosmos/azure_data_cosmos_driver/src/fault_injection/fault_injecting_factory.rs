@@ -40,7 +40,7 @@ impl HttpClientFactory for FaultInjectingHttpClientFactory {
         &self,
         connection_pool: &ConnectionPoolOptions,
         config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
+    ) -> crate::error::Result<Arc<dyn TransportClient>> {
         let transport_kind = config.transport_kind;
         let real_client = self.inner.build(connection_pool, config)?;
         let rules = (*self.rules).clone();
@@ -72,7 +72,7 @@ mod tests {
             &self,
             _connection_pool: &ConnectionPoolOptions,
             _config: HttpClientConfig,
-        ) -> azure_core::Result<Arc<dyn TransportClient>> {
+        ) -> crate::error::Result<Arc<dyn TransportClient>> {
             Ok(Arc::new(MockTransportClient {
                 call_count: AtomicU32::new(0),
             }))

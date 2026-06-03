@@ -52,8 +52,8 @@ fn create_test_item(unique_id: &str) -> TestItem {
 /// With probability 0.0, the fault should never be applied.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -118,8 +118,8 @@ pub async fn fault_injection_probability_zero_never_fails() -> Result<(), Box<dy
 /// Test probability fault injection - with probability 1.0, fault should always apply.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -169,8 +169,8 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
                 let err =
                     result.expect_err(&format!("read {} should fail with probability 1.0", i));
                 assert_eq!(
-                    Some(StatusCode::ServiceUnavailable),
-                    err.http_status(),
+                    StatusCode::ServiceUnavailable,
+                    err.status().status_code(),
                     "read {} should return 503",
                     i
                 );
@@ -187,8 +187,8 @@ pub async fn fault_injection_probability_one_always_fails() -> Result<(), Box<dy
 /// Injects 429 for the first 2 requests, verifies 3rd succeeds.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -254,8 +254,8 @@ pub async fn fault_injection_429_retry_with_hit_limit() -> Result<(), Box<dyn Er
 /// Test DeleteItem fault - verify CRUD operations unaffected.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -325,8 +325,8 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
                 .await;
             let err = delete_result.expect_err("delete should fail due to fault injection");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
-                err.http_status(),
+                StatusCode::ServiceUnavailable,
+                err.status().status_code(),
                 "delete should return 503 ServiceUnavailable"
             );
 
@@ -340,8 +340,8 @@ pub async fn fault_injection_delete_item_fault_crud_succeeds() -> Result<(), Box
 /// Test container-specific fault - verify other containers unaffected.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -417,8 +417,8 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
             let err = faulty_result
                 .expect_err("read should fail for container matching 'FaultyContainer'");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
-                err.http_status(),
+                StatusCode::ServiceUnavailable,
+                err.status().status_code(),
                 "expected 503 ServiceUnavailable for FaultyContainer"
             );
 
@@ -432,8 +432,8 @@ pub async fn fault_injection_container_specific() -> Result<(), Box<dyn Error>> 
 /// Test multiple rules priority - first matching rule wins.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem
@@ -491,8 +491,8 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
             // Should get 429 (first rule), not 503 (second rule)
             let err = result.expect_err("expected first rule (429) to apply");
             assert_eq!(
-                Some(StatusCode::TooManyRequests),
-                err.http_status(),
+                StatusCode::TooManyRequests,
+                err.status().status_code(),
                 "first matching rule should win (429, not 503)"
             );
 
@@ -507,8 +507,8 @@ pub async fn fault_injection_multiple_rules_priority() -> Result<(), Box<dyn Err
 /// Second rule applies immediately and should win.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with a future start_time (won't be active yet)
@@ -567,8 +567,8 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
             // Should get 503 (second rule) because first rule hasn't started yet
             let err = result.expect_err("expected second rule (503) to apply");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
-                err.http_status(),
+                StatusCode::ServiceUnavailable,
+                err.status().status_code(),
                 "second rule should apply (503) since first rule has not started"
             );
 
@@ -583,8 +583,8 @@ pub async fn fault_injection_first_rule_inactive_due_to_start_time() -> Result<(
 /// Second rule should win.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), Box<dyn Error>> {
     // First rule: 429 for ReadItem, but with an end_time in the past (already expired)
@@ -646,8 +646,8 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
             // Should get 503 (second rule) because first rule's duration has expired
             let err = result.expect_err("expected second rule (503) to apply");
             assert_eq!(
-                Some(StatusCode::ServiceUnavailable),
-                err.http_status(),
+                StatusCode::ServiceUnavailable,
+                err.status().status_code(),
                 "second rule should apply (503) since first rule's end_time has passed"
             );
 
@@ -661,8 +661,8 @@ pub async fn fault_injection_first_rule_expired_due_to_end_time() -> Result<(), 
 /// Test hit_limit behavior - fault stops after N applications.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -718,8 +718,8 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
                     i
                 );
                 assert_eq!(
-                    Some(StatusCode::InternalServerError),
-                    result.unwrap_err().http_status()
+                    StatusCode::InternalServerError,
+                    result.unwrap_err().status().status_code()
                 );
             }
 
@@ -743,8 +743,8 @@ pub async fn fault_injection_hit_limit_behavior() -> Result<(), Box<dyn Error>> 
 /// Test empty rules - no fault injection, operations should succeed.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
     let fault_builder: Vec<Arc<FaultInjectionRule>> = Vec::new();
@@ -794,8 +794,8 @@ pub async fn fault_injection_empty_rules() -> Result<(), Box<dyn Error>> {
 /// Test that item operations succeed when metadata operations are faulted.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -903,8 +903,8 @@ pub async fn fault_injection_metadata_fault_item_ops_succeed() -> Result<(), Box
 /// and re-enabling it resumes injection.
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
@@ -1060,8 +1060,14 @@ pub async fn gateway20_connection_error_fails_fast_after_all_regions_attempted(
             let err = result.expect_err(
                 "read must fail fast after Gateway 2.0 connection errors on every region",
             );
+            let status = err.status();
             assert!(
-                matches!(err.kind(), azure_core::error::ErrorKind::Io)
+                status.sub_status()
+                    == Some(azure_data_cosmos_driver::SubStatusCode::TRANSPORT_IO_FAILED)
+                    || status.sub_status()
+                        == Some(
+                            azure_data_cosmos_driver::SubStatusCode::TRANSPORT_CONNECTION_FAILED
+                        )
                     || err.to_string().to_lowercase().contains("connection"),
                 "expected a connection-failure error, got: {err:?}"
             );

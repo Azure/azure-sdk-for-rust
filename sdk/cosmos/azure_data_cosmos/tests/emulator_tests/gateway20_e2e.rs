@@ -55,7 +55,7 @@ use azure_data_cosmos::models::{
 use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::query::FeedScope;
 use azure_data_cosmos::{
-    CosmosAccountEndpoint, CosmosAccountReference, CosmosClient, Query, Region, RoutingStrategy,
+    AccountEndpoint, AccountReference, CosmosClient, Query, Region, RoutingStrategy,
     TransactionalBatch,
 };
 use futures::StreamExt;
@@ -66,7 +66,7 @@ fn read_env(name: &str) -> Option<String> {
 }
 
 /// Normalizes a Gateway 2.0 endpoint string so it can be parsed by
-/// `CosmosAccountEndpoint::from_str` (which is a thin wrapper over
+/// `AccountEndpoint::from_str` (which is a thin wrapper over
 /// `Url::parse`).
 ///
 /// The pre-provisioned Gateway 2.0 secret variables in the
@@ -115,9 +115,9 @@ async fn build_client(
     key: &str,
     gateway20_disabled: bool,
 ) -> Result<CosmosClient, Box<dyn std::error::Error>> {
-    let endpoint: CosmosAccountEndpoint = normalize_gateway20_endpoint(endpoint).parse()?;
+    let endpoint: AccountEndpoint = normalize_gateway20_endpoint(endpoint).parse()?;
     let account_ref =
-        CosmosAccountReference::with_master_key(endpoint, Secret::from(key.to_string()));
+        AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
     let client = CosmosClient::builder()
         .with_gateway20_disabled(gateway20_disabled)
         .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US))
@@ -313,8 +313,9 @@ pub async fn gateway20_query_paginates_via_continuation_tokens(
         HeaderName::from_static("x-ms-max-item-count"),
         HeaderValue::from_static("2"),
     );
-    let query_options = QueryOptions::default()
-        .with_operation_options(OperationOptions::default().with_custom_headers(custom_headers));
+    let mut op_options = OperationOptions::default();
+    op_options.custom_headers = Some(custom_headers);
+    let query_options = QueryOptions::default().with_operation_options(op_options);
 
     let query = Query::from("SELECT * FROM c ORDER BY c.value");
     let mut pages = container

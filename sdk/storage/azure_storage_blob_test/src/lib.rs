@@ -2,16 +2,19 @@
 // Licensed under the MIT License.
 
 use std::{
+    future::Future,
     slice,
     sync::{
         atomic::{AtomicUsize, Ordering},
         mpsc::Sender,
         Arc,
     },
+    time::Duration,
 };
 
 use async_trait::async_trait;
 use azure_core::{
+    credentials::TokenCredential,
     error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
@@ -20,7 +23,8 @@ use azure_core::{
     },
     Bytes, Result,
 };
-use azure_core_test::Recording;
+use azure_core_test::{Recording, TestMode};
+use azure_identity::ManagedIdentityCredential;
 use azure_storage_blob::{
     models::{
         BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
@@ -122,6 +126,32 @@ pub fn recorded_test_setup(
         "https://{}.blob.core.windows.net/",
         recording.var(account_name_var, None).as_str()
     )
+}
+
+/// Returns a credential suitable for storage operations.
+///
+/// In playback mode, returns the recording's mock credential immediately.
+/// Otherwise, if the environment variable `AZURE_STORAGE_USE_MANAGED_IDENTITY` is set to
+/// `"true"`, returns a [`ManagedIdentityCredential`]. Falls back to the recording's
+/// test credential via [`Recording::credential`].
+///
+/// # Arguments
+///
+/// * `recording` - A reference to a Recording instance.
+pub fn get_test_credential(recording: &Recording) -> Arc<dyn TokenCredential> {
+    if recording.test_mode() == TestMode::Playback {
+        return recording.credential();
+    }
+
+    let use_managed_identity = std::env::var("AZURE_STORAGE_USE_MANAGED_IDENTITY")
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+
+    if use_managed_identity {
+        ManagedIdentityCredential::new(None).expect("failed to create ManagedIdentityCredential")
+    } else {
+        recording.credential()
+    }
 }
 
 /// Takes in a Recording instance and returns a randomized blob name with prefix "blob" of length 16.
@@ -511,5 +541,42 @@ impl Policy for FailFirstPolicy {
             ));
         }
         next[0].send(ctx, request, &next[1..]).await
+    }
+}
+
+/// Polls an async condition until it returns `true`, with behavior adapted to the test mode.
+///
+/// - **Live**: polls every 5 seconds up to 60 seconds total, panicking on timeout.
+/// - **Record**: sleeps 15 seconds, then returns (caller asserts after).
+/// - **Playback**: returns immediately.
+///
+/// # Arguments
+///
+/// * `recording` - The current test recording context.
+/// * `check` - An async closure that returns `Ok(true)` when the condition is met.
+pub async fn poll_until<F, Fut>(recording: &Recording, mut check: F) -> Result<()>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<bool>>,
+{
+    match recording.test_mode() {
+        TestMode::Live => {
+            let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
+            loop {
+                if check().await? {
+                    return Ok(());
+                }
+                assert!(
+                    tokio::time::Instant::now() < deadline,
+                    "Timed out after 60s waiting for eventual consistency"
+                );
+                tokio::time::sleep(Duration::from_secs(5)).await;
+            }
+        }
+        TestMode::Record => {
+            tokio::time::sleep(Duration::from_secs(15)).await;
+            Ok(())
+        }
+        TestMode::Playback => Ok(()),
     }
 }

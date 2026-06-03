@@ -18,6 +18,7 @@ use crate::{
 };
 
 use super::{
+    intersect_feed_ranges,
     query_plan::{QueryInfo, QueryPlan},
     DrainedLeaf, PartitionRoutingRefresh, Pipeline, PipelineNode, PipelineNodeState, Request,
     RequestTarget, SequentialDrain, TopologyProvider,
@@ -45,7 +46,7 @@ use super::{
 pub(crate) fn build_trivial_pipeline(
     operation: Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
-) -> azure_core::Result<Pipeline> {
+) -> crate::error::Result<Pipeline> {
     debug_assert!(
         operation.is_trivial(),
         "build_trivial_pipeline called with non-trivial operation: {:?} targeting {:?}",
@@ -64,13 +65,13 @@ pub(crate) fn build_trivial_pipeline(
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         Some(other) => {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                format!(
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_message(format!(
                     "continuation token shape {} does not match a trivial operation",
                     snapshot_kind(&other)
-                ),
-            ));
+                ))
+                .build());
         }
     };
 
@@ -83,11 +84,15 @@ pub(crate) fn build_trivial_pipeline(
             if let Some(pk) = f.partition_key() {
                 RequestTarget::LogicalPartitionKey(pk.clone())
             } else {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "FeedRange targeting requires a fan-out pipeline; \
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE,
+                    )
+                    .with_message(
+                        "FeedRange targeting requires a fan-out pipeline; \
                  use plan_operation for cross-partition queries",
-                ));
+                    )
+                    .build());
             }
         }
     };
@@ -129,7 +134,7 @@ pub(crate) async fn build_sequential_drain(
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
-) -> azure_core::Result<Pipeline> {
+) -> crate::error::Result<Pipeline> {
     validate_query_plan(query_plan)?;
 
     let resume = match resume {
@@ -148,22 +153,23 @@ pub(crate) async fn build_sequential_drain(
                 } => server_continuation,
                 PipelineNodeState::Drained => None,
                 other => {
-                    return Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::DataConversion,
-                        format!(
+                    return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE).with_message(format!(
                             "continuation token has unsupported nested shape inside SequentialDrain: {}",
                             snapshot_kind(&other)
-                        ),
-                    ));
+                        )).build());
                 }
             };
             let current_min_epk = EffectivePartitionKey::from(current_min_epk);
             let current_max_epk = EffectivePartitionKey::from(current_max_epk);
             if current_min_epk > current_max_epk {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "continuation token has invalid SequentialDrain range (min > max)",
-                ));
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    )
+                    .with_message(
+                        "continuation token has invalid SequentialDrain range (min > max)",
+                    )
+                    .build());
             }
             Some(ResumeCursor {
                 current_min_epk,
@@ -177,8 +183,8 @@ pub(crate) async fn build_sequential_drain(
             // A bare Request snapshot means the cross-partition query had only
             // a single child — apply it as a cursor at the minimum EPK.
             Some(ResumeCursor {
-                current_min_epk: EffectivePartitionKey::min(),
-                current_max_epk: EffectivePartitionKey::max(),
+                current_min_epk: EffectivePartitionKey::MIN.clone(),
+                current_max_epk: EffectivePartitionKey::MAX.clone(),
                 server_continuation,
             })
         }
@@ -211,13 +217,15 @@ pub(crate) async fn build_sequential_drain(
                     && resolved_range.range.min_inclusive() <= &cursor.current_min_epk
                     && &cursor.current_max_epk < resolved_range.range.max_exclusive()
                 {
-                    let resumed_target = RequestTarget::EffectivePartitionKeyRange {
-                        range: FeedRange::new(
-                            cursor.current_min_epk.clone(),
-                            cursor.current_max_epk.clone(),
-                        )?,
-                        partition_key_range_id: resolved_range.partition_key_range_id.clone(),
-                    };
+                    let resumed_range = FeedRange::new(
+                        cursor.current_min_epk.clone(),
+                        cursor.current_max_epk.clone(),
+                    )?;
+                    let resumed_target = RequestTarget::effective_partition_key_range(
+                        resumed_range,
+                        resolved_range.partition_key_range_id.clone(),
+                        resolved_range.range.clone(),
+                    );
                     let resumed_continuation = cursor.server_continuation.take();
                     request_nodes.push(Box::new(Request::new(
                         Arc::clone(operation),
@@ -225,13 +233,15 @@ pub(crate) async fn build_sequential_drain(
                         resumed_continuation,
                     )));
 
-                    let tail_target = RequestTarget::EffectivePartitionKeyRange {
-                        range: FeedRange::new(
-                            cursor.current_max_epk.clone(),
-                            resolved_range.range.max_exclusive().clone(),
-                        )?,
-                        partition_key_range_id: resolved_range.partition_key_range_id,
-                    };
+                    let tail_range = FeedRange::new(
+                        cursor.current_max_epk.clone(),
+                        resolved_range.range.max_exclusive().clone(),
+                    )?;
+                    let tail_target = RequestTarget::effective_partition_key_range(
+                        tail_range,
+                        resolved_range.partition_key_range_id,
+                        resolved_range.range,
+                    );
                     request_nodes.push(Box::new(Request::new(
                         Arc::clone(operation),
                         tail_target,
@@ -241,13 +251,18 @@ pub(crate) async fn build_sequential_drain(
                 }
             }
 
-            // Carry the server continuation onto the first surviving leaf,
-            // then clear it so subsequent leaves start fresh.
+            // Carry the server continuation to every leaf node, because
+            // we don't know which ones have been drained. The service does, and will
+            // just return empty pages for those if needed.
             let initial_continuation = resume.as_mut().and_then(|c| c.server_continuation.take());
-            let target = RequestTarget::EffectivePartitionKeyRange {
-                range: resolved_range.range,
-                partition_key_range_id: resolved_range.partition_key_range_id,
-            };
+            let range = intersect_feed_ranges(&resolved_range.range, &feed_range).expect(
+                "topology provider must return ranges that overlap the query plan EPK range",
+            );
+            let target = RequestTarget::effective_partition_key_range(
+                range,
+                resolved_range.partition_key_range_id,
+                resolved_range.range,
+            );
             request_nodes.push(Box::new(Request::new(
                 Arc::clone(operation),
                 target,
@@ -264,10 +279,10 @@ pub(crate) async fn build_sequential_drain(
         if resume.is_some() {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "query plan produced no partition ranges to query",
-        ));
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_message("query plan produced no partition ranges to query")
+            .build());
     }
 
     // Even when there's only one request node, we still need to wrap it in a SequentialDrain
@@ -293,7 +308,7 @@ fn snapshot_kind(state: &PipelineNodeState) -> &'static str {
 }
 
 /// Validates that the query plan does not require features we don't yet support.
-fn validate_query_plan(plan: &QueryPlan) -> azure_core::Result<()> {
+fn validate_query_plan(plan: &QueryPlan) -> crate::error::Result<()> {
     if plan.hybrid_search_query_info.is_some() {
         return Err(unsupported_feature("hybrid search queries"));
     }
@@ -305,7 +320,7 @@ fn validate_query_plan(plan: &QueryPlan) -> azure_core::Result<()> {
     Ok(())
 }
 
-fn validate_query_info(info: &QueryInfo) -> azure_core::Result<()> {
+fn validate_query_info(info: &QueryInfo) -> crate::error::Result<()> {
     if info.top.is_some() {
         return Err(unsupported_feature("TOP clause in cross-partition queries"));
     }
@@ -329,11 +344,11 @@ fn validate_query_info(info: &QueryInfo) -> azure_core::Result<()> {
     Ok(())
 }
 
-fn unsupported_feature(feature: &str) -> azure_core::Error {
-    azure_core::Error::with_message(
-        azure_core::error::ErrorKind::Other,
-        format!("unsupported query feature: {feature}"),
-    )
+fn unsupported_feature(feature: &str) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+        .with_message(format!("unsupported query feature: {feature}"))
+        .build()
 }
 
 #[cfg(test)]
@@ -434,10 +449,13 @@ mod tests {
             Err(_) => panic!("did not expect panic for FeedRange target"),
             // Returned Err in release mode (also acceptable)
             Ok(Err(err)) => {
-                assert_eq!(
-                    err.to_string(),
-                    "FeedRange targeting requires a fan-out pipeline; \
-                     use plan_operation for cross-partition queries"
+                let rendered = err.to_string();
+                assert!(
+                    rendered.ends_with(
+                        "FeedRange targeting requires a fan-out pipeline; \
+                         use plan_operation for cross-partition queries"
+                    ),
+                    "unexpected: {rendered}"
                 );
             }
             _ => panic!("expected error or panic for FeedRange target"),
@@ -480,7 +498,22 @@ mod tests {
 
     /// Asserts that the pipeline is a `SequentialDrain` containing `Request` nodes
     /// targeting the given EPK ranges (in order).
+    type ExpectedDrainRequestWithPartition<'a> = (&'a str, &'a str, &'a str, &'a str, &'a str);
+    type ExpectedDrainRequestWithContinuation<'a> =
+        (&'a str, &'a str, &'a str, &'a str, &'a str, Option<&'a str>);
+
     fn assert_drain_requests(pipeline: Pipeline, expected: &[(&str, &str, &str)]) {
+        let expected = expected
+            .iter()
+            .map(|&(min, max, pk_range_id)| (min, max, pk_range_id, min, max))
+            .collect::<Vec<_>>();
+        assert_drain_requests_with_partitions(pipeline, &expected);
+    }
+
+    fn assert_drain_requests_with_partitions(
+        pipeline: Pipeline,
+        expected: &[ExpectedDrainRequestWithPartition<'_>],
+    ) {
         let drain = pipeline
             .into_root()
             .downcast::<SequentialDrain>()
@@ -493,30 +526,35 @@ mod tests {
             expected.len(),
             children.len(),
         );
-        for (child, &(min, max, pk_range_id)) in children.into_iter().zip(expected) {
+        for (child, &(min, max, pk_range_id, partition_min, partition_max)) in
+            children.into_iter().zip(expected)
+        {
             let request = child
                 .downcast::<Request>()
                 .expect("expected Request child node");
             assert_eq!(
                 *request.target(),
-                RequestTarget::EffectivePartitionKeyRange {
-                    range: FeedRange::new(
+                RequestTarget::effective_partition_key_range(
+                    FeedRange::new(
                         EffectivePartitionKey::from(min),
                         EffectivePartitionKey::from(max),
                     )
                     .unwrap(),
-                    partition_key_range_id: pk_range_id.to_string(),
-                },
+                    pk_range_id.to_string(),
+                    FeedRange::new(
+                        EffectivePartitionKey::from(partition_min),
+                        EffectivePartitionKey::from(partition_max),
+                    )
+                    .unwrap(),
+                ),
                 "mismatch for pk range {pk_range_id}"
             );
         }
     }
 
-    /// Asserts that each `Request` child targets the given range and has the
-    /// expected server continuation snapshot state.
-    fn assert_drain_requests_with_continuation(
+    fn assert_drain_requests_with_partitions_and_continuation(
         pipeline: Pipeline,
-        expected: &[(&str, &str, &str, Option<&str>)],
+        expected: &[ExpectedDrainRequestWithContinuation<'_>],
     ) {
         let drain = pipeline
             .into_root()
@@ -531,20 +569,27 @@ mod tests {
             children.len(),
         );
 
-        for (child, &(min, max, pk_range_id, continuation)) in children.into_iter().zip(expected) {
+        for (child, &(min, max, pk_range_id, partition_min, partition_max, continuation)) in
+            children.into_iter().zip(expected)
+        {
             let request = child
                 .downcast::<Request>()
                 .expect("expected Request child node");
             assert_eq!(
                 *request.target(),
-                RequestTarget::EffectivePartitionKeyRange {
-                    range: FeedRange::new(
+                RequestTarget::effective_partition_key_range(
+                    FeedRange::new(
                         EffectivePartitionKey::from(min),
                         EffectivePartitionKey::from(max),
                     )
                     .unwrap(),
-                    partition_key_range_id: pk_range_id.to_string(),
-                },
+                    pk_range_id.to_string(),
+                    FeedRange::new(
+                        EffectivePartitionKey::from(partition_min),
+                        EffectivePartitionKey::from(partition_max),
+                    )
+                    .unwrap(),
+                ),
                 "mismatch for pk range {pk_range_id}"
             );
 
@@ -665,7 +710,6 @@ mod tests {
     #[tokio::test]
     async fn topology_partition_wider_than_query_range() {
         // The topology partition [, FF) is wider than query range [20, 80).
-        // The resolved range matches the topology, not the query range.
         let plan = plan_with_ranges(vec![qr("20", "80")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-wide")])]);
@@ -673,7 +717,7 @@ mod tests {
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap();
-        assert_drain_requests(pipeline, &[("", "FF", "pkrange-wide")]);
+        assert_drain_requests_with_partitions(pipeline, &[("20", "80", "pkrange-wide", "", "FF")]);
     }
 
     #[tokio::test]
@@ -691,9 +735,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: TOP clause in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: TOP clause in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -712,9 +757,11 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: LIMIT clause in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered
+                .ends_with("unsupported query feature: LIMIT clause in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -734,9 +781,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: ORDER BY in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: ORDER BY in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -755,9 +803,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: aggregates in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: aggregates in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -776,9 +825,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: GROUP BY in cross-partition queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: GROUP BY in cross-partition queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -801,9 +851,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "unsupported query feature: hybrid search queries"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("unsupported query feature: hybrid search queries"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -828,9 +879,10 @@ mod tests {
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "query plan produced no partition ranges to query"
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("query plan produced no partition ranges to query"),
+            "unexpected: {rendered}"
         );
     }
 
@@ -838,15 +890,22 @@ mod tests {
     async fn propagates_topology_resolution_error() {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
-        let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "topology resolution failed",
-        ))]);
+        let mut topology =
+            MockTopologyProvider::new(vec![Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("topology resolution failed")
+                .build())]);
 
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), None)
             .await
             .unwrap_err();
-        assert_eq!(err.to_string(), "topology resolution failed");
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("topology resolution failed"),
+            "unexpected: {rendered}"
+        );
     }
 
     // -----------------------------------------------------------------
@@ -1001,11 +1060,11 @@ mod tests {
             .await
             .unwrap();
 
-        assert_drain_requests_with_continuation(
+        assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[
-                ("55", "AA", "pk-merged", Some("server-token-xyz")),
-                ("AA", "FF", "pk-merged", None),
+                ("55", "AA", "pk-merged", "", "FF", Some("server-token-xyz")),
+                ("AA", "FF", "pk-merged", "", "FF", None),
             ],
         );
     }

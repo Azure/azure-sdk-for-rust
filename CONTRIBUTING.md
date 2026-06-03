@@ -4,7 +4,7 @@
 
 - [Rust toolchain](https://www.rust-lang.org/tools/install)
 
-  When you run `cargo build`, toolchain version [1.85](https://releases.rs/docs/1.85.0/) and necessary components will be installed automatically.
+  When you run `cargo build`, the required toolchain version and necessary components will be installed automatically.
 
 - (Recommended) If you use [Visual Studio Code], install recommended extensions to improve your development experience.
 
@@ -410,6 +410,26 @@ See <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inhe
 When a release to crates.io completes, the Engineering System opens a pull request to increment versions of released packages. This PR should be merged as soon as possible to put the `main` branch in a "releasable" state and to provide context that code at the HEAD of `main` may not reflect code in a previously released version of a library.
 
 The incremented version will be a "beta" of an incrementally higher release. This incremented version in the PR is a placeholder. The version can be updated in another PR to reflect the intended release version.
+
+### Toolchains
+
+The stable and nightly Rust toolchain versions used throughout the repository are pinned to specific versions. The stable channel is pinned in `rust-toolchain.toml`; the nightly channel is pinned in `eng/scripts/Language-Settings.ps1` and in the shebang lines of the `eng/scripts/*.rs` utility scripts.
+
+Project maintainers can update both channels by running:
+
+```powershell
+eng/scripts/Update-Rust.ps1
+```
+
+This script automatically detects the latest stable release from GitHub and finds a working nightly toolchain. You can also specify either or both versions explicitly:
+
+```powershell
+eng/scripts/Update-Rust.ps1 -Version 1.96.0 -NightlyVersion 2026-05-01
+```
+
+Outside contributors who need a newer toolchain should [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues) describing specifically why the update is needed.
+
+The minimum supported Rust version (MSRV) is pinned to an older version in the root `Cargo.toml` and is updated less frequently because raising it is a breaking change. To request an MSRV bump, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues) with a clear justification for why the increase is necessary.
 
 ## Samples
 

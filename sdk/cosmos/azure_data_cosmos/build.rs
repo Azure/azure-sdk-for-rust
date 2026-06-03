@@ -7,6 +7,6 @@
 fn main() {
     // Allow `#[cfg_attr(not(test_category = "..."), ignore)]` in `tests/*.rs`.
     println!(
-        "cargo:rustc-check-cfg=cfg(test_category, values(\"emulator\", \"multi_write\", \"split\", \"gateway20\", \"gateway20_multi_region\"))"
+        "cargo:rustc-check-cfg=cfg(test_category, values(\"emulator\", \"emulator_vnext\", \"multi_write\", \"split\", \"gateway20\", \"gateway20_multi_region\"))"
     );
 }

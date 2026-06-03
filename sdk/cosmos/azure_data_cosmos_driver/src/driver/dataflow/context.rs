@@ -27,7 +27,7 @@ pub(crate) trait RequestExecutor: Send {
         target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> BoxFuture<'a, azure_core::Result<CosmosResponse>>;
+    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>>;
 }
 
 /// Resolves EPK ranges to their current physical partition key ranges.
@@ -48,7 +48,7 @@ pub(crate) trait TopologyProvider: Send {
         &'a mut self,
         range: &'a FeedRange,
         refresh: PartitionRoutingRefresh,
-    ) -> BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>>;
+    ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>>;
 }
 
 /// A physical partition's EPK sub-range, as resolved from the current topology.
@@ -89,7 +89,7 @@ impl<'a> PipelineContext<'a> {
         target: RequestTarget,
         partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> azure_core::Result<CosmosResponse> {
+    ) -> crate::error::Result<CosmosResponse> {
         self.request_executor
             .execute_request(operation, target, partition_routing_refresh, continuation)
             .await
@@ -99,12 +99,9 @@ impl<'a> PipelineContext<'a> {
         &mut self,
         range: &FeedRange,
         refresh: PartitionRoutingRefresh,
-    ) -> azure_core::Result<Vec<ResolvedRange>> {
+    ) -> crate::error::Result<Vec<ResolvedRange>> {
         let provider = self.topology_provider.as_deref_mut().ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "topology resolution requested for a plan that was not given a topology provider",
-            )
+            crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_TOPOLOGY_PROVIDER_MISSING).with_message("topology resolution requested for a plan that was not given a topology provider").build()
         })?;
         provider.resolve_ranges(range, refresh).await
     }

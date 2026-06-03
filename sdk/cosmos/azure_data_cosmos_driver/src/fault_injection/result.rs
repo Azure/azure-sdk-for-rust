@@ -71,7 +71,7 @@ impl CustomResponseBuilder {
     }
 
     /// Adds a sub-status header to the response.
-    pub fn with_sub_status(self, code: u32) -> Self {
+    pub fn with_sub_status(self, code: u16) -> Self {
         self.with_header("x-ms-substatus", code.to_string())
     }
 

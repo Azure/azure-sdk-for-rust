@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos_driver"
-version = "0.3.0"
+version = "0.4.0"
 description = "Core implementation layer for Azure Cosmos DB - provides transport, routing, and protocol handling for cross-language SDK reuse"
 readme = "README.md"
 authors.workspace = true
@@ -21,12 +21,14 @@ async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
-azure_data_cosmos_macros.workspace = true
+azure_data_cosmos_macros.version = "0.1.0"
+backtrace.workspace = true
 base64.workspace = true
 bytes.workspace = true
 crossbeam-epoch = { workspace = true, features = ["std"] }
 futures.workspace = true
 h2 = { workspace = true, optional = true }
+percent-encoding = { workspace = true, optional = true }
 rand.workspace = true
 reqwest = { workspace = true, optional = true }
 serde.workspace = true
@@ -36,7 +38,6 @@ tokio = { workspace = true, optional = true, features = ["rt", "time"] }
 tracing.workspace = true
 url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
-percent-encoding = { workspace = true, optional = true }
 
 [dev-dependencies]
 azure_identity.workspace = true
@@ -82,10 +83,20 @@ fault_injection = []
 # usability (see `docs/IN_MEMORY_EMULATOR_SPEC.md` and the doc comments on the
 # `eval` module). Production code MUST NOT enable this feature; it is not
 # covered by SemVer and may change or disappear at any time.
-__internal_in_memory_emulator = ["dep:tokio", "dep:time", "dep:percent-encoding"]
+__internal_in_memory_emulator = [
+  "dep:tokio",
+  "dep:time",
+  "dep:percent-encoding",
+]
 __internal_mocking = []
 # Enables test-only DiagnosticsContext construction used by SDK unit tests. NOT a stable API.
 __internal_test_diagnostics_construction = []
+# `__internal_backtrace_bench` exposes [`error::Backtrace`], its capture/
+# render entry points, and the two global limiters so the `*_benchmarks`
+# crate can drive the rate-limited backtrace machinery deterministically.
+# Production code MUST NOT enable this feature; the surface is `#[doc(hidden)]`
+# and not covered by SemVer.
+__internal_backtrace_bench = []
 # `__internal_testing` exposes a small, intentionally-unstable surface
 # (`CosmosOperation::query_plan` and `query::__TEST_ONLY_SUPPORTED_QUERY_FEATURES`,
 # plus `query::__test_only_generate_query_plan_for_pk_paths`) for cross-crate

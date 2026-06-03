@@ -3,7 +3,8 @@
 ## Generate API Report
 
 This tool generates a JSON report of the API documentation for a specified Rust package.
-It uses the following command `cargo +nightly rustdoc -Z unstable-options --output-format json --package {package_name} --all-features` to generate the documentation in JSON format, processes the JSON to remove unnecessary attributes, and outputs a cleaned-up version of the JSON.
+It uses the command `cargo +nightly rustdoc -Z unstable-options --output-format json --package {package_name} --all-features` to generate the documentation in JSON format, processes the JSON to remove unnecessary attributes, and outputs a cleaned-up version of the JSON.
+The specific `nightly` channel is taken from [../rust-toolchain.toml] so the unstable JSON output is compatible.
 
 ## Version Compatibility
 
@@ -21,7 +22,7 @@ When updating the nightly toolchain or the rustdoc-types crate, follow these ste
 
 - First check the `FORMAT_VERSION` in a sample JSON output from the new nightly
 - Update the rustdoc-types crate version to match
-- Update `rust-toolchain.toml` with the desired nightly toolchain version and run `rustup install`.
+- Update [../rust-toolchain.toml] with the desired nightly toolchain version and run `rustup install`.
 - Update the rust-api-parser project in the azure-sdk-for-tools repository to ensure compatibility with the new JSON format
 - Test the complete workflow to ensure all tools in the chain remain compatible
 

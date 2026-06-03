@@ -18,7 +18,7 @@ use std::num::NonZeroU32;
 /// don't have to traffic in the `-1` wire sentinel directly.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum MaxItemCount {
+pub enum MaxItemCountHint {
     /// Let the service decide the page size (emits `x-ms-max-item-count: -1`).
     ServerDecides,
 
@@ -59,6 +59,7 @@ pub(crate) mod request_header_names {
     pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
     pub const START_EPK: &str = "x-ms-start-epk";
     pub const END_EPK: &str = "x-ms-end-epk";
+    pub const READ_FEED_KEY_TYPE: &str = "x-ms-read-key-type";
     #[allow(dead_code)] // Reserved for future direct partition-key header writes.
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
@@ -148,10 +149,10 @@ pub struct CosmosRequestHeaders {
 
     /// Maximum number of items to return per page (`x-ms-max-item-count`).
     ///
-    /// Used by feed/query/changefeed reads. See [`MaxItemCount`] for the two
+    /// Used by feed/query/changefeed reads. See [`MaxItemCountHint`] for the two
     /// explicit values; the `-1` wire sentinel for "server decides" is
-    /// represented by [`MaxItemCount::ServerDecides`].
-    pub max_item_count: Option<MaxItemCount>,
+    /// represented by [`MaxItemCountHint::ServerDecides`].
+    pub max_item_count: Option<MaxItemCountHint>,
 
     /// Requests an incremental change feed read (`a-im: Incremental feed`).
     ///
@@ -236,8 +237,8 @@ impl CosmosRequestHeaders {
         }
         if let Some(count) = self.max_item_count {
             let wire = match count {
-                MaxItemCount::ServerDecides => "-1".to_string(),
-                MaxItemCount::Limit(n) => n.get().to_string(),
+                MaxItemCountHint::ServerDecides => "-1".to_string(),
+                MaxItemCountHint::Limit(n) => n.get().to_string(),
             };
             headers.insert(
                 request_header_names::MAX_ITEM_COUNT,
@@ -607,7 +608,7 @@ impl CosmosResponseHeaders {
                     result.resource_usage = Some(value.as_str().to_owned());
                 }
                 response_header_names::HAS_TENTATIVE_WRITES => {
-                    result.has_tentative_writes = value.as_str().parse::<bool>().ok();
+                    result.has_tentative_writes = parse_bool_ci(value.as_str());
                 }
                 response_header_names::PARTITION_KEY_RANGE_ID => {
                     result.partition_key_range_id = Some(value.as_str().to_owned());
@@ -628,6 +629,182 @@ impl CosmosResponseHeaders {
             }
         }
         result
+    }
+
+    /// Reconstructs an [`azure_core::http::headers::Headers`] from this
+    /// typed projection. Inverse of [`from_headers`](Self::from_headers).
+    ///
+    /// Used at the SDK boundary so that an [`azure_core::Error`] minted
+    /// from a Cosmos `CosmosError` carries a usable `raw_response.headers()`
+    /// for callers that consume the foundation error type without
+    /// downcasting back to the typed Cosmos surface.
+    ///
+    /// Only fields that were populated by [`from_headers`](Self::from_headers)
+    /// round-trip — fields that were never set (`None`) are omitted from
+    /// the output, matching the on-wire absence of the corresponding
+    /// header.
+    ///
+    /// String formatting follows the on-wire conventions:
+    ///
+    /// * Numbers (`u32`, `u64`, `i64`, `f64`) use their natural `Display`
+    ///   representation.
+    /// * Booleans are emitted as Pascal-case `"True"` / `"False"` because
+    ///   that is what real Cosmos DB sends (matching the case-insensitive
+    ///   parser in `from_headers`).
+    /// * `index_metrics` is **re-encoded to base64** because the on-wire
+    ///   header is base64-encoded JSON.
+    pub fn to_raw_headers(&self) -> Headers {
+        use azure_core::http::headers::HeaderName;
+
+        let mut h = Headers::new();
+        // Closure: insert `name` → `value` (stringified) when `value` is `Some`.
+        // The lambda form keeps each call site to one line and avoids
+        // re-typing the `HeaderName::from_static` wrapper.
+        let mut put_str = |name: &'static str, value: Option<String>| {
+            if let Some(v) = value {
+                h.insert(HeaderName::from_static(name), HeaderValue::from(v));
+            }
+        };
+        let bool_to_wire = |b: bool| if b { "True" } else { "False" };
+
+        put_str(
+            response_header_names::ACTIVITY_ID,
+            self.activity_id.as_ref().map(ToString::to_string),
+        );
+        put_str(
+            response_header_names::REQUEST_CHARGE,
+            self.request_charge.as_ref().map(ToString::to_string),
+        );
+        put_str(
+            response_header_names::SESSION_TOKEN,
+            self.session_token.as_ref().map(ToString::to_string),
+        );
+        put_str(
+            response_header_names::ETAG,
+            self.etag.as_ref().map(ToString::to_string),
+        );
+        put_str(
+            response_header_names::CONTINUATION,
+            self.continuation.clone(),
+        );
+        put_str(
+            response_header_names::ITEM_COUNT,
+            self.item_count.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::SUBSTATUS,
+            self.substatus.map(|s| s.value().to_string()),
+        );
+        // `index_metrics` is stored decoded; re-encode to match the on-wire
+        // base64 form so a parser round-trips correctly.
+        put_str(
+            response_header_names::INDEX_METRICS,
+            self.index_metrics.as_deref().map(|s| STANDARD.encode(s)),
+        );
+        put_str(
+            response_header_names::QUERY_METRICS,
+            self.query_metrics.clone(),
+        );
+        put_str(
+            response_header_names::SERVER_DURATION_MS,
+            self.server_duration_ms.map(|v| v.to_string()),
+        );
+        put_str(response_header_names::LSN, self.lsn.map(|v| v.to_string()));
+        put_str(
+            response_header_names::ITEM_LSN,
+            self.item_lsn.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::OWNER_FULL_NAME,
+            self.owner_full_name.clone(),
+        );
+        put_str(response_header_names::OWNER_ID, self.owner_id.clone());
+        put_str(
+            response_header_names::OFFER_REPLACE_PENDING,
+            self.offer_replace_pending
+                .map(|b| bool_to_wire(b).to_owned()),
+        );
+        put_str(
+            response_header_names::RETRY_AFTER_MS,
+            self.retry_after_ms.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::CORRELATED_ACTIVITY_ID,
+            self.correlated_activity_id.clone(),
+        );
+        put_str(
+            response_header_names::TRANSPORT_REQUEST_ID,
+            self.transport_request_id.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::GLOBAL_COMMITTED_LSN,
+            self.global_committed_lsn.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::QUORUM_ACKED_LSN,
+            self.quorum_acked_lsn.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::QUORUM_ACKED_LOCAL_LSN,
+            self.quorum_acked_local_lsn.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::LOCAL_LSN,
+            self.local_lsn.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::ITEM_LOCAL_LSN,
+            self.item_local_lsn.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::NUMBER_OF_READ_REGIONS,
+            self.number_of_read_regions.map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::LAST_STATE_CHANGE_UTC,
+            self.last_state_change_utc.clone(),
+        );
+        put_str(
+            response_header_names::GATEWAY_VERSION,
+            self.gateway_version.clone(),
+        );
+        put_str(
+            response_header_names::SERVICE_VERSION,
+            self.service_version.clone(),
+        );
+        put_str(
+            response_header_names::RESOURCE_QUOTA,
+            self.resource_quota.clone(),
+        );
+        put_str(
+            response_header_names::RESOURCE_USAGE,
+            self.resource_usage.clone(),
+        );
+        put_str(
+            response_header_names::HAS_TENTATIVE_WRITES,
+            self.has_tentative_writes
+                .map(|b| bool_to_wire(b).to_owned()),
+        );
+        put_str(
+            response_header_names::PARTITION_KEY_RANGE_ID,
+            self.partition_key_range_id.clone(),
+        );
+        put_str(
+            response_header_names::INTERNAL_PARTITION_ID,
+            self.internal_partition_id.clone(),
+        );
+        put_str(response_header_names::LOG_RESULTS, self.log_results.clone());
+        put_str(
+            response_header_names::COLLECTION_INDEX_TRANSFORMATION_PROGRESS,
+            self.collection_index_transformation_progress
+                .map(|v| v.to_string()),
+        );
+        put_str(
+            response_header_names::COLLECTION_LAZY_INDEXING_PROGRESS,
+            self.collection_lazy_indexing_progress
+                .map(|v| v.to_string()),
+        );
+        h
     }
 }
 
@@ -1031,7 +1208,7 @@ mod tests {
     #[test]
     fn write_to_headers_emits_max_item_count() {
         let cosmos_headers = CosmosRequestHeaders {
-            max_item_count: Some(MaxItemCount::Limit(NonZeroU32::new(7).unwrap())),
+            max_item_count: Some(MaxItemCountHint::Limit(NonZeroU32::new(7).unwrap())),
             ..Default::default()
         };
         let mut headers = Headers::new();
@@ -1051,5 +1228,188 @@ mod tests {
             headers.get_optional_str(&HeaderName::from_static("x-ms-max-item-count")),
             None
         );
+    }
+
+    /// Round-trips a fully-populated [`CosmosResponseHeaders`] through
+    /// [`to_raw_headers`](CosmosResponseHeaders::to_raw_headers) followed
+    /// by [`from_headers`](CosmosResponseHeaders::from_headers) and
+    /// asserts every public field is preserved.
+    ///
+    /// Pins the on-wire encoding contracts the `From<CosmosError> for
+    /// azure_core::Error` boundary relies on:
+    /// * Numeric fields format via `Display` (no unexpected locale / precision drift).
+    /// * Booleans round-trip via Pascal-case `"True"` / `"False"`.
+    /// * `index_metrics` re-encodes to base64 so the parser sees the same
+    ///   on-wire shape it would from the real service.
+    /// * `None` fields are not emitted (no stray empty-string headers).
+    #[test]
+    fn to_raw_headers_round_trips_through_from_headers() {
+        let original = CosmosResponseHeaders {
+            activity_id: Some(ActivityId::from_string("abc-123".into())),
+            request_charge: Some(RequestCharge::new(5.67)),
+            session_token: Some(SessionToken::new("0:1#100")),
+            etag: Some(ETag::new("\"v1\"")),
+            continuation: Some("next-page".into()),
+            item_count: Some(10),
+            substatus: Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT),
+            index_metrics: Some("{\"UtilizedSingleIndexes\":[]}".into()),
+            query_metrics: Some("totalExecutionTimeInMs=1.23".into()),
+            server_duration_ms: Some(4.5),
+            lsn: Some(42),
+            item_lsn: Some(37),
+            owner_full_name: Some("dbs/d/colls/c".into()),
+            owner_id: Some("rid-xyz".into()),
+            offer_replace_pending: Some(true),
+            retry_after_ms: Some(1000),
+            correlated_activity_id: Some("corr-456".into()),
+            transport_request_id: Some(99),
+            global_committed_lsn: Some(50),
+            quorum_acked_lsn: Some(48),
+            quorum_acked_local_lsn: Some(47),
+            local_lsn: Some(51),
+            item_local_lsn: Some(39),
+            number_of_read_regions: Some(2),
+            last_state_change_utc: Some("2024-01-01T00:00:00Z".into()),
+            gateway_version: Some("2.18.0".into()),
+            service_version: Some("version 2.18.0".into()),
+            resource_quota: Some("documentSize=10240;".into()),
+            resource_usage: Some("documentSize=0;".into()),
+            has_tentative_writes: Some(false),
+            partition_key_range_id: Some("0".into()),
+            internal_partition_id: Some("internal-xyz".into()),
+            log_results: Some("ok".into()),
+            collection_index_transformation_progress: Some(100),
+            collection_lazy_indexing_progress: Some(75),
+        };
+
+        let raw = original.to_raw_headers();
+        // Pascal-case wire form for booleans — matches what real Cosmos
+        // sends and what the case-insensitive parser accepts.
+        assert_eq!(
+            raw.get_optional_str(&HeaderName::from_static(
+                response_header_names::OFFER_REPLACE_PENDING
+            )),
+            Some("True")
+        );
+        assert_eq!(
+            raw.get_optional_str(&HeaderName::from_static(
+                response_header_names::HAS_TENTATIVE_WRITES
+            )),
+            Some("False")
+        );
+        // Sub-status is emitted as the bare numeric value.
+        assert_eq!(
+            raw.get_optional_str(&HeaderName::from_static(response_header_names::SUBSTATUS)),
+            Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT.value().to_string()).as_deref()
+        );
+        // `index_metrics` is base64 of the decoded JSON.
+        assert_eq!(
+            raw.get_optional_str(&HeaderName::from_static(
+                response_header_names::INDEX_METRICS
+            )),
+            Some(STANDARD.encode("{\"UtilizedSingleIndexes\":[]}")).as_deref()
+        );
+
+        let round_tripped = CosmosResponseHeaders::from_headers(&raw);
+        assert_eq!(
+            round_tripped.activity_id.as_ref().map(|a| a.as_str()),
+            original.activity_id.as_ref().map(|a| a.as_str())
+        );
+        assert!(
+            (round_tripped.request_charge.unwrap().value()
+                - original.request_charge.unwrap().value())
+            .abs()
+                < f64::EPSILON
+        );
+        assert_eq!(
+            round_tripped
+                .session_token
+                .as_ref()
+                .map(SessionToken::as_str),
+            original.session_token.as_ref().map(SessionToken::as_str)
+        );
+        assert_eq!(
+            round_tripped.etag.as_ref().map(ETag::as_str),
+            original.etag.as_ref().map(ETag::as_str)
+        );
+        assert_eq!(round_tripped.continuation, original.continuation);
+        assert_eq!(round_tripped.item_count, original.item_count);
+        assert_eq!(round_tripped.substatus, original.substatus);
+        assert_eq!(round_tripped.index_metrics, original.index_metrics);
+        assert_eq!(round_tripped.query_metrics, original.query_metrics);
+        assert_eq!(
+            round_tripped.server_duration_ms,
+            original.server_duration_ms
+        );
+        assert_eq!(round_tripped.lsn, original.lsn);
+        assert_eq!(round_tripped.item_lsn, original.item_lsn);
+        assert_eq!(round_tripped.owner_full_name, original.owner_full_name);
+        assert_eq!(round_tripped.owner_id, original.owner_id);
+        assert_eq!(
+            round_tripped.offer_replace_pending,
+            original.offer_replace_pending
+        );
+        assert_eq!(round_tripped.retry_after_ms, original.retry_after_ms);
+        assert_eq!(
+            round_tripped.correlated_activity_id,
+            original.correlated_activity_id
+        );
+        assert_eq!(
+            round_tripped.transport_request_id,
+            original.transport_request_id
+        );
+        assert_eq!(
+            round_tripped.global_committed_lsn,
+            original.global_committed_lsn
+        );
+        assert_eq!(round_tripped.quorum_acked_lsn, original.quorum_acked_lsn);
+        assert_eq!(
+            round_tripped.quorum_acked_local_lsn,
+            original.quorum_acked_local_lsn
+        );
+        assert_eq!(round_tripped.local_lsn, original.local_lsn);
+        assert_eq!(round_tripped.item_local_lsn, original.item_local_lsn);
+        assert_eq!(
+            round_tripped.number_of_read_regions,
+            original.number_of_read_regions
+        );
+        assert_eq!(
+            round_tripped.last_state_change_utc,
+            original.last_state_change_utc
+        );
+        assert_eq!(round_tripped.gateway_version, original.gateway_version);
+        assert_eq!(round_tripped.service_version, original.service_version);
+        assert_eq!(round_tripped.resource_quota, original.resource_quota);
+        assert_eq!(round_tripped.resource_usage, original.resource_usage);
+        assert_eq!(
+            round_tripped.has_tentative_writes,
+            original.has_tentative_writes
+        );
+        assert_eq!(
+            round_tripped.partition_key_range_id,
+            original.partition_key_range_id
+        );
+        assert_eq!(
+            round_tripped.internal_partition_id,
+            original.internal_partition_id
+        );
+        assert_eq!(round_tripped.log_results, original.log_results);
+        assert_eq!(
+            round_tripped.collection_index_transformation_progress,
+            original.collection_index_transformation_progress
+        );
+        assert_eq!(
+            round_tripped.collection_lazy_indexing_progress,
+            original.collection_lazy_indexing_progress
+        );
+    }
+
+    /// `to_raw_headers` on a defaulted (empty) value must produce an
+    /// empty `Headers` — no stray empty-string headers from `None`
+    /// fields.
+    #[test]
+    fn to_raw_headers_empty_when_all_fields_none() {
+        let raw = CosmosResponseHeaders::default().to_raw_headers();
+        assert_eq!(raw.iter().count(), 0);
     }
 }
