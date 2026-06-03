@@ -22,8 +22,6 @@ cargo add azure_identity azure_security_keyvault_secrets tokio
 
 ## Status
 
-🚨 WARNING 🚨: This project is under active development. Be aware that large breaking changes may happen before 1.0 is reached.
-
 This project is the successor to the `azure_sdk*` crates from [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust). The crates have been renamed, so those older crates should be considered fully deprecated.
 
 ## Project Structure

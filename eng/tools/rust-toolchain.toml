@@ -1,4 +1,5 @@
 [toolchain]
+# This toolchain corresponds to v45 of the JSON format and is required for APIView.
 channel = "nightly-2025-05-09"
 components = [
   "cargo",

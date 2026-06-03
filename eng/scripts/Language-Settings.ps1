@@ -13,6 +13,8 @@ $SupportsTestResourcesDotenv = $true
 # Lazy-initialized static property accessors cache values on first access.
 class Channels {
   hidden static [string] $_repoRoot = $null
+
+  # Also update all the ./*.rs scripts to use the same nightly channel.
   hidden static [string] $_nightly = 'nightly-2026-04-14'
   hidden static [string] $_stable = $null
   hidden static [string] $_msrv = $null

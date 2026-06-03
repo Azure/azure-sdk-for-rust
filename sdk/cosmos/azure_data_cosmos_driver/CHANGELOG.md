@@ -6,9 +6,13 @@
 
 ### Breaking Changes
 
+- Removed `CosmosDriver::resolve_container_by_rid` and the supporting `CosmosOperation::read_container_by_rid` factory and `ContainerCache::get_or_fetch_by_rid`. These RID-keyed entry points had no callers; container resolution now goes exclusively through `resolve_container` / `resolve_container_by_name`. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
+
 ### Bugs Fixed
 
 ### Other Changes
+
+- `CosmosDriver::resolve_container_by_name` no longer issues an extra `read_database` round-trip to discover the database RID. The database RID is now extracted in-process from the encoded byte layout of the container RID returned by the container read. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
 
 ## 0.3.0 (2026-05-29)
 

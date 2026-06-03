@@ -105,28 +105,6 @@ impl ContainerCache {
         self.get_or_fetch_impl(&self.by_name, key, fetch_fn).await
     }
 
-    /// Looks up a container by RID, fetching if not cached.
-    ///
-    /// On a cache miss, calls `fetch_fn` to resolve the container from the
-    /// service. The resolved reference is then cross-populated into the
-    /// by-name cache. Concurrent requests for the same RID share one fetch.
-    pub(crate) async fn get_or_fetch_by_rid<F, Fut>(
-        &self,
-        account_endpoint: &str,
-        container_rid: &str,
-        fetch_fn: F,
-    ) -> crate::error::Result<Arc<ContainerReference>>
-    where
-        F: FnOnce() -> Fut,
-        Fut: std::future::Future<Output = crate::error::Result<ContainerReference>>,
-    {
-        let key = ContainerRidKey {
-            account_endpoint: account_endpoint.to_owned(),
-            container_rid: container_rid.to_owned(),
-        };
-        self.get_or_fetch_impl(&self.by_rid, key, fetch_fn).await
-    }
-
     /// Returns a cached container looked up by name, or `None` if not cached.
     #[allow(dead_code)] // Used in tests; will be called from production code once lookup-by-name is wired up.
     pub(crate) async fn get_by_name(
@@ -337,39 +315,6 @@ mod tests {
 
         assert_eq!(resolved.name(), "mycoll");
         assert_eq!(counter.load(Ordering::SeqCst), 1);
-    }
-
-    // --- get_or_fetch_by_rid ---
-
-    #[tokio::test]
-    async fn fetch_by_rid_caches_and_cross_populates_name() {
-        let cache = ContainerCache::new();
-        let counter = Arc::new(AtomicUsize::new(0));
-
-        let container = test_container("mydb", "mycoll");
-        let container_rid = container.rid().to_owned();
-        let container_clone = container.clone();
-        let counter_clone = counter.clone();
-
-        let resolved = cache
-            .get_or_fetch_by_rid(ACCOUNT_ENDPOINT, &container_rid, || async move {
-                counter_clone.fetch_add(1, Ordering::SeqCst);
-                Ok(container_clone)
-            })
-            .await
-            .unwrap();
-
-        assert_eq!(resolved.name(), "mycoll");
-        assert_eq!(counter.load(Ordering::SeqCst), 1);
-
-        // Should be cross-populated and retrievable by name
-        let by_name = cache.get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll").await;
-        assert!(by_name.is_some());
-        assert_eq!(by_name.unwrap().rid(), container_rid);
-
-        // Should also be retrievable by RID
-        let by_rid = cache.get_by_rid(ACCOUNT_ENDPOINT, &container_rid).await;
-        assert!(by_rid.is_some());
     }
 
     // --- put ---
