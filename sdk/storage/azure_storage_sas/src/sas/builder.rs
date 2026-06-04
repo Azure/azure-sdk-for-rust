@@ -1,14 +1,13 @@
-use std::sync::Arc;
-
-use azure_core::credentials::TokenCredential;
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 use url::Url;
 use uuid::Uuid;
 
 use azure_core::error::ErrorKind;
 
+use azure_storage_blob::models::UserDelegationKey;
+
 use crate::{
-    key::{format_sas_time, UserDelegationKey},
+    key::format_sas_time,
     resource::sealed,
     sas::{SasSigningContext, SasUrlParams, SignedProtocol},
     Resource,
@@ -20,39 +19,34 @@ use crate::{
 /// which determines the valid permission type at compile time via [`Resource::Permissions`].
 /// The type parameter `K` tracks whether a delegation key is present:
 ///
-/// # Simple usage — fetch key and build in one chain
+/// # Usage
+///
+/// Obtain a `UserDelegationKey` via `azure_storage_blob::BlobServiceClient::get_user_delegation_key`,
+/// then call [`Self::with_key`] to unlock [`Self::build`].
 ///
 /// ```ignore
-/// use std::sync::Arc;
-/// use time::{OffsetDateTime, Duration};
-/// use azure_identity::DefaultAzureCredential;
+/// use azure_storage_blob::BlobServiceClient;
 /// use azure_storage_sas::{BlobResource, BlobSasPermissions, UserDelegationSasBuilder};
+/// use time::{OffsetDateTime, Duration};
 ///
-/// let credential = Arc::new(DefaultAzureCredential::default());
 /// let expiry = OffsetDateTime::now_utc() + Duration::hours(1);
+/// let key = service_client.get_user_delegation_key(expiry, None).await?.into();
+///
 /// let url = UserDelegationSasBuilder::new(
 ///     "myaccount",
-///     BlobResource {
-///         container: "mycontainer".into(),
-///         blob: "path/to/blob.txt".into(),
-///         options: None,
-///     },
-///     BlobSasPermissions { write: true, create: true, ..Default::default() },
+///     BlobResource { container: "mycontainer".into(), blob: "path/to/blob.txt".into(), options: None },
+///     BlobSasPermissions { read: true, ..Default::default() },
 ///     expiry,
 /// )
-/// .fetch_key(credential)
-/// .await?
+/// .with_key(key)
 /// .build()?;
 /// ```
 ///
 /// # Reusing a key across multiple SAS tokens
 ///
 /// ```ignore
-/// // Fetch once — the key is valid for up to [`UserDelegationSasBuilder::MAX_KEY_EXPIRY`]
-/// let builder = UserDelegationSasBuilder::new("myaccount", resource, permissions, expiry)
-///     .fetch_key(credential)
-///     .await?;
-/// let key = builder.key().clone();
+/// let key = service_client.get_user_delegation_key(expiry, None).await?.into();
+/// let key_clone = key.clone(); // UserDelegationKey is Clone
 ///
 /// for blob_resource in blobs {
 ///     let url = UserDelegationSasBuilder::new("myaccount", blob_resource, permissions, expiry)
@@ -70,8 +64,6 @@ pub struct UserDelegationSasBuilder<R: Resource, K = ()> {
     expiry: OffsetDateTime,
     key: K,
     version: Option<String>,
-    key_expiry: Duration,
-    http_client: Option<reqwest::Client>,
     endpoint: Option<Url>,
     ip: Option<String>,
     protocol: SignedProtocol,
@@ -82,9 +74,6 @@ pub struct UserDelegationSasBuilder<R: Resource, K = ()> {
 }
 
 impl<R: Resource, K> UserDelegationSasBuilder<R, K> {
-    /// Azure-enforced upper limit on user delegation key validity.
-    pub const MAX_KEY_EXPIRY: Duration = Duration::days(7);
-
     /// Overrides the API version sent in the `sv` parameter and `x-ms-version` header.
     /// <https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas#specify-the-signed-version-field>
     ///
@@ -95,22 +84,6 @@ impl<R: Resource, K> UserDelegationSasBuilder<R, K> {
     /// - [`crate::file::FILE_MIN_VERSION`]
     pub fn signed_version(mut self, version: impl Into<String>) -> Self {
         self.version = Some(version.into());
-        self
-    }
-
-    /// Overrides the validity period of the user delegation key.
-    ///
-    /// Defaults to [`Self::MAX_KEY_EXPIRY`].
-    pub fn key_expiry_duration(mut self, duration: Duration) -> Self {
-        self.key_expiry = duration;
-        self
-    }
-
-    /// Provides a shared [`reqwest::Client`] to reuse an existing connection pool.
-    ///
-    /// If not set, a new client is created per [`UserDelegationSasBuilder::fetch_key`] call.
-    pub fn http_client(mut self, client: reqwest::Client) -> Self {
-        self.http_client = Some(client);
         self
     }
 
@@ -210,7 +183,7 @@ impl<R: Resource> UserDelegationSasBuilder<R> {
     /// The `permissions` argument must match the resource's associated permission type
     /// (e.g. [`crate::blob::BlobSasPermissions`] for [`crate::blob::BlobResource`]). This is enforced at compile time.
     ///
-    /// Call [`Self::fetch_key`] or [`Self::with_key`] to unlock [`UserDelegationSasBuilder::build`].
+    /// Call [`Self::with_key`] to set a user delegation key and unlock [`UserDelegationSasBuilder::build`].
     pub fn new(
         account: impl Into<String>,
         resource: R,
@@ -225,8 +198,6 @@ impl<R: Resource> UserDelegationSasBuilder<R> {
             expiry,
             key: (),
             version: None,
-            key_expiry: Self::MAX_KEY_EXPIRY,
-            http_client: None,
             endpoint: None,
             ip: None,
             protocol: SignedProtocol::default(),
@@ -237,65 +208,10 @@ impl<R: Resource> UserDelegationSasBuilder<R> {
         }
     }
 
-    /// Fetches a user delegation key from Azure Storage and returns a ready-to-build builder.
-    ///
-    /// The key is valid for the duration set via [`Self::key_expiry_duration`] (default: [`Self::MAX_KEY_EXPIRY`]).
-    /// Extract the key via [`UserDelegationSasBuilder::key`] to reuse it
-    /// across multiple builders with [`Self::with_key`].
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if `key_expiry_duration` exceeds [`Self::MAX_KEY_EXPIRY`], if the
-    /// credential fails to produce a token, if a network error occurs, or if the storage
-    /// service rejects the key request.
-    pub async fn fetch_key(
-        mut self,
-        credential: Arc<dyn TokenCredential>,
-    ) -> azure_core::Result<UserDelegationSasBuilder<R, UserDelegationKey>> {
-        if self.key_expiry > Self::MAX_KEY_EXPIRY {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::Other,
-                "key_expiry_duration exceeds the Azure-enforced maximum; see UserDelegationSasBuilder::MAX_KEY_EXPIRY",
-            ));
-        }
-
-        let now = OffsetDateTime::now_utc();
-        let key_start = format_sas_time(now)
-            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
-        let key_expiry_str = format_sas_time(now + self.key_expiry)
-            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
-
-        // Each storage service exposes its own GetUserDelegationKey endpoint.
-        let key_endpoint = if let Some(ref ep) = self.endpoint {
-            ep.clone()
-        } else {
-            self.resource.default_endpoint(&self.account)
-        };
-        let version = self
-            .version
-            .clone()
-            .unwrap_or_else(|| self.resource.default_api_version().to_owned());
-
-        let delegated_user_tid_str = self.delegated_user_tenant_id.map(|u| u.to_string());
-        let client = self
-            .http_client
-            .get_or_insert_with(reqwest::Client::default);
-        let key = UserDelegationKey::fetch(
-            &key_endpoint,
-            &version,
-            &credential,
-            client,
-            &key_start,
-            &key_expiry_str,
-            delegated_user_tid_str.as_deref(),
-        )
-        .await?;
-        Ok(self.with_key(key))
-    }
-
     /// Sets a pre-fetched user delegation key and returns a ready-to-build builder.
     ///
-    /// Use this to reuse an existing key.
+    /// Obtain the key from `azure_storage_blob::BlobServiceClient::get_user_delegation_key`
+    /// and convert it with `.into()` when the `sas` feature is enabled on `azure_storage_blob`.
     pub fn with_key(
         self,
         key: UserDelegationKey,
@@ -308,8 +224,6 @@ impl<R: Resource> UserDelegationSasBuilder<R> {
             expiry: self.expiry,
             key,
             version: self.version,
-            key_expiry: self.key_expiry,
-            http_client: self.http_client,
             endpoint: self.endpoint,
             ip: self.ip,
             protocol: self.protocol,
@@ -378,7 +292,7 @@ impl<R: Resource> UserDelegationSasBuilder<R, UserDelegationKey> {
             delegated_user_tenant_id: skdutid.as_deref(),
         };
         let s2s = self.resource.string_to_sign(&ctx);
-        let sig = key.compute_signature(&s2s)?;
+        let sig = crate::key::compute_hmac_signature(&key.value, &s2s)?;
 
         self.resource.sas_url(
             &account_endpoint,

@@ -466,7 +466,7 @@ mod tests {
             delegated_user_tenant_id: None,
         };
         let s2s = resource.string_to_sign(&ctx);
-        let sig = key.compute_signature(&s2s).unwrap();
+        let sig = crate::key::compute_hmac_signature(&key.value, &s2s).unwrap();
         let endpoint = Url::parse(&format!("https://{}.blob.core.windows.net", ACCOUNT)).unwrap();
         let url = resource
             .sas_url(
@@ -557,7 +557,7 @@ mod tests {
         assert_eq!(parts[24], "", "[24] rscd — empty");
         assert_eq!(parts[27], "application/octet-stream", "[27] rsct");
 
-        let sig = key.compute_signature(&s2s).unwrap();
+        let sig = crate::key::compute_hmac_signature(&key.value, &s2s).unwrap();
         let endpoint = Url::parse(&format!("https://{}.blob.core.windows.net", ACCOUNT)).unwrap();
         let url = resource
             .sas_url(
@@ -630,7 +630,7 @@ mod tests {
             "[22] canonicalizedSignedRequestQueryParameters"
         );
 
-        let sig = key.compute_signature(&s2s).unwrap();
+        let sig = crate::key::compute_hmac_signature(&key.value, &s2s).unwrap();
         let endpoint = Url::parse(&format!("https://{}.blob.core.windows.net", ACCOUNT)).unwrap();
         let url = resource
             .sas_url(

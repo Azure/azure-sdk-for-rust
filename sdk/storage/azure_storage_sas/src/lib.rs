@@ -7,7 +7,7 @@ pub(crate) mod sas;
 #[cfg(test)]
 pub(crate) mod test_utils;
 
-pub use key::{UserDelegationKey, UserDelegationKeyFetcher};
+pub use azure_storage_blob::models::UserDelegationKey;
 pub use resource::{blob, file, queue, table, Resource};
 pub use sas::builder::UserDelegationSasBuilder;
 pub use sas::SignedProtocol;

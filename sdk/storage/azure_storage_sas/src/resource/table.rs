@@ -241,7 +241,7 @@ mod tests {
             delegated_user_tenant_id: None,
         };
         let s2s = resource.string_to_sign(&ctx);
-        let sig = key.compute_signature(&s2s).unwrap();
+        let sig = crate::key::compute_hmac_signature(&key.value, &s2s).unwrap();
         let endpoint = Url::parse(&format!("https://{}.table.core.windows.net", ACCOUNT)).unwrap();
         let url = resource
             .sas_url(
@@ -298,7 +298,7 @@ mod tests {
             delegated_user_tenant_id: None,
         };
         let s2s = resource.string_to_sign(&ctx);
-        let sig = key.compute_signature(&s2s).unwrap();
+        let sig = crate::key::compute_hmac_signature(&key.value, &s2s).unwrap();
         let endpoint = Url::parse(&format!("https://{}.table.core.windows.net", ACCOUNT)).unwrap();
         let url = resource
             .sas_url(

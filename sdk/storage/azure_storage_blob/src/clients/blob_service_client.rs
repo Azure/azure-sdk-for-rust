@@ -3,16 +3,20 @@
 
 pub use crate::generated::clients::{BlobServiceClient, BlobServiceClientOptions};
 
-use crate::{BlobClient, BlobContainerClient};
+use crate::{
+    generated::models::{BlobServiceClientGetUserDelegationKeyOptions, KeyInfo, UserDelegationKey},
+    BlobClient, BlobContainerClient,
+};
 use azure_core::{
     credentials::TokenCredential,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        Pipeline, Url,
+        Pipeline, RequestContent, Url, XmlFormat,
     },
     tracing, Result,
 };
 use std::sync::Arc;
+use time::{macros::format_description, OffsetDateTime};
 
 impl BlobServiceClient {
     /// Creates a new BlobServiceClient from a service URL.
@@ -115,5 +119,38 @@ impl BlobServiceClient {
     /// Gets the URL of the resource this client is configured for.
     pub fn url(&self) -> &Url {
         &self.endpoint
+    }
+
+    /// Fetches a user delegation key valid from now until `expiry`.
+    ///
+    /// The key can be used to sign user delegation SAS tokens without embedding a storage account
+    /// key. When the `sas` feature is enabled, convert it to
+    /// [`azure_storage_sas::UserDelegationKey`] with `.into()` and pass it to
+    /// [`azure_storage_sas::UserDelegationSasBuilder::with_key`].
+    ///
+    /// # Arguments
+    ///
+    /// * `expiry` - The expiry time for the user delegation key. Must be within 7 days from now.
+    /// * `options` - Optional parameters for the request.
+    pub async fn get_user_delegation_key(
+        &self,
+        expiry: OffsetDateTime,
+        options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
+    ) -> Result<UserDelegationKey> {
+        let fmt = format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]Z");
+        let start = OffsetDateTime::now_utc()
+            .format(fmt)
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let expiry_str = expiry
+            .format(fmt)
+            .map_err(|e| azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, e))?;
+        let key_info = RequestContent::<KeyInfo, XmlFormat>::try_from(KeyInfo {
+            start,
+            expiry: expiry_str,
+        })?;
+        let rsp = self
+            .get_user_delegation_key_internal(key_info, options)
+            .await?;
+        rsp.into_model()
     }
 }

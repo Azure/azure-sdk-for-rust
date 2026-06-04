@@ -1078,3 +1078,48 @@ pub struct StorageServiceStats {
     #[serde(rename = "GeoReplication", skip_serializing_if = "Option::is_none")]
     pub geo_replication: Option<GeoReplication>,
 }
+
+/// The request body for `GetUserDelegationKey`.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename = "KeyInfo")]
+pub struct KeyInfo {
+    /// The start time for the user delegation key, in ISO 8601 UTC format (`YYYY-MM-DDTHH:MM:SSZ`).
+    #[serde(rename = "Start")]
+    pub start: String,
+    /// The expiry time for the user delegation key, in ISO 8601 UTC format (`YYYY-MM-DDTHH:MM:SSZ`).
+    #[serde(rename = "Expiry")]
+    pub expiry: String,
+}
+
+/// The user delegation key returned by `GetUserDelegationKey`.
+///
+/// Obtain via [`crate::clients::BlobServiceClient::get_user_delegation_key`] and pass to
+/// [`azure_storage_sas::UserDelegationSasBuilder::with_key`] (enable the `sas` feature for the
+/// `From` conversion).
+///
+/// <https://learn.microsoft.com/rest/api/storageservices/get-user-delegation-key>
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+#[serde(rename = "UserDelegationKey")]
+pub struct UserDelegationKey {
+    /// The immutable identifier for an object in the Microsoft identity system.
+    #[serde(rename = "SignedOid")]
+    pub signed_oid: String,
+    /// A GUID that represents the Microsoft Entra tenant that the user is from.
+    #[serde(rename = "SignedTid")]
+    pub signed_tid: String,
+    /// The start time of the user delegation key, in ISO 8601 UTC format.
+    #[serde(rename = "SignedStart")]
+    pub signed_start: String,
+    /// The expiration time of the user delegation key, in ISO 8601 UTC format.
+    #[serde(rename = "SignedExpiry")]
+    pub signed_expiry: String,
+    /// The service that the user delegation key can be used for (`b` for Blob Storage).
+    #[serde(rename = "SignedService")]
+    pub signed_service: String,
+    /// The REST API version used to obtain the user delegation key.
+    #[serde(rename = "SignedVersion")]
+    pub signed_version: String,
+    /// The user delegation key value (base64-encoded HMAC-SHA256 key bytes).
+    #[serde(rename = "Value")]
+    pub value: String,
+}

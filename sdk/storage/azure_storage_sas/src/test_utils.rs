@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use url::Url;
 
-use crate::UserDelegationKey;
+use azure_storage_blob::models::UserDelegationKey;
 
 pub(crate) const ACCOUNT: &str = "testaccount";
 

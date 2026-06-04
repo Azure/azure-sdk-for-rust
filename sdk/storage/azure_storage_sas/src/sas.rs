@@ -1,4 +1,4 @@
-use crate::key::UserDelegationKey;
+use azure_storage_blob::models::UserDelegationKey;
 
 pub mod builder;
 

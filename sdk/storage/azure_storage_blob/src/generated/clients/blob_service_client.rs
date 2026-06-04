@@ -6,9 +6,10 @@
 use crate::generated::models::{
     BlobServiceClientFindBlobsByTagsOptions, BlobServiceClientGetAccountInfoOptions,
     BlobServiceClientGetAccountInfoResult, BlobServiceClientGetPropertiesOptions,
-    BlobServiceClientGetStatisticsOptions, BlobServiceClientListContainersOptions,
-    BlobServiceClientSetPropertiesOptions, BlobServiceProperties, FilteredBlobResponse,
-    ListContainersResponse, StorageServiceStats,
+    BlobServiceClientGetStatisticsOptions, BlobServiceClientGetUserDelegationKeyOptions,
+    BlobServiceClientListContainersOptions, BlobServiceClientSetPropertiesOptions,
+    BlobServiceProperties, FilteredBlobResponse, KeyInfo, ListContainersResponse,
+    StorageServiceStats, UserDelegationKey,
 };
 use azure_core::{
     error::CheckSuccessOptions,
@@ -386,6 +387,53 @@ impl BlobServiceClient {
                 Some(PipelineSendOptions {
                     check_success: CheckSuccessOptions {
                         success_codes: &[202],
+                    },
+                    ..Default::default()
+                }),
+            )
+            .await?;
+        Ok(rsp.into())
+    }
+
+    /// Returns a user delegation key for use in creating a user delegation SAS token.
+    ///
+    /// This is the raw generated method; prefer the handwritten
+    /// [`BlobServiceClient::get_user_delegation_key`] which constructs [`KeyInfo`] automatically.
+    ///
+    /// # Arguments
+    ///
+    /// * `key_info` - The start and expiry times for the requested key, encoded as XML.
+    /// * `options` - Optional parameters for the request.
+    #[tracing::function("Storage.Blob.BlobServiceClient.getUserDelegationKey")]
+    pub(crate) async fn get_user_delegation_key_internal(
+        &self,
+        key_info: RequestContent<KeyInfo, XmlFormat>,
+        options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>,
+    ) -> Result<Response<UserDelegationKey, XmlFormat>> {
+        let options = options.unwrap_or_default();
+        let ctx = options.method_options.context.to_borrowed();
+        let mut url = self.endpoint.clone();
+        let mut query_builder = url.query_builder();
+        query_builder
+            .append_pair("comp", "userdelegationkey")
+            .append_pair("restype", "service");
+        if let Some(timeout) = options.timeout {
+            query_builder.set_pair("timeout", timeout.to_string());
+        }
+        query_builder.build();
+        let mut request = Request::new(url, Method::Post);
+        request.insert_header("accept", "application/xml");
+        request.insert_header("content-type", "application/xml");
+        request.insert_header("x-ms-version", &self.version);
+        request.set_body(key_info);
+        let rsp = self
+            .pipeline
+            .send(
+                &ctx,
+                &mut request,
+                Some(PipelineSendOptions {
+                    check_success: CheckSuccessOptions {
+                        success_codes: &[200],
                     },
                     ..Default::default()
                 }),
