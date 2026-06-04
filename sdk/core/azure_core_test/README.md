@@ -2,13 +2,13 @@
 
 The types and functions in this crate help test client libraries built on `azure_core`, including the `#[recorded::test]` attribute.
 
-We use integration tests - tests defined under a crates' `tests/` directories - for testing against provisioned resources.
+We use integration tests - tests defined under crates' `tests/` directories - for testing against provisioned resources.
 Most crates use recorded tests to record (and sanitize) or play back HTTP traffic during test execution by attributing tests with `#[recorded::test]`.
 
 If your crate does not communicate over HTTP or provisioning resources cannot be fully automated, you can also mark tests as `#[recorded::test(live)]`.
 This still provides utility such as reading environment variables or other test context that might be helpful when your tests run.
 
-🚨 WARNING 🚨: This project is not supported for anything other that testing [Azure client libraries for Rust](https://github.com/Azure/azure-sdk-for-rust).
+🚨 WARNING 🚨: This project is not supported for anything other than testing [Azure client libraries for Rust](https://github.com/Azure/azure-sdk-for-rust).
 The public API and behavior may change at any time.
 
 ## Prerequisites
@@ -66,7 +66,7 @@ but mock credentials when playing back - there are a number of other helpful fea
   ChaCha20 is used to provide a deterministic, portable sequence of seeded random data.
 - `random_string` generates a random `String` of a given length with an optional prefix, which is included in the length.
 - `remove_sanitizers` will remove named sanitizers, like `AZSDK3430` that sanitizes all `$..id` fields and may cause playback to fail.
-- `set_matcher` adds a custom matcher to match headers, path segments, and or body content.
+- `set_matcher` sets a custom matcher to compare headers, path segments, and/or body content.
 - `skip` pauses recording until the returned guard is dropped.
 - `test_mode` gets the current `TestMode`.
 - `var` gets a required variable with optional `ValueOptions` you can use to sanitize values.

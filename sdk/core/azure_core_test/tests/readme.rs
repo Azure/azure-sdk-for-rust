@@ -1,6 +1,7 @@
 // Licensed under the MIT License.
 
 #![allow(dead_code)]
+#![allow(unknown_lints)]
 #![allow(unnameable_test_items)]
 use include_file::include_markdown;
 

@@ -4,7 +4,7 @@ Macros for testing client libraries built on `azure_core`.
 Read about the [`azure_core_test`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/core/azure_core_test) crate
 for more information about the generated code and how to write recorded tests.
 
-🚨 WARNING 🚨: This project is not supported for anything other that testing [Azure client libraries for Rust](https://github.com/Azure/azure-sdk-for-rust).
+🚨 WARNING 🚨: This project is not supported for anything other than testing [Azure client libraries for Rust](https://github.com/Azure/azure-sdk-for-rust).
 The public API and behavior may change at any time.
 
 ## Client methods
@@ -21,7 +21,7 @@ async fn get_secret(ctx: TestContext) -> Result<(), Box<dyn std::error::Error>> 
 }
 ```
 
-The `TestContext` parameter is required unless your test function is attribute as `#[recorded::test(live)]` (live-only).
+The `TestContext` parameter is required unless your test function is attributed as `#[recorded::test(live)]` (live-only).
 You can name the parameter whatever you want.
 The `TestContext` parameter is used to initialize an HTTP client to play back or record tests
 and provides other information to test functions that may be useful.
