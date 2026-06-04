@@ -14,16 +14,16 @@ The Rust driver retries writes by default for retryable status codes. This is sa
 
 Write retries are not strictly idempotent — the initial attempt and a retry may return different status codes (e.g., create returns 201 on success, then 409 on retry). What makes retries "safe" is that the final state of the resource is the same regardless of how many times the operation is executed, and the non-2xx status codes are deterministic signals the application can handle.
 
-For replace and upsert operations, customers must use ETag preconditions (`If-Match` headers) to enable optimistic locking. Without ETags, there is no concurrency control — concurrent writers or retried writes can silently overwrite each other.
+For replace and upsert operations, the driver **always retries** regardless of whether an ETag precondition is provided. If the application developer has concerns about idempotency or wants optimistic locking, ETag preconditions (`If-Match` headers) are the appropriate mitigation. Without ETags, there is no concurrency control — concurrent writers or retried writes can silently overwrite each other.
 
-| Operation | Idempotent? | Retry safe? | Initial attempt | On retry (duplicate) | App must handle |
-|-----------|-------------|-------------|-----------------|----------------------|-----------------|
-| Create | Yes | Always | 201 Created | 409 Conflict | 409 |
-| Delete | Yes | Always | 204 No Content | 404 Not Found | 404 |
-| Replace / Upsert | With ETag | Yes | 200 OK | 412 Precondition Failed (if concurrent update) | 412 |
-| Replace / Upsert | Without ETag | No | 200 OK | 200 OK (silent overwrite — no concurrency control) | — |
-| Patch | Yes | Always | 200 OK | 200 OK (operation-level idempotency) | — |
-| Stored Procedure | No | **Never** | Varies | Undefined (side effects may repeat) | N/A — retries disabled |
+| Operation | Retried? | Initial attempt | On retry (duplicate) | App must handle |
+|-----------|----------|-----------------|----------------------|-----------------|
+| Create | Yes | 201 Created | 409 Conflict | 409 |
+| Delete | Yes | 204 No Content | 404 Not Found | 404 |
+| Replace / Upsert (with ETag) | Yes | 200 OK | 412 Precondition Failed (if concurrent update) | 412 |
+| Replace / Upsert (without ETag) | Yes | 200 OK | 200 OK (silent overwrite — no concurrency control) | — |
+| Patch | Yes | 200 OK | 200 OK (operation-level idempotency) | — |
+| Stored Procedure | **No** | Varies | Undefined (side effects may repeat) | N/A — retries disabled |
 
 ## Status Code Handling
 
@@ -33,6 +33,7 @@ For replace and upsert operations, customers must use ETag preconditions (`If-Ma
 |--------|-----------|---------|--------|
 | 400 | — | Bad Request | Abort |
 | 401 | — | Unauthorized | Abort |
+| 404 | 0 | Not Found | Abort |
 | 409 | — | Conflict | Abort |
 | 412 | — | Precondition Failed | Abort |
 
@@ -70,7 +71,8 @@ The session token is preserved on all retry attempts — it is never cleared to 
 | Operation | Action | Budget |
 |-----------|--------|--------|
 | Reads | Cross-region failover retry | 3 failover attempts |
-| Writes (all) | **Cross-region failover retry** | 3 failover attempts |
+| Writes (except stored procedures) | **Cross-region failover retry** | 3 failover attempts |
+| Stored Procedure writes | **Abort** | — |
 
 408 indicates a server-side or client-side timeout. The Rust driver retries writes on 408 because:
 
