@@ -1073,6 +1073,7 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         };
 
         let endpoint = CosmosEndpoint::global(

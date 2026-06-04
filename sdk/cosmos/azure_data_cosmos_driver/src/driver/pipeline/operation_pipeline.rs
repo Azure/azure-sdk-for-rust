@@ -1810,14 +1810,14 @@ fn pk_range_id_from_result(
 ///
 /// # Diagnostics-on-error
 ///
-/// Operation-level errors don't propagate the diagnostics chain to the
-/// caller today — same pre-existing limitation as the non-hedged
-/// `Abort` arm. Before dropping the builder on each `Err`-producing
-/// path, emit a `tracing::warn!` event carrying `activity_id`,
-/// `request_count`, and (where available) the HTTP status so operators
-/// investigating "why didn't hedging save me?" have *something* to
-/// grep for. Hedged ops bite harder than non-hedged ops here because
-/// the operator paid for two regions of requests on a final error.
+/// Every `Err`-producing arm grafts the operation's
+/// `DiagnosticsContextBuilder` onto the returned error via
+/// `CosmosErrorBuilder::from_error(...).with_diagnostics(...)` so
+/// callers reading `error.diagnostics()` see the full
+/// per-attempt request chain — operators investigating "why didn't
+/// hedging save me?" need the diagnostics on hedge-terminal errors
+/// even more than the non-hedged path, because the operator paid
+/// for two regions of requests on a final error.
 fn finalize_hedge_attempt(
     result: Box<TransportResult>,
     diagnostics: DiagnosticsContextBuilder,
@@ -1839,8 +1839,11 @@ fn finalize_hedge_attempt(
                 sub_status = ?status.sub_status(),
                 "cosmos.hedge.terminal_http_error",
             );
-            drop(diagnostics);
-            Err(build_service_error(&status, &cosmos_headers, &body))
+            let diagnostics_ctx = Arc::new(diagnostics.complete());
+            let base = build_service_error(&status, &cosmos_headers, &body);
+            Err(crate::error::CosmosErrorBuilder::from_error(base)
+                .with_diagnostics(diagnostics_ctx)
+                .build())
         }
         TransportOutcome::TransportError { error, .. } => {
             tracing::warn!(
@@ -1849,8 +1852,10 @@ fn finalize_hedge_attempt(
                 error = %error,
                 "cosmos.hedge.terminal_transport_error",
             );
-            drop(diagnostics);
-            Err(error)
+            let diagnostics_ctx = Arc::new(diagnostics.complete());
+            Err(crate::error::CosmosErrorBuilder::from_error(error)
+                .with_diagnostics(diagnostics_ctx)
+                .build())
         }
         TransportOutcome::DeadlineExceeded { .. } => {
             tracing::warn!(
@@ -1858,9 +1863,23 @@ fn finalize_hedge_attempt(
                 request_count = diagnostics.request_count(),
                 "cosmos.hedge.terminal_deadline_exceeded",
             );
-            drop(diagnostics);
+            // Typed status (408 + CLIENT_OPERATION_TIMEOUT) mirrors
+            // `enforce_deadline_or_timeout` so retry-evaluation and
+            // telemetry treat hedged deadline-exceeded identically to
+            // non-hedged.
+            let mut diagnostics = diagnostics;
+            diagnostics.set_operation_status(
+                azure_core::http::StatusCode::RequestTimeout,
+                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            );
+            let diagnostics_ctx = Arc::new(diagnostics.complete());
             Err(crate::error::CosmosError::builder()
+                .with_status(crate::models::CosmosStatus::from_parts(
+                    azure_core::http::StatusCode::RequestTimeout,
+                    Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                ))
                 .with_message("deadline exceeded during hedged attempt")
+                .with_diagnostics(diagnostics_ctx)
                 .build())
         }
     }
@@ -2110,15 +2129,34 @@ where
 
 /// Synthetic operation error returned by [`execute_hedged`] when the
 /// application-cancellation deadline fires while one or both hedge
-/// attempts are still racing. Mirrors the .NET v3 cancellation behavior.
-/// The actual diagnostics from the most-advanced in-flight pipeline
-/// (when harvested within [`HARVEST_WINDOW`]) are attached to the
-/// operation's [`DiagnosticsContextBuilder`] before this error is
-/// returned — they are not carried inside the error itself, matching
-/// the rest of the operation pipeline's diagnostics model.
-fn application_cancelled_error() -> crate::error::CosmosError {
+/// attempts are still racing. Mirrors the .NET v3 cancellation behavior
+/// and `enforce_deadline_or_timeout`'s typed-status pattern.
+///
+/// Takes the [`DiagnosticsContextBuilder`] by value so the cancel-error
+/// path can finalize diagnostics and graft them onto the synthesized
+/// error in one step — without that graft, callers reading
+/// `error.diagnostics()` would see `None` on every hedge-cancel
+/// outcome even though the pipeline tracked every attempt and harvested
+/// the most-advanced in-flight leg within [`HARVEST_WINDOW`].
+///
+/// Status is set to `408 RequestTimeout` + `CLIENT_OPERATION_TIMEOUT`
+/// (20008) so callers and telemetry can discriminate a client-side
+/// hedge cancel from a service-returned 408.
+fn application_cancelled_error(
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> crate::error::CosmosError {
+    diagnostics.set_operation_status(
+        azure_core::http::StatusCode::RequestTimeout,
+        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+    );
+    let diagnostics_ctx = Arc::new(diagnostics.complete());
     crate::error::CosmosError::builder()
+        .with_status(crate::models::CosmosStatus::from_parts(
+            azure_core::http::StatusCode::RequestTimeout,
+            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        ))
         .with_message("operation cancelled by application deadline during cross-region hedging")
+        .with_diagnostics(diagnostics_ctx)
         .build()
 }
 
@@ -2398,8 +2436,22 @@ async fn execute_hedged(
     let threshold_duration = match azure_core::time::Duration::try_from(threshold.get()) {
         Ok(d) => d,
         Err(_) => {
+            // Programmer-error-class invariant violation: a hedge
+            // threshold above `Duration::MAX` should be impossible by
+            // construction (`HedgeThreshold::new` already guards this).
+            // Synthesize the same typed status + diagnostics graft as
+            // the other Terminal(Err) paths so operators inspecting
+            // `error.diagnostics()` still see what the operation
+            // attempted before bailing.
+            parent_diagnostics.set_operation_status(
+                azure_core::http::StatusCode::InternalServerError,
+                Some(SubStatusCode::TRANSPORT_GENERATED_503),
+            );
+            let diagnostics_ctx = Arc::new(parent_diagnostics.complete());
             return HedgedRaceResult::Terminal(Err(crate::error::CosmosError::builder()
+                .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
                 .with_message("hedge threshold exceeds azure_core::time::Duration range")
+                .with_diagnostics(diagnostics_ctx)
                 .build()));
         }
     };
@@ -2530,7 +2582,7 @@ async fn execute_hedged(
                     primary_region_for_diag.clone(),
                 ),
             );
-            return HedgedRaceResult::Terminal(Err(application_cancelled_error()));
+            return HedgedRaceResult::Terminal(Err(application_cancelled_error(parent_diagnostics)));
         }
     };
 
@@ -2675,7 +2727,9 @@ async fn execute_hedged(
                                 secondary_region_for_diag.clone(),
                             ),
                         );
-                        return HedgedRaceResult::Terminal(Err(application_cancelled_error()));
+                        return HedgedRaceResult::Terminal(Err(application_cancelled_error(
+                            parent_diagnostics,
+                        )));
                     };
                     parent_diagnostics.merge_hedge_attempt(secondary_diag);
                     captured_pk_range_id =
@@ -2819,7 +2873,9 @@ async fn execute_hedged(
                                 secondary_region_for_diag.clone(),
                             ),
                         );
-                        return HedgedRaceResult::Terminal(Err(application_cancelled_error()));
+                        return HedgedRaceResult::Terminal(Err(application_cancelled_error(
+                            parent_diagnostics,
+                        )));
                     };
                     parent_diagnostics.merge_hedge_attempt(primary_diag);
                     captured_pk_range_id =
@@ -2902,6 +2958,16 @@ async fn execute_hedged(
 /// which two regions burnt RU on the failed race. `None` is rendered
 /// as the [`HedgeDiagnostics::UNKNOWN_REGION_SENTINEL`] string for
 /// consistency with the diagnostics-attachment surface.
+///
+/// Status is set to [`CosmosStatus::TRANSPORT_GENERATED_503`] so
+/// retry-evaluation and telemetry can discriminate a client-side
+/// "both legs transient" classification from any other 5xx surface.
+/// Diagnostics are not threaded here: the surrounding
+/// `BothTransient` flow returns a builder that the failover loop
+/// keeps mutating; only the terminal error-surfacing path (when the
+/// failover budget is exhausted) attaches diagnostics, and it does
+/// so from the loop's own builder via the standard error-promotion
+/// path.
 fn transient_outcome_error(
     primary_region: Option<&Region>,
     secondary_region: Option<&Region>,
@@ -2913,6 +2979,7 @@ fn transient_outcome_error(
         .map(Region::as_str)
         .unwrap_or(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL);
     crate::error::CosmosError::builder()
+        .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
         .with_message(format!(
             "hedging completed without producing a final response \
              (primary={p}, secondary={s})"
@@ -2985,7 +3052,7 @@ fn finalize_both_transient(
             activity_id = %activity_id,
             "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
         );
-        HedgedRaceResult::Terminal(Err(application_cancelled_error()))
+        HedgedRaceResult::Terminal(Err(application_cancelled_error(parent_diagnostics)))
     } else {
         tracing::debug!(
             activity_id = %activity_id,
@@ -3440,6 +3507,7 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         };
 
         let routing = super::resolve_endpoint(
@@ -3497,6 +3565,7 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         };
 
         let routing = super::resolve_endpoint(
@@ -3554,6 +3623,7 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         };
 
         let routing = super::resolve_endpoint(
@@ -3618,6 +3688,7 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         };
 
         let first_routing = super::resolve_endpoint(
@@ -3879,6 +3950,7 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         };
 
         let routing = super::resolve_endpoint(
@@ -5283,11 +5355,25 @@ mod tests {
 
     #[test]
     fn application_cancelled_error_carries_app_cancel_message() {
-        let err = super::application_cancelled_error();
+        let err = super::application_cancelled_error(test_diagnostics());
         let msg = err.to_string();
         assert!(
             msg.contains("cancelled by application deadline"),
             "unexpected error message: {msg}"
+        );
+        // Typed-status invariant: telemetry/retry-evaluation can
+        // discriminate a client-side hedge cancel from a service 408.
+        let status = err.status();
+        assert_eq!(status.status_code(), azure_core::http::StatusCode::RequestTimeout);
+        assert_eq!(
+            status.sub_status(),
+            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+        );
+        // Diagnostics-on-error invariant: the synthesized error must
+        // carry the operation's diagnostics chain (cf. P0 #1).
+        assert!(
+            err.diagnostics().is_some(),
+            "application_cancelled_error must graft diagnostics"
         );
     }
 
