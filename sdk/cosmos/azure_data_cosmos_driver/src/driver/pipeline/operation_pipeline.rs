@@ -327,6 +327,14 @@ pub(crate) async fn execute_operation_pipeline(
                     partition_key_range_id: retry_state.partition_key_range_id.clone(),
                     location_state_store,
                 };
+                // Latch the one-race-per-operation cap before dispatch
+                // so the post-`BothTransient` fallback iteration's
+                // STAGE 5b suppresses a second hedge upgrade. The
+                // `BothTransient` handler below preserves this flag
+                // since it mutates only `partition_key_range_id`,
+                // `failover_retry_count`, and `location` on
+                // `retry_state` — see [`OperationRetryState`].
+                retry_state.hedge_already_fired = true;
                 match execute_hedged(
                     &attempt_ctx,
                     &routing,
@@ -489,14 +497,26 @@ pub(crate) async fn execute_operation_pipeline(
         // unchanged — preserving today's sequential-failover semantics
         // for non-hedgeable operations, single-region accounts,
         // env-disabled hedging, and explicit `AvailabilityStrategy::Disabled`.
-        let action = maybe_upgrade_to_hedge(
-            action,
-            operation,
-            options,
-            &location.account,
-            &routing,
-            configured_request_timeout,
-        );
+        //
+        // Cap to one hedge race per operation: once a race has been
+        // dispatched (via STAGE 2b or a prior STAGE 7 Hedge arm), do
+        // not upgrade again. Each race already burns two regions of RU
+        // even on the `BothTransient` fallback path; allowing
+        // back-to-back upgrades would compound RU consumption without
+        // letting the surrounding failover loop make sequential
+        // progress against the remaining regions.
+        let action = if retry_state.hedge_already_fired {
+            action
+        } else {
+            maybe_upgrade_to_hedge(
+                action,
+                operation,
+                options,
+                &location.account,
+                &routing,
+                configured_request_timeout,
+            )
+        };
 
         // ── STAGE 6: Apply location effects ────────────────────────────
         // Single-master write effects are deferred into
@@ -674,6 +694,11 @@ pub(crate) async fn execute_operation_pipeline(
                     partition_key_range_id: retry_state.partition_key_range_id.clone(),
                     location_state_store,
                 };
+                // Same one-race-per-operation latch as STAGE 2b. Set
+                // *after* `advance_to_next_attempt` because the latter
+                // replaces `retry_state` from `new_state` (which carries
+                // `hedge_already_fired = false`).
+                retry_state.hedge_already_fired = true;
                 match execute_hedged(
                     &attempt_ctx,
                     &primary_routing,

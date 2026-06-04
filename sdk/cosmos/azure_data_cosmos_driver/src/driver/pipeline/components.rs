@@ -176,6 +176,18 @@ pub(crate) struct OperationRetryState {
     /// counters drive threshold-based failover and need the failure signal
     /// immediately.
     pub pending_write_effects: Vec<LocationEffect>,
+    /// Whether a cross-region hedge race has already been dispatched for
+    /// this operation.
+    ///
+    /// Sticky within a single operation. Set when the operation pipeline
+    /// dispatches `execute_hedged` (either from STAGE 2b on the first
+    /// attempt, or from STAGE 7 after upgrading a `FailoverRetry` /
+    /// `SessionRetry` action). Read by STAGE 5b to suppress a second
+    /// hedge upgrade on the post-`BothTransient` fallback path — each
+    /// race already burned two regions of RU, and re-upgrading on the
+    /// next iteration would burn another two without giving the
+    /// surrounding failover loop a chance to make sequential progress.
+    pub hedge_already_fired: bool,
 }
 
 /// How a session retry should resolve endpoints for a read operation.
@@ -212,6 +224,7 @@ impl OperationRetryState {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         }
     }
 
