@@ -2458,10 +2458,19 @@ async fn execute_hedged(
                 // that completes before the threshold) would silently
                 // neutralize the PPCB signal for exactly the failure
                 // mode it is designed to detect.
+                //
+                // Prefer the PK range ID parsed from the winning
+                // response over `ctx.partition_key_range_id` (which is
+                // the pre-race snapshot from the AttemptContext). On
+                // the first attempt of an operation the snapshot is
+                // `None`, so PPCB feedback would otherwise no-op even
+                // though the response now carries the resolved range.
+                let pk_range_id_for_feedback = pk_range_id_from_result(&result)
+                    .or_else(|| ctx.partition_key_range_id.clone());
                 record_hedge_outcome(
                     ctx.location_state_store,
                     HedgeOutcome::PrimaryWin,
-                    ctx.partition_key_range_id.as_ref(),
+                    pk_range_id_for_feedback.as_ref(),
                     primary_region.as_ref(),
                 );
                 // result is Ok by the `primary_was_final` guard above.
@@ -2615,7 +2624,9 @@ async fn execute_hedged(
                     record_hedge_outcome(
                         ctx.location_state_store,
                         HedgeOutcome::PrimaryWin,
-                        ctx.partition_key_range_id.as_ref(),
+                        captured_pk_range_id
+                            .as_ref()
+                            .or(ctx.partition_key_range_id.as_ref()),
                         primary_region.as_ref(),
                     );
                     HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
@@ -2679,7 +2690,9 @@ async fn execute_hedged(
                             record_hedge_outcome(
                                 ctx.location_state_store,
                                 HedgeOutcome::AlternateWin,
-                                ctx.partition_key_range_id.as_ref(),
+                                captured_pk_range_id
+                                    .as_ref()
+                                    .or(ctx.partition_key_range_id.as_ref()),
                                 primary_region.as_ref(),
                             );
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
@@ -2754,7 +2767,9 @@ async fn execute_hedged(
                     record_hedge_outcome(
                         ctx.location_state_store,
                         HedgeOutcome::AlternateWin,
-                        ctx.partition_key_range_id.as_ref(),
+                        captured_pk_range_id
+                            .as_ref()
+                            .or(ctx.partition_key_range_id.as_ref()),
                         primary_region.as_ref(),
                     );
                     HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
@@ -2819,7 +2834,9 @@ async fn execute_hedged(
                             record_hedge_outcome(
                                 ctx.location_state_store,
                                 HedgeOutcome::PrimaryWin,
-                                ctx.partition_key_range_id.as_ref(),
+                                captured_pk_range_id
+                                    .as_ref()
+                                    .or(ctx.partition_key_range_id.as_ref()),
                                 primary_region.as_ref(),
                             );
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
