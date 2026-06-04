@@ -2,11 +2,14 @@
 
 The types and functions in this crate help test client libraries built on `azure_core`, including the `#[recorded::test]` attribute.
 
-We use integration tests - tests defined under a crate's `tests/` directory - for testing against provisioned resources.
+We use integration tests - tests defined under a crates' `tests/` directories - for testing against provisioned resources.
 Most crates use recorded tests to record (and sanitize) or play back HTTP traffic during test execution by attributing tests with `#[recorded::test]`.
 
 If your crate does not communicate over HTTP or provisioning resources cannot be fully automated, you can also mark tests as `#[recorded::test(live)]`.
 This still provides utility such as reading environment variables or other test context that might be helpful when your tests run.
+
+🚨 WARNING 🚨: This project is not supported for anything other that testing [Azure client libraries for Rust](https://github.com/Azure/azure-sdk-for-rust).
+The public API and behavior may change at any time.
 
 ## Prerequisites
 
@@ -18,7 +21,7 @@ This still provides utility such as reading environment variables or other test 
 To test client methods using our [Test Proxy] or run against live resources, you can attribute asynchronous tests
 using the `#[recorded::test]` attribute:
 
-```rust no_run
+```rust ignore get-secret
 use azure_core::Result;
 use azure_core_test::{recorded, TestContext};
 use azure_security_keyvault_secrets::{SecretClient, SecretClientOptions};
@@ -55,11 +58,17 @@ Besides instrumenting your client and getting credentials - real credentials whe
 but mock credentials when playing back - there are a number of other helpful features on the `Recording` object returned above:
 
 - `add_sanitizer` will add custom sanitizers. There are many pre-configured by the [Test Proxy] as well.
-- `remove_sanitizers` will remove named sanitizers, like `AZSDK3430` that sanitizes all `$..id` fields and may cause playback to fail.
-- `add_matcher` adds a custom matcher to match headers, path segments, and or body content.
+- `credential` gets a credential that is appropriate for the `TestMode`.
+- `instrument` configures the [Test Proxy] transport in a provided `azure_core::http::ClientOptions`.
+- `instrument_perf` is similar to `instrument` but configures the transport for performance testing (not benching).
 - `random` gets random data (numbers, arrays, etc.) that is initialized from the OS when running live or recording,
   but the seed is saved with the recording and used during play back so that sequential generation of random data is deterministic.
   ChaCha20 is used to provide a deterministic, portable sequence of seeded random data.
+- `random_string` generates a random `String` of a given length with an optional prefix, which is included in the length.
+- `remove_sanitizers` will remove named sanitizers, like `AZSDK3430` that sanitizes all `$..id` fields and may cause playback to fail.
+- `set_matcher` adds a custom matcher to match headers, path segments, and or body content.
+- `skip` pauses recording until the returned guard is dropped.
+- `test_mode` gets the current `TestMode`.
 - `var` gets a required variable with optional `ValueOptions` you can use to sanitize values.
   This function will err if the variable is not set in the environment when running live or recording, or available when playing back.
 - `var_opt` gets optional variables and will not err in the aforementioned cases.
@@ -67,7 +76,7 @@ but mock credentials when playing back - there are a number of other helpful fea
 ## Record tests
 
 Like with all our other Azure SDK languages, we use a common system for provisioning resources named [Test Resources].
-This uses a `test-resources.json` or `test-resources.bicep` file in the crate or service directory.
+This uses a `test-resources.bicep` or `test-resources.json` file in the crate or service directory.
 
 When you run this, it will output some environment variables you can set in your shell, or pass on the command line if your shell supports it.
 

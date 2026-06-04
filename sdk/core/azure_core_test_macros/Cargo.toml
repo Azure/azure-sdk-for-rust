@@ -12,17 +12,15 @@ keywords = ["cloud", "iot", "rest", "sdk"]
 categories = ["development-tools"]
 edition.workspace = true
 rust-version.workspace = true
-publish = false
 
 [lib]
 proc-macro = true
 
 [dependencies]
-azure_core = { workspace = true, features = ["test"] }
 proc-macro2.workspace = true
 quote.workspace = true
 syn.workspace = true
 
 [dev-dependencies]
-azure_core_test.path = "../azure_core_test"
+azure_core_test.workspace = true
 tokio.workspace = true

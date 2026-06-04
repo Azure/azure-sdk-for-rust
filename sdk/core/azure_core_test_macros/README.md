@@ -1,18 +1,22 @@
 # Azure client library test macros
 
 Macros for testing client libraries built on `azure_core`.
+Read about the [`azure_core_test`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/core/azure_core_test) crate
+for more information about the generated code and how to write recorded tests.
+
+🚨 WARNING 🚨: This project is not supported for anything other that testing [Azure client libraries for Rust](https://github.com/Azure/azure-sdk-for-rust).
+The public API and behavior may change at any time.
 
 ## Client methods
 
-To test client methods using our [Test Proxy] or run against live resources, you can attribute asynchronous tests
+To test client methods using our [Test Proxy] or to run against live resources, you can attribute asynchronous tests
 using the `#[recorded::test]` attribute:
 
 ```rust
-use azure_core::Result;
 use azure_core_test::{recorded, TestContext};
 
 #[recorded::test]
-async fn get_secret(ctx: TestContext) -> Result<()> {
+async fn get_secret(ctx: TestContext) -> Result<(), Box<dyn std::error::Error>> {
     todo!()
 }
 ```
