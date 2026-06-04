@@ -91,7 +91,9 @@ pub mod option_offset_date_time_rfc3339_fixed_width {
             {
                 iso8601::Config::DEFAULT
                     .set_time_precision(iso8601::TimePrecision::Second {
-                        decimal_digits: NonZero::new(7),
+                        // HANDWRITTEN ILLEGAL EDIT
+                        // Need a different RFC to override this value to 0
+                        decimal_digits: None,
                     })
                     .encode()
             },

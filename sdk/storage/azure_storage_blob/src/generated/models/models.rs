@@ -852,6 +852,32 @@ pub struct GeoReplication {
     pub status: Option<GeoReplicationStatusType>,
 }
 
+/// Key information.
+#[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
+pub struct KeyInfo {
+    /// The delegated user tenant ID in Entra ID.
+    #[serde(rename = "DelegatedUserTid", skip_serializing_if = "Option::is_none")]
+    pub delegated_user_tid: Option<String>,
+
+    /// The date-time the key expires.
+    #[serde(
+        default,
+        rename = "Expiry",
+        skip_serializing_if = "Option::is_none",
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
+    )]
+    pub expiry: Option<OffsetDateTime>,
+
+    /// The date-time the key is active.
+    #[serde(
+        default,
+        rename = "Start",
+        skip_serializing_if = "Option::is_none",
+        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
+    )]
+    pub start: Option<OffsetDateTime>,
+}
+
 /// The result of the List Blobs API.
 #[derive(Clone, Default, Deserialize, SafeDebug, Serialize)]
 #[non_exhaustive]

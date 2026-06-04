@@ -804,6 +804,7 @@ dependencies = [
  "azure_core_test",
  "azure_identity 1.0.0",
  "azure_storage_blob_test",
+ "azure_storage_common",
  "bytes",
  "clap",
  "flate2",
