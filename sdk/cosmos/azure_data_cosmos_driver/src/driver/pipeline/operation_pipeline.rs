@@ -2009,20 +2009,37 @@ async fn perform_single_attempt(
     )
     .await;
 
-    // STAGE 4b: capture session token from a session-eligible response.
-    if ctx.session_consistency_active {
-        if let Some(cosmos_headers) = result.cosmos_headers() {
-            if should_capture_session_token_from_status(
-                cosmos_headers.substatus.as_ref(),
-                &result.outcome,
-            ) {
-                ctx.session_manager
-                    .capture_session_token(ctx.operation, cosmos_headers);
-            }
+    // Session-token capture deliberately deferred to the winning
+    // branch in `execute_hedged`. Capturing here would advance the
+    // session token off the *losing* leg's response on every race,
+    // which can leak stale state from a region whose mutation the
+    // caller never observes. See `capture_session_token_for_winner`.
+    Ok(result)
+}
+
+/// Captures the session token from a hedge race's **winning** leg's
+/// response, mirroring the non-hedged STAGE 4b logic without the inline
+/// capture that `perform_single_attempt` used to perform.
+///
+/// Called from each terminal "winner" branch in [`execute_hedged`] (the
+/// pre-threshold primary win, the post-threshold primary win, and the
+/// two alternate-win branches). The loser's headers are intentionally
+/// discarded — advancing the operation's session token from a region
+/// whose response the caller never observes would leak stale state and
+/// violate read-your-writes against the winning region.
+fn capture_session_token_for_winner(ctx: &AttemptContext<'_>, result: &TransportResult) {
+    if !ctx.session_consistency_active {
+        return;
+    }
+    if let Some(cosmos_headers) = result.cosmos_headers() {
+        if should_capture_session_token_from_status(
+            cosmos_headers.substatus.as_ref(),
+            &result.outcome,
+        ) {
+            ctx.session_manager
+                .capture_session_token(ctx.operation, cosmos_headers);
         }
     }
-
-    Ok(result)
 }
 
 /// Upper bound on how long [`execute_hedged`] waits for in-flight hedge
@@ -2475,6 +2492,7 @@ async fn execute_hedged(
                 );
                 // result is Ok by the `primary_was_final` guard above.
                 let tr = result.expect("Ok by primary_was_final guard");
+                capture_session_token_for_winner(ctx, &tr);
                 return HedgedRaceResult::Terminal(finalize_hedge_attempt(
                     Box::new(tr),
                     parent_diagnostics,
@@ -2629,6 +2647,7 @@ async fn execute_hedged(
                             .or(ctx.partition_key_range_id.as_ref()),
                         primary_region.as_ref(),
                     );
+                    capture_session_token_for_winner(ctx, &tr);
                     HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
                 }
                 HedgeClass::Transient => {
@@ -2695,6 +2714,7 @@ async fn execute_hedged(
                                     .or(ctx.partition_key_range_id.as_ref()),
                                 primary_region.as_ref(),
                             );
+                            capture_session_token_for_winner(ctx, &tr);
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
                                 tr,
                                 parent_diagnostics,
@@ -2772,6 +2792,7 @@ async fn execute_hedged(
                             .or(ctx.partition_key_range_id.as_ref()),
                         primary_region.as_ref(),
                     );
+                    capture_session_token_for_winner(ctx, &tr);
                     HedgedRaceResult::Terminal(finalize_hedge_attempt(tr, parent_diagnostics))
                 }
                 HedgeClass::Transient => {
@@ -2839,6 +2860,7 @@ async fn execute_hedged(
                                     .or(ctx.partition_key_range_id.as_ref()),
                                 primary_region.as_ref(),
                             );
+                            capture_session_token_for_winner(ctx, &tr);
                             HedgedRaceResult::Terminal(finalize_hedge_attempt(
                                 tr,
                                 parent_diagnostics,
