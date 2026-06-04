@@ -362,28 +362,13 @@ pub(crate) async fn execute_operation_pipeline(
                             "hedge race: both transient on STAGE 2b; attempting failover fallback",
                         );
                         diagnostics = returned_diagnostics;
-                        // Adopt the PK range ID captured by either hedge
-                        // leg (first non-`None` wins). Without this the
-                        // loop would re-enter with
-                        // `retry_state.partition_key_range_id = None`
-                        // even though one or both legs received responses
-                        // that carried the header, and subsequent PPCB
-                        // feedback would short-circuit on `partition.is_none()`.
+                        // Fold the race-observed PK-range-id and 1002 latch
+                        // back into the parent retry_state so the failover
+                        // fallback behaves like a non-hedged attempt that
+                        // saw the same conditions.
                         if retry_state.partition_key_range_id.is_none() {
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
-                        // Cross-hedge propagation upgrade boundary
-                        // (HEDGING_SPEC.md §9.6). At least one leg
-                        // observed a 404/1002 that would have triggered
-                        // the `hub_region_processing_only` latch on the
-                        // non-hedged path. Flip the per-state latch (and
-                        // the shared `Arc<AtomicBool>`, if attached) so
-                        // the next pipeline attempt emits the
-                        // `x-ms-cosmos-hub-region-processing-only`
-                        // header — without it, the failover-loop
-                        // fallback would re-issue against the next
-                        // region and burn another slot on a
-                        // guaranteed-repeat 1002.
                         propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
                         try_advance_after_both_transient(
                             &mut retry_state,
@@ -643,20 +628,9 @@ pub(crate) async fn execute_operation_pipeline(
                 // the response (mirroring the `Complete` arm's
                 // `build_cosmos_response(result, diagnostics)` shape).
                 //
-                // Apply the post-transition `new_state` to `retry_state`
-                // BEFORE constructing `AttemptContext`. Without this the
-                // race would run against the pre-transition state and
-                // silently lose: (a) post-failover region exclusions
-                // (secondary could drift back to the just-failed region),
-                // (b) the `hub_region_processing_only` latch (the
-                // cross-hedge shared `Arc<AtomicBool>` would seed `false`
-                // even though a 1002 was already observed — directly
-                // breaks HEDGING_SPEC §9.6), and (c) the advanced
-                // `failover_retry_count` / `session_token_retry_count`
-                // that drive `try_advance_after_both_transient` budget
-                // accounting. Mirrors the same transition the
-                // `FailoverRetry` / `SessionRetry` arms perform via
-                // `advance_to_next_attempt`.
+                // Apply `new_state` before building `AttemptContext` so
+                // the race inherits the post-transition exclusions, latch,
+                // and counters — see `OperationAction::Hedge::new_state`.
                 advance_to_next_attempt(
                     &mut retry_state,
                     new_state,
@@ -715,19 +689,10 @@ pub(crate) async fn execute_operation_pipeline(
                             "hedge race: both transient on STAGE 7; attempting failover fallback",
                         );
                         diagnostics = returned_diagnostics;
-                        // Adopt the PK range ID captured by either hedge
-                        // leg (see the matching STAGE 2b handler for
-                        // rationale).
+                        // Same fold-back as the STAGE 2b handler above.
                         if retry_state.partition_key_range_id.is_none() {
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
-                        // Cross-hedge propagation upgrade boundary
-                        // (HEDGING_SPEC.md §9.6). See the matching STAGE
-                        // 2b handler for rationale — flips the per-state
-                        // latch + any shared `Arc<AtomicBool>` so the
-                        // next pipeline attempt emits the
-                        // `x-ms-cosmos-hub-region-processing-only`
-                        // header.
                         propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
                         try_advance_after_both_transient(
                             &mut retry_state,
@@ -1870,15 +1835,10 @@ fn finalize_hedge_attempt(
 /// [`evaluate_hedge_eligibility`] so it can compute the driver default
 /// threshold (`min(1000ms, request_timeout / 2)`).
 ///
-/// The `new_state` carried by the incoming `FailoverRetry` /
-/// `SessionRetry` is forwarded into the rewritten `Hedge` variant so the
-/// STAGE 7 dispatch arm can apply it to `retry_state` before building
-/// `AttemptContext`. Without this forwarding, the hedge race would run
-/// against the pre-transition state and silently lose: (a) the
-/// post-failover region exclusions, (b) the `hub_region_processing_only`
-/// latch that seeds the cross-hedge shared `Arc<AtomicBool>` (per spec
-/// §9.6), and (c) the advanced retry counters that drive
-/// `try_advance_after_both_transient` budget accounting.
+/// Forwards the incoming variant's `new_state` into the rewritten
+/// `Hedge` variant so STAGE 7 can apply it to the live `retry_state`
+/// before building `AttemptContext` — see
+/// `OperationAction::Hedge::new_state`.
 fn maybe_upgrade_to_hedge(
     action: OperationAction,
     operation: &CosmosOperation,
@@ -2211,64 +2171,30 @@ pub(crate) enum HedgedRaceResult {
     /// the loop will consult when in-hedge retry lands. Today they are
     /// surfaced only via tracing.
     ///
-    /// `partition_key_range_id` carries the PK-range-id observed by
-    /// either hedge leg (first non-`None` wins). The caller must write
-    /// it back into `retry_state.partition_key_range_id` (if currently
-    /// `None`) before re-entering the loop, otherwise subsequent PPCB
-    /// feedback short-circuits on `partition.is_none()` and the
-    /// partition-level overrides path stays unusable for the rest of
-    /// the operation. `None` here means neither leg's response carried
-    /// the header (e.g. both transports failed before any response, or
-    /// both responses were transient HTTP errors stripped of the
-    /// header).
+    /// `partition_key_range_id` and `observed_session_unavailable` carry
+    /// state the race observed that the failover-loop fallback must fold
+    /// back into `retry_state` before re-entering — see
+    /// `pk_range_id_from_result` and `propagate_hedge_session_unavailable`
+    /// for the write-back contract.
     BothTransient {
         primary_region: Option<Region>,
         secondary_region: Option<Region>,
         last_error: crate::error::CosmosError,
         diagnostics: DiagnosticsContextBuilder,
         partition_key_range_id: Option<PartitionKeyRangeId>,
-        /// `true` when at least one hedge leg observed a 404/1002
-        /// `ReadSessionNotAvailable` that would have triggered
-        /// `build_session_retry_state`'s `hub_region_processing_only`
-        /// latch on the non-hedged path. The surrounding failover loop
-        /// uses this to flip `retry_state.hub_region_processing_only`
-        /// (and the shared `Arc<AtomicBool>`, if any) before re-entering
-        /// — without it, the post-hedge fallback would issue further
-        /// attempts without the `x-ms-cosmos-hub-region-processing-only`
-        /// header even though session lag was definitely observed,
-        /// burning the next failover slot on a guaranteed-repeat 1002.
-        /// See HEDGING_SPEC.md §9.6 (cross-hedge propagation).
         observed_session_unavailable: bool,
     },
 }
 
-/// Applies a single hedge leg's `LocationEffect`s to the shared
-/// `LocationStateStore` and accumulates the cross-leg session-retry
-/// signal so the surrounding race coordinator can flip the parent
-/// operation's `hub_region_processing_only` latch at the end.
+/// Applies one hedge leg's `LocationEffect`s to the shared
+/// `LocationStateStore` and OR-accumulates its
+/// `observed_session_unavailable` signal (also `Release`-storing the
+/// shared latch on first trigger).
 ///
-/// Wraps [`evaluate_hedge_leg_effects`] so the same plumbing (apply
-/// effects, OR the bool, flip the shared `Arc<AtomicBool>` when a
-/// 1002 trigger fires) lives in one place. Called at every classify
-/// site inside [`execute_hedged`] before [`classify_hedge_result`]
-/// runs, so that:
-///
-///   1. `MarkPartitionUnavailable` / `MarkEndpointUnavailable` from
-///      this leg are reflected in the shared routing snapshot before
-///      the failover-loop fallback re-resolves the next region — i.e.
-///      the hedged path's routing-state mutation coverage matches the
-///      non-hedged path's (HEDGING_SPEC.md §14.1).
-///   2. The shared hub-region-processing-only `Arc<AtomicBool>` is
-///      flipped immediately on a 1002 trigger, so the sibling leg's
-///      next request build (if any) picks it up — without it, two
-///      sibling legs racing into the same 1002 each pay a separate
-///      session-retry round (HEDGING_SPEC.md §9.6 — symmetric
-///      propagation).
-///   3. The `race_observed_session_unavailable` flag accumulates so
-///      [`finalize_both_transient`] can surface it via
-///      `HedgedRaceResult::BothTransient`, letting the failover-loop
-///      fallback flip the parent `retry_state.hub_region_processing_only`
-///      before the next pipeline attempt is built.
+/// Called at every classify site in [`execute_hedged`] so the hedged
+/// path's routing-state and hub-region-latch mutations stay symmetric
+/// with the non-hedged `evaluate_transport_result` path — see
+/// HEDGING_SPEC.md §6.5 invariant #10 and §9.6.
 async fn apply_hedge_leg_effects(
     ctx: &AttemptContext<'_>,
     retry_state_snapshot: &OperationRetryState,
@@ -2354,13 +2280,9 @@ async fn execute_hedged(
     threshold: HedgeThreshold,
     strategy_config: HedgingStrategyConfig,
     mut parent_diagnostics: DiagnosticsContextBuilder,
-    // Per-leg LocationEffect application + cross-hedge 1002 latch
-    // propagation evaluate against the parent operation's retry_state
-    // as it stood at the moment hedging was dispatched. Borrowed (not
-    // cloned) — `execute_hedged` only reads; mutations to the parent
-    // retry_state happen post-race in the surrounding failover loop
-    // (STAGE 2b / STAGE 7) once `HedgedRaceResult` is destructured.
-    // See HEDGING_SPEC.md §6.5 (concurrency invariants) and §9.6.
+    // Borrowed snapshot read by `apply_hedge_leg_effects`; the race
+    // never mutates the parent retry_state — STAGE 2b / STAGE 7 do
+    // that post-race once `HedgedRaceResult` is destructured.
     retry_state_snapshot: &OperationRetryState,
 ) -> HedgedRaceResult {
     let primary_region = primary_routing.endpoint.region().cloned();
@@ -2601,26 +2523,10 @@ async fn execute_hedged(
     // terminal branches inspect the deadline to choose between
     // [`application_cancelled_error`] and [`transient_outcome_error`].
     //
-    // Per-leg PK-range-id accumulator. Updated at every classify site
-    // with the first non-`None` id observed across either leg, and
-    // surfaced via `HedgedRaceResult::BothTransient::partition_key_range_id`
-    // so the surrounding loop can populate `retry_state.partition_key_range_id`
-    // before re-entering. Without this, the both-transient fallback
-    // would run all subsequent attempts PK-less and silently break
-    // PPCB attribution (see `pk_range_id_from_result`).
+    // Per-leg signals threaded into `BothTransient` so the failover-loop
+    // fallback can rehydrate `retry_state` with what the race observed
+    // — see `pk_range_id_from_result` and `apply_hedge_leg_effects`.
     let mut captured_pk_range_id: Option<PartitionKeyRangeId> = None;
-    // Cross-leg session-retry-trigger accumulator. Set to `true` by
-    // [`apply_hedge_leg_effects`] whenever any leg's response would
-    // have triggered the `hub_region_processing_only` latch in
-    // `build_session_retry_state`. Surfaced through
-    // `HedgedRaceResult::BothTransient::observed_session_unavailable`
-    // so the STAGE 2b / STAGE 7 fallback can flip the parent
-    // `retry_state.hub_region_processing_only` (and any shared latch)
-    // before the next pipeline attempt is built. Mirrors HEDGING_SPEC.md
-    // §9.6 — both `Final` and `BothTransient` paths flip the shared
-    // `Arc<AtomicBool>` immediately so siblings see it on their next
-    // request build; the `BothTransient` surface ALSO carries the bool
-    // up so the failover-loop fallback flips the per-state latch.
     let mut race_observed_session_unavailable = false;
     match select(primary_attempt, secondary_attempt).await {
         Either::Left(((primary_result, primary_diag), secondary_remaining)) => {
@@ -2956,21 +2862,10 @@ fn transient_outcome_error(
 /// `HedgeDiagnostics` attachment site so the attachment contract
 /// holds even on global-endpoint accounts.
 ///
-/// `partition_key_range_id` is the first non-`None` PK-range-id
-/// observed across either leg (accumulated by the caller via
-/// [`pk_range_id_from_result`] at each classify site). Surfaced via
-/// `HedgedRaceResult::BothTransient` so the surrounding failover loop
-/// can write it back to `retry_state.partition_key_range_id` before
-/// re-entering — without it, every subsequent attempt would run
-/// PK-less and silently break PPCB attribution.
-///
-/// `observed_session_unavailable` is the OR-accumulation across legs
-/// of [`evaluate_hedge_leg_effects`]'s `observed_session_unavailable`
-/// signal (accumulated by the caller via [`apply_hedge_leg_effects`]).
-/// Surfaced via `HedgedRaceResult::BothTransient` so the failover-loop
-/// fallback can flip `retry_state.hub_region_processing_only` (and the
-/// shared `Arc<AtomicBool>`, if any) before re-entering — see
-/// HEDGING_SPEC.md §9.6 (cross-hedge propagation).
+/// `partition_key_range_id` and `observed_session_unavailable` are
+/// per-leg signals accumulated during the race; both are surfaced
+/// verbatim on `HedgedRaceResult::BothTransient` for the failover
+/// loop's write-back contract (see the variant docs).
 #[allow(
     clippy::too_many_arguments,
     reason = "All ten values come from `execute_hedged`'s state and \
@@ -3101,19 +2996,10 @@ fn try_advance_after_both_transient(
     Ok(())
 }
 
-/// Flips the per-state `hub_region_processing_only` latch (and the
-/// shared `Arc<AtomicBool>`, if attached) when at least one hedge leg
-/// observed a 404/1002 that would have triggered
-/// [`build_session_retry_state`]'s latch on the non-hedged path.
-///
-/// Mirrors `build_session_retry_state`'s `Release`-ordered shared-latch
-/// CAS so the failover-loop fallback after `BothTransient` issues its
-/// next attempt with the `x-ms-cosmos-hub-region-processing-only`
-/// header set — see HEDGING_SPEC.md §9.6 (cross-hedge propagation) and
-/// HUB_REGION_PROCESSING_HEADER_SPEC.md §7.1.
-///
-/// Idempotent: a `false` flag is a no-op (the no-1002 race path) and a
-/// `true` flag against an already-latched state preserves the latch.
+/// Flips the per-state and shared `hub_region_processing_only` latches
+/// when a hedge leg observed a 1002 the non-hedged
+/// `build_session_retry_state` would have latched on. Idempotent —
+/// `false` and already-latched are no-ops. See HEDGING_SPEC.md §9.6.
 fn propagate_hedge_session_unavailable(
     retry_state: &mut OperationRetryState,
     observed_session_unavailable: bool,

@@ -206,15 +206,11 @@ pub(crate) fn evaluate_hedge_eligibility(
         return None;
     }
 
-    // Pick the first applicable region whose endpoint differs from the
-    // primary's. The primary is NOT guaranteed to be
-    // `preferred_read_endpoints[0]`: PPCB overrides, probe-candidate
-    // routing, location-index advancement, and prior retry state can route
-    // it to a later preferred endpoint. Defaulting to `applicable[1]`
-    // would, in those cases, hedge to the same region as the primary —
-    // doubling RU/load with zero availability benefit. Compare by both
-    // region identity and `endpoint_key` (the latter guards against
-    // distinct endpoints aliased to the same region name).
+    // Pick the first applicable endpoint distinct from `primary` on both
+    // region AND endpoint_key. The primary is NOT necessarily
+    // `preferred_read_endpoints[0]` (PPCB overrides / probe routing /
+    // prior retry state can promote it), so a same-region or same-key
+    // alias would double RU with zero availability benefit.
     let primary_region = primary.endpoint.region().cloned();
     let primary_key = primary.endpoint.endpoint_key();
     let secondary_ep = account_state
