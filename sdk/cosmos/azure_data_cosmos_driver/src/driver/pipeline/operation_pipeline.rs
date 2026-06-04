@@ -637,6 +637,22 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store,
                     operation.is_read_only(),
                 );
+                // Re-resolve the primary routing against the advanced
+                // retry_state and freshly snapshotted location. The
+                // pre-advance `routing` referenced the failed region that
+                // triggered the upgrade — racing it again as the hedge's
+                // primary would double-pay RU on a known-bad region.
+                // `secondary_routing` was selected by
+                // `evaluate_hedge_eligibility` against the pre-advance
+                // state, so it remains valid for the secondary leg.
+                let location = location_state_store.snapshot();
+                let primary_routing = resolve_endpoint(
+                    operation,
+                    &retry_state,
+                    &location,
+                    pipeline_type.is_data_plane(),
+                    location_state_store.endpoint_unavailability_ttl(),
+                );
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
@@ -660,7 +676,7 @@ pub(crate) async fn execute_operation_pipeline(
                 };
                 match execute_hedged(
                     &attempt_ctx,
-                    &routing,
+                    &primary_routing,
                     &secondary_routing,
                     threshold,
                     strategy_config,
