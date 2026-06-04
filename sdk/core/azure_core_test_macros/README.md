@@ -12,7 +12,7 @@ The public API and behavior may change at any time.
 To test client methods using our [Test Proxy] or to run against live resources, you can attribute asynchronous tests
 using the `#[recorded::test]` attribute:
 
-```rust
+```rust no_run
 use azure_core_test::{recorded, TestContext};
 
 #[recorded::test]
