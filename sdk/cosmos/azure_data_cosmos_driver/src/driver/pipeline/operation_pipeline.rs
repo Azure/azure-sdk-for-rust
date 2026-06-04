@@ -613,32 +613,45 @@ fn resolve_endpoint(
             endpoint_unavailability_ttl,
         )
         .unwrap_or_else(|| {
-            if retry_state.is_dataplane {
-                // Data-plane operations must always use a regional endpoint.
-                // preferred_write_endpoints is guaranteed non-empty by
-                // build_account_endpoint_state. During normal operation it
-                // contains regional endpoints; during initial bootstrap
-                // (before account metadata is fetched) it may contain the
-                // global default_endpoint — but data-plane operations should
-                // not run before topology discovery completes. The
-                // debug_assert below guards this invariant.
-                account
-                    .preferred_write_endpoints
-                    .first()
-                    .expect("preferred_write_endpoints is always non-empty")
-                    .clone()
-            } else {
-                // Metadata operations (e.g., GetDatabaseAccount) may use the
-                // global endpoint — it is the canonical entry point for
-                // account topology discovery.
-                account.default_endpoint.clone()
-            }
+            // Both data-plane and pipeline-routed metadata operations
+            // (Database/Container/Offer/etc. CRUD) fall back to the hub
+            // regional endpoint when every preferred region has been
+            // attempted or excluded. Hub is the only region with
+            // guaranteed-fresh state for metadata writes and is the
+            // canonical landing site for data-plane operations.
+            //
+            // `OperationOptions::excluded_regions` is a *preference*, not
+            // a hard constraint. If the caller excludes every preferred
+            // region (including the hub) we deliberately ignore the
+            // exclusion and fall back to the hub regional endpoint rather
+            // than fail the operation — failing on exhaustion would
+            // surprise callers more than a single best-effort attempt
+            // against the most authoritative region. The only
+            // requests that legitimately target the global endpoint are
+            // account-topology fetches (initial bootstrap, periodic refresh,
+            // and `LocationEffect::RefreshAccountProperties`), all of which
+            // go through `CosmosDriver::fetch_account_properties_with_transport`
+            // and bypass this routing path entirely.
+            //
+            // `preferred_write_endpoints` is guaranteed non-empty by
+            // `build_account_endpoint_state`. During normal operation it
+            // contains regional endpoints; during initial bootstrap (before
+            // account metadata is fetched) it may contain the global
+            // default endpoint, but no pipeline operation should run before
+            // topology discovery completes. The `debug_assert!` below
+            // guards that invariant.
+            account
+                .preferred_write_endpoints
+                .first()
+                .expect("preferred_write_endpoints is always non-empty")
+                .clone()
         })
     });
     debug_assert!(
-        !retry_state.is_dataplane || !selected.is_global(),
-        "data-plane operation resolved to global endpoint; \
-         this should never happen — data-plane requests must use regional endpoints"
+        !selected.is_global(),
+        "pipeline operation resolved to global endpoint; \
+         this should never happen — only account-topology fetches \
+         (which bypass this routing path) may use the global endpoint"
     );
     let use_gateway20 = selected.uses_gateway20(prefer_gateway20);
     let transport_mode = if use_gateway20 {
@@ -2034,10 +2047,19 @@ mod tests {
     }
 
     #[test]
-    fn resolve_endpoint_metadata_falls_back_to_global_when_all_excluded() {
+    fn resolve_endpoint_metadata_falls_back_to_hub_when_all_excluded() {
+        // Pipeline-routed metadata operations (e.g. read_all_databases,
+        // CreateDatabase, CreateContainer, Offer reads) must fall back to
+        // the hub regional endpoint when every preferred region is excluded
+        // — never the global endpoint. The global endpoint is only used by
+        // account-topology fetches, which bypass this routing path.
         let operation = CosmosOperation::read_all_databases(test_account());
         let default_endpoint =
             CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
+        let hub_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
         let read_endpoint = CosmosEndpoint::regional(
             "westus2".into(),
             Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
@@ -2046,7 +2068,7 @@ mod tests {
         let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
             generation: 0,
             preferred_read_endpoints: vec![read_endpoint.clone()].into(),
-            preferred_write_endpoints: vec![default_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
             unavailable_endpoints: Default::default(),
             multiple_write_locations_enabled: false,
             default_endpoint: default_endpoint.clone(),
@@ -2061,7 +2083,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             is_dataplane: false,
             hub_region_processing_only: false,
-            excluded_regions: vec!["westus2".into()],
+            excluded_regions: vec!["westus2".into(), "eastus".into()],
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
@@ -2077,9 +2099,8 @@ mod tests {
             false,
             Duration::from_secs(60),
         );
-        // Metadata operations fall back to the global endpoint when all
-        // regional endpoints are excluded.
-        assert_eq!(routing.endpoint, default_endpoint);
+        assert_eq!(routing.endpoint, hub_endpoint);
+        assert!(!routing.endpoint.is_global());
     }
 
     #[test]

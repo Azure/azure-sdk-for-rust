@@ -3,5 +3,4 @@
 
 //! Multi-region test modules.
 
-mod driver_excluded_regions_fallback;
 mod driver_partition_failover;

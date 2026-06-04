@@ -7,6 +7,7 @@ pub mod account_metadata_refresh;
 pub mod control_plane;
 pub mod error_cases;
 pub mod error_diagnostics;
+pub mod excluded_regions_fallback;
 pub mod multi_region;
 pub mod point_operations;
 pub mod split_merge;

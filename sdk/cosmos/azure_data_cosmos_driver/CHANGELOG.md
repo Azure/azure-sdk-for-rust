@@ -7,7 +7,7 @@
 ### Breaking Changes
 
 ### Bugs Fixed
-- Data-plane operations now fall back to the hub/primary write region endpoint instead of the global account endpoint when all regional endpoints are excluded or unavailable. Metadata operations (e.g., account topology discovery) continue to use the global endpoint. ([#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503))
+- Data-plane and non-account metadata operations now fall back to the hub/primary write region endpoint instead of the global account endpoint when all regional endpoints are excluded or unavailable. ([#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503))
 
 ### Other Changes
 

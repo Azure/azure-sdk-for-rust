@@ -472,27 +472,6 @@ impl DriverTestRunContext {
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
-        self.read_item_with_options(
-            container,
-            item_id,
-            partition_key,
-            OperationOptions::default(),
-        )
-        .await
-    }
-
-    /// Reads an item using the driver with the specified [`OperationOptions`].
-    ///
-    /// Use this overload when the test needs to set per-request options such as
-    /// `excluded_regions`; for the common case where defaults are fine, prefer
-    /// [`read_item`](Self::read_item).
-    pub async fn read_item_with_options(
-        &self,
-        container: &ContainerReference,
-        item_id: &str,
-        partition_key: impl Into<PartitionKey>,
-        options: OperationOptions,
-    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime
@@ -504,7 +483,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_singleton_operation(operation, options)
+            .execute_singleton_operation(operation, OperationOptions::default())
             .await?;
 
         Ok(result)
