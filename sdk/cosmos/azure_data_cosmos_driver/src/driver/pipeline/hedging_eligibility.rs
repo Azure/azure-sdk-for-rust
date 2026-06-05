@@ -87,8 +87,15 @@ pub(crate) fn should_hedge(
         .preferred_read_endpoints
         .iter()
         .filter(|ep| match ep.region() {
+            // Endpoints without a concrete region (e.g. the global
+            // account endpoint) cannot be used as a hedge secondary —
+            // the secondary picker in `evaluate_hedge_eligibility`
+            // requires `region().is_some()` so the leg targets a
+            // distinct geo. Mirror that constraint here so we don't
+            // report `should_hedge == true` for a 1-region + global
+            // account that would then bail out at the picker.
             Some(r) => !excluded_regions.contains(r),
-            None => true,
+            None => false,
         })
         .count();
 
