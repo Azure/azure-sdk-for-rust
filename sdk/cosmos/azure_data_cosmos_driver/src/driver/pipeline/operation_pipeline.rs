@@ -3215,13 +3215,31 @@ fn try_advance_after_both_transient(
 
 /// Flips the per-state and shared `hub_region_processing_only` latches
 /// when a hedge leg observed a 1002 the non-hedged
-/// `build_session_retry_state` would have latched on. Idempotent —
-/// `false` and already-latched are no-ops. See HEDGING_SPEC.md §9.6.
+/// `build_session_retry_state` would have latched on, and advances
+/// `session_token_retry_count` symmetrically with that path so the
+/// user-configured `max_session_retries` cap is honored across both
+/// the non-hedged and hedge-fallback flows. Idempotent — `false` and
+/// already-latched-with-budget-exhausted are no-ops.
+/// See HEDGING_SPEC.md §9.6.
 fn propagate_hedge_session_unavailable(
     retry_state: &mut OperationRetryState,
     observed_session_unavailable: bool,
 ) {
-    if !observed_session_unavailable || retry_state.hub_region_processing_only {
+    if !observed_session_unavailable {
+        return;
+    }
+    // Advance the session-retry counter symmetrically with the
+    // non-hedged `build_session_retry_state` path (which increments
+    // via `.advance_session_retry()`). Without this bump, a hedge
+    // race that observed a 1002 could consume the full
+    // `max_session_retries` budget on top of the hedge legs,
+    // exceeding the user-configured cap. Gate on `can_retry_session`
+    // so a budget-exhausted operation does not overflow the counter.
+    if retry_state.can_retry_session() {
+        retry_state.session_token_retry_count =
+            retry_state.session_token_retry_count.saturating_add(1);
+    }
+    if retry_state.hub_region_processing_only {
         return;
     }
     retry_state.hub_region_processing_only = true;
@@ -3229,8 +3247,11 @@ fn propagate_hedge_session_unavailable(
         shared.store(true, Ordering::Release);
     }
     tracing::debug!(
+        session_token_retry_count = retry_state.session_token_retry_count,
+        max_session_retries = retry_state.max_session_retries,
         "hedge both-transient: 1002 observed by at least one leg; \
-         flipped hub_region_processing_only latch for next attempt",
+         flipped hub_region_processing_only latch and advanced \
+         session-retry counter for next attempt",
     );
 }
 
