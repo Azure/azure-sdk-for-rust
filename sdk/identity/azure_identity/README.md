@@ -16,7 +16,7 @@ cargo add azure_identity
 
 ### Prerequisites
 
-* An [Azure subscription].
+- An [Azure subscription].
 
 ### Authenticate during local development
 
