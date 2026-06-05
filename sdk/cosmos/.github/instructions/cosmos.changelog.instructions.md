@@ -7,17 +7,11 @@ applyTo: "sdk/cosmos/**/CHANGELOG.md"
 
 - Never modify already released sections (anything not marked "Unreleased"). Only add entries under the current "(Unreleased)" version.
 
-- Before modifying CHANGELOG.md:
-    - Check if the current branch already has an associated PR with a changelog entry
-    - If a changelog entry for the current PR already exists, DO NOT add additional entries
-    - All changes within a single PR should be summarized in ONE changelog entry
-    - The PR author is responsible for updating the existing entry if needed, not the AI agent
-
 - If the PR title starts with `[Internal]`, do not change any `CHANGELOG.md` files.
 
-- Add one entry per PR under an existing category header (for example: "Features Added", "Breaking Changes", "Bugs Fixed", "Other Changes").
+- Add entries under an existing category header (for example: "Features Added", "Breaking Changes", "Bugs Fixed", "Other Changes"). A single PR may produce multiple entries when it spans multiple categories or distinct customer-visible changes.
 	- Do not create new category headers.
-	- Put the entry under the most appropriate existing category.
+	- Put each entry under the most appropriate existing category.
 
 - Entry format:
 	- Prefer the existing style used in the file.
