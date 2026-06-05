@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added configurable throttle (HTTP 429, rate-limited) retry limits to `OperationOptions`: `max_throttle_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables retries) caps the number of 429 retries, and `max_throttle_retry_wait_time` (default `30s`) caps the cumulative wait across them. These resolve through the standard operation → account → runtime → env layering and are threaded into the transport-level throttle retry loop via `ThrottleRetryState::with_limits`.
+
 ### Breaking Changes
 
 - Removed `CosmosDriver::resolve_container_by_rid` and the supporting `CosmosOperation::read_container_by_rid` factory and `ContainerCache::get_or_fetch_by_rid`. These RID-keyed entry points had no callers; container resolution now goes exclusively through `resolve_container` / `resolve_container_by_name`. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))

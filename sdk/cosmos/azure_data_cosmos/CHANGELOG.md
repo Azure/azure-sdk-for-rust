@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added configurable retry limits for throttled (HTTP 429, rate-limited) requests, mirroring the .NET SDK's `MaxRetryAttemptsOnRateLimitedRequests` / `MaxRetryWaitTimeOnRateLimitedRequests`. Two new `OperationOptions` fields, `max_throttle_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables throttle retries) and `max_throttle_retry_wait_time` (default `30s`), can be set per-request via `OperationOptions`/`OperationOptionsBuilder`. New client-wide setters `CosmosClientBuilder::with_max_retry_attempts_on_throttled_requests(u32)` and `CosmosClientBuilder::with_max_retry_wait_time_on_throttled_requests(Duration)` forward these as runtime-layer defaults.
+
 ### Breaking Changes
 
 ### Bugs Fixed

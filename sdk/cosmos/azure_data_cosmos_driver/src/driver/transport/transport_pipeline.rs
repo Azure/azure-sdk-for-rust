@@ -147,6 +147,18 @@ pub(crate) struct TransportPipelineContext<'a> {
     /// Computed once by the operation pipeline from the routing-level endpoint
     /// so the transport pipeline doesn't need to allocate a `String` per attempt.
     pub endpoint_key: EndpointKey,
+    /// Maximum number of 429 (throttle) retries for this operation.
+    ///
+    /// Resolved by the operation pipeline from the effective
+    /// [`OperationOptionsView::max_throttle_retry_count`](crate::options::OperationOptionsView::max_throttle_retry_count)
+    /// (defaulting to `9`). `0` disables throttle retries.
+    pub max_throttle_attempts: u32,
+    /// Maximum cumulative wait budget across 429 (throttle) retries.
+    ///
+    /// Resolved by the operation pipeline from the effective
+    /// [`OperationOptionsView::max_throttle_retry_wait_time`](crate::options::OperationOptionsView::max_throttle_retry_wait_time)
+    /// (defaulting to 30 seconds).
+    pub max_throttle_wait_time: Duration,
 }
 
 /// Executes a single transport attempt.
@@ -161,7 +173,8 @@ pub(crate) async fn execute_transport_pipeline(
     ctx: &TransportPipelineContext<'_>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    let mut throttle_state = ThrottleRetryState::new();
+    let mut throttle_state =
+        ThrottleRetryState::with_limits(ctx.max_throttle_attempts, ctx.max_throttle_wait_time);
     let mut local_connectivity_retry_count = 0_u32;
     let mut prior_failed_transport_shards = Vec::<FailedTransportShardDiagnostics>::new();
     let mut excluded_shard_id = None;
@@ -812,6 +825,69 @@ mod tests {
     }
 
     #[test]
+    fn evaluate_transport_retry_429_disabled_when_max_attempts_zero() {
+        // `max_throttle_retry_count = 0` (the analog of .NET's
+        // MaxRetryAttemptsOnRateLimitedRequests = 0) must surface the first
+        // 429 to the caller without any retry.
+        let result = make_throttled_result_with_retry_after(42);
+        let state = ThrottleRetryState::with_limits(0, Duration::from_secs(30));
+
+        assert!(matches!(
+            evaluate_transport_retry(&result, &state),
+            ThrottleAction::Propagate
+        ));
+    }
+
+    #[test]
+    fn evaluate_transport_retry_429_honors_custom_max_attempts() {
+        // With a custom cap of 2, the third 429 (attempt_count == 2) stops.
+        let result = make_throttled_result_with_retry_after(1);
+        let max_wait = Duration::from_secs(30);
+
+        // attempt_count 0 and 1 still retry.
+        for attempt in 0..2 {
+            let state = ThrottleRetryState {
+                attempt_count: attempt,
+                ..ThrottleRetryState::with_limits(2, max_wait)
+            };
+            assert!(
+                matches!(
+                    evaluate_transport_retry(&result, &state),
+                    ThrottleAction::Retry { .. }
+                ),
+                "attempt {attempt} should retry under a cap of 2"
+            );
+        }
+
+        // attempt_count 2 reaches the cap and propagates.
+        let state = ThrottleRetryState {
+            attempt_count: 2,
+            ..ThrottleRetryState::with_limits(2, max_wait)
+        };
+        assert!(matches!(
+            evaluate_transport_retry(&result, &state),
+            ThrottleAction::Propagate
+        ));
+    }
+
+    #[test]
+    fn evaluate_transport_retry_429_honors_custom_max_wait_time() {
+        // A tight cumulative wait budget propagates once the next delay would
+        // exceed it, mirroring .NET's MaxRetryWaitTimeOnRateLimitedRequests.
+        let result = make_throttled_result_with_retry_after(2_000);
+        let state = ThrottleRetryState {
+            cumulative_delay: Duration::from_millis(500),
+            ..ThrottleRetryState::with_limits(9, Duration::from_secs(1))
+        };
+
+        // 500ms accumulated + 2000ms next delay = 2.5s > 1s budget.
+        assert!(matches!(
+            evaluate_transport_retry(&result, &state),
+            ThrottleAction::Propagate
+        ));
+    }
+
+    #[test]
     fn evaluate_transport_retry_429_exceeds_max_wait() {
         let result = make_throttled_result_with_retry_after(2_000);
         let state = ThrottleRetryState {
@@ -930,6 +1006,8 @@ mod tests {
                 pipeline_type: PipelineType::Metadata,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: endpoint.endpoint_key(),
+                max_throttle_attempts: 9,
+                max_throttle_wait_time: Duration::from_secs(30),
             },
             &mut diagnostics,
         )
@@ -1077,6 +1155,8 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                max_throttle_attempts: 9,
+                max_throttle_wait_time: Duration::from_secs(30),
             },
             &mut diagnostics,
         )
@@ -1126,6 +1206,8 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                max_throttle_attempts: 9,
+                max_throttle_wait_time: Duration::from_secs(30),
             },
             &mut diagnostics,
         )
@@ -1163,6 +1245,8 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                max_throttle_attempts: 9,
+                max_throttle_wait_time: Duration::from_secs(30),
             },
             &mut diagnostics,
         )
@@ -1198,6 +1282,8 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                max_throttle_attempts: 9,
+                max_throttle_wait_time: Duration::from_secs(30),
             },
             &mut diagnostics,
         )

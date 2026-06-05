@@ -119,6 +119,52 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Sets the maximum number of retries for requests that the service
+    /// throttles (HTTP 429, rate-limited).
+    ///
+    /// This is the analog of the .NET SDK's
+    /// `CosmosClientOptions.MaxRetryAttemptsOnRateLimitedRequests`. It bounds
+    /// the transport-level retry loop that honors the service
+    /// `x-ms-retry-after-ms` header. A value of `0` disables retrying
+    /// throttled requests, surfacing the first 429 to the caller.
+    ///
+    /// **Default**: `9`.
+    ///
+    /// This client-wide value can be overridden per request via
+    /// [`OperationOptions`](crate::OperationOptions).
+    ///
+    /// # Arguments
+    ///
+    /// * `max_attempts` - The maximum number of throttle retries.
+    pub fn with_max_retry_attempts_on_throttled_requests(mut self, max_attempts: u32) -> Self {
+        self.options.operation.max_throttle_retry_count = Some(max_attempts);
+        self
+    }
+
+    /// Sets the maximum cumulative wait time across throttle (HTTP 429)
+    /// retries before the 429 is surfaced to the caller.
+    ///
+    /// This is the analog of the .NET SDK's
+    /// `CosmosClientOptions.MaxRetryWaitTimeOnRateLimitedRequests`. Once the
+    /// accumulated retry delay would exceed this budget, no further throttle
+    /// retry is attempted.
+    ///
+    /// **Default**: 30 seconds.
+    ///
+    /// This client-wide value can be overridden per request via
+    /// [`OperationOptions`](crate::OperationOptions).
+    ///
+    /// # Arguments
+    ///
+    /// * `max_wait_time` - The maximum cumulative throttle-retry wait time.
+    pub fn with_max_retry_wait_time_on_throttled_requests(
+        mut self,
+        max_wait_time: std::time::Duration,
+    ) -> Self {
+        self.options.operation.max_throttle_retry_wait_time = Some(max_wait_time);
+        self
+    }
+
     /// Configures fault injection for testing.
     ///
     /// Accepts a vector of [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)
@@ -351,10 +397,13 @@ impl CosmosClientBuilder {
         // the env layer in the driver's option-resolution hierarchy, so it
         // pins the SDK's "enabled by default" behavior even when the env var
         // is unset.
-        let runtime_operation_options =
-            azure_data_cosmos_driver::options::OperationOptionsBuilder::new()
-                .with_per_partition_circuit_breaker_enabled(ppcb_enabled)
-                .build();
+        //
+        // Start from the client-level operation defaults (set via the builder,
+        // e.g. `with_max_retry_attempts_on_throttled_requests`) so they are
+        // forwarded to the driver's runtime layer, then force the resolved
+        // PPCB default on top.
+        let mut runtime_operation_options = self.options.operation.clone();
+        runtime_operation_options.per_partition_circuit_breaker_enabled = Some(ppcb_enabled);
         driver_runtime_builder =
             driver_runtime_builder.with_operation_options(runtime_operation_options);
 
@@ -553,6 +602,29 @@ mod tests {
             Some(false),
             "explicit env-var opt-out must propagate to the driver runtime"
         );
+    }
+
+    /// The client-wide throttle-retry setters must populate the operation
+    /// options that `build()` forwards to the driver's runtime layer.
+    #[test]
+    fn throttle_retry_setters_populate_operation_options() {
+        let builder = CosmosClientBuilder::new()
+            .with_max_retry_attempts_on_throttled_requests(4)
+            .with_max_retry_wait_time_on_throttled_requests(std::time::Duration::from_secs(15));
+
+        assert_eq!(builder.options.operation.max_throttle_retry_count, Some(4));
+        assert_eq!(
+            builder.options.operation.max_throttle_retry_wait_time,
+            Some(std::time::Duration::from_secs(15))
+        );
+    }
+
+    /// A throttle-retry count of `0` (disable retries) must round-trip through
+    /// the builder unchanged so the driver can surface the first 429.
+    #[test]
+    fn throttle_retry_count_zero_round_trips() {
+        let builder = CosmosClientBuilder::new().with_max_retry_attempts_on_throttled_requests(0);
+        assert_eq!(builder.options.operation.max_throttle_retry_count, Some(0));
     }
 
     fn test_account() -> azure_data_cosmos_driver::models::AccountReference {

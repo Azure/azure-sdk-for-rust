@@ -90,6 +90,29 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
     pub max_session_retry_count: Option<u32>,
 
+    /// Maximum number of retries when a request is throttled by the service
+    /// (HTTP 429, rate-limited).
+    ///
+    /// This is the analog of the .NET SDK's
+    /// `MaxRetryAttemptsOnRateLimitedRequests`. It bounds the transport-level
+    /// retry loop that honors the service `x-ms-retry-after-ms` header (or an
+    /// exponential-backoff fallback when the header is absent).
+    ///
+    /// **Default**: `9`. A value of `0` disables retrying throttled requests
+    /// (the first 429 is surfaced to the caller).
+    #[option(env = "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT")]
+    pub max_throttle_retry_count: Option<u32>,
+
+    /// Maximum cumulative time to spend waiting across throttle (HTTP 429)
+    /// retries before giving up and surfacing the 429 to the caller.
+    ///
+    /// This is the analog of the .NET SDK's
+    /// `MaxRetryWaitTimeOnRateLimitedRequests`. Once the accumulated retry
+    /// delay would exceed this budget, no further throttle retry is attempted.
+    ///
+    /// **Default**: 30 seconds.
+    pub max_throttle_retry_wait_time: Option<Duration>,
+
     /// Read failure count threshold before the per-partition circuit breaker
     /// trips for a `(partition, region)` pair.
     ///
@@ -199,6 +222,8 @@ mod tests {
             .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
             .with_max_failover_retry_count(5)
             .with_max_session_retry_count(3)
+            .with_max_throttle_retry_count(4)
+            .with_max_throttle_retry_wait_time(Duration::from_secs(12))
             .build();
 
         assert_eq!(
@@ -211,6 +236,11 @@ mod tests {
         );
         assert_eq!(options.max_failover_retry_count, Some(5));
         assert_eq!(options.max_session_retry_count, Some(3));
+        assert_eq!(options.max_throttle_retry_count, Some(4));
+        assert_eq!(
+            options.max_throttle_retry_wait_time,
+            Some(Duration::from_secs(12))
+        );
     }
 
     #[test]
@@ -266,6 +296,7 @@ mod tests {
             "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
             "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
             "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".to_string()),
+            "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT" => Ok("4".to_string()),
             _ => Err(std::env::VarError::NotPresent),
         });
 
@@ -279,8 +310,10 @@ mod tests {
         );
         assert_eq!(options.max_failover_retry_count, Some(7));
         assert_eq!(options.max_session_retry_count, Some(3));
+        assert_eq!(options.max_throttle_retry_count, Some(4));
         // Fields without env annotation remain None
         assert!(options.excluded_regions.is_none());
+        assert!(options.max_throttle_retry_wait_time.is_none());
     }
 
     #[test]
