@@ -3086,12 +3086,6 @@ fn finalize_both_transient(
     observed_session_unavailable: bool,
 ) -> HedgedRaceResult {
     let deadline_was_elapsed = deadline_elapsed(deadline);
-    parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
-        strategy_config,
-        primary_region_for_diag,
-        secondary_region_for_diag,
-        deadline_was_elapsed,
-    ));
     tracing::warn!(
         activity_id = %activity_id,
         deadline_elapsed = deadline_was_elapsed,
@@ -3100,12 +3094,27 @@ fn finalize_both_transient(
         "cosmos.hedge.both_transient",
     );
     if deadline_was_elapsed {
+        // Terminal both-transient under elapsed deadline — set the
+        // BothTransient hedge diagnostics here because no subsequent
+        // attempt will rewrite them; the application_cancelled_error
+        // path is the operation's final answer.
+        parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
+            strategy_config,
+            primary_region_for_diag,
+            secondary_region_for_diag,
+            deadline_was_elapsed,
+        ));
         tracing::debug!(
             activity_id = %activity_id,
             "execute_hedged: both transient under elapsed deadline; surfacing app-cancel",
         );
         HedgedRaceResult::Terminal(Err(application_cancelled_error(parent_diagnostics)))
     } else {
+        // Non-terminal: the failover loop will run further attempts
+        // against fresh regions. Do NOT stamp HedgeDiagnostics here —
+        // if a later sequential attempt succeeds, the response would
+        // otherwise carry a misleading `terminal_state = BothTransient`
+        // even though the actual outcome was a happy success.
         tracing::debug!(
             activity_id = %activity_id,
             primary_region = ?primary_region.as_ref().map(Region::as_str),
@@ -3113,6 +3122,15 @@ fn finalize_both_transient(
             observed_session_unavailable,
             "execute_hedged: both legs transient; bubbling up for failover-loop fallback",
         );
+        // Suppress unused-variable warning for `strategy_config` /
+        // `*_for_diag` on this branch — they are kept on the function
+        // signature for symmetry with the terminal branch and for
+        // future use if downstream telemetry decides to stamp
+        // BothTransient-during-fallback as a distinct intermediate
+        // state.
+        let _ = strategy_config;
+        let _ = primary_region_for_diag;
+        let _ = secondary_region_for_diag;
         HedgedRaceResult::BothTransient {
             last_error: transient_outcome_error(primary_region.as_ref(), secondary_region.as_ref()),
             primary_region,
