@@ -37,6 +37,7 @@ use crate::container_ref::ContainerRefInner;
 use crate::driver::{DriverHandle, DriverInner};
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosErrorInner};
+use crate::op_request::{build_request, CosmosOperationRequest};
 use crate::operation::OperationDescHandle;
 use crate::operation_options::OperationOptionsHandle;
 use crate::response::ResponseHandle;
@@ -296,9 +297,225 @@ pub extern "C" fn cosmos_driver_submit(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FFI: cosmos_driver_get_or_create_submit (Phase 3 deferral)
+// FFI: cosmos_driver_execute_operation_submit / _execute_singleton_operation_submit
+//
+// The two canonical entry points host SDKs use. The host fills a flat
+// `cosmos_operation_request_t` (kind + references + body + per-op tweaks +
+// options) and submits it; the wrapper builds the driver's `CosmosOperation`
+// + `OperationOptions` internally and dispatches to the matching driver
+// method. These supersede the per-operation factory / mutator surface.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Submits a feed-capable operation for asynchronous execution, binding to
+/// the driver's planner so a single page is produced per call.
+///
+/// Unlike [`cosmos_driver_execute_singleton_operation_submit`], this path
+/// runs `plan_operation` + `execute_plan` internally so it can both
+/// **resume** from an inbound continuation token
+/// ([`CosmosOperationRequest::continuation_token`]) and **surface** the
+/// next-page token via [`crate::response::cosmos_response_next_continuation`].
+///
+/// Use this for any operation that can return multiple pages — queries,
+/// read-all-items, change feed — and drive pagination by re-submitting with
+/// the returned next token until the completion delivers an end-of-stream
+/// response (status code `0`, NULL next token; see the `Ok(None)` contract
+/// below).
+///
+/// # Completion outcomes
+///
+/// - **A page of results**: outcome `OK`; the response carries the body,
+///   headers, and (when more pages remain) a non-NULL next continuation.
+/// - **Feed exhausted** (`Ok(None)` from the driver): outcome `OK` with a
+///   degenerate response — status code `0`, empty body, NULL next token.
+///   Hosts treat this as end-of-stream.
+/// - **Failure**: outcome `ERROR` with the coarse code (+ rich error when
+///   the queue opted in).
+///
+/// # Parameters
+///
+/// - `driver` — non-NULL driver handle.
+/// - `request` — non-NULL [`CosmosOperationRequest`] describing the
+///   operation. All borrowed pointers must remain valid for the duration of
+///   this call (the wrapper copies everything it needs before returning).
+/// - `queue` — non-NULL completion queue.
+/// - `user_data` — opaque pointer round-tripped onto the completion.
+/// - `out_pre_error` — receives the coarse code on pre-flight failure
+///   (returns NULL). NULL is accepted.
+///
+/// # Returns
+///
+/// A fresh `cosmos_operation_handle_t *` on success, or NULL on pre-flight
+/// failure (with `*out_pre_error` populated when non-NULL). Pre-flight
+/// failures include malformed requests (`INVALID_ARGUMENT`), invalid option
+/// values (`INVALID_OPTION_VALUE`), and the queue states
+/// (`QUEUE_SHUTDOWN` / `QUEUE_FULL`).
+#[no_mangle]
+pub extern "C" fn cosmos_driver_execute_operation_submit(
+    driver: *const DriverHandle,
+    request: *const CosmosOperationRequest,
+    queue: *mut CompletionQueue,
+    user_data: *mut c_void,
+    out_pre_error: *mut CosmosErrorCode,
+) -> *mut OperationHandle {
+    let write_err = |code: CosmosErrorCode| {
+        if !out_pre_error.is_null() {
+            // SAFETY: caller-supplied writable slot.
+            unsafe {
+                *out_pre_error = code;
+            }
+        }
+    };
+
+    let Some(driver_inner) = DriverHandle::inner_arc(driver) else {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    };
+    let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
+
+    // Build the driver operation + options + inbound continuation from the
+    // flat request. Validation failures abort before we spend a spawn.
+    // SAFETY: caller guarantees `request`'s pointer fields per the struct
+    // contract.
+    let built = match unsafe { build_request(request) } {
+        Ok(b) => b,
+        Err(code) => {
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
+        Ok(pair) => pair,
+        Err(code) => {
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let runtime = Arc::clone(ctx.queue.runtime());
+    let crate::op_request::BuiltRequest {
+        operation,
+        options,
+        continuation,
+    } = built;
+
+    spawn_oneshot(
+        ctx,
+        runtime,
+        async move {
+            // Plan with the inbound continuation, then execute a single
+            // page. Mirrors `CosmosDriver::execute_operation` but threads
+            // the continuation token through the planner and retains the
+            // plan so we can mint the next-page token.
+            let container = operation.container().cloned();
+            let mut plan = driver_arc
+                .plan_operation(operation, &options, continuation.as_ref())
+                .await?;
+            let page = driver_arc
+                .execute_plan(&mut plan, container, options)
+                .await?;
+            // After a page, snapshot the next-page token from the plan.
+            // Token derivation is best-effort: a failure here (e.g. a
+            // non-query trivial op that doesn't support client tokens)
+            // simply yields no next token rather than failing the page.
+            let next = match page {
+                Some(_) => plan
+                    .to_continuation_token()
+                    .ok()
+                    .map(|t| t.as_str().to_owned()),
+                None => None,
+            };
+            Ok((page, next))
+        },
+        |(page, next): (Option<CosmosResponse>, Option<String>)| {
+            ResponseHandle::into_raw_with_next_continuation(page, next)
+        },
+    );
+    op_handle
+}
+
+/// Submits a singleton (single-result) operation for asynchronous
+/// execution, binding to [`CosmosDriver::execute_singleton_operation`].
+///
+/// Use this for point operations and any operation that returns exactly one
+/// result — create / read / replace / delete / patch item, database and
+/// container CRUD, read/replace offer. Feed kinds (queries, read-all,
+/// change feed) must go through
+/// [`cosmos_driver_execute_operation_submit`] instead; submitting one here
+/// makes the driver assert in debug builds and yields a
+/// `CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE`-shaped error in release.
+///
+/// The inbound [`CosmosOperationRequest::continuation_token`] is ignored on
+/// this path (singletons do not paginate).
+///
+/// # Parameters / Returns
+///
+/// Identical in shape to [`cosmos_driver_execute_operation_submit`]; the
+/// completion always carries a single response (outcome `OK`) or an error
+/// (outcome `ERROR`).
+#[no_mangle]
+pub extern "C" fn cosmos_driver_execute_singleton_operation_submit(
+    driver: *const DriverHandle,
+    request: *const CosmosOperationRequest,
+    queue: *mut CompletionQueue,
+    user_data: *mut c_void,
+    out_pre_error: *mut CosmosErrorCode,
+) -> *mut OperationHandle {
+    let write_err = |code: CosmosErrorCode| {
+        if !out_pre_error.is_null() {
+            // SAFETY: caller-supplied writable slot.
+            unsafe {
+                *out_pre_error = code;
+            }
+        }
+    };
+
+    let Some(driver_inner) = DriverHandle::inner_arc(driver) else {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    };
+    let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
+
+    // SAFETY: caller guarantees `request`'s pointer fields per the struct
+    // contract.
+    let built = match unsafe { build_request(request) } {
+        Ok(b) => b,
+        Err(code) => {
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
+        Ok(pair) => pair,
+        Err(code) => {
+            write_err(code);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let runtime = Arc::clone(ctx.queue.runtime());
+    // `continuation` is intentionally dropped: singletons do not paginate.
+    let crate::op_request::BuiltRequest {
+        operation, options, ..
+    } = built;
+
+    spawn_oneshot(
+        ctx,
+        runtime,
+        async move {
+            driver_arc
+                .execute_singleton_operation(operation, options)
+                .await
+        },
+        |response: CosmosResponse| ResponseHandle::into_raw(response),
+    );
+    op_handle
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FFI: cosmos_driver_get_or_create_submit (Phase 3 deferral)
+// ─────────────────────────────────────────────────────────────────────────────
 /// Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].
 ///
 /// Bridges `CosmosDriverRuntime::get_or_create_driver` through the

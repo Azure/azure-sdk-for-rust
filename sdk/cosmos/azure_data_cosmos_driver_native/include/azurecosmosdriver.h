@@ -301,6 +301,73 @@ typedef int32_t cosmos_operation_handle_state_t;
 #endif // __cplusplus
 
 /**
+ * Tri-state mirror of [`ReadConsistencyStrategy`] for the flat options
+ * struct. `0` (`Unset`) means "inherit from a lower-priority layer".
+ */
+enum cosmos_CosmosReadConsistencyStrategy
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Inherit from account / runtime / environment.
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_UNSET = 0,
+  /**
+   * Use the default behavior for the chosen consistency level.
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_DEFAULT = 1,
+  /**
+   * Eventual consistency.
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_EVENTUAL = 2,
+  /**
+   * Session consistency (the driver's typical default).
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_SESSION = 3,
+  /**
+   * Read the latest version across all regions (single-master / Strong).
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_GLOBAL_STRONG = 4,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_CosmosReadConsistencyStrategy cosmos_CosmosReadConsistencyStrategy;
+#else
+typedef int32_t cosmos_CosmosReadConsistencyStrategy;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Tri-state mirror of [`ContentResponseOnWrite`]. `0` (`Unset`) inherits.
+ */
+enum cosmos_CosmosContentResponseOnWriteOpt
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Inherit from a lower-priority layer.
+   */
+  COSMOS_CONTENT_RESPONSE_ON_WRITE_OPT_UNSET = 0,
+  /**
+   * Server returns no body on write responses.
+   */
+  COSMOS_CONTENT_RESPONSE_ON_WRITE_OPT_DISABLED = 1,
+  /**
+   * Server returns the written resource in the response body.
+   */
+  COSMOS_CONTENT_RESPONSE_ON_WRITE_OPT_ENABLED = 2,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_CosmosContentResponseOnWriteOpt cosmos_CosmosContentResponseOnWriteOpt;
+#else
+typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
  * Per spec §4.6 — mirrors [`ReadConsistencyStrategy`].
  *
  * Variant prefixes are baked into the Rust variant names so the
@@ -361,6 +428,154 @@ enum cosmos_content_response_on_write_t
 typedef enum cosmos_content_response_on_write_t cosmos_content_response_on_write_t;
 #else
 typedef int32_t cosmos_content_response_on_write_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Discriminates which driver `CosmosOperation` factory a
+ * [`CosmosOperationRequest`] maps to. Append-only: new kinds get new
+ * trailing discriminants so the ABI stays stable.
+ */
+enum cosmos_CosmosOperationKind
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Invalid / uninitialized — always rejected with `INVALID_ARGUMENT`.
+   */
+  COSMOS_OPERATION_KIND_INVALID = 0,
+  /**
+   * `CosmosOperation::create_database` — requires `account`.
+   */
+  COSMOS_OPERATION_KIND_CREATE_DATABASE = 1,
+  /**
+   * `CosmosOperation::read_all_databases` — requires `account`.
+   */
+  COSMOS_OPERATION_KIND_READ_ALL_DATABASES = 2,
+  /**
+   * `CosmosOperation::query_databases` — requires `account` + body.
+   */
+  COSMOS_OPERATION_KIND_QUERY_DATABASES = 3,
+  /**
+   * `CosmosOperation::query_offers` — requires `account` + body.
+   */
+  COSMOS_OPERATION_KIND_QUERY_OFFERS = 4,
+  /**
+   * `CosmosOperation::read_offer` — requires `account` + `resource_link`.
+   */
+  COSMOS_OPERATION_KIND_READ_OFFER = 5,
+  /**
+   * `CosmosOperation::replace_offer` — requires `account` + `resource_link` + body.
+   */
+  COSMOS_OPERATION_KIND_REPLACE_OFFER = 6,
+  /**
+   * `CosmosOperation::read_database` — requires `database`.
+   */
+  COSMOS_OPERATION_KIND_READ_DATABASE = 7,
+  /**
+   * `CosmosOperation::delete_database` — requires `database`.
+   */
+  COSMOS_OPERATION_KIND_DELETE_DATABASE = 8,
+  /**
+   * `CosmosOperation::create_container` — requires `database` + body.
+   */
+  COSMOS_OPERATION_KIND_CREATE_CONTAINER = 9,
+  /**
+   * `CosmosOperation::read_all_containers` — requires `database`.
+   */
+  COSMOS_OPERATION_KIND_READ_ALL_CONTAINERS = 10,
+  /**
+   * `CosmosOperation::query_containers` — requires `database` + body.
+   */
+  COSMOS_OPERATION_KIND_QUERY_CONTAINERS = 11,
+  /**
+   * `CosmosOperation::read_container` — requires `container`.
+   */
+  COSMOS_OPERATION_KIND_READ_CONTAINER = 12,
+  /**
+   * `CosmosOperation::replace_container` — requires `container` + body.
+   */
+  COSMOS_OPERATION_KIND_REPLACE_CONTAINER = 13,
+  /**
+   * `CosmosOperation::delete_container` — requires `container`.
+   */
+  COSMOS_OPERATION_KIND_DELETE_CONTAINER = 14,
+  /**
+   * `CosmosOperation::read_all_items` — requires `container` + `partition_key`.
+   */
+  COSMOS_OPERATION_KIND_READ_ALL_ITEMS = 15,
+  /**
+   * `CosmosOperation::read_all_items_cross_partition` — requires `container`.
+   */
+  COSMOS_OPERATION_KIND_READ_ALL_ITEMS_CROSS_PARTITION = 16,
+  /**
+   * `CosmosOperation::query_items` — requires `container` + body; `feed_range` optional.
+   */
+  COSMOS_OPERATION_KIND_QUERY_ITEMS = 17,
+  /**
+   * `CosmosOperation::batch` — requires `container` + `partition_key` + body.
+   */
+  COSMOS_OPERATION_KIND_BATCH = 18,
+  /**
+   * `CosmosOperation::create_item` — requires `container` + `partition_key` + body.
+   */
+  COSMOS_OPERATION_KIND_CREATE_ITEM = 19,
+  /**
+   * `CosmosOperation::read_item` — requires `container` + `partition_key` + `item_id`.
+   */
+  COSMOS_OPERATION_KIND_READ_ITEM = 20,
+  /**
+   * `CosmosOperation::upsert_item` — requires `container` + `partition_key` + body.
+   */
+  COSMOS_OPERATION_KIND_UPSERT_ITEM = 21,
+  /**
+   * `CosmosOperation::replace_item` — requires `container` + `partition_key` + `item_id` + body.
+   */
+  COSMOS_OPERATION_KIND_REPLACE_ITEM = 22,
+  /**
+   * `CosmosOperation::delete_item` — requires `container` + `partition_key` + `item_id`.
+   */
+  COSMOS_OPERATION_KIND_DELETE_ITEM = 23,
+  /**
+   * `CosmosOperation::patch_item` — requires `container` + `partition_key` + `item_id` + body.
+   */
+  COSMOS_OPERATION_KIND_PATCH_ITEM = 24,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_CosmosOperationKind cosmos_CosmosOperationKind;
+#else
+typedef int32_t cosmos_CosmosOperationKind;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Selects which optimistic-concurrency precondition (if any) to attach.
+ */
+enum cosmos_CosmosPreconditionKind
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * No precondition.
+   */
+  COSMOS_PRECONDITION_KIND_NONE = 0,
+  /**
+   * `If-Match: <etag>` — requires `precondition_etag`.
+   */
+  COSMOS_PRECONDITION_KIND_IF_MATCH = 1,
+  /**
+   * `If-None-Match: <etag>` — requires `precondition_etag`.
+   */
+  COSMOS_PRECONDITION_KIND_IF_NONE_MATCH = 2,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_CosmosPreconditionKind cosmos_CosmosPreconditionKind;
+#else
+typedef int32_t cosmos_CosmosPreconditionKind;
 #endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
@@ -555,6 +770,111 @@ typedef struct cosmos_partition_key_t {
 } cosmos_partition_key_t;
 
 /**
+ * A single custom request/operation header. Both pointers are
+ * NUL-terminated UTF-8 and borrowed for the duration of the submit call;
+ * the wrapper copies them before returning.
+ */
+typedef struct cosmos_CosmosHeaderKv {
+  /**
+   * Header name (NUL-terminated UTF-8).
+   */
+  const char *name;
+  /**
+   * Header value (NUL-terminated UTF-8).
+   */
+  const char *value;
+} cosmos_CosmosHeaderKv;
+
+/**
+ * Flat C ABI mirror of the driver's
+ * [`azure_data_cosmos_driver::options::OperationOptions`].
+ *
+ * Every field is tri-state encoded (see [`OptOf`]) so the host can
+ * distinguish "inherit from a lower layer" from an explicit value. A
+ * pointer to this struct rides on [`CosmosOperationRequest::options`]; pass
+ * NULL there to use the driver/runtime defaults for every field.
+ *
+ * Construct with [`cosmos_operation_options_default`] to obtain an
+ * all-unset value, then set the fields you care about.
+ */
+typedef struct cosmos_CosmosOperationOptions {
+  /**
+   * Read consistency strategy. `Unset` inherits.
+   */
+  cosmos_CosmosReadConsistencyStrategy read_consistency_strategy;
+  /**
+   * Whether write responses include the resource body. `Unset` inherits.
+   */
+  cosmos_CosmosContentResponseOnWriteOpt content_response_on_write;
+  /**
+   * Disable automatic session token management. Tri-state bool.
+   */
+  int8_t session_capturing_disabled;
+  /**
+   * Enable the per-partition circuit breaker. Tri-state bool.
+   */
+  int8_t per_partition_circuit_breaker_enabled;
+  /**
+   * Max region-failover retries. `< 0` = unset.
+   */
+  int32_t max_failover_retry_count;
+  /**
+   * Max session-consistency retries on 404/1002. `< 0` = unset.
+   */
+  int32_t max_session_retry_count;
+  /**
+   * PPCB read failure threshold. `< 0` = unset.
+   */
+  int32_t circuit_breaker_failure_count_for_reads;
+  /**
+   * PPCB write failure threshold (multi-master). `< 0` = unset.
+   */
+  int32_t circuit_breaker_failure_count_for_writes;
+  /**
+   * PPCB counter reset window (minutes). `< 0` = unset.
+   */
+  int32_t circuit_breaker_timeout_counter_reset_window_in_minutes;
+  /**
+   * Min age (seconds) before a tripped breaker may probe back. `< 0` = unset.
+   */
+  int32_t allowed_partition_unavailability_duration_in_seconds;
+  /**
+   * PPCB failback sweep interval (seconds). `< 0` = unset.
+   */
+  int32_t ppcb_stale_partition_unavailability_refresh_interval_in_seconds;
+  /**
+   * End-to-end timeout (milliseconds). `< 0` = unset.
+   */
+  int64_t end_to_end_timeout_ms;
+  /**
+   * Endpoint unavailability TTL (milliseconds). `< 0` = unset.
+   */
+  int64_t endpoint_unavailability_ttl_ms;
+  /**
+   * Throughput control group name (NUL-terminated UTF-8). NULL = unset.
+   */
+  const char *throughput_control_group;
+  /**
+   * Excluded regions — array of NUL-terminated UTF-8 region ids.
+   * NULL / `0` length = unset; non-NULL with `0` length is rejected.
+   */
+  const char *const *excluded_regions;
+  /**
+   * Number of entries in `excluded_regions`.
+   */
+  uintptr_t excluded_regions_len;
+  /**
+   * Custom headers added to every request for the operation.
+   * NULL / `0` length = none.
+   */
+  const struct cosmos_CosmosHeaderKv *custom_headers;
+  /**
+   * Number of entries in `custom_headers`.
+   */
+  uintptr_t custom_headers_len;
+} cosmos_CosmosOperationOptions;
+
+/**
  * Opaque C ABI handle for a built but un-submitted operation.
  *
  * Storage pun: same shape as `OperationOptionsHandle`.
@@ -591,6 +911,115 @@ typedef struct cosmos_partition_key_builder_t {
 typedef struct cosmos_runtime_builder_t {
   uint8_t _opaque[0];
 } cosmos_runtime_builder_t;
+
+/**
+ * Borrowed view of a request body. `data` may be NULL iff `len` is `0`.
+ * The wrapper copies the bytes into a driver-owned `Vec<u8>` before
+ * returning, so the host may free the buffer immediately after submit.
+ */
+typedef struct cosmos_CosmosBytesView {
+  /**
+   * Pointer to the first byte, or NULL when `len == 0`.
+   */
+  const uint8_t *data;
+  /**
+   * Number of bytes.
+   */
+  uintptr_t len;
+} cosmos_CosmosBytesView;
+
+/**
+ * Self-describing request passed to the two submit entry points. The host
+ * fills out the fields relevant to `kind`; irrelevant fields must be left
+ * NULL / sentinel (strict validation rejects mismatches with
+ * `INVALID_ARGUMENT`).
+ *
+ * All pointers are borrowed for the duration of the submit call only.
+ */
+typedef struct cosmos_CosmosOperationRequest {
+  /**
+   * Which operation to build. See [`CosmosOperationKind`].
+   */
+  cosmos_CosmosOperationKind kind;
+  /**
+   * Account reference. Required for account-scope kinds; otherwise NULL.
+   */
+  const struct cosmos_account_ref_t *account;
+  /**
+   * Database reference. Required for database-scope kinds; otherwise NULL.
+   */
+  const struct cosmos_database_ref_t *database;
+  /**
+   * Container reference. Required for container/item-scope kinds; otherwise NULL.
+   */
+  const struct cosmos_container_ref_t *container;
+  /**
+   * Item id (NUL-terminated UTF-8). Required for item-scope kinds that
+   * address a specific document; otherwise NULL.
+   */
+  const char *item_id;
+  /**
+   * Offer resource link (NUL-terminated UTF-8). Required for the offer
+   * kinds; otherwise NULL.
+   */
+  const char *resource_link;
+  /**
+   * Partition key handle. Required for item-scope, `read_all_items`, and
+   * `batch`; otherwise NULL.
+   */
+  const struct cosmos_partition_key_t *partition_key;
+  /**
+   * Feed range handle. Optional for `query_items`; otherwise NULL.
+   */
+  const struct cosmos_feed_range_t *feed_range;
+  /**
+   * Request body. `data == NULL && len == 0` means "no body".
+   */
+  struct cosmos_CosmosBytesView body;
+  /**
+   * Session token override (NUL-terminated UTF-8). NULL = unset.
+   */
+  const char *session_token;
+  /**
+   * Activity id override (NUL-terminated UTF-8). NULL = auto-generate.
+   */
+  const char *activity_id;
+  /**
+   * Continuation token to resume a feed (NUL-terminated UTF-8). NULL = none.
+   * Only meaningful for feed kinds dispatched through
+   * `cosmos_driver_execute_operation_submit`.
+   */
+  const char *continuation_token;
+  /**
+   * Max item count hint for feeds. `< 0` = unset.
+   */
+  int32_t max_item_count;
+  /**
+   * PATCH read-modify-write attempt budget. `0` = unset.
+   */
+  uint8_t patch_max_attempts;
+  /**
+   * Populate index metrics. Tri-state bool (`0` unset / `1` false / `2` true).
+   */
+  int8_t populate_index_metrics;
+  /**
+   * Populate query metrics. Tri-state bool (`0` unset / `1` false / `2` true).
+   */
+  int8_t populate_query_metrics;
+  /**
+   * Precondition selector. See [`CosmosPreconditionKind`].
+   */
+  cosmos_CosmosPreconditionKind precondition_kind;
+  /**
+   * ETag for the precondition (NUL-terminated UTF-8). Required iff
+   * `precondition_kind` is not `None`.
+   */
+  const char *precondition_etag;
+  /**
+   * Per-call options. NULL = use driver/runtime defaults.
+   */
+  const struct cosmos_CosmosOperationOptions *options;
+} cosmos_CosmosOperationRequest;
 
 #ifdef __cplusplus
 extern "C" {
@@ -1186,6 +1615,13 @@ int32_t cosmos_feed_range_clone(const struct cosmos_feed_range_t *fr,
 void cosmos_feed_range_free(struct cosmos_feed_range_t *fr);
 
 /**
+ * Returns an all-unset [`CosmosOperationOptions`] by value. The host
+ * mutates the fields it cares about and leaves the rest at their inherit
+ * sentinels.
+ */
+struct cosmos_CosmosOperationOptions cosmos_operation_options_default(void);
+
+/**
  * Frees an operation handle. Idempotent only in the sense that the
  * pointer is then NULL on the caller side — double-free is undefined
  * behavior. NULL is a no-op.
@@ -1598,6 +2034,24 @@ const char *cosmos_response_etag(const struct cosmos_response_t *response);
 const char *cosmos_response_continuation_token(const struct cosmos_response_t *response);
 
 /**
+ * Borrowed pointer to the **next-page** continuation token for a feed
+ * page produced by [`crate::submit::cosmos_driver_execute_operation_submit`],
+ * or NULL when this was the last page / the response did not come from a
+ * feed submit.
+ *
+ * This is the planner-derived token (from
+ * `OperationPlan::to_continuation_token()`) and is the correct token to
+ * pass back as `CosmosOperationRequest::continuation_token` to fetch the
+ * following page — including for cross-partition queries. It differs from
+ * [`cosmos_response_continuation_token`], which surfaces the raw server
+ * header continuation (valid only for trivial single-partition reads).
+ *
+ * The returned pointer is valid until [`cosmos_response_free`] is called
+ * on this response handle.
+ */
+const char *cosmos_response_next_continuation(const struct cosmos_response_t *response);
+
+/**
  * Zero-copy borrowed view of the response body bytes. NULL pointer +
  * 0 length when the body is empty / response is NULL.
  *
@@ -1793,6 +2247,84 @@ struct cosmos_operation_handle_t *cosmos_driver_submit(const struct cosmos_drive
                                                        struct cosmos_cq_t *queue,
                                                        void *user_data,
                                                        cosmos_error_code_t *out_pre_error);
+
+/**
+ * Submits a feed-capable operation for asynchronous execution, binding to
+ * the driver's planner so a single page is produced per call.
+ *
+ * Unlike [`cosmos_driver_execute_singleton_operation_submit`], this path
+ * runs `plan_operation` + `execute_plan` internally so it can both
+ * **resume** from an inbound continuation token
+ * ([`CosmosOperationRequest::continuation_token`]) and **surface** the
+ * next-page token via [`crate::response::cosmos_response_next_continuation`].
+ *
+ * Use this for any operation that can return multiple pages — queries,
+ * read-all-items, change feed — and drive pagination by re-submitting with
+ * the returned next token until the completion delivers an end-of-stream
+ * response (status code `0`, NULL next token; see the `Ok(None)` contract
+ * below).
+ *
+ * # Completion outcomes
+ *
+ * - **A page of results**: outcome `OK`; the response carries the body,
+ *   headers, and (when more pages remain) a non-NULL next continuation.
+ * - **Feed exhausted** (`Ok(None)` from the driver): outcome `OK` with a
+ *   degenerate response — status code `0`, empty body, NULL next token.
+ *   Hosts treat this as end-of-stream.
+ * - **Failure**: outcome `ERROR` with the coarse code (+ rich error when
+ *   the queue opted in).
+ *
+ * # Parameters
+ *
+ * - `driver` — non-NULL driver handle.
+ * - `request` — non-NULL [`CosmosOperationRequest`] describing the
+ *   operation. All borrowed pointers must remain valid for the duration of
+ *   this call (the wrapper copies everything it needs before returning).
+ * - `queue` — non-NULL completion queue.
+ * - `user_data` — opaque pointer round-tripped onto the completion.
+ * - `out_pre_error` — receives the coarse code on pre-flight failure
+ *   (returns NULL). NULL is accepted.
+ *
+ * # Returns
+ *
+ * A fresh `cosmos_operation_handle_t *` on success, or NULL on pre-flight
+ * failure (with `*out_pre_error` populated when non-NULL). Pre-flight
+ * failures include malformed requests (`INVALID_ARGUMENT`), invalid option
+ * values (`INVALID_OPTION_VALUE`), and the queue states
+ * (`QUEUE_SHUTDOWN` / `QUEUE_FULL`).
+ */
+struct cosmos_operation_handle_t *cosmos_driver_execute_operation_submit(const struct cosmos_driver_t *driver,
+                                                                         const struct cosmos_CosmosOperationRequest *request,
+                                                                         struct cosmos_cq_t *queue,
+                                                                         void *user_data,
+                                                                         cosmos_error_code_t *out_pre_error);
+
+/**
+ * Submits a singleton (single-result) operation for asynchronous
+ * execution, binding to [`CosmosDriver::execute_singleton_operation`].
+ *
+ * Use this for point operations and any operation that returns exactly one
+ * result — create / read / replace / delete / patch item, database and
+ * container CRUD, read/replace offer. Feed kinds (queries, read-all,
+ * change feed) must go through
+ * [`cosmos_driver_execute_operation_submit`] instead; submitting one here
+ * makes the driver assert in debug builds and yields a
+ * `CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE`-shaped error in release.
+ *
+ * The inbound [`CosmosOperationRequest::continuation_token`] is ignored on
+ * this path (singletons do not paginate).
+ *
+ * # Parameters / Returns
+ *
+ * Identical in shape to [`cosmos_driver_execute_operation_submit`]; the
+ * completion always carries a single response (outcome `OK`) or an error
+ * (outcome `ERROR`).
+ */
+struct cosmos_operation_handle_t *cosmos_driver_execute_singleton_operation_submit(const struct cosmos_driver_t *driver,
+                                                                                   const struct cosmos_CosmosOperationRequest *request,
+                                                                                   struct cosmos_cq_t *queue,
+                                                                                   void *user_data,
+                                                                                   cosmos_error_code_t *out_pre_error);
 
 /**
  * Asynchronous variant of [`crate::driver::cosmos_driver_get_or_create_blocking`].
