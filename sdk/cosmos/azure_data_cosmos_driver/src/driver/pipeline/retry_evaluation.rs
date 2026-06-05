@@ -1200,6 +1200,64 @@ mod tests {
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
+    /// Regression guard for HEDGING_SPEC.md §7.2.1: a cross-region hedge
+    /// can only be spawned from a region-changing retry action, and for a
+    /// 429 that path is gated to sub-status `3092`
+    /// (`SystemResourceUnavailable`). A `3200` (`RU_BUDGET_EXCEEDED`)
+    /// throttle must instead `Abort` — failing it over to another region
+    /// cannot conjure throughput and only spreads the throttle. Pinning
+    /// this here ensures a future widening of the retry-trigger group
+    /// cannot silently begin hedging RU-exhaustion throttles.
+    #[test]
+    fn throttle_substatus_gates_hedge_eligibility() {
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let throttle_result = |sub: SubStatusCode| TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status: CosmosStatus::from_parts(StatusCode::TooManyRequests, Some(sub)),
+                cosmos_headers: CosmosResponseHeaders::default(),
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        };
+
+        // 429/3092 — transient backend pressure → failover-eligible, hence
+        // the only 429 the hedge upgrade in `maybe_upgrade_to_hedge` may act on.
+        let op = make_read_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let (action, _) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            throttle_result(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE),
+            &state,
+        );
+        assert!(
+            matches!(action, OperationAction::FailoverRetry { .. }),
+            "429/3092 SystemResourceUnavailable must be failover-eligible; got {action:?}",
+        );
+
+        // 429/3200 — provisioned RU budget exhausted → must NOT become a
+        // region-changing retry, so it can never be upgraded into a hedge.
+        let op = make_read_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let (action, _) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            throttle_result(SubStatusCode::RU_BUDGET_EXCEEDED),
+            &state,
+        );
+        assert!(
+            !matches!(
+                action,
+                OperationAction::FailoverRetry { .. } | OperationAction::SessionRetry { .. }
+            ),
+            "429/3200 RU_BUDGET_EXCEEDED must not become a region-changing retry \
+             (HEDGING_SPEC.md §7.2.1); got {action:?}",
+        );
+    }
+
     #[test]
     fn service_unavailable_non_idempotent_write_retries() {
         let op = make_create_operation();

@@ -26,13 +26,18 @@ use crate::options::{HedgeThreshold, Region};
 #[non_exhaustive]
 pub struct HedgingStrategyConfig {
     /// The configured threshold before the alternate-region hedge fires.
-    pub threshold: HedgeThreshold,
+    threshold: HedgeThreshold,
 }
 
 impl HedgingStrategyConfig {
     /// Creates a new strategy config snapshot from the given threshold.
-    pub const fn new(threshold: HedgeThreshold) -> Self {
+    pub(crate) const fn new(threshold: HedgeThreshold) -> Self {
         Self { threshold }
+    }
+
+    /// The configured threshold before the alternate-region hedge fires.
+    pub fn threshold(&self) -> HedgeThreshold {
+        self.threshold
     }
 }
 
@@ -88,22 +93,22 @@ pub enum HedgeTerminalState {
 /// Diagnostic information about a hedging execution, attached to the
 /// winning response when a hedging strategy was active for the operation.
 ///
-/// The [`terminal_state`](Self::terminal_state) field is the authoritative
-/// classification of how the race ended; use it (not
-/// [`was_hedge`](Self::was_hedge) alone) when computing observability
+/// The [`terminal_state`](Self::terminal_state()) accessor is the
+/// authoritative classification of how the race ended; use it (not
+/// [`was_hedge`](Self::was_hedge()) alone) when computing observability
 /// metrics, especially hedge win-rate.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct HedgeDiagnostics {
     /// The hedging strategy configuration that was active.
-    pub strategy_config: HedgingStrategyConfig,
+    strategy_config: HedgingStrategyConfig,
 
     /// The primary region that the operation was initially dispatched to.
     ///
     /// Always populated. For global-endpoint accounts whose routed
-    /// endpoint surfaces no named region, this is the
-    /// [`HedgeDiagnostics::UNKNOWN_REGION_SENTINEL`] sentinel.
-    pub primary_region: Region,
+    /// endpoint surfaces no named region, this is the unknown-region
+    /// sentinel.
+    primary_region: Region,
 
     /// The alternate region the hedge was dispatched to, if any.
     ///
@@ -111,52 +116,53 @@ pub struct HedgeDiagnostics {
     /// [`HedgeTerminalState::PrimaryWonPreThreshold`] and
     /// [`HedgeTerminalState::DeadlineExceededPreThreshold`]);
     /// `Some(_)` otherwise.
-    pub alternate_region: Option<Region>,
+    alternate_region: Option<Region>,
 
-    /// The region whose response was returned to the caller.
+    /// The region whose response was returned to the caller, if a leg
+    /// produced a final response.
     ///
-    /// For terminal-error states (`BothTransient`, `CancelledAwaitingPartner`,
-    /// `DeadlineExceededPreThreshold`) no leg produced a final response,
-    /// and this field holds the primary region as a sentinel — consult
-    /// [`terminal_state`](Self::terminal_state) before interpreting it.
-    pub response_region: Region,
+    /// `Some(_)` only for the winning terminal states
+    /// ([`HedgeTerminalState::PrimaryWonPreThreshold`],
+    /// [`HedgeTerminalState::PrimaryWonAfterHedge`], and
+    /// [`HedgeTerminalState::AlternateWon`]); `None` for the
+    /// terminal-error states where no leg produced a final response.
+    response_region: Option<Region>,
 
     /// Whether the alternate hedge produced the final response that was
     /// returned to the caller.
     ///
-    /// `true` only when [`terminal_state`](Self::terminal_state) is
+    /// `true` only when [`terminal_state`](Self::terminal_state()) is
     /// [`HedgeTerminalState::AlternateWon`]; `false` for every other
     /// terminal state, including terminal-error states where no leg won.
-    /// This is the field hedge win-rate metrics should aggregate over.
-    pub was_hedge: bool,
+    was_hedge: bool,
 
     /// Authoritative classification of the race outcome.
-    ///
-    /// Always consult this field when computing observability metrics
-    /// rather than inferring intent from the other fields.
-    pub terminal_state: HedgeTerminalState,
+    terminal_state: HedgeTerminalState,
 }
 
 impl HedgeDiagnostics {
     /// Sentinel `Region` value used when a hedge leg ran against a
     /// global-endpoint account whose routed endpoint surfaces no named
-    /// region. Downstream consumers can use this to distinguish "no
-    /// named region" from a real Azure region.
-    pub const UNKNOWN_REGION_SENTINEL: &'static str = "(unknown)";
+    /// region. Used internally at the diagnostics-construction sites to
+    /// keep the attachment contract intact when no named region exists.
+    pub(crate) const UNKNOWN_REGION_SENTINEL: &'static str = "(unknown)";
 
     /// Constructs a [`HedgeDiagnostics`] for the *"primary won before the
     /// threshold fired"* case — the zero-overhead happy path.
     ///
     /// Terminal state: [`HedgeTerminalState::PrimaryWonPreThreshold`].
     /// `alternate_region = None`,
-    /// `response_region = primary_region`,
+    /// `response_region = Some(primary_region)`,
     /// `was_hedge = false`.
-    pub fn primary_only(strategy_config: HedgingStrategyConfig, primary_region: Region) -> Self {
+    pub(crate) fn primary_only(
+        strategy_config: HedgingStrategyConfig,
+        primary_region: Region,
+    ) -> Self {
         Self {
             strategy_config,
             primary_region: primary_region.clone(),
             alternate_region: None,
-            response_region: primary_region,
+            response_region: Some(primary_region),
             was_hedge: false,
             terminal_state: HedgeTerminalState::PrimaryWonPreThreshold,
         }
@@ -166,18 +172,17 @@ impl HedgeDiagnostics {
     /// threshold; primary harvested but no final response"* case.
     ///
     /// Terminal state: [`HedgeTerminalState::DeadlineExceededPreThreshold`].
-    /// `was_hedge = false`. `response_region` is set to the primary region
-    /// as a sentinel — the operation surfaces a cancellation error so no
-    /// response is actually returned to the caller.
-    pub fn primary_only_deadline_exceeded(
+    /// `was_hedge = false`. `response_region = None` — the operation
+    /// surfaces a cancellation error so no response reaches the caller.
+    pub(crate) fn primary_only_deadline_exceeded(
         strategy_config: HedgingStrategyConfig,
         primary_region: Region,
     ) -> Self {
         Self {
             strategy_config,
-            primary_region: primary_region.clone(),
+            primary_region,
             alternate_region: None,
-            response_region: primary_region,
+            response_region: None,
             was_hedge: false,
             terminal_state: HedgeTerminalState::DeadlineExceededPreThreshold,
         }
@@ -187,9 +192,9 @@ impl HedgeDiagnostics {
     /// alternate, primary still won"* case.
     ///
     /// Terminal state: [`HedgeTerminalState::PrimaryWonAfterHedge`].
-    /// `response_region = primary_region`,
+    /// `response_region = Some(primary_region)`,
     /// `was_hedge = false`.
-    pub fn primary_won_after_hedge(
+    pub(crate) fn primary_won_after_hedge(
         strategy_config: HedgingStrategyConfig,
         primary_region: Region,
         alternate_region: Region,
@@ -198,7 +203,7 @@ impl HedgeDiagnostics {
             strategy_config,
             primary_region: primary_region.clone(),
             alternate_region: Some(alternate_region),
-            response_region: primary_region,
+            response_region: Some(primary_region),
             was_hedge: false,
             terminal_state: HedgeTerminalState::PrimaryWonAfterHedge,
         }
@@ -210,9 +215,9 @@ impl HedgeDiagnostics {
     /// Terminal state: [`HedgeTerminalState::AlternateWon`]. This is the
     /// **only** terminal state for which `was_hedge = true`. Hedge win-rate
     /// metrics should aggregate over this variant exclusively.
-    /// `response_region = alternate_region`,
+    /// `response_region = Some(alternate_region)`,
     /// `was_hedge = true`.
-    pub fn hedge_won(
+    pub(crate) fn hedge_won(
         strategy_config: HedgingStrategyConfig,
         primary_region: Region,
         alternate_region: Region,
@@ -221,7 +226,7 @@ impl HedgeDiagnostics {
             strategy_config,
             primary_region,
             alternate_region: Some(alternate_region.clone()),
-            response_region: alternate_region,
+            response_region: Some(alternate_region),
             was_hedge: true,
             terminal_state: HedgeTerminalState::AlternateWon,
         }
@@ -231,11 +236,11 @@ impl HedgeDiagnostics {
     /// retriable failure"* case.
     ///
     /// Terminal state: [`HedgeTerminalState::BothTransient`] with
-    /// `deadline_elapsed` carried through. `was_hedge = false` — no leg
-    /// produced a final response. `response_region` is the primary region
-    /// as a sentinel; the operation surfaces either a cancellation error
-    /// (when `deadline_elapsed = true`) or a synthetic both-transient error.
-    pub fn both_transient(
+    /// `deadline_elapsed` carried through. `was_hedge = false` and
+    /// `response_region = None` — no leg produced a final response; the
+    /// operation surfaces either a cancellation error (when
+    /// `deadline_elapsed = true`) or a synthetic both-transient error.
+    pub(crate) fn both_transient(
         strategy_config: HedgingStrategyConfig,
         primary_region: Region,
         alternate_region: Region,
@@ -243,9 +248,9 @@ impl HedgeDiagnostics {
     ) -> Self {
         Self {
             strategy_config,
-            primary_region: primary_region.clone(),
+            primary_region,
             alternate_region: Some(alternate_region),
-            response_region: primary_region,
+            response_region: None,
             was_hedge: false,
             terminal_state: HedgeTerminalState::BothTransient { deadline_elapsed },
         }
@@ -256,22 +261,60 @@ impl HedgeDiagnostics {
     /// failure"* case.
     ///
     /// Terminal state: [`HedgeTerminalState::CancelledAwaitingPartner`].
-    /// `was_hedge = false` — no leg produced a final response.
-    /// `response_region` is the primary region as a sentinel; the operation
-    /// surfaces a cancellation error.
-    pub fn cancelled_awaiting_partner(
+    /// `was_hedge = false` and `response_region = None` — no leg produced
+    /// a final response; the operation surfaces a cancellation error.
+    pub(crate) fn cancelled_awaiting_partner(
         strategy_config: HedgingStrategyConfig,
         primary_region: Region,
         alternate_region: Region,
     ) -> Self {
         Self {
             strategy_config,
-            primary_region: primary_region.clone(),
+            primary_region,
             alternate_region: Some(alternate_region),
-            response_region: primary_region,
+            response_region: None,
             was_hedge: false,
             terminal_state: HedgeTerminalState::CancelledAwaitingPartner,
         }
+    }
+
+    /// The hedging strategy configuration that was active for the operation.
+    pub fn strategy_config(&self) -> HedgingStrategyConfig {
+        self.strategy_config
+    }
+
+    /// The primary region the operation was initially dispatched to.
+    ///
+    /// For global-endpoint accounts whose routed endpoint surfaces no
+    /// named region, this is the unknown-region sentinel.
+    pub fn primary_region(&self) -> &Region {
+        &self.primary_region
+    }
+
+    /// The alternate region the hedge was dispatched to, or `None` when
+    /// only the primary leg ran.
+    pub fn alternate_region(&self) -> Option<&Region> {
+        self.alternate_region.as_ref()
+    }
+
+    /// The region whose response was returned to the caller, or `None`
+    /// when no leg produced a final response (terminal-error states).
+    pub fn response_region(&self) -> Option<&Region> {
+        self.response_region.as_ref()
+    }
+
+    /// Whether the alternate hedge produced the final response.
+    ///
+    /// `true` only when [`terminal_state`](Self::terminal_state()) is
+    /// [`HedgeTerminalState::AlternateWon`]; this is the field hedge
+    /// win-rate metrics should aggregate over.
+    pub fn was_hedge(&self) -> bool {
+        self.was_hedge
+    }
+
+    /// Authoritative classification of how the hedging race ended.
+    pub fn terminal_state(&self) -> HedgeTerminalState {
+        self.terminal_state
     }
 }
 
@@ -291,19 +334,19 @@ mod tests {
     #[test]
     fn strategy_config_exposes_threshold() {
         let cfg = config();
-        assert_eq!(cfg.threshold, threshold());
+        assert_eq!(cfg.threshold(), threshold());
     }
 
     #[test]
     fn primary_only_constructor() {
         let diag = HedgeDiagnostics::primary_only(config(), Region::EAST_US);
-        assert_eq!(diag.strategy_config, config());
-        assert_eq!(diag.primary_region, Region::EAST_US);
-        assert_eq!(diag.alternate_region, None);
-        assert_eq!(diag.response_region, Region::EAST_US);
-        assert!(!diag.was_hedge);
+        assert_eq!(diag.strategy_config(), config());
+        assert_eq!(diag.primary_region(), &Region::EAST_US);
+        assert_eq!(diag.alternate_region(), None);
+        assert_eq!(diag.response_region(), Some(&Region::EAST_US));
+        assert!(!diag.was_hedge());
         assert_eq!(
-            diag.terminal_state,
+            diag.terminal_state(),
             HedgeTerminalState::PrimaryWonPreThreshold
         );
     }
@@ -311,14 +354,19 @@ mod tests {
     #[test]
     fn primary_only_deadline_exceeded_constructor() {
         let diag = HedgeDiagnostics::primary_only_deadline_exceeded(config(), Region::EAST_US);
-        assert_eq!(diag.primary_region, Region::EAST_US);
-        assert_eq!(diag.alternate_region, None);
+        assert_eq!(diag.primary_region(), &Region::EAST_US);
+        assert_eq!(diag.alternate_region(), None);
+        assert_eq!(
+            diag.response_region(),
+            None,
+            "deadline-exceeded pre-threshold produced no final response"
+        );
         assert!(
-            !diag.was_hedge,
+            !diag.was_hedge(),
             "deadline-exceeded pre-threshold must not record was_hedge=true"
         );
         assert_eq!(
-            diag.terminal_state,
+            diag.terminal_state(),
             HedgeTerminalState::DeadlineExceededPreThreshold
         );
     }
@@ -327,12 +375,12 @@ mod tests {
     fn primary_won_after_hedge_constructor() {
         let diag =
             HedgeDiagnostics::primary_won_after_hedge(config(), Region::EAST_US, Region::WEST_US_2);
-        assert_eq!(diag.primary_region, Region::EAST_US);
-        assert_eq!(diag.alternate_region, Some(Region::WEST_US_2));
-        assert_eq!(diag.response_region, Region::EAST_US);
-        assert!(!diag.was_hedge);
+        assert_eq!(diag.primary_region(), &Region::EAST_US);
+        assert_eq!(diag.alternate_region(), Some(&Region::WEST_US_2));
+        assert_eq!(diag.response_region(), Some(&Region::EAST_US));
+        assert!(!diag.was_hedge());
         assert_eq!(
-            diag.terminal_state,
+            diag.terminal_state(),
             HedgeTerminalState::PrimaryWonAfterHedge
         );
     }
@@ -340,30 +388,30 @@ mod tests {
     #[test]
     fn hedge_won_constructor() {
         let diag = HedgeDiagnostics::hedge_won(config(), Region::EAST_US, Region::WEST_US_2);
-        assert_eq!(diag.primary_region, Region::EAST_US);
-        assert_eq!(diag.alternate_region, Some(Region::WEST_US_2));
-        assert_eq!(diag.response_region, Region::WEST_US_2);
-        assert!(diag.was_hedge);
-        assert_eq!(diag.terminal_state, HedgeTerminalState::AlternateWon);
+        assert_eq!(diag.primary_region(), &Region::EAST_US);
+        assert_eq!(diag.alternate_region(), Some(&Region::WEST_US_2));
+        assert_eq!(diag.response_region(), Some(&Region::WEST_US_2));
+        assert!(diag.was_hedge());
+        assert_eq!(diag.terminal_state(), HedgeTerminalState::AlternateWon);
     }
 
     #[test]
     fn both_transient_constructor_with_deadline_elapsed() {
         let diag =
             HedgeDiagnostics::both_transient(config(), Region::EAST_US, Region::WEST_US_2, true);
-        assert_eq!(diag.primary_region, Region::EAST_US);
-        assert_eq!(diag.alternate_region, Some(Region::WEST_US_2));
+        assert_eq!(diag.primary_region(), &Region::EAST_US);
+        assert_eq!(diag.alternate_region(), Some(&Region::WEST_US_2));
         assert_eq!(
-            diag.response_region,
-            Region::EAST_US,
-            "sentinel response_region is primary for terminal-error states"
+            diag.response_region(),
+            None,
+            "both-transient produced no final response"
         );
         assert!(
-            !diag.was_hedge,
+            !diag.was_hedge(),
             "both-transient must not record was_hedge=true — no leg won"
         );
         assert_eq!(
-            diag.terminal_state,
+            diag.terminal_state(),
             HedgeTerminalState::BothTransient {
                 deadline_elapsed: true
             }
@@ -374,9 +422,9 @@ mod tests {
     fn both_transient_constructor_without_deadline_elapsed() {
         let diag =
             HedgeDiagnostics::both_transient(config(), Region::EAST_US, Region::WEST_US_2, false);
-        assert!(!diag.was_hedge);
+        assert!(!diag.was_hedge());
         assert_eq!(
-            diag.terminal_state,
+            diag.terminal_state(),
             HedgeTerminalState::BothTransient {
                 deadline_elapsed: false
             }
@@ -390,15 +438,15 @@ mod tests {
             Region::EAST_US,
             Region::WEST_US_2,
         );
-        assert_eq!(diag.primary_region, Region::EAST_US);
-        assert_eq!(diag.alternate_region, Some(Region::WEST_US_2));
-        assert_eq!(diag.response_region, Region::EAST_US);
+        assert_eq!(diag.primary_region(), &Region::EAST_US);
+        assert_eq!(diag.alternate_region(), Some(&Region::WEST_US_2));
+        assert_eq!(diag.response_region(), None);
         assert!(
-            !diag.was_hedge,
+            !diag.was_hedge(),
             "cancelled-awaiting-partner must not record was_hedge=true — no leg won"
         );
         assert_eq!(
-            diag.terminal_state,
+            diag.terminal_state(),
             HedgeTerminalState::CancelledAwaitingPartner
         );
     }
@@ -409,23 +457,24 @@ mod tests {
         // Hedge win-rate metrics depend on this.
         let east = Region::EAST_US;
         let west = Region::WEST_US_2;
-        assert!(HedgeDiagnostics::hedge_won(config(), east.clone(), west.clone()).was_hedge);
-        assert!(!HedgeDiagnostics::primary_only(config(), east.clone()).was_hedge);
+        assert!(HedgeDiagnostics::hedge_won(config(), east.clone(), west.clone()).was_hedge());
+        assert!(!HedgeDiagnostics::primary_only(config(), east.clone()).was_hedge());
         assert!(
-            !HedgeDiagnostics::primary_only_deadline_exceeded(config(), east.clone()).was_hedge
+            !HedgeDiagnostics::primary_only_deadline_exceeded(config(), east.clone()).was_hedge()
         );
         assert!(
             !HedgeDiagnostics::primary_won_after_hedge(config(), east.clone(), west.clone())
-                .was_hedge
+                .was_hedge()
         );
         assert!(
-            !HedgeDiagnostics::both_transient(config(), east.clone(), west.clone(), true).was_hedge
+            !HedgeDiagnostics::both_transient(config(), east.clone(), west.clone(), true)
+                .was_hedge()
         );
         assert!(
             !HedgeDiagnostics::both_transient(config(), east.clone(), west.clone(), false)
-                .was_hedge
+                .was_hedge()
         );
-        assert!(!HedgeDiagnostics::cancelled_awaiting_partner(config(), east, west).was_hedge);
+        assert!(!HedgeDiagnostics::cancelled_awaiting_partner(config(), east, west).was_hedge());
     }
 
     #[test]
@@ -449,18 +498,17 @@ mod tests {
     /// `Region::new("(unknown)")` sentinel at the diagnostics-construction
     /// sites in that case (the PPCB recording paths still see `None` so
     /// counters are not collapsed under one sentinel key). This test
-    /// pins the sentinel string so downstream consumers can rely on it
-    /// to distinguish "no named region" from a real Azure region.
+    /// pins the sentinel string used internally for that substitution.
     #[test]
     fn unknown_region_sentinel_constructs_diagnostics_for_global_endpoint() {
         let unknown = Region::new("(unknown)");
         let diag = HedgeDiagnostics::primary_only(config(), unknown.clone());
-        assert_eq!(diag.response_region, unknown);
-        assert_eq!(diag.primary_region, unknown);
-        assert_eq!(diag.alternate_region, None);
-        assert!(!diag.was_hedge);
+        assert_eq!(diag.response_region(), Some(&unknown));
+        assert_eq!(diag.primary_region(), &unknown);
+        assert_eq!(diag.alternate_region(), None);
+        assert!(!diag.was_hedge());
         assert_eq!(
-            diag.terminal_state,
+            diag.terminal_state(),
             HedgeTerminalState::PrimaryWonPreThreshold
         );
         // Sentinel must not collide with any real region constant.

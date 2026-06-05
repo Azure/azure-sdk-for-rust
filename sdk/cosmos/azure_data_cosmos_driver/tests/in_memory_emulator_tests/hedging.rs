@@ -310,28 +310,29 @@ async fn hedging_read_primary_fast() {
         );
 
     assert!(
-        !hedge_diag.was_hedge,
+        !hedge_diag.was_hedge(),
         "primary should win pre-threshold; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.terminal_state,
+        hedge_diag.terminal_state(),
         HedgeTerminalState::PrimaryWonPreThreshold,
         "zero-overhead happy path → terminal state must classify as \
          PrimaryWonPreThreshold (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.alternate_region, None,
+        hedge_diag.alternate_region(),
+        None,
         "only the primary should have been launched (§6.5 #3 zero-overhead \
          happy path); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.response_region,
-        Region::EAST_US,
+        hedge_diag.response_region(),
+        Some(&Region::EAST_US),
         "primary (East US) should be the winning region; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.primary_region,
-        Region::EAST_US,
+        hedge_diag.primary_region(),
+        &Region::EAST_US,
         "primary_region must record East US on the zero-overhead happy \
          path; diag={hedge_diag:?}",
     );
@@ -377,28 +378,28 @@ async fn hedging_read_primary_slow() {
         );
 
     assert!(
-        hedge_diag.was_hedge,
+        hedge_diag.was_hedge(),
         "alternate region should win the hedge race; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.terminal_state,
+        hedge_diag.terminal_state(),
         HedgeTerminalState::AlternateWon,
         "alternate must win when primary is slow past threshold → terminal \
          state must classify as AlternateWon (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.alternate_region,
-        Some(Region::WEST_US),
+        hedge_diag.alternate_region(),
+        Some(&Region::WEST_US),
         "primary + alternate should both have been launched; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.response_region,
-        Region::WEST_US,
+        hedge_diag.response_region(),
+        Some(&Region::WEST_US),
         "alternate (West US) should be the winning region; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.primary_region,
-        Region::EAST_US,
+        hedge_diag.primary_region(),
+        &Region::EAST_US,
         "primary_region must record East US (the losing region); \
          diag={hedge_diag:?}",
     );
@@ -453,28 +454,28 @@ async fn hedging_read_primary_503() {
         );
 
     assert!(
-        hedge_diag.was_hedge,
+        hedge_diag.was_hedge(),
         "alternate region should win the hedge race; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.terminal_state,
+        hedge_diag.terminal_state(),
         HedgeTerminalState::AlternateWon,
         "delayed-503 primary + healthy alternate must classify as \
          AlternateWon (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.alternate_region,
-        Some(Region::WEST_US),
+        hedge_diag.alternate_region(),
+        Some(&Region::WEST_US),
         "primary + alternate should both have been launched; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.response_region,
-        Region::WEST_US,
+        hedge_diag.response_region(),
+        Some(&Region::WEST_US),
         "alternate (West US) should be the winning region; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.primary_region,
-        Region::EAST_US,
+        hedge_diag.primary_region(),
+        &Region::EAST_US,
         "primary_region must record East US (the delayed-503 leg); \
          diag={hedge_diag:?}",
     );
@@ -765,20 +766,20 @@ async fn hedging_read_both_regions_slow() {
     // threshold; the primary won the race because its 500 ms delay
     // finished before the alternate's 100 ms + 700 ms = 800 ms.
     assert_eq!(
-        hedge_diag.terminal_state,
+        hedge_diag.terminal_state(),
         HedgeTerminalState::PrimaryWonAfterHedge,
         "primary completing first after the alternate spawned must \
          classify as PrimaryWonAfterHedge (spec §10.1.1); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.alternate_region,
-        Some(Region::WEST_US),
+        hedge_diag.alternate_region(),
+        Some(&Region::WEST_US),
         "both pipelines should have been spawned (graceful degradation); \
          diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.response_region,
-        Region::EAST_US,
+        hedge_diag.response_region(),
+        Some(&Region::EAST_US),
         "primary (500 ms) should beat alternate (100 ms threshold + 700 ms \
          = 800 ms); diag={hedge_diag:?}",
     );
@@ -827,7 +828,7 @@ async fn hedging_cancels_loser() {
     let hedge_diag = read_item_hedge_diagnostics(&driver, op_options, "cancel-item", "pk1")
         .await
         .expect("alternate should win and `HedgeDiagnostics` must be attached");
-    assert_eq!(hedge_diag.response_region, Region::WEST_US);
+    assert_eq!(hedge_diag.response_region(), Some(&Region::WEST_US));
 
     // Give the loser a chance to "wake up" if cancellation didn't take.
     // If it weren't structurally cancelled, the 800 ms delay would still
@@ -884,12 +885,12 @@ async fn hedging_failback_to_primary() {
                 .await
                 .unwrap_or_else(|| panic!("read #{i} must enter execute_hedged"));
         assert!(
-            hedge_diag.was_hedge,
+            hedge_diag.was_hedge(),
             "read #{i} must hedge (primary slow); diag={hedge_diag:?}",
         );
         assert_eq!(
-            hedge_diag.response_region,
-            Region::WEST_US,
+            hedge_diag.response_region(),
+            Some(&Region::WEST_US),
             "read #{i}: alternate must win; diag={hedge_diag:?}",
         );
     }
@@ -909,18 +910,19 @@ async fn hedging_failback_to_primary() {
             .await
             .expect("read #6 must still attach `HedgeDiagnostics::primary_only`");
     assert!(
-        !hedge_diag.was_hedge,
+        !hedge_diag.was_hedge(),
         "read #6: primary should win pre-threshold once the fault expires; \
          diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.alternate_region, None,
+        hedge_diag.alternate_region(),
+        None,
         "read #6: only the primary should run (§6.5 #3 zero-overhead path); \
          diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.response_region,
-        Region::EAST_US,
+        hedge_diag.response_region(),
+        Some(&Region::EAST_US),
         "read #6: primary (East US) must win; diag={hedge_diag:?}",
     );
 }
@@ -994,13 +996,13 @@ async fn hedging_with_ppcb_existing_failures() {
         .expect("hedging must enter even with PPCB enabled");
 
     assert!(
-        hedge_diag.was_hedge,
+        hedge_diag.was_hedge(),
         "alternate must win despite PPCB tracking the East US failure; \
          diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.response_region,
-        Region::WEST_US,
+        hedge_diag.response_region(),
+        Some(&Region::WEST_US),
         "PPCB has only 1 failure (below threshold 10); primary still routes \
          to East US and the alternate wins on West US; diag={hedge_diag:?}",
     );
@@ -1096,12 +1098,12 @@ async fn hedging_alternate_wins_trip_ppcb() {
                 .await
                 .unwrap_or_else(|| panic!("read #{i} must enter execute_hedged"));
         assert!(
-            hedge_diag.was_hedge,
+            hedge_diag.was_hedge(),
             "read #{i} (pre-trip) must hedge; diag={hedge_diag:?}",
         );
         assert_eq!(
-            hedge_diag.response_region,
-            Region::WEST_US,
+            hedge_diag.response_region(),
+            Some(&Region::WEST_US),
             "read #{i} (pre-trip): alternate (West US) must win; \
              diag={hedge_diag:?}",
         );
@@ -1128,18 +1130,19 @@ async fn hedging_alternate_wins_trip_ppcb() {
             .await
             .expect("post-trip read must still attach `HedgeDiagnostics::primary_only`");
     assert!(
-        !hedge_diag.was_hedge,
+        !hedge_diag.was_hedge(),
         "post-trip read: primary should win pre-threshold against the new \
          (West US) primary endpoint; diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.alternate_region, None,
+        hedge_diag.alternate_region(),
+        None,
         "post-trip read: only the primary should run (§6.5 #3 zero-overhead \
          path); diag={hedge_diag:?}",
     );
     assert_eq!(
-        hedge_diag.response_region,
-        Region::WEST_US,
+        hedge_diag.response_region(),
+        Some(&Region::WEST_US),
         "post-trip read: PPCB override must route the primary to West US — \
          the visible end-user signal that the hedge-driven trip in \
          `record_hedge_alternate_win` actually redirects routing per \

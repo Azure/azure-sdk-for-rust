@@ -1137,6 +1137,45 @@ fn is_final_result(status: &CosmosStatus) -> bool {
 > here governs only whether hedging itself terminates early, not the
 > retry pipeline that runs *inside* each hedge.
 
+### 7.2.1 429 sub-status sensitivity (hedge-spawn eligibility)
+
+The §7.2 table classifies `429 | * | transient` for the purpose of the
+*in-race* outcome decision (`classify_hedge_result`) — i.e. once two legs
+are already running, a 429 from one leg does not terminate the race. That
+blanket rule is **not** the same as the decision to *spawn* a hedge in the
+first place, which is deliberately narrower and sub-status-aware.
+
+A cross-region hedge is only ever started when the primary attempt
+produces a region-changing retry action (`FailoverRetry` / `SessionRetry`)
+that `maybe_upgrade_to_hedge` then upgrades (§8). For a 429 this happens
+**only** for sub-status `3092` (`SystemResourceUnavailable`), which
+`try_handle_retry_trigger_group` admits to the retry-trigger group. Every
+other 429 sub-status falls through `evaluate_http_outcome` to `Abort` and
+is therefore **never** upgraded into a cross-region hedge:
+
+| 429 sub-status | Constant | Hedge-spawn eligible? | Rationale |
+|----------------|----------|-----------------------|-----------|
+| 3092 | `SYSTEM_RESOURCE_UNAVAILABLE` | **Yes** | Transient backend capacity pressure (e.g. high CPU / hot partition transient); another replica/region can serve immediately. |
+| 3200 | `RU_BUDGET_EXCEEDED` | No (Abort) | Provisioned throughput exhausted. Failing over to another region cannot conjure RU/s and only spreads the throttle; the correct response is in-region backoff, not hedging. |
+| 3210 | `RU_BUDGET_EXCEEDED_FOR_MASTER` | No (Abort) | Control-plane / master-partition RU exhaustion — same reasoning as 3200. |
+| other | — | No (Abort) | Conservative default: only sub-statuses with a known cross-region benefit may spawn a hedge. |
+
+This means the "examine the 429 sub-status before hedging" guard already
+exists implicitly via the retry-trigger group — there is no separate
+hedging-specific check to add. The regression test
+`throttle_substatus_gates_hedge_eligibility` in `retry_evaluation.rs`
+pins this behavior so a future widening of the trigger group cannot
+silently begin hedging RU-exhaustion throttles.
+
+> **Draft / follow-up.** The *in-race* classifier (§7.2) still treats a
+> 429 from an already-running leg as transient regardless of sub-status.
+> A future refinement may additionally classify `3200` / `3210` as
+> *final* in `classify_hedge_result`, so that when both legs land on
+> RU-exhaustion the race short-circuits instead of draining both legs.
+> That change is intentionally deferred until it can be covered by
+> emulator tests and is gated behind reviewer sign-off, because it alters
+> the observable error surfaced under sustained throttling.
+
 ---
 
 ## 8. Operation Pipeline Integration

@@ -38,11 +38,11 @@ use std::time::Duration;
 /// Primary region — the first entry in the `preferred_regions` list passed
 /// to the driver. The hedging evaluator targets this region for the primary
 /// leg and selects the next eligible entry as the alternate.
-const PRIMARY_REGION: Region = Region::EAST_US_2;
+const PRIMARY_REGION: Region = Region::NORTH_CENTRAL_US;
 
 /// Alternate region — second entry in `preferred_regions`. Spec §6.2:
 /// `regions[1]` is the deterministic alternate-region target.
-const ALTERNATE_REGION: Region = Region::WEST_US_3;
+const ALTERNATE_REGION: Region = Region::EAST_US_2;
 
 /// Threshold short enough that any added delay on the primary leg fires
 /// the alternate-region hedge well before the operation deadline. Per
@@ -135,29 +135,31 @@ pub async fn hedging_primary_slow_alternate_wins() -> Result<(), Box<dyn Error>>
             );
 
             assert_eq!(
-                hedge_diag.terminal_state,
+                hedge_diag.terminal_state(),
                 HedgeTerminalState::AlternateWon,
                 "alternate must win when the primary is delayed past the threshold; \
                  hedge_diag = {hedge_diag:?}",
             );
             assert!(
-                hedge_diag.was_hedge,
+                hedge_diag.was_hedge(),
                 "was_hedge invariant: must be true iff terminal_state == AlternateWon \
                  (spec §10.1); hedge_diag = {hedge_diag:?}",
             );
             assert_eq!(
-                hedge_diag.response_region, ALTERNATE_REGION,
+                hedge_diag.response_region(),
+                Some(&ALTERNATE_REGION),
                 "winning response must come from the alternate region; \
                  hedge_diag = {hedge_diag:?}",
             );
             assert_eq!(
-                hedge_diag.primary_region, PRIMARY_REGION,
+                hedge_diag.primary_region(),
+                &PRIMARY_REGION,
                 "primary_region must record the region that lost the race; \
                  hedge_diag = {hedge_diag:?}",
             );
             assert_eq!(
-                hedge_diag.alternate_region,
-                Some(ALTERNATE_REGION),
+                hedge_diag.alternate_region(),
+                Some(&ALTERNATE_REGION),
                 "alternate_region must be populated once the threshold elapses \
                  and a hedge is spawned; hedge_diag = {hedge_diag:?}",
             );
@@ -217,23 +219,25 @@ pub async fn hedging_primary_fast_no_alternate() -> Result<(), Box<dyn Error>> {
             );
 
             assert_eq!(
-                hedge_diag.terminal_state,
+                hedge_diag.terminal_state(),
                 HedgeTerminalState::PrimaryWonPreThreshold,
                 "healthy account → primary must win before the threshold fires; \
                  hedge_diag = {hedge_diag:?}",
             );
             assert!(
-                !hedge_diag.was_hedge,
+                !hedge_diag.was_hedge(),
                 "was_hedge must be false when no alternate produced the response; \
                  hedge_diag = {hedge_diag:?}",
             );
             assert_eq!(
-                hedge_diag.alternate_region, None,
+                hedge_diag.alternate_region(),
+                None,
                 "only the primary leg should be launched on the zero-overhead happy \
                  path (spec §6.5 invariant #3); hedge_diag = {hedge_diag:?}",
             );
             assert_eq!(
-                hedge_diag.response_region, PRIMARY_REGION,
+                hedge_diag.response_region(),
+                Some(&PRIMARY_REGION),
                 "primary owns the response on the zero-overhead happy path; \
                  hedge_diag = {hedge_diag:?}",
             );
