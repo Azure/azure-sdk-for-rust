@@ -2403,6 +2403,235 @@ mod tests {
     }
 
     #[test]
+    fn resolve_endpoint_multi_write_isolated_region_unavailable_read_returns_isolated_not_excluded()
+    {
+        // Multi-write (multi-master) account, read op.
+        // Topology: preferred_read = [r1, r2], preferred_write = [r1, r2]
+        //           (both regions readable AND writable).
+        // Caller config: excluded_regions = [r1] (pin workload to r2).
+        // Service state: r2 marked unavailable in account.unavailable_endpoints.
+        //
+        // Expected: r2 is returned as `first_unavailable`. We must NOT leak to
+        // r1 — even though r1 is in the preferred list and is the "first
+        // preferred region", it was hard-excluded by the caller and must
+        // never be selected.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+
+        let r1 = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let r2 = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            r2.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![r1.clone(), r2.clone()].into(),
+            preferred_write_endpoints: vec![r1.clone(), r2.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: true,
+            default_endpoint: r1.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            vec!["eastus".into()],
+            3,
+            2,
+        );
+        retry_state.is_dataplane = true;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            routing.endpoint, r2,
+            "isolation broken on read: resolve_endpoint did not return the \
+             caller's isolated region (r2)"
+        );
+        assert_ne!(
+            routing.endpoint, r1,
+            "isolation broken on read: resolve_endpoint silently routed to \
+             the excluded region (r1)"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_multi_write_isolated_region_unavailable_write_retry_returns_isolated_not_excluded(
+    ) {
+        // Multi-write (multi-master) account, write op, simulating attempt 2
+        // after the first attempt against r2 failed.
+        // Topology: preferred_read = [r1, r2], preferred_write = [r1, r2].
+        // Caller config: excluded_regions = [r1] (pin workload to r2).
+        // Service state: r2 marked unavailable in account.unavailable_endpoints.
+        // In-flight state: pending_write_effects contains a partition mark
+        //                  for r2, so the in-flight skip set on this attempt
+        //                  is [r2].
+        //
+        // Trace through resolve_endpoint:
+        //   pass 1 (skip=[r2]): r1 excluded → continue; r2 in skip →
+        //                       continue; returns None.
+        //   pass 2 (skip=[]):   r1 excluded → continue; r2 not excluded,
+        //                       not in skip, unavailable → recorded as
+        //                       first_unavailable; returns Some(r2).
+        //   selected = Some(r2). The last-resort
+        //   `preferred_write_endpoints[0]` fallback never fires because
+        //   pass 2 returned Some.
+        //
+        // Expected: r2 returned. We must NOT leak to r1.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        let r1 = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let r2 = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            r2.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![r1.clone(), r2.clone()].into(),
+            preferred_write_endpoints: vec![r1.clone(), r2.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: true,
+            default_endpoint: r1.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            true,
+            vec!["eastus".into()],
+            3,
+            2,
+        );
+        retry_state.is_dataplane = true;
+        // Simulate one prior failed write attempt against r2 (westus2).
+        retry_state
+            .pending_write_effects
+            .push(make_pending_partition_mark_for_region("westus2"));
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            routing.endpoint, r2,
+            "isolation broken on write retry: resolve_endpoint did not \
+             return the caller's isolated region (r2)"
+        );
+        assert_ne!(
+            routing.endpoint, r1,
+            "isolation broken on write retry: resolve_endpoint silently \
+             routed to the excluded region (r1) via the last-resort fallback"
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_single_write_excluded_hub_satellite_unavailable_read_returns_satellite() {
+        // Single-write (single-master) account, read op.
+        // Topology: preferred_read = [hub, satellite], preferred_write = [hub]
+        //           (only hub is writable; both readable).
+        // Caller config: excluded_regions = [hub] (pin reads to satellite).
+        // Service state: satellite marked unavailable.
+        //
+        // For READS on a single-write account, the routing primary list is
+        // preferred_read_endpoints (which contains BOTH hub and satellite).
+        // Excluding hub leaves satellite as the only eligible region, and
+        // even though satellite is unavailable, `first_unavailable` returns
+        // it. We must NOT leak to hub on reads — the caller asked for
+        // isolation, and the satellite-unavailable case is exactly when the
+        // caller wants to see the error, not a silent cross-region hop.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+
+        let hub = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let satellite = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            satellite.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![hub.clone(), satellite.clone()].into(),
+            preferred_write_endpoints: vec![hub.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: hub.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
+            0,
+            false,
+            vec!["eastus".into()],
+            3,
+            2,
+        );
+        retry_state.is_dataplane = true;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+        assert_eq!(
+            routing.endpoint, satellite,
+            "isolation broken on single-write read: resolve_endpoint did \
+             not return the caller's isolated region (satellite)"
+        );
+        assert_ne!(
+            routing.endpoint, hub,
+            "isolation broken on single-write read: resolve_endpoint \
+             silently routed to the excluded hub region"
+        );
+    }
+
+    #[test]
     fn resolve_endpoint_picks_first_available_over_unavailable() {
         let operation = CosmosOperation::read_all_databases(test_account());
         let default_endpoint =
