@@ -613,25 +613,40 @@ fn resolve_endpoint(
             endpoint_unavailability_ttl,
         )
         .unwrap_or_else(|| {
-            // Both data-plane and pipeline-routed metadata operations
-            // (Database/Container/Offer/etc. CRUD) fall back to the hub
-            // regional endpoint when every preferred region has been
-            // attempted or excluded. Hub is the only region with
-            // guaranteed-fresh state for metadata writes and is the
-            // canonical landing site for data-plane operations.
+            // Last-resort fallback for both data-plane and pipeline-routed
+            // metadata operations (Database/Container/Offer/etc. CRUD) when
+            // `try_select_endpoint` returned `None` from both passes. The
+            // hub regional endpoint is the canonical landing site: it is
+            // the only region with guaranteed-fresh state for metadata
+            // writes, and it is the most authoritative single region for
+            // data-plane operations.
             //
-            // `OperationOptions::excluded_regions` is a *preference*, not
-            // a hard constraint. If the caller excludes every preferred
-            // region (including the hub) we deliberately ignore the
-            // exclusion and fall back to the hub regional endpoint rather
-            // than fail the operation — failing on exhaustion would
-            // surprise callers more than a single best-effort attempt
-            // against the most authoritative region. The only
-            // requests that legitimately target the global endpoint are
-            // account-topology fetches (initial bootstrap, periodic refresh,
-            // and `LocationEffect::RefreshAccountProperties`), all of which
-            // go through `CosmosDriver::fetch_account_properties_with_transport`
-            // and bypass this routing path entirely.
+            // When does this fire? Only when EVERY preferred region was
+            // excluded by `OperationOptions::excluded_regions`. Note that
+            // `excluded_regions` is a hard per-region filter inside
+            // `try_select_endpoint` above: excluded regions are
+            // unconditionally skipped in both passes and are not even
+            // eligible to be returned as a deprioritized `first_unavailable`
+            // fallback. So excluding the hub keeps requests out of the hub
+            // region as long as at least one other region remains preferred
+            // — see the test
+            // `resolve_endpoint_dataplane_isolated_region_unavailable_retries_same_region`
+            // which pins that behavior.
+            //
+            // This site is reserved for the degenerate "everything is
+            // excluded" configuration. Rather than fail the operation
+            // outright we make a single best-effort attempt against the
+            // hub regional endpoint, because failing on exhaustion would
+            // surprise callers more than landing on the most authoritative
+            // region. If we ever need to add an opt-in "strict / fail on
+            // exhaustion" routing mode, this is the site to gate it on.
+            //
+            // The only requests that legitimately target the global
+            // endpoint are account-topology fetches (initial bootstrap,
+            // periodic refresh, and `LocationEffect::RefreshAccountProperties`),
+            // all of which go through
+            // `CosmosDriver::fetch_account_properties_with_transport` and
+            // bypass this routing path entirely.
             //
             // `preferred_write_endpoints` is guaranteed non-empty by
             // `build_account_endpoint_state`. During normal operation it
@@ -2288,6 +2303,102 @@ mod tests {
         // Excluded + unavailable: data-plane op must get the hub write
         // region, not the global endpoint.
         assert_eq!(routing.endpoint, hub_endpoint);
+        assert!(!routing.endpoint.is_global());
+    }
+
+    #[test]
+    fn resolve_endpoint_dataplane_isolated_region_unavailable_retries_same_region() {
+        // Region-isolation guarantee: when the caller excludes every region
+        // EXCEPT one (intending to confine the workload to that single
+        // region), the SDK must NOT silently fall back to the hub region
+        // when the chosen region becomes unavailable. Instead the chosen
+        // region is returned as a deprioritized-but-not-replaced endpoint
+        // (`first_unavailable`), preserving isolation. The caller's retry
+        // budget eventually surfaces the error, which is the correct
+        // signal — a workload pinned to one region should fail, not silently
+        // cross a region boundary.
+        //
+        // This is the scenario where the customer wants the hub region
+        // excluded (e.g. compliance / cost / blast-radius reasons) and the
+        // only retained region (WestUS2 here) is unavailable. We must NOT
+        // route to EastUS.
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+        let default_endpoint =
+            CosmosEndpoint::global(Url::parse("https://test.documents.azure.com:443/").unwrap());
+        let hub_endpoint = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let isolated_endpoint = CosmosEndpoint::regional(
+            "westus2".into(),
+            Url::parse("https://test-westus2.documents.azure.com:443/").unwrap(),
+        );
+
+        // Mark the caller's chosen region as unavailable.
+        let mut unavailable = std::collections::HashMap::new();
+        unavailable.insert(
+            isolated_endpoint.url().clone(),
+            (
+                std::time::Instant::now(),
+                crate::driver::routing::UnavailableReason::ServiceUnavailable,
+            ),
+        );
+
+        // Account topology: both regions are readable; hub is the write
+        // region. The caller's preference puts the isolated region first.
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![isolated_endpoint.clone(), hub_endpoint.clone()].into(),
+            preferred_write_endpoints: vec![hub_endpoint.clone()].into(),
+            unavailable_endpoints: unavailable,
+            multiple_write_locations_enabled: false,
+            default_endpoint: default_endpoint.clone(),
+        }));
+
+        let mut retry_state = crate::driver::pipeline::components::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 3,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
+            // Caller excludes the hub region — they want isolation to
+            // WestUS2 only.
+            excluded_regions: vec!["eastus".into()],
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
+        };
+        retry_state.is_dataplane = true;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+
+        // The isolated region is returned even though it's unavailable —
+        // crucially NOT the hub region. This is what preserves
+        // region-isolation intent: the caller's retry policy will eventually
+        // exhaust and surface the error, but no request ever crosses into
+        // the excluded hub region.
+        assert_eq!(
+            routing.endpoint, isolated_endpoint,
+            "region-isolation broken: resolve_endpoint silently fell back \
+             to a region the caller excluded"
+        );
+        assert_ne!(
+            routing.endpoint, hub_endpoint,
+            "region-isolation broken: resolve_endpoint chose the excluded hub region"
+        );
         assert!(!routing.endpoint.is_global());
     }
 
