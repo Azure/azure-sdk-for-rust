@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #![allow(dead_code)]
+use azure_core_examples::secrets as azure_security_keyvault_secrets;
 use include_file::include_markdown;
 
 #[ignore = "only compile doc examples"]
