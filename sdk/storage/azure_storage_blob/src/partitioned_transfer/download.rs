@@ -410,11 +410,9 @@ fn start_initial_download_task_channel(
     destination_offset: usize,
     sender: UnboundedSender<Result<(usize, Bytes), Error>>,
 ) -> SpawnedTask {
-    get_async_runtime().spawn(Box::pin(body_to_channel(
-        initial_response.into_body(),
-        destination_offset,
-        sender,
-    )))
+    get_async_runtime().spawn(Box::pin(async move {
+        body_to_channel(initial_response.into_body(), destination_offset, sender).await;
+    }))
 }
 
 /// Spawns a worker to request the given range and stream it through a channel.
@@ -447,30 +445,35 @@ fn start_download_task_channel<Behavior: PartitionedDownloadBehavior + Send + Sy
     }))
 }
 
+/// Takes an AsyncResponseBody and streams it through a channel, using the given `destination_offset`
+/// to calculate the offset for each individual Bytes message.
+///
+///
 async fn body_to_channel(
     mut body: AsyncResponseBody,
     mut destination_offset: usize,
     mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
-) {
+) -> std::result::Result<(), mpsc::SendError> {
     const CHANNEL_BATCH_LEN: usize = 8;
     let mut batch_counter = BatchCounter::<CHANNEL_BATCH_LEN>::new();
     while let Some(result) = body.next().await {
         match result {
             Ok(bytes) => {
                 let bytes_len = bytes.len();
-                let _res = sender.feed(Ok((destination_offset, bytes))).await;
+                sender.feed(Ok((destination_offset, bytes))).await?;
                 destination_offset += bytes_len;
                 if batch_counter.eval() {
-                    let _res = sender.flush().await;
+                    sender.flush().await?;
                 }
             }
             Err(err) => {
-                let _res = sender.send(Err(err)).await;
+                sender.send(Err(err)).await?;
                 return;
             }
         };
     }
-    let _res = sender.flush().await;
+    sender.flush().await?;
+    Ok(());
 }
 
 /// Performs a `transfer_range()` call with the given range. If this results in a

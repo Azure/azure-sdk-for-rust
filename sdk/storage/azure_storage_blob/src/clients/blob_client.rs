@@ -166,6 +166,10 @@ impl BlobClient {
     /// [`BlobClientDownloadResult::properties`] and [`BlobClientDownloadResult::headers`]
     /// reflect only the initial response's metadata and properties.
     ///
+    /// If the streamed bytes of this blob are to be collected into contiguous memory,
+    /// consider instead calling [`BlobClient::download_into`] with a pre-allocated buffer
+    /// to avoid unnecessary copies and allocations.
+    ///
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
@@ -202,7 +206,25 @@ impl BlobClient {
         BlobClientDownloadResult::from_headers(response)
     }
 
-    #[tracing::function("Storage.Blob.Blob.download")]
+    /// Downloads a blob and its contents from the service.
+    ///
+    /// This operation performs a managed (multi-part) download, splitting the blob into
+    /// parallel range requests for better performance on large blobs. The downloaded bytes are
+    /// written directly into the provided `buffer` and the number of bytes written is returned
+    /// in the result.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - Destination buffer to write the downloaded blob data into.
+    /// * `options` - Optional configuration for the request.
+    ///
+    /// # Notes
+    ///
+    /// By default, storage clients create their HTTP transport via
+    /// [`azure_core::http::new_http_client()`] with automatic decompression disabled.
+    /// If you set a custom transport in [`BlobClientOptions`] without also disabling
+    /// automatic decompression, partitioned downloads may not succeed.
+    #[tracing::function("Storage.Blob.Blob.download_into")]
     pub async fn download_into(
         &self,
         buffer: &mut [u8],
