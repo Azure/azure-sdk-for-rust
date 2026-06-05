@@ -288,10 +288,8 @@ impl HedgeDiagnostics {
     }
 
     /// Authoritative classification of how the hedging race ended.
-    ///
-    /// The alternate-hedge-produced-response signal is derived as
-    /// `matches!(diag.terminal_state(), HedgeTerminalState::AlternateWon)`
-    /// — hedge win-rate metrics aggregate over that single match.
+    /// Replaced the legacy `was_hedge` boolean — derive that via
+    /// `matches!(state, HedgeTerminalState::AlternateWon)`.
     pub fn terminal_state(&self) -> HedgeTerminalState {
         self.terminal_state
     }

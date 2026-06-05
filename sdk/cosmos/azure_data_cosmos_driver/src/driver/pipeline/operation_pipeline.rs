@@ -385,14 +385,9 @@ pub(crate) async fn execute_operation_pipeline(
                             operation.is_read_only(),
                             last_error,
                         ) {
-                            // Budget exhausted — graft the accumulated
-                            // diagnostics (which carry both hedge legs'
-                            // traces) onto the terminal error before
-                            // propagating. Without this graft the
-                            // operation returns an error with
-                            // `.diagnostics() == None`, which is the
-                            // exact bug class commit 33748b2 closed for
-                            // the other hedge error paths.
+                            // Budget exhausted — graft accumulated
+                            // diagnostics onto the terminal error so
+                            // callers don't see `.diagnostics() == None`.
                             let diagnostics_ctx = Arc::new(diagnostics.complete());
                             return Err(crate::error::CosmosErrorBuilder::from_error(e)
                                 .with_diagnostics(diagnostics_ctx)
@@ -685,15 +680,13 @@ pub(crate) async fn execute_operation_pipeline(
                     location_state_store.endpoint_unavailability_ttl(),
                 );
                 // Re-evaluate hedge eligibility against the *post-advance*
-                // primary. The original `secondary_routing` was picked by
-                // `evaluate_hedge_eligibility` to be distinct from the
-                // pre-advance primary; after `advance_to_next_attempt`
-                // rotates the LocationIndex, the new primary may coincide
-                // with that pre-selected secondary, which would race both
-                // legs in the same region (zero availability benefit, 2× RU).
-                // If no distinct alternate remains, fall back to non-hedged
-                // sequential failover by continuing the loop (which will
-                // dispatch a single attempt against `primary_routing`).
+                // primary. After `advance_to_next_attempt` rotates the
+                // LocationIndex, the new primary may coincide with the
+                // pre-selected `_pre_advance_secondary`, which would race
+                // both legs in the same region (zero benefit, 2× RU). If
+                // no distinct alternate remains, fall back to non-hedged
+                // dispatch via `continue` — we intentionally do NOT set
+                // `hedge_already_fired` since no race actually started.
                 let secondary_routing = match evaluate_hedge_eligibility(
                     operation,
                     options,
@@ -708,10 +701,6 @@ pub(crate) async fn execute_operation_pipeline(
                             "STAGE 7 hedge upgrade: no distinct alternate region after \
                              advance_to_next_attempt; falling back to non-hedged dispatch",
                         );
-                        // Intentionally do NOT set `hedge_already_fired`
-                        // here — no race was started, so this operation
-                        // should still be allowed to fire a hedge later if
-                        // the routing state evolves to make one viable.
                         continue;
                     }
                 };
@@ -784,10 +773,8 @@ pub(crate) async fn execute_operation_pipeline(
                             operation.is_read_only(),
                             last_error,
                         ) {
-                            // Budget exhausted — graft the accumulated
-                            // diagnostics onto the terminal error before
-                            // propagating. See the matching STAGE 2b
-                            // branch for rationale.
+                            // Budget exhausted — graft diagnostics
+                            // onto the terminal error (see STAGE 2b).
                             let diagnostics_ctx = Arc::new(diagnostics.complete());
                             return Err(crate::error::CosmosErrorBuilder::from_error(e)
                                 .with_diagnostics(diagnostics_ctx)
@@ -1728,12 +1715,9 @@ struct AttemptContext<'a> {
     /// End-to-end deadline (operation timeout) — passed through to each
     /// per-attempt transport invocation.
     deadline: Option<Instant>,
-    /// Original configured operation timeout (the value used to derive
-    /// `deadline`). Carried independently so [`execute_hedged`] can
-    /// compute the effective harvest window via
-    /// [`effective_harvest_window`] without re-deriving the timeout
-    /// from a wall-clock `Instant` (which would erode toward zero as
-    /// the operation progresses).
+    /// Original configured timeout (the value used to derive `deadline`).
+    /// Carried so [`execute_hedged`] can compute the effective harvest
+    /// window via [`effective_harvest_window`].
     configured_request_timeout: Option<Duration>,
     /// Whether this operation runs against a multi-master account.
     /// Used by [`execute_hedged`] to gate construction of the shared
@@ -1976,18 +1960,14 @@ fn maybe_upgrade_to_hedge(
 
     match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
         Some(upgrade) => {
-            // Hedge will consume two failover-budget slots when it
-            // races (primary + secondary) and a third slot to advance
-            // past both on a BothTransient fallback. If the operation
-            // doesn't have at least two slots remaining we'd produce
-            // a race that immediately exhausts the budget without
-            // giving the failover loop a chance to try additional
-            // regions sequentially. Stay on the non-hedged path so
-            // the remaining budget is spent on sequential failovers.
-            let needed: u32 = 2;
+            // Hedge consumes two failover-budget slots on the race
+            // (primary + secondary) and a third on BothTransient
+            // advance. If fewer than two slots remain, stay on the
+            // non-hedged path so the remaining budget is spent on
+            // sequential failovers.
             if new_state
                 .failover_retry_count
-                .saturating_add(needed)
+                .saturating_add(2)
                 > new_state.max_failover_retries
             {
                 tracing::debug!(
@@ -2147,26 +2127,19 @@ fn capture_session_token_for_winner(ctx: &AttemptContext<'_>, result: &Transport
 /// v3 awaits the most-recently-completed task with no timeout, but the
 /// Rust path trades slightly less-rich diagnostics-on-cancel for
 /// predictable user-visible cancel latency when a transport future is
-/// stuck.
-///
-/// This is an absolute ceiling; the effective window is further capped
-/// by [`effective_harvest_window`] so callers running with an aggressive
-/// `request_timeout` (e.g. 100ms) do not pay an additional ~50ms of
-/// cancel latency for diagnostics harvesting.
+/// stuck. The effective window is further capped by
+/// [`effective_harvest_window`] for callers with aggressive timeouts.
 const HARVEST_WINDOW: Duration = Duration::from_millis(50);
 
-/// Lower bound on the harvest window. We never wait less than this so a
-/// diagnostics-rich `Ready` future from a completed transport still
-/// resolves before the timer fires on typical OSes.
+/// Lower bound on the harvest window so an already-completed `Ready`
+/// future still resolves before the timer fires on typical OSes.
 const HARVEST_WINDOW_FLOOR: Duration = Duration::from_millis(1);
 
-/// Computes the effective harvest window for a given operation timeout.
-/// Returns [`HARVEST_WINDOW`] when no timeout is configured (the user
-/// has not capped overall latency), otherwise caps the window at
-/// `request_timeout / 10` so aggressive callers do not see a fixed
-/// 50ms cancel-latency tax. The result is clamped to
-/// [`HARVEST_WINDOW_FLOOR`] so a tiny `request_timeout` still leaves
-/// room for an already-completed future to be polled.
+/// Effective harvest window for a given operation timeout:
+/// `min(HARVEST_WINDOW, request_timeout / 10)`, clamped at
+/// [`HARVEST_WINDOW_FLOOR`]. Returns [`HARVEST_WINDOW`] when no timeout
+/// is configured. Aggressive callers (e.g. `request_timeout = 100ms`)
+/// avoid a fixed 50ms cancel-latency tax.
 fn effective_harvest_window(configured_request_timeout: Option<Duration>) -> Duration {
     match configured_request_timeout {
         Some(t) => HARVEST_WINDOW.min(t / 10).max(HARVEST_WINDOW_FLOOR),
@@ -3159,9 +3132,8 @@ fn finalize_both_transient(
         "cosmos.hedge.both_transient",
     );
     if deadline_was_elapsed {
-        // Terminal both-transient under elapsed deadline — set the
-        // BothTransient hedge diagnostics here because no subsequent
-        // attempt will rewrite them; the application_cancelled_error
+        // Terminal both-transient under elapsed deadline — stamp
+        // BothTransient here because the application_cancelled_error
         // path is the operation's final answer.
         parent_diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
             strategy_config,
@@ -3175,11 +3147,12 @@ fn finalize_both_transient(
         );
         HedgedRaceResult::Terminal(Err(application_cancelled_error(parent_diagnostics)))
     } else {
-        // Non-terminal: the failover loop will run further attempts
-        // against fresh regions. Do NOT stamp HedgeDiagnostics here —
-        // if a later sequential attempt succeeds, the response would
-        // otherwise carry a misleading `terminal_state = BothTransient`
-        // even though the actual outcome was a happy success.
+        // Non-terminal: the failover loop will run more attempts. Do
+        // NOT stamp HedgeDiagnostics here — a later successful retry
+        // would otherwise carry a misleading
+        // `terminal_state = BothTransient`. `strategy_config` and the
+        // `*_for_diag` regions are used in the `if` arm above so they
+        // are not unused; they are simply dropped here.
         tracing::debug!(
             activity_id = %activity_id,
             primary_region = ?primary_region.as_ref().map(Region::as_str),
@@ -3187,15 +3160,6 @@ fn finalize_both_transient(
             observed_session_unavailable,
             "execute_hedged: both legs transient; bubbling up for failover-loop fallback",
         );
-        // Suppress unused-variable warning for `strategy_config` /
-        // `*_for_diag` on this branch — they are kept on the function
-        // signature for symmetry with the terminal branch and for
-        // future use if downstream telemetry decides to stamp
-        // BothTransient-during-fallback as a distinct intermediate
-        // state.
-        let _ = strategy_config;
-        let _ = primary_region_for_diag;
-        let _ = secondary_region_for_diag;
         HedgedRaceResult::BothTransient {
             last_error: transient_outcome_error(primary_region.as_ref(), secondary_region.as_ref()),
             primary_region,
@@ -3281,10 +3245,8 @@ fn try_advance_after_both_transient(
 /// Flips the per-state and shared `hub_region_processing_only` latches
 /// when a hedge leg observed a 1002 the non-hedged
 /// `build_session_retry_state` would have latched on, and advances
-/// `session_token_retry_count` symmetrically with that path so the
-/// user-configured `max_session_retries` cap is honored across both
-/// the non-hedged and hedge-fallback flows. Idempotent — `false` and
-/// already-latched-with-budget-exhausted are no-ops.
+/// `session_token_retry_count` symmetrically so `max_session_retries`
+/// is honored across both non-hedged and hedge-fallback flows.
 /// See HEDGING_SPEC.md §9.6.
 fn propagate_hedge_session_unavailable(
     retry_state: &mut OperationRetryState,
@@ -3293,13 +3255,9 @@ fn propagate_hedge_session_unavailable(
     if !observed_session_unavailable {
         return;
     }
-    // Advance the session-retry counter symmetrically with the
-    // non-hedged `build_session_retry_state` path (which increments
-    // via `.advance_session_retry()`). Without this bump, a hedge
-    // race that observed a 1002 could consume the full
-    // `max_session_retries` budget on top of the hedge legs,
-    // exceeding the user-configured cap. Gate on `can_retry_session`
-    // so a budget-exhausted operation does not overflow the counter.
+    // Mirror `.advance_session_retry()` in the non-hedged path so the
+    // hedge fallback can't exceed `max_session_retries`. Gate on
+    // `can_retry_session` to avoid overflowing past the cap.
     if retry_state.can_retry_session() {
         retry_state.session_token_retry_count =
             retry_state.session_token_retry_count.saturating_add(1);

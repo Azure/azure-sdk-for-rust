@@ -87,13 +87,9 @@ pub(crate) fn should_hedge(
         .preferred_read_endpoints
         .iter()
         .filter(|ep| match ep.region() {
-            // Endpoints without a concrete region (e.g. the global
-            // account endpoint) cannot be used as a hedge secondary —
-            // the secondary picker in `evaluate_hedge_eligibility`
-            // requires `region().is_some()` so the leg targets a
-            // distinct geo. Mirror that constraint here so we don't
-            // report `should_hedge == true` for a 1-region + global
-            // account that would then bail out at the picker.
+            // Region-less endpoints (e.g. the global account endpoint)
+            // are skipped because the secondary picker in
+            // `evaluate_hedge_eligibility` requires `region().is_some()`.
             Some(r) => !excluded_regions.contains(r),
             None => false,
         })
@@ -130,14 +126,8 @@ pub(crate) fn resolve_availability_strategy(
 }
 
 /// Computes the driver-default threshold: `min(1000ms, request_timeout / 2)`,
-/// falling back to `1000ms` when `request_timeout` is `None` or zero.
-///
-/// Sub-millisecond timeouts (e.g. `Some(1ns)`) floor to zero after `/2`.
-/// In that degenerate case, fall back to the original `request_timeout`
-/// itself (not the 1000ms cap) so the hedge threshold never exceeds
-/// the caller's deadline. If even `request_timeout` is zero/None, the
-/// global cap is used — the operation will deadline before the hedge
-/// fires anyway.
+/// falling back to `request_timeout` itself when `t/2 == 0` (sub-ms input),
+/// then to `1000ms` only when no timeout is configured.
 fn default_threshold(request_timeout: Option<Duration>) -> HedgeThreshold {
     let candidate = match request_timeout {
         Some(t) if !t.is_zero() => (t / 2).min(DEFAULT_THRESHOLD_CAP),
