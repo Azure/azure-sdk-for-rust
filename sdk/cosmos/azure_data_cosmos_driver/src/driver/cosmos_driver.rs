@@ -445,6 +445,19 @@ impl CosmosDriver {
             evaluation_collector: None,
         };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+
+        // Tag the request so `FaultInjectingHttpClient` can match
+        // `FaultOperationType::MetadataReadDatabaseAccount` rules against the
+        // bootstrap fetch. Mirrors the data-plane tag in `operation_pipeline`.
+        #[cfg(feature = "fault_injection")]
+        {
+            use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
+            request.headers.insert(
+                FAULT_INJECTION_OPERATION,
+                crate::fault_injection::FaultOperationType::MetadataReadDatabaseAccount.as_str(),
+            );
+        }
+
         if let Err(err) = request_signing::sign_request(
             &mut request,
             account.auth(),

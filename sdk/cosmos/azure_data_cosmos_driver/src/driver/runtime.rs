@@ -173,6 +173,7 @@ pub struct CosmosDriverRuntime {
     machine_id: Arc<String>,
 
     /// Whether fault injection is enabled for this runtime.
+    #[cfg_attr(not(feature = "fault_injection"), allow(dead_code))]
     fault_injection_enabled: bool,
 
     /// Proxy configuration snapshot for diagnostics.
@@ -232,6 +233,7 @@ impl CosmosDriverRuntime {
     }
 
     /// Returns whether fault injection is enabled for this runtime.
+    #[cfg(feature = "fault_injection")]
     pub(crate) fn fault_injection_enabled(&self) -> bool {
         self.fault_injection_enabled
     }
