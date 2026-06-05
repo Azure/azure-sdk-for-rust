@@ -310,7 +310,7 @@ async fn hedging_read_primary_fast() {
         );
 
     assert!(
-        !hedge_diag.was_hedge(),
+        !matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
         "primary should win pre-threshold; diag={hedge_diag:?}",
     );
     assert_eq!(
@@ -378,7 +378,7 @@ async fn hedging_read_primary_slow() {
         );
 
     assert!(
-        hedge_diag.was_hedge(),
+        matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
         "alternate region should win the hedge race; diag={hedge_diag:?}",
     );
     assert_eq!(
@@ -454,7 +454,7 @@ async fn hedging_read_primary_503() {
         );
 
     assert!(
-        hedge_diag.was_hedge(),
+        matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
         "alternate region should win the hedge race; diag={hedge_diag:?}",
     );
     assert_eq!(
@@ -885,7 +885,7 @@ async fn hedging_failback_to_primary() {
                 .await
                 .unwrap_or_else(|| panic!("read #{i} must enter execute_hedged"));
         assert!(
-            hedge_diag.was_hedge(),
+            matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
             "read #{i} must hedge (primary slow); diag={hedge_diag:?}",
         );
         assert_eq!(
@@ -910,7 +910,7 @@ async fn hedging_failback_to_primary() {
             .await
             .expect("read #6 must still attach `HedgeDiagnostics::primary_only`");
     assert!(
-        !hedge_diag.was_hedge(),
+        !matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
         "read #6: primary should win pre-threshold once the fault expires; \
          diag={hedge_diag:?}",
     );
@@ -996,7 +996,7 @@ async fn hedging_with_ppcb_existing_failures() {
         .expect("hedging must enter even with PPCB enabled");
 
     assert!(
-        hedge_diag.was_hedge(),
+        matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
         "alternate must win despite PPCB tracking the East US failure; \
          diag={hedge_diag:?}",
     );
@@ -1098,7 +1098,7 @@ async fn hedging_alternate_wins_trip_ppcb() {
                 .await
                 .unwrap_or_else(|| panic!("read #{i} must enter execute_hedged"));
         assert!(
-            hedge_diag.was_hedge(),
+            matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
             "read #{i} (pre-trip) must hedge; diag={hedge_diag:?}",
         );
         assert_eq!(
@@ -1130,7 +1130,7 @@ async fn hedging_alternate_wins_trip_ppcb() {
             .await
             .expect("post-trip read must still attach `HedgeDiagnostics::primary_only`");
     assert!(
-        !hedge_diag.was_hedge(),
+        !matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
         "post-trip read: primary should win pre-threshold against the new \
          (West US) primary endpoint; diag={hedge_diag:?}",
     );

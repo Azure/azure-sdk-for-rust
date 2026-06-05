@@ -79,7 +79,7 @@ fn hedging_operation_options(threshold: Duration) -> OperationOptions {
 ///
 /// Validates the end-to-end §6.1 race + §10.1 diagnostics shape against a
 /// real account: the diagnostics returned to the caller must record
-/// `terminal_state == AlternateWon`, `was_hedge == true`, and
+/// `terminal_state == AlternateWon` and
 /// `response_region == ALTERNATE_REGION`.
 #[tokio::test]
 #[cfg_attr(
@@ -141,8 +141,8 @@ pub async fn hedging_primary_slow_alternate_wins() -> Result<(), Box<dyn Error>>
                  hedge_diag = {hedge_diag:?}",
             );
             assert!(
-                hedge_diag.was_hedge(),
-                "was_hedge invariant: must be true iff terminal_state == AlternateWon \
+                matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
+                "alternate-won invariant: terminal_state must be AlternateWon \
                  (spec §10.1); hedge_diag = {hedge_diag:?}",
             );
             assert_eq!(
@@ -186,8 +186,7 @@ pub async fn hedging_primary_slow_alternate_wins() -> Result<(), Box<dyn Error>>
 /// (spec §10.1: a synthetic "primary-only" record lets callers distinguish
 /// *"hedging was selected but never fanned out"* from *"hedging was not
 /// selected"*). The terminal state must classify as
-/// `PrimaryWonPreThreshold` with `was_hedge == false` and only the primary
-/// leg launched.
+/// `PrimaryWonPreThreshold` and only the primary leg launched.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_region"),
@@ -225,8 +224,8 @@ pub async fn hedging_primary_fast_no_alternate() -> Result<(), Box<dyn Error>> {
                  hedge_diag = {hedge_diag:?}",
             );
             assert!(
-                !hedge_diag.was_hedge(),
-                "was_hedge must be false when no alternate produced the response; \
+                !matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
+                "terminal_state must NOT be AlternateWon when no alternate produced the response; \
                  hedge_diag = {hedge_diag:?}",
             );
             assert_eq!(
