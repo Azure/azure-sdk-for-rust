@@ -4,6 +4,9 @@
 
 ### Features Added
 
+- Added support for service API version `2026-03-01-preview` (now the default).
+- Added experimental `PlatformManaged` configuration on `CertificatePolicy` for platform-managed certificate issuance.
+
 ### Breaking Changes
 
 ### Bugs Fixed
