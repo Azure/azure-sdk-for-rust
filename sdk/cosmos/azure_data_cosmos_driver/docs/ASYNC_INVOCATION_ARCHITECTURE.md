@@ -1,6 +1,7 @@
 <!--
 cspell:ignore azurecosmosdriver cdylib pinning ungoverned MPSC cgo napi GCHandle
 cspell:ignore Tokio reqwest mutex tcs CompletableFuture asyncio uintptr cbindgen
+cspell:ignore staticlib dlopen dlsym dylib corrosion ctypes downcallhandle
 -->
 
 # Async invocation architecture &mdash; `azure_data_cosmos_driver_native`
@@ -12,6 +13,122 @@ minutes before diving into the C API surface.
 
 If you only read one section, read [&sect;2 &mdash; The submission &harr;
 completion lifecycle](#2--the-submission--completion-lifecycle).
+
+---
+
+## 0. What &laquo;C wrapper&raquo; means (there is no C code)
+
+A common first question is: *if this is a "C wrapper", where is the C
+code?* The short answer is that the **&laquo;C&raquo; refers to the ABI
+(Application Binary Interface) &mdash; the binary calling convention &mdash;
+not the implementation language.** The crate is written 100% in Rust. The
+only hand-written C in the repo lives under
+[`c_tests/`](../../azure_data_cosmos_driver_native/c_tests), and that is a
+**test harness** that *consumes* the library to prove the ABI is callable
+from real C; it is not part of the shipped artifact.
+
+So &laquo;C bindings&raquo; here means *a binary that any C-compatible
+language can bind to*, not *a binary written in C*.
+
+### The four pieces that make it work
+
+```mermaid
+flowchart LR
+    A["Rust source<br/>src/*.rs<br/>#[no_mangle] extern &quot;C&quot; fns<br/>#[repr(C)] structs"]
+    B["cbindgen (build.rs)<br/>parses the Rust,<br/>emits the .h"]
+    C["include/azurecosmosdriver.h<br/>(checked-in C header)"]
+    D["libazurecosmosdriver<br/>.dll / .so / .dylib<br/>(cdylib + staticlib)"]
+    E["Host language<br/>C# / Java / Go / Python / C++"]
+    A -->|"cargo build compiles to"| D
+    A -->|"cargo build runs"| B --> C
+    C -->|"describes symbols in"| D
+    E -->|"declares + dlopen / links"| D
+    C -.->|"copied / vendored by"| E
+```
+
+**End-to-end call flow for one operation.**
+
+```mermaid
+sequenceDiagram
+    participant H as Host (e.g. C#)
+    participant W as native wrapper (Rust, C ABI)
+    participant D as azure_data_cosmos_driver (pure Rust)
+    participant S as Cosmos DB service
+
+    H->>W: fill cosmos_CosmosOperationRequest (repr(C) struct)
+    H->>W: cosmos_driver_execute_singleton_operation_submit(drv, &req, q, ud, &err)
+    Note over W: borrow + copy fields,<br/>translate to driver types (to_driver())
+    W->>D: execute_singleton_operation(op, options)
+    D->>S: HTTP (transport, routing, retries)
+    S-->>D: response bytes
+    D-->>W: CosmosResponse
+    Note over W: park result on completion queue
+    H->>W: cosmos_cq_wait(q)  → completion handle
+    H->>W: cosmos_completion_take_response → cosmos_response_* accessors
+    W-->>H: status / RU / body bytes (host deserializes its own JSON)
+```
+
+1. **Rust functions wearing a C costume.** Every public entry point is a
+   normal Rust function annotated to speak C:
+
+   ```rust
+   #[no_mangle]                          // export the literal symbol name
+   pub extern "C" fn cosmos_bytes_len(b: *const CosmosBytes) -> usize { ... }
+   ```
+
+   - `extern "C"` &mdash; use the C calling convention (how arguments and
+     return values are passed in registers / on the stack).
+   - `#[no_mangle]` &mdash; suppress Rust name-mangling so the exported
+     symbol is exactly `cosmos_bytes_len`, findable by `dlsym` /
+     `GetProcAddress` / `[DllImport]`.
+   - `#[repr(C)]` on structs (e.g. `CosmosBytes`, `CosmosOperationRequest`)
+     &mdash; lay fields out in memory exactly as a C compiler would, so a C#
+     `[StructLayout(Sequential)]` mirror or a Go `C.struct_...` lines up
+     byte-for-byte.
+
+   `crate-type = ["cdylib", "staticlib"]` in `Cargo.toml` turns this into a
+   `.dll` / `.so` / `.dylib` (and a static archive) full of C-callable
+   symbols, named `azurecosmosdriver`.
+
+2. **cbindgen auto-generates the C header.** A C / C# / Go caller needs a
+   *declaration* of each function and struct. Rather than hand-write that,
+   [`build.rs`](../../azure_data_cosmos_driver_native/build.rs) runs
+   **cbindgen** on every `cargo build`: it parses the `extern "C"` functions
+   and `#[repr(C)]` types and writes
+   [`include/azurecosmosdriver.h`](../../azure_data_cosmos_driver_native/include/azurecosmosdriver.h).
+   The `rename` map + `prefix = "cosmos_"` in `build.rs` is cosmetic &mdash;
+   it turns the Rust type name `RuntimeContext` into the spec C name
+   `cosmos_runtime_t`.
+
+3. **The header is checked into git.** So a Java / Go / Python team can
+   vendor `azurecosmosdriver.h` *without installing a Rust toolchain*. It is
+   the contract.
+
+4. **Host languages bind at the ABI.** No language-specific glue is compiled
+   into the crate &mdash; each host declares the symbols its own way and the
+   OS loader connects them:
+
+   | Host | Binding mechanism |
+   |---|---|
+   | C / C++ | `#include "azurecosmosdriver.h"` + link `-lazurecosmosdriver` (this is what `c_tests/` does via CMake + corrosion) |
+   | C# | `[DllImport("azurecosmosdriver")]` + `[StructLayout(Sequential)]` struct mirror |
+   | Java 22+ | `java.lang.foreign` FFM API (`SymbolLookup` + `downcallHandle`) |
+   | Go | `cgo` (`import "C"`) |
+   | Python | `ctypes.CDLL(...)` |
+
+### So, to summarize
+
+- **Why "C wrapper" with no C code?** Because it exposes a **C ABI**, the
+  lingua franca of cross-language interop. The implementation is Rust; the
+  *interface* is C.
+- **Are there C bindings?** Yes &mdash; the binding is the **checked-in C
+  header** (`azurecosmosdriver.h`) plus the C-ABI symbols in the compiled
+  `.dll` / `.so` / `.dylib`. The only actual C *source* is the test harness
+  in `c_tests/`, which exists purely to validate that a genuine C program can
+  drive the library.
+
+The rest of this document (&sect;1 onward) assumes this foundation and
+focuses on the *async* shape layered on top of these C-ABI symbols.
 
 ---
 
@@ -111,7 +228,7 @@ sequenceDiagram
     Sub->>Tok: spawn driver.execute_singleton_operation(op)
     Sub-->>App: cosmos_operation_handle_t* (in-flight)
     App-->>App: return Task / Future / chan to caller
-    Note over App: App now awaits &mdash; no thread is blocked.
+    Note over App: App now awaits &mdash no thread is blocked.
 
     Tok->>Drv: poll until ready
     Drv-->>Tok: Ok(CosmosResponse) | Err(CosmosError)
@@ -120,7 +237,7 @@ sequenceDiagram
 
     Rcv->>CQ: cosmos_cq_wait(queue, timeout)
     CQ-->>Rcv: cosmos_completion_t*
-    Rcv->>Rcv: read user_data &rarr; recover Cont
+    Rcv->>Rcv: read user_data &rarr recover Cont
     alt outcome == OK
         Rcv->>Cont: SetResult(take_response)
     else outcome == ERROR
