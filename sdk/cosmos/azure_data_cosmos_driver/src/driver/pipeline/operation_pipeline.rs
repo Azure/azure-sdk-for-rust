@@ -631,7 +631,7 @@ pub(crate) async fn execute_operation_pipeline(
                     .build());
             }
             OperationAction::Hedge {
-                secondary_routing,
+                secondary_routing: _pre_advance_secondary,
                 threshold,
                 strategy_config,
                 new_state,
@@ -662,9 +662,6 @@ pub(crate) async fn execute_operation_pipeline(
                 // pre-advance `routing` referenced the failed region that
                 // triggered the upgrade — racing it again as the hedge's
                 // primary would double-pay RU on a known-bad region.
-                // `secondary_routing` was selected by
-                // `evaluate_hedge_eligibility` against the pre-advance
-                // state, so it remains valid for the secondary leg.
                 let location = location_state_store.snapshot();
                 let primary_routing = resolve_endpoint(
                     operation,
@@ -673,6 +670,37 @@ pub(crate) async fn execute_operation_pipeline(
                     pipeline_type.is_data_plane(),
                     location_state_store.endpoint_unavailability_ttl(),
                 );
+                // Re-evaluate hedge eligibility against the *post-advance*
+                // primary. The original `secondary_routing` was picked by
+                // `evaluate_hedge_eligibility` to be distinct from the
+                // pre-advance primary; after `advance_to_next_attempt`
+                // rotates the LocationIndex, the new primary may coincide
+                // with that pre-selected secondary, which would race both
+                // legs in the same region (zero availability benefit, 2× RU).
+                // If no distinct alternate remains, fall back to non-hedged
+                // sequential failover by continuing the loop (which will
+                // dispatch a single attempt against `primary_routing`).
+                let secondary_routing = match evaluate_hedge_eligibility(
+                    operation,
+                    options,
+                    &location.account,
+                    &primary_routing,
+                    configured_request_timeout,
+                ) {
+                    Some(upgrade) => upgrade.secondary_routing,
+                    None => {
+                        tracing::debug!(
+                            activity_id = %activity_id,
+                            "STAGE 7 hedge upgrade: no distinct alternate region after \
+                             advance_to_next_attempt; falling back to non-hedged dispatch",
+                        );
+                        // Intentionally do NOT set `hedge_already_fired`
+                        // here — no race was started, so this operation
+                        // should still be allowed to fire a hedge later if
+                        // the routing state evolves to make one viable.
+                        continue;
+                    }
+                };
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
