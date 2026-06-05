@@ -258,9 +258,8 @@ pub(crate) fn evaluate_hedge_leg_effects(
 
         TransportOutcome::HttpError {
             status,
-            cosmos_headers,
-            body,
             request_sent,
+            ..
         } => {
             // Mirror `build_session_retry_state`'s four-condition latch
             // trigger (HEDGING_SPEC.md §9.6).
@@ -287,8 +286,6 @@ pub(crate) fn evaluate_hedge_leg_effects(
                 endpoint,
                 retry_state,
                 status,
-                cosmos_headers,
-                body,
                 *request_sent,
             ) {
                 eval.effects = effects;
