@@ -313,6 +313,7 @@ pub(crate) async fn execute_operation_pipeline(
                     options,
                     throughput_control,
                     deadline,
+                    configured_request_timeout,
                     can_use_multiple_write_locations: retry_state.can_use_multiple_write_locations,
                     // First attempt: no 1002 has been observed yet, so the
                     // per-state latch is `false`. The shared
@@ -730,6 +731,7 @@ pub(crate) async fn execute_operation_pipeline(
                     options,
                     throughput_control,
                     deadline,
+                    configured_request_timeout,
                     can_use_multiple_write_locations: retry_state.can_use_multiple_write_locations,
                     hub_region_processing_only_initial: retry_state.hub_region_processing_only,
                     partition_key_range_id: retry_state.partition_key_range_id.clone(),
@@ -1726,6 +1728,13 @@ struct AttemptContext<'a> {
     /// End-to-end deadline (operation timeout) — passed through to each
     /// per-attempt transport invocation.
     deadline: Option<Instant>,
+    /// Original configured operation timeout (the value used to derive
+    /// `deadline`). Carried independently so [`execute_hedged`] can
+    /// compute the effective harvest window via
+    /// [`effective_harvest_window`] without re-deriving the timeout
+    /// from a wall-clock `Instant` (which would erode toward zero as
+    /// the operation progresses).
+    configured_request_timeout: Option<Duration>,
     /// Whether this operation runs against a multi-master account.
     /// Used by [`execute_hedged`] to gate construction of the shared
     /// hub-region-processing-only latch (the latch is only meaningful
@@ -2139,7 +2148,31 @@ fn capture_session_token_for_winner(ctx: &AttemptContext<'_>, result: &Transport
 /// Rust path trades slightly less-rich diagnostics-on-cancel for
 /// predictable user-visible cancel latency when a transport future is
 /// stuck.
+///
+/// This is an absolute ceiling; the effective window is further capped
+/// by [`effective_harvest_window`] so callers running with an aggressive
+/// `request_timeout` (e.g. 100ms) do not pay an additional ~50ms of
+/// cancel latency for diagnostics harvesting.
 const HARVEST_WINDOW: Duration = Duration::from_millis(50);
+
+/// Lower bound on the harvest window. We never wait less than this so a
+/// diagnostics-rich `Ready` future from a completed transport still
+/// resolves before the timer fires on typical OSes.
+const HARVEST_WINDOW_FLOOR: Duration = Duration::from_millis(1);
+
+/// Computes the effective harvest window for a given operation timeout.
+/// Returns [`HARVEST_WINDOW`] when no timeout is configured (the user
+/// has not capped overall latency), otherwise caps the window at
+/// `request_timeout / 10` so aggressive callers do not see a fixed
+/// 50ms cancel-latency tax. The result is clamped to
+/// [`HARVEST_WINDOW_FLOOR`] so a tiny `request_timeout` still leaves
+/// room for an already-completed future to be polled.
+fn effective_harvest_window(configured_request_timeout: Option<Duration>) -> Duration {
+    match configured_request_timeout {
+        Some(t) => HARVEST_WINDOW.min(t / 10).max(HARVEST_WINDOW_FLOOR),
+        None => HARVEST_WINDOW,
+    }
+}
 
 /// Discriminator returned by the Stage-2 threshold-vs-deadline nested
 /// race so the outer `select` against the primary can branch cleanly
@@ -2176,8 +2209,11 @@ fn deadline_signal(deadline: Option<Instant>) -> Pin<Box<dyn Future<Output = ()>
 /// application cancellation has fired the operation outcome is the
 /// cancellation error regardless of whether the in-flight pipeline
 /// would have produced a final response.
-async fn harvest_remaining_attempt<F>(attempt: F, parent: &mut DiagnosticsContextBuilder)
-where
+async fn harvest_remaining_attempt<F>(
+    attempt: F,
+    parent: &mut DiagnosticsContextBuilder,
+    harvest_window: Duration,
+) where
     F: Future<
             Output = (
                 crate::error::Result<TransportResult>,
@@ -2186,7 +2222,7 @@ where
         > + Unpin
         + Send,
 {
-    let window = match azure_core::time::Duration::try_from(HARVEST_WINDOW) {
+    let window = match azure_core::time::Duration::try_from(harvest_window) {
         Ok(d) => d,
         Err(_) => return,
     };
@@ -2244,6 +2280,7 @@ async fn await_attempt_or_deadline_harvest<F>(
     attempt: F,
     deadline: Option<Instant>,
     parent: &mut DiagnosticsContextBuilder,
+    harvest_window: Duration,
 ) -> Option<(
     crate::error::Result<TransportResult>,
     DiagnosticsContextBuilder,
@@ -2261,7 +2298,7 @@ where
     match select(attempt, deadline_fut).await {
         Either::Left((result, _deadline)) => Some(result),
         Either::Right(((), remaining)) => {
-            harvest_remaining_attempt(remaining, parent).await;
+            harvest_remaining_attempt(remaining, parent, harvest_window).await;
             None
         }
     }
@@ -2646,7 +2683,12 @@ async fn execute_hedged(
                 activity_id = %ctx.activity_id,
                 "execute_hedged: deadline fired pre-threshold; harvesting primary",
             );
-            harvest_remaining_attempt(remaining_primary, &mut parent_diagnostics).await;
+            harvest_remaining_attempt(
+                remaining_primary,
+                &mut parent_diagnostics,
+                effective_harvest_window(ctx.configured_request_timeout),
+            )
+            .await;
             parent_diagnostics.set_hedge_diagnostics(
                 HedgeDiagnostics::primary_only_deadline_exceeded(
                     strategy_config,
@@ -2782,6 +2824,7 @@ async fn execute_hedged(
                             secondary_remaining,
                             ctx.deadline,
                             &mut parent_diagnostics,
+                            effective_harvest_window(ctx.configured_request_timeout),
                         )
                         .await
                     else {
@@ -2928,6 +2971,7 @@ async fn execute_hedged(
                         primary_remaining,
                         ctx.deadline,
                         &mut parent_diagnostics,
+                        effective_harvest_window(ctx.configured_request_timeout),
                     )
                     .await
                     else {
@@ -5565,7 +5609,7 @@ mod tests {
             )
         });
 
-        super::harvest_remaining_attempt(attempt, &mut parent).await;
+        super::harvest_remaining_attempt(attempt, &mut parent, super::HARVEST_WINDOW).await;
         assert_eq!(parent.request_count(), 1);
     }
 
@@ -5607,7 +5651,7 @@ mod tests {
 
         // Drive the test clock past HARVEST_WINDOW.
         let parent_before = parent.request_count();
-        super::harvest_remaining_attempt(attempt, &mut parent).await;
+        super::harvest_remaining_attempt(attempt, &mut parent, super::HARVEST_WINDOW).await;
         assert_eq!(parent.request_count(), parent_before);
     }
 
