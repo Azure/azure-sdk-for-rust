@@ -440,7 +440,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_test"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "azure_core 1.0.0",
@@ -467,7 +467,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_test_macros"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "azure_core_test",
  "proc-macro2",
