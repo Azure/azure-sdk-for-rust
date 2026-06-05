@@ -131,20 +131,25 @@ pub(crate) fn resolve_availability_strategy(
 
 /// Computes the driver-default threshold: `min(1000ms, request_timeout / 2)`,
 /// falling back to `1000ms` when `request_timeout` is `None` or zero.
+///
+/// Sub-millisecond timeouts (e.g. `Some(1ns)`) floor to zero after `/2`.
+/// In that degenerate case, fall back to the original `request_timeout`
+/// itself (not the 1000ms cap) so the hedge threshold never exceeds
+/// the caller's deadline. If even `request_timeout` is zero/None, the
+/// global cap is used — the operation will deadline before the hedge
+/// fires anyway.
 fn default_threshold(request_timeout: Option<Duration>) -> HedgeThreshold {
     let candidate = match request_timeout {
         Some(t) if !t.is_zero() => (t / 2).min(DEFAULT_THRESHOLD_CAP),
         _ => DEFAULT_THRESHOLD_CAP,
     };
 
-    // `candidate` can only be zero if `request_timeout` is `Some(1ns)`
-    // (which floors to zero after `/2`). In that degenerate case, fall
-    // back to the cap so the newtype invariant holds — the caller is
-    // already running with an unrealistic timeout.
-    HedgeThreshold::new(candidate).unwrap_or_else(|| {
-        HedgeThreshold::new(DEFAULT_THRESHOLD_CAP)
-            .expect("DEFAULT_THRESHOLD_CAP is statically non-zero")
-    })
+    HedgeThreshold::new(candidate)
+        .or_else(|| request_timeout.and_then(HedgeThreshold::new))
+        .unwrap_or_else(|| {
+            HedgeThreshold::new(DEFAULT_THRESHOLD_CAP)
+                .expect("DEFAULT_THRESHOLD_CAP is statically non-zero")
+        })
 }
 
 /// Outcome of [`evaluate_hedge_eligibility`] — everything the pipeline
