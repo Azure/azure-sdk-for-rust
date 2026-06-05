@@ -378,12 +378,25 @@ pub(crate) async fn execute_operation_pipeline(
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
                         propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
-                        try_advance_after_both_transient(
+                        if let Err(e) = try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
                             operation.is_read_only(),
                             last_error,
-                        )?;
+                        ) {
+                            // Budget exhausted — graft the accumulated
+                            // diagnostics (which carry both hedge legs'
+                            // traces) onto the terminal error before
+                            // propagating. Without this graft the
+                            // operation returns an error with
+                            // `.diagnostics() == None`, which is the
+                            // exact bug class commit 33748b2 closed for
+                            // the other hedge error paths.
+                            let diagnostics_ctx = Arc::new(diagnostics.complete());
+                            return Err(crate::error::CosmosErrorBuilder::from_error(e)
+                                .with_diagnostics(diagnostics_ctx)
+                                .build());
+                        }
                         diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
                         continue;
                     }
@@ -763,12 +776,21 @@ pub(crate) async fn execute_operation_pipeline(
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
                         propagate_hedge_session_unavailable(&mut retry_state, race_observed_1002);
-                        try_advance_after_both_transient(
+                        if let Err(e) = try_advance_after_both_transient(
                             &mut retry_state,
                             &location,
                             operation.is_read_only(),
                             last_error,
-                        )?;
+                        ) {
+                            // Budget exhausted — graft the accumulated
+                            // diagnostics onto the terminal error before
+                            // propagating. See the matching STAGE 2b
+                            // branch for rationale.
+                            let diagnostics_ctx = Arc::new(diagnostics.complete());
+                            return Err(crate::error::CosmosErrorBuilder::from_error(e)
+                                .with_diagnostics(diagnostics_ctx)
+                                .build());
+                        }
                         diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
                         continue;
                     }
