@@ -113,6 +113,27 @@
 //!   needs a [`RequestObserver`](azure_data_cosmos_driver::in_memory_emulator::RequestObserver)
 //!   plumbed through [`super::setup_multi_region`] so the test can assert on
 //!   headers received per region. Deferred until that helper variant lands.
+//! * `hedging_stage7_reevaluates_eligibility_after_advance` — STAGE 7
+//!   hedge upgrade path: after a BothTransient at STAGE 2b, the failover
+//!   loop calls `advance_to_next_attempt` and re-runs hedge eligibility
+//!   against the post-advance primary so the new race targets two
+//!   distinct regions (the F1 fix). Needs a 3-region setup helper (East
+//!   US + West US + Central US) so the advance lands on a *third*
+//!   region distinct from the originally-selected secondary; with the
+//!   current 2-region `setup_multi_region`, the only candidate
+//!   secondary is the region the advance now sits on, and the fix
+//!   short-circuits to the non-hedged fallback. Deferred until a
+//!   3-region helper variant lands.
+//! * `hedging_already_fired_latch_suppresses_second_race` — within a
+//!   single operation, the `hedge_already_fired` per-state latch
+//!   prevents `maybe_upgrade_to_hedge` from firing a second race on a
+//!   post-BothTransient failover retry (one-race-per-operation
+//!   invariant, spec §6.5 #1). Needs the same 3-region helper so the
+//!   failover loop has a third region to dispatch against
+//!   sequentially after the latch fires; with two regions, both have
+//!   been consumed by the BothTransient race and the loop bails out
+//!   before the latch is observable. Deferred until the 3-region
+//!   helper lands.
 //! * Remaining §15.1 unit-test backfills
 //!   (`app_cancel_preserves_hedge_diagnostics`,
 //!   `exclude_regions_honored_by_every_retry_trigger`,
