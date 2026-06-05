@@ -3,9 +3,10 @@
 
 //! Generic submit pipeline.
 //!
-//! Phase 6's [`cosmos_driver_submit`] (item-CRUD), plus the deferred
-//! Phase 3 async driver-creation paths
-//! ([`cosmos_driver_get_or_create_submit`],
+//! The two canonical operation entry points
+//! ([`cosmos_driver_execute_operation_submit`] /
+//! [`cosmos_driver_execute_singleton_operation_submit`]), plus the async
+//! driver-creation paths ([`cosmos_driver_get_or_create_submit`],
 //! [`cosmos_driver_resolve_container_submit`]) all share the same
 //! shape:
 //!
@@ -38,8 +39,6 @@ use crate::driver::{DriverHandle, DriverInner};
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosErrorInner};
 use crate::op_request::{build_request, CosmosOperationRequest};
-use crate::operation::OperationDescHandle;
-use crate::operation_options::OperationOptionsHandle;
 use crate::response::ResponseHandle;
 use crate::runtime::RuntimeContext;
 
@@ -178,122 +177,6 @@ fn spawn_oneshot<Fut, R>(
             );
         }
     });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FFI: cosmos_driver_submit
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Submits a singleton operation for asynchronous execution.
-///
-/// Per spec §4.7, this binds to
-/// [`CosmosDriver::execute_singleton_operation`]: the operation runs
-/// off-thread on the wrapper's Tokio runtime, and when it completes a
-/// [`Completion`] lands on `queue`. Inspect the completion's outcome
-/// (`OK` / `ERROR` / `CANCELLED`), then call
-/// [`cosmos_completion_take_response`] or
-/// [`cosmos_completion_take_error`] as appropriate.
-///
-/// # Parameters
-///
-/// - `driver` — non-NULL driver handle (obtained from
-///   `cosmos_driver_get_or_create_*`).
-/// - `op` — non-NULL operation handle. **Consumed** on successful
-///   submit; subsequent mutators / re-submits return
-///   `OPERATION_CONSUMED` (4005).
-/// - `options` — optional per-call operation options.
-/// - `queue` — non-NULL completion queue. The runtime that backs the
-///   queue is used to spawn the task.
-/// - `user_data` — opaque pointer round-tripped verbatim onto the
-///   completion.
-/// - `out_pre_error` — receives the coarse code on pre-flight failure
-///   (returns NULL). NULL is accepted (the code is dropped).
-///
-/// # Returns
-///
-/// On success: a fresh `cosmos_operation_handle_t *` representing the
-/// in-flight operation. The caller must `cosmos_operation_handle_free`
-/// it when no longer needed (typically after observing the completion).
-///
-/// On pre-flight failure: NULL. `*out_pre_error` (if non-NULL)
-/// receives one of `INVALID_ARGUMENT` (NULL inputs),
-/// `QUEUE_SHUTDOWN` (queue already shut down), `QUEUE_FULL` (queue at
-/// hard capacity), or `OPERATION_CONSUMED` (operation already
-/// submitted).
-///
-/// [`cosmos_completion_take_response`]: crate::completion::cosmos_completion_take_response
-/// [`cosmos_completion_take_error`]: crate::completion::cosmos_completion_take_error
-#[no_mangle]
-pub extern "C" fn cosmos_driver_submit(
-    driver: *const DriverHandle,
-    op: *mut OperationDescHandle,
-    options: *const OperationOptionsHandle,
-    queue: *mut CompletionQueue,
-    user_data: *mut c_void,
-    out_pre_error: *mut CosmosErrorCode,
-) -> *mut OperationHandle {
-    let write_err = |code: CosmosErrorCode| {
-        if !out_pre_error.is_null() {
-            // SAFETY: caller-supplied writable slot.
-            unsafe {
-                *out_pre_error = code;
-            }
-        }
-    };
-
-    // Bind driver + options (options is optional).
-    let Some(driver_inner) = DriverHandle::inner_arc(driver) else {
-        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-        return std::ptr::null_mut();
-    };
-    let driver_arc: Arc<CosmosDriver> = Arc::clone(&driver_inner.inner);
-    let options_owned = if options.is_null() {
-        azure_data_cosmos_driver::options::OperationOptions::default()
-    } else {
-        match OperationOptionsHandle::inner_arc(options) {
-            Some(arc) => arc.inner.clone(),
-            None => {
-                write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-                return std::ptr::null_mut();
-            }
-        }
-    };
-
-    // Take the inner CosmosOperation out of the FFI handle. Subsequent
-    // mutators / submits on the same handle observe `None` and return
-    // OPERATION_CONSUMED.
-    let inner_op = match crate::operation::OperationDescHandle::take_inner(op) {
-        Ok(o) => o,
-        Err(code) => {
-            write_err(code);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
-        Ok(pair) => pair,
-        Err(code) => {
-            // Re-stash the operation on the handle so callers can mutate
-            // and retry per spec §4.6.3 #4 (pre-flight failure does NOT
-            // consume the operation).
-            crate::operation::OperationDescHandle::restore_inner(op, inner_op);
-            write_err(code);
-            return std::ptr::null_mut();
-        }
-    };
-
-    let runtime = Arc::clone(ctx.queue.runtime());
-    spawn_oneshot(
-        ctx,
-        runtime,
-        async move {
-            driver_arc
-                .execute_singleton_operation(inner_op, options_owned)
-                .await
-        },
-        |response: CosmosResponse| ResponseHandle::into_raw(response),
-    );
-    op_handle
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -688,11 +571,24 @@ mod tests {
     use std::ptr;
 
     #[test]
-    fn submit_rejects_null_driver() {
+    fn execute_operation_submit_rejects_null_driver() {
         let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
-        let h = cosmos_driver_submit(
+        let h = cosmos_driver_execute_operation_submit(
+            ptr::null(),
             ptr::null(),
             ptr::null_mut(),
+            ptr::null_mut(),
+            &mut err,
+        );
+        assert!(h.is_null());
+        assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+    }
+
+    #[test]
+    fn execute_singleton_operation_submit_rejects_null_driver() {
+        let mut err = CosmosErrorCode::CosmosErrorCodeSuccess;
+        let h = cosmos_driver_execute_singleton_operation_submit(
+            ptr::null(),
             ptr::null(),
             ptr::null_mut(),
             ptr::null_mut(),

@@ -271,7 +271,7 @@ impl CosmosOperationOptions {
     /// All non-NULL string / array pointers must reference valid
     /// NUL-terminated UTF-8 (and, for arrays, the declared number of
     /// elements) for the duration of the call.
-    unsafe fn to_driver(&self) -> Result<OperationOptions, CosmosErrorCode> {
+    pub(crate) unsafe fn to_driver(&self) -> Result<OperationOptions, CosmosErrorCode> {
         let mut opts = OperationOptions::default();
 
         opts.read_consistency_strategy = self.read_consistency_strategy.to_driver()?;

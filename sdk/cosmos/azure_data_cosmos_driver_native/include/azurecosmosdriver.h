@@ -223,8 +223,8 @@ enum cosmos_error_code_t
    */
   COSMOS_ERROR_CODE_UNSUPPORTED_OPERATION_FOR_MUTATOR = 4009,
   /**
-   * `cosmos_operation_with_request_header` passed a non-ASCII / control-
-   * character header name or value.
+   * A request header (`cosmos_header_kv_t`) on the submitted operation
+   * request had a non-ASCII / control-character name or value.
    */
   COSMOS_ERROR_CODE_INVALID_HEADER = 4010,
   /**
@@ -364,70 +364,6 @@ enum cosmos_CosmosContentResponseOnWriteOpt
 typedef enum cosmos_CosmosContentResponseOnWriteOpt cosmos_CosmosContentResponseOnWriteOpt;
 #else
 typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
- * Per spec §4.6 — mirrors [`ReadConsistencyStrategy`].
- *
- * Variant prefixes are baked into the Rust variant names so the
- * `ScreamingSnakeCase` cbindgen rule emits the spec-mandated
- * `COSMOS_READ_CONSISTENCY_*` constants without per-enum overrides
- * (matches Phase 1's `CosmosCqState` pattern).
- */
-enum cosmos_read_consistency_t
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : int32_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * Use the default behavior for the chosen consistency level.
-   */
-  COSMOS_READ_CONSISTENCY_DEFAULT = 0,
-  /**
-   * Eventual consistency.
-   */
-  COSMOS_READ_CONSISTENCY_EVENTUAL = 1,
-  /**
-   * Session consistency (the driver's typical default).
-   */
-  COSMOS_READ_CONSISTENCY_SESSION = 2,
-  /**
-   * Read the latest version across all regions
-   * (single-master / Strong-only).
-   */
-  COSMOS_READ_CONSISTENCY_GLOBAL_STRONG = 3,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_read_consistency_t cosmos_read_consistency_t;
-#else
-typedef int32_t cosmos_read_consistency_t;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
- * Per spec §4.6 — mirrors [`ContentResponseOnWrite`].
- */
-enum cosmos_content_response_on_write_t
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : int32_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * The driver's default — server returns no body on write responses.
-   */
-  COSMOS_CONTENT_RESPONSE_ON_WRITE_DISABLED = 0,
-  /**
-   * Server returns the written resource in the response body.
-   */
-  COSMOS_CONTENT_RESPONSE_ON_WRITE_ENABLED = 1,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_content_response_on_write_t cosmos_content_response_on_write_t;
-#else
-typedef int32_t cosmos_content_response_on_write_t;
 #endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
@@ -742,34 +678,6 @@ typedef struct cosmos_driver_options_builder_t {
 } cosmos_driver_options_builder_t;
 
 /**
- * Opaque C ABI handle for a built [`OperationOptions`] value.
- *
- * Storage pun: same shape as `DriverOptionsHandle`.
- */
-typedef struct cosmos_operation_options_t {
-  uint8_t _opaque[0];
-} cosmos_operation_options_t;
-
-/**
- * Opaque C ABI handle for [`FeedRangeInner`].
- *
- * Storage pun: same shape as the other reference handles.
- */
-typedef struct cosmos_feed_range_t {
-  uint8_t _opaque[0];
-} cosmos_feed_range_t;
-
-/**
- * Opaque C ABI handle for an immutable partition key.
- *
- * Storage pun: same shape as `AccountRefHandle`. Cloning is a cheap
- * atomic refcount bump on a single `Arc`.
- */
-typedef struct cosmos_partition_key_t {
-  uint8_t _opaque[0];
-} cosmos_partition_key_t;
-
-/**
  * A single custom request/operation header. Both pointers are
  * NUL-terminated UTF-8 and borrowed for the duration of the submit call;
  * the wrapper copies them before returning.
@@ -875,20 +783,23 @@ typedef struct cosmos_CosmosOperationOptions {
 } cosmos_CosmosOperationOptions;
 
 /**
- * Opaque C ABI handle for a built but un-submitted operation.
+ * Opaque C ABI handle for [`FeedRangeInner`].
  *
- * Storage pun: same shape as `OperationOptionsHandle`.
+ * Storage pun: same shape as the other reference handles.
  */
-typedef struct cosmos_operation_t {
+typedef struct cosmos_feed_range_t {
   uint8_t _opaque[0];
-} cosmos_operation_t;
+} cosmos_feed_range_t;
 
 /**
- * Opaque C ABI handle for an `OperationOptionsBuilder`.
+ * Opaque C ABI handle for an immutable partition key.
+ *
+ * Storage pun: same shape as `AccountRefHandle`. Cloning is a cheap
+ * atomic refcount bump on a single `Arc`.
  */
-typedef struct cosmos_operation_options_builder_t {
+typedef struct cosmos_partition_key_t {
   uint8_t _opaque[0];
-} cosmos_operation_options_builder_t;
+} cosmos_partition_key_t;
 
 /**
  * Opaque C ABI handle for an incrementally-populated partition-key
@@ -1475,16 +1386,16 @@ int32_t cosmos_driver_options_builder_with_preferred_regions(struct cosmos_drive
  * Sets the per-driver default operation options.
  *
  * Mirrors [`DriverOptionsBuilder::with_operation_options`]. The supplied
- * `cosmos_operation_options_t` is **cloned** into the builder; the caller
- * retains ownership of the source handle and must `_free` it
- * independently. NULL `options` is rejected with `INVALID_ARGUMENT` —
- * pass a fresh handle from `cosmos_operation_options_builder_build` or
- * don't call this setter at all to inherit the driver defaults.
- *
- * Wires the Phase 3 deferral noted in [`crate::driver_options`].
+ * flat `cosmos_operation_options_t` (see
+ * [`crate::op_request::CosmosOperationOptions`]) is converted and **cloned**
+ * into the builder; the caller retains ownership of the source struct. NULL
+ * `options` is rejected with `INVALID_ARGUMENT` — pass a struct from
+ * [`crate::op_request::cosmos_operation_options_default`] (mutated as
+ * needed) or don't call this setter at all to inherit the driver defaults.
+ * An out-of-range option value is rejected with `INVALID_OPTION_VALUE`.
  */
 int32_t cosmos_driver_options_builder_with_operation_options(struct cosmos_driver_options_builder_t *builder,
-                                                             const struct cosmos_operation_options_t *options);
+                                                             const struct cosmos_CosmosOperationOptions *options);
 
 /**
  * Consumes the builder and returns a fresh `cosmos_driver_options_t *`.
@@ -1620,271 +1531,6 @@ void cosmos_feed_range_free(struct cosmos_feed_range_t *fr);
  * sentinels.
  */
 struct cosmos_CosmosOperationOptions cosmos_operation_options_default(void);
-
-/**
- * Frees an operation handle. Idempotent only in the sense that the
- * pointer is then NULL on the caller side — double-free is undefined
- * behavior. NULL is a no-op.
- */
-void cosmos_operation_free(struct cosmos_operation_t *op);
-
-/**
- * Read a specific throughput offer by resource link.
- */
-int32_t cosmos_operation_read_offer(const struct cosmos_account_ref_t *account,
-                                    const char *resource_link,
-                                    struct cosmos_operation_t **out_op);
-
-/**
- * Replace a throughput offer by resource link.
- */
-int32_t cosmos_operation_replace_offer(const struct cosmos_account_ref_t *account,
-                                       const char *resource_link,
-                                       struct cosmos_operation_t **out_op);
-
-/**
- * Single-partition feed read. Mirrors
- * [`CosmosOperation::read_all_items`].
- */
-int32_t cosmos_operation_read_all_items(const struct cosmos_container_ref_t *container,
-                                        const struct cosmos_partition_key_t *pk,
-                                        struct cosmos_operation_t **out_op);
-
-/**
- * Query operation. NULL `feed_range` targets the entire container
- * (equivalent to `cosmos_feed_range_full`).
- */
-int32_t cosmos_operation_query_items(const struct cosmos_container_ref_t *container,
-                                     const struct cosmos_feed_range_t *feed_range,
-                                     struct cosmos_operation_t **out_op);
-
-/**
- * Query-plan fetch. `supported_features_mask` is the comma-separated
- * header value the driver sends as
- * `x-ms-cosmos-supported-query-features`. Most language SDKs never
- * call this directly — exposed for parity with the driver surface.
- *
- * **Note (Phase 6+ follow-up):** the driver crate's
- * `CosmosOperation::query_plan` exists but signature reconciliation
- * with the spec's `query_plan_for_features` is still in flight. This
- * FFI entry point reserves the name and returns
- * `INVALID_ARGUMENT` until the driver-side shape stabilises.
- */
-int32_t cosmos_operation_query_plan_for_features(const struct cosmos_container_ref_t *container,
-                                                 const char *supported_features_mask,
-                                                 struct cosmos_operation_t **out_op);
-
-/**
- * Transactional batch. Sub-operation accumulation lands in Phase 9;
- * Phase 6 reserves the factory.
- */
-int32_t cosmos_operation_batch(const struct cosmos_container_ref_t *container,
-                               const struct cosmos_partition_key_t *pk,
-                               struct cosmos_operation_t **out_op);
-
-/**
- * Sets the request body (raw UTF-8 JSON bytes). The wrapper **copies**
- * the bytes into a driver-owned `Vec<u8>` before returning; the caller
- * may free the source buffer immediately. NULL `body` with `body_len == 0`
- * is accepted and sets an empty body.
- *
- * Per spec §4.6.2: replaces any previously-set body.
- */
-int32_t cosmos_operation_with_body(struct cosmos_operation_t *op,
-                                   const uint8_t *body,
-                                   uintptr_t body_len);
-
-/**
- * Sets the session token (drives session-consistency reads).
- */
-int32_t cosmos_operation_with_session_token(struct cosmos_operation_t *op, const char *token);
-
-/**
- * Sets the activity-id (correlates client-side logs with server-side
- * traces).
- */
-int32_t cosmos_operation_with_activity_id(struct cosmos_operation_t *op, const char *activity_id);
-
-/**
- * Sets the maximum item count for feed-style operations
- * (`x-ms-max-item-count`). Pass `-1` to let the server decide; any
- * non-negative value caps the page at that many items. `0` is
- * rejected as `INVALID_OPTION_VALUE` (the driver enforces
- * `NonZeroU32` internally).
- */
-int32_t cosmos_operation_with_max_item_count(struct cosmos_operation_t *op, int32_t max_item_count);
-
-/**
- * Enables / disables the `populateIndexMetrics` request header.
- */
-int32_t cosmos_operation_with_populate_index_metrics(struct cosmos_operation_t *op, bool enabled);
-
-/**
- * Enables / disables the `populateQueryMetrics` request header.
- */
-int32_t cosmos_operation_with_populate_query_metrics(struct cosmos_operation_t *op, bool enabled);
-
-/**
- * Sets an `If-Match` precondition. Calling either precondition setter
- * twice (or both) on the same operation returns
- * `PRECONDITION_ALREADY_SET` (4008) per spec §4.6.2.
- */
-int32_t cosmos_operation_with_precondition_if_match(struct cosmos_operation_t *op,
-                                                    const char *etag);
-
-/**
- * Sets an `If-None-Match` precondition.
- */
-int32_t cosmos_operation_with_precondition_if_none_match(struct cosmos_operation_t *op,
-                                                         const char *etag);
-
-/**
- * Caps the number of Read-Modify-Write attempts the patch handler
- * may make for a `patch_item` operation. `max_attempts == 0` returns
- * `INVALID_ARGUMENT`; calling on a non-patch operation returns
- * `UNSUPPORTED_OPERATION_FOR_MUTATOR` (4009).
- */
-int32_t cosmos_operation_with_patch_max_attempts(struct cosmos_operation_t *op,
-                                                 uint8_t max_attempts);
-
-/**
- * Frees a built `cosmos_operation_options_t *`. NULL is a no-op.
- */
-void cosmos_operation_options_free(struct cosmos_operation_options_t *options);
-
-/**
- * Allocates a new operation-options builder. Always succeeds.
- */
-struct cosmos_operation_options_builder_t *cosmos_operation_options_builder_new(void);
-
-/**
- * Frees a builder that was never consumed by [`cosmos_operation_options_builder_build`].
- * NULL is a no-op.
- */
-void cosmos_operation_options_builder_free(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Sets the read-consistency strategy (driver's
- * `read_consistency_strategy`). See [`CosmosReadConsistency`].
- */
-int32_t cosmos_operation_options_builder_with_read_consistency_strategy(struct cosmos_operation_options_builder_t *builder,
-                                                                        cosmos_read_consistency_t value);
-
-/**
- * Clears any explicitly-set read-consistency strategy so the field
- * inherits from the higher-priority options layer.
- */
-int32_t cosmos_operation_options_builder_clear_read_consistency_strategy(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Sets the content-response-on-write mode (driver's
- * `content_response_on_write`).
- */
-int32_t cosmos_operation_options_builder_with_content_response_on_write(struct cosmos_operation_options_builder_t *builder,
-                                                                        cosmos_content_response_on_write_t value);
-
-/**
- * Clears any explicitly-set content-response-on-write mode.
- */
-int32_t cosmos_operation_options_builder_clear_content_response_on_write(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Sets `session_capturing_disabled`. `false` re-enables session
- * capture; `true` disables it.
- */
-int32_t cosmos_operation_options_builder_with_session_capturing_disabled(struct cosmos_operation_options_builder_t *builder,
-                                                                         bool value);
-
-int32_t cosmos_operation_options_builder_clear_session_capturing_disabled(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Sets `per_partition_circuit_breaker_enabled`.
- */
-int32_t cosmos_operation_options_builder_with_per_partition_circuit_breaker_enabled(struct cosmos_operation_options_builder_t *builder,
-                                                                                    bool value);
-
-int32_t cosmos_operation_options_builder_clear_per_partition_circuit_breaker_enabled(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Sets the end-to-end operation latency policy (the timeout below
- * which a request is abandoned in favor of retry). The driver clamps
- * values below 1 s to 1 s.
- */
-int32_t cosmos_operation_options_builder_with_end_to_end_timeout_ms(struct cosmos_operation_options_builder_t *builder,
-                                                                    uint64_t timeout_ms);
-
-int32_t cosmos_operation_options_builder_clear_end_to_end_timeout(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Sets `endpoint_unavailability_ttl` (how long an endpoint stays
- * marked unavailable after a failure).
- */
-int32_t cosmos_operation_options_builder_with_endpoint_unavailability_ttl_ms(struct cosmos_operation_options_builder_t *builder,
-                                                                             uint64_t ttl_ms);
-
-int32_t cosmos_operation_options_builder_clear_endpoint_unavailability_ttl(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Sets `throughput_control_group` (references a group registered on
- * the runtime).
- */
-int32_t cosmos_operation_options_builder_with_throughput_control_group(struct cosmos_operation_options_builder_t *builder,
-                                                                       const char *group_name);
-
-int32_t cosmos_operation_options_builder_clear_throughput_control_group(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Sets `excluded_regions` from a C array of NUL-terminated UTF-8
- * region names.
- *
- * Replaces any previously-set list. NULL `regions` with `regions_len == 0`
- * is accepted and equivalent to setting an empty list (the field is
- * set to `Some(ExcludedRegions(vec![]))` — distinct from "inherit"
- * which `_clear_excluded_regions` produces).
- */
-int32_t cosmos_operation_options_builder_with_excluded_regions(struct cosmos_operation_options_builder_t *builder,
-                                                               const char *const *regions,
-                                                               uintptr_t regions_len);
-
-int32_t cosmos_operation_options_builder_clear_excluded_regions(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Sets a single custom-header entry. The first call to this on a
- * builder allocates the underlying map; subsequent calls append.
- *
- * `INVALID_HEADER` (4010) is returned when either string contains
- * non-ASCII or control characters (Cosmos rejects these wire-side; we
- * fail fast).
- */
-int32_t cosmos_operation_options_builder_set_custom_header(struct cosmos_operation_options_builder_t *builder,
-                                                           const char *name,
-                                                           const char *value);
-
-/**
- * Drops every previously-set custom header. The `Option<HashMap>`
- * field reverts to `None` (i.e. inherits from a higher layer).
- */
-int32_t cosmos_operation_options_builder_clear_custom_headers(struct cosmos_operation_options_builder_t *builder);
-
-/**
- * Consumes the builder and returns an immutable
- * `cosmos_operation_options_t *`.
- *
- * # Lifetime
- *
- * `_build` consumes the builder regardless of success or failure.
- * Callers must NOT call [`cosmos_operation_options_builder_free`] on
- * the same pointer afterwards.
- *
- * # Returns
- *
- * - `SUCCESS` (0) with `*out_options` populated.
- * - `INVALID_ARGUMENT` (1) when `builder` or `out_options` is NULL. In
- *   the NULL-`out_options` case the builder is still consumed to avoid
- *   leaking the inner allocation.
- */
-int32_t cosmos_operation_options_builder_build(struct cosmos_operation_options_builder_t *builder,
-                                               struct cosmos_operation_options_t **out_options);
 
 /**
  * Allocates a new partition-key builder. Always succeeds; the returned
@@ -2199,54 +1845,6 @@ int32_t cosmos_runtime_builder_with_cpu_refresh_interval_ms(struct cosmos_runtim
 int32_t cosmos_runtime_builder_build(struct cosmos_runtime_builder_t *builder,
                                      struct cosmos_runtime_t **out_runtime,
                                      struct cosmos_error_t **out_error);
-
-/**
- * Submits a singleton operation for asynchronous execution.
- *
- * Per spec §4.7, this binds to
- * [`CosmosDriver::execute_singleton_operation`]: the operation runs
- * off-thread on the wrapper's Tokio runtime, and when it completes a
- * [`Completion`] lands on `queue`. Inspect the completion's outcome
- * (`OK` / `ERROR` / `CANCELLED`), then call
- * [`cosmos_completion_take_response`] or
- * [`cosmos_completion_take_error`] as appropriate.
- *
- * # Parameters
- *
- * - `driver` — non-NULL driver handle (obtained from
- *   `cosmos_driver_get_or_create_*`).
- * - `op` — non-NULL operation handle. **Consumed** on successful
- *   submit; subsequent mutators / re-submits return
- *   `OPERATION_CONSUMED` (4005).
- * - `options` — optional per-call operation options.
- * - `queue` — non-NULL completion queue. The runtime that backs the
- *   queue is used to spawn the task.
- * - `user_data` — opaque pointer round-tripped verbatim onto the
- *   completion.
- * - `out_pre_error` — receives the coarse code on pre-flight failure
- *   (returns NULL). NULL is accepted (the code is dropped).
- *
- * # Returns
- *
- * On success: a fresh `cosmos_operation_handle_t *` representing the
- * in-flight operation. The caller must `cosmos_operation_handle_free`
- * it when no longer needed (typically after observing the completion).
- *
- * On pre-flight failure: NULL. `*out_pre_error` (if non-NULL)
- * receives one of `INVALID_ARGUMENT` (NULL inputs),
- * `QUEUE_SHUTDOWN` (queue already shut down), `QUEUE_FULL` (queue at
- * hard capacity), or `OPERATION_CONSUMED` (operation already
- * submitted).
- *
- * [`cosmos_completion_take_response`]: crate::completion::cosmos_completion_take_response
- * [`cosmos_completion_take_error`]: crate::completion::cosmos_completion_take_error
- */
-struct cosmos_operation_handle_t *cosmos_driver_submit(const struct cosmos_driver_t *driver,
-                                                       struct cosmos_operation_t *op,
-                                                       const struct cosmos_operation_options_t *options,
-                                                       struct cosmos_cq_t *queue,
-                                                       void *user_data,
-                                                       cosmos_error_code_t *out_pre_error);
 
 /**
  * Submits a feed-capable operation for asynchronous execution, binding to

@@ -7,19 +7,19 @@
 //!
 //! `DriverOptions` itself is small (3 fields per spec §4.2): the bound
 //! account, the per-driver `OperationOptions`, and a `Vec<Region>` of
-//! preferred regions. Phase 3 ships everything in this surface **except**
-//! `with_operation_options` — that setter requires the full
-//! `cosmos_operation_options_*` builder which lands in Phase 5. Until
-//! then, drivers built through this FFI use the driver's own defaults
-//! (the same defaults `DriverOptionsBuilder::build()` populates when no
-//! operation options are configured).
+//! preferred regions. The per-driver defaults are set through
+//! `with_operation_options`, which now takes the flat
+//! `cosmos_operation_options_t` struct
+//! ([`crate::op_request::CosmosOperationOptions`]) directly rather than an
+//! opaque options-builder handle. Drivers that don't configure operation
+//! options use the driver's own defaults (the same defaults
+//! `DriverOptionsBuilder::build()` populates when none are configured).
 //!
 //! The settings frequently confused with "per-driver" defaults
 //! (excluded regions, consistency, content-response-on-write,
 //! throughput control, retry counts, etc.) all live on
-//! `OperationOptions` and will reach this surface via
-//! `with_operation_options` in Phase 5 — not as additional setters on
-//! the driver-options builder.
+//! `OperationOptions` and reach this surface via `with_operation_options`
+//! — not as additional setters on the driver-options builder.
 //!
 //! Transport-side knobs (connection pool, user-agent suffix, workload
 //! id, correlation id) live on `cosmos_runtime_builder_t`, not here.
@@ -273,29 +273,34 @@ pub extern "C" fn cosmos_driver_options_builder_with_preferred_regions(
 /// Sets the per-driver default operation options.
 ///
 /// Mirrors [`DriverOptionsBuilder::with_operation_options`]. The supplied
-/// `cosmos_operation_options_t` is **cloned** into the builder; the caller
-/// retains ownership of the source handle and must `_free` it
-/// independently. NULL `options` is rejected with `INVALID_ARGUMENT` —
-/// pass a fresh handle from `cosmos_operation_options_builder_build` or
-/// don't call this setter at all to inherit the driver defaults.
-///
-/// Wires the Phase 3 deferral noted in [`crate::driver_options`].
+/// flat `cosmos_operation_options_t` (see
+/// [`crate::op_request::CosmosOperationOptions`]) is converted and **cloned**
+/// into the builder; the caller retains ownership of the source struct. NULL
+/// `options` is rejected with `INVALID_ARGUMENT` — pass a struct from
+/// [`crate::op_request::cosmos_operation_options_default`] (mutated as
+/// needed) or don't call this setter at all to inherit the driver defaults.
+/// An out-of-range option value is rejected with `INVALID_OPTION_VALUE`.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_options_builder_with_operation_options(
     builder: *mut DriverOptionsBuilderHandle,
-    options: *const crate::operation_options::OperationOptionsHandle,
+    options: *const crate::op_request::CosmosOperationOptions,
 ) -> i32 {
     let Some(inner) = DriverOptionsBuilderHandle::inner_mut(builder) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
-    let Some(options_inner) = crate::operation_options::OperationOptionsHandle::inner_arc(options)
-    else {
+    if options.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
+    }
+    // SAFETY: `options` is non-NULL and the caller guarantees its pointer
+    // fields per the `cosmos_operation_options_t` contract.
+    let driver_opts = match unsafe { (*options).to_driver() } {
+        Ok(o) => o,
+        Err(code) => return code.as_i32(),
     };
     let Some(taken) = inner.builder.take() else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32();
     };
-    inner.builder = Some(taken.with_operation_options(options_inner.inner.clone()));
+    inner.builder = Some(taken.with_operation_options(driver_opts));
     CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
 }
 

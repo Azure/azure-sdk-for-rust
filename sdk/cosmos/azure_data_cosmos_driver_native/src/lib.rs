@@ -35,8 +35,6 @@ pub mod driver_options;
 pub mod error;
 pub mod feed_range;
 pub mod op_request;
-pub mod operation;
-pub mod operation_options;
 pub mod partition_key;
 pub mod response;
 pub mod runtime;

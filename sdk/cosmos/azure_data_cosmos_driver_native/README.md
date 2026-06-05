@@ -1,4 +1,4 @@
-<!-- cspell:ignore azurecosmosdriver cdylib staticlib corrosion cbindgen ctest dotnet pinvoke pinvokeimpl pkgconfig cgo ctypes findlibrary ldflags downcallhandle nativelinker symbolloader symbollookup invokeexact byref byrefparam dllimport unmanagedfunctionpointer extern jna jansi callconv dlopen dlsym fixedstring nullable lifo lpdouble lpwchar lpwstr ptypes ofvoid invokestatic linkedhashmap nonblocking jvmti -->
+<!-- cspell:ignore azurecosmosdriver cdylib staticlib corrosion cbindgen ctest dotnet pinvoke pinvokeimpl pkgconfig cgo ctypes findlibrary ldflags downcallhandle nativelinker symbolloader symbollookup invokeexact byref byrefparam dllimport unmanagedfunctionpointer extern jna jansi callconv dlopen dlsym fixedstring nullable lifo lpdouble lpwchar lpwstr ptypes ofvoid invokestatic linkedhashmap nonblocking jvmti addr gchandle -->
 
 # Azure Cosmos DB Driver — Native C Bindings (`azure_data_cosmos_driver_native`)
 
@@ -33,8 +33,8 @@ This crate is being built up phase-by-phase per
 | 2 — runtime builder | ✅ | `cosmos_runtime_builder_*` (5 primitive setters + build) |
 | 3 — account + driver | ✅ | `cosmos_account_ref_with_master_key`, `cosmos_database_ref_*`, `cosmos_driver_options_builder_*`, `cosmos_driver_get_or_create_blocking` |
 | 4 — partition keys | ✅ | `cosmos_partition_key_builder_*` (5 value kinds, hierarchical, `_empty`) |
-| 5 — operation options + factories | ✅ | `cosmos_operation_options_builder_*` (all 16 `OperationOptions` fields with `_with_*` / `_clear_*`), 11 account/db-scope factories, 8 core mutators |
-| 6 — submit + response + container/item factories | ✅ | `cosmos_driver_submit`, `cosmos_driver_get_or_create_submit`, `cosmos_driver_resolve_container_*`, `cosmos_response_*`, `cosmos_feed_range_*`, 13 container/item-scope factories, `with_patch_max_attempts` |
+| 5 — operation request + options structs | ✅ | Flat `cosmos_CosmosOperationRequest` (kind-tagged via `cosmos_CosmosOperationKind`, 25 variants) + tri-state `cosmos_CosmosOperationOptions` (all 16 `OperationOptions` fields), seeded by `cosmos_operation_options_default` |
+| 6 — submit + response | ✅ | `cosmos_driver_execute_operation_submit` (feeds + pagination) and `cosmos_driver_execute_singleton_operation_submit` (point ops), `cosmos_driver_get_or_create_submit`, `cosmos_driver_resolve_container_*`, `cosmos_response_*`, `cosmos_feed_range_*` |
 | 7 — diagnostics | ⏳ | `cosmos_diagnostics_*` accessors + `cosmos_response_diagnostics` |
 | 8 — pagination | ⏳ | `cosmos_pager_*`, multi-part body iterator, EPK feed-range variants |
 | 9 — patch + transactional batch | ⏳ | Patch instruction builder, batch sub-operation appender |
@@ -58,14 +58,15 @@ functional core.
 | Item-CRUD operations (read / create / upsert / replace / delete / patch) | ✅ |
 | Container-CRUD operations (read / replace / delete) | ✅ |
 | Database + account-scope operations | ✅ |
-| `cosmos_driver_submit` (one-shot singleton execution) | ✅ |
+| `cosmos_driver_execute_singleton_operation_submit` (point ops) | ✅ |
+| `cosmos_driver_execute_operation_submit` (feeds + pagination) | ✅ |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
 | Pagination (read-feeds + query result sets) | ⏳ Phase 8 |
 | Multi-part response body iteration | ⏳ Phase 8 |
 | Diagnostics accessors | ⏳ Phase 7 |
 | Patch instruction builder | ⏳ Phase 9 |
 | Transactional batch sub-operation builder | ⏳ Phase 9 |
-| Custom per-operation request headers | ⏳ pending spec/driver reconcile (custom headers currently live on `cosmos_operation_options_*`, not on the operation) |
+| Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 
 ## Building
 
@@ -111,6 +112,31 @@ production "receive-loop" thread pattern. See
 [Notes that apply to all four bindings](#notes-that-apply-to-all-four-bindings)
 below for the production-shape guidance.
 
+> **API migration note.** The per-operation factory + mutator surface
+> (`cosmos_operation_create_item`, `cosmos_operation_with_body`,
+> `cosmos_operation_options_builder_*`, `cosmos_driver_submit`, …) has been
+> **removed**. Operations are now described by a single flat,
+> self-describing `cosmos_CosmosOperationRequest` struct (kind-tagged via
+> `cosmos_CosmosOperationKind`, with per-call settings on the tri-state
+> `cosmos_CosmosOperationOptions` seeded by `cosmos_operation_options_default`)
+> and executed through exactly two entry points:
+>
+> - `cosmos_driver_execute_singleton_operation_submit` — point operations
+>   (create / read / replace / delete / patch item, database & container CRUD,
+>   read/replace offer).
+> - `cosmos_driver_execute_operation_submit` — feed/paginated operations
+>   (queries, read-all, change feed); resumes from and surfaces a continuation
+>   token.
+>
+> Both take `(driver, const cosmos_CosmosOperationRequest *request, queue,
+> user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.
+> The checked-in [header](include/azurecosmosdriver.h) is the authoritative
+> source for the struct field layout and the 25 operation kinds. The C#
+> example below is written against this new API; the Java, Go, and Python
+> examples that follow are pending migration and currently show the **old**
+> factory flow — translate them field-for-field from the C# example and the
+> header until they are updated.
+
 ### .NET (C# 12 / .NET 8+)
 
 Copy `azurecosmosdriver.{dll,so,dylib}` next to the executable, then
@@ -146,12 +172,44 @@ internal static class Cosmos
     [DllImport(Lib)] public static extern int    cosmos_partition_key_builder_build(IntPtr b, out IntPtr pk);
     [DllImport(Lib)] public static extern void   cosmos_partition_key_free(IntPtr pk);
 
-    [DllImport(Lib)] public static extern int    cosmos_operation_create_item(IntPtr c, byte[] id, IntPtr pk, out IntPtr op);
-    [DllImport(Lib)] public static extern int    cosmos_operation_read_item  (IntPtr c, byte[] id, IntPtr pk, out IntPtr op);
-    [DllImport(Lib)] public static extern int    cosmos_operation_delete_item(IntPtr c, byte[] id, IntPtr pk, out IntPtr op);
-    [DllImport(Lib)] public static extern int    cosmos_operation_with_body  (IntPtr op, byte[] body, UIntPtr len);
-    [DllImport(Lib)] public static extern void   cosmos_operation_free       (IntPtr op);
-    [DllImport(Lib)] public static extern IntPtr cosmos_driver_submit(IntPtr drv, IntPtr op, IntPtr opts, IntPtr q, IntPtr ud, out int preErr);
+    // Operation kinds (subset — see `cosmos_CosmosOperationKind` in the header).
+    public const int KIND_CREATE_ITEM = 19;
+    public const int KIND_READ_ITEM   = 20;
+    public const int KIND_DELETE_ITEM = 23;
+
+    // Inline body view (mirrors `cosmos_CosmosBytesView`).
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BytesView { public IntPtr data; public UIntPtr len; }
+
+    // Flat, self-describing request (mirrors `cosmos_CosmosOperationRequest`).
+    // Fill only the fields the `kind` needs; leave the rest NULL / sentinel.
+    [StructLayout(LayoutKind.Sequential)]
+    public struct OpRequest
+    {
+        public int       kind;
+        public IntPtr    account;
+        public IntPtr    database;
+        public IntPtr    container;
+        public IntPtr    item_id;             // char*
+        public IntPtr    resource_link;       // char*
+        public IntPtr    partition_key;
+        public IntPtr    feed_range;
+        public BytesView body;
+        public IntPtr    session_token;       // char*
+        public IntPtr    activity_id;         // char*
+        public IntPtr    continuation_token;  // char*
+        public int       max_item_count;      // < 0 = unset
+        public byte      patch_max_attempts;  // 0 = unset
+        public sbyte     populate_index_metrics; // tri-state bool (0/1/2)
+        public sbyte     populate_query_metrics; // tri-state bool (0/1/2)
+        public int       precondition_kind;   // 0 = none
+        public IntPtr    precondition_etag;   // char*
+        public IntPtr    options;             // cosmos_CosmosOperationOptions*
+    }
+
+    // The two — and only two — execution entry points.
+    [DllImport(Lib)] public static extern IntPtr cosmos_driver_execute_singleton_operation_submit(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
+    [DllImport(Lib)] public static extern IntPtr cosmos_driver_execute_operation_submit(IntPtr drv, ref OpRequest req, IntPtr q, IntPtr ud, out int preErr);
     [DllImport(Lib)] public static extern void   cosmos_operation_handle_free(IntPtr h);
 
     [DllImport(Lib)] public static extern int    cosmos_completion_outcome(IntPtr c);
@@ -168,13 +226,12 @@ internal static class Cosmos
 
 internal static class Program
 {
-    static IntPtr SubmitAndWait(IntPtr drv, IntPtr op, IntPtr q)
+    static IntPtr SubmitAndWait(IntPtr drv, ref Cosmos.OpRequest req, IntPtr q)
     {
-        var h = Cosmos.cosmos_driver_submit(drv, op, IntPtr.Zero, q, IntPtr.Zero, out int pre);
+        var h = Cosmos.cosmos_driver_execute_singleton_operation_submit(drv, ref req, q, IntPtr.Zero, out int pre);
         if (h == IntPtr.Zero) throw new InvalidOperationException($"submit pre-flight failed: {pre}");
         var c = Cosmos.cosmos_cq_wait(q, 30_000);
         Cosmos.cosmos_operation_handle_free(h);
-        Cosmos.cosmos_operation_free(op);
         return c;
     }
 
@@ -199,29 +256,60 @@ internal static class Program
         Cosmos.cosmos_partition_key_builder_add_string(pkb, Cosmos.Cstr("tenant-42"));
         Cosmos.cosmos_partition_key_builder_build(pkb, out var pk);
 
-        // 4. CREATE
+        // 4. CREATE — fill a flat request and submit it through the singleton path.
         var body = JsonSerializer.SerializeToUtf8Bytes(new { id = "doc1", pk = "tenant-42", name = "hello" });
-        Cosmos.cosmos_operation_create_item(coll, Cosmos.Cstr("doc1"), pk, out var op);
-        Cosmos.cosmos_operation_with_body(op, body, (UIntPtr)body.Length);
-        var comp = SubmitAndWait(drv, op, q);
-        var resp = Cosmos.cosmos_completion_take_response(comp);
-        Console.WriteLine($"CREATE status={Cosmos.cosmos_response_status_code(resp)} ru={Cosmos.cosmos_response_request_charge(resp):F2}");
-        Cosmos.cosmos_response_free(resp); Cosmos.cosmos_completion_free(comp);
+        var bodyPin = GCHandle.Alloc(body, GCHandleType.Pinned);
+        try
+        {
+            var req = new Cosmos.OpRequest
+            {
+                kind           = Cosmos.KIND_CREATE_ITEM,
+                container      = coll,
+                partition_key  = pk,
+                body           = new Cosmos.BytesView { data = bodyPin.AddrOfPinnedObject(), len = (UIntPtr)body.Length },
+                max_item_count = -1,
+            };
+            var comp = SubmitAndWait(drv, ref req, q);
+            var resp = Cosmos.cosmos_completion_take_response(comp);
+            Console.WriteLine($"CREATE status={Cosmos.cosmos_response_status_code(resp)} ru={Cosmos.cosmos_response_request_charge(resp):F2}");
+            Cosmos.cosmos_response_free(resp); Cosmos.cosmos_completion_free(comp);
+        }
+        finally { bodyPin.Free(); }
 
-        // 5. READ
-        Cosmos.cosmos_operation_read_item(coll, Cosmos.Cstr("doc1"), pk, out op);
-        comp = SubmitAndWait(drv, op, q);
-        resp = Cosmos.cosmos_completion_take_response(comp);
-        Cosmos.cosmos_response_body(resp, out var dataPtr, out var dataLen);
-        Console.WriteLine($"READ status={Cosmos.cosmos_response_status_code(resp)} body={Marshal.PtrToStringUTF8(dataPtr, (int)dataLen)}");
-        Cosmos.cosmos_response_free(resp); Cosmos.cosmos_completion_free(comp);
+        // 5. READ — item-id addressed, no body.
+        var idBytes = Cosmos.Cstr("doc1");
+        var idPin = GCHandle.Alloc(idBytes, GCHandleType.Pinned);
+        try
+        {
+            var req = new Cosmos.OpRequest
+            {
+                kind           = Cosmos.KIND_READ_ITEM,
+                container      = coll,
+                partition_key  = pk,
+                item_id        = idPin.AddrOfPinnedObject(),
+                max_item_count = -1,
+            };
+            var comp = SubmitAndWait(drv, ref req, q);
+            var resp = Cosmos.cosmos_completion_take_response(comp);
+            Cosmos.cosmos_response_body(resp, out var dataPtr, out var dataLen);
+            Console.WriteLine($"READ status={Cosmos.cosmos_response_status_code(resp)} body={Marshal.PtrToStringUTF8(dataPtr, (int)dataLen)}");
+            Cosmos.cosmos_response_free(resp); Cosmos.cosmos_completion_free(comp);
 
-        // 6. DELETE
-        Cosmos.cosmos_operation_delete_item(coll, Cosmos.Cstr("doc1"), pk, out op);
-        comp = SubmitAndWait(drv, op, q);
-        resp = Cosmos.cosmos_completion_take_response(comp);
-        Console.WriteLine($"DELETE status={Cosmos.cosmos_response_status_code(resp)}");
-        Cosmos.cosmos_response_free(resp); Cosmos.cosmos_completion_free(comp);
+            // 6. DELETE — same shape as READ, different kind.
+            var del = new Cosmos.OpRequest
+            {
+                kind           = Cosmos.KIND_DELETE_ITEM,
+                container      = coll,
+                partition_key  = pk,
+                item_id        = idPin.AddrOfPinnedObject(),
+                max_item_count = -1,
+            };
+            comp = SubmitAndWait(drv, ref del, q);
+            resp = Cosmos.cosmos_completion_take_response(comp);
+            Console.WriteLine($"DELETE status={Cosmos.cosmos_response_status_code(resp)}");
+            Cosmos.cosmos_response_free(resp); Cosmos.cosmos_completion_free(comp);
+        }
+        finally { idPin.Free(); }
 
         // 7. Tear-down (LIFO)
         Cosmos.cosmos_partition_key_free(pk);
@@ -615,18 +703,23 @@ if __name__ == "__main__":
 4. **Lifetime ownership cheat-sheet:**
    - `_blocking` / `_create` / `_get_or_create_*` / `_build` produce handles
      the caller owns and must `_free`.
-   - `cosmos_driver_submit` consumes the operation (subsequent mutators
-     return `OPERATION_CONSUMED`).
+   - The submit entry points
+     (`cosmos_driver_execute_singleton_operation_submit` /
+     `cosmos_driver_execute_operation_submit`) only **borrow** the
+     `cosmos_CosmosOperationRequest` and every pointer it carries for the
+     duration of the call; the wrapper copies what it needs before returning,
+     so the host may free its buffers immediately afterward.
    - `cosmos_completion_take_response` / `_take_error` transfer ownership out
      of the completion; the response/error is freed independently.
    - Completion handles must be freed via `cosmos_completion_free`.
-   - Operation handles (`cosmos_operation_handle_t *`) are freed via
-     `cosmos_operation_handle_free` separately from the operation builder.
+   - Operation handles (`cosmos_operation_handle_t *`) returned by the submit
+     entry points are freed via `cosmos_operation_handle_free`.
 5. **Schema-agnostic data plane.** The wrapper never serializes user
    payloads — host SDKs build JSON (or any other body format the service
-   accepts) themselves and hand the bytes to `cosmos_operation_with_body`.
-   Bytes are **copied** before the call returns; callers may release their
-   source buffer immediately.
+   accepts) themselves and hand the bytes to the request via
+   `cosmos_CosmosOperationRequest.body` (a `cosmos_CosmosBytesView`).
+   Bytes are **copied** before the submit call returns; callers may release
+   their source buffer immediately.
 6. **Diagnostics-on-error** is currently only available via the rich
    `cosmos_error_t` on `outcome == ERROR` completions. The success-path
    `cosmos_response_diagnostics` accessor lands in Phase 7.

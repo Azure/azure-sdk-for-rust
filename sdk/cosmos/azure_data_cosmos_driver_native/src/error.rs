@@ -147,8 +147,8 @@ pub enum CosmosErrorCode {
     /// A mutator only meaningful for a specific operation kind was rejected.
     CosmosErrorCodeUnsupportedOperationForMutator = 4009,
 
-    /// `cosmos_operation_with_request_header` passed a non-ASCII / control-
-    /// character header name or value.
+    /// A request header (`cosmos_header_kv_t`) on the submitted operation
+    /// request had a non-ASCII / control-character name or value.
     CosmosErrorCodeInvalidHeader = 4010,
 
     /// A submit targeted a `cosmos_cq_t` that had already been shut down via
