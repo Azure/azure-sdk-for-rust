@@ -2534,8 +2534,8 @@ async fn execute_hedged(
                 // the first attempt of an operation the snapshot is
                 // `None`, so PPCB feedback would otherwise no-op even
                 // though the response now carries the resolved range.
-                let pk_range_id_for_feedback = pk_range_id_from_result(&result)
-                    .or_else(|| ctx.partition_key_range_id.clone());
+                let pk_range_id_for_feedback =
+                    pk_range_id_from_result(&result).or_else(|| ctx.partition_key_range_id.clone());
                 record_hedge_outcome(
                     ctx.location_state_store,
                     HedgeOutcome::PrimaryWin,
@@ -2582,7 +2582,9 @@ async fn execute_hedged(
                     primary_region_for_diag.clone(),
                 ),
             );
-            return HedgedRaceResult::Terminal(Err(application_cancelled_error(parent_diagnostics)));
+            return HedgedRaceResult::Terminal(Err(application_cancelled_error(
+                parent_diagnostics,
+            )));
         }
     };
 
@@ -5364,7 +5366,10 @@ mod tests {
         // Typed-status invariant: telemetry/retry-evaluation can
         // discriminate a client-side hedge cancel from a service 408.
         let status = err.status();
-        assert_eq!(status.status_code(), azure_core::http::StatusCode::RequestTimeout);
+        assert_eq!(
+            status.status_code(),
+            azure_core::http::StatusCode::RequestTimeout
+        );
         assert_eq!(
             status.sub_status(),
             Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
