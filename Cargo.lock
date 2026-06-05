@@ -446,11 +446,12 @@ dependencies = [
  "azure_core 1.0.0",
  "azure_core_test_macros",
  "azure_identity 1.0.0",
- "azure_security_keyvault_secrets",
+ "azure_security_keyvault_secrets 1.0.0",
  "clap",
  "dotenvy",
  "flate2",
  "futures",
+ "include-file",
  "rand 0.10.1",
  "rand_chacha 0.10.0",
  "reqwest",
@@ -468,7 +469,6 @@ dependencies = [
 name = "azure_core_test_macros"
 version = "0.1.0"
 dependencies = [
- "azure_core 1.0.0",
  "azure_core_test",
  "proc-macro2",
  "quote",
@@ -615,7 +615,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.0.0",
  "azure_core_test",
- "azure_security_keyvault_secrets",
+ "azure_security_keyvault_secrets 1.1.0-beta.1",
  "clap",
  "futures",
  "include-file",
@@ -744,6 +744,23 @@ dependencies = [
  "sha2",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "azure_security_keyvault_secrets"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e96b370d75ebb8807cc1ccfc6fe647b1e61e13052cba2e800b95f0cf0bd27d9a"
+dependencies = [
+ "async-lock",
+ "async-trait",
+ "azure_core 1.0.0",
+ "futures",
+ "rustc_version",
+ "serde",
+ "serde_json",
+ "time",
+ "tokio",
 ]
 
 [[package]]
