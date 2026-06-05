@@ -1402,6 +1402,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -1409,6 +1410,7 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         };
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
