@@ -213,86 +213,49 @@ where
      * Assuming we can copy bytes in memory faster than the network can produce them, there should
      * be no significant buildup of memory in this channel.
      */
-    let (tx, mut rx) = mpsc::unbounded();
-    let mut tx_opt = Some(tx);
-    let mut download_workers = Vec::with_capacity(parallel);
-    // the starting offset of the overall download range
-    // bytes at this position are written to position 0 of `buffer`
-    let src_offset = response_analysis.overall_download_range.start;
+    let (mut tx, mut rx) = mpsc::unbounded();
+    // worker that does nothing but monitor active downloads and spawn new ones
+    let downloads_manager_handle = get_async_runtime().spawn(Box::pin(async move {
+        // the starting offset of the overall download range
+        // bytes at this position are written to position 0 of `buffer`
+        let src_offset = response_analysis.overall_download_range.start;
 
-    download_workers.push(start_initial_download_task_channel(
-        initial_response,
-        0,
-        tx_opt
-            .as_ref()
-            .ok_or_else(|| Error::with_message(ErrorKind::Other, "Channel closed unexpectedly."))?
-            .clone(),
-    ));
+        let mut download_workers = Vec::with_capacity(parallel);
+        download_workers.push(start_initial_download_task_channel(
+            initial_response,
+            0,
+            tx.clone(),
+        ));
+
+        while let Some(range) = response_analysis.remaining_download_ranges.pop_front() {
+            while download_workers.len() >= parallel {
+                (_, _, download_workers) = future::select_all(download_workers).await;
+            }
+            download_workers.push(start_download_task_channel(
+                client.clone(),
+                range.clone(),
+                range.start - src_offset,
+                etag_lock.clone(),
+                tx.clone(),
+            ));
+        }
+        if let Err(error) = future::try_join_all(download_workers).await {
+            _ = tx.send(Err(map_spawned_task_error(error))).await;
+        }
+    }));
 
     let mut total_read = 0;
-    loop {
-        while download_workers.len() < parallel {
-            if let Some(range) = response_analysis.remaining_download_ranges.pop_front() {
-                download_workers.push(start_download_task_channel(
-                    client.clone(),
-                    range.clone(),
-                    range.start - src_offset,
-                    etag_lock.clone(),
-                    tx_opt
-                        .as_ref()
-                        .ok_or_else(|| {
-                            Error::with_message(ErrorKind::Other, "Channel closed unexpectedly.")
-                        })?
-                        .clone(),
-                ));
-            } else {
-                // No more transmitters needed.
-                // Drop this one to ensure channel closes when expected.
-                tx_opt = None;
-                break;
-            }
+    while let Ok(msg) = rx.recv().await {
+        let (write_offset, bytes) = msg?;
+        if write_offset
+            .checked_add(bytes.len())
+            .ok_or_else(insufficient_buffer_err)?
+            > buffer.len()
+        {
+            return Err(insufficient_buffer_err());
         }
-
-        // Read Bytes from channel and prune join handles for worker tasks
-        match future::select(rx.recv(), future::select_all(download_workers)).await {
-            // Received download bytes from channel. Write them to buffer.
-            Either::Left((Ok(Ok((write_offset, bytes))), select_download_workers)) => {
-                if write_offset
-                    .checked_add(bytes.len())
-                    .ok_or_else(insufficient_buffer_err)?
-                    > buffer.len()
-                {
-                    return Err(insufficient_buffer_err());
-                }
-                buffer[write_offset..write_offset + bytes.len()].copy_from_slice(&bytes);
-                total_read += bytes.len();
-                download_workers = select_download_workers.into_inner();
-            }
-            // Received download error from channel. Fail overall operation.
-            Either::Left((Ok(Err(download_err)), _)) => {
-                return Err(download_err);
-            }
-            // All channel items have been recieved and all senders have been closed.
-            // Complete download.
-            Either::Left((Err(_recv_err), select_download_workers)) => {
-                // A worker could have failed to report an error through the channel.
-                // Join on all workers before returning success.
-                future::try_join_all(select_download_workers.into_inner())
-                    .await
-                    .map_err(map_spawned_task_error)?;
-                drop(rx);
-                break;
-            }
-            // A worker completed with success.
-            // Prune its handle and allow loop to start another.
-            Either::Right(((Ok(()), _, remaining_worker_handles), _)) => {
-                download_workers = remaining_worker_handles;
-            }
-            // A worker joined with error. Fail overall operation.
-            Either::Right(((Err(worker_join_err), _, _remaining_worker_handles), _)) => {
-                return Err(map_spawned_task_error(worker_join_err));
-            }
-        };
+        buffer[write_offset..write_offset + bytes.len()].copy_from_slice(&bytes);
+        total_read += bytes.len();
     }
 
     let expected_total_read = response_analysis.overall_download_range.len();
@@ -305,6 +268,9 @@ where
             ),
         ));
     }
+    downloads_manager_handle
+        .await
+        .map_err(map_spawned_task_error)?;
     Ok(total_read)
 }
 
