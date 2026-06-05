@@ -1645,17 +1645,28 @@ impl CosmosStatus {
     }
 
     /// Returns `true` when this status is a **final** (non-retriable) outcome
-    /// for the purposes of cross-region hedging (HEDGING_SPEC §7.1).
+    /// for the purposes of cross-region hedging (HEDGING_SPEC §7.1 / §7.2.1).
     ///
     /// Final statuses are:
     /// * any 1xx / 2xx / 3xx response,
     /// * the explicitly non-retriable client errors `400`, `401`, `405`,
     ///   `409`, `412`, `413`,
-    /// * `404` with no sub-status (or sub-status `0`).
+    /// * `404` with no sub-status (or sub-status `0`),
+    /// * `429` with a sub-status describing throttling that a second region
+    ///   cannot relieve — `3200` (`RU_BUDGET_EXCEEDED`), `3210`
+    ///   (`RU_BUDGET_EXCEEDED_FOR_MASTER`), and `3214`
+    ///   (`HOT_PARTITION_KEY_THROTTLED`).
     ///
-    /// Everything else — including `404/1002`, `408`, `429`, `503`, and
-    /// `403` regardless of sub-status — is treated as retriable so the
-    /// racing hedge gets a chance to win.
+    /// Everything else — including `404/1002`, `408`, generic/`3092` `429`,
+    /// `503`, and `403` regardless of sub-status — is treated as retriable
+    /// so the racing hedge gets a chance to win.
+    ///
+    /// The `429` carve-out mirrors the *hedge-spawn* guard (§7.2.1): RU-budget
+    /// and hot-partition throttles are account-/partition-wide, so racing a
+    /// second region only doubles the load on an already-saturated resource.
+    /// A generic `429` (no sub-status) and the transient-capacity `3092`
+    /// (`SYSTEM_RESOURCE_UNAVAILABLE`) stay retriable, since another region
+    /// genuinely may have spare capacity.
     pub(crate) fn is_final_result(&self) -> bool {
         let code: u16 = self.status_code.into();
         if code < 400 {
@@ -1663,7 +1674,15 @@ impl CosmosStatus {
         }
 
         let sub = self.sub_status.map(|s| s.value()).unwrap_or(0);
-        matches!(code, 400 | 401 | 405 | 409 | 412 | 413) || (code == 404 && sub == 0)
+        matches!(code, 400 | 401 | 405 | 409 | 412 | 413)
+            || (code == 404 && sub == 0)
+            || (code == 429
+                && matches!(
+                    sub,
+                    3200 // RU_BUDGET_EXCEEDED
+                        | 3210 // RU_BUDGET_EXCEEDED_FOR_MASTER
+                        | 3214 // HOT_PARTITION_KEY_THROTTLED
+                ))
     }
 
     /// Returns the human-readable name of this status combination, if known.

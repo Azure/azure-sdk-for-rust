@@ -48,10 +48,11 @@ impl HedgingStrategyConfig {
 /// most importantly hedge win-rate, which **must not** count terminal-
 /// error states as alternate wins.
 ///
-/// Always consult this field instead of inferring intent from
-/// [`HedgeDiagnostics::was_hedge`] alone: `was_hedge` is `true` only when
-/// the alternate produced the final response, but several non-`AlternateWon`
-/// terminal states still record an `alternate_region`.
+/// Always consult this field instead of inferring intent from the presence
+/// of an [`alternate_region`](HedgeDiagnostics::alternate_region()) alone:
+/// an alternate produced the final response only in the
+/// [`AlternateWon`](Self::AlternateWon) state, but several other terminal
+/// states still record an `alternate_region`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum HedgeTerminalState {
@@ -94,9 +95,9 @@ pub enum HedgeTerminalState {
 /// winning response when a hedging strategy was active for the operation.
 ///
 /// The [`terminal_state`](Self::terminal_state()) accessor is the
-/// authoritative classification of how the race ended; use it (not
-/// [`was_hedge`](Self::was_hedge()) alone) when computing observability
-/// metrics, especially hedge win-rate.
+/// authoritative classification of how the race ended; use it when
+/// computing observability metrics, especially hedge win-rate (count only
+/// [`HedgeTerminalState::AlternateWon`] as an alternate win).
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct HedgeDiagnostics {
@@ -321,7 +322,10 @@ mod tests {
         assert_eq!(diag.primary_region(), &Region::EAST_US);
         assert_eq!(diag.alternate_region(), None);
         assert_eq!(diag.response_region(), Some(&Region::EAST_US));
-        assert!(!matches!(diag.terminal_state(), HedgeTerminalState::AlternateWon));
+        assert!(!matches!(
+            diag.terminal_state(),
+            HedgeTerminalState::AlternateWon
+        ));
         assert_eq!(
             diag.terminal_state(),
             HedgeTerminalState::PrimaryWonPreThreshold
@@ -355,7 +359,10 @@ mod tests {
         assert_eq!(diag.primary_region(), &Region::EAST_US);
         assert_eq!(diag.alternate_region(), Some(&Region::WEST_US_2));
         assert_eq!(diag.response_region(), Some(&Region::EAST_US));
-        assert!(!matches!(diag.terminal_state(), HedgeTerminalState::AlternateWon));
+        assert!(!matches!(
+            diag.terminal_state(),
+            HedgeTerminalState::AlternateWon
+        ));
         assert_eq!(
             diag.terminal_state(),
             HedgeTerminalState::PrimaryWonAfterHedge
@@ -368,7 +375,10 @@ mod tests {
         assert_eq!(diag.primary_region(), &Region::EAST_US);
         assert_eq!(diag.alternate_region(), Some(&Region::WEST_US_2));
         assert_eq!(diag.response_region(), Some(&Region::WEST_US_2));
-        assert!(matches!(diag.terminal_state(), HedgeTerminalState::AlternateWon));
+        assert!(matches!(
+            diag.terminal_state(),
+            HedgeTerminalState::AlternateWon
+        ));
         assert_eq!(diag.terminal_state(), HedgeTerminalState::AlternateWon);
     }
 
@@ -399,7 +409,10 @@ mod tests {
     fn both_transient_constructor_without_deadline_elapsed() {
         let diag =
             HedgeDiagnostics::both_transient(config(), Region::EAST_US, Region::WEST_US_2, false);
-        assert!(!matches!(diag.terminal_state(), HedgeTerminalState::AlternateWon));
+        assert!(!matches!(
+            diag.terminal_state(),
+            HedgeTerminalState::AlternateWon
+        ));
         assert_eq!(
             diag.terminal_state(),
             HedgeTerminalState::BothTransient {
@@ -451,11 +464,9 @@ mod tests {
         assert!(!is_alternate_won(
             HedgeDiagnostics::primary_only_deadline_exceeded(config(), east.clone()),
         ));
-        assert!(!is_alternate_won(HedgeDiagnostics::primary_won_after_hedge(
-            config(),
-            east.clone(),
-            west.clone(),
-        )));
+        assert!(!is_alternate_won(
+            HedgeDiagnostics::primary_won_after_hedge(config(), east.clone(), west.clone(),)
+        ));
         assert!(!is_alternate_won(HedgeDiagnostics::both_transient(
             config(),
             east.clone(),
@@ -502,7 +513,10 @@ mod tests {
         assert_eq!(diag.response_region(), Some(&unknown));
         assert_eq!(diag.primary_region(), &unknown);
         assert_eq!(diag.alternate_region(), None);
-        assert!(!matches!(diag.terminal_state(), HedgeTerminalState::AlternateWon));
+        assert!(!matches!(
+            diag.terminal_state(),
+            HedgeTerminalState::AlternateWon
+        ));
         assert_eq!(
             diag.terminal_state(),
             HedgeTerminalState::PrimaryWonPreThreshold

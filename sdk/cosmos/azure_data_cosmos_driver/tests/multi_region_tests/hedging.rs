@@ -141,7 +141,10 @@ pub async fn hedging_primary_slow_alternate_wins() -> Result<(), Box<dyn Error>>
                  hedge_diag = {hedge_diag:?}",
             );
             assert!(
-                matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
+                matches!(
+                    hedge_diag.terminal_state(),
+                    HedgeTerminalState::AlternateWon
+                ),
                 "alternate-won invariant: terminal_state must be AlternateWon \
                  (spec §10.1); hedge_diag = {hedge_diag:?}",
             );
@@ -224,7 +227,10 @@ pub async fn hedging_primary_fast_no_alternate() -> Result<(), Box<dyn Error>> {
                  hedge_diag = {hedge_diag:?}",
             );
             assert!(
-                !matches!(hedge_diag.terminal_state(), HedgeTerminalState::AlternateWon),
+                !matches!(
+                    hedge_diag.terminal_state(),
+                    HedgeTerminalState::AlternateWon
+                ),
                 "terminal_state must NOT be AlternateWon when no alternate produced the response; \
                  hedge_diag = {hedge_diag:?}",
             );

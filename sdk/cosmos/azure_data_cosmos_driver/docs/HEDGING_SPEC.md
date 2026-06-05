@@ -1083,6 +1083,11 @@ chain.
 /// request right now (account-level failover, write-region change). The retry
 /// pipeline running *inside* each hedge may treat `403/3` as a redirect
 /// trigger; that is independent of this classification.
+///
+/// Note: a 429 is normally transient, but the account-/partition-wide
+/// throttles `3200` (RU_BUDGET_EXCEEDED), `3210`
+/// (RU_BUDGET_EXCEEDED_FOR_MASTER), and `3214` (HOT_PARTITION_KEY_THROTTLED)
+/// are **final** — racing a second region cannot relieve them (§7.2.1).
 fn is_final_result(status: &CosmosStatus) -> bool {
     let code = status.http_status_code;
     let sub = status.sub_status_code;
@@ -1101,6 +1106,11 @@ fn is_final_result(status: &CosmosStatus) -> bool {
         | 412  // Precondition Failed
         | 413  // Request Entity Too Large
     ) || (code == 404 && sub == 0)  // Not Found with no sub-status
+        || (code == 429 && matches!(sub,
+            3200  // RU_BUDGET_EXCEEDED
+            | 3210  // RU_BUDGET_EXCEEDED_FOR_MASTER
+            | 3214  // HOT_PARTITION_KEY_THROTTLED
+        ))
 }
 ```
 
@@ -1122,7 +1132,8 @@ fn is_final_result(status: &CosmosStatus) -> bool {
 | 410 | * | **Yes** | Gone — partition may have moved |
 | 412 | * | No (final) | Precondition — deterministic |
 | 413 | * | No (final) | Payload too large — same everywhere |
-| 429 | * | **Yes** | Throttled — another region may have capacity |
+| 429 | 3092 (or none) | **Yes** | Transient capacity pressure — another region may have capacity |
+| 429 | 3200 / 3210 / 3214 | No (final) | RU-budget / hot-partition throttle — account-/partition-wide; racing another region only doubles the load (§7.2.1) |
 | 500 | * | **Yes** | Internal error — may be region-specific |
 | 503 | * | **Yes** | Unavailable — another region may be healthy |
 
@@ -1168,14 +1179,17 @@ hedging-specific check to add. The regression test
 pins this behavior so a future widening of the trigger group cannot
 silently begin hedging RU-exhaustion or hot-partition throttles.
 
-> **Draft / follow-up.** The *in-race* classifier (§7.2) still treats a
-> 429 from an already-running leg as transient regardless of sub-status.
-> A future refinement may additionally classify `3200` / `3210` as
-> *final* in `classify_hedge_result`, so that when both legs land on
-> RU-exhaustion the race short-circuits instead of draining both legs.
-> That change is intentionally deferred until it can be covered by
-> emulator tests and is gated behind reviewer sign-off, because it alters
-> the observable error surfaced under sustained throttling.
+> **In-race finality.** The *in-race* classifier (`is_final_result`, the
+> backing predicate for `classify_hedge_result` / `result_is_final`) is
+> also sub-status-aware for 429: `3200` (`RU_BUDGET_EXCEEDED`), `3210`
+> (`RU_BUDGET_EXCEEDED_FOR_MASTER`), and `3214`
+> (`HOT_PARTITION_KEY_THROTTLED`) are treated as **final**, so when a
+> proactively-hedged leg lands on one of these the race short-circuits
+> instead of spending the partner region's RU on a throttle it cannot
+> relieve. A generic 429 and the transient-capacity `3092`
+> (`SYSTEM_RESOURCE_UNAVAILABLE`) remain transient. The lockstep test
+> `result_is_final_agrees_with_classify_hedge_result` pins these two
+> predicates together.
 
 ---
 

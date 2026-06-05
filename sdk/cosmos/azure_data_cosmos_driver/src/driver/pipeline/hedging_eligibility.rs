@@ -428,7 +428,20 @@ mod tests {
 
     #[test]
     fn is_final_result_429() {
+        // A generic 429 (no sub-status) and the transient-capacity 3092
+        // sub-status stay transient — another region may have capacity.
         assert!(!status(429, None).is_final_result());
+        assert!(!status(429, Some(3092)).is_final_result());
+    }
+
+    #[test]
+    fn is_final_result_429_ru_budget_and_hot_partition_are_final() {
+        // RU-budget / hot-partition throttles are account-/partition-wide;
+        // racing a second region cannot relieve them, so they are final
+        // (HEDGING_SPEC §7.2.1).
+        assert!(status(429, Some(3200)).is_final_result()); // RU_BUDGET_EXCEEDED
+        assert!(status(429, Some(3210)).is_final_result()); // RU_BUDGET_EXCEEDED_FOR_MASTER
+        assert!(status(429, Some(3214)).is_final_result()); // HOT_PARTITION_KEY_THROTTLED
     }
 
     #[test]
