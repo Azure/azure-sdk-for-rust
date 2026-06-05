@@ -1155,9 +1155,10 @@ is therefore **never** upgraded into a cross-region hedge:
 
 | 429 sub-status | Constant | Hedge-spawn eligible? | Rationale |
 |----------------|----------|-----------------------|-----------|
-| 3092 | `SYSTEM_RESOURCE_UNAVAILABLE` | **Yes** | Transient backend capacity pressure (e.g. high CPU / hot partition transient); another replica/region can serve immediately. |
+| 3092 | `SYSTEM_RESOURCE_UNAVAILABLE` | **Yes** | Transient backend capacity pressure (e.g. high CPU / transient hop saturation); another replica/region can serve immediately. |
 | 3200 | `RU_BUDGET_EXCEEDED` | No (Abort) | Provisioned throughput exhausted. Failing over to another region cannot conjure RU/s and only spreads the throttle; the correct response is in-region backoff, not hedging. |
 | 3210 | `RU_BUDGET_EXCEEDED_FOR_MASTER` | No (Abort) | Control-plane / master-partition RU exhaustion — same reasoning as 3200. |
+| 3214 | `HOT_PARTITION_KEY_THROTTLED` | No (Abort) | A hot logical partition is throttled identically in every region (the same partition key maps to the same logical partition everywhere), so hedging cannot route around it and merely doubles the load on an already-saturated partition. |
 | other | — | No (Abort) | Conservative default: only sub-statuses with a known cross-region benefit may spawn a hedge. |
 
 This means the "examine the 429 sub-status before hedging" guard already
@@ -1165,7 +1166,7 @@ exists implicitly via the retry-trigger group — there is no separate
 hedging-specific check to add. The regression test
 `throttle_substatus_gates_hedge_eligibility` in `retry_evaluation.rs`
 pins this behavior so a future widening of the trigger group cannot
-silently begin hedging RU-exhaustion throttles.
+silently begin hedging RU-exhaustion or hot-partition throttles.
 
 > **Draft / follow-up.** The *in-race* classifier (§7.2) still treats a
 > 429 from an already-running leg as transient regardless of sub-status.

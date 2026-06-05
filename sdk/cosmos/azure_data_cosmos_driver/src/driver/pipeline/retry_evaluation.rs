@@ -1203,11 +1203,13 @@ mod tests {
     /// Regression guard for HEDGING_SPEC.md §7.2.1: a cross-region hedge
     /// can only be spawned from a region-changing retry action, and for a
     /// 429 that path is gated to sub-status `3092`
-    /// (`SystemResourceUnavailable`). A `3200` (`RU_BUDGET_EXCEEDED`)
-    /// throttle must instead `Abort` — failing it over to another region
-    /// cannot conjure throughput and only spreads the throttle. Pinning
+    /// (`SystemResourceUnavailable`). Every other throttle sub-status —
+    /// `3200` (`RU_BUDGET_EXCEEDED`), `3210` (`RU_BUDGET_EXCEEDED_FOR_MASTER`),
+    /// and `3214` (`HOT_PARTITION_KEY_THROTTLED`) — must instead `Abort`:
+    /// failing them over to another region cannot conjure throughput or
+    /// cool a hot logical partition and only spreads the throttle. Pinning
     /// this here ensures a future widening of the retry-trigger group
-    /// cannot silently begin hedging RU-exhaustion throttles.
+    /// cannot silently begin hedging RU-exhaustion or hot-partition throttles.
     #[test]
     fn throttle_substatus_gates_hedge_eligibility() {
         let endpoint = CosmosEndpoint::global(
@@ -1238,24 +1240,26 @@ mod tests {
             "429/3092 SystemResourceUnavailable must be failover-eligible; got {action:?}",
         );
 
-        // 429/3200 — provisioned RU budget exhausted → must NOT become a
-        // region-changing retry, so it can never be upgraded into a hedge.
-        let op = make_read_operation();
-        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
-        let (action, _) = evaluate_transport_result(
-            &op,
-            &endpoint,
-            throttle_result(SubStatusCode::RU_BUDGET_EXCEEDED),
-            &state,
-        );
-        assert!(
-            !matches!(
-                action,
-                OperationAction::FailoverRetry { .. } | OperationAction::SessionRetry { .. }
-            ),
-            "429/3200 RU_BUDGET_EXCEEDED must not become a region-changing retry \
-             (HEDGING_SPEC.md §7.2.1); got {action:?}",
-        );
+        // Every other throttle sub-status must NOT become a region-changing
+        // retry, so it can never be upgraded into a cross-region hedge.
+        for sub in [
+            SubStatusCode::RU_BUDGET_EXCEEDED,            // 3200
+            SubStatusCode::RU_BUDGET_EXCEEDED_FOR_MASTER, // 3210
+            SubStatusCode::HOT_PARTITION_KEY_THROTTLED,   // 3214
+        ] {
+            let op = make_read_operation();
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let (action, _) =
+                evaluate_transport_result(&op, &endpoint, throttle_result(sub), &state);
+            assert!(
+                !matches!(
+                    action,
+                    OperationAction::FailoverRetry { .. } | OperationAction::SessionRetry { .. }
+                ),
+                "429/{sub:?} must not become a region-changing retry \
+                 (HEDGING_SPEC.md §7.2.1); got {action:?}",
+            );
+        }
     }
 
     #[test]
