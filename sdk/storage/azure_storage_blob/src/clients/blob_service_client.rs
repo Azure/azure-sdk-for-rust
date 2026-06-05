@@ -124,8 +124,7 @@ impl BlobServiceClient {
     /// Fetches a user delegation key valid from now until `expiry`.
     ///
     /// The key can be used to sign user delegation SAS tokens without embedding a storage account
-    /// key. When the `sas` feature is enabled, convert it to
-    /// [`azure_storage_sas::UserDelegationKey`] with `.into()` and pass it to
+    /// key. When the `sas` feature is enabled, pass it directly to
     /// [`azure_storage_sas::UserDelegationSasBuilder::with_key`].
     ///
     /// # Arguments

@@ -30,7 +30,7 @@ use crate::{
 /// use time::{OffsetDateTime, Duration};
 ///
 /// let expiry = OffsetDateTime::now_utc() + Duration::hours(1);
-/// let key = service_client.get_user_delegation_key(expiry, None).await?.into();
+/// let key = service_client.get_user_delegation_key(expiry, None).await?;
 ///
 /// let url = UserDelegationSasBuilder::new(
 ///     "myaccount",
@@ -45,7 +45,7 @@ use crate::{
 /// # Reusing a key across multiple SAS tokens
 ///
 /// ```ignore
-/// let key = service_client.get_user_delegation_key(expiry, None).await?.into();
+/// let key = service_client.get_user_delegation_key(expiry, None).await?;
 /// let key_clone = key.clone(); // UserDelegationKey is Clone
 ///
 /// for blob_resource in blobs {
