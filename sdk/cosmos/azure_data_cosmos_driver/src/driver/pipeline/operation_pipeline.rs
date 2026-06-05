@@ -1967,6 +1967,27 @@ fn maybe_upgrade_to_hedge(
 
     match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
         Some(upgrade) => {
+            // Hedge will consume two failover-budget slots when it
+            // races (primary + secondary) and a third slot to advance
+            // past both on a BothTransient fallback. If the operation
+            // doesn't have at least two slots remaining we'd produce
+            // a race that immediately exhausts the budget without
+            // giving the failover loop a chance to try additional
+            // regions sequentially. Stay on the non-hedged path so
+            // the remaining budget is spent on sequential failovers.
+            let needed: u32 = 2;
+            if new_state
+                .failover_retry_count
+                .saturating_add(needed)
+                > new_state.max_failover_retries
+            {
+                tracing::debug!(
+                    failover_retry_count = new_state.failover_retry_count,
+                    max_failover_retries = new_state.max_failover_retries,
+                    "cosmos.hedge.budget_exhausted_skipping_upgrade",
+                );
+                return action;
+            }
             // Emit a structured event when an operation is upgraded
             // into the hedge race. Fields mirror the inputs that drove
             // the eligibility decision so operators can correlate
