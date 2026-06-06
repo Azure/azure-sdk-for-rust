@@ -203,6 +203,23 @@ pub struct KeyClientRotateKeyOptions<'a> {
     pub method_options: ClientMethodOptions<'a>,
 }
 
+/// Options to be passed to [`KeyClient::secure_unwrap_key()`](crate::generated::clients::KeyClient::secure_unwrap_key())
+#[derive(Clone, Default, SafeDebug)]
+pub struct KeyClientSecureUnwrapKeyOptions<'a> {
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
+/// Options to be passed to [`KeyClient::secure_wrap_key()`](crate::generated::clients::KeyClient::secure_wrap_key())
+#[derive(Clone, Default, SafeDebug)]
+pub struct KeyClientSecureWrapKeyOptions<'a> {
+    /// The version of the key.
+    pub key_version: Option<String>,
+
+    /// Allows customization of the method call.
+    pub method_options: ClientMethodOptions<'a>,
+}
+
 /// Options to be passed to [`KeyClient::sign()`](crate::generated::clients::KeyClient::sign())
 #[derive(Clone, Default, SafeDebug)]
 pub struct KeyClientSignOptions<'a> {

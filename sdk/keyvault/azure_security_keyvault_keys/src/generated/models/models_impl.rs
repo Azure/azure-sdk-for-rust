@@ -6,7 +6,8 @@
 use super::{
     CreateKeyParameters, DeletedKeyProperties, GetRandomBytesParameters, ImportKeyParameters,
     KeyOperationParameters, KeyProperties, KeyRotationPolicy, ListDeletedKeyPropertiesResult,
-    ListKeyPropertiesResult, ReleaseParameters, RestoreKeyParameters, SignParameters,
+    ListKeyPropertiesResult, ReleaseParameters, RestoreKeyParameters,
+    SecureKeyUnWrapOperationParameters, SecureKeyWrapOperationParameters, SignParameters,
     UpdateKeyPropertiesParameters, VerifyParameters,
 };
 use async_trait::async_trait;
@@ -79,6 +80,24 @@ impl TryFrom<ReleaseParameters> for RequestContent<ReleaseParameters> {
 impl TryFrom<RestoreKeyParameters> for RequestContent<RestoreKeyParameters> {
     type Error = azure_core::Error;
     fn try_from(value: RestoreKeyParameters) -> Result<Self> {
+        Ok(to_json(&value)?.into())
+    }
+}
+
+impl TryFrom<SecureKeyUnWrapOperationParameters>
+    for RequestContent<SecureKeyUnWrapOperationParameters>
+{
+    type Error = azure_core::Error;
+    fn try_from(value: SecureKeyUnWrapOperationParameters) -> Result<Self> {
+        Ok(to_json(&value)?.into())
+    }
+}
+
+impl TryFrom<SecureKeyWrapOperationParameters>
+    for RequestContent<SecureKeyWrapOperationParameters>
+{
+    type Error = azure_core::Error;
+    fn try_from(value: SecureKeyWrapOperationParameters) -> Result<Self> {
         Ok(to_json(&value)?.into())
     }
 }

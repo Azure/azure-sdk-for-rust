@@ -1,14 +1,14 @@
 # Release History
 
-## 1.1.0-beta.1 (Unreleased)
+## 2.0.0-beta.1 (Unreleased)
 
 ### Features Added
 
-### Breaking Changes
-
-### Bugs Fixed
+- Added experimental support for HSM-platform secure key wrap and unwrap operations (`secure_wrap_key`, `secure_unwrap_key`) and the `ExternalKey` model for Azure Key Vault internal usage. Any calls using these operations will fail and they are not recommended to be used at this point. [#4539](https://github.com/Azure/azure-sdk-for-rust/pull/4539)
 
 ### Other Changes
+
+- Upgraded to API service version `2026-03-01-preview`.
 
 ## 1.0.0 (2026-05-12)
 
