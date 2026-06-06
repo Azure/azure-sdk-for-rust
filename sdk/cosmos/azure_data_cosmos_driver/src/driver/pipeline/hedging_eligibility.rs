@@ -445,11 +445,39 @@ mod tests {
     }
 
     #[test]
-    fn is_final_result_403_transient() {
-        // Per §7.2 row, 403 (with or without sub-status) is transient
-        // for hedging purposes.
-        assert!(!status(403, None).is_final_result());
-        assert!(!status(403, Some(3)).is_final_result());
+    fn is_final_result_403_is_final_regardless_of_sub_status() {
+        // 403 is authorization/ownership (RBAC, write-forbidden, account
+        // ownership) — racing another region either duplicates the denial
+        // or doubles a security-sensitive signal. Dedicated retry paths
+        // (e.g., PPAF write-forbidden) handle the retriable sub-statuses
+        // through the normal retry loop rather than via a hedge race.
+        assert!(status(403, None).is_final_result());
+        assert!(status(403, Some(3)).is_final_result()); // WRITE_FORBIDDEN
+        assert!(status(403, Some(1008)).is_final_result()); // DATABASE_ACCOUNT_NOT_FOUND
+        assert!(status(403, Some(5)).is_final_result()); // arbitrary unknown sub-status
+    }
+
+    #[test]
+    fn is_final_result_protocol_and_policy_codes_are_final() {
+        // Payload / policy / protocol errors that no alternate region can
+        // resolve — racing them just wastes RU and request budget.
+        for code in [422_u16, 451, 501, 505] {
+            assert!(
+                status(code, None).is_final_result(),
+                "expected {} to be final",
+                code
+            );
+        }
+    }
+
+    #[test]
+    fn is_final_result_generic_5xx_remain_retriable() {
+        // Generic 500 InternalServerError is left retriable so a hedge
+        // against another region can still win — the new final-set
+        // expansion intentionally excludes 500 / 502 / 504.
+        assert!(!status(500, None).is_final_result());
+        assert!(!status(502, None).is_final_result());
+        assert!(!status(504, None).is_final_result());
     }
 
     #[test]

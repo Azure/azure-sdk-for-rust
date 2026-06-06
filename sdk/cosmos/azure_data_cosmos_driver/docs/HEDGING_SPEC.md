@@ -1078,16 +1078,19 @@ chain.
 /// Final results terminate hedging immediately. Transient results allow other
 /// in-flight hedges to continue racing for a better outcome.
 ///
-/// Note: 403 (with or without sub-status `3` WriteForbidden) is **transient**
-/// for hedging — it typically indicates the targeted region cannot serve the
-/// request right now (account-level failover, write-region change). The retry
-/// pipeline running *inside* each hedge may treat `403/3` as a redirect
-/// trigger; that is independent of this classification.
+/// Note: 403 (with or without sub-status `3` WriteForbidden) is **final** for
+/// hedging — it is an authorization/ownership decision that another region
+/// cannot change in parallel. When a 403 (e.g. `WriteForbidden`) needs to be
+/// retried against another region, the dedicated retry pipeline (PPAF) handles
+/// it through the normal retry loop rather than via a parallel hedge race.
 ///
 /// Note: a 429 is normally transient, but the account-/partition-wide
 /// throttles `3200` (RU_BUDGET_EXCEEDED), `3210`
 /// (RU_BUDGET_EXCEEDED_FOR_MASTER), and `3214` (HOT_PARTITION_KEY_THROTTLED)
 /// are **final** — racing a second region cannot relieve them (§7.2.1).
+///
+/// Note: protocol-/policy-level errors (`422`, `451`, `501`, `505`) are
+/// **final** because no alternate region can resolve them.
 fn is_final_result(status: &CosmosStatus) -> bool {
     let code = status.http_status_code;
     let sub = status.sub_status_code;
@@ -1097,14 +1100,19 @@ fn is_final_result(status: &CosmosStatus) -> bool {
         return true;
     }
 
-    // Specific client errors that are definitively non-transient
+    // Specific client / server errors that are definitively non-transient
     matches!(code,
         400  // Bad Request
         | 401  // Unauthorized
+        | 403  // Forbidden / WriteForbidden — authorization decision
         | 405  // Method Not Allowed
         | 409  // Conflict
         | 412  // Precondition Failed
         | 413  // Request Entity Too Large
+        | 422  // Unprocessable Entity
+        | 451  // Unavailable For Legal Reasons
+        | 501  // Not Implemented
+        | 505  // HTTP Version Not Supported
     ) || (code == 404 && sub == 0)  // Not Found with no sub-status
         || (code == 429 && matches!(sub,
             3200  // RU_BUDGET_EXCEEDED
@@ -1122,8 +1130,7 @@ fn is_final_result(status: &CosmosStatus) -> bool {
 | 304 | * | No (final) | Not Modified |
 | 400 | * | No (final) | Client error — won't succeed in another region |
 | 401 | * | No (final) | Auth failure — same credentials everywhere |
-| 403 | 0 (no sub) | **Yes** | Forbidden — may indicate a regional failover in progress; another region may serve |
-| 403 | 3 | **Yes** | WriteForbidden — region may be failing over |
+| 403 | * | No (final) | Forbidden / authorization decision (RBAC, WriteForbidden, account ownership) — another region cannot change the answer; retriable sub-statuses go through the dedicated retry pipeline (e.g. PPAF) instead of a parallel hedge race |
 | 404 | 0 | No (final) | Resource genuinely not found |
 | 404 | 1002 | **Yes** | ReadSessionNotAvailable — session lag |
 | 405 | * | No (final) | Wrong HTTP method |
@@ -1132,21 +1139,26 @@ fn is_final_result(status: &CosmosStatus) -> bool {
 | 410 | * | **Yes** | Gone — partition may have moved |
 | 412 | * | No (final) | Precondition — deterministic |
 | 413 | * | No (final) | Payload too large — same everywhere |
+| 422 | * | No (final) | Unprocessable Entity — payload-level error; same in every region |
 | 429 | 3092 (or none) | **Yes** | Transient capacity pressure — another region may have capacity |
 | 429 | 3200 / 3210 / 3214 | No (final) | RU-budget / hot-partition throttle — account-/partition-wide; racing another region only doubles the load (§7.2.1) |
+| 451 | * | No (final) | Unavailable For Legal Reasons — policy-level; not regional |
 | 500 | * | **Yes** | Internal error — may be region-specific |
+| 501 | * | No (final) | Not Implemented — protocol-level; no alternate region can serve |
 | 503 | * | **Yes** | Unavailable — another region may be healthy |
+| 505 | * | No (final) | HTTP Version Not Supported — protocol-level; no alternate region can serve |
 
 > **Note on 403 sub-statuses.** The driver classifies any 403 (with or
-> without `WriteForbidden` sub-status `3`) as **transient** for hedging
-> purposes — a 403 typically signals that the targeted region cannot
-> currently serve the request (account-level failover in progress, write
-> region change, etc.), and the *correct* action is to keep racing other
-> in-flight hedges. This matches .NET v3's `IsFinalResult` behavior. Note
-> that the *retry layer* may treat `403/3` differently (PPAF write retry
-> consumes it as a write-redirect signal); the hedging classification
-> here governs only whether hedging itself terminates early, not the
-> retry pipeline that runs *inside* each hedge.
+> without `WriteForbidden` sub-status `3`) as **final** for hedging
+> purposes — a 403 is an authorization/ownership decision (RBAC,
+> account ownership, write-region restriction) that another region
+> cannot change in parallel. When a 403 *can* be retried — e.g.
+> `WriteForbidden` on a single-master account — the dedicated retry
+> path (PPAF write retry) handles the redirect through the normal
+> retry loop rather than via a parallel hedge race. Racing the same
+> request against another region would, at best, duplicate the denial
+> and, at worst, double a security-sensitive signal that may itself
+> be rate-limited.
 
 ### 7.2.1 429 sub-status sensitivity (hedge-spawn eligibility)
 
@@ -2653,7 +2665,7 @@ of them constitutes a new goal and requires a spec amendment.
 | Threshold | Time before the alternate-region hedge fires |
 | Alternate region | The single fallback region targeted by the hedge — `applicable_read_endpoints[1]` after `ExcludeRegions` filtering |
 | Final result | A response that is definitively non-transient (success or permanent error) — see §7.1 |
-| Transient result | A response that might succeed in another region (5xx, timeout, 404/1002, 429, 403, 410) — see §7.2 |
+| Transient result | A response that might succeed in another region (5xx except 501/505, timeout, 404/1002, 429, 410) — see §7.2 |
 | PPAF | Per-Partition Automatic Failover (write failover on single-master). Independent of hedging in this driver. |
 | PPCB | Per-Partition Circuit Breaker (read/write failover on failure threshold). Receives signal from hedging on repeated alternate-region wins (§9.5). |
 | MM | Multi-master (multi-write-region) account |
