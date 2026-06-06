@@ -383,6 +383,8 @@ pub(crate) async fn execute_operation_pipeline(
                             &mut retry_state,
                             &location,
                             operation.is_read_only(),
+                            primary_region.as_ref(),
+                            secondary_region.as_ref(),
                             last_error,
                         ) {
                             // Budget exhausted — graft accumulated
@@ -771,6 +773,8 @@ pub(crate) async fn execute_operation_pipeline(
                             &mut retry_state,
                             &location,
                             operation.is_read_only(),
+                            primary_region.as_ref(),
+                            secondary_region.as_ref(),
                             last_error,
                         ) {
                             // Budget exhausted — graft diagnostics
@@ -3185,11 +3189,21 @@ fn finalize_both_transient(
 /// # Region accounting
 ///
 /// The race consumed exactly two regions (the primary at the
-/// snapshot's current `LocationIndex` and the secondary at the next
-/// preferred read endpoint). We charge two slots against
-/// `failover_retry_count` and advance the `LocationIndex` by two
-/// positions so the next iteration's `resolve_endpoint` selects a
-/// region not yet tried in this operation.
+/// snapshot's current `LocationIndex` and the secondary picked by
+/// `evaluate_hedge_eligibility`). We charge two slots against
+/// `failover_retry_count` and walk the `LocationIndex` forward until
+/// it lands on an endpoint whose region matches neither the raced
+/// primary nor the raced secondary, so the next iteration's
+/// `resolve_endpoint` selects a region not yet tried in this race.
+///
+/// Walking forward (rather than blindly advancing by a fixed offset)
+/// matters because the secondary picker no longer guarantees the
+/// secondary sits at `primary_index + 1` — it scans the preferred
+/// endpoints from the front and returns the first endpoint whose
+/// region and endpoint key differ from the primary. With a fixed
+/// `+2` advance the post-race `LocationIndex` could land back on the
+/// just-failed primary or secondary (or skip an untried region) when
+/// the primary was promoted to a non-zero index by prior retry state.
 ///
 /// # Why two slots, not one?
 ///
@@ -3205,6 +3219,8 @@ fn try_advance_after_both_transient(
     retry_state: &mut OperationRetryState,
     location: &LocationSnapshot,
     is_read_only: bool,
+    primary_region: Option<&Region>,
+    secondary_region: Option<&Region>,
     last_error: crate::error::CosmosError,
 ) -> Result<(), crate::error::CosmosError> {
     let consumed: u32 = 2;
@@ -3219,19 +3235,43 @@ fn try_advance_after_both_transient(
     }
 
     retry_state.failover_retry_count = next_count;
-    let endpoints_len =
-        preferred_endpoints_for_attempt(location.account.as_ref(), retry_state, is_read_only).len();
+    let endpoints =
+        preferred_endpoints_for_attempt(location.account.as_ref(), retry_state, is_read_only);
+    let endpoints_len = endpoints.len();
     if endpoints_len > 0 {
-        // Advance the LocationIndex twice — past both regions the race
-        // already consumed. `next_for_generation` rebases stale indices
-        // on the first call when the snapshot generation changed, so
-        // the second call lands on the third preferred endpoint in the
-        // new ordering.
-        let advanced = retry_state
+        // Walk the LocationIndex forward starting from its current
+        // position. `next_for_generation` rebases stale indices on the
+        // first call when the snapshot generation changed, so the
+        // first step lands on a position in the refreshed ordering.
+        // We then keep advancing while the endpoint at the resolved
+        // index belongs to a region that was just raced (primary or
+        // secondary), bounded by `endpoints_len` iterations so we
+        // always make forward progress even when only the raced
+        // regions remain.
+        let raced_region = |candidate: Option<&Region>| -> bool {
+            match candidate {
+                Some(c) => {
+                    primary_region.is_some_and(|p| p == c)
+                        || secondary_region.is_some_and(|s| s == c)
+                }
+                None => false,
+            }
+        };
+
+        let mut advanced = retry_state
             .location
             .next_for_generation(endpoints_len, location.account.generation);
-        retry_state.location =
-            advanced.next_for_generation(endpoints_len, location.account.generation);
+        // `endpoints_len - 1` extra steps is enough: combined with the
+        // initial advance above we cover every distinct index in the
+        // list, and the loop bails out the moment we find one that
+        // is not in the raced set.
+        for _ in 0..endpoints_len.saturating_sub(1) {
+            if !raced_region(endpoints[advanced.index()].region()) {
+                break;
+            }
+            advanced = advanced.next_for_generation(endpoints_len, location.account.generation);
+        }
+        retry_state.location = advanced;
     }
     tracing::debug!(
         failover_retry_count = retry_state.failover_retry_count,
@@ -5742,5 +5782,208 @@ mod tests {
             request_header_names::HUB_REGION_PROCESSING_ONLY,
         ));
         assert!(value.is_none());
+    }
+
+    // ── try_advance_after_both_transient (region-aware advancement) ───
+    //
+    // After the `evaluate_hedge_eligibility` secondary picker change
+    // (commit 5dea1c9) the raced secondary is no longer guaranteed
+    // to sit at `primary_index + 1`. These tests pin the
+    // `try_advance_after_both_transient` contract: the post-race
+    // `LocationIndex` must NOT land on either of the two regions the
+    // race already consumed, regardless of where the picker placed
+    // the secondary relative to the primary.
+    fn make_endpoint(region: &'static str) -> CosmosEndpoint {
+        CosmosEndpoint::regional(
+            region.into(),
+            Url::parse(&format!("https://acc-{region}.documents.azure.com:443/"))
+                .expect("test endpoint url should parse"),
+        )
+    }
+
+    fn make_advance_test_state(
+        location_index: usize,
+        endpoint_count: usize,
+    ) -> crate::driver::pipeline::components::OperationRetryState {
+        let mut location = LocationIndex::initial(0);
+        for _ in 0..location_index {
+            location = location.next(endpoint_count);
+        }
+        crate::driver::pipeline::components::OperationRetryState {
+            location,
+            failover_retry_count: 0,
+            session_token_retry_count: 0,
+            max_failover_retries: 10,
+            max_session_retries: 2,
+            can_use_multiple_write_locations: false,
+            is_dataplane: true,
+            hub_region_processing_only: false,
+            shared_hub_region_latch: None,
+            excluded_regions: Vec::new(),
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
+        }
+    }
+
+    fn make_advance_test_location(regions: &[&'static str]) -> super::LocationSnapshot {
+        let endpoints: Vec<CosmosEndpoint> = regions.iter().copied().map(make_endpoint).collect();
+        let default = endpoints[0].clone();
+        super::LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: endpoints.clone().into(),
+            preferred_write_endpoints: endpoints.into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: default,
+        }))
+    }
+
+    fn dummy_last_error() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_message("test-both-transient")
+            .build()
+    }
+
+    /// Regression: STAGE 7 picker now selects the secondary as the
+    /// first endpoint with a region/key different from the primary,
+    /// which can sit at an index earlier than the primary. The
+    /// post-race advance must skip BOTH raced regions instead of
+    /// blindly stepping `LocationIndex` by `+2`.
+    ///
+    /// Endpoints: [A, B, C, D]. Primary promoted to index 2 (C);
+    /// picker walks from the front and lands on A (index 0) as the
+    /// secondary. After `BothTransient` the next attempt must target
+    /// D (the only untried region), not A again.
+    #[test]
+    fn try_advance_after_both_transient_skips_raced_regions_when_secondary_is_before_primary() {
+        let regions = ["regiona", "regionb", "regionc", "regiond"];
+        let location = make_advance_test_location(&regions);
+        let mut state = make_advance_test_state(2, regions.len()); // primary = regionc
+
+        let primary = crate::options::Region::new("regionc");
+        let secondary = crate::options::Region::new("regiona");
+
+        super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            true,
+            Some(&primary),
+            Some(&secondary),
+            dummy_last_error(),
+        )
+        .expect("budget should allow advance");
+
+        let landed = location.account.preferred_read_endpoints[state.location.index()].region();
+        assert_eq!(
+            landed.map(crate::options::Region::as_str),
+            Some("regiond"),
+            "post-BothTransient LocationIndex must skip the raced primary and \
+             the raced secondary (no matter where it sat) and land on the \
+             only untried region",
+        );
+        assert_eq!(state.failover_retry_count, 2);
+    }
+
+    /// Sanity: when the secondary sits immediately after the primary
+    /// (the historical layout the original `+2` advance assumed), the
+    /// new implementation still skips both raced regions and lands on
+    /// the next untried region.
+    #[test]
+    fn try_advance_after_both_transient_skips_raced_regions_when_secondary_is_after_primary() {
+        let regions = ["regiona", "regionb", "regionc", "regiond"];
+        let location = make_advance_test_location(&regions);
+        let mut state = make_advance_test_state(0, regions.len()); // primary = regiona
+
+        let primary = crate::options::Region::new("regiona");
+        let secondary = crate::options::Region::new("regionb");
+
+        super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            true,
+            Some(&primary),
+            Some(&secondary),
+            dummy_last_error(),
+        )
+        .expect("budget should allow advance");
+
+        let landed = location.account.preferred_read_endpoints[state.location.index()].region();
+        assert_eq!(
+            landed.map(crate::options::Region::as_str),
+            Some("regionc"),
+            "secondary-after-primary case must still skip both raced regions",
+        );
+    }
+
+    /// Edge case: only two regions exist and both were raced. The
+    /// function must terminate (no infinite loop) and charge the two
+    /// slots against the failover budget. With nowhere untried left
+    /// to go, the `LocationIndex` is allowed to wrap; the next
+    /// iteration's `resolve_endpoint` relies on the unavailable-
+    /// endpoint de-prioritization to make a sensible choice.
+    #[test]
+    fn try_advance_after_both_transient_terminates_when_all_regions_are_raced() {
+        let regions = ["regiona", "regionb"];
+        let location = make_advance_test_location(&regions);
+        let mut state = make_advance_test_state(0, regions.len());
+
+        let primary = crate::options::Region::new("regiona");
+        let secondary = crate::options::Region::new("regionb");
+
+        let result = super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            true,
+            Some(&primary),
+            Some(&secondary),
+            dummy_last_error(),
+        );
+
+        assert!(
+            result.is_ok(),
+            "should not surface a terminal error when budget remains"
+        );
+        assert_eq!(
+            state.failover_retry_count, 2,
+            "two slots are always charged regardless of layout",
+        );
+    }
+
+    /// Budget-exhaustion path remains untouched: when
+    /// `failover_retry_count + 2 > max_failover_retries`, the
+    /// function returns the supplied error without mutating
+    /// `LocationIndex`.
+    #[test]
+    fn try_advance_after_both_transient_surfaces_terminal_error_when_budget_exhausted() {
+        let regions = ["regiona", "regionb", "regionc"];
+        let location = make_advance_test_location(&regions);
+        let mut state = make_advance_test_state(0, regions.len());
+        state.max_failover_retries = 1;
+        let starting_index = state.location.index();
+
+        let primary = crate::options::Region::new("regiona");
+        let secondary = crate::options::Region::new("regionb");
+
+        let result = super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            true,
+            Some(&primary),
+            Some(&secondary),
+            dummy_last_error(),
+        );
+
+        assert!(result.is_err(), "exhausted budget must surface terminal");
+        assert_eq!(
+            state.location.index(),
+            starting_index,
+            "exhausted budget must not mutate LocationIndex",
+        );
+        assert_eq!(state.failover_retry_count, 0);
     }
 }
