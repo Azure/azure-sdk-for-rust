@@ -97,6 +97,11 @@ Documentation: [cargo-semver-checks](https://github.com/obi1kenobi/cargo-semver-
 
 Runs in [Test-Semver.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Test-Semver.ps1)
 
+Workspace-level `cargo-semver-checks` configuration ignores `constructible_struct_adds_field`.
+For public model structs, prefer examples and downstream code that initialize values with
+`..Default::default()` even when all current fields are assigned, so newly added optional
+fields do not break existing initializers.
+
 ```bash
 cargo install cargo-semver-checks
 cargo semver-checks
