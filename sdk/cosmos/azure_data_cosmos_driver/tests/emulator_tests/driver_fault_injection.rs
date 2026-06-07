@@ -331,3 +331,101 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
     })
     .await
 }
+
+/// Verifies that a transient failure on a force-refresh of the partition-key
+/// range cache does NOT regress the cached routing map to empty.
+///
+/// Scenario:
+/// 1. Install (but disable) a one-shot `ServiceUnavailable` fault on
+///    `MetadataPartitionKeyRanges`.
+/// 2. Warm the routing-map cache successfully (fault disabled).
+/// 3. Enable the fault, then force-refresh the cache. The fetch fails.
+/// 4. Assert the post-refresh routing map is still populated, proving the
+///    cache kept the previously cached map rather than replacing it with an
+///    empty placeholder that would break routing until the next explicit
+///    invalidation.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn pkrange_refresh_transient_failure_preserves_cached_routing_map(
+) -> Result<(), Box<dyn Error>> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::MetadataPartitionKeyRanges)
+        .build();
+
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .with_probability(1.0)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("pkrange-refresh-transient", result)
+            .with_condition(condition)
+            .with_hit_limit(1)
+            .build(),
+    );
+    // Start disabled so the warmup below isn't intercepted; we enable the
+    // rule immediately before force-refreshing so the failure is guaranteed
+    // to land on the refresh path under test.
+    rule.disable();
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
+
+        // Warmup: fault is disabled, this populates the cache with real ranges.
+        let warmed = context
+            .resolve_all_partition_key_ranges(&container, false)
+            .await?;
+        assert!(
+            warmed.is_some_and(|r| !r.is_empty()),
+            "warmup resolve must populate the routing map"
+        );
+        assert_eq!(
+            rule.hit_count(),
+            0,
+            "warmup must not have triggered the disabled fault"
+        );
+
+        // Arm the fault and force-refresh. With the fix in place, the refresh
+        // sees the transient failure but preserves the previously cached map.
+        rule.enable();
+        let refreshed = context
+            .resolve_all_partition_key_ranges(&container, true)
+            .await?;
+
+        assert!(
+            refreshed.is_some(),
+            "force-refresh on transient failure must not return None"
+        );
+        let ranges = refreshed.unwrap();
+        assert!(
+            !ranges.is_empty(),
+            "force-refresh on transient failure must preserve the previously cached \
+             routing map -- empty ranges indicate the cache regressed to empty"
+        );
+
+        assert_eq!(
+            rule.hit_count(),
+            1,
+            "force-refresh must have triggered the fault exactly once"
+        );
+
+        // A subsequent non-refresh lookup must still see the populated cache.
+        let after = context
+            .resolve_all_partition_key_ranges(&container, false)
+            .await?;
+        assert!(
+            after.is_some_and(|r| !r.is_empty()),
+            "subsequent non-refresh lookup must observe the preserved routing map"
+        );
+
+        Ok(())
+    })
+    .await
+}

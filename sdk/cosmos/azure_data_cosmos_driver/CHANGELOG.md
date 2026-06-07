@@ -10,6 +10,9 @@
 
 ### Bugs Fixed
 
+- Cross-partition query resume now propagates the server continuation to every surviving sub-leaf when a child range carried in the resume cursor has been split between sessions. Previously, only the first sub-leaf received the continuation and the rest restarted from offset zero, re-emitting already-consumed items. ([#TODO-PR](https://github.com/Azure/azure-sdk-for-rust/pull/TODO))
+- A transient failure while refreshing the partition key range cache no longer replaces a known-good cached routing map with an empty placeholder; the previous map is preserved until the next successful refresh. ([#TODO-PR](https://github.com/Azure/azure-sdk-for-rust/pull/TODO))
+
 ### Other Changes
 
 - `CosmosDriver::resolve_container_by_name` no longer issues an extra `read_database` round-trip to discover the database RID. The database RID is now extracted in-process from the encoded byte layout of the container RID returned by the container read. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
