@@ -797,15 +797,8 @@ mod tests {
         assert_eq!(success_refreshes.load(Ordering::SeqCst), 1);
     }
 
-    /// Post-bootstrap regression for #4483: when a periodic background refresh
-    /// fails (e.g. account-metadata fetch hits a 5xx with a Cosmos error
-    /// envelope), the previously-cached `AccountProperties` must NOT be
-    /// replaced or evicted. Bootstrap succeeds and seeds the cache; the next
-    /// timer-driven refresh fails with the same shape the production fetch
-    /// helper now produces (typed upstream status + diagnostics envelope), and
-    /// the cache continues to serve the bootstrap value untouched.
     #[tokio::test]
-    async fn refresh_failure_after_bootstrap_preserves_cached_properties() {
+    async fn location_state_store_preserves_cache_on_refresh_failure() {
         let endpoint = test_endpoint();
         let default_endpoint = CosmosEndpoint::global(endpoint.url().clone());
         let total_refreshes = Arc::new(AtomicUsize::new(0));

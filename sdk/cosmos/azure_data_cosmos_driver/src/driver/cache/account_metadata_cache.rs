@@ -508,9 +508,6 @@ mod tests {
         assert!(props.readable_regions().is_empty());
     }
 
-    // Coverage: non-2xx response bodies must not parse as AccountProperties — the
-    // status-gating branch upstream of the parser is responsible for handling them.
-
     #[test]
     fn error_envelope_service_unavailable_does_not_parse_as_account_properties() {
         // Shape returned by the gateway for HTTP 503.

@@ -1315,6 +1315,10 @@ impl DiagnosticsContextBuilder {
     /// [`complete_request`](Self::complete_request) that copies the standard Cosmos
     /// response-header fields (`request_charge`, `activity_id`, `session_token`,
     /// `server_duration_ms`) onto the request before marking it complete.
+    ///
+    /// Must be called at most once per [`RequestHandle`]. Subsequent calls
+    /// `debug_assert!` (the `update_request` step rejects already-completed
+    /// handles) and are no-ops in release builds.
     pub(crate) fn record_response(
         &mut self,
         handle: RequestHandle,

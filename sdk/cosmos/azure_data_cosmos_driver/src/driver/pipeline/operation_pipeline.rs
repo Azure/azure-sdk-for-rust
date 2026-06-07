@@ -915,8 +915,10 @@ fn build_transport_request(
                 &operation.resource_type(),
             )
         {
-            use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-            headers.insert(FAULT_INJECTION_OPERATION, fault_op.as_str());
+            crate::driver::transport::cosmos_headers::apply_fault_injection_operation_tag(
+                &mut headers,
+                fault_op,
+            );
         }
     }
 
