@@ -347,19 +347,18 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
     .await
 }
 
-/// Test that a transport-generated 503 on a non-idempotent write aborts (not retried).
+/// Test that an HTTP 503 on a non-idempotent write fails over and succeeds.
 ///
-/// Fault injection simulates transport-level failures (e.g. connection drops) which
-/// produce a synthetic 503/20003 (`TransportGenerated503`). These are distinct from
-/// HTTP-level 503s returned by the service: transport errors on non-idempotent writes
-/// are NOT retried because we cannot know whether the server processed the request.
-/// HTTP-level 503s ARE retried for all operations (see retry_evaluation.rs Block 2).
+/// Per the retry spec (docs/ErrorCodesAndRetries.md), the Rust driver retries
+/// writes on 5xx unconditionally — including non-idempotent writes — preferring
+/// availability over idempotency concerns. With a single 503 injected on the hub
+/// region, the driver fails over to the satellite where the write succeeds.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
-pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<(), Box<dyn Error>> {
+pub async fn fault_injection_http_503_write_fails_over() -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
         .build();
@@ -369,7 +368,7 @@ pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<()
         .with_region(HUB_REGION)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("write-region-transport-503", server_error)
+    let rule = FaultInjectionRuleBuilder::new("write-region-http-503", server_error)
         .with_condition(condition)
         .with_hit_limit(1)
         .build();
@@ -406,16 +405,13 @@ pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<()
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            // Transport-generated 503 on a non-idempotent write (upsert) should NOT
-            // be retried — the driver cannot know if the server processed the request.
-            let result = fault_container_client
+            // HTTP 503 on a non-idempotent write triggers a cross-region failover;
+            // the satellite serves the retried write successfully.
+            let response = fault_container_client
                 .upsert_item(&pk, &item_id, &item, None)
-                .await;
-
-            assert!(
-                result.is_err(),
-                "Transport-generated 503 on non-idempotent write should abort, not retry"
-            );
+                .await
+                .expect("write should succeed after 503 failover");
+            assert_region_contacted_with_retry(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
