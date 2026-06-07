@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-// cspell:ignore serviceunavailable
 
 //! Emulator-level fault-injection coverage for the account-metadata (GET /) endpoint.
 //! Complements the in-process unit tests in `src/driver/cosmos_driver.rs`.

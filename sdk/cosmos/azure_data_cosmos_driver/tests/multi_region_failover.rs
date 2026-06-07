@@ -14,7 +14,7 @@ use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos_driver::models::{
-    AccountReference, CosmosOperation, ItemReference, PartitionKey,
+    AccountReference, CosmosOperation, CosmosResponse, ItemReference, PartitionKey,
 };
 use azure_data_cosmos_driver::options::{OperationOptions, Region};
 use azure_data_cosmos_driver::{CosmosStatus, SubStatusCode};
@@ -142,6 +142,30 @@ fn assert_preserves_upstream_status(
             "expected the injected sub-status to be preserved. Got: {err:?}"
         );
     }
+}
+
+/// Asserts the final request in `response`'s diagnostics was sent to a region
+/// other than `faulted_region` — i.e. failover (or session-retry) actually
+/// re-targeted the operation to a peer endpoint, not just retried in place.
+fn assert_final_request_left_faulted_region(response: &CosmosResponse, faulted_region: &Region) {
+    let diagnostics = response.diagnostics();
+    let requests = diagnostics.requests();
+    let final_request = requests
+        .last()
+        .expect("a successful response must have at least one request in its diagnostics");
+    let final_region = final_request
+        .region()
+        .expect("the final request should have a region label");
+    assert_ne!(
+        final_region,
+        faulted_region,
+        "the successful final request should have been routed to a region other \
+         than the faulted region {faulted_region:?}; instead it landed on \
+         {final_region:?} (endpoint: {endpoint}). Regions contacted across the \
+         operation: {contacted:?}.",
+        endpoint = final_request.endpoint(),
+        contacted = diagnostics.regions_contacted()
+    );
 }
 
 /// Installs a fault rule into a fresh `CosmosDriverRuntime`.
@@ -328,15 +352,16 @@ async fn write_forbidden_triggers_refresh_and_failover() {
          in region {:?} before the driver re-routed; hit_count was 0",
         env.fault_region
     );
-    assert!(
-        result.is_ok(),
-        "the driver should have failed over to another region after the \
-         region-scoped WriteForbidden fault exhausted its hit_limit; instead \
-         the operation failed with: {:?}. If the configured account does not \
-         actually have a second write region available, point \
-         AZURE_COSMOS_TEST_REGION at a region that is not the only write region.",
-        result.err()
-    );
+    let response = result.unwrap_or_else(|err| {
+        panic!(
+            "the driver should have failed over to another region after the \
+             region-scoped WriteForbidden fault exhausted its hit_limit; instead \
+             the operation failed with: {err:?}. If the configured account does \
+             not actually have a second write region available, point \
+             AZURE_COSMOS_TEST_REGION at a region that is not the only write region."
+        )
+    });
+    assert_final_request_left_faulted_region(&response, &env.fault_region);
 }
 
 /// Region-scoped 404/1002 fault on ReadItem with a hit limit, after seeding the item on a clean runtime.
@@ -396,13 +421,14 @@ async fn session_not_available_retries_across_locations() {
          preferred region; hit_count was 0",
         env.fault_region
     );
-    assert!(
-        result.is_ok(),
-        "session retry should have advanced to the next preferred region and \
-         the read should have eventually succeeded; instead it failed with: \
-         {:?}. If the configured account has only one read region, point \
-         AZURE_COSMOS_TEST_REGION at a region that has at least one peer \
-         available for read failover.",
-        result.err()
-    );
+    let response = result.unwrap_or_else(|err| {
+        panic!(
+            "session retry should have advanced to the next preferred region and \
+             the read should have eventually succeeded; instead it failed with: \
+             {err:?}. If the configured account has only one read region, point \
+             AZURE_COSMOS_TEST_REGION at a region that has at least one peer \
+             available for read failover."
+        )
+    });
+    assert_final_request_left_faulted_region(&response, &env.fault_region);
 }
