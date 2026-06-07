@@ -9,7 +9,7 @@
 
 use crate::{
     driver::routing::CosmosEndpoint,
-    models::{ActivityId, CosmosStatus, RequestCharge, SubStatusCode},
+    models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
     options::{DiagnosticsOptions, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
 };
@@ -1307,6 +1307,35 @@ impl DiagnosticsContextBuilder {
         let handle = RequestHandle(self.requests.len());
         self.requests.push(request);
         handle
+    }
+
+    /// Records the response headers and completion of a request in one shot.
+    ///
+    /// Convenience wrapper around [`update_request`](Self::update_request) +
+    /// [`complete_request`](Self::complete_request) that copies the standard Cosmos
+    /// response-header fields (`request_charge`, `activity_id`, `session_token`,
+    /// `server_duration_ms`) onto the request before marking it complete.
+    pub(crate) fn record_response(
+        &mut self,
+        handle: RequestHandle,
+        status_code: StatusCode,
+        headers: &CosmosResponseHeaders,
+    ) {
+        self.update_request(handle, |req| {
+            if let Some(charge) = headers.request_charge {
+                req.with_charge(charge);
+            }
+            if let Some(activity_id) = headers.activity_id.clone() {
+                req.with_activity_id(activity_id);
+            }
+            if let Some(token) = headers.session_token.clone() {
+                req.with_session_token(token.to_string());
+            }
+            if let Some(duration) = headers.server_duration_ms {
+                req.with_server_duration_ms(duration);
+            }
+        });
+        self.complete_request(handle, status_code, headers.substatus);
     }
 
     /// Records completion of a request.

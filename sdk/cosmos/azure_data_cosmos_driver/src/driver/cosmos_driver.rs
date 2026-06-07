@@ -507,22 +507,7 @@ impl CosmosDriver {
         let sub_status = cosmos_headers.substatus;
         let cosmos_status = crate::error::CosmosStatus::from_parts(status_code, sub_status);
 
-        // Mirrors `transport_pipeline::map_http_response_payload`.
-        diagnostics.update_request(request_handle, |req| {
-            if let Some(charge) = cosmos_headers.request_charge {
-                req.with_charge(charge);
-            }
-            if let Some(activity_id) = cosmos_headers.activity_id.clone() {
-                req.with_activity_id(activity_id);
-            }
-            if let Some(token) = cosmos_headers.session_token.clone() {
-                req.with_session_token(token.to_string());
-            }
-            if let Some(duration) = cosmos_headers.server_duration_ms {
-                req.with_server_duration_ms(duration);
-            }
-        });
-        diagnostics.complete_request(request_handle, status_code, sub_status);
+        diagnostics.record_response(request_handle, status_code, &cosmos_headers);
         diagnostics.set_operation_status(status_code, sub_status);
         let diagnostics_arc = Arc::new(diagnostics.complete());
 
