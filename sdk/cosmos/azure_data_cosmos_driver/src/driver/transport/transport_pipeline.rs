@@ -28,10 +28,13 @@ use crate::{
 };
 
 use super::{
-    adaptive_transport::AdaptiveTransport, cosmos_headers::apply_cosmos_headers,
-    cosmos_transport_client::HttpRequest, infer_request_sent_status, request_signing::sign_request,
-    sharded_transport::EndpointKey, unwrap_response_for_gateway20, wrap_request_for_gateway20,
-    WrapInputs,
+    adaptive_transport::AdaptiveTransport,
+    cosmos_headers::{apply_cosmos_headers, apply_read_consistency_strategy},
+    cosmos_transport_client::HttpRequest,
+    infer_request_sent_status,
+    request_signing::sign_request,
+    sharded_transport::EndpointKey,
+    unwrap_response_for_gateway20, wrap_request_for_gateway20, WrapInputs,
 };
 
 use crate::driver::pipeline::components::{
@@ -230,6 +233,19 @@ pub(crate) async fn execute_transport_pipeline(
 
         // Apply standard Cosmos headers
         apply_cosmos_headers(&mut http_request, ctx.user_agent);
+        // V1 RCS emission: per Java parity, when RCS is non-Default on a read,
+        // set `x-ms-cosmos-read-consistency-strategy` and strip any
+        // `x-ms-consistency-level` header. Gateway20 emits the equivalent via
+        // the RNTBD `ReadConsistencyStrategy` token in
+        // `wrap_request_for_gateway20`, so we skip the HTTP header there to
+        // avoid double-encoding the same intent.
+        if request.transport_mode != TransportMode::Gateway20 {
+            apply_read_consistency_strategy(
+                &mut http_request,
+                request.read_consistency_strategy,
+                request.operation_type.is_read_only(),
+            );
+        }
 
         if let Err(cosmos_err) =
             sign_request(&mut http_request, ctx.credential, &request.auth_context).await
@@ -258,6 +274,7 @@ pub(crate) async fn execute_transport_pipeline(
                 partition_key: request.partition_key.as_ref(),
                 partition_key_definition: request.partition_key_definition.as_ref(),
                 effective_consistency: request.effective_consistency,
+                read_consistency_strategy: request.read_consistency_strategy,
                 account_name: ctx.account_name.as_deref(),
             };
             match wrap_request_for_gateway20(&http_request, &wrap_inputs) {
@@ -1032,6 +1049,7 @@ mod tests {
             partition_key: None,
             partition_key_definition: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
             body: None,
@@ -1178,6 +1196,7 @@ mod tests {
             partition_key: None,
             partition_key_definition: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
             body: None,
@@ -1418,6 +1437,7 @@ mod tests {
             partition_key: None,
             partition_key_definition: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers,
             body: None,

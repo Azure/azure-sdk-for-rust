@@ -26,7 +26,7 @@ use crate::{
         CosmosResponseHeaders, CosmosStatus, DefaultConsistencyLevel, OperationType, PartitionKey,
         PartitionKeyDefinition,
     },
-    options::Region,
+    options::{ReadConsistencyStrategy, Region},
 };
 
 // ── Operation-Level Components ─────────────────────────────────────────
@@ -452,6 +452,16 @@ pub(crate) struct TransportRequest {
     pub partition_key_definition: Option<PartitionKeyDefinition>,
     /// Effective consistency resolved from account default and read options.
     pub effective_consistency: DefaultConsistencyLevel,
+    /// Read consistency strategy as requested by the caller (per-request override
+    /// preferred over client-level default; falls back to
+    /// [`ReadConsistencyStrategy::Default`] when neither is set).
+    ///
+    /// Wire layers consult this *in addition* to `effective_consistency`: when it is
+    /// non-`Default` on a read operation, V1 emits the
+    /// `x-ms-cosmos-read-consistency-strategy` HTTP header (and strips
+    /// `x-ms-consistency-level`); V2 emits the RNTBD `ReadConsistencyStrategy`
+    /// token (`0x00F0`) and drops the `ConsistencyLevel` token.
+    pub read_consistency_strategy: ReadConsistencyStrategy,
     /// The fully resolved URL for this attempt.
     pub url: Url,
     /// Headers to send (includes operation-specific and attempt-specific headers).

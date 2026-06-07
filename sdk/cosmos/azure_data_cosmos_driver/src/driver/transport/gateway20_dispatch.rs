@@ -20,6 +20,7 @@ use crate::{
         cosmos_headers::response_header_names, effective_partition_key::EffectivePartitionKey,
         DefaultConsistencyLevel, OperationType, PartitionKey, PartitionKeyDefinition, ResourceType,
     },
+    options::ReadConsistencyStrategy,
 };
 
 use super::{
@@ -44,6 +45,10 @@ pub(crate) struct WrapInputs<'a> {
     pub(crate) partition_key: Option<&'a PartitionKey>,
     pub(crate) partition_key_definition: Option<&'a PartitionKeyDefinition>,
     pub(crate) effective_consistency: DefaultConsistencyLevel,
+    /// When non-`Default`, emit the `ReadConsistencyStrategy` RNTBD token (`0x00F0`)
+    /// and SUPPRESS the `ConsistencyLevel` token. Callers must already have gated
+    /// this to read operations.
+    pub(crate) read_consistency_strategy: ReadConsistencyStrategy,
     pub(crate) account_name: Option<&'a str>,
 }
 
@@ -84,7 +89,17 @@ pub(crate) fn wrap_request_for_gateway20(
     }
     metadata.push(Token::authorization_token(authorization));
     metadata.push(Token::date(date));
-    metadata.push(Token::consistency_level(inputs.effective_consistency));
+    // Rule 1+5: when RCS is non-Default on a read, emit the RNTBD
+    // ReadConsistencyStrategy token (0x00F0) and DROP the ConsistencyLevel token.
+    // Otherwise, emit ConsistencyLevel as before (Default => transparent on wire
+    // by virtue of carrying the resolved effective consistency).
+    if inputs.read_consistency_strategy.is_non_default() {
+        metadata.push(Token::read_consistency_strategy(
+            inputs.read_consistency_strategy,
+        ));
+    } else {
+        metadata.push(Token::consistency_level(inputs.effective_consistency));
+    }
     metadata.push(Token::transport_request_id(next_transport_request_id()));
     metadata.push(Token::sdk_supported_capabilities(
         SUPPORTED_CAPABILITIES_BITS,
@@ -396,6 +411,7 @@ mod tests {
             partition_key,
             partition_key_definition,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             account_name: Some("account"),
         }
     }
@@ -639,6 +655,68 @@ mod tests {
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x03));
     }
 
+    /// Rule 1+5 (Java parity, Azure/azure-sdk-for-java#48787):
+    /// non-`Default` RCS on the wrap path emits token `0x00F0` and SUPPRESSES
+    /// the legacy `ConsistencyLevel` token `0x0010`.
+    #[test]
+    fn wrap_emits_read_consistency_strategy_token_and_drops_consistency_level() {
+        use crate::options::ReadConsistencyStrategy;
+
+        let cases = [
+            (ReadConsistencyStrategy::Eventual, 0x01u8),
+            (ReadConsistencyStrategy::Session, 0x02u8),
+            (ReadConsistencyStrategy::LatestCommitted, 0x03u8),
+            (ReadConsistencyStrategy::GlobalStrong, 0x04u8),
+        ];
+
+        for (strategy, expected_byte) in cases {
+            let request = signed_request(None);
+            let auth_context = AuthorizationContext::new(
+                Method::Get,
+                ResourceType::Document,
+                "dbs/db1/colls/coll1/docs/doc1",
+            );
+            let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None, None);
+            inputs.read_consistency_strategy = strategy;
+
+            let wrapped = wrap_request_for_gateway20(&request, &inputs).unwrap();
+            let parsed = parse_wrapped_request(&wrapped, 10);
+
+            assert_eq!(
+                parsed.tokens[&0x00F0],
+                ParsedTokenValue::Byte(expected_byte),
+                "ReadConsistencyStrategy {strategy:?} should serialize to byte {expected_byte:#x}"
+            );
+            assert!(
+                !parsed.tokens.contains_key(&0x0010),
+                "ConsistencyLevel token (0x0010) must be omitted when RCS={strategy:?} is non-Default"
+            );
+        }
+    }
+
+    /// Rule 3: `Default` RCS is transparent — wrap behaves identically to the
+    /// pre-RCS world, emitting only `ConsistencyLevel`.
+    #[test]
+    fn wrap_with_default_rcs_emits_only_consistency_level_token() {
+        use crate::options::ReadConsistencyStrategy;
+
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None, None);
+        inputs.read_consistency_strategy = ReadConsistencyStrategy::Default;
+        inputs.effective_consistency = DefaultConsistencyLevel::Session;
+
+        let wrapped = wrap_request_for_gateway20(&request, &inputs).unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 10);
+
+        assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x02));
+        assert!(!parsed.tokens.contains_key(&0x00F0));
+    }
+
     #[test]
     fn wrap_computes_effective_partition_key_bytes() {
         let request = signed_request(None);
@@ -821,6 +899,7 @@ mod tests {
                 partition_key: None,
                 partition_key_definition: None,
                 effective_consistency: DefaultConsistencyLevel::Session,
+                read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
             },
         )
@@ -856,6 +935,7 @@ mod tests {
                 partition_key: None,
                 partition_key_definition: None,
                 effective_consistency: DefaultConsistencyLevel::Session,
+                read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
             },
         )
@@ -889,6 +969,7 @@ mod tests {
                 partition_key: None,
                 partition_key_definition: None,
                 effective_consistency: DefaultConsistencyLevel::Session,
+                read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
             },
         )

@@ -6,7 +6,10 @@
 use azure_core::error::ErrorKind;
 use uuid::Uuid;
 
-use crate::models::{DefaultConsistencyLevel, OperationType, ResourceType};
+use crate::{
+    models::{DefaultConsistencyLevel, OperationType, ResourceType},
+    options::ReadConsistencyStrategy,
+};
 
 /// The token type byte used by RNTBD metadata tokens.
 ///
@@ -292,6 +295,33 @@ impl Token {
         )
     }
 
+    /// `ReadConsistencyStrategy` token (id `0x00F0`, `Byte`).
+    ///
+    /// Java parity (Azure/azure-sdk-for-java#48787). Server requires this token
+    /// in place of `ConsistencyLevel` when the caller specifies a non-`Default`
+    /// read consistency strategy on a read request. `Default` MUST never be
+    /// serialized (callers gate on `is_non_default`).
+    pub(crate) fn read_consistency_strategy(value: ReadConsistencyStrategy) -> Self {
+        let value = match value {
+            ReadConsistencyStrategy::Eventual => 0x01,
+            ReadConsistencyStrategy::Session => 0x02,
+            ReadConsistencyStrategy::LatestCommitted => 0x03,
+            ReadConsistencyStrategy::GlobalStrong => 0x04,
+            // Caller-side guard: `Default` is transparent on the wire.
+            ReadConsistencyStrategy::Default => {
+                debug_assert!(
+                    false,
+                    "Token::read_consistency_strategy must not be called with Default"
+                );
+                0x00
+            }
+        };
+        Self::new(
+            RntbdRequestToken::ReadConsistencyStrategy.into(),
+            TokenValue::Byte(value),
+        )
+    }
+
     pub(crate) fn database_name(value: String) -> Self {
         Self::new(
             RntbdRequestToken::DatabaseName.into(),
@@ -391,6 +421,7 @@ pub(crate) enum RntbdRequestToken {
     EffectivePartitionKey,
     SDKSupportedCapabilities,
     GlobalDatabaseAccountName,
+    ReadConsistencyStrategy,
 }
 
 impl TryFrom<u16> for RntbdRequestToken {
@@ -410,6 +441,7 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x005A => Ok(Self::EffectivePartitionKey),
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
             0x00CE => Ok(Self::GlobalDatabaseAccountName),
+            0x00F0 => Ok(Self::ReadConsistencyStrategy),
             _ => Err(()),
         }
     }
@@ -430,6 +462,7 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::EffectivePartitionKey => 0x005A,
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
             RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
+            RntbdRequestToken::ReadConsistencyStrategy => 0x00F0,
         }
     }
 }
@@ -837,5 +870,36 @@ mod tests {
             other => panic!("expected TokenValue::Guid, got {other:?}"),
         }
         assert!(src.is_empty());
+    }
+
+    #[test]
+    fn read_consistency_strategy_token_byte_mapping_matches_java() {
+        // Java parity (Azure/azure-sdk-for-java#48787): the RNTBD
+        // `ReadConsistencyStrategy` token has id `0x00F0`, `Byte` type, and
+        // these exact byte values. A drift here means the SDK and the gateway
+        // disagree about what consistency the caller requested.
+        let cases = [
+            (ReadConsistencyStrategy::Eventual, 0x01u8),
+            (ReadConsistencyStrategy::Session, 0x02u8),
+            (ReadConsistencyStrategy::LatestCommitted, 0x03u8),
+            (ReadConsistencyStrategy::GlobalStrong, 0x04u8),
+        ];
+
+        for (strategy, expected_byte) in cases {
+            let token = Token::read_consistency_strategy(strategy);
+            let mut encoded = Vec::new();
+            token.write_to(&mut encoded).unwrap();
+            // u16 id (LE) + u8 token type + u8 byte value
+            assert_eq!(encoded[0], 0xF0);
+            assert_eq!(encoded[1], 0x00);
+            assert_eq!(
+                encoded[2], 0x00,
+                "ReadConsistencyStrategy must be Byte (0x00)"
+            );
+            assert_eq!(
+                encoded[3], expected_byte,
+                "{strategy:?} byte value diverged from Java parity"
+            );
+        }
     }
 }

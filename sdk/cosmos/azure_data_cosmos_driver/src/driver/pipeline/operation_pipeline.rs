@@ -169,6 +169,26 @@ pub(crate) async fn execute_operation_pipeline(
         resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
     let session_consistency_active = !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
+
+    // Rule 4 (Java parity, Azure/azure-sdk-for-java#48787): GlobalStrong is
+    // valid only on reads against accounts whose default consistency is Strong.
+    // For writes or non-Strong accounts, server-side semantics would not be
+    // applied — fail fast client-side with BadRequest before incurring a round
+    // trip.
+    if matches!(
+        read_consistency_strategy,
+        ReadConsistencyStrategy::GlobalStrong
+    ) && operation.is_read_only()
+        && account_default_consistency != DefaultConsistencyLevel::Strong
+    {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_message(
+                "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
+                 default consistency level is Strong",
+            )
+            .build());
+    }
     let max_session_retries = options
         .max_session_retry_count()
         .copied()
@@ -270,6 +290,11 @@ pub(crate) async fn execute_operation_pipeline(
             execution_context,
             deadline,
             effective_consistency,
+            read_consistency_strategy: if operation.is_read_only() {
+                read_consistency_strategy
+            } else {
+                ReadConsistencyStrategy::Default
+            },
             resolved_session_token: session_consistency_active
                 .then(|| {
                     session_manager.resolve_session_token(
@@ -857,6 +882,9 @@ struct TransportRequestContext<'a> {
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
     effective_consistency: DefaultConsistencyLevel,
+    /// Raw (uncollapsed) RCS to be emitted on the wire for read operations.
+    /// `Default` for non-reads or when caller did not specify an RCS.
+    read_consistency_strategy: ReadConsistencyStrategy,
     resolved_session_token: Option<SessionToken>,
     throughput_control: Option<&'a ThroughputControlGroupSnapshot>,
 }
@@ -1014,6 +1042,7 @@ fn build_transport_request(
             .container()
             .map(|container| container.partition_key_definition().clone()),
         effective_consistency: ctx.effective_consistency,
+        read_consistency_strategy: ctx.read_consistency_strategy,
         url,
         headers,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
@@ -1484,6 +1513,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -1507,6 +1537,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -1530,6 +1561,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -1558,6 +1590,7 @@ mod tests {
             execution_context: ExecutionContext::Retry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -1599,6 +1632,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -1632,6 +1666,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -2935,6 +2970,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -2969,6 +3005,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -3007,6 +3044,7 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -3055,6 +3093,7 @@ mod tests {
             resolved_session_token: None,
             throughput_control: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -3093,6 +3132,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
@@ -3139,6 +3179,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
@@ -3186,6 +3227,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: Some(&snapshot),
         };
@@ -3241,6 +3283,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };
@@ -3323,6 +3366,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             resolved_session_token: None,
             throughput_control: None,
         };

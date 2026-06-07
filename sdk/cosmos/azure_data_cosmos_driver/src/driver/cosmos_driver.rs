@@ -374,16 +374,7 @@ impl CosmosDriver {
         user_agent: &azure_core::http::headers::HeaderValue,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
-        let mut request = HttpRequest {
-            url: endpoint.join_path("/"),
-            method: azure_core::http::Method::Get,
-            headers: azure_core::http::headers::Headers::new(),
-            body: None,
-            timeout: None,
-            #[cfg(feature = "fault_injection")]
-            evaluation_collector: None,
-        };
-        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+        let mut request = Self::build_account_properties_request(&endpoint, user_agent);
         request_signing::sign_request(
             &mut request,
             account.auth(),
@@ -428,6 +419,33 @@ impl CosmosDriver {
             "AccountProperties retrieved successfully"
         );
         Ok(props)
+    }
+
+    /// Builds the unsigned `getDatabaseAccount` HTTP request.
+    ///
+    /// Always sets `x-ms-cosmos-use-thinclient: true` so the server emits
+    /// `thinClient*Locations` whenever the federation has thin-client
+    /// enabled. Matches Java/.NET behavior; without this header the server
+    /// suppresses those fields and Gateway 2.0 is silently disabled.
+    fn build_account_properties_request(
+        endpoint: &AccountEndpoint,
+        user_agent: &azure_core::http::headers::HeaderValue,
+    ) -> HttpRequest {
+        let mut request = HttpRequest {
+            url: endpoint.join_path("/"),
+            method: azure_core::http::Method::Get,
+            headers: azure_core::http::headers::Headers::new(),
+            body: None,
+            timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
+        };
+        cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
+        request.headers.insert(
+            crate::constants::GATEWAY20_DISCOVERY_OPT_IN,
+            azure_core::http::headers::HeaderValue::from_static("true"),
+        );
+        request
     }
 
     fn parse_account_properties_payload(
@@ -2208,6 +2226,25 @@ mod tests {
 
         let endpoint = CosmosDriver::endpoint_for_write_region(&account, None);
         assert_eq!(endpoint.url().as_str(), account.endpoint().as_str());
+    }
+
+    #[test]
+    fn build_account_properties_request_sets_thinclient_discovery_header() {
+        let endpoint = AccountEndpoint::try_from("https://test.documents.azure.com:443/").unwrap();
+        let user_agent = azure_core::http::headers::HeaderValue::from_static("test-ua");
+
+        let request = CosmosDriver::build_account_properties_request(&endpoint, &user_agent);
+
+        let opt_in = request
+            .headers
+            .get_optional_str(&crate::constants::GATEWAY20_DISCOVERY_OPT_IN)
+            .expect("getDatabaseAccount must send x-ms-cosmos-use-thinclient so the server emits thinClient*Locations");
+        assert_eq!(
+            opt_in, "true",
+            "x-ms-cosmos-use-thinclient must be `true` to match Java/.NET wire contract"
+        );
+        assert_eq!(request.method, azure_core::http::Method::Get);
+        assert!(request.url.as_str().starts_with(endpoint.url().as_str()));
     }
 
     #[test]

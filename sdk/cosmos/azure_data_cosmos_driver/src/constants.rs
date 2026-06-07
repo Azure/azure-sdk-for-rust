@@ -44,6 +44,18 @@ pub const GATEWAY20_RANGE_MIN: HeaderName = HeaderName::from_static("x-ms-thincl
 /// Sent for feed and cross-partition operations only.
 pub const GATEWAY20_RANGE_MAX: HeaderName = HeaderName::from_static("x-ms-thinclient-range-max");
 
+/// Gateway 2.0 endpoint-discovery opt-in header.
+///
+/// Sent on every `getDatabaseAccount` request so the server emits
+/// `thinClientWritableLocations` / `thinClientReadableLocations` in the
+/// metadata response. Without this header the server suppresses those
+/// fields even when the federation has thin-client enabled, which
+/// silently disables Gateway 2.0 routing for the client. Matches Java
+/// (`HttpConstants.HttpHeaders.THINCLIENT_OPT_IN`) and .NET
+/// (`ThinClientConstants.EnableThinClientEndpointDiscoveryHeaderName`).
+pub const GATEWAY20_DISCOVERY_OPT_IN: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-use-thinclient");
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -67,6 +79,10 @@ mod tests {
                 GATEWAY20_RANGE_MAX,
                 HeaderName::from_static("x-ms-thinclient-range-max"),
             ),
+            (
+                GATEWAY20_DISCOVERY_OPT_IN,
+                HeaderName::from_static("x-ms-cosmos-use-thinclient"),
+            ),
         ];
 
         for (actual, expected) in cases {
@@ -81,6 +97,7 @@ mod tests {
             ("GATEWAY20_RESOURCE_TYPE", GATEWAY20_RESOURCE_TYPE),
             ("GATEWAY20_RANGE_MIN", GATEWAY20_RANGE_MIN),
             ("GATEWAY20_RANGE_MAX", GATEWAY20_RANGE_MAX),
+            ("GATEWAY20_DISCOVERY_OPT_IN", GATEWAY20_DISCOVERY_OPT_IN),
         ];
 
         for (index, (left_name, left_header)) in constants.iter().enumerate() {

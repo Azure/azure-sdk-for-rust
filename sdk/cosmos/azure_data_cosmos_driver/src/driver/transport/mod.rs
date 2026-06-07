@@ -17,6 +17,7 @@ pub(crate) mod adaptive_transport;
 mod authorization_policy;
 #[cfg(feature = "tokio")]
 pub(crate) mod background_task_manager;
+pub(crate) mod connectivity_probe;
 pub(crate) mod cosmos_headers;
 pub(crate) mod cosmos_transport_client;
 mod emulator;
