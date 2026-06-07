@@ -10,6 +10,8 @@
 
 ### Bugs Fixed
 
+- Bootstrap account-metadata fetches now surface non-2xx responses as `CosmosError` with the wire status and body, instead of a `missing field _self` serde error. Diagnostics are populated on the same envelope used by the operation pipeline. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
+
 ### Other Changes
 
 - `CosmosDriver::resolve_container_by_name` no longer issues an extra `read_database` round-trip to discover the database RID. The database RID is now extracted in-process from the encoded byte layout of the container RID returned by the container read. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
