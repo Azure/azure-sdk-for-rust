@@ -349,10 +349,11 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
 
 /// Test that an HTTP 503 on a non-idempotent write fails over and succeeds.
 ///
-/// Per the retry spec (docs/ErrorCodesAndRetries.md), the Rust driver retries
-/// writes on 5xx unconditionally — including non-idempotent writes — preferring
-/// availability over idempotency concerns. With a single 503 injected on the hub
-/// region, the driver fails over to the satellite where the write succeeds.
+/// Per the retry spec (`azure_data_cosmos_driver/docs/ErrorCodesAndRetries.md`),
+/// the Rust driver retries writes on 5xx unconditionally — including
+/// non-idempotent writes — preferring availability over idempotency concerns.
+/// With a single 503 injected on the hub region, the driver fails over to the
+/// satellite where the write succeeds.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),

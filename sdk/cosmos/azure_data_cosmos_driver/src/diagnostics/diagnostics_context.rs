@@ -1325,6 +1325,15 @@ impl DiagnosticsContextBuilder {
         status_code: StatusCode,
         headers: &CosmosResponseHeaders,
     ) {
+        if let Some(request) = self.requests.get(handle.0) {
+            debug_assert!(
+                !request.is_completed(),
+                "record_response called after the request was already completed"
+            );
+            if request.is_completed() {
+                return;
+            }
+        }
         self.update_request(handle, |req| {
             if let Some(charge) = headers.request_charge {
                 req.with_charge(charge);
