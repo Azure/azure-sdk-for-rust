@@ -2598,7 +2598,7 @@ async fn execute_hedged(
                 // Structured win event. `was_hedge=false` distinguishes
                 // the zero-overhead happy path from a post-threshold
                 // primary win.
-                tracing::info!(
+                tracing::debug!(
                     activity_id = %ctx.activity_id,
                     winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
                     was_hedge = false,
@@ -2776,7 +2776,7 @@ async fn execute_hedged(
                         reason = "primary_won_post_threshold",
                         "cosmos.hedge.canceled",
                     );
-                    tracing::info!(
+                    tracing::debug!(
                         activity_id = %ctx.activity_id,
                         winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
                         was_hedge = true,
@@ -2846,7 +2846,7 @@ async fn execute_hedged(
                                 activity_id = %ctx.activity_id,
                                 "execute_hedged: secondary won after primary transient",
                             );
-                            tracing::info!(
+                            tracing::debug!(
                                 activity_id = %ctx.activity_id,
                                 winner_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
                                 was_hedge = true,
@@ -2924,7 +2924,7 @@ async fn execute_hedged(
                         reason = "secondary_won_race",
                         "cosmos.hedge.canceled",
                     );
-                    tracing::info!(
+                    tracing::debug!(
                         activity_id = %ctx.activity_id,
                         winner_region = ?secondary_region.as_ref().map(crate::options::Region::as_str),
                         was_hedge = true,
@@ -2995,7 +2995,7 @@ async fn execute_hedged(
                                 activity_id = %ctx.activity_id,
                                 "execute_hedged: primary won after secondary transient",
                             );
-                            tracing::info!(
+                            tracing::debug!(
                                 activity_id = %ctx.activity_id,
                                 winner_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
                                 was_hedge = true,

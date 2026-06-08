@@ -1528,7 +1528,13 @@ fn record_hedge_win(
 3. **PPCB owns the threshold and the state transition.** The hedging
    `execute_hedged()` only emits the signal; whether N hedge-wins trip the
    breaker, and what state the partition transitions to, lives in the
-   PPCB module.
+   PPCB module. The threshold itself is operator-tunable via
+   [`OperationOptions::consecutive_hedge_win_threshold`] (or the
+   `AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD` environment variable),
+   with a default of `5` matching the .NET v3 SDK convention. Lower
+   values trip the partition faster when the primary region is
+   chronically slow; higher values are more tolerant of occasional
+   latency spikes the hedge happens to win.
 4. **Updates are lock-free / CAS-based.** Matches the existing
    `LocationStateStore` contract (§9.1).
 5. **PK-range-id is captured even when both legs return transient.**
@@ -2046,7 +2052,7 @@ breaking changes.
 | `cosmos.hedge.enabled_for_operation` | DEBUG | `threshold_ms`, `region_count` | `evaluate_transport_result` decides to hedge a specific operation |
 | `cosmos.hedge.alternate_spawned` | DEBUG | `target_region`, `elapsed_ms` | The threshold elapsed and the alternate hedge was spawned |
 | `cosmos.hedge.canceled` | DEBUG | `which` (`primary` / `alternate`), `target_region`, `reason` (`winner_found` / `deadline` / `app_canceled`) | A losing pipeline is canceled |
-| `cosmos.hedge.winner_selected` | INFO | `winner_region`, `elapsed_ms`, `was_hedge` | A response is selected as final |
+| `cosmos.hedge.winner_selected` | DEBUG | `winner_region`, `elapsed_ms`, `was_hedge` | A response is selected as final. DEBUG (not INFO) because the §5.2 driver default enables hedging on every multi-region read; emitting at INFO would amplify log volume by 1 event/op in production. Win-rate metrics should be derived from the `HedgeDiagnostics` chain (§10.3) rather than from log scrapes. |
 | `cosmos.hedge.both_transient` | WARN | `last_status_code` | Both primary and alternate returned transient responses |
 | `cosmos.hedge.recorded_alternate_win` | DEBUG | `primary_region`, `partition` | `execute_hedged()` recorded an alternate-region win for PPCB feedback (§9.5) |
 

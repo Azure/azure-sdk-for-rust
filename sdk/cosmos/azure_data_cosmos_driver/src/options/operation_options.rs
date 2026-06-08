@@ -172,6 +172,24 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")]
     pub per_partition_circuit_breaker_enabled: Option<bool>,
 
+    /// Consecutive alternate-region hedge wins on the same
+    /// `(partition, primary_region)` pair before the per-partition circuit
+    /// breaker (PPCB) trips the partition away from that primary.
+    ///
+    /// **Default**: `5` (matches the .NET v3 SDK convention). See
+    /// `docs/HEDGING_SPEC.md` §9.5.
+    ///
+    /// **Tuning**: Lower values trip the partition faster when the primary
+    /// region is chronically slow but the alternate is healthy — useful
+    /// when operators want hedging to drive failover aggressively. Higher
+    /// values are more tolerant of occasional latency spikes that the
+    /// hedge happens to win, avoiding spurious failovers when both regions
+    /// are healthy and the primary just happened to lose the race. Set
+    /// well above `max_failover_retries` to effectively disable hedge-win
+    /// driven trips while keeping the hedge race itself active.
+    #[option(env = "AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD")]
+    pub consecutive_hedge_win_threshold: Option<u32>,
+
     /// Cross-region availability strategy controlling whether eligible
     /// requests are hedged to additional regions when the primary is slow.
     ///
