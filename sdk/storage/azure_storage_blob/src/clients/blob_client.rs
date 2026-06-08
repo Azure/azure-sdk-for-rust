@@ -4,11 +4,13 @@
 pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 
 use crate::{
-    generated::clients::BlobClient as GeneratedBlobClient,
-    generated::models::BlobClientDownloadInternalOptions,
+    generated::{
+        clients::BlobClient as GeneratedBlobClient, models::BlobClientDownloadInternalOptions,
+    },
     models::{
-        BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientUploadOptions,
-        BlobClientUploadResult, HttpRange, StorageErrorCode,
+        BlobClientDownloadIntoResult, BlobClientDownloadOptions, BlobClientDownloadResult,
+        BlobClientUploadOptions, BlobClientUploadResult, BlobDownloadProperties, HttpRange,
+        StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     AppendBlobClient, BlockBlobClient, PageBlobClient,
@@ -210,8 +212,7 @@ impl BlobClient {
     ///
     /// This operation performs a managed (multi-part) download, splitting the blob into
     /// parallel range requests for better performance on large blobs. The downloaded bytes are
-    /// written directly into the provided `buffer` and the number of bytes written is returned
-    /// in the result.
+    /// written directly into the provided `buffer`.
     ///
     /// # Arguments
     ///
@@ -229,7 +230,7 @@ impl BlobClient {
         &self,
         buffer: &mut [u8],
         options: Option<BlobClientDownloadOptions<'_>>,
-    ) -> Result<usize> {
+    ) -> Result<BlobClientDownloadIntoResult> {
         let options = options.unwrap_or_default();
         let parallel = options
             .parallel
@@ -245,14 +246,19 @@ impl BlobClient {
             tracer: self.tracer.clone(),
         };
         let behavior = BlobClientDownloadBehavior::new(inner_client, options.into());
-        partitioned_transfer::download_into(
+        let (_, headers, len) = partitioned_transfer::download_into(
             buffer,
             range,
             parallel,
             partition_size,
             Arc::new(behavior),
         )
-        .await
+        .await?;
+        Ok(BlobClientDownloadIntoResult {
+            len,
+            properties: BlobDownloadProperties::from_headers(&headers)?,
+            headers,
+        })
     }
 
     /// Uploads content to a block blob, overwriting any existing blob by default.

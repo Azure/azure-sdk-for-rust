@@ -1013,7 +1013,7 @@ async fn test_managed_download_into(ctx: TestContext) -> Result<(), Box<dyn Erro
 
         request_count.store(0, Ordering::Relaxed);
         let _scope = count_policy.check_request_scope();
-        let copied = blob_client
+        let download_result = blob_client
             .download_into(
                 &mut buffer,
                 Some(BlobClientDownloadOptions {
@@ -1025,7 +1025,7 @@ async fn test_managed_download_into(ctx: TestContext) -> Result<(), Box<dyn Erro
             )
             .await?;
 
-        assert_eq!(copied, download_len);
+        assert_eq!(download_result.len, download_len);
         assert_eq!(
             &buffer,
             download_range.map_or(&data[..], |r| &data[r.0..min(r.1, data.len())])
@@ -1095,9 +1095,9 @@ async fn test_managed_download_into_empty(ctx: TestContext) -> Result<(), Box<dy
 
     request_count.store(0, Ordering::Relaxed);
     let _scope = count_policy.check_request_scope();
-    let copied = blob_client.download_into(&mut [0; 1024], None).await?;
+    let download_result = blob_client.download_into(&mut [0; 1024], None).await?;
 
-    assert_eq!(copied, 0);
+    assert_eq!(download_result.len, 0);
     // 1 op with a range, 1 op without after the first one fails
     assert_eq!(request_count.load(Ordering::Relaxed), 2);
 

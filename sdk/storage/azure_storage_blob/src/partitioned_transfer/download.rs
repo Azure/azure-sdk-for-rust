@@ -17,7 +17,7 @@ use async_trait::async_trait;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
     error::ErrorKind,
-    http::{AsyncRawResponse, AsyncResponseBody, Etag, StatusCode},
+    http::{headers::Headers, AsyncRawResponse, AsyncResponseBody, Etag, StatusCode},
     Error,
 };
 use bytes::Bytes;
@@ -155,7 +155,7 @@ pub(crate) async fn download_into<Behavior>(
     parallel: NonZero<usize>,
     partition_size: NonZero<usize>,
     client: Arc<Behavior>,
-) -> AzureResult<usize>
+) -> AzureResult<(StatusCode, Headers, usize)>
 where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
@@ -176,14 +176,20 @@ where
     let (initial_response, response_analysis) =
         get_initial_response_and_analyze(range, partition_size, client.clone()).await?;
 
-    let _status = initial_response.status();
+    let status = initial_response.status();
     let headers = initial_response.headers().clone();
     let etag_lock = headers.get_optional_str(&"etag".into()).map(Etag::from);
 
     let mut response_analysis = match response_analysis {
         Some(a) => a,
         // if no response analysis, no subsequent gets, therefore just copy to buffer and return
-        None => return initial_response.into_body().collect_into(buffer).await,
+        None => {
+            return initial_response
+                .into_body()
+                .collect_into(buffer)
+                .await
+                .map(|read| (status, headers, read))
+        }
     };
 
     // fail fast for buffer overflow
@@ -202,7 +208,7 @@ where
                 .collect_into(&mut buffer[total_read..])
                 .await?;
         }
-        return Ok(total_read);
+        return Ok((status, headers, total_read));
     }
 
     /* There's no sound way to have parallel workers operate on a borrowed buffer. Instead, we will
@@ -214,7 +220,7 @@ where
      * be no significant buildup of memory in this channel.
      */
     let (mut tx, mut rx) = mpsc::unbounded();
-    // worker that does nothing but monitor active downloads and spawn new ones
+    // worker that does nothing but monitor active download workers and spawn new ones
     let downloads_manager_handle = get_async_runtime().spawn(Box::pin(async move {
         // the starting offset of the overall download range
         // bytes at this position are written to position 0 of `buffer`
@@ -271,7 +277,8 @@ where
     downloads_manager_handle
         .await
         .map_err(map_spawned_task_error)?;
-    Ok(total_read)
+
+    Ok((status, headers, total_read))
 }
 
 async fn get_initial_response_and_analyze<Behavior>(
@@ -397,6 +404,7 @@ fn start_download_task_buffer<Behavior: PartitionedDownloadBehavior + Send + Syn
 }
 
 /// Spawns a worker to take the given raw response and stream it through a channel.
+/// Worker terminates gracefully on download error or channel send error.
 ///
 /// # Arguments
 ///
@@ -411,11 +419,12 @@ fn start_initial_download_task_channel(
     sender: UnboundedSender<Result<(usize, Bytes), Error>>,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
-        body_to_channel(initial_response.into_body(), destination_offset, sender).await;
+        _ = body_to_channel(initial_response.into_body(), destination_offset, sender).await;
     }))
 }
 
 /// Spawns a worker to request the given range and stream it through a channel.
+/// Worker terminates gracefully on download error or channel send error.
 ///
 /// # Arguments
 ///
@@ -434,21 +443,17 @@ fn start_download_task_channel<Behavior: PartitionedDownloadBehavior + Send + Sy
     mut sender: UnboundedSender<Result<(usize, Bytes), Error>>,
 ) -> SpawnedTask {
     get_async_runtime().spawn(Box::pin(async move {
-        let response = match client.transfer_range(Some(range), etag_lock).await {
-            Ok(response) => response,
-            Err(err) => {
-                let _res = sender.send(Err(err)).await;
-                return;
-            }
+        _ = match client.transfer_range(Some(range), etag_lock).await {
+            Ok(response) => body_to_channel(response.into_body(), destination_offset, sender).await,
+            Err(err) => sender.send(Err(err)).await,
         };
-        body_to_channel(response.into_body(), destination_offset, sender).await;
     }))
 }
 
 /// Takes an AsyncResponseBody and streams it through a channel, using the given `destination_offset`
 /// to calculate the offset for each individual Bytes message.
-///
-///
+/// When recieving an error from `body`, sends that error through the channel and terminates.
+/// Immediately returns on error sending a message through the channel.
 async fn body_to_channel(
     mut body: AsyncResponseBody,
     mut destination_offset: usize,
@@ -467,13 +472,11 @@ async fn body_to_channel(
                 }
             }
             Err(err) => {
-                sender.send(Err(err)).await?;
-                return;
+                return sender.send(Err(err)).await;
             }
         };
     }
-    sender.flush().await?;
-    Ok(());
+    sender.flush().await
 }
 
 /// Performs a `transfer_range()` call with the given range. If this results in a
@@ -827,7 +830,7 @@ mod tests {
             let download_len = download_range.map_or(DATA_LEN, |r| r.1 - r.0);
             let dst = &mut buffer[..download_len];
 
-            let copied = download_into(
+            let (_, _, copied) = download_into(
                 dst,
                 download_range.map(|r| (r.0..r.1).into()),
                 PARALLEL.try_into().unwrap(),
@@ -958,7 +961,7 @@ mod tests {
             let download_len = download_range.map_or(DATA_LEN, |r| r.1 - r.0);
             let dst = &mut buffer[..download_len];
 
-            let copied = download_into(
+            let (_, _, copied) = download_into(
                 dst,
                 download_range.map(|r| (r.0..r.1).into()),
                 parallel.try_into().unwrap(),
@@ -1043,7 +1046,7 @@ mod tests {
         let data = get_random_data(0);
         let mock = Arc::new(MockPartitionedDownloadBehavior::new(data.clone(), None));
 
-        let copied =
+        let (_, _, copied) =
             download_into(&mut [0; 1024], None, parallel, partition_len, mock.clone()).await?;
 
         assert_eq!(copied, 0);

@@ -19,8 +19,6 @@ use azure_storage_blob_test::get_test_credential;
 use bytes::BytesMut;
 use futures::{FutureExt, StreamExt, TryStreamExt};
 
-use crate::extensions::{OnceLockExt, RecordingExt};
-
 enum CollectOptions {
     Stream,
     Core,
