@@ -10,6 +10,7 @@ use azure_storage_blob::models::{
     PageBlobClientUploadPagesOptions, PageListHeaders, SequenceNumberActionType,
 };
 use azure_storage_blob_test::{get_blob_name, get_container_client, StorageAccount};
+use futures::TryStreamExt;
 use std::{collections::HashMap, error::Error};
 
 #[recorded::test]
@@ -636,13 +637,14 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .await?;
 
     // Single Range Scenario
-    let response = page_blob_client.get_page_ranges(None).await?;
+    let mut pager = page_blob_client.get_page_ranges(None)?;
+    let response = pager.try_next().await?.unwrap();
     let blob_content_length = response.blob_content_length()?;
     assert_eq!(Some(2048), blob_content_length);
     assert!(response.etag()?.is_some());
 
     let page_list = response.into_model()?;
-    let page_ranges = page_list.page_range.unwrap();
+    let page_ranges = page_list.page_range;
     assert_eq!(1, page_ranges.len());
     assert_eq!(Some(0), page_ranges[0].start);
     assert_eq!(Some(511), page_ranges[0].end);
@@ -658,9 +660,10 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         )
         .await?;
 
-    let response = page_blob_client.get_page_ranges(None).await?;
+    let mut pager = page_blob_client.get_page_ranges(None)?;
+    let response = pager.try_next().await?.unwrap();
     let page_list = response.into_model()?;
-    let page_ranges = page_list.page_range.unwrap();
+    let page_ranges = page_list.page_range;
     assert_eq!(2, page_ranges.len());
     assert_eq!(Some(0), page_ranges[0].start);
     assert_eq!(Some(511), page_ranges[0].end);
@@ -672,9 +675,10 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         range: Some(HttpRange::new(0, 512)),
         ..Default::default()
     };
-    let response = page_blob_client.get_page_ranges(Some(options)).await?;
+    let mut pager = page_blob_client.get_page_ranges(Some(options))?;
+    let response = pager.try_next().await?.unwrap();
     let page_list = response.into_model()?;
-    let page_ranges = page_list.page_range.unwrap();
+    let page_ranges = page_list.page_range;
     assert_eq!(1, page_ranges.len());
     assert_eq!(Some(0), page_ranges[0].start);
     assert_eq!(Some(511), page_ranges[0].end);
@@ -684,9 +688,10 @@ async fn test_get_page_ranges(ctx: TestContext) -> Result<(), Box<dyn Error>> {
         .clear_pages(HttpRange::new(0, 512), None)
         .await?;
 
-    let response = page_blob_client.get_page_ranges(None).await?;
+    let mut pager = page_blob_client.get_page_ranges(None)?;
+    let response = pager.try_next().await?.unwrap();
     let page_list = response.into_model()?;
-    let page_ranges = page_list.page_range.unwrap();
+    let page_ranges = page_list.page_range;
     assert_eq!(1, page_ranges.len());
     assert_eq!(Some(1024), page_ranges[0].start);
     assert_eq!(Some(1535), page_ranges[0].end);

@@ -1836,7 +1836,7 @@ pub struct PageBlobClientGetPageRangesOptions<'a> {
     pub maxresults: Option<i32>,
 
     /// Allows customization of the method call.
-    pub method_options: ClientMethodOptions<'a>,
+    pub method_options: PagerOptions<'a>,
 
     /// Specifies the range of the blob to operate on.
     pub range: Option<HttpRange>,
@@ -1846,6 +1846,29 @@ pub struct PageBlobClientGetPageRangesOptions<'a> {
 
     /// The timeout parameter is expressed in seconds. For more information, see [Setting Timeouts for Blob Service Operations.](\"<https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\>")
     pub timeout: Option<i32>,
+}
+
+impl PageBlobClientGetPageRangesOptions<'_> {
+    /// Transforms this [`PageBlobClientGetPageRangesOptions`] into a new `PageBlobClientGetPageRangesOptions` that owns the underlying data, cloning it if necessary.
+    pub fn into_owned(self) -> PageBlobClientGetPageRangesOptions<'static> {
+        PageBlobClientGetPageRangesOptions {
+            if_match: self.if_match,
+            if_modified_since: self.if_modified_since,
+            if_none_match: self.if_none_match,
+            if_tags: self.if_tags,
+            if_unmodified_since: self.if_unmodified_since,
+            lease_id: self.lease_id,
+            marker: self.marker,
+            maxresults: self.maxresults,
+            method_options: PagerOptions {
+                context: self.method_options.context.into_owned(),
+                ..self.method_options
+            },
+            range: self.range,
+            snapshot: self.snapshot,
+            timeout: self.timeout,
+        }
+    }
 }
 
 /// Options to be passed to `PageBlobClient::resize()`

@@ -1096,8 +1096,8 @@ pub struct PageList {
     pub next_marker: Option<String>,
 
     /// The page ranges.
-    #[serde(rename = "PageRange", skip_serializing_if = "Option::is_none")]
-    pub page_range: Option<Vec<PageRange>>,
+    #[serde(default, rename = "PageRange")]
+    pub page_range: Vec<PageRange>,
 }
 
 /// A page range.

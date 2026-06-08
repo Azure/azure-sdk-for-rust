@@ -20,11 +20,12 @@ use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
     http::{
-        ClientOptions, Method, NoFormat, Pipeline, PipelineSendOptions, Request, RequestContent,
-        Response, Url, UrlExt, XmlFormat,
+        pager::{PagerContinuation, PagerResult, PagerState},
+        ClientOptions, Method, NoFormat, PageIterator, Pipeline, PipelineSendOptions, RawResponse,
+        Request, RequestContent, Response, Url, UrlExt, XmlFormat,
     },
     time::to_rfc7231,
-    tracing, Bytes, Result,
+    tracing, xml, Bytes, Result,
 };
 
 #[tracing::client]
@@ -368,14 +369,14 @@ impl PageBlobClient {
     ///
     /// [`PageListHeaders`]: crate::generated::models::PageListHeaders
     #[tracing::function("Storage.Blob.PageBlobClient.getPageRanges")]
-    pub async fn get_page_ranges(
+    pub fn get_page_ranges(
         &self,
         options: Option<PageBlobClientGetPageRangesOptions<'_>>,
-    ) -> Result<Response<PageList, XmlFormat>> {
-        let options = options.unwrap_or_default();
-        let ctx = options.method_options.context.to_borrowed();
-        let mut url = self.endpoint.clone();
-        let mut query_builder = url.query_builder();
+    ) -> Result<PageIterator<Response<PageList, XmlFormat>>> {
+        let options = options.unwrap_or_default().into_owned();
+        let pipeline = self.pipeline.clone();
+        let mut first_url = self.endpoint.clone();
+        let mut query_builder = first_url.query_builder();
         query_builder.append_pair("comp", "pagelist");
         if let Some(marker) = options.marker.as_ref() {
             query_builder.set_pair("marker", marker);
@@ -390,44 +391,67 @@ impl PageBlobClient {
             query_builder.set_pair("timeout", timeout.to_string());
         }
         query_builder.build();
-        let mut request = Request::new(url, Method::Get);
-        request.insert_header("accept", "application/xml");
-        if let Some(if_match) = options.if_match.as_ref() {
-            request.insert_header("if-match", if_match.to_string());
-        }
-        if let Some(if_modified_since) = options.if_modified_since {
-            request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
-        }
-        if let Some(if_none_match) = options.if_none_match.as_ref() {
-            request.insert_header("if-none-match", if_none_match.to_string());
-        }
-        if let Some(if_unmodified_since) = options.if_unmodified_since {
-            request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
-        }
-        if let Some(range) = options.range.as_ref() {
-            request.insert_header("range", range.to_string());
-        }
-        if let Some(if_tags) = options.if_tags.as_ref() {
-            request.insert_header("x-ms-if-tags", if_tags);
-        }
-        if let Some(lease_id) = options.lease_id.as_ref() {
-            request.insert_header("x-ms-lease-id", lease_id);
-        }
-        request.insert_header("x-ms-version", &self.version);
-        let rsp = self
-            .pipeline
-            .send(
-                &ctx,
-                &mut request,
-                Some(PipelineSendOptions {
-                    check_success: CheckSuccessOptions {
-                        success_codes: &[200],
-                    },
-                    ..Default::default()
-                }),
-            )
-            .await?;
-        Ok(rsp.into())
+        let version = self.version.clone();
+        Ok(PageIterator::new(
+            move |marker: PagerState, pager_options| {
+                let mut url = first_url.clone();
+                if let PagerState::More(marker) = marker {
+                    let mut query_builder = url.query_builder();
+                    query_builder.set_pair("marker", marker.as_ref());
+                    query_builder.build();
+                }
+                let mut request = Request::new(url, Method::Get);
+                request.insert_header("accept", "application/xml");
+                if let Some(if_match) = options.if_match.as_ref() {
+                    request.insert_header("if-match", if_match.to_string());
+                }
+                if let Some(if_modified_since) = options.if_modified_since {
+                    request.insert_header("if-modified-since", to_rfc7231(&if_modified_since));
+                }
+                if let Some(if_none_match) = options.if_none_match.as_ref() {
+                    request.insert_header("if-none-match", if_none_match.to_string());
+                }
+                if let Some(if_unmodified_since) = options.if_unmodified_since {
+                    request.insert_header("if-unmodified-since", to_rfc7231(&if_unmodified_since));
+                }
+                if let Some(range) = options.range.as_ref() {
+                    request.insert_header("range", range.to_string());
+                }
+                if let Some(if_tags) = options.if_tags.as_ref() {
+                    request.insert_header("x-ms-if-tags", if_tags);
+                }
+                if let Some(lease_id) = options.lease_id.as_ref() {
+                    request.insert_header("x-ms-lease-id", lease_id);
+                }
+                request.insert_header("x-ms-version", &version);
+                let pipeline = pipeline.clone();
+                Box::pin(async move {
+                    let rsp = pipeline
+                        .send(
+                            &pager_options.context,
+                            &mut request,
+                            Some(PipelineSendOptions {
+                                check_success: CheckSuccessOptions {
+                                    success_codes: &[200],
+                                },
+                                ..Default::default()
+                            }),
+                        )
+                        .await?;
+                    let (status, headers, body) = rsp.deconstruct();
+                    let res: PageList = xml::from_xml(&body)?;
+                    let rsp = RawResponse::from_bytes(status, headers, body).into();
+                    Ok(match res.next_marker {
+                        Some(next_marker) if !next_marker.is_empty() => PagerResult::More {
+                            response: rsp,
+                            continuation: PagerContinuation::Token(next_marker),
+                        },
+                        _ => PagerResult::Done { response: rsp },
+                    })
+                })
+            },
+            Some(options.method_options),
+        ))
     }
 
     /// Changes the size of the specified page blob.
