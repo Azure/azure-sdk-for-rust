@@ -524,7 +524,14 @@ impl CosmosDriver {
 
         // Gate parsing on HTTP status. Non-2xx bodies (5xx envelopes, AAD 401/403, proxy text)
         // would otherwise serde-fail and surface as `SERIALIZATION_RESPONSE_BODY_INVALID`.
-        // 3xx is treated as non-success; redirect following is the transport's responsibility.
+        // 3xx is treated as non-success here as a safety net: the production reqwest client
+        // built by `DefaultHttpClientFactory` keeps reqwest's default `Policy::limited(10)` and
+        // transparently follows 3xx redirects on the wire (see
+        // `bootstrap_transport_follows_3xx_redirects_against_real_server` for the end-to-end
+        // proof). A 3xx that still reaches this branch therefore means an unfollowable
+        // redirect — hop-limit exhausted, missing/relative Location, scheme downgrade blocked
+        // by reqwest, etc. — and we surface it as `CosmosError` with the upstream status
+        // preserved rather than letting the redirect body parse-fail.
         if !status_code.is_success() {
             diagnostics.set_operation_status(status_code, sub_status);
             let diagnostics_arc = Arc::new(diagnostics.complete());
@@ -3334,6 +3341,139 @@ mod tests {
         assert!(
             req.endpoint().contains("test.documents.azure.com"),
             "request diagnostics must record the endpoint that would have been contacted. Got: {req:?}"
+        );
+    }
+
+    /// End-to-end proof that the production reqwest transport built by
+    /// `DefaultHttpClientFactory` actually follows 3xx redirects on the wire,
+    /// which is what the inline comment in `fetch_account_properties_with_transport`
+    /// promises. Without this test, a future change that flipped the redirect
+    /// policy to `Policy::none()` (or any other regression that stopped
+    /// following) would silently rebrand every redirector-fronted endpoint
+    /// (custom Front Door / proxy returning 307/308) as a `CosmosError` 307,
+    /// even though no real client wants that behavior.
+    ///
+    /// Spins up a localhost HTTP/1.1 server that returns `307 Temporary
+    /// Redirect` with `Location: <self>/follow` on the first request and
+    /// the canonical `AccountProperties` JSON on the second, then drives a
+    /// real `ReqwestTransportClient` through `fetch_account_properties_with_transport`
+    /// and asserts the call succeeds with the JSON-derived `id`.
+    #[tokio::test]
+    async fn bootstrap_transport_follows_3xx_redirects_against_real_server() {
+        use std::sync::atomic::{AtomicU32, Ordering as AtomicOrdering};
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let port = addr.port();
+        let request_count = Arc::new(AtomicU32::new(0));
+
+        let counter = Arc::clone(&request_count);
+        let server = tokio::spawn(async move {
+            for _ in 0..2 {
+                let Ok((mut socket, _peer)) = listener.accept().await else {
+                    return;
+                };
+                let mut buf = [0u8; 8192];
+                let mut read = 0;
+                // Read headers until CRLF CRLF. The bootstrap GET has no body so we
+                // don't need Content-Length parsing here.
+                loop {
+                    let n = match socket.read(&mut buf[read..]).await {
+                        Ok(0) | Err(_) => break,
+                        Ok(n) => n,
+                    };
+                    read += n;
+                    if buf[..read].windows(4).any(|w| w == b"\r\n\r\n") {
+                        break;
+                    }
+                    if read == buf.len() {
+                        break;
+                    }
+                }
+                let request = std::str::from_utf8(&buf[..read]).unwrap_or("");
+                let request_line = request.lines().next().unwrap_or("");
+                let n = counter.fetch_add(1, AtomicOrdering::SeqCst);
+
+                let response = if n == 0 {
+                    assert!(
+                        request_line.starts_with("GET / "),
+                        "first request must hit the root path; got: {request_line:?}"
+                    );
+                    format!(
+                        "HTTP/1.1 307 Temporary Redirect\r\n\
+                         Location: http://127.0.0.1:{port}/follow\r\n\
+                         Content-Length: 5\r\n\
+                         Connection: close\r\n\
+                         \r\n\
+                         MOVED"
+                    )
+                } else {
+                    assert!(
+                        request_line.starts_with("GET /follow "),
+                        "redirected request must hit /follow; got: {request_line:?}"
+                    );
+                    format!(
+                        "HTTP/1.1 200 OK\r\n\
+                         Content-Type: application/json\r\n\
+                         Content-Length: {}\r\n\
+                         Connection: close\r\n\
+                         \r\n\
+                         {}",
+                        ACCOUNT_PROPERTIES_PAYLOAD.len(),
+                        ACCOUNT_PROPERTIES_PAYLOAD,
+                    )
+                };
+                let _ = socket.write_all(response.as_bytes()).await;
+                let _ = socket.shutdown().await;
+            }
+        });
+
+        let pool = ConnectionPoolOptions::default();
+        let config = HttpClientConfig {
+            version_policy: HttpVersionPolicy::Http11Only,
+            request_timeout: std::time::Duration::from_secs(5),
+            allow_invalid_cert: false,
+            http2_keep_alive_while_idle: false,
+        };
+        let transport_client =
+            crate::driver::transport::http_client_factory::DefaultHttpClientFactory::new()
+                .build(&pool, config)
+                .expect("DefaultHttpClientFactory must build a real reqwest-backed transport");
+        let transport = crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(
+            transport_client,
+        );
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account(&format!("http://127.0.0.1:{port}/"));
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let result = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+        )
+        .await;
+
+        // Ensure the server task has fully drained so the assertion message can
+        // report the final hop count (especially if the bootstrap fetch failed).
+        let _ = server.await;
+
+        let final_count = request_count.load(AtomicOrdering::SeqCst);
+        let props = result.unwrap_or_else(|err| panic!(
+            "bootstrap fetch must succeed against a redirector that returns 307 -> 200 JSON; \
+             this proves the reqwest transport follows redirects. saw {final_count} request(s). err: {err:?}"
+        ));
+        assert_eq!(
+            props.id, "test",
+            "fetched AccountProperties must come from the /follow hop, proving the transport followed the 307"
+        );
+        assert_eq!(
+            final_count, 2,
+            "transport must have made exactly 2 wire requests (initial + one redirect follow). Got: {final_count}"
         );
     }
 }
