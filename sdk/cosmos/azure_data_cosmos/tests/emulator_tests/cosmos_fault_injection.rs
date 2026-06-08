@@ -1102,18 +1102,35 @@ pub async fn error_diagnostics_records_retry_history() -> Result<(), Box<dyn Err
                 !requests.is_empty(),
                 "diagnostics.requests() must be non-empty"
             );
+            let mut injected_503_attempts = 0usize;
             for (i, req) in requests.iter().enumerate() {
                 let status = req.status();
                 let code = u16::from(status.status_code());
+                if code == 503 {
+                    injected_503_attempts += 1;
+                }
                 // Every recorded attempt either reflects the injected 503
-                // or a transient transport-layer recovery code. We don't
-                // pin sub-status here; the contract is "attempts are
-                // visible with real status."
+                // or a transient transport-layer probe (status 0). Other
+                // status codes here would mean we're recording attempts
+                // that don't match what fault injection actually did.
                 assert!(
-                    (500..600).contains(&code) || code == 0,
-                    "attempt {i} status should reflect injected failure or transport probe, got {code}"
+                    code == 503 || code == 0,
+                    "attempt {i} status should reflect injected 503 or be a transport probe, got {code}"
                 );
             }
+            // The whole point of this test is to prove the diagnostics
+            // history captured the injected failures — not just a stream
+            // of transport probes. At least one attempt MUST carry the
+            // injected 503 status.
+            assert!(
+                injected_503_attempts > 0,
+                "at least one recorded attempt must reflect the injected 503; \
+                 recorded statuses: {:?}",
+                requests
+                    .iter()
+                    .map(|r| u16::from(r.status().status_code()))
+                    .collect::<Vec<_>>()
+            );
 
             // Duration is captured.
             assert!(
@@ -1154,7 +1171,7 @@ pub async fn error_diagnostics_records_retry_history() -> Result<(), Box<dyn Err
 )]
 pub async fn error_diagnostics_includes_fault_injection_evaluations() -> Result<(), Box<dyn Error>>
 {
-    use azure_data_cosmos::fault_injection::FaultInjectionEvaluation;
+    use azure_data_cosmos_driver::fault_injection::FaultInjectionEvaluation;
 
     let always_503 = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -1220,6 +1237,31 @@ pub async fn error_diagnostics_includes_fault_injection_evaluations() -> Result<
             assert!(
                 has_applied,
                 "at least one request attempt must record the `Applied` evaluation for rule 'fi-eval-applied'"
+            );
+
+            // Negative control: the recorded `Applied` evaluations must
+            // be consistent with the rule's hit counter. Without this
+            // cross-check the assertion above passes for any non-zero
+            // hit_count, even if attempts and evaluations are mis-aligned.
+            let applied_in_diagnostics = diag
+                .requests()
+                .iter()
+                .flat_map(|req| req.fault_injection_evaluations().iter())
+                .filter(|e| {
+                    matches!(
+                        e,
+                        FaultInjectionEvaluation::Applied { rule_id }
+                            if rule_id == "fi-eval-applied"
+                    )
+                })
+                .count();
+            assert_eq!(
+                applied_in_diagnostics as u32,
+                rule.hit_count(),
+                "diagnostics-recorded `Applied` count ({}) must match the rule's hit_count ({}); \
+                 a mismatch means some applications fired without being recorded in per-attempt diagnostics",
+                applied_in_diagnostics,
+                rule.hit_count()
             );
 
             Ok(())

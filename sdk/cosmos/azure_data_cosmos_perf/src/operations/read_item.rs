@@ -9,7 +9,7 @@ use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::options::ItemReadOptions;
 
-use super::{extract_backend_duration, Operation, OperationOutcome};
+use super::{extract_backend_duration, Operation};
 use crate::seed::SharedItems;
 
 /// Reads a random seeded item by ID and partition key.
@@ -34,15 +34,12 @@ impl Operation for ReadItemOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::Result<OperationOutcome> {
+    ) -> azure_data_cosmos::Result<Option<std::time::Duration>> {
         let item = self.items.random();
 
         let response = container
             .read_item(&item.partition_key, &item.id, self.options.clone())
             .await?;
-        Ok(OperationOutcome::new(
-            extract_backend_duration(response.headers()),
-            response.diagnostics(),
-        ))
+        Ok(extract_backend_duration(response.headers()))
     }
 }

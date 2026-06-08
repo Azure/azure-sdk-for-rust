@@ -25,7 +25,7 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        DatabaseProperties, DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
+        DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
@@ -714,39 +714,6 @@ impl CosmosDriver {
         let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
         let options = OperationOptions::default();
 
-        let db_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_database(db_ref.clone()),
-                options.clone(),
-            )
-            .await?;
-        let db_headers = db_result.headers().clone();
-        let db_diagnostics = db_result.diagnostics();
-        let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("failed to deserialize database response")
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    db_headers.clone(),
-                ))
-                .with_diagnostics(db_diagnostics.clone())
-                .with_source(e)
-                .build()
-        })?;
-        let db_rid = db_props.system_properties.rid.ok_or_else(|| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("database response missing _rid")
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    db_headers,
-                ))
-                .with_diagnostics(db_diagnostics)
-                .with_source(std::io::Error::other("missing _rid"))
-                .build()
-        })?;
-
         let container_result = self
             .execute_singleton_operation(
                 CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
@@ -778,92 +745,39 @@ impl CosmosDriver {
                     .with_message("container response missing _rid")
                     .with_response_parts(crate::models::CosmosResponsePayload::new(
                         crate::models::ResponseBody::NoPayload,
-                        container_headers,
+                        container_headers.clone(),
                     ))
-                    .with_diagnostics(container_diagnostics)
+                    .with_diagnostics(container_diagnostics.clone())
                     .with_source(std::io::Error::other("missing _rid"))
                     .build()
             })?;
 
-        Ok(ContainerReference::new(
-            self.account().clone(),
-            db_props.id.into_owned(),
-            db_rid,
-            container_props.id.clone().into_owned(),
-            container_rid,
-            &container_props,
-        ))
-    }
-
-    async fn fetch_container_by_rid(
-        &self,
-        db_rid: &str,
-        container_rid: &str,
-    ) -> crate::error::Result<ContainerReference> {
-        let db_ref = DatabaseReference::from_rid(self.account().clone(), db_rid.to_owned());
-        let options = OperationOptions::default();
-
-        let db_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_database(db_ref.clone()),
-                options.clone(),
-            )
-            .await?;
-        let db_headers = db_result.headers().clone();
-        let db_diagnostics = db_result.diagnostics();
-        let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message(format!(
-                    "failed to deserialize database response (db_rid='{db_rid}'): {e}"
-                ))
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    db_headers,
-                ))
-                .with_diagnostics(db_diagnostics)
-                .with_source(e)
-                .build()
-        })?;
-        let resolved_db_rid = db_props
-            .system_properties
-            .rid
-            .clone()
-            .unwrap_or_else(|| db_rid.to_owned());
-
-        let container_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_container_by_rid(db_ref, container_rid.to_owned()),
-                options,
-            )
-            .await?;
-        let container_headers = container_result.headers().clone();
-        let container_diagnostics = container_result.diagnostics();
-        let container_props: ContainerProperties = container_result
-            .into_body()
-            .into_single()
-            .map_err(|e| {
-                crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+        // Derive the database RID from the container RID's encoded byte
+        // layout. This avoids an extra `read_database` round-trip — the
+        // first 4 decoded bytes of the container RID are the parent database RID.
+        let db_rid = crate::models::resource_id::ResourceId::new(container_rid.clone())
+            .database_rid()
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
-                        "failed to deserialize container response (db_rid='{db_rid}', container_rid='{container_rid}'): {e}"
+                        "failed to extract database RID from container RID '{container_rid}'"
                     ))
-                    .with_response_parts(crate::models::CosmosResponsePayload::new(crate::models::ResponseBody::NoPayload, container_headers))
+                    .with_response_parts(crate::models::CosmosResponsePayload::new(
+                        crate::models::ResponseBody::NoPayload,
+                        container_headers,
+                    ))
                     .with_diagnostics(container_diagnostics)
-                    .with_source(e)
+                    .with_source(std::io::Error::other("invalid container _rid"))
                     .build()
             })?;
-        let resolved_container_rid = container_props
-            .system_properties
-            .rid
-            .clone()
-            .unwrap_or_else(|| container_rid.to_owned());
 
         Ok(ContainerReference::new(
             self.account().clone(),
-            db_props.id.into_owned(),
-            resolved_db_rid,
+            db_name.to_owned(),
+            db_rid.as_str().to_owned(),
             container_props.id.clone().into_owned(),
-            resolved_container_rid,
+            container_rid,
             &container_props,
         ))
     }
@@ -1133,30 +1047,6 @@ impl CosmosDriver {
         container: ContainerReference,
         continuation: Option<String>,
     ) -> Option<PkRangeFetchResult> {
-        // Error already logged inside the `_with_error` variant. Callers
-        // that want diagnostics on the error path use that variant
-        // directly; this `Option`-returning shim exists for the
-        // pre-resolve fast-path which treats every failure as
-        // "skip the optimization, fall through to default routing."
-        self.fetch_pk_ranges_from_service_with_error(container, continuation)
-            .await
-            .ok()
-    }
-
-    /// Single-page partition key range fetch that propagates errors.
-    ///
-    /// Identical wire behavior to [`Self::fetch_pk_ranges_from_service`], but
-    /// returns `Err(azure_core::Error)` (with the operation's
-    /// `DiagnosticsContext` carrier attached by the pipeline) instead of
-    /// silently logging and downgrading to `None`. Used by the
-    /// SDK-facing `_with_error` routing variants so callers can recover
-    /// per-attempt history, ActivityId, region, and final status when a
-    /// routing-map fetch fails.
-    pub(crate) async fn fetch_pk_ranges_from_service_with_error(
-        &self,
-        container: ContainerReference,
-        continuation: Option<String>,
-    ) -> crate::error::Result<PkRangeFetchResult> {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone());
@@ -1181,32 +1071,29 @@ impl CosmosDriver {
         {
             Ok(response) => {
                 let etag = response.headers().etag.as_ref().map(|e| e.to_string());
-                let diagnostics = response.diagnostics();
 
                 // 304 Not Modified is a success outcome for conditional
                 // changefeed reads: the cached routing map is still current.
                 if response.status().status_code() == azure_core::http::StatusCode::NotModified {
-                    return Ok(PkRangeFetchResult {
+                    return Some(PkRangeFetchResult {
                         ranges: vec![],
                         continuation,
                         not_modified: true,
                     });
                 }
 
-                let body_bytes = response.into_body().single().map_err(|e| {
-                    tracing::error!(
-                        container = %container.name(),
-                        "Partition key ranges response was a feed body, expected single payload"
-                    );
-                    // Attach the originating operation's diagnostics to the
-                    // parse failure so callers can correlate the malformed
-                    // response with its ActivityId/region.
-                    crate::error::CosmosErrorBuilder::from_error(e)
-                        .with_diagnostics(Arc::clone(&diagnostics))
-                        .build()
-                })?;
+                let body_bytes = match response.into_body().single() {
+                    Ok(b) => b,
+                    Err(_) => {
+                        tracing::error!(
+                            container = %container.name(),
+                            "Partition key ranges response was a feed body, expected single payload"
+                        );
+                        return None;
+                    }
+                };
                 match parse_pk_ranges_response(&body_bytes) {
-                    Some(ranges) => Ok(PkRangeFetchResult {
+                    Some(ranges) => Some(PkRangeFetchResult {
                         ranges,
                         continuation: etag,
                         not_modified: false,
@@ -1216,10 +1103,7 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        Err(crate::error::CosmosError::builder()
-                            .with_message("failed to parse partition key ranges response body")
-                            .with_diagnostics(diagnostics)
-                            .build())
+                        None
                     }
                 }
             }
@@ -1249,23 +1133,16 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                    } else {
-                        tracing::warn!(
-                            container = %container.name(),
-                            error = %e,
-                            "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
-                        );
+                        return None;
                     }
-                } else {
-                    tracing::warn!(
-                        container = %container.name(),
-                        error = %e,
-                        "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
-                    );
                 }
-                // The pipeline already attached the per-operation
-                // `DiagnosticsContext` carrier — propagate unchanged.
-                Err(e)
+
+                tracing::warn!(
+                    container = %container.name(),
+                    error = %e,
+                    "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
+                );
+                None
             }
         }
     }
@@ -1691,38 +1568,6 @@ impl CosmosDriver {
         Ok(resolved.as_ref().clone())
     }
 
-    /// Resolves a container by database RID and container RID.
-    ///
-    /// Attempts to resolve from `ContainerCache` first. On cache miss, fetches
-    /// metadata from the service and populates the cache.
-    pub async fn resolve_container_by_rid(
-        &self,
-        db_rid: &str,
-        container_rid: &str,
-    ) -> crate::error::Result<ContainerReference> {
-        let endpoint = self.account().endpoint().as_str().to_owned();
-        let db_rid_owned = db_rid.to_owned();
-        let container_rid_owned = container_rid.to_owned();
-
-        let resolved = self
-            .runtime
-            .container_cache()
-            .get_or_fetch_by_rid(&endpoint, container_rid, || async move {
-                self.fetch_container_by_rid(&db_rid_owned, &container_rid_owned)
-                    .await
-                    .map_err(|err| {
-                        crate::error::CosmosErrorBuilder::from_error(err)
-                            .with_context(format!(
-                                "resolve container by rid (db_rid='{db_rid_owned}', container_rid='{container_rid_owned}')"
-                            ))
-                            .build()
-                    })
-            })
-            .await?;
-
-        Ok(resolved.as_ref().clone())
-    }
-
     /// Plans the execution of a Cosmos DB operation.
     ///
     /// For trivial operations (non-query or single-partition), returns a
@@ -1929,102 +1774,6 @@ impl CosmosDriver {
                     |c, cont| Box::pin(self.fetch_pk_ranges_from_service(c, cont)),
                 )
                 .await
-        }
-    }
-
-    /// Error-propagating variant of [`Self::resolve_all_partition_key_ranges`].
-    ///
-    /// Returns `Err(azure_core::Error)` with the per-operation
-    /// `DiagnosticsContext` carrier attached (recoverable via
-    /// `CosmosError::diagnostics`) when the routing map fetch fails or the
-    /// resulting map is empty. SDK code that surfaces errors to callers
-    /// uses this variant; the silent `Option`-returning variant is reserved
-    /// for the pipeline pre-resolve fast-path where a failed routing-map
-    /// lookup just skips an optimization.
-    pub async fn resolve_all_partition_key_ranges_with_error(
-        &self,
-        container: &ContainerReference,
-        force_refresh: bool,
-    ) -> crate::error::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
-        let routing_map = self
-            .pk_range_cache
-            .try_lookup_with_error(container, force_refresh, |c, cont| {
-                Box::pin(self.fetch_pk_ranges_from_service_with_error(c, cont))
-            })
-            .await?;
-
-        let ranges = routing_map.ranges();
-        if ranges.is_empty() {
-            return Err(crate::error::CosmosError::builder()
-                .with_message(
-                    "resolved routing map contains no partition key ranges; \
-                     the container may not exist or the service may be unreachable",
-                )
-                .build());
-        }
-        Ok(ranges.to_vec())
-    }
-
-    /// Error-propagating variant of [`Self::resolve_partition_key_ranges_for_key`].
-    ///
-    /// Returns `Err(azure_core::Error)` (with `DiagnosticsContext` carrier
-    /// attached on the wire-error path) when the routing map cannot be
-    /// resolved. Client-side validation errors (empty partition key,
-    /// invalid EPK computation) are returned without diagnostics — no
-    /// service call occurred.
-    pub async fn resolve_partition_key_ranges_for_key_with_error(
-        &self,
-        container: &ContainerReference,
-        partition_key: &PartitionKey,
-        force_refresh: bool,
-    ) -> crate::error::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
-        if partition_key.is_empty() {
-            return Err(crate::error::CosmosError::builder()
-                .with_message("partition key must have at least one component")
-                .build());
-        }
-
-        let pk_def = container.partition_key_definition();
-        let epk_range = EffectivePartitionKey::compute_range(partition_key.values(), pk_def)
-            .map_err(|e| {
-                crate::error::CosmosError::builder()
-                    .with_message(format!("effective partition key computation failed: {e}"))
-                    .build()
-            })?;
-
-        if epk_range.start == epk_range.end {
-            // Full key — point lookup
-            let routing_map = self
-                .pk_range_cache
-                .try_lookup_with_error(container, force_refresh, |c, cont| {
-                    Box::pin(self.fetch_pk_ranges_from_service_with_error(c, cont))
-                })
-                .await?;
-            if routing_map.ranges().is_empty() {
-                return Err(crate::error::CosmosError::builder()
-                    .with_message("resolved routing map contains no partition key ranges")
-                    .build());
-            }
-            Ok(routing_map
-                .get_range_by_effective_partition_key(&epk_range.start)
-                .cloned()
-                .map_or_else(Vec::new, |r| vec![r]))
-        } else {
-            // Prefix key — overlapping range lookup. Resolve the routing
-            // map directly so the fetch error path propagates;
-            // `resolve_overlapping_ranges` itself is the silent
-            // `Option`-returning variant used by the pre-resolve path.
-            let routing_map = self
-                .pk_range_cache
-                .try_lookup_with_error(container, force_refresh, |c, cont| {
-                    Box::pin(self.fetch_pk_ranges_from_service_with_error(c, cont))
-                })
-                .await?;
-            Ok(routing_map
-                .get_overlapping_ranges(&epk_range.start..&epk_range.end)
-                .into_iter()
-                .cloned()
-                .collect())
         }
     }
 }

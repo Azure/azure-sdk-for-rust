@@ -1547,22 +1547,6 @@ impl DiagnosticsContext {
             .complete()
     }
 
-    /// Test-only companion to [`Self::for_testing`] that also pre-populates
-    /// the operation's final [`CosmosStatus`]. Used by the wrapper
-    /// crate's error-conversion tests to verify the precedence rule
-    /// "a diagnostics-recorded final status wins over the wrapped
-    /// `azure_core::Error::http_status`".
-    ///
-    /// Same gating and lifecycle constraints as [`Self::for_testing`].
-    #[cfg(feature = "__internal_test_diagnostics_construction")]
-    #[doc(hidden)]
-    pub fn for_testing_with_status(activity_id: ActivityId, status: CosmosStatus) -> Self {
-        let mut builder =
-            DiagnosticsContextBuilder::new(activity_id, Arc::new(DiagnosticsOptions::default()));
-        builder.set_operation_status(status.status_code(), status.sub_status());
-        builder.complete()
-    }
-
     /// Concatenates the per-request diagnostics from a sequence of
     /// sub-operation contexts into a single aggregated [`DiagnosticsContext`].
     ///

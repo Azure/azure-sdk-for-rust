@@ -88,6 +88,7 @@ use std::borrow::Cow;
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[non_exhaustive]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)] // Reserved wire-format model for read-database/query-databases responses.
 pub(crate) struct DatabaseProperties {
     /// Unique identifier for the database within the account.
     pub id: Cow<'static, str>,

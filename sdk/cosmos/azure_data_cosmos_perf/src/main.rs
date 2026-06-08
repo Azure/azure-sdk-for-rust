@@ -8,7 +8,6 @@ mod operations;
 mod runner;
 mod seed;
 mod setup;
-mod shard_observer;
 mod stats;
 
 /// Creates an AAD credential using WorkloadIdentity (AKS) with fallback to ManagedIdentity (VMs).

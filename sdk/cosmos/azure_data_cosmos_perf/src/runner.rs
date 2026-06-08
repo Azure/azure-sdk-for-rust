@@ -8,6 +8,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::models::DiagnosticsContext;
+use azure_data_cosmos_driver::DiagnosticsVerbosity;
 use rand::RngExt;
 use serde::Serialize;
 use sysinfo::System;
@@ -15,7 +17,6 @@ use tokio::task::JoinSet;
 use uuid::Uuid;
 
 use crate::operations::Operation;
-use crate::shard_observer::{ShardObserver, ShardSnapshot};
 use crate::stats::{self, Stats};
 
 /// Walks the `std::error::Error::source()` chain and joins messages with " → ".
@@ -128,11 +129,20 @@ struct ErrorResult {
     operation: String,
     error_message: String,
     source_message: Option<String>,
-    /// Pre-failure context for the transport shard that owned the failing
-    /// request. `None` when diagnostics did not carry shard info (e.g. the
-    /// failure happened before the shard handed the stream off).
+    /// HTTP status code from `CosmosError::status()` — always present (transport /
+    /// client-synthesized errors carry the placeholder status produced by
+    /// `CosmosStatus::synthetic`, e.g. `503` for `TRANSPORT_GENERATED_503`).
+    status_code: u16,
+    /// Cosmos sub-status code from `CosmosError::status()`, when one was set.
+    /// `None` for service errors that did not carry a sub-status header.
     #[serde(skip_serializing_if = "Option::is_none")]
-    shard_snapshot: Option<ShardSnapshot>,
+    sub_status: Option<u16>,
+    /// Finalized per-operation diagnostics serialized as a JSON object — written
+    /// to ADX as a `dynamic` column (queryable, not a quoted string). `None`
+    /// when the error fired before the pipeline finalized diagnostics
+    /// (e.g. some pre-request client validation failures).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    diagnostics: Option<serde_json::Value>,
 }
 
 /// Configuration for a perf test run.
@@ -284,7 +294,6 @@ pub async fn run(config: RunConfig) {
     // Spawn fixed worker pool — each worker loops until cancelled
     let start = Instant::now();
     let mut workers = JoinSet::new();
-    let observer = Arc::new(ShardObserver::new());
 
     for _ in 0..concurrency {
         let ops = operations.clone();
@@ -295,7 +304,6 @@ pub async fn run(config: RunConfig) {
         let err_workload_id = workload_id.clone();
         let err_commit_sha = commit_sha.clone();
         let err_hostname = hostname.clone();
-        let observer = observer.clone();
 
         workers.spawn(async move {
             while !cancelled.load(Ordering::Relaxed) {
@@ -304,29 +312,11 @@ pub async fn run(config: RunConfig) {
 
                 let op_start = Instant::now();
                 match op.execute(&container).await {
-                    Ok(outcome) => {
-                        stats.record_latency(
-                            op.name(),
-                            op_start.elapsed(),
-                            outcome.backend_duration,
-                        );
-                        if let Some(shard_id) =
-                            outcome.diagnostics.as_deref().and_then(extract_shard_id)
-                        {
-                            // Observation result is discarded on success — we only
-                            // need to keep ShardObserver bookkeeping warm so that
-                            // an eventual failure on the same shard has rich
-                            // history to snapshot.
-                            let _ = observer.observe(shard_id, true);
-                        }
+                    Ok(backend_duration) => {
+                        stats.record_latency(op.name(), op_start.elapsed(), backend_duration);
                     }
                     Err(e) => {
                         stats.record_error(op.name());
-                        let shard_snapshot = e
-                            .diagnostics()
-                            .as_deref()
-                            .and_then(extract_shard_id)
-                            .map(|shard_id| observer.observe(shard_id, false));
                         upsert_error(
                             &err_container,
                             op.name(),
@@ -334,7 +324,6 @@ pub async fn run(config: RunConfig) {
                             &err_workload_id,
                             &err_commit_sha,
                             &err_hostname,
-                            shard_snapshot,
                         )
                         .await;
                     }
@@ -467,7 +456,6 @@ async fn upsert_results(
 /// Writes a single error document to the results container.
 ///
 /// Failures are logged to stderr but never propagated—this must not stop the workload.
-#[allow(clippy::too_many_arguments)]
 async fn upsert_error(
     container: &ContainerClient,
     operation: &str,
@@ -475,12 +463,16 @@ async fn upsert_error(
     workload_id: &str,
     commit_sha: &str,
     hostname: &str,
-    shard_snapshot: Option<ShardSnapshot>,
 ) {
     let now = time::OffsetDateTime::now_utc()
         .format(&time::format_description::well_known::Rfc3339)
         .expect("RFC 3339 formatting should never fail");
     let id = Uuid::new_v4().to_string();
+
+    let status = error.status();
+    let status_code = u16::from(status.status_code());
+    let sub_status = status.sub_status().map(|s| s.value());
+    let diagnostics = error.diagnostics().as_deref().and_then(diagnostics_to_json);
 
     let doc = ErrorResult {
         id: id.clone(),
@@ -492,7 +484,9 @@ async fn upsert_error(
         operation: operation.to_string(),
         error_message: format!("{error}"),
         source_message: error_source_chain(error),
-        shard_snapshot,
+        status_code,
+        sub_status,
+        diagnostics,
     };
     if let Err(e) = container
         .upsert_item(&doc.partition_key, &id, &doc, None)
@@ -502,14 +496,18 @@ async fn upsert_error(
     }
 }
 
-/// Pulls the transport shard id from a finalized DiagnosticsContext, if any.
-///
-/// Scans the per-attempt RequestDiagnostics list (newest first) and returns the
-/// first transport-shard binding it finds.
-fn extract_shard_id(diagnostics: &azure_data_cosmos::models::DiagnosticsContext) -> Option<u64> {
-    diagnostics
-        .requests()
-        .iter()
-        .rev()
-        .find_map(|req| req.transport_shard().map(|s| s.shard_id()))
+/// Serializes a finalized [`DiagnosticsContext`] to a `serde_json::Value` so it
+/// can be embedded as a `dynamic` column in the upserted document (rather than
+/// a quoted JSON string). Returns `None` if either the diagnostics JSON or the
+/// re-parse fails — both are non-fatal: the surrounding error row is still
+/// written, just without the diagnostics field.
+fn diagnostics_to_json(diagnostics: &DiagnosticsContext) -> Option<serde_json::Value> {
+    let json_str = diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+    match serde_json::from_str(json_str) {
+        Ok(value) => Some(value),
+        Err(e) => {
+            eprintln!("Warning: failed to parse diagnostics JSON for error row: {e}");
+            None
+        }
+    }
 }

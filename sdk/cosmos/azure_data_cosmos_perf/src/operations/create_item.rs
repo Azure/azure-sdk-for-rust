@@ -11,7 +11,7 @@ use azure_data_cosmos::options::ItemWriteOptions;
 use rand::RngExt;
 use uuid::Uuid;
 
-use super::{extract_backend_duration, Operation, OperationOutcome, PerfItem};
+use super::{extract_backend_duration, Operation, PerfItem};
 use crate::seed::{SeededItem, SharedItems};
 
 /// Creates a new item with a unique ID and partition key.
@@ -39,7 +39,7 @@ impl Operation for CreateItemOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::Result<OperationOutcome> {
+    ) -> azure_data_cosmos::Result<Option<std::time::Duration>> {
         let id = Uuid::new_v4().to_string();
         let partition_key = Uuid::new_v4().to_string();
         let value = rand::rng().random_range(0..u64::MAX);
@@ -55,9 +55,8 @@ impl Operation for CreateItemOperation {
             .create_item(&item.partition_key, &id, &item, self.options.clone())
             .await?;
         let backend = extract_backend_duration(response.headers());
-        let diagnostics = response.diagnostics();
 
         self.items.push(SeededItem { id, partition_key });
-        Ok(OperationOutcome::new(backend, diagnostics))
+        Ok(backend)
     }
 }

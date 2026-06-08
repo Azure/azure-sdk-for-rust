@@ -101,6 +101,6 @@
 #[doc(inline)]
 pub use azure_data_cosmos_driver::fault_injection::{
     CustomResponse, CustomResponseBuilder, FaultInjectionCondition, FaultInjectionConditionBuilder,
-    FaultInjectionErrorType, FaultInjectionEvaluation, FaultInjectionResult,
-    FaultInjectionResultBuilder, FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
+    FaultInjectionErrorType, FaultInjectionResult, FaultInjectionResultBuilder, FaultInjectionRule,
+    FaultInjectionRuleBuilder, FaultOperationType,
 };
