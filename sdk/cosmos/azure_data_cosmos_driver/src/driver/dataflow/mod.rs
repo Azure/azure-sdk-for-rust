@@ -39,6 +39,8 @@ mod node;
 mod pipeline;
 pub(crate) mod planner;
 pub(crate) mod query_plan;
+#[cfg(test)]
+mod query_resume_integration_tests;
 mod request;
 mod snapshot;
 mod topology;
