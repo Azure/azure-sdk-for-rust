@@ -9,6 +9,7 @@
 - Removed `CosmosDriver::resolve_container_by_rid` and the supporting `CosmosOperation::read_container_by_rid` factory and `ContainerCache::get_or_fetch_by_rid`. These RID-keyed entry points had no callers; container resolution now goes exclusively through `resolve_container` / `resolve_container_by_name`. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
 
 ### Bugs Fixed
+- PPAF now clears stale `failover_overrides` entries when the server-side `enablePerPartitionFailoverBehavior` flag transitions from enabled to disabled, so they cannot silently re-apply on re-enable. The in-memory emulator also now emits the flag and exposes runtime-toggle hooks so the dynamic-enablement contract is testable end-to-end. ([#4325](https://github.com/Azure/azure-sdk-for-rust/issues/4325))
 
 ### Other Changes
 

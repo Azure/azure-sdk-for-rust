@@ -9,6 +9,7 @@ pub mod error_cases;
 pub mod error_diagnostics;
 pub mod multi_region;
 pub mod point_operations;
+pub mod ppaf_dynamic_enablement;
 pub mod split_merge;
 pub mod throttling;
 

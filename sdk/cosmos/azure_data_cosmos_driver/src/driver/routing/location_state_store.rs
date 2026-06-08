@@ -374,7 +374,7 @@ impl LocationStateStore {
     ///
     /// The `last_refresh_epoch_ms` clock is updated by
     /// [`refresh_account_properties_inner`] only on a successful fetch — if
-    /// this timer-driven refresh fails (network error, service 5xx, …), the
+    /// this timer-driven refresh fails (network error, service 5xx, ...), the
     /// event-driven path is NOT throttled and is free to retry recovery
     /// immediately.
     async fn force_refresh_account_properties(&self) {
@@ -514,10 +514,23 @@ impl LocationStateStore {
         *self.last_synced_properties.lock().unwrap() = Some(properties);
         self.apply_partition(|current| {
             let mut next = current.clone();
+            // Track the PPAF transition so we can drop stale per-partition
+            // failover overrides when the server-side flag flips off. The
+            // eligibility gate in `is_eligible_for_ppaf` already prevents
+            // stale entries from being *applied* while PPAF is off, but
+            // leaving them in place would silently re-apply outdated
+            // overrides if the operator re-enabled PPAF later -- clearing
+            // here guarantees a clean slate on re-enable.
+            let ppaf_was_enabled = current.per_partition_automatic_failover_enabled;
             next.per_partition_automatic_failover_enabled =
                 per_partition_automatic_failover_enabled;
             next.per_partition_circuit_breaker_enabled = per_partition_automatic_failover_enabled
                 || current.config.circuit_breaker_option_enabled;
+
+            if ppaf_was_enabled && !per_partition_automatic_failover_enabled {
+                next.failover_overrides.clear();
+            }
+
             next
         });
     }
@@ -654,6 +667,33 @@ mod tests {
             "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
             "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
             "enableMultipleWriteLocations": false,
+            "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
+            "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
+            "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
+            "queryEngineConfiguration": "{}"
+        }))
+        .unwrap()
+    }
+
+    /// Builds an `AccountProperties` payload that mirrors `test_refresh_payload`
+    /// but with an explicit value for `enablePerPartitionFailoverBehavior` and
+    /// a caller-supplied etag -- so successive `sync_account_properties` calls
+    /// look like distinct service updates rather than no-op repeats that the
+    /// etag short-circuit suppresses.
+    fn test_payload_with_ppaf(enabled: bool, etag: &str) -> AccountProperties {
+        serde_json::from_value(serde_json::json!({
+            "_self": "",
+            "id": "test",
+            "_rid": "test.documents.azure.com",
+            "_etag": etag,
+            "media": "//media/",
+            "addresses": "//addresses/",
+            "_dbs": "//dbs/",
+            "writableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "readableLocations": [{ "name": "eastus", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com:443/" }],
+            "enableMultipleWriteLocations": false,
+            "enablePerPartitionFailoverBehavior": enabled,
             "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
             "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
             "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
@@ -941,6 +981,244 @@ mod tests {
         assert!(
             weak.upgrade().is_none(),
             "PartitionEndpointState was leaked: not dropped after LocationStateStore drop"
+        );
+    }
+
+    // -- PPAF dynamic enablement (issue #4325) ----------------------------
+    //
+    // The driver consumes `AccountProperties.enable_per_partition_failover_behavior`
+    // as the single source of truth for PPAF enablement. These tests verify
+    // that `sync_account_properties` propagates the server flag into the live
+    // `PartitionEndpointState.per_partition_automatic_failover_enabled` on
+    // every refresh, and that stale `failover_overrides` entries are dropped
+    // when the server flag flips off so they cannot silently re-apply if the
+    // operator re-enables PPAF later.
+
+    fn build_store_for_ppaf_tests() -> LocationStateStore {
+        let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
+        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+            let payload = test_refresh_payload();
+            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                Box::pin(async move { Ok(payload) });
+            fut
+        });
+
+        LocationStateStore::new(
+            Arc::new(AccountMetadataCache::new()),
+            test_endpoint(),
+            default_endpoint,
+            refresh,
+            false,
+            Duration::from_secs(60),
+            PartitionFailoverConfig::default(),
+            Vec::new(),
+        )
+    }
+
+    #[test]
+    fn sync_propagates_ppaf_flag_from_account_properties() {
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        // Initial state -- no sync yet, flag is false from `PartitionEndpointState::default()`.
+        assert!(
+            !store
+                .snapshot()
+                .partitions
+                .per_partition_automatic_failover_enabled
+        );
+
+        // First sync with PPAF=true must flip the flag on.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on")),
+            &default_endpoint,
+        );
+        assert!(
+            store
+                .snapshot()
+                .partitions
+                .per_partition_automatic_failover_enabled,
+            "PPAF flag should be true after a sync with enablePerPartitionFailoverBehavior=true"
+        );
+
+        // Second sync with PPAF=false must flip it back off.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(false, "etag-off")),
+            &default_endpoint,
+        );
+        assert!(
+            !store
+                .snapshot()
+                .partitions
+                .per_partition_automatic_failover_enabled,
+            "PPAF flag should be false after a sync with enablePerPartitionFailoverBehavior=false"
+        );
+    }
+
+    #[test]
+    fn ppcb_tracks_server_ppaf_flag_in_absence_of_option_override() {
+        // PPCB effective value = server_ppaf || options_ppcb_enabled.
+        // With options_ppcb_enabled=false (the default), PPCB tracks PPAF.
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on")),
+            &default_endpoint,
+        );
+        assert!(
+            store
+                .snapshot()
+                .partitions
+                .per_partition_circuit_breaker_enabled,
+            "PPCB should be enabled when PPAF is enabled and option-side PPCB is the default false"
+        );
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(false, "etag-off")),
+            &default_endpoint,
+        );
+        assert!(
+            !store
+                .snapshot()
+                .partitions
+                .per_partition_circuit_breaker_enabled,
+            "PPCB should follow PPAF off when option-side PPCB is the default false"
+        );
+    }
+
+    #[test]
+    fn disabling_ppaf_clears_failover_overrides() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionFailoverEntry,
+        };
+        use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
+        use std::collections::HashSet;
+
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        // Enable PPAF first so the override would actually be honored by the
+        // routing eligibility gate (the test is about transition cleanup, not
+        // about whether the override applies while PPAF is on).
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on")),
+            &default_endpoint,
+        );
+
+        // Seed a fake PPAF override entry. This mirrors what
+        // `mark_partition_unavailable` would install during a real
+        // single-master write failover.
+        let endpoint_a = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let endpoint_b = CosmosEndpoint::regional(
+            "westus".into(),
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let pkrange_id: PartitionKeyRangeId = "0".to_string().into();
+        let entry = PartitionFailoverEntry {
+            current_endpoint: endpoint_b.clone(),
+            first_failed_endpoint: endpoint_a.clone(),
+            failed_endpoints: HashSet::from([endpoint_a]),
+            read_failure_count: 0,
+            write_failure_count: 1,
+            first_failure_time: Instant::now(),
+            last_failure_time: Instant::now(),
+            health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
+        };
+
+        store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.failover_overrides
+                .insert(pkrange_id.clone(), entry.clone());
+            next
+        });
+        assert_eq!(
+            store.snapshot().partitions.failover_overrides.len(),
+            1,
+            "test setup: failover override was not installed"
+        );
+
+        // Server flips PPAF off -- the next refresh must drop the stale override
+        // entry so it cannot silently re-apply when PPAF is re-enabled.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(false, "etag-off")),
+            &default_endpoint,
+        );
+
+        let snapshot = store.snapshot();
+        assert!(
+            !snapshot.partitions.per_partition_automatic_failover_enabled,
+            "PPAF should be off after sync_account_properties with false"
+        );
+        assert!(
+            snapshot.partitions.failover_overrides.is_empty(),
+            "failover_overrides should be cleared when PPAF flips from true to false; \
+             leaving stale entries lets old failovers re-apply silently on re-enable"
+        );
+    }
+
+    #[test]
+    fn re_enabling_ppaf_does_not_clear_overrides_that_were_installed_after_re_enable() {
+        // Sanity-check that the clear path only fires on the true->false edge:
+        // disabling, re-enabling, then installing fresh overrides must leave
+        // those fresh overrides alone on subsequent same-state (true->true)
+        // syncs.
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionFailoverEntry,
+        };
+        use crate::driver::routing::partition_key_range_id::PartitionKeyRangeId;
+        use std::collections::HashSet;
+
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        // false -> true: clear path must not fire (no prior overrides anyway).
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on-1")),
+            &default_endpoint,
+        );
+
+        let endpoint_a = CosmosEndpoint::regional(
+            "eastus".into(),
+            url::Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let endpoint_b = CosmosEndpoint::regional(
+            "westus".into(),
+            url::Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let pkrange_id: PartitionKeyRangeId = "0".to_string().into();
+        let entry = PartitionFailoverEntry {
+            current_endpoint: endpoint_b.clone(),
+            first_failed_endpoint: endpoint_a.clone(),
+            failed_endpoints: HashSet::from([endpoint_a]),
+            read_failure_count: 0,
+            write_failure_count: 1,
+            first_failure_time: Instant::now(),
+            last_failure_time: Instant::now(),
+            health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
+        };
+        store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.failover_overrides
+                .insert(pkrange_id.clone(), entry.clone());
+            next
+        });
+
+        // true -> true with a new etag (still enabled): clear path must not fire.
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "etag-on-2")),
+            &default_endpoint,
+        );
+
+        assert_eq!(
+            store.snapshot().partitions.failover_overrides.len(),
+            1,
+            "overrides installed while PPAF is on must not be cleared by a same-state sync"
         );
     }
 }
