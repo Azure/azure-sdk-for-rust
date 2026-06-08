@@ -7,11 +7,11 @@
 ### Breaking Changes
 
 - Removed `CosmosDriver::resolve_container_by_rid` and the supporting `CosmosOperation::read_container_by_rid` factory and `ContainerCache::get_or_fetch_by_rid`. These RID-keyed entry points had no callers; container resolution now goes exclusively through `resolve_container` / `resolve_container_by_name`. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
-- Cross-partition query continuation tokens minted by `0.3.0` cannot be resumed against `0.4.0`. The on-wire token shape was reshaped to record per-range sibling state so that pausing a fan-out query mid-flight no longer loses information about siblings that hadn't been touched yet. Callers holding a `0.3.0`-minted token will receive a continuation-token error on resume and must re-issue the query. (`0.3.0` tokens were already broken on the resume-after-split path that this release fixes, so this aligns behavior with documentation.) ([#TODO-PR](https://github.com/Azure/azure-sdk-for-rust/pull/TODO))
+- Cross-partition query continuation tokens minted by `0.3.0` cannot be resumed against `0.4.0`. The on-wire token shape was reshaped to record per-range sibling state so that pausing a fan-out query mid-flight no longer loses information about siblings that hadn't been touched yet. Callers holding a `0.3.0`-minted token will receive a continuation-token error on resume and must re-issue the query. (`0.3.0` tokens were already broken on the resume-after-split path that this release fixes, so this aligns behavior with documentation.) ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 
 ### Bugs Fixed
 
-- Fixed duplicate items being returned on cross-partition query resume after a physical partition split. When a cross-partition query was paused, serialized to a continuation token, and resumed after the underlying partition had split, the resumed iterator could re-emit items the caller had already consumed on a prior page. The continuation token now records per-range sibling state and is correctly propagated to every surviving leaf after a split. ([#TODO-PR](https://github.com/Azure/azure-sdk-for-rust/pull/TODO))
+- Fixed duplicate items being returned on cross-partition query resume after a physical partition split. When a cross-partition query was paused, serialized to a continuation token, and resumed after the underlying partition had split, the resumed iterator could re-emit items the caller had already consumed on a prior page. The continuation token now records per-range sibling state and is correctly propagated to every surviving leaf after a split. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 
 ### Other Changes
 
