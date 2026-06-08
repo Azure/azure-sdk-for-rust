@@ -25,7 +25,12 @@ Show a summary of the misspellings to the user. Prompt the user for which words 
 
 For words that should be replaced, fix the misspellings directly in the source files. If you cannot confidently determine the correct spelling, ask the user.
 
-For words that should be ignored, add them to the `ignoreWords` array in a `.cspell.json` file under `sdk/{service-directory}` or lower. If the file doesn't exist, create it with an `import` of either a parent `.cspell.json` or `../../.vscode/cspell.json` from the root of the repo.
+When ignoring a word, consider whether the word is domain-specific or spans multiple services:
+
+1. **It's a domain-specific term** (e.g., "RNTBD" in CosmosDB) unlikely to appear in other services — add it to the `ignoreWords` list in `sdk/{service}/.cspell.json`. Keep that list sorted alphabetically.
+2. **It's a term that applies to multiple services** (e.g., "upsert") — add it to the `words` list in `.vscode/cspell.json`. Keep that list sorted alphabetically.
+
+cSpell is case-insensitive, so you don't need to worry about the casing of ignored or added words. All lower-case is preferred unless there is a benefit to keeping words in their original case.
 
 Example `sdk/keyvault/.cspell.json`:
 
