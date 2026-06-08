@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added configurable throttle (HTTP 429, rate-limited) retry limits to `OperationOptions`: `max_throttle_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables retries) caps the number of 429 retries, and `max_throttle_retry_wait_time` (default `30s`) caps the cumulative wait across them. These resolve through the standard operation → account → runtime → env layering and are threaded into the transport-level throttle retry loop via `ThrottleRetryState::with_limits`.
+- Added configurable throttle (HTTP 429, rate-limited) retry limits to `OperationOptions`: `max_throttle_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables retries) caps the number of 429 retries, and `max_throttle_retry_wait_time` (default `30s`) caps the cumulative wait across them. These resolve through the standard operation → account → runtime → env layering and are threaded into the transport-level throttle retry loop via `ThrottleRetryState::with_limits`. When `max_throttle_retry_count` is `0`, the one-shot forced-final-retry safety net in `execute_transport_pipeline` is also suppressed so the first 429 surfaces with zero retries on the wire (matching the .NET-parity `MaxRetryAttemptsOnRateLimitedRequests = 0` contract). Both budgets are scoped per `execute_transport_pipeline` invocation; an operation that fans out across regions (failover, hedging) starts a fresh throttle budget per leg, so per-operation total wall-clock time should be bounded via `OperationOptions::end_to_end_latency_policy`.
 
 ### Breaking Changes
 

@@ -161,6 +161,14 @@ pub(crate) async fn execute_operation_pipeline(
     // `MaxRetryWaitTimeOnRateLimitedRequests`. They are forwarded to the
     // transport pipeline, which owns the 429 retry loop. `0` attempts disables
     // throttle retries.
+    //
+    // **Scope note**: each value is forwarded as a *per-transport-pipeline*
+    // budget — `execute_transport_pipeline` is invoked once per attempt that
+    // this operation pipeline makes (e.g., per region during failover or per
+    // leg during hedging), and each invocation starts with a fresh
+    // throttle-retry budget. Total wall-clock cost across an operation is
+    // bounded by `end_to_end_latency_policy` (see the per-attempt deadline
+    // wiring below), not by these knobs in aggregate.
     let max_throttle_attempts = options
         .max_throttle_retry_count()
         .copied()

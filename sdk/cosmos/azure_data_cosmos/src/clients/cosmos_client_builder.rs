@@ -130,6 +130,13 @@ impl CosmosClientBuilder {
     ///
     /// **Default**: `9`.
     ///
+    /// **Scope**: applies *per transport-pipeline invocation*, not per
+    /// logical operation. An operation that fans out across regions
+    /// (failover, hedging) enters the transport pipeline once per leg, each
+    /// with a fresh throttle-retry budget. To cap an operation's *total*
+    /// wall-clock time, configure an end-to-end latency policy on
+    /// [`OperationOptions::end_to_end_latency_policy`](crate::OperationOptions).
+    ///
     /// This client-wide value can be overridden per request via
     /// [`OperationOptions`](crate::OperationOptions).
     ///
@@ -150,6 +157,12 @@ impl CosmosClientBuilder {
     /// retry is attempted.
     ///
     /// **Default**: 30 seconds.
+    ///
+    /// **Scope**: same per-invocation scope as
+    /// [`with_max_retry_attempts_on_throttled_requests`](Self::with_max_retry_attempts_on_throttled_requests)
+    /// — this is *not* a per-operation cap. Configure
+    /// [`OperationOptions::end_to_end_latency_policy`](crate::OperationOptions)
+    /// for that.
     ///
     /// This client-wide value can be overridden per request via
     /// [`OperationOptions`](crate::OperationOptions).

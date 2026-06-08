@@ -100,6 +100,14 @@ pub struct OperationOptions {
     ///
     /// **Default**: `9`. A value of `0` disables retrying throttled requests
     /// (the first 429 is surfaced to the caller).
+    ///
+    /// **Scope**: This budget applies *per transport-pipeline invocation*,
+    /// not per logical operation. An operation that performs cross-region
+    /// failover or hedging can call into the transport pipeline multiple
+    /// times — each invocation starts with a fresh throttle-retry budget.
+    /// To bound the **total** time an operation can spend on retries (across
+    /// throttling, failover, hedging, etc.), configure
+    /// [`end_to_end_latency_policy`](Self::end_to_end_latency_policy).
     #[option(env = "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT")]
     pub max_throttle_retry_count: Option<u32>,
 
@@ -111,6 +119,12 @@ pub struct OperationOptions {
     /// delay would exceed this budget, no further throttle retry is attempted.
     ///
     /// **Default**: 30 seconds.
+    ///
+    /// **Scope**: This budget applies *per transport-pipeline invocation*,
+    /// not per logical operation. See the scope note on
+    /// [`max_throttle_retry_count`](Self::max_throttle_retry_count) and
+    /// [`end_to_end_latency_policy`](Self::end_to_end_latency_policy) for the
+    /// per-operation cap.
     pub max_throttle_retry_wait_time: Option<Duration>,
 
     /// Read failure count threshold before the per-partition circuit breaker

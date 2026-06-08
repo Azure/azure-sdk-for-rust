@@ -152,12 +152,19 @@ pub(crate) struct TransportPipelineContext<'a> {
     /// Resolved by the operation pipeline from the effective
     /// [`OperationOptionsView::max_throttle_retry_count`](crate::options::OperationOptionsView::max_throttle_retry_count)
     /// (defaulting to `9`). `0` disables throttle retries.
+    ///
+    /// **Scope**: This budget is per `execute_transport_pipeline` invocation,
+    /// not per logical operation — an operation that performs cross-region
+    /// failover or hedging will enter this pipeline once per leg, each with
+    /// a fresh budget. Per-operation total time is bounded by the operation's
+    /// `end_to_end_latency_policy` deadline, not by this knob.
     pub max_throttle_attempts: u32,
     /// Maximum cumulative wait budget across 429 (throttle) retries.
     ///
     /// Resolved by the operation pipeline from the effective
     /// [`OperationOptionsView::max_throttle_retry_wait_time`](crate::options::OperationOptionsView::max_throttle_retry_wait_time)
-    /// (defaulting to 30 seconds).
+    /// (defaulting to 30 seconds). Same per-invocation scope note as
+    /// [`max_throttle_attempts`](Self::max_throttle_attempts).
     pub max_throttle_wait_time: Duration,
 }
 
@@ -351,7 +358,17 @@ pub(crate) async fn execute_transport_pipeline(
                     TransportOutcome::HttpError { status, .. } if status.is_throttled()
                 );
 
-                if throttle_state.can_use_forced_final_retry() && is_throttled {
+                // Honor an explicit `max_throttle_retry_count = 0` opt-out: when the
+                // caller has disabled throttle retries entirely (the .NET-parity
+                // contract for `MaxRetryAttemptsOnRateLimitedRequests = 0`), the
+                // one-shot forced-final retry must also be suppressed — otherwise
+                // a "fail-fast" configuration would still incur one extra round
+                // trip. The forced-final retry remains active for any non-zero
+                // budget, preserving the historical safety net.
+                if throttle_state.max_attempts > 0
+                    && throttle_state.can_use_forced_final_retry()
+                    && is_throttled
+                {
                     if let Some(final_delay) = forced_final_retry_delay(request.deadline) {
                         // One extra retry attempt after throttle budget is exhausted.
                         // When no deadline exists, this retry is immediate.
@@ -1022,6 +1039,225 @@ mod tests {
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
         assert!(requests[0].timed_out());
+    }
+
+    /// Always returns an HTTP 429 response and counts how many times it was
+    /// invoked. Used by the end-to-end `execute_transport_pipeline` tests that
+    /// need to drive the throttle-retry loop without standing up a real
+    /// service.
+    #[derive(Debug)]
+    struct AlwaysThrottlesTransportClient {
+        request_count: Arc<std::sync::atomic::AtomicUsize>,
+    }
+
+    #[async_trait]
+    impl TransportClient for AlwaysThrottlesTransportClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            self.request_count
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            Ok(HttpResponse {
+                status: 429,
+                headers: azure_core::http::headers::Headers::new(),
+                body: vec![],
+            })
+        }
+    }
+
+    /// End-to-end regression: `max_throttle_attempts = 0` must surface the
+    /// first 429 to the caller with **exactly one** request on the wire,
+    /// honoring the `MaxRetryAttemptsOnRateLimitedRequests = 0` .NET-parity
+    /// contract.
+    ///
+    /// This test guards the full `execute_transport_pipeline` loop, including
+    /// the one-shot `forced_final_retry` safety net which is suppressed when
+    /// the user has explicitly opted out of throttle retries.
+    /// `evaluate_transport_retry_429_disabled_when_max_attempts_zero` only
+    /// covers the classifier; the `forced_final_retry` fires *after* the
+    /// classifier returns `Propagate`, so it is invisible to the
+    /// classifier-level test.
+    #[tokio::test]
+    async fn execute_transport_pipeline_with_zero_max_attempts_does_not_retry_429() {
+        let request_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let client = AdaptiveTransport::Gateway(Arc::new(AlwaysThrottlesTransportClient {
+            request_count: Arc::clone(&request_count),
+        }));
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("throttle-max-attempts-zero".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        let result = execute_transport_pipeline(
+            test_request(None),
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+                endpoint_key: test_endpoint_key(),
+                max_throttle_attempts: 0,
+                max_throttle_wait_time: Duration::from_secs(30),
+            },
+            &mut diagnostics,
+        )
+        .await;
+
+        // Exactly one request hit the wire — no throttle retry, no forced
+        // final retry.
+        assert_eq!(
+            request_count.load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "max_throttle_attempts=0 must surface the first 429 with no retry, but observed {} total transport requests",
+            request_count.load(std::sync::atomic::Ordering::SeqCst),
+        );
+
+        // The 429 propagates as an HttpError so the caller can react to it.
+        match result.outcome {
+            TransportOutcome::HttpError { status, .. } => {
+                assert!(
+                    status.is_throttled(),
+                    "expected 429/throttled outcome, got {:?}",
+                    status,
+                );
+            }
+            other => panic!("expected HttpError(429), got {other:?}"),
+        }
+
+        // Diagnostics record the single attempt.
+        let completed = diagnostics.complete();
+        assert_eq!(completed.requests().len(), 1);
+    }
+
+    /// End-to-end companion: with the default budget (≥ 1 attempt) the
+    /// forced-final retry remains active. This pins the historical safety-net
+    /// behavior so a future change to the gating logic that over-suppresses
+    /// the forced-final retry would be caught by tests.
+    #[tokio::test]
+    async fn execute_transport_pipeline_with_default_attempts_uses_forced_final_retry() {
+        let request_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let client = AdaptiveTransport::Gateway(Arc::new(AlwaysThrottlesTransportClient {
+            request_count: Arc::clone(&request_count),
+        }));
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("throttle-forced-final".to_owned()),
+            Arc::new(DiagnosticsOptions::default()),
+        );
+
+        // A very tight cumulative-wait budget (1ms) so the regular throttle
+        // loop bails out immediately, leaving only the forced-final-retry
+        // path to consider.
+        let _ = execute_transport_pipeline(
+            test_request(None),
+            &TransportPipelineContext {
+                transport: &client,
+                allow_sent_transport_retry: false,
+                credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                pipeline_type: PipelineType::DataPlane,
+                transport_security: TransportSecurity::Secure,
+                endpoint_key: test_endpoint_key(),
+                max_throttle_attempts: 9,
+                max_throttle_wait_time: Duration::from_millis(1),
+            },
+            &mut diagnostics,
+        )
+        .await;
+
+        // Initial request + one forced-final-retry attempt = 2 total.
+        assert_eq!(
+            request_count.load(std::sync::atomic::Ordering::SeqCst),
+            2,
+            "default (≥1 attempt) configuration must permit the one-shot \
+             forced-final retry, expected 2 transport requests, observed {}",
+            request_count.load(std::sync::atomic::Ordering::SeqCst),
+        );
+    }
+
+    /// End-to-end fault-injection regression: a transport that *always* throws
+    /// 429 must be retried exactly `max_throttle_attempts` times before the
+    /// throttle propagates to the caller, for **several** configured limits.
+    ///
+    /// This is the direct verification that the
+    /// [`OperationOptionsView::max_throttle_retry_count`](crate::options::OperationOptionsView::max_throttle_retry_count)
+    /// knob (surfaced here as
+    /// [`TransportPipelineContext::max_throttle_attempts`]) is honored: with a
+    /// generous cumulative-wait budget and no end-to-end deadline, the only
+    /// limiter is the attempt count, so the total number of requests that hit
+    /// the wire is deterministic.
+    ///
+    /// Wire-request accounting for `max_throttle_attempts = N` (where `N > 0`):
+    ///
+    /// * `1` initial attempt, plus
+    /// * `N` throttle retries (the classifier keeps retrying while
+    ///   `attempt_count < N`), plus
+    /// * `1` one-shot `forced_final_retry` safety-net attempt that fires once
+    ///   after the throttle budget is exhausted (active for any non-zero
+    ///   budget — see
+    ///   [`execute_transport_pipeline_with_default_attempts_uses_forced_final_retry`]).
+    ///
+    /// Total = `N + 2`. The `N = 0` opt-out (exactly one request, no
+    /// forced-final retry) is covered by
+    /// [`execute_transport_pipeline_with_zero_max_attempts_does_not_retry_429`].
+    #[tokio::test]
+    async fn execute_transport_pipeline_honors_configured_max_throttle_attempts() {
+        for max_throttle_attempts in [1_u32, 2, 3, 5] {
+            let request_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+            let client = AdaptiveTransport::Gateway(Arc::new(AlwaysThrottlesTransportClient {
+                request_count: Arc::clone(&request_count),
+            }));
+            let mut diagnostics = DiagnosticsContextBuilder::new(
+                ActivityId::from_string(format!("throttle-attempts-{max_throttle_attempts}")),
+                Arc::new(DiagnosticsOptions::default()),
+            );
+
+            let result = execute_transport_pipeline(
+                // No deadline so the cumulative-wait/deadline guards never cut
+                // the loop short — the attempt count is the sole limiter.
+                test_request(None),
+                &TransportPipelineContext {
+                    transport: &client,
+                    allow_sent_transport_retry: false,
+                    credential: &Credential::from(azure_core::credentials::Secret::new("dGVzdA==")),
+                    user_agent: &azure_core::http::headers::HeaderValue::from_static("test-agent"),
+                    pipeline_type: PipelineType::DataPlane,
+                    transport_security: TransportSecurity::Secure,
+                    endpoint_key: test_endpoint_key(),
+                    max_throttle_attempts,
+                    // Generous budget so the cumulative-wait cap is never the
+                    // limiter for these small attempt counts.
+                    max_throttle_wait_time: Duration::from_secs(300),
+                },
+                &mut diagnostics,
+            )
+            .await;
+
+            // 1 initial + N throttle retries + 1 forced-final-retry = N + 2.
+            let expected = max_throttle_attempts as usize + 2;
+            assert_eq!(
+                request_count.load(std::sync::atomic::Ordering::SeqCst),
+                expected,
+                "max_throttle_attempts={max_throttle_attempts} must yield {expected} total \
+                 transport requests (1 initial + {max_throttle_attempts} retries + 1 \
+                 forced-final), but observed {}",
+                request_count.load(std::sync::atomic::Ordering::SeqCst),
+            );
+
+            // After the budget is exhausted the 429 propagates to the caller.
+            match result.outcome {
+                TransportOutcome::HttpError { status, .. } => {
+                    assert!(
+                        status.is_throttled(),
+                        "expected 429/throttled outcome for \
+                         max_throttle_attempts={max_throttle_attempts}, got {status:?}",
+                    );
+                }
+                other => panic!(
+                    "expected HttpError(429) for max_throttle_attempts={max_throttle_attempts}, \
+                     got {other:?}"
+                ),
+            }
+        }
     }
 
     #[derive(Debug)]
