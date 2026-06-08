@@ -135,7 +135,7 @@ impl CosmosClientBuilder {
     /// (failover, hedging) enters the transport pipeline once per leg, each
     /// with a fresh throttle-retry budget. To cap an operation's *total*
     /// wall-clock time, configure an end-to-end latency policy on
-    /// [`OperationOptions::end_to_end_latency_policy`](crate::OperationOptions).
+    /// [`OperationOptions::end_to_end_latency_policy`](crate::OperationOptions::end_to_end_latency_policy).
     ///
     /// This client-wide value can be overridden per request via
     /// [`OperationOptions`](crate::OperationOptions).
@@ -165,7 +165,7 @@ impl CosmosClientBuilder {
     /// **Scope**: same per-invocation scope as
     /// [`with_max_retry_attempts_on_throttled_requests`](Self::with_max_retry_attempts_on_throttled_requests)
     /// — this is *not* a per-operation cap. Configure
-    /// [`OperationOptions::end_to_end_latency_policy`](crate::OperationOptions)
+    /// [`OperationOptions::end_to_end_latency_policy`](crate::OperationOptions::end_to_end_latency_policy)
     /// for that.
     ///
     /// This client-wide value can be overridden per request via

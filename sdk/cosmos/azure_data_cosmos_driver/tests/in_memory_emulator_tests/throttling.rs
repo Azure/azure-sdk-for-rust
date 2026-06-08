@@ -425,12 +425,14 @@ async fn create_container_honors_offer_throughput_header() {
 /// transport-pipeline invocation and `rule.hit_count()` equals the exact
 /// number of read attempts on the wire:
 ///
-/// * `N == 0` — throttle retries disabled → exactly **1** attempt (the
-///   forced-final retry is also suppressed for the explicit opt-out).
-/// * `N > 0` — `1` initial + `N` throttle retries + `1` forced-final-retry
-///   safety net = **`N + 2`** attempts. No `end_to_end_latency_policy` is set,
-///   so the transport request carries no deadline and the forced-final retry
-///   fires immediately.
+/// * **Total = `N + 1`** attempts (1 initial + N retries) for any N,
+///   including `N == 0`. The one-shot forced-final-retry safety net in
+///   `execute_transport_pipeline` is gated on `attempt_count < max_attempts`,
+///   so once the count budget is exhausted it is suppressed too — matching
+///   the .NET-parity `MaxRetryAttemptsOnRateLimitedRequests` semantic.
+/// * The forced-final retry still fires when the *cumulative-wait* budget
+///   (rather than the count) is the limiter; this test sets a generous
+///   300-second wait so the count is the sole limiter.
 ///
 /// This is the in-memory analog of the live-emulator test
 /// `emulator_tests::driver_fault_injection::fault_injection_429_honors_configurable_throttle_retry_count`

@@ -335,8 +335,9 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 }
 
 /// End-to-end validation that the configurable 429 (throttle) retry budget —
-/// [`OperationOptions::max_throttle_retry_count`](azure_data_cosmos_driver::options::OperationOptions::max_throttle_retry_count)
-/// — is honored across the full driver stack against a live emulator account.
+/// [`ThrottlingRetryOptions::max_retry_count`](azure_data_cosmos_driver::options::ThrottlingRetryOptions::max_retry_count),
+/// exposed on the nested `OperationOptions::throttling_retry_options` group —
+/// is honored across the full driver stack against a live emulator account.
 ///
 /// A fault rule injects an HTTP 429 (`TooManyRequests`) on **every**
 /// `ReadItem` transport attempt with probability `1.0`. Because the injected
@@ -346,17 +347,17 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
 /// invocation. Counting `rule.hit_count()` therefore yields the exact number
 /// of read attempts that reached the (faulted) transport client.
 ///
-/// Wire-attempt accounting for `max_throttle_retry_count = N`:
+/// Wire-attempt accounting for `max_retry_count = N`:
 ///
-/// * `N == 0` — throttle retries disabled → exactly **1** attempt. The first
-///   429 is surfaced immediately and the one-shot forced-final retry is also
-///   suppressed for the explicit `.NET`-parity opt-out
-///   (`MaxRetryAttemptsOnRateLimitedRequests = 0`).
-/// * `N > 0` — `1` initial + `N` throttle retries + `1` forced-final-retry
-///   safety net = **`N + 2`** attempts. The default operation has no
-///   end-to-end deadline (no `end_to_end_latency_policy`), so the
-///   forced-final retry fires immediately and the throttle backoff sleeps are
-///   the only delays (a few milliseconds total for these small budgets).
+/// * **Total = `N + 1`** attempts on the wire (1 initial + N retries) for
+///   any N, including `N == 0`. The one-shot forced-final-retry safety net
+///   in `execute_transport_pipeline` is gated on `attempt_count <
+///   max_attempts`, so once the count budget is exhausted the safety net is
+///   suppressed too — matching the .NET-parity
+///   `MaxRetryAttemptsOnRateLimitedRequests` semantic.
+/// * The forced-final retry still fires when the *cumulative-wait* budget
+///   (rather than the count) is the limiter; this test uses a generous
+///   300-second wait budget so the count is always the sole limiter.
 ///
 /// This mirrors the unit-level coverage in
 /// `transport_pipeline::tests::execute_transport_pipeline_honors_configured_max_throttle_attempts`
