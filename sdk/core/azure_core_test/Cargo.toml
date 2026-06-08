@@ -1,18 +1,17 @@
 [package]
 name = "azure_core_test"
-version = "0.1.0"
+version = "0.2.0"
 description = "Utilities for testing client libraries built on azure_core."
 readme = "README.md"
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage = "https://github.com/azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_core"
+documentation = "https://docs.rs/azure_core_test"
 keywords = ["sdk", "cloud", "rest", "iot"]
 categories = ["development-tools::testing"]
 edition.workspace = true
 rust-version.workspace = true
-publish = false
 
 [features]
 default = []
@@ -20,9 +19,9 @@ tracing = ["tracing-subscriber"]
 
 [dependencies]
 async-trait.workspace = true
-azure_core = { workspace = true, features = ["test"] }
-azure_core_test_macros.path = "../azure_core_test_macros"
-azure_identity.workspace = true
+azure_core = { path = "../azure_core", version = "1.1.0-beta.1", default-features = false, features = ["test"] }
+azure_core_test_macros = { path = "../azure_core_test_macros", version = "0.2.0" }
+azure_identity = { path = "../../identity/azure_identity", version = "1.1.0-beta.1" }
 clap.workspace = true
 dotenvy = "0.15.7"
 flate2.workspace = true
@@ -49,9 +48,9 @@ url.workspace = true
 zip.workspace = true
 
 [dev-dependencies]
-# Crate used in README.md example.
-azure_security_keyvault_secrets.path = "../../keyvault/azure_security_keyvault_secrets"
+azure_core_examples.path = "../azure_core_examples"
 clap.workspace = true
+include-file.workspace = true
 tokio = { workspace = true, features = ["macros", "rt", "signal"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 

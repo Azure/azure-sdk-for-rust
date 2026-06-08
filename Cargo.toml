@@ -68,12 +68,12 @@ version = "1.0.0"
 version = "1.0.0"
 
 [workspace.dependencies.azure_core_test]
-# azure_core_test is not published and only ever in dev-dependencies herein
-path = "sdk/core/azure_core_test"
+# azure_core_test should only ever be in dev-dependencies herein
+version = "0.1.0"
 
 [workspace.dependencies.azure_core_test_macros]
-# azure_core_test_macros is not published and only ever in dev-dependencies herein
-path = "sdk/core/azure_core_test_macros"
+# azure_core_test_macros should only ever be in dev-dependencies herein
+version = "0.1.0"
 
 [workspace.dependencies.azure_identity]
 # azure_identity should only ever be in dev-dependencies herein
@@ -110,7 +110,7 @@ h2 = "0.4.13"
 hdrhistogram = "7.5"
 hostname = "0.4"
 hmac = { version = "0.12" }
-include-file = { version = "0.5.1", default-features = false }
+include-file = { version = "1.0.0", default-features = false }
 openssl = { version = "0.10.79" }
 opentelemetry = { version = "0.31", features = ["trace"] }
 opentelemetry-appender-tracing = { version = "0.31" }

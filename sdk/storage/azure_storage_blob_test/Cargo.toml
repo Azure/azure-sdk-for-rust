@@ -2,7 +2,6 @@
 name = "azure_storage_blob_test"
 version = "0.1.0"
 description = "Common utilities for Key Vault tests"
-readme = "README.md"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true

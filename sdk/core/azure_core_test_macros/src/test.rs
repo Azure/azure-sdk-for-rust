@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::test::TestMode;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::sync::LazyLock;
@@ -13,6 +12,31 @@ const INVALID_RECORDED_ATTRIBUTE_MESSAGE: &str =
     "expected `#[recorded::test]`, `#[recorded::test(live)]`, or `#[recorded::test(playback)]`";
 const INVALID_RECORDED_FUNCTION_MESSAGE: &str =
     "expected `async fn(TestContext)` function signature with `Result<T, E>` return";
+const INVALID_TEST_MODE_MESSAGE: &str = "expected 'playback', 'record', or 'live'";
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+enum TestMode {
+    #[default]
+    Playback,
+    Record,
+    Live,
+}
+
+impl TestMode {
+    fn current() -> std::result::Result<Self, &'static str> {
+        std::env::var("AZURE_TEST_MODE")
+            .map_or_else(|_| Ok(Self::default()), |value| Self::parse(&value))
+    }
+
+    fn parse(value: &str) -> std::result::Result<Self, &'static str> {
+        match value.to_ascii_lowercase().as_str() {
+            "playback" => Ok(Self::Playback),
+            "record" => Ok(Self::Record),
+            "live" => Ok(Self::Live),
+            _ => Err(INVALID_TEST_MODE_MESSAGE),
+        }
+    }
+}
 
 // cspell:ignore asyncness
 pub fn parse_test(attr: TokenStream, item: TokenStream) -> Result<TokenStream> {
@@ -181,6 +205,17 @@ fn test_mode_to_tokens(test_mode: TestMode) -> TokenStream {
 mod tests {
     use super::*;
     use syn::Attribute;
+
+    #[test]
+    fn test_mode_parse() {
+        assert_eq!(TestMode::parse("playback").unwrap(), TestMode::Playback);
+        assert_eq!(TestMode::parse("Record").unwrap(), TestMode::Record);
+        assert_eq!(TestMode::parse("LIVE").unwrap(), TestMode::Live);
+        assert_eq!(
+            TestMode::parse("invalid").unwrap_err(),
+            INVALID_TEST_MODE_MESSAGE
+        );
+    }
 
     #[test]
     fn attributes_parse_live() {
