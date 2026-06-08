@@ -7,6 +7,7 @@ pub mod account_metadata_refresh;
 pub mod control_plane;
 pub mod error_cases;
 pub mod error_diagnostics;
+pub mod excluded_regions_fallback;
 #[cfg(feature = "fault_injection")]
 pub mod hedging;
 pub mod multi_region;
