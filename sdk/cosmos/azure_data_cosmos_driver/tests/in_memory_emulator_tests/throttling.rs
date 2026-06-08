@@ -480,7 +480,10 @@ async fn fault_injection_429_honors_configurable_throttle_retry_count() {
     );
 
     // (configured throttle-retry budget, expected total ReadItem attempts).
-    for (max_throttle_retry_count, expected_hits) in [(0_u32, 1_u32), (1, 3), (3, 5), (5, 7)] {
+    // Total = 1 initial + N retries (the forced-final retry is suppressed
+    // once the count budget is exhausted; it only fires when the
+    // cumulative-wait budget is the limiter).
+    for (max_throttle_retry_count, expected_hits) in [(0_u32, 1_u32), (1, 2), (3, 4), (5, 6)] {
         let rule = Arc::new(
             FaultInjectionRuleBuilder::new(
                 "always-429",

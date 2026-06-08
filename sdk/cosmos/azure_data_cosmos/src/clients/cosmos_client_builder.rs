@@ -160,7 +160,7 @@ impl CosmosClientBuilder {
     /// accumulated retry delay would exceed this budget, no further throttle
     /// retry is attempted.
     ///
-    /// **Default**: 30 seconds.
+    /// **Default**: 15 seconds.
     ///
     /// **Scope**: same per-invocation scope as
     /// [`with_max_retry_attempts_on_throttled_requests`](Self::with_max_retry_attempts_on_throttled_requests)
@@ -422,9 +422,17 @@ impl CosmosClientBuilder {
         // Start from the client-level operation defaults (set via the builder,
         // e.g. `with_max_retry_attempts_on_throttled_requests`) so they are
         // forwarded to the driver's runtime layer, then force the resolved
-        // PPCB default on top.
+        // PPCB default on top — but only when the SDK builder hasn't already
+        // set an explicit value. No public SDK setter exists today, but the
+        // `is_none()` guard prevents a future PR that adds one from silently
+        // having its value clobbered here.
         let mut runtime_operation_options = self.options.operation.clone();
-        runtime_operation_options.per_partition_circuit_breaker_enabled = Some(ppcb_enabled);
+        if runtime_operation_options
+            .per_partition_circuit_breaker_enabled
+            .is_none()
+        {
+            runtime_operation_options.per_partition_circuit_breaker_enabled = Some(ppcb_enabled);
+        }
         driver_runtime_builder =
             driver_runtime_builder.with_operation_options(runtime_operation_options);
 

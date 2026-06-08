@@ -226,6 +226,15 @@ pub struct ThrottlingRetryOptions {
     ///
     /// **Default**: `9`. A value of `0` disables retrying throttled requests
     /// (the first 429 is surfaced to the caller).
+    ///
+    /// **Wire-request semantics**: a configured `max_retry_count = N`
+    /// produces up to `N + 1` total HTTP requests on the wire (1 initial
+    /// + up to N retries). The driver's one-shot forced-final-retry
+    /// safety net is suppressed once the count budget is exhausted, so the
+    /// count is the hard cap — matching .NET / Java parity. (The
+    /// forced-final retry only fires when the cumulative-wait budget
+    /// — see [`max_retry_wait_time`](Self::max_retry_wait_time) — is the
+    /// limiter rather than the count.)
     #[option(env = "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT")]
     pub max_retry_count: Option<u32>,
 
@@ -237,7 +246,7 @@ pub struct ThrottlingRetryOptions {
     /// Once the accumulated retry delay would exceed this budget, no further
     /// throttle retry is attempted.
     ///
-    /// **Default**: 30 seconds.
+    /// **Default**: 15 seconds.
     pub max_retry_wait_time: Option<Duration>,
 }
 
@@ -359,7 +368,9 @@ mod tests {
         // Fields without env annotation remain None
         assert!(options.excluded_regions.is_none());
         // Nested option groups are not populated by the parent's `from_env`;
-        // they are loaded separately (see `throttling_retry_options_from_env`).
+        // they are loaded separately at construction sites (see
+        // `CosmosDriverRuntimeBuilder::build` and the
+        // `throttling_retry_options_from_env` test below).
         assert!(options.throttling_retry_options.is_none());
     }
 
@@ -384,5 +395,71 @@ mod tests {
         assert!(options.excluded_regions.is_none());
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
+    }
+
+    /// The nested [`ThrottlingRetryOptions`] group must participate in the
+    /// standard runtime → account → operation → environment layered
+    /// resolution on a *per-inner-field* basis. A finer-grained per-field
+    /// guard than [`view_resolves_across_layers`] (which only covers flat
+    /// fields), this test pins the contract that the
+    /// [`OperationOptionsView::throttling_retry_options`] view walks every
+    /// layer for each inner field independently.
+    ///
+    /// Regression guard: if the `#[option(nested)]` macro ever stopped
+    /// recursing through layers for inner-field lookup, per-operation
+    /// throttle overrides would silently inherit the runtime layer's value
+    /// — visible end-to-end but invisible to the existing unit test suite.
+    #[test]
+    fn nested_throttling_retry_options_resolves_across_layers() {
+        use std::sync::Arc;
+        use std::time::Duration;
+
+        // Runtime layer: both inner fields set.
+        let runtime = Arc::new(OperationOptions {
+            throttling_retry_options: Some(ThrottlingRetryOptions {
+                max_retry_count: Some(9),
+                max_retry_wait_time: Some(Duration::from_secs(15)),
+            }),
+            ..Default::default()
+        });
+
+        // Operation layer: only `max_retry_count` overridden; the inner
+        // `max_retry_wait_time` is left `None` so the view should fall
+        // through to the runtime layer for that one field.
+        let operation = OperationOptions {
+            throttling_retry_options: Some(ThrottlingRetryOptions {
+                max_retry_count: Some(0),
+                max_retry_wait_time: None,
+            }),
+            ..Default::default()
+        };
+
+        let view = OperationOptionsView::new(None, Some(runtime), None, Some(&operation));
+        let throttling = view.throttling_retry_options();
+
+        assert_eq!(
+            throttling.max_retry_count(),
+            Some(&0),
+            "operation-layer override must win over runtime layer for `max_retry_count`",
+        );
+        assert_eq!(
+            throttling.max_retry_wait_time(),
+            Some(&Duration::from_secs(15)),
+            "missing inner field on the operation layer must fall through to runtime",
+        );
+    }
+
+    /// When *no* layer sets `throttling_retry_options`, the view's
+    /// inner-field accessors must return `None` so the consumer falls back
+    /// to the compile-time defaults (`DEFAULT_MAX_THROTTLE_ATTEMPTS` /
+    /// `DEFAULT_MAX_THROTTLE_WAIT`).
+    #[test]
+    fn nested_throttling_retry_options_view_is_none_when_unset_at_every_layer() {
+        let op = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op));
+        let throttling = view.throttling_retry_options();
+
+        assert!(throttling.max_retry_count().is_none());
+        assert!(throttling.max_retry_wait_time().is_none());
     }
 }

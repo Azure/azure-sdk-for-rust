@@ -799,10 +799,18 @@ impl CosmosDriverRuntimeBuilder {
             bootstrap_transport,
             http_client_factory,
             env_operation_options: Arc::new(OperationOptions {
-                // Nested option groups are not populated by the parent's
-                // `from_env`, so the throttling group is loaded explicitly to
-                // keep `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT` honored at the
-                // environment layer.
+                // INVARIANT — when adding a new `#[option(nested)]` field to
+                // `OperationOptions`, you MUST add an explicit
+                // `<NestedType>::from_env()` call here under a matching field
+                // initializer. The `CosmosOptions` derive macro's
+                // `from_env_vars` does *not* recurse into nested option
+                // groups (today; tracked as a macro follow-up to fix this
+                // ergonomically — see the comment in
+                // `azure_data_cosmos_macros/src/env.rs`). Skipping the
+                // explicit call here silently drops the nested group's env
+                // vars at the env layer, which surfaces only as "per-env
+                // overrides for the new group are ignored" at runtime — no
+                // compile-time guard catches it.
                 throttling_retry_options: Some(crate::options::ThrottlingRetryOptions::from_env()),
                 ..OperationOptions::from_env()
             }),

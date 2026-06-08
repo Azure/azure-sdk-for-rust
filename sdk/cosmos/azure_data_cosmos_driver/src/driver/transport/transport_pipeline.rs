@@ -163,7 +163,7 @@ pub(crate) struct TransportPipelineContext<'a> {
     ///
     /// Resolved by the operation pipeline from the effective
     /// [`ThrottlingRetryOptionsView::max_retry_wait_time`](crate::options::ThrottlingRetryOptionsView::max_retry_wait_time)
-    /// (defaulting to 30 seconds). Same per-invocation scope note as
+    /// (defaulting to 15 seconds). Same per-invocation scope note as
     /// [`max_throttle_attempts`](Self::max_throttle_attempts).
     pub max_throttle_wait_time: Duration,
 }
@@ -358,14 +358,22 @@ pub(crate) async fn execute_transport_pipeline(
                     TransportOutcome::HttpError { status, .. } if status.is_throttled()
                 );
 
-                // Honor an explicit `max_retry_count = 0` opt-out: when the
-                // caller has disabled throttle retries entirely (the .NET-parity
-                // contract for `MaxRetryAttemptsOnRateLimitedRequests = 0`), the
-                // one-shot forced-final retry must also be suppressed — otherwise
-                // a "fail-fast" configuration would still incur one extra round
-                // trip. The forced-final retry remains active for any non-zero
-                // budget, preserving the historical safety net.
-                if throttle_state.max_attempts > 0
+                // Honor the user-configured `max_retry_count` as the cap on
+                // *total* retries on the wire (matching the .NET-parity
+                // `MaxRetryAttemptsOnRateLimitedRequests` contract): when the
+                // count budget is exhausted (`attempt_count >= max_attempts`),
+                // suppress the one-shot forced-final retry too. Otherwise a
+                // user-configured `max_retry_count = N` would still produce
+                // `N + 1` retries on the wire (one extra forced-final round
+                // trip), which is an off-by-one against .NET and a surprising
+                // extra request for the `N = 0` "fail-fast" configuration.
+                //
+                // The forced-final retry remains active when
+                // `evaluate_transport_retry` returns `Propagate` for a
+                // *non-count* reason (i.e., the cumulative-wait budget was
+                // hit before the count budget), preserving the historical
+                // safety net for `max_retry_wait_time` exhaustion.
+                if throttle_state.attempt_count < throttle_state.max_attempts
                     && throttle_state.can_use_forced_final_retry()
                     && is_throttled
                 {
@@ -913,7 +921,9 @@ mod tests {
             ..ThrottleRetryState::new()
         };
 
-        // cumulative = 29s + 2s = 31s > 30s max
+        // cumulative = 29s + 2s = 31s; well above the 15s default max wait,
+        // so the throttle classifier propagates rather than scheduling
+        // another retry.
         assert!(matches!(
             evaluate_transport_retry(&result, &state),
             ThrottleAction::Propagate
@@ -1190,14 +1200,16 @@ mod tests {
     ///
     /// * `1` initial attempt, plus
     /// * `N` throttle retries (the classifier keeps retrying while
-    ///   `attempt_count < N`), plus
-    /// * `1` one-shot `forced_final_retry` safety-net attempt that fires once
-    ///   after the throttle budget is exhausted (active for any non-zero
-    ///   budget — see
-    ///   [`execute_transport_pipeline_with_default_attempts_uses_forced_final_retry`]).
+    ///   `attempt_count < N`).
     ///
-    /// Total = `N + 2`. The `N = 0` opt-out (exactly one request, no
-    /// forced-final retry) is covered by
+    /// Total = `N + 1`. Once the count budget is exhausted the one-shot
+    /// `forced_final_retry` safety net is suppressed too, matching the
+    /// .NET-parity `MaxRetryAttemptsOnRateLimitedRequests` semantic. The
+    /// forced-final retry still fires when the *cumulative-wait* budget is
+    /// the limiter (rather than the count), which is covered by
+    /// [`execute_transport_pipeline_with_default_attempts_uses_forced_final_retry`].
+    /// The `N = 0` opt-out (exactly one request, no forced-final retry) is
+    /// covered by
     /// [`execute_transport_pipeline_with_zero_max_attempts_does_not_retry_429`].
     #[tokio::test]
     async fn execute_transport_pipeline_honors_configured_max_throttle_attempts() {
@@ -1232,14 +1244,16 @@ mod tests {
             )
             .await;
 
-            // 1 initial + N throttle retries + 1 forced-final-retry = N + 2.
-            let expected = max_throttle_attempts as usize + 2;
+            // 1 initial + N throttle retries = N + 1. The forced-final retry
+            // is gated on `attempt_count < max_attempts`, so once the count
+            // budget is exhausted the safety net does NOT fire too — matching
+            // .NET's `MaxRetryAttemptsOnRateLimitedRequests` semantic.
+            let expected = max_throttle_attempts as usize + 1;
             assert_eq!(
                 request_count.load(std::sync::atomic::Ordering::SeqCst),
                 expected,
                 "max_throttle_attempts={max_throttle_attempts} must yield {expected} total \
-                 transport requests (1 initial + {max_throttle_attempts} retries + 1 \
-                 forced-final), but observed {}",
+                 transport requests (1 initial + {max_throttle_attempts} retries), but observed {}",
                 request_count.load(std::sync::atomic::Ordering::SeqCst),
             );
 
