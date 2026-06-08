@@ -95,7 +95,7 @@ For single-write accounts, retry cycles through the available endpoint(s). For m
 
 | Substatus | Action | Budget |
 |-----------|--------|--------|
-| — (standard) | Local retry with backoff | 9 attempts / 15s total |
+| — (standard) | Local retry with backoff | 9 attempts / 30s total |
 | 3092 (global throttle) | Cross-region failover retry | 3 failover attempts |
 
 Standard 429 is handled entirely within the transport pipeline — the operation pipeline never sees it. The transport layer respects `x-ms-retry-after-ms` headers and falls back to exponential backoff (5ms base, 5s cap per attempt).
@@ -210,7 +210,7 @@ Without PPCB, the driver marks entire endpoints as unavailable when errors occur
 
 | Layer | Budget | Scope |
 |-------|--------|-------|
-| Transport (429) | 9 attempts or 15s | Per-request, local only |
+| Transport (429) | 9 attempts or 30s | Per-request, local only |
 | Operation failover | 3 attempts | Per-operation, cross-region |
 | Session retry (404/1002) | 2 (single-write) or `preferred_endpoints.len()` (multi-write) | Per-operation |
 

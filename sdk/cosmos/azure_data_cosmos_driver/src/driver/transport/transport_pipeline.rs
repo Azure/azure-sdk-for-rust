@@ -163,7 +163,7 @@ pub(crate) struct TransportPipelineContext<'a> {
     ///
     /// Resolved by the operation pipeline from the effective
     /// [`ThrottlingRetryOptionsView::max_retry_wait_time`](crate::options::ThrottlingRetryOptionsView::max_retry_wait_time)
-    /// (defaulting to 15 seconds). Same per-invocation scope note as
+    /// (defaulting to 30 seconds). Same per-invocation scope note as
     /// [`max_throttle_attempts`](Self::max_throttle_attempts).
     pub max_throttle_wait_time: Duration,
 }
@@ -921,7 +921,7 @@ mod tests {
             ..ThrottleRetryState::new()
         };
 
-        // cumulative = 29s + 2s = 31s; well above the 15s default max wait,
+        // cumulative = 29s + 2s = 31s; well above the 30s default max wait,
         // so the throttle classifier propagates rather than scheduling
         // another retry.
         assert!(matches!(

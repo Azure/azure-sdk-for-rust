@@ -246,7 +246,7 @@ pub struct ThrottlingRetryOptions {
     /// Once the accumulated retry delay would exceed this budget, no further
     /// throttle retry is attempted.
     ///
-    /// **Default**: 15 seconds.
+    /// **Default**: 30 seconds.
     pub max_retry_wait_time: Option<Duration>,
 }
 

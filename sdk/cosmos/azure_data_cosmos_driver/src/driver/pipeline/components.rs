@@ -332,7 +332,7 @@ pub(crate) struct ThrottleRetryState {
 
 /// Hard-coded defaults for throttle retry.
 pub(crate) const DEFAULT_MAX_THROTTLE_ATTEMPTS: u32 = 9;
-pub(crate) const DEFAULT_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(15);
+pub(crate) const DEFAULT_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(30);
 const DEFAULT_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
 const DEFAULT_FALLBACK_BASE_DELAY: Duration = Duration::from_millis(5);
 const DEFAULT_BACKOFF_FACTOR: f64 = 2.0;
@@ -586,7 +586,7 @@ mod tests {
         let state = ThrottleRetryState::new();
         assert_eq!(state.attempt_count, 0);
         assert_eq!(state.max_attempts, 9);
-        assert_eq!(state.max_wait_time, Duration::from_secs(15));
+        assert_eq!(state.max_wait_time, Duration::from_secs(30));
         assert_eq!(state.fallback_base_delay, Duration::from_millis(5));
         assert_eq!(state.max_per_retry_delay, Duration::from_secs(5));
         assert_eq!(state.backoff_jitter_ratio, 0.25);

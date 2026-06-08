@@ -133,7 +133,7 @@ impl CosmosClientBuilder {
     ///   the service `x-ms-retry-after-ms` header (**default** `9`; a value of
     ///   `0` disables throttle retries, surfacing the first 429 to the caller).
     /// - `max_retry_wait_time` caps the cumulative retry delay (**default**
-    ///   15 seconds); once the accumulated delay would exceed it, no further
+    ///   30 seconds); once the accumulated delay would exceed it, no further
     ///   throttle retry is attempted.
     ///
     /// **Scope**: applies *per transport-pipeline invocation*, not per logical
