@@ -165,7 +165,7 @@ where
     let missing_bytes_err = |expected: usize, actual: usize| {
         Error::with_message(
             ErrorKind::Other,
-            format!("Download incomplete. Expected to read {expected} bytes, but read actual bytes. Bytes may not have been written to buffer in the correct positions."),
+            format!("Download incomplete. Expected to read {expected} bytes, but read {actual} bytes. Bytes may not have been written to buffer in the correct positions."),
         )
     };
 
