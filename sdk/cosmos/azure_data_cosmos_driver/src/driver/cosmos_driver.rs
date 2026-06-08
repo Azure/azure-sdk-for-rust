@@ -528,10 +528,11 @@ impl CosmosDriver {
         // built by `DefaultHttpClientFactory` keeps reqwest's default `Policy::limited(10)` and
         // transparently follows 3xx redirects on the wire (see
         // `bootstrap_transport_follows_3xx_redirects_against_real_server` for the end-to-end
-        // proof). A 3xx that still reaches this branch therefore means an unfollowable
-        // redirect — hop-limit exhausted, missing/relative Location, scheme downgrade blocked
-        // by reqwest, etc. — and we surface it as `CosmosError` with the upstream status
-        // preserved rather than letting the redirect body parse-fail.
+        // proof). A 3xx that still reaches this branch therefore means a redirect
+        // the transport could not follow — hop-limit exhausted, missing/relative
+        // Location, scheme downgrade blocked by reqwest, etc. — and we surface it
+        // as `CosmosError` with the upstream status preserved rather than letting
+        // the redirect body parse-fail.
         if !status_code.is_success() {
             diagnostics.set_operation_status(status_code, sub_status);
             let diagnostics_arc = Arc::new(diagnostics.complete());
@@ -3349,8 +3350,8 @@ mod tests {
     /// which is what the inline comment in `fetch_account_properties_with_transport`
     /// promises. Without this test, a future change that flipped the redirect
     /// policy to `Policy::none()` (or any other regression that stopped
-    /// following) would silently rebrand every redirector-fronted endpoint
-    /// (custom Front Door / proxy returning 307/308) as a `CosmosError` 307,
+    /// following) would silently rebrand every endpoint fronted by a redirecting
+    /// proxy (custom Front Door / proxy returning 307/308) as a `CosmosError` 307,
     /// even though no real client wants that behavior.
     ///
     /// Spins up a localhost HTTP/1.1 server that returns `307 Temporary
@@ -3464,7 +3465,7 @@ mod tests {
 
         let final_count = request_count.load(AtomicOrdering::SeqCst);
         let props = result.unwrap_or_else(|err| panic!(
-            "bootstrap fetch must succeed against a redirector that returns 307 -> 200 JSON; \
+            "bootstrap fetch must succeed against a redirecting proxy that returns 307 -> 200 JSON; \
              this proves the reqwest transport follows redirects. saw {final_count} request(s). err: {err:?}"
         ));
         assert_eq!(
