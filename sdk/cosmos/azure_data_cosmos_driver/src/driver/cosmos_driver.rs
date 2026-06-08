@@ -43,8 +43,11 @@ use url::Url;
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
     transport::{
-        cosmos_headers, cosmos_transport_client::HttpRequest, request_signing,
-        AuthorizationContext, CosmosTransport,
+        connectivity_probe::{ConnectivityProbe, Http2ConnectivityProbe},
+        cosmos_headers,
+        cosmos_transport_client::HttpRequest,
+        http_client_factory::HttpClientConfig,
+        request_signing, AuthorizationContext, CosmosTransport,
     },
     CosmosDriverRuntime,
 };
@@ -867,6 +870,36 @@ impl CosmosDriver {
 
         let partition_failover_config = PartitionFailoverConfig::from_options(&init_view);
 
+        // Construct the Gateway 2.0 connectivity probe ahead of the
+        // LocationStateStore so it can be wired in as a constructor arg.
+        // Skipped when the operator has disabled Gateway 2.0 entirely or
+        // when the probe transport cannot be built — in either case the
+        // store falls back to today's behavior (no probe gating).
+        let connectivity_probe: Option<Arc<dyn ConnectivityProbe>> = if runtime
+            .connection_pool()
+            .gateway20_disabled()
+        {
+            None
+        } else {
+            let probe_config = HttpClientConfig::dataplane_gateway20(runtime.connection_pool());
+            match runtime
+                .http_client_factory()
+                .build(runtime.connection_pool(), probe_config)
+            {
+                Ok(transport) => {
+                    Some(Arc::new(Http2ConnectivityProbe::new(transport))
+                        as Arc<dyn ConnectivityProbe>)
+                }
+                Err(err) => {
+                    tracing::warn!(
+                        error = %err,
+                        "Failed to construct Gateway 2.0 connectivity probe; gateway20 routing will not be gated by probe",
+                    );
+                    None
+                }
+            }
+        };
+
         let location_state_store = Arc::new(LocationStateStore::new(
             runtime.account_metadata_cache().clone(),
             account_endpoint,
@@ -876,6 +909,7 @@ impl CosmosDriver {
             endpoint_unavailability_ttl,
             partition_failover_config,
             options.preferred_regions().to_vec(),
+            connectivity_probe,
         ));
 
         // Spawn the background failback loop for partition-level overrides.

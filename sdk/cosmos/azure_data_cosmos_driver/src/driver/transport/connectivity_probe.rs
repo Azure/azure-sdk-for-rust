@@ -1,12 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// Temporary: probe types are constructed in a follow-up commit that wires
-// them into `LocationStateStore` + `CosmosDriver`. CI runs with
-// `RUSTFLAGS=-Dwarnings`, so the dead-code warnings would otherwise turn
-// into build failures until the wiring lands.
-#![allow(dead_code)]
-
 //! HTTP/2 connectivity probe for Gateway 2.0 (thin-client) proxy endpoints.
 //!
 //! After the SDK discovers thin-client endpoints from a `getDatabaseAccount`
@@ -171,11 +165,6 @@ impl Http2ConnectivityProbe {
             transport,
             timeout: DEFAULT_PROBE_TIMEOUT,
         }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn with_timeout(transport: Arc<dyn TransportClient>, timeout: Duration) -> Self {
-        Self { transport, timeout }
     }
 
     /// Builds the probe URL: `{base}/connectivity-probe` preserving the
