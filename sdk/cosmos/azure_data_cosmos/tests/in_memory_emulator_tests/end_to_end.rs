@@ -1041,7 +1041,7 @@ async fn sdk_throttling_retry_options_disables_retry() {
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
-    let db_name = format!("sdk-throttle-noretry-{run_id}");
+    let db_name = format!("sdk-throttle-no-retry-{run_id}");
     emulator_store.create_database(&db_name);
     emulator_store.create_container_with_config(
         &db_name,
