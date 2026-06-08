@@ -9,6 +9,7 @@
 - Removed `CosmosDriver::resolve_container_by_rid` and the supporting `CosmosOperation::read_container_by_rid` factory and `ContainerCache::get_or_fetch_by_rid`. These RID-keyed entry points had no callers; container resolution now goes exclusively through `resolve_container` / `resolve_container_by_name`. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
 
 ### Bugs Fixed
+- Data-plane and non-account metadata operations now fall back to the hub/primary write region endpoint instead of the global account endpoint when all regional endpoints are excluded or unavailable. ([#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503))
 
 - A transient failure while refreshing the partition key range cache no longer replaces a known-good cached routing map with an empty placeholder; the previous map is preserved until the next successful refresh. ([#4549](https://github.com/Azure/azure-sdk-for-rust/pull/4549))
 
