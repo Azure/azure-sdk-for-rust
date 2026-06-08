@@ -8,14 +8,14 @@ description: "Generate a new recorded integration test"
 You will generate one or more recorded integration tests under the `sdk/{service-directory}/{crate-name}/tests` directory in `${input:testFile:test_file}.rs` where:
 
 - `{repo-root}` is the root directory containing `Cargo.toml`.
-- `{service-directory}` is the directory under [sdk](../../sdk) for the current ${file} e.g., `sdk/keyvault`.
-- `{crate-name}` is the crate directory under `{service-directory}` for the current ${file} e.g., `sdk/keyvault/azure_security_keyvault_secrets`.
+- `{service-directory}` is the directory name under [sdk](../../sdk) for the current ${file} e.g., `keyvault`.
+- `{crate-name}` is the crate directory name under `sdk/{service-directory}` for the current ${file} e.g., `azure_security_keyvault_secrets`.
 
 ## Set up
 
 These instructions only need to be done once. If changes described are already present, do not make the changes again.
 
-- Recorded tests must always be integration tests under the `{crate-name}/tests` directory. Do not add recorded tests to `src/`, `examples/`, or `README.md`.
+- Recorded tests must always be integration tests under the `sdk/{service-directory}/{crate-name}/tests` directory. Do not add recorded tests to `src/`, `examples/`, or `README.md`.
 - If PowerShell is not installed, stop and ask the user to install it first using [PowerShell installation instructions](https://learn.microsoft.com/powershell/scripting/install/installing-powershell).
 - Provision test resources using the full script path:
 
@@ -23,14 +23,14 @@ These instructions only need to be done once. If changes described are already p
   {repo-root}/eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory {service-directory}
   ```
 
-- To run recorded tests, rely on the existing test infrastructure. Test Proxy is acquired automatically for test runs when needed, but not for `test-proxy push -a {service-directory}/assets.json`.
+- To run recorded tests, rely on the existing test infrastructure. Test Proxy is acquired automatically for test runs when needed, but not for `test-proxy push -a sdk/{service-directory}/assets.json`.
 - For manual Test Proxy usage or asset publishing, see [CONTRIBUTING.md](../../CONTRIBUTING.md) and the [Test Proxy documentation](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md).
 
 ## Adding a new recorded test
 
 For each new recorded test:
 
-- In `{crate-name}/tests/${input:testFile}.rs`, add or update async integration tests attributed with `#[recorded::test]`.
+- In `sdk/{service-directory}/{crate-name}/tests/${input:testFile}.rs`, add or update async integration tests attributed with `#[recorded::test]`.
 - Use the signature `async fn ${input:testName}(ctx: TestContext) -> Result<()>`.
 - Start each test with:
   - `let recording = ctx.recording();`
@@ -59,7 +59,7 @@ For each new recorded test:
 - After recording and playback succeeds, publish updated recordings only if `test-proxy` is already installed and available:
 
   ```bash
-  test-proxy push -a {service-directory}/assets.json
+  test-proxy push -a sdk/{service-directory}/assets.json
   ```
 
 ## Tear down

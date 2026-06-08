@@ -1,0 +1,13 @@
+# Verify-Links.ps1 expects one exact link value per line.
+# Ignore AGENTS.md relative links individually because page-level ignores are not supported.
+CONTRIBUTING.md
+.github/instructions/changelog.instructions.md
+doc/deprecation-process.md
+sdk/keyvault/azure_security_keyvault_secrets
+.github/instructions
+.github/prompts
+.github/skills
+.github/instructions/git-commit.instructions.md
+.github/instructions/github-pullrequest.instructions.md
+.github/instructions/pwsh.instructions.md
+.github/CODEOWNERS

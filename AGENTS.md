@@ -204,7 +204,7 @@ eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory {service}
 AZURE_TEST_MODE=record cargo test -p {crate-name} --test {test-name}
 
 # Update assets after successfully recording and playing back tests
-test-proxy push -a {service}/assets.json
+test-proxy push -a sdk/{service}/assets.json
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for comprehensive testing guidance including debugging, Test Proxy usage, and trace logging.
