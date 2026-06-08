@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `OperationOptions::consecutive_hedge_win_threshold` (and the `AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD` environment variable) to tune the consecutive alternate-region hedge-win count before the per-partition circuit breaker trips the partition (default `5`, matching the .NET v3 SDK). Lower values trip the partition faster when the primary region is chronically slow; higher values are more tolerant of occasional latency spikes the hedge happens to win. See `docs/HEDGING_SPEC.md` §9.5. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
+- Added `OperationOptions::consecutive_hedge_win_threshold` (and the `AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD` environment variable) to tune the consecutive alternate-region hedge-win count before the per-partition circuit breaker trips the partition (default `5`, matching the .NET v3 SDK). Lower values trip the partition faster when the primary region is chronically slow; higher values are more tolerant of occasional latency spikes the hedge happens to win. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
 
 ### Breaking Changes
 
@@ -17,7 +17,7 @@
 
 ### Other Changes
 
-- Downgraded the `cosmos.hedge.winner_selected` structured tracing event from `INFO` to `DEBUG`. Because the §5.2 driver default enables hedging for every multi-region read, an `INFO`-level emission produced one log line per successful read in production. Win-rate metrics should be derived from the `HedgeDiagnostics` chain (see `docs/HEDGING_SPEC.md` §10.3) rather than from log scraping. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
+- Downgraded the `cosmos.hedge.winner_selected` structured tracing event from `INFO` to `DEBUG`. Because the driver default enables hedging for every multi-region read, an `INFO`-level emission produced one log line per successful read in production. Win-rate metrics should be derived from the `HedgeDiagnostics` chain rather than from log scraping. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
 - `CosmosDriver::resolve_container_by_name` no longer issues an extra `read_database` round-trip to discover the database RID. The database RID is now extracted in-process from the encoded byte layout of the container RID returned by the container read. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
 
 ## 0.3.0 (2026-05-29)

@@ -176,8 +176,7 @@ pub struct OperationOptions {
     /// `(partition, primary_region)` pair before the per-partition circuit
     /// breaker (PPCB) trips the partition away from that primary.
     ///
-    /// **Default**: `5` (matches the .NET v3 SDK convention). See
-    /// `docs/HEDGING_SPEC.md` §9.5.
+    /// **Default**: `5` (matches the .NET v3 SDK convention).
     ///
     /// **Tuning**: Lower values trip the partition faster when the primary
     /// region is chronically slow but the alternate is healthy — useful
@@ -194,7 +193,7 @@ pub struct OperationOptions {
     /// requests are hedged to additional regions when the primary is slow.
     ///
     /// **Default**: `None` — the driver applies the built-in default
-    /// strategy (see `docs/HEDGING_SPEC.md` §5.2). Setting
+    /// strategy. Setting
     /// `Some(AvailabilityStrategy::Disabled)` at any layer turns hedging
     /// off for that scope.
     pub availability_strategy: Option<AvailabilityStrategy>,
