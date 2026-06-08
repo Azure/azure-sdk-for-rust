@@ -3,18 +3,18 @@
 
 use std::{
     hint::black_box,
+    num::NonZero,
     sync::{Arc, OnceLock},
 };
 
 use azure_core::{error::ErrorKind, http::Url, Bytes};
 use azure_core_test::{
-    perf::{
-        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        PerfTestOptionKind,
-    },
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
     TestContext,
 };
-use azure_storage_blob::{BlobClient, BlobContainerClient};
+
+use super::options;
+use azure_storage_blob::{models::BlobClientDownloadOptions, BlobClient, BlobContainerClient};
 use azure_storage_blob_test::get_test_credential;
 use bytes::BytesMut;
 use futures::{FutureExt, StreamExt, TryStreamExt};
@@ -31,6 +31,8 @@ pub struct DownloadBlobTest {
     count: u32,
     size: usize,
     collect: CollectOptions,
+    concurrency: Option<NonZero<usize>>,
+    partition_size: Option<NonZero<usize>>,
     endpoint: Option<String>,
     client: OnceLock<BlobContainerClient>,
 }
@@ -63,6 +65,12 @@ impl DownloadBlobTest {
                     .try_get_test_arg("size")?
                     .expect("size argument is mandatory"),
                 collect: collect_options,
+                concurrency: runner
+                    .try_get_test_arg::<usize>("concurrency")?
+                    .and_then(NonZero::new),
+                partition_size: runner
+                    .try_get_test_arg::<usize>("partition-size")?
+                    .and_then(NonZero::new),
                 endpoint,
                 client: OnceLock::new(),
             }) as Box<dyn PerfTest>)
@@ -75,53 +83,28 @@ impl DownloadBlobTest {
             name: "download_blob",
             description: "Download blobs from a container",
             options: vec![
-                PerfTestOption {
-                    name: "count",
-                    display_message: "The number of blobs to download",
-                    mandatory: false,
-                    short_activator: Some('c'),
-                    long_activator: "count",
-                    expected_args_len: 1,
-                    option_type: PerfTestOptionKind::Uint32,
-                    ..Default::default()
-                },
-                PerfTestOption {
-                    name: "collect",
-                    display_message: "Collect the blob contents instead of streaming them",
-                    mandatory: false,
-                    short_activator: None,
-                    long_activator: "collect",
-                    expected_args_len: 1,
-                    option_type: PerfTestOptionKind::String,
-                    ..Default::default()
-                },
-                PerfTestOption {
-                    name: "size",
-                    display_message: "The size of each blob in bytes",
-                    mandatory: true,
-                    short_activator: Some('s'),
-                    long_activator: "size",
-                    expected_args_len: 1,
-                    option_type: PerfTestOptionKind::Usize,
-                    ..Default::default()
-                },
-                PerfTestOption {
-                    name: "endpoint",
-                    display_message: "The endpoint of the blob storage",
-                    mandatory: false,
-                    short_activator: Some('e'),
-                    long_activator: "endpoint",
-                    expected_args_len: 1,
-                    ..Default::default()
-                },
+                options::count(),
+                options::collect(),
+                options::size(),
+                options::concurrency(),
+                options::partition_size(),
+                options::endpoint(),
             ],
             create_test: Self::create_download_blob_test,
         }
     }
 
+    fn download_options(&self) -> BlobClientDownloadOptions<'_> {
+        BlobClientDownloadOptions {
+            parallel: self.concurrency,
+            partition_size: self.partition_size,
+            ..Default::default()
+        }
+    }
+
     /// This method represents the most basic way to download a blob, where we simply stream the contents and do nothing with them. This is useful for testing the performance of streaming downloads without any additional overhead.
     async fn collect_stream(&self, blob_client: BlobClient) -> azure_core::Result<()> {
-        let response = blob_client.download(None).await?;
+        let response = blob_client.download(Some(self.download_options())).await?;
 
         let mut body = response.body;
 
@@ -134,7 +117,7 @@ impl DownloadBlobTest {
 
     /// This method collects the entire blob into memory in 512K chunks using the `collect_into` method on the body
     async fn collect_into(&self, blob_client: BlobClient) -> azure_core::Result<()> {
-        let response = blob_client.download(None).await?;
+        let response = blob_client.download(Some(self.download_options())).await?;
 
         let mut buffer = vec![0u8; self.size];
         response.body.collect_into(&mut buffer).await?;
@@ -147,7 +130,7 @@ impl DownloadBlobTest {
     /// This is useful for testing the performance of collecting the entire blob into memory, which
     /// may be a common scenario for smaller blobs.
     async fn collect_blob(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
-        let response = blob_client.download(None).await?;
+        let response = blob_client.download(Some(self.download_options())).await?;
 
         let body = response.body.collect().await?;
         Ok(black_box(body))
@@ -156,7 +139,7 @@ impl DownloadBlobTest {
     /// This method collects the entire blob into memory using a simple loop and extending a `Vec<u8>`.
     /// This is the original blob collect method.
     async fn collect_blob_simple(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
-        let response = blob_client.download(None).await?;
+        let response = blob_client.download(Some(self.download_options())).await?;
 
         let mut body = response.body;
 
@@ -170,7 +153,7 @@ impl DownloadBlobTest {
 
     /// This method collects the entire blob into memory using a `BytesMut` buffer.
     async fn collect_blob_vec_bytes(&self, blob_client: BlobClient) -> azure_core::Result<Bytes> {
-        let response = blob_client.download(None).await?;
+        let response = blob_client.download(Some(self.download_options())).await?;
 
         let mut body = response.body;
         let mut bytes = Vec::<Bytes>::new();

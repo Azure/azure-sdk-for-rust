@@ -150,7 +150,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let path_str = format!("./target/doc/{}.json", crate_name);
     let path = Path::new(&path_str);
 
-    // Call cargo +nightly rustdoc to generate the JSON file
+    // Call `cargo rustdoc` using the nightly channel inheritted from ../../rust-toolchain.toml.
     let channel = env!("TOOLCHAIN_CHANNEL");
     let mut command = Command::new("cargo");
     command

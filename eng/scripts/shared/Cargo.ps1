@@ -11,7 +11,7 @@ function Get-CargoPackages() {
   foreach ($package in $metadata.packages) {
     $package.UnreleasedDependencies = @()
     foreach ($dependency in $package.dependencies) {
-      if ($dependency.path -and $dependency.kind -ne 'dev') {
+      if ($dependency['path'] -and $dependency['kind'] -ne 'dev') {
         $dependencyPackage = $metadata.packages | Where-Object -Property name -EQ -Value $dependency.name | Select-Object -First 1
         $package.UnreleasedDependencies += $dependencyPackage
       }

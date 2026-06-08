@@ -9,6 +9,64 @@ $SupportsTestResourcesDotenv = $true
 
 . (Join-Path $EngCommonScriptsDir "Helpers" "PSModule-Helpers.ps1")
 
+# Channel aliases used throughout scripts to pin channels.
+# Lazy-initialized static property accessors cache values on first access.
+class Channels {
+  hidden static [string] $_repoRoot = $null
+
+  # Also update all the ./*.rs scripts to use the same nightly channel.
+  hidden static [string] $_nightly = 'nightly-2026-04-14'
+  hidden static [string] $_stable = $null
+  hidden static [string] $_msrv = $null
+
+  static [string] Nightly() {
+    return [Channels]::_nightly
+  }
+
+  static [string] Stable() {
+    if (-not [Channels]::_stable) {
+      $path = [System.IO.Path]::Combine([Channels]::_repoRoot, 'rust-toolchain.toml')
+      [string] $content = Get-Content -Raw $path
+      [Channels]::_stable = if ($content -Match 'channel\s+=\s+"([^"]+)"') {
+        $Matches[1]
+      }
+      else {
+        Write-Warning "Failed to get stable channel from $path"
+        'stable'
+      }
+    }
+    return [Channels]::_stable
+  }
+
+  static [string] MSRV() {
+    if (-not [Channels]::_msrv) {
+      $path = [System.IO.Path]::Combine([Channels]::_repoRoot, 'Cargo.toml')
+      [string] $content = Get-Content -Raw $path
+      [Channels]::_msrv = if ($content -Match 'rust-version\s+=\s+"([^"]+)"') {
+        $Matches[1]
+      }
+      else {
+        Write-Warning "Failed to get MSRV from $path"
+        'stable'
+      }
+    }
+    return [Channels]::_msrv
+  }
+
+  # Resolves a toolchain alias ('stable', 'nightly', 'msrv') to its pinned version.
+  # Any other value (e.g. an explicit version) is passed through unchanged.
+  static [string] Resolve([string] $toolchain) {
+    $resolved = switch ($toolchain.ToLower()) {
+      'stable' { [Channels]::Stable() }
+      'nightly' { [Channels]::Nightly() }
+      'msrv' { [Channels]::MSRV() }
+      default { $toolchain }
+    }
+    return $resolved
+  }
+}
+[Channels]::_repoRoot = $RepoRoot
+
 function SetPackageVersion ($PackageName, $Version, $ServiceDirectory, $ReleaseDate, $ReplaceLatestEntryTitle = $true) {
   if ($null -eq $ReleaseDate) {
     $ReleaseDate = Get-Date -Format "yyyy-MM-dd"
@@ -44,18 +102,14 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
       $searchPath = Join-Path $searchPath $ServiceDirectory -Resolve
     }
 
-    # Enumerate packages that do not have "test" as an independent word in the
-    # name.
-    # Examples:
-    # "azure_core" - included
-    # "azure_core_test" - excluded
-    # "azure_attestation" - included
+    # Enumerate publishable workspace packages in the selected service directory.
+    # Internal test helper crates should set `publish = false` in their Cargo.toml
+    # so package discovery does not need to special-case names.
     $packages = Invoke-LoggedCommand "cargo metadata --format-version 1 --no-deps" -GroupOutput
     | ConvertFrom-Json -AsHashtable
     | Select-Object -ExpandProperty packages
     | Where-Object {
       $_.manifest_path.StartsWith($searchPath) `
-        -and ("test" -notin ($_.name -split '_')) `
         -and ($null -eq $_.publish)
     }
 

@@ -14,6 +14,8 @@ param(
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
 
+$resolvedToolchain = [Channels]::Resolve($Toolchain)
+
 function Get-OutputPackages($workspacePackages) {
   $packages = @()
   switch ($PsCmdlet.ParameterSetName) {
@@ -64,7 +66,7 @@ $finalExitCode = 0
 foreach ($package in $outputPackages) {
   $packageName = $package.name
   $manifestPath = $package.manifest_path
-  $output = Invoke-LoggedCommand "cargo +$Toolchain semver-checks --manifest-path $manifestPath" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
+  $output = Invoke-LoggedCommand "cargo +$resolvedToolchain semver-checks --manifest-path $manifestPath" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
   if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $packageName) {
     LogWarning "$packageName base version is a placeholder and will be ignored"
     continue

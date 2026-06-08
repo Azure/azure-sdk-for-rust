@@ -307,7 +307,7 @@ dependencies = [
  "async-trait",
  "azure_core_examples",
  "azure_core_macros 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.2.0",
  "bytes",
  "criterion",
  "futures",
@@ -428,8 +428,8 @@ name = "azure_core_opentelemetry"
 version = "1.1.0-beta.1"
 dependencies = [
  "azure_core 1.0.0",
- "azure_core_test",
- "azure_core_test_macros",
+ "azure_core_test 0.1.0",
+ "azure_core_test_macros 0.1.0",
  "azure_identity 1.0.0",
  "opentelemetry",
  "opentelemetry_sdk",
@@ -441,12 +441,13 @@ dependencies = [
 [[package]]
 name = "azure_core_test"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c2804e3700e030700e4c9c00c2e37d86c4092323ad81f21f1a43a44fc06f0afe"
 dependencies = [
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_test_macros",
+ "azure_core_test_macros 0.1.0",
  "azure_identity 1.0.0",
- "azure_security_keyvault_secrets",
  "clap",
  "dotenvy",
  "flate2",
@@ -465,11 +466,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_core_test"
+version = "0.2.0"
+dependencies = [
+ "async-trait",
+ "azure_core 1.1.0-beta.1",
+ "azure_core_examples",
+ "azure_core_test_macros 0.2.0",
+ "azure_identity 1.1.0-beta.1",
+ "clap",
+ "dotenvy",
+ "flate2",
+ "futures",
+ "include-file",
+ "rand 0.10.1",
+ "rand_chacha 0.10.0",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tar",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "zip",
+]
+
+[[package]]
 name = "azure_core_test_macros"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "878a0b374ba6a37254f01886984b8d9c828f32011e606518930c19535849301f"
 dependencies = [
- "azure_core 1.0.0",
- "azure_core_test",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "azure_core_test_macros"
+version = "0.2.0"
+dependencies = [
+ "azure_core_test 0.2.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -478,12 +516,12 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.34.0"
+version = "0.35.0"
 dependencies = [
  "async-lock",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_data_cosmos_driver",
  "azure_identity 1.0.0",
  "base64 0.22.1",
@@ -515,7 +553,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "arc-swap",
  "async-lock",
@@ -613,9 +651,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.0.0",
- "azure_core_test",
- "azure_security_keyvault_secrets",
+ "azure_core 1.1.0-beta.1",
+ "azure_core_examples",
+ "azure_core_test 0.2.0",
  "clap",
  "futures",
  "include-file",
@@ -641,7 +679,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.0.0",
  "azure_core_amqp 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_messaging_eventhubs",
  "criterion",
@@ -662,7 +700,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.0.0",
  "azure_core_opentelemetry 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_messaging_eventhubs",
  "azure_storage_blob 1.0.0",
@@ -688,7 +726,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.0.0",
  "azure_core_amqp 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "futures",
  "rand 0.10.1",
@@ -708,7 +746,7 @@ dependencies = [
  "async-lock",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
@@ -730,7 +768,7 @@ dependencies = [
  "async-lock",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_security_keyvault_test",
  "criterion",
@@ -753,7 +791,7 @@ dependencies = [
  "async-lock",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_security_keyvault_test",
  "futures",
@@ -801,7 +839,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.0.0",
  "azure_core_opentelemetry 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_storage_blob_test",
  "bytes",
@@ -828,7 +866,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_storage_blob 1.1.0-beta.1",
  "bytes",
@@ -843,7 +881,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.0.0",
  "azure_core_opentelemetry 1.0.0",
- "azure_core_test",
+ "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "clap",
  "futures",
@@ -2124,11 +2162,12 @@ dependencies = [
 
 [[package]]
 name = "include-file"
-version = "0.5.1"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4db0c2483923cdc1a04d371af232e93215bef3d6a761b663870dd2db4ca795a9"
+checksum = "babf2fc9613fcd8bf298719ad975819fc6ab212d3a60de4d2eb55554c7bfd03d"
 dependencies = [
  "proc-macro2",
+ "quote",
  "syn 2.0.117",
 ]
 
