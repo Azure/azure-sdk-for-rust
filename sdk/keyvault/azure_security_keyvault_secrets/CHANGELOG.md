@@ -10,8 +10,6 @@
 
 ### Other Changes
 
-- Upgraded to API service version `2026-03-01-preview`.
-
 ## 1.0.0 (2026-05-12)
 
 ### Features Added
