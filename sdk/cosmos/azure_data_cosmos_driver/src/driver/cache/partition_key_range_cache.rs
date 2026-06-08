@@ -207,7 +207,9 @@ impl PartitionKeyRangeCache {
     /// Otherwise, the new ranges are merged via [`ContainerRoutingMap::try_combine`].
     ///
     /// Returns a routing map for the container. If the initial fetch fails or
-    /// returns invalid ranges, an empty routing map is cached and returned.
+    /// returns invalid ranges, the previously cached routing map is preserved
+    /// when one exists; only when there is no previous map to fall back to is
+    /// an empty routing map cached and returned.
     pub(crate) async fn try_lookup<F, Fut>(
         &self,
         container: &ContainerReference,
