@@ -231,8 +231,7 @@ impl Client {
         request.insert_headers(&sanitizer)?;
         request.add_optional_header(&options.recording_id);
         // Send the sanitizer settings so configured redaction rules reach the test-proxy.
-        let body: Body = sanitizer.try_into()?;
-        request.set_body(body);
+        request.set_json(&sanitizer)?;
         self.pipeline
             .send(
                 &ctx,
