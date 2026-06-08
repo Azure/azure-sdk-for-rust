@@ -2,7 +2,16 @@
 // Licensed under the MIT License.
 
 //! Integration coverage for multi-region failover via HTTP-transport fault injection.
-//! Gated on `feature = "fault_injection"` + env vars; tests skip cleanly when prereqs are absent.
+//!
+//! Gated on `feature = "fault_injection"` + env vars. Skip / fail behavior follows
+//! the same pattern as [`framework::resolve_test_env`]:
+//! - `AZURE_COSMOS_TEST_MODE=Skipped` → silent skip even when env vars are set.
+//! - `AZURE_COSMOS_TEST_MODE=Required` or running on Azure Pipelines (i.e.
+//!   `SYSTEM_TEAMPROJECTID` is set) → **panic** if the required env vars are
+//!   missing, so a misconfigured CI run reports a real failure instead of a
+//!   silent pass.
+//! - Otherwise (`AZURE_COSMOS_TEST_MODE=Allowed`, the default) → log to stderr
+//!   and skip cleanly when env vars are absent, which is the dev-loop default.
 
 #![cfg(feature = "fault_injection")]
 
@@ -21,6 +30,35 @@ use azure_data_cosmos_driver::{CosmosStatus, SubStatusCode};
 use azure_identity::DeveloperToolsCredential;
 use std::sync::Arc;
 use uuid::Uuid;
+
+// The framework module is shared across test binaries; not all exports are used
+// from every binary so silence both dead-code and unused-import lints (other
+// driver test binaries do the same thing).
+#[allow(dead_code, unused_imports)]
+mod framework;
+
+use framework::{get_test_mode, is_azure_pipelines, CosmosTestMode};
+
+/// Centralizes the "should I skip or panic?" decision for tests that require
+/// real-account env vars. Mirrors `framework::resolve_test_env` so a single
+/// `AZURE_COSMOS_TEST_MODE` semantics applies across the driver test binaries.
+///
+/// Panics in `Required` mode or when running on Azure Pipelines so a
+/// misconfigured CI run cannot quietly skip every assertion — the original
+/// `eprintln!` pattern hid configuration drift behind a green build.
+fn skip_or_fail_missing_env(test_name: &str, required_vars: &str) {
+    if is_azure_pipelines() || get_test_mode() == CosmosTestMode::Required {
+        panic!(
+            "{test_name}: required environment variables are not set (need: {required_vars}). \
+             Test mode is Required (or running on Azure Pipelines), so this is a hard failure. \
+             Set AZURE_COSMOS_TEST_MODE=Skipped to opt out, or populate the env vars."
+        );
+    }
+    eprintln!(
+        "Skipping {test_name}: required environment variables are not set (need: {required_vars}). \
+         Set AZURE_COSMOS_TEST_MODE=Required to fail instead of skipping."
+    );
+}
 
 fn read_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.trim().is_empty())
@@ -239,8 +277,9 @@ async fn seed_item(env: &DataPlaneEnv, id: &str) {
 #[tokio::test]
 async fn write_forbidden_on_metadata_preserves_upstream_status() {
     let Some(account) = build_account_from_env() else {
-        eprintln!(
-            "Skipping WriteForbidden metadata fault test: AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, or AZURE_COSMOS_TEST_DATABASE unset"
+        skip_or_fail_missing_env(
+            "write_forbidden_on_metadata_preserves_upstream_status",
+            "AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY",
         );
         return;
     };
@@ -260,8 +299,9 @@ async fn write_forbidden_on_metadata_preserves_upstream_status() {
 #[tokio::test]
 async fn session_not_available_on_metadata_preserves_upstream_status() {
     let Some(account) = build_account_from_env() else {
-        eprintln!(
-            "Skipping ReadSessionNotAvailable metadata fault test: AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, or AZURE_COSMOS_TEST_DATABASE unset"
+        skip_or_fail_missing_env(
+            "session_not_available_on_metadata_preserves_upstream_status",
+            "AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY",
         );
         return;
     };
@@ -281,8 +321,9 @@ async fn session_not_available_on_metadata_preserves_upstream_status() {
 #[tokio::test]
 async fn aad_token_credential_account_metadata_smoke_test() {
     let Some(account) = build_account_with_token_credential_from_env() else {
-        eprintln!(
-            "Skipping AAD smoke test: AZURE_COSMOS_ENDPOINT unset or no usable credential chain"
+        skip_or_fail_missing_env(
+            "aad_token_credential_account_metadata_smoke_test",
+            "AZURE_COSMOS_ENDPOINT plus a usable AAD credential chain (az login, managed identity, etc.)",
         );
         return;
     };
@@ -302,12 +343,11 @@ async fn aad_token_credential_account_metadata_smoke_test() {
 #[tokio::test]
 async fn write_forbidden_triggers_refresh_and_failover() {
     let Some(env) = build_data_plane_env() else {
-        eprintln!(
-            "Skipping write_forbidden_triggers_refresh_and_failover: requires \
-             AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, AZURE_COSMOS_TEST_DATABASE, \
+        skip_or_fail_missing_env(
+            "write_forbidden_triggers_refresh_and_failover",
+            "AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, AZURE_COSMOS_TEST_DATABASE, \
              AZURE_COSMOS_TEST_CONTAINER, AZURE_COSMOS_TEST_PARTITION_KEY, and \
-             AZURE_COSMOS_TEST_REGION (the multi-write region the fault should \
-             be scoped to)"
+             AZURE_COSMOS_TEST_REGION (the multi-write region the fault should be scoped to)",
         );
         return;
     };
@@ -369,11 +409,11 @@ async fn write_forbidden_triggers_refresh_and_failover() {
 #[tokio::test]
 async fn session_not_available_retries_across_locations() {
     let Some(env) = build_data_plane_env() else {
-        eprintln!(
-            "Skipping session_not_available_retries_across_locations: requires \
-             AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, AZURE_COSMOS_TEST_DATABASE, \
+        skip_or_fail_missing_env(
+            "session_not_available_retries_across_locations",
+            "AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, AZURE_COSMOS_TEST_DATABASE, \
              AZURE_COSMOS_TEST_CONTAINER, AZURE_COSMOS_TEST_PARTITION_KEY, and \
-             AZURE_COSMOS_TEST_REGION"
+             AZURE_COSMOS_TEST_REGION",
         );
         return;
     };
