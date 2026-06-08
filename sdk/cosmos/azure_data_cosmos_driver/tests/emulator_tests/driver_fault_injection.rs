@@ -7,8 +7,10 @@
 
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::fault_injection::*;
+use azure_data_cosmos_driver::options::{OperationOptionsBuilder, ThrottlingRetryOptionsBuilder};
 use std::error::Error;
 use std::sync::Arc;
+use std::time::Duration;
 
 /// Tests that a rule with probability 0.0 never injects faults.
 ///
@@ -330,4 +332,117 @@ pub async fn fault_injection_connection_error() -> Result<(), Box<dyn Error>> {
         Ok(())
     })
     .await
+}
+
+/// End-to-end validation that the configurable 429 (throttle) retry budget —
+/// [`OperationOptions::max_throttle_retry_count`](azure_data_cosmos_driver::options::OperationOptions::max_throttle_retry_count)
+/// — is honored across the full driver stack against a live emulator account.
+///
+/// A fault rule injects an HTTP 429 (`TooManyRequests`) on **every**
+/// `ReadItem` transport attempt with probability `1.0`. Because the injected
+/// 429 carries no sub-status it is a *generic* throttle: the operation
+/// pipeline classifies it as region-confirming (no cross-region failover), so
+/// the entire retry budget is spent inside a single transport-pipeline
+/// invocation. Counting `rule.hit_count()` therefore yields the exact number
+/// of read attempts that reached the (faulted) transport client.
+///
+/// Wire-attempt accounting for `max_throttle_retry_count = N`:
+///
+/// * `N == 0` — throttle retries disabled → exactly **1** attempt. The first
+///   429 is surfaced immediately and the one-shot forced-final retry is also
+///   suppressed for the explicit `.NET`-parity opt-out
+///   (`MaxRetryAttemptsOnRateLimitedRequests = 0`).
+/// * `N > 0` — `1` initial + `N` throttle retries + `1` forced-final-retry
+///   safety net = **`N + 2`** attempts. The default operation has no
+///   end-to-end deadline (no `end_to_end_latency_policy`), so the
+///   forced-final retry fires immediately and the throttle backoff sleeps are
+///   the only delays (a few milliseconds total for these small budgets).
+///
+/// This mirrors the unit-level coverage in
+/// `transport_pipeline::tests::execute_transport_pipeline_honors_configured_max_throttle_attempts`
+/// but exercises the real option-resolution → fault-injection → transport
+/// retry path instead of driving the loop directly.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
+) -> Result<(), Box<dyn Error>> {
+    // (configured throttle-retry budget, expected total ReadItem attempts).
+    for (max_throttle_retry_count, expected_hits) in [(0_u32, 1_u32), (1, 3), (3, 5), (5, 7)] {
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "always-429",
+                FaultInjectionResultBuilder::new()
+                    .with_error(FaultInjectionErrorType::TooManyRequests)
+                    .with_probability(1.0)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::ReadItem)
+                    .build(),
+            )
+            .build(),
+        );
+
+        // Pin the throttle-retry budget at the runtime layer of the option
+        // view. A generous cumulative-wait budget keeps the attempt count the
+        // sole limiter for these small retry counts. No end-to-end latency
+        // policy is set, so the transport request carries no deadline and the
+        // forced-final retry is immediate.
+        let operation_options = OperationOptionsBuilder::new()
+            .with_throttling_retry_options(
+                ThrottlingRetryOptionsBuilder::new()
+                    .with_max_retry_count(max_throttle_retry_count)
+                    .with_max_retry_wait_time(Duration::from_secs(300))
+                    .build(),
+            )
+            .build();
+
+        let rule_for_assert = Arc::clone(&rule);
+        Box::pin(
+            DriverTestClient::run_with_unique_db_and_fault_injection_options(
+                vec![rule],
+                operation_options,
+                async move |context, database| {
+                    let container_name = context.unique_container_name();
+                    let container = context
+                        .create_container(&database, &container_name, "/pk")
+                        .await?;
+
+                    // Seed the item with a write. The fault rule targets only
+                    // ReadItem, so the seeding write is unaffected.
+                    let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+                    context
+                        .create_item(&container, "item1", "pk1", item_json)
+                        .await?;
+
+                    // The read always observes 429 and ultimately fails once
+                    // the throttle budget is exhausted.
+                    let read_result = context.read_item(&container, "item1", "pk1").await;
+                    assert!(
+                        read_result.is_err(),
+                        "read must fail once the throttle budget is exhausted \
+                         (max_throttle_retry_count={max_throttle_retry_count})",
+                    );
+
+                    assert_eq!(
+                        rule_for_assert.hit_count(),
+                        expected_hits,
+                        "max_throttle_retry_count={max_throttle_retry_count} must yield \
+                         {expected_hits} ReadItem attempts on the wire, but the 429 fault \
+                         rule fired {} time(s)",
+                        rule_for_assert.hit_count(),
+                    );
+
+                    Ok(())
+                },
+            ),
+        )
+        .await?;
+    }
+
+    Ok(())
 }

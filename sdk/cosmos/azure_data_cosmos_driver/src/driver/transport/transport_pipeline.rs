@@ -150,7 +150,7 @@ pub(crate) struct TransportPipelineContext<'a> {
     /// Maximum number of 429 (throttle) retries for this operation.
     ///
     /// Resolved by the operation pipeline from the effective
-    /// [`OperationOptionsView::max_throttle_retry_count`](crate::options::OperationOptionsView::max_throttle_retry_count)
+    /// [`ThrottlingRetryOptionsView::max_retry_count`](crate::options::ThrottlingRetryOptionsView::max_retry_count)
     /// (defaulting to `9`). `0` disables throttle retries.
     ///
     /// **Scope**: This budget is per `execute_transport_pipeline` invocation,
@@ -162,7 +162,7 @@ pub(crate) struct TransportPipelineContext<'a> {
     /// Maximum cumulative wait budget across 429 (throttle) retries.
     ///
     /// Resolved by the operation pipeline from the effective
-    /// [`OperationOptionsView::max_throttle_retry_wait_time`](crate::options::OperationOptionsView::max_throttle_retry_wait_time)
+    /// [`ThrottlingRetryOptionsView::max_retry_wait_time`](crate::options::ThrottlingRetryOptionsView::max_retry_wait_time)
     /// (defaulting to 30 seconds). Same per-invocation scope note as
     /// [`max_throttle_attempts`](Self::max_throttle_attempts).
     pub max_throttle_wait_time: Duration,
@@ -358,7 +358,7 @@ pub(crate) async fn execute_transport_pipeline(
                     TransportOutcome::HttpError { status, .. } if status.is_throttled()
                 );
 
-                // Honor an explicit `max_throttle_retry_count = 0` opt-out: when the
+                // Honor an explicit `max_retry_count = 0` opt-out: when the
                 // caller has disabled throttle retries entirely (the .NET-parity
                 // contract for `MaxRetryAttemptsOnRateLimitedRequests = 0`), the
                 // one-shot forced-final retry must also be suppressed — otherwise
@@ -843,7 +843,7 @@ mod tests {
 
     #[test]
     fn evaluate_transport_retry_429_disabled_when_max_attempts_zero() {
-        // `max_throttle_retry_count = 0` (the analog of .NET's
+        // `max_retry_count = 0` (the analog of .NET's
         // MaxRetryAttemptsOnRateLimitedRequests = 0) must surface the first
         // 429 to the caller without any retry.
         let result = make_throttled_result_with_retry_after(42);
@@ -1179,7 +1179,7 @@ mod tests {
     /// throttle propagates to the caller, for **several** configured limits.
     ///
     /// This is the direct verification that the
-    /// [`OperationOptionsView::max_throttle_retry_count`](crate::options::OperationOptionsView::max_throttle_retry_count)
+    /// [`ThrottlingRetryOptionsView::max_retry_count`](crate::options::ThrottlingRetryOptionsView::max_retry_count)
     /// knob (surfaced here as
     /// [`TransportPipelineContext::max_throttle_attempts`]) is honored: with a
     /// generous cumulative-wait budget and no end-to-end deadline, the only

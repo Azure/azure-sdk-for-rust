@@ -169,12 +169,13 @@ pub(crate) async fn execute_operation_pipeline(
     // throttle-retry budget. Total wall-clock cost across an operation is
     // bounded by `end_to_end_latency_policy` (see the per-attempt deadline
     // wiring below), not by these knobs in aggregate.
-    let max_throttle_attempts = options
-        .max_throttle_retry_count()
+    let throttling_retry_options = options.throttling_retry_options();
+    let max_throttle_attempts = throttling_retry_options
+        .max_retry_count()
         .copied()
         .unwrap_or(DEFAULT_MAX_THROTTLE_ATTEMPTS);
-    let max_throttle_wait_time = options
-        .max_throttle_retry_wait_time()
+    let max_throttle_wait_time = throttling_retry_options
+        .max_retry_wait_time()
         .copied()
         .unwrap_or(DEFAULT_MAX_THROTTLE_WAIT);
 

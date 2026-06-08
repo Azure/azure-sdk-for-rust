@@ -798,7 +798,14 @@ impl CosmosDriverRuntimeBuilder {
             connection_pool,
             bootstrap_transport,
             http_client_factory,
-            env_operation_options: Arc::new(OperationOptions::from_env()),
+            env_operation_options: Arc::new(OperationOptions {
+                // Nested option groups are not populated by the parent's
+                // `from_env`, so the throttling group is loaded explicitly to
+                // keep `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT` honored at the
+                // environment layer.
+                throttling_retry_options: Some(crate::options::ThrottlingRetryOptions::from_env()),
+                ..OperationOptions::from_env()
+            }),
             operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,

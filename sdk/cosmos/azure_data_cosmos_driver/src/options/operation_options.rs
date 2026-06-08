@@ -90,42 +90,21 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT")]
     pub max_session_retry_count: Option<u32>,
 
-    /// Maximum number of retries when a request is throttled by the service
-    /// (HTTP 429, rate-limited).
+    /// Retry behavior for requests throttled by the service (HTTP 429,
+    /// rate-limited).
     ///
-    /// This is the analog of the .NET SDK's
-    /// `MaxRetryAttemptsOnRateLimitedRequests`. It bounds the transport-level
-    /// retry loop that honors the service `x-ms-retry-after-ms` header (or an
-    /// exponential-backoff fallback when the header is absent).
+    /// Groups the throttle-retry knobs into a single option group, mirroring
+    /// the .NET SDK's `ThrottlingRetryOptions` and the Java SDK's
+    /// `ThrottlingRetryOptions`. See [`ThrottlingRetryOptions`] for the
+    /// individual settings ([`max_retry_count`](ThrottlingRetryOptions::max_retry_count)
+    /// and [`max_retry_wait_time`](ThrottlingRetryOptions::max_retry_wait_time)).
     ///
-    /// **Default**: `9`. A value of `0` disables retrying throttled requests
-    /// (the first 429 is surfaced to the caller).
-    ///
-    /// **Scope**: This budget applies *per transport-pipeline invocation*,
-    /// not per logical operation. An operation that performs cross-region
-    /// failover or hedging can call into the transport pipeline multiple
-    /// times — each invocation starts with a fresh throttle-retry budget.
-    /// To bound the **total** time an operation can spend on retries (across
-    /// throttling, failover, hedging, etc.), configure
-    /// [`end_to_end_latency_policy`](Self::end_to_end_latency_policy).
-    #[option(env = "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT")]
-    pub max_throttle_retry_count: Option<u32>,
-
-    /// Maximum cumulative time to spend waiting across throttle (HTTP 429)
-    /// retries before giving up and surfacing the 429 to the caller.
-    ///
-    /// This is the analog of the .NET SDK's
-    /// `MaxRetryWaitTimeOnRateLimitedRequests`. Once the accumulated retry
-    /// delay would exceed this budget, no further throttle retry is attempted.
-    ///
-    /// **Default**: 30 seconds.
-    ///
-    /// **Scope**: This budget applies *per transport-pipeline invocation*,
-    /// not per logical operation. See the scope note on
-    /// [`max_throttle_retry_count`](Self::max_throttle_retry_count) and
-    /// [`end_to_end_latency_policy`](Self::end_to_end_latency_policy) for the
-    /// per-operation cap.
-    pub max_throttle_retry_wait_time: Option<Duration>,
+    /// Each inner setting resolves independently across the runtime → account
+    /// → operation → environment layers. To bound the **total** time an
+    /// operation can spend on retries (across throttling, failover, hedging,
+    /// etc.), configure [`end_to_end_latency_policy`](Self::end_to_end_latency_policy).
+    #[option(nested)]
+    pub throttling_retry_options: Option<ThrottlingRetryOptions>,
 
     /// Read failure count threshold before the per-partition circuit breaker
     /// trips for a `(partition, region)` pair.
@@ -214,6 +193,54 @@ pub struct OperationOptions {
     pub custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
 }
 
+/// Retry behavior for requests throttled by the service (HTTP 429,
+/// rate-limited).
+///
+/// Mirrors the .NET and Java SDKs' `ThrottlingRetryOptions`, grouping the two
+/// throttle-retry knobs into a single option group instead of exposing them as
+/// flat fields. Each setting participates independently in the standard
+/// runtime → account → operation → environment layered resolution.
+///
+/// These limits bound the transport-level 429 retry loop, which honors the
+/// service `x-ms-retry-after-ms` header (or an exponential-backoff fallback
+/// when the header is absent).
+///
+/// # Scope
+///
+/// Both budgets apply *per transport-pipeline invocation*, not per logical
+/// operation. An operation that performs cross-region failover or hedging can
+/// call into the transport pipeline multiple times — each invocation starts
+/// with a fresh throttle-retry budget. To bound the **total** time an
+/// operation can spend on retries, configure
+/// [`OperationOptions::end_to_end_latency_policy`].
+#[derive(CosmosOptions, Clone, Debug)]
+#[options(layers(runtime, account, operation))]
+#[non_exhaustive]
+pub struct ThrottlingRetryOptions {
+    /// Maximum number of retries when a request is throttled by the service
+    /// (HTTP 429, rate-limited).
+    ///
+    /// This is the analog of the .NET SDK's
+    /// `MaxRetryAttemptsOnRateLimitedRequests` (and Java's
+    /// `maxRetryAttemptsOnThrottledRequests`).
+    ///
+    /// **Default**: `9`. A value of `0` disables retrying throttled requests
+    /// (the first 429 is surfaced to the caller).
+    #[option(env = "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT")]
+    pub max_retry_count: Option<u32>,
+
+    /// Maximum cumulative time to spend waiting across throttle (HTTP 429)
+    /// retries before giving up and surfacing the 429 to the caller.
+    ///
+    /// This is the analog of the .NET SDK's
+    /// `MaxRetryWaitTimeOnRateLimitedRequests` (and Java's `maxRetryWaitTime`).
+    /// Once the accumulated retry delay would exceed this budget, no further
+    /// throttle retry is attempted.
+    ///
+    /// **Default**: 30 seconds.
+    pub max_retry_wait_time: Option<Duration>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -231,13 +258,16 @@ mod tests {
 
     #[test]
     fn builder_creates_options() {
+        let throttling = ThrottlingRetryOptionsBuilder::new()
+            .with_max_retry_count(4)
+            .with_max_retry_wait_time(Duration::from_secs(12))
+            .build();
         let options = OperationOptionsBuilder::new()
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
             .with_max_failover_retry_count(5)
             .with_max_session_retry_count(3)
-            .with_max_throttle_retry_count(4)
-            .with_max_throttle_retry_wait_time(Duration::from_secs(12))
+            .with_throttling_retry_options(throttling)
             .build();
 
         assert_eq!(
@@ -250,9 +280,12 @@ mod tests {
         );
         assert_eq!(options.max_failover_retry_count, Some(5));
         assert_eq!(options.max_session_retry_count, Some(3));
-        assert_eq!(options.max_throttle_retry_count, Some(4));
+        let throttling = options
+            .throttling_retry_options
+            .expect("throttling group should be set");
+        assert_eq!(throttling.max_retry_count, Some(4));
         assert_eq!(
-            options.max_throttle_retry_wait_time,
+            throttling.max_retry_wait_time,
             Some(Duration::from_secs(12))
         );
     }
@@ -310,7 +343,6 @@ mod tests {
             "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
             "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
             "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".to_string()),
-            "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT" => Ok("4".to_string()),
             _ => Err(std::env::VarError::NotPresent),
         });
 
@@ -324,10 +356,23 @@ mod tests {
         );
         assert_eq!(options.max_failover_retry_count, Some(7));
         assert_eq!(options.max_session_retry_count, Some(3));
-        assert_eq!(options.max_throttle_retry_count, Some(4));
         // Fields without env annotation remain None
         assert!(options.excluded_regions.is_none());
-        assert!(options.max_throttle_retry_wait_time.is_none());
+        // Nested option groups are not populated by the parent's `from_env`;
+        // they are loaded separately (see `throttling_retry_options_from_env`).
+        assert!(options.throttling_retry_options.is_none());
+    }
+
+    #[test]
+    fn throttling_retry_options_from_env() {
+        let throttling = ThrottlingRetryOptions::from_env_vars(|key| match key {
+            "AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT" => Ok("4".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(throttling.max_retry_count, Some(4));
+        // `max_retry_wait_time` has no env var, so it stays None.
+        assert!(throttling.max_retry_wait_time.is_none());
     }
 
     #[test]

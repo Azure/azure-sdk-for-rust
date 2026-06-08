@@ -144,7 +144,11 @@ impl CosmosClientBuilder {
     ///
     /// * `max_attempts` - The maximum number of throttle retries.
     pub fn with_max_retry_attempts_on_throttled_requests(mut self, max_attempts: u32) -> Self {
-        self.options.operation.max_throttle_retry_count = Some(max_attempts);
+        self.options
+            .operation
+            .throttling_retry_options
+            .get_or_insert_with(Default::default)
+            .max_retry_count = Some(max_attempts);
         self
     }
 
@@ -174,7 +178,11 @@ impl CosmosClientBuilder {
         mut self,
         max_wait_time: std::time::Duration,
     ) -> Self {
-        self.options.operation.max_throttle_retry_wait_time = Some(max_wait_time);
+        self.options
+            .operation
+            .throttling_retry_options
+            .get_or_insert_with(Default::default)
+            .max_retry_wait_time = Some(max_wait_time);
         self
     }
 
@@ -625,9 +633,15 @@ mod tests {
             .with_max_retry_attempts_on_throttled_requests(4)
             .with_max_retry_wait_time_on_throttled_requests(std::time::Duration::from_secs(15));
 
-        assert_eq!(builder.options.operation.max_throttle_retry_count, Some(4));
+        let throttling = builder
+            .options
+            .operation
+            .throttling_retry_options
+            .as_ref()
+            .expect("throttling group should be populated");
+        assert_eq!(throttling.max_retry_count, Some(4));
         assert_eq!(
-            builder.options.operation.max_throttle_retry_wait_time,
+            throttling.max_retry_wait_time,
             Some(std::time::Duration::from_secs(15))
         );
     }
@@ -637,7 +651,15 @@ mod tests {
     #[test]
     fn throttle_retry_count_zero_round_trips() {
         let builder = CosmosClientBuilder::new().with_max_retry_attempts_on_throttled_requests(0);
-        assert_eq!(builder.options.operation.max_throttle_retry_count, Some(0));
+        assert_eq!(
+            builder
+                .options
+                .operation
+                .throttling_retry_options
+                .as_ref()
+                .and_then(|t| t.max_retry_count),
+            Some(0)
+        );
     }
 
     fn test_account() -> azure_data_cosmos_driver::models::AccountReference {

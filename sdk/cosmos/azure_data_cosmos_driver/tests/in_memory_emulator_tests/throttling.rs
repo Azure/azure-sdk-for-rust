@@ -403,3 +403,169 @@ async fn create_container_honors_offer_throughput_header() {
         "expected x-ms-offer-throughput=400 to engage throttling within 1000 creates"
     );
 }
+
+/// End-to-end validation that the configurable 429 (throttle) retry budget —
+/// [`ThrottlingRetryOptions::max_retry_count`](azure_data_cosmos_driver::options::ThrottlingRetryOptions::max_retry_count)
+/// — is honored when driving the **full driver pipeline** against the
+/// in-memory emulator.
+///
+/// Unlike the raw-HTTP throttling tests above (which call
+/// [`InMemoryEmulatorHttpClient::execute_request`] directly and therefore
+/// bypass the driver's transport retry loop), this test wires the emulator in
+/// as the driver's transport via
+/// [`InMemoryEmulatorHttpClient::runtime_builder`] and layers a fault-injection
+/// rule on top. The rule injects an HTTP 429 (`TooManyRequests`) on **every**
+/// `ReadItem` attempt — short-circuiting the emulator entirely — so the only
+/// thing limiting the number of read attempts that reach the (faulted)
+/// transport is the configured throttle-retry budget.
+///
+/// Because the injected 429 carries no sub-status it is a *generic* throttle:
+/// the operation pipeline does not re-retry it (a generic 429 routes straight
+/// to `Abort`), so the entire budget is spent inside a single
+/// transport-pipeline invocation and `rule.hit_count()` equals the exact
+/// number of read attempts on the wire:
+///
+/// * `N == 0` — throttle retries disabled → exactly **1** attempt (the
+///   forced-final retry is also suppressed for the explicit opt-out).
+/// * `N > 0` — `1` initial + `N` throttle retries + `1` forced-final-retry
+///   safety net = **`N + 2`** attempts. No `end_to_end_latency_policy` is set,
+///   so the transport request carries no deadline and the forced-final retry
+///   fires immediately.
+///
+/// This is the in-memory analog of the live-emulator test
+/// `emulator_tests::driver_fault_injection::fault_injection_429_honors_configurable_throttle_retry_count`
+/// and the unit-level
+/// `transport_pipeline::tests::execute_transport_pipeline_honors_configured_max_throttle_attempts`.
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
+async fn fault_injection_429_honors_configurable_throttle_retry_count() {
+    use azure_data_cosmos_driver::fault_injection::{
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+        FaultInjectionRuleBuilder, FaultOperationType,
+    };
+    use azure_data_cosmos_driver::models::{
+        AccountReference, CosmosOperation, ItemReference, PartitionKey,
+    };
+    use azure_data_cosmos_driver::options::{
+        OperationOptions, OperationOptionsBuilder, ThrottlingRetryOptionsBuilder,
+    };
+
+    // A single-region emulator with a database + container provisioned. No
+    // throttling is enabled on the store itself — the 429s come purely from
+    // the fault-injection rule, keeping the attempt count deterministic.
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        azure_core::http::Url::parse(GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session);
+
+    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let store = emulator.store();
+    store.create_database("testdb");
+    store.create_container(
+        "testdb",
+        "testcoll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+    );
+
+    let account = AccountReference::with_master_key(
+        azure_core::http::Url::parse(GATEWAY_URL).unwrap(),
+        "ZW11bGF0b3Ita2V5",
+    );
+
+    // (configured throttle-retry budget, expected total ReadItem attempts).
+    for (max_throttle_retry_count, expected_hits) in [(0_u32, 1_u32), (1, 3), (3, 5), (5, 7)] {
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "always-429",
+                FaultInjectionResultBuilder::new()
+                    .with_error(FaultInjectionErrorType::TooManyRequests)
+                    .with_probability(1.0)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::ReadItem)
+                    .build(),
+            )
+            .build(),
+        );
+
+        // Pin the throttle-retry budget at the runtime layer. A generous
+        // cumulative-wait budget keeps the attempt count the sole limiter,
+        // and no end-to-end latency policy is set so the forced-final retry
+        // is immediate.
+        let operation_options = OperationOptionsBuilder::new()
+            .with_throttling_retry_options(
+                ThrottlingRetryOptionsBuilder::new()
+                    .with_max_retry_count(max_throttle_retry_count)
+                    .with_max_retry_wait_time(std::time::Duration::from_secs(300))
+                    .build(),
+            )
+            .build();
+
+        let runtime = emulator
+            .runtime_builder()
+            .with_fault_injection_rules(vec![Arc::clone(&rule)])
+            .expect("fault injection rules should register")
+            .with_operation_options(operation_options)
+            .build()
+            .await
+            .expect("runtime should build against the in-memory emulator");
+
+        let driver = runtime
+            .get_or_create_driver(account.clone(), None)
+            .await
+            .expect("driver should initialize against the in-memory emulator");
+
+        let container = driver
+            .resolve_container_by_name("testdb", "testcoll")
+            .await
+            .expect("container should resolve");
+
+        // Seed a unique item per iteration via the driver. The fault rule
+        // targets only ReadItem, so this CreateItem is never faulted.
+        let item_id = format!("item-{max_throttle_retry_count}");
+        let create_body =
+            format!(r#"{{"id": "{item_id}", "pk": "pk1", "value": "throttle-test"}}"#);
+        let create_ref =
+            ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id.clone());
+        driver
+            .execute_singleton_operation(
+                CosmosOperation::create_item(create_ref).with_body(create_body.into_bytes()),
+                OperationOptions::default(),
+            )
+            .await
+            .expect("seeding create must succeed (rule targets ReadItem only)");
+
+        // The read always observes the injected 429 and ultimately fails once
+        // the throttle budget is exhausted.
+        let read_ref =
+            ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id.clone());
+        let read_result = driver
+            .execute_singleton_operation(
+                CosmosOperation::read_item(read_ref),
+                OperationOptions::default(),
+            )
+            .await;
+        assert!(
+            read_result.is_err(),
+            "read must fail once the throttle budget is exhausted \
+             (max_throttle_retry_count={max_throttle_retry_count})",
+        );
+
+        assert_eq!(
+            rule.hit_count(),
+            expected_hits,
+            "max_throttle_retry_count={max_throttle_retry_count} must yield {expected_hits} \
+             ReadItem attempts on the wire, but the 429 fault rule fired {} time(s)",
+            rule.hit_count(),
+        );
+    }
+}
