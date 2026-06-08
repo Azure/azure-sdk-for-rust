@@ -15,6 +15,7 @@ pub use azure_data_cosmos_driver::models::{
 pub use azure_data_cosmos_driver::options::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
     OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
+    ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView,
     ThroughputControlGroupOptions, UserAgentSuffix,
 };
 

@@ -36,7 +36,8 @@ use crate::{
 use super::{
     components::{
         OperationAction, OperationRetryState, RoutingDecision, TransportMode, TransportOutcome,
-        TransportRequest, TransportResult,
+        TransportRequest, TransportResult, DEFAULT_MAX_THROTTLE_ATTEMPTS,
+        DEFAULT_MAX_THROTTLE_WAIT,
     },
     retry_evaluation::{
         evaluate_transport_result, is_region_confirming_status, partition_effects_for_deferral,
@@ -153,6 +154,30 @@ pub(crate) async fn execute_operation_pipeline(
     let mut diagnostics = diagnostics;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
+
+    // Throttle (HTTP 429) retry limits, resolved from the effective operation
+    // options. These are the analogs of the .NET SDK's
+    // `MaxRetryAttemptsOnRateLimitedRequests` /
+    // `MaxRetryWaitTimeOnRateLimitedRequests`. They are forwarded to the
+    // transport pipeline, which owns the 429 retry loop. `0` attempts disables
+    // throttle retries.
+    //
+    // **Scope note**: each value is forwarded as a *per-transport-pipeline*
+    // budget — `execute_transport_pipeline` is invoked once per attempt that
+    // this operation pipeline makes (e.g., per region during failover or per
+    // leg during hedging), and each invocation starts with a fresh
+    // throttle-retry budget. Total wall-clock cost across an operation is
+    // bounded by `end_to_end_latency_policy` (see the per-attempt deadline
+    // wiring below), not by these knobs in aggregate.
+    let throttling_retry_options = options.throttling_retry_options();
+    let max_throttle_attempts = throttling_retry_options
+        .max_retry_count()
+        .copied()
+        .unwrap_or(DEFAULT_MAX_THROTTLE_ATTEMPTS);
+    let max_throttle_wait_time = throttling_retry_options
+        .max_retry_wait_time()
+        .copied()
+        .unwrap_or(DEFAULT_MAX_THROTTLE_WAIT);
 
     // Determine if session consistency is active for this operation.
     let session_capturing_disabled = options
@@ -310,6 +335,8 @@ pub(crate) async fn execute_operation_pipeline(
                 pipeline_type,
                 transport_security,
                 endpoint_key: routing.endpoint.endpoint_key(),
+                max_throttle_attempts,
+                max_throttle_wait_time,
             },
             &mut diagnostics,
         )
