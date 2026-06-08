@@ -21,7 +21,7 @@ Further discussion on or pull requests for these issues is highly valued, and we
 ## Using Copilot
 
 This repository is [configured](https://code.visualstudio.com/docs/copilot/copilot-customization) to facilitate Copilot.
-In addition to [general instructions](AGENTS.md), you can find additional skills in [.github/skills](.github/skills) or use `/{skill-name}` in Copilot; and prompts in [.github/prompts](.github/prompts) or type `/{prompt-name}` in Copilot.
+In addition to [general instructions](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md), you can find additional skills in [.github/skills](https://github.com/Azure/azure-sdk-for-rust/tree/main/.github/skills) or use `/{skill-name}` in Copilot; and prompts in [.github/prompts](https://github.com/Azure/azure-sdk-for-rust/tree/main/.github/prompts) or type `/{prompt-name}` in Copilot.
 
 To generate a new performance test, for example, you might prompt with:
 
@@ -29,7 +29,7 @@ To generate a new performance test, for example, you might prompt with:
 Using /perf-test generate a perf test for SecretClient::get_secret.
 ```
 
-For comprehensive guidance on how AI agents should interact with this repository, including workflows, automation boundaries, and safety guidelines, see [AGENTS.md](AGENTS.md).
+For comprehensive guidance on how AI agents should interact with this repository, including workflows, automation boundaries, and safety guidelines, see [AGENTS.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md).
 
 ## Generated code
 
@@ -152,7 +152,7 @@ Most crates use recorded tests to record (and sanitize) or play back HTTP traffi
 
 If your crate does not communicate over HTTP or provisioning resources cannot be fully automated, you can also mark tests as `#[recorded::test(live)]`.
 
-For more details about recorded tests, please refer to the [`azure_core_test` crate](sdk/core/azure_core_test/README.md).
+For more details about recorded tests, please refer to the [`azure_core_test` crate](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/azure_core_test/README.md).
 
 ### Documentation Tests
 
