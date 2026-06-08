@@ -531,6 +531,28 @@ impl DriverTestRunContext {
         Ok(result)
     }
 
+    /// Resolves all partition key ranges for a container, optionally forcing
+    /// a refresh of the cached routing map. Exposes the driver's internal
+    /// `resolve_all_partition_key_ranges` for tests that need to exercise the
+    /// pkrange-cache refresh path directly.
+    pub async fn resolve_all_partition_key_ranges(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+    ) -> Result<
+        Option<Vec<azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange>>,
+        Box<dyn Error>,
+    > {
+        let driver = self
+            .client
+            .runtime
+            .get_or_create_driver(self.client.account.clone(), None)
+            .await?;
+        Ok(driver
+            .resolve_all_partition_key_ranges(container, force_refresh)
+            .await)
+    }
+
     /// Validates diagnostics for a successful data plane operation.
     pub fn validate_data_plane_diagnostics(
         &self,
