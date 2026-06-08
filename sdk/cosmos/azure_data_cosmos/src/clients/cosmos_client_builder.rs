@@ -120,21 +120,27 @@ impl CosmosClientBuilder {
     }
 
     /// Sets the maximum number of retries for requests that the service
-    /// throttles (HTTP 429, rate-limited).
+    /// throttles (HTTP 429, rate-limited), along with the maximum cumulative
+    /// wait time across those retries, as a single grouped
+    /// [`ThrottlingRetryOptions`](crate::ThrottlingRetryOptions) value.
     ///
-    /// This is the analog of the .NET SDK's
-    /// `CosmosClientOptions.MaxRetryAttemptsOnRateLimitedRequests`. It bounds
-    /// the transport-level retry loop that honors the service
-    /// `x-ms-retry-after-ms` header. A value of `0` disables retrying
-    /// throttled requests, surfacing the first 429 to the caller.
+    /// Mirrors the .NET SDK's `MaxRetryAttemptsOnRateLimitedRequests` /
+    /// `MaxRetryWaitTimeOnRateLimitedRequests` (grouped here as the Java SDK
+    /// does via `CosmosClientBuilder.throttlingRetryOptions`). Build the value
+    /// with [`ThrottlingRetryOptionsBuilder`](crate::ThrottlingRetryOptionsBuilder):
     ///
-    /// **Default**: `9`.
+    /// - `max_retry_count` bounds the transport-level retry loop that honors
+    ///   the service `x-ms-retry-after-ms` header (**default** `9`; a value of
+    ///   `0` disables throttle retries, surfacing the first 429 to the caller).
+    /// - `max_retry_wait_time` caps the cumulative retry delay (**default**
+    ///   15 seconds); once the accumulated delay would exceed it, no further
+    ///   throttle retry is attempted.
     ///
-    /// **Scope**: applies *per transport-pipeline invocation*, not per
-    /// logical operation. An operation that fans out across regions
-    /// (failover, hedging) enters the transport pipeline once per leg, each
-    /// with a fresh throttle-retry budget. To cap an operation's *total*
-    /// wall-clock time, configure an end-to-end latency policy on
+    /// **Scope**: applies *per transport-pipeline invocation*, not per logical
+    /// operation. An operation that fans out across regions (failover,
+    /// hedging) enters the transport pipeline once per leg, each with a fresh
+    /// throttle-retry budget. To cap an operation's *total* wall-clock time,
+    /// configure
     /// [`OperationOptions::end_to_end_latency_policy`](crate::OperationOptions::end_to_end_latency_policy).
     ///
     /// This client-wide value can be overridden per request via
@@ -142,47 +148,9 @@ impl CosmosClientBuilder {
     ///
     /// # Arguments
     ///
-    /// * `max_attempts` - The maximum number of throttle retries.
-    pub fn with_max_retry_attempts_on_throttled_requests(mut self, max_attempts: u32) -> Self {
-        self.options
-            .operation
-            .throttling_retry_options
-            .get_or_insert_with(Default::default)
-            .max_retry_count = Some(max_attempts);
-        self
-    }
-
-    /// Sets the maximum cumulative wait time across throttle (HTTP 429)
-    /// retries before the 429 is surfaced to the caller.
-    ///
-    /// This is the analog of the .NET SDK's
-    /// `CosmosClientOptions.MaxRetryWaitTimeOnRateLimitedRequests`. Once the
-    /// accumulated retry delay would exceed this budget, no further throttle
-    /// retry is attempted.
-    ///
-    /// **Default**: 15 seconds.
-    ///
-    /// **Scope**: same per-invocation scope as
-    /// [`with_max_retry_attempts_on_throttled_requests`](Self::with_max_retry_attempts_on_throttled_requests)
-    /// — this is *not* a per-operation cap. Configure
-    /// [`OperationOptions::end_to_end_latency_policy`](crate::OperationOptions::end_to_end_latency_policy)
-    /// for that.
-    ///
-    /// This client-wide value can be overridden per request via
-    /// [`OperationOptions`](crate::OperationOptions).
-    ///
-    /// # Arguments
-    ///
-    /// * `max_wait_time` - The maximum cumulative throttle-retry wait time.
-    pub fn with_max_retry_wait_time_on_throttled_requests(
-        mut self,
-        max_wait_time: std::time::Duration,
-    ) -> Self {
-        self.options
-            .operation
-            .throttling_retry_options
-            .get_or_insert_with(Default::default)
-            .max_retry_wait_time = Some(max_wait_time);
+    /// * `options` - The grouped throttle-retry configuration.
+    pub fn with_throttling_retry_options(mut self, options: crate::ThrottlingRetryOptions) -> Self {
+        self.options.operation.throttling_retry_options = Some(options);
         self
     }
 
@@ -420,7 +388,7 @@ impl CosmosClientBuilder {
         // is unset.
         //
         // Start from the client-level operation defaults (set via the builder,
-        // e.g. `with_max_retry_attempts_on_throttled_requests`) so they are
+        // e.g. `with_throttling_retry_options`) so they are
         // forwarded to the driver's runtime layer, then force the resolved
         // PPCB default on top — but only when the SDK builder hasn't already
         // set an explicit value. No public SDK setter exists today, but the
@@ -633,13 +601,16 @@ mod tests {
         );
     }
 
-    /// The client-wide throttle-retry setters must populate the operation
+    /// The client-wide throttle-retry setter must populate the operation
     /// options that `build()` forwards to the driver's runtime layer.
     #[test]
-    fn throttle_retry_setters_populate_operation_options() {
-        let builder = CosmosClientBuilder::new()
-            .with_max_retry_attempts_on_throttled_requests(4)
-            .with_max_retry_wait_time_on_throttled_requests(std::time::Duration::from_secs(15));
+    fn throttle_retry_setter_populates_operation_options() {
+        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
+            crate::ThrottlingRetryOptionsBuilder::new()
+                .with_max_retry_count(4)
+                .with_max_retry_wait_time(std::time::Duration::from_secs(15))
+                .build(),
+        );
 
         let throttling = builder
             .options
@@ -658,7 +629,11 @@ mod tests {
     /// the builder unchanged so the driver can surface the first 429.
     #[test]
     fn throttle_retry_count_zero_round_trips() {
-        let builder = CosmosClientBuilder::new().with_max_retry_attempts_on_throttled_requests(0);
+        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
+            crate::ThrottlingRetryOptionsBuilder::new()
+                .with_max_retry_count(0)
+                .build(),
+        );
         assert_eq!(
             builder
                 .options
@@ -667,6 +642,29 @@ mod tests {
                 .as_ref()
                 .and_then(|t| t.max_retry_count),
             Some(0)
+        );
+    }
+
+    /// The grouped `with_throttling_retry_options` setter must replace the
+    /// whole group with the supplied value.
+    #[test]
+    fn grouped_throttling_retry_options_setter_replaces_group() {
+        let group = crate::ThrottlingRetryOptionsBuilder::new()
+            .with_max_retry_count(2)
+            .with_max_retry_wait_time(std::time::Duration::from_secs(7))
+            .build();
+        let builder = CosmosClientBuilder::new().with_throttling_retry_options(group);
+
+        let throttling = builder
+            .options
+            .operation
+            .throttling_retry_options
+            .as_ref()
+            .expect("throttling group should be populated");
+        assert_eq!(throttling.max_retry_count, Some(2));
+        assert_eq!(
+            throttling.max_retry_wait_time,
+            Some(std::time::Duration::from_secs(7))
         );
     }
 
