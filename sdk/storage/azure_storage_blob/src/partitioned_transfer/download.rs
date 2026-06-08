@@ -162,6 +162,13 @@ where
     let insufficient_buffer_err =
         || Error::with_message(ErrorKind::Other, "Insufficient buffer length.");
 
+    let missing_bytes_err = |expected: usize, actual: usize| {
+        Error::with_message(
+            ErrorKind::Other,
+            format!("Download incomplete. Expected to read {expected} bytes, but read actual bytes. Bytes may not have been written to buffer in the correct positions."),
+        )
+    };
+
     let range: Option<Range<usize>> = range.map(|hr| {
         let start = hr.offset() as usize;
         let end = match hr.length() {
@@ -207,6 +214,10 @@ where
                 .into_body()
                 .collect_into(&mut buffer[total_read..])
                 .await?;
+        }
+        let expected_total_read = response_analysis.overall_download_range.len();
+        if expected_total_read != total_read {
+            return Err(missing_bytes_err(expected_total_read, total_read));
         }
         return Ok((status, headers, total_read));
     }
@@ -266,13 +277,7 @@ where
 
     let expected_total_read = response_analysis.overall_download_range.len();
     if expected_total_read != total_read {
-        return Err(Error::with_message(
-            ErrorKind::Other,
-            format!(
-                "Download incomplete. Expected to read {} bytes, but read {} bytes. Bytes may not have been written to buffer in the correct positions.",
-                expected_total_read, total_read
-            ),
-        ));
+        return Err(missing_bytes_err(expected_total_read, total_read));
     }
     downloads_manager_handle
         .await
