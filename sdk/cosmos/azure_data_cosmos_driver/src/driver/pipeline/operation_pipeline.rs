@@ -5861,12 +5861,12 @@ mod tests {
     /// D (the only untried region), not A again.
     #[test]
     fn try_advance_after_both_transient_skips_raced_regions_when_secondary_is_before_primary() {
-        let regions = ["regiona", "regionb", "regionc", "regiond"];
+        let regions = ["region-a", "region-b", "region-c", "region-d"];
         let location = make_advance_test_location(&regions);
-        let mut state = make_advance_test_state(2, regions.len()); // primary = regionc
+        let mut state = make_advance_test_state(2, regions.len()); // primary = region-c
 
-        let primary = crate::options::Region::new("regionc");
-        let secondary = crate::options::Region::new("regiona");
+        let primary = crate::options::Region::new("region-c");
+        let secondary = crate::options::Region::new("region-a");
 
         super::try_advance_after_both_transient(
             &mut state,
@@ -5881,7 +5881,7 @@ mod tests {
         let landed = location.account.preferred_read_endpoints[state.location.index()].region();
         assert_eq!(
             landed.map(crate::options::Region::as_str),
-            Some("regiond"),
+            Some("region-d"),
             "post-BothTransient LocationIndex must skip the raced primary and \
              the raced secondary (no matter where it sat) and land on the \
              only untried region",
@@ -5895,12 +5895,12 @@ mod tests {
     /// the next untried region.
     #[test]
     fn try_advance_after_both_transient_skips_raced_regions_when_secondary_is_after_primary() {
-        let regions = ["regiona", "regionb", "regionc", "regiond"];
+        let regions = ["region-a", "region-b", "region-c", "region-d"];
         let location = make_advance_test_location(&regions);
-        let mut state = make_advance_test_state(0, regions.len()); // primary = regiona
+        let mut state = make_advance_test_state(0, regions.len()); // primary = region-a
 
-        let primary = crate::options::Region::new("regiona");
-        let secondary = crate::options::Region::new("regionb");
+        let primary = crate::options::Region::new("region-a");
+        let secondary = crate::options::Region::new("region-b");
 
         super::try_advance_after_both_transient(
             &mut state,
@@ -5915,7 +5915,7 @@ mod tests {
         let landed = location.account.preferred_read_endpoints[state.location.index()].region();
         assert_eq!(
             landed.map(crate::options::Region::as_str),
-            Some("regionc"),
+            Some("region-c"),
             "secondary-after-primary case must still skip both raced regions",
         );
     }
@@ -5928,12 +5928,12 @@ mod tests {
     /// endpoint de-prioritization to make a sensible choice.
     #[test]
     fn try_advance_after_both_transient_terminates_when_all_regions_are_raced() {
-        let regions = ["regiona", "regionb"];
+        let regions = ["region-a", "region-b"];
         let location = make_advance_test_location(&regions);
         let mut state = make_advance_test_state(0, regions.len());
 
-        let primary = crate::options::Region::new("regiona");
-        let secondary = crate::options::Region::new("regionb");
+        let primary = crate::options::Region::new("region-a");
+        let secondary = crate::options::Region::new("region-b");
 
         let result = super::try_advance_after_both_transient(
             &mut state,
@@ -5960,14 +5960,14 @@ mod tests {
     /// `LocationIndex`.
     #[test]
     fn try_advance_after_both_transient_surfaces_terminal_error_when_budget_exhausted() {
-        let regions = ["regiona", "regionb", "regionc"];
+        let regions = ["region-a", "region-b", "region-c"];
         let location = make_advance_test_location(&regions);
         let mut state = make_advance_test_state(0, regions.len());
         state.max_failover_retries = 1;
         let starting_index = state.location.index();
 
-        let primary = crate::options::Region::new("regiona");
-        let secondary = crate::options::Region::new("regionb");
+        let primary = crate::options::Region::new("region-a");
+        let secondary = crate::options::Region::new("region-b");
 
         let result = super::try_advance_after_both_transient(
             &mut state,
