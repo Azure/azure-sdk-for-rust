@@ -1132,9 +1132,11 @@ pub async fn error_diagnostics_records_retry_history() -> Result<(), Box<dyn Err
                     .collect::<Vec<_>>()
             );
 
-            // Duration is captured.
+            // Duration is captured. Compare against `Duration::ZERO` rather
+            // than `.as_millis() > 0` so sub-millisecond retry loops still
+            // assert correctly.
             assert!(
-                diag.duration().as_millis() > 0,
+                diag.duration() > Duration::ZERO,
                 "diagnostics.duration() should be > 0 after retries"
             );
 
