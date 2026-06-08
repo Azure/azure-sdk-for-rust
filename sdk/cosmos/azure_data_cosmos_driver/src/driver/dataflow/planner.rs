@@ -251,10 +251,21 @@ pub(crate) async fn build_sequential_drain(
                 }
             }
 
-            // Carry the server continuation to every leaf node, because
-            // we don't know which ones have been drained. The service does, and will
-            // just return empty pages for those if needed.
-            let initial_continuation = resume.as_mut().and_then(|c| c.server_continuation.take());
+            // Carry the server continuation to every leaf inside the cursor's
+            // original child-range scope: after a split, the original child has
+            // fanned out into multiple sub-ranges and we don't know which ones
+            // have been drained — the service does, and emits empty pages for
+            // any already-drained sub-range. Leaves entirely past
+            // `current_max_epk` are fresh and must NOT carry the continuation.
+            let initial_continuation = resume.as_ref().and_then(|c| {
+                if c.server_continuation.is_some()
+                    && resolved_range.range.min_inclusive() < &c.current_max_epk
+                {
+                    c.server_continuation.clone()
+                } else {
+                    None
+                }
+            });
             let range = intersect_feed_ranges(&resolved_range.range, &feed_range).expect(
                 "topology provider must return ranges that overlap the query plan EPK range",
             );
@@ -268,6 +279,14 @@ pub(crate) async fn build_sequential_drain(
                 target,
                 initial_continuation,
             )));
+        }
+
+        // The cursor's stored continuation belongs to a single original child
+        // range and must not bleed into leaves built for subsequent
+        // `query_range`s. After processing all resolved ranges for the current
+        // `query_range`, drop it.
+        if let Some(c) = resume.as_mut() {
+            c.server_continuation = None;
         }
     }
 
@@ -961,7 +980,51 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resume_propagates_server_continuation_to_first_surviving_leaf_only() {
+    async fn resume_propagates_server_continuation_to_every_surviving_leaf_after_split() {
+        // Cursor was suspended inside a single physical partition that has since
+        // been split into two child ranges. Every leaf overlapping the original
+        // cursor scope must carry the saved continuation, otherwise the
+        // continuation-less leaves execute a fresh query and re-emit items the
+        // caller has already consumed.
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "55", "pk-a"),
+            rr("55", "70", "pk-b1"),
+            rr("70", "AA", "pk-b2"),
+            rr("AA", "FF", "pk-c"),
+        ])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            current_min_epk: "55".to_owned(),
+            current_max_epk: "AA".to_owned(),
+            left_most: Box::new(PipelineNodeState::Request {
+                server_continuation: Some("server-token-xyz".to_owned()),
+            }),
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("55", "70", "pk-b1", "55", "70", Some("server-token-xyz")),
+                ("70", "AA", "pk-b2", "70", "AA", Some("server-token-xyz")),
+                ("AA", "FF", "pk-c", "AA", "FF", None),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_does_not_leak_continuation_into_fresh_leaves_past_cursor_scope() {
+        // Defensive regression guard for the cursor-scope bound. Topology
+        // unchanged across sessions: the cursor sits exactly on the middle
+        // child. The leaf for that child must carry the continuation; the
+        // leaf for the following (fresh) child must not. Note: the pre-fix
+        // `Option::take()` behavior happens to produce the same result for
+        // this exact shape; the test instead pins the scope-check contract
+        // so a future refactor cannot regress to "clone into every leaf".
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![
@@ -981,16 +1044,88 @@ mod tests {
         let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
             .unwrap();
-        let snapshot = pipeline.snapshot_state();
-        let PipelineNodeState::SequentialDrain { left_most, .. } = snapshot else {
-            panic!("expected SequentialDrain snapshot, got {snapshot:?}");
-        };
-        assert_eq!(
-            *left_most,
-            PipelineNodeState::Request {
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("55", "AA", "pk-b", "55", "AA", Some("server-token-xyz")),
+                ("AA", "FF", "pk-c", "AA", "FF", None),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_does_not_leak_continuation_across_query_ranges() {
+        // Two disjoint query-plan ranges. The cursor sits in the first range;
+        // every leaf the second range produces must start fresh.
+        // Pins the contract across disjoint ranges -- a defensive guard
+        // since the second range's leaves are also past `current_max_epk`
+        // and would be filtered by the scope check alone.
+        let plan = plan_with_ranges(vec![qr("", "55"), qr("80", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "30", "pk-a"), rr("30", "55", "pk-b")]),
+            Ok(vec![rr("80", "C0", "pk-c"), rr("C0", "FF", "pk-d")]),
+        ]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            current_min_epk: "30".to_owned(),
+            current_max_epk: "55".to_owned(),
+            left_most: Box::new(PipelineNodeState::Request {
                 server_continuation: Some("server-token-xyz".to_owned()),
-            },
-            "front leaf must carry the resumed server continuation",
+            }),
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("30", "55", "pk-b", "30", "55", Some("server-token-xyz")),
+                ("80", "C0", "pk-c", "80", "C0", None),
+                ("C0", "FF", "pk-d", "C0", "FF", None),
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn resume_clears_continuation_between_overlapping_query_ranges() {
+        // Exercises the end-of-`for query_range` reset specifically. The
+        // second query-plan range overlaps the cursor's child scope, so its
+        // first leaf (`min_inclusive=40 < current_max_epk=55`) would pass
+        // the per-leaf scope check and inherit the continuation if the
+        // cursor were not cleared between query ranges. Cosmos query plans
+        // do not normally produce overlapping ranges, but the planner
+        // contract is "continuations belong to the cursor's originating
+        // query range" -- this test pins that contract.
+        let plan = plan_with_ranges(vec![qr("", "55"), qr("40", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![rr("", "30", "pk-a"), rr("30", "55", "pk-b")]),
+            Ok(vec![rr("40", "C0", "pk-c"), rr("C0", "FF", "pk-d")]),
+        ]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            current_min_epk: "30".to_owned(),
+            current_max_epk: "55".to_owned(),
+            left_most: Box::new(PipelineNodeState::Request {
+                server_continuation: Some("server-token-xyz".to_owned()),
+            }),
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .unwrap();
+        assert_drain_requests_with_partitions_and_continuation(
+            pipeline,
+            &[
+                ("30", "55", "pk-b", "30", "55", Some("server-token-xyz")),
+                // pk-c starts at 40 which is < cursor.current_max_epk=55, but
+                // it belongs to a fresh query-plan range so the continuation
+                // must NOT propagate.
+                ("40", "C0", "pk-c", "40", "C0", None),
+                ("C0", "FF", "pk-d", "C0", "FF", None),
+            ],
         );
     }
 
