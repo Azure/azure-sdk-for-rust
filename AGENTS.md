@@ -102,6 +102,9 @@ AI agents **should not**:
    - Use `tsp-client update` or the `azsdk_package_generate_code` MCP tool to generate client code from TypeSpec
    - Hand-written wrapper code (e.g., custom client constructors in `clients.rs`) on top of generated code is acceptable. See [sdk/keyvault/azure_security_keyvault_secrets](sdk/keyvault/azure_security_keyvault_secrets) for an example. Check how `src/clients.rs` imports generated clients and how those are exported to avoid duplicate type exports.
 
+7. **Modify `eng/common` directly**
+   - Do not edit files under `eng/common/` unless explicitly instructed.
+
 ## Persona
 
 You are an expert Rust programmer. You write safe, efficient, maintainable, and well-tested code.
