@@ -509,6 +509,8 @@ impl SubStatusCode {
             20209 => Some("ClientCrossPartitionQueryRequiresContainerRef"),
             20210 => Some("ClientSingletonOperationReturnedEmptyPage"),
             20211 => Some("ClientComputeRangeInvokedWithEmptyPartitionKey"),
+            20212 => Some("ClientContinuationTokenInvalidChildren"),
+            20213 => Some("ClientContinuationTokenSavedRangeUnhonored"),
             20300 => Some("ClientNoOverlappingFeedRangesForSessionToken"),
             20301 => Some("ClientNoThroughputOfferForResource"),
             20302 => Some("ClientQueryPlanProducedEmptyRanges"),
@@ -1368,6 +1370,16 @@ impl SubStatusCode {
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode =
         SubStatusCode(20211);
 
+    /// A continuation token's `SequentialDrain` children list is malformed
+    /// (out of order, overlapping, or has min > max) (20212).
+    pub const CLIENT_CONTINUATION_TOKEN_INVALID_CHILDREN: SubStatusCode = SubStatusCode(20212);
+
+    /// A continuation token's saved range could not be honored on resume
+    /// because the topology no longer covers it (20213). Surfacing this as
+    /// an error rather than silently dropping the range prevents duplicate
+    /// emission or data loss.
+    pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
+
     // ----- 20300-20349: SDK-detected service contract violations -----
 
     /// The supplied session-token feed ranges contain no overlap with
@@ -2074,6 +2086,20 @@ impl CosmosStatus {
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = CosmosStatus {
         status_code: StatusCode::InternalServerError,
         sub_status: Some(SubStatusCode::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY),
+    };
+
+    /// 500 / 20212 — continuation token's `SequentialDrain` children list
+    /// is malformed (out of order, overlapping, or min > max).
+    pub const CLIENT_CONTINUATION_TOKEN_INVALID_CHILDREN: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_CHILDREN),
+    };
+
+    /// 500 / 20213 — continuation token's saved range could not be
+    /// honored on resume because the topology no longer covers it.
+    pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
     };
 
     // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)

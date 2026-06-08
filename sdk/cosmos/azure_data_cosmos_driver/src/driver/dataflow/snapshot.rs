@@ -4,11 +4,12 @@
 //! Pipeline node snapshot state used to serialize / deserialize continuation
 //! tokens.
 //!
-//! Each variant captures only the information required to reconstruct an
-//! equivalent pipeline on resume. In particular, [`SequentialDrain`] preserves
-//! its left-most child plus the active child's original EPK bounds; the
-//! planner reconstructs the remaining (yet-to-drain) children from the
-//! operation's query ranges and the current topology.
+//! Each variant captures the information required to reconstruct an
+//! equivalent pipeline on resume. [`SequentialDrain`] preserves the full
+//! remaining-work ledger: every still-pending or in-progress child range and
+//! its state. The planner uses this list as the authoritative set of work
+//! left to do; ranges of the topology that are not represented here have
+//! already been drained and must not be re-queried.
 
 use serde::{Deserialize, Serialize};
 
@@ -34,15 +35,125 @@ pub(crate) enum PipelineNodeState {
 
     /// A sequential drain over EPK-ordered children.
     ///
-    /// Only the left-most (currently-active) child's snapshot is preserved.
-    /// `current_min_epk` / `current_max_epk` are the original bounds of the
-    /// active child when the snapshot was taken. The planner uses
-    /// `current_min_epk` to skip already-drained ranges, and `current_max_epk`
-    /// to recover correct continuation behavior if that child's partition has
-    /// merged before resume.
-    SequentialDrain {
-        current_min_epk: String,
-        current_max_epk: String,
-        left_most: Box<PipelineNodeState>,
-    },
+    /// The `children` list is the authoritative remaining-work ledger: each
+    /// entry carries the original EPK range of one not-yet-drained child plus
+    /// the snapshot of that child's state. The list must be sorted ascending
+    /// by `min_epk` and the ranges must be non-overlapping; the planner
+    /// validates this on resume and rejects malformed tokens.
+    SequentialDrain { children: Vec<RangedChildState> },
+}
+
+/// One entry in a [`PipelineNodeState::SequentialDrain`] children list.
+///
+/// `min_epk` and `max_epk` are the EPK bounds of the child at the time the
+/// snapshot was taken. `state` is the child's own `snapshot_state()` and
+/// must currently be a [`PipelineNodeState::Request`] (in-progress or
+/// not-yet-started) or [`PipelineNodeState::Drained`]; nested
+/// `SequentialDrain` is not supported.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct RangedChildState {
+    pub(crate) min_epk: String,
+    pub(crate) max_epk: String,
+    pub(crate) state: PipelineNodeState,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn child(min: &str, max: &str, token: Option<&str>) -> RangedChildState {
+        RangedChildState {
+            min_epk: min.to_owned(),
+            max_epk: max.to_owned(),
+            state: PipelineNodeState::Request {
+                server_continuation: token.map(str::to_owned),
+            },
+        }
+    }
+
+    #[test]
+    fn drained_round_trips() {
+        let json = serde_json::to_string(&PipelineNodeState::Drained).unwrap();
+        assert_eq!(json, r#"{"kind":"drained"}"#);
+        let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, PipelineNodeState::Drained);
+    }
+
+    #[test]
+    fn request_round_trips_with_and_without_token() {
+        let with = PipelineNodeState::Request {
+            server_continuation: Some("abc".to_owned()),
+        };
+        let json = serde_json::to_string(&with).unwrap();
+        assert_eq!(json, r#"{"kind":"request","server_continuation":"abc"}"#);
+        let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, with);
+
+        let without = PipelineNodeState::Request {
+            server_continuation: None,
+        };
+        let json = serde_json::to_string(&without).unwrap();
+        assert_eq!(json, r#"{"kind":"request"}"#);
+        let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, without);
+    }
+
+    #[test]
+    fn sequential_drain_round_trips_single_child() {
+        let state = PipelineNodeState::SequentialDrain {
+            children: vec![child("00", "FF", Some("tok"))],
+        };
+        let json = serde_json::to_string(&state).unwrap();
+        let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, state);
+    }
+
+    #[test]
+    fn sequential_drain_round_trips_multi_child_including_drained() {
+        let state = PipelineNodeState::SequentialDrain {
+            children: vec![
+                RangedChildState {
+                    min_epk: "00".into(),
+                    max_epk: "55".into(),
+                    state: PipelineNodeState::Drained,
+                },
+                child("55", "AA", Some("tok-2")),
+                child("AA", "FF", None),
+            ],
+        };
+        let json = serde_json::to_string(&state).unwrap();
+        let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, state);
+    }
+
+    #[test]
+    fn sequential_drain_round_trips_empty_children() {
+        // Empty is structurally valid (the snapshot path emits Drained
+        // instead, but the serde shape must accept and round-trip an
+        // explicit empty list).
+        let state = PipelineNodeState::SequentialDrain { children: vec![] };
+        let json = serde_json::to_string(&state).unwrap();
+        let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, state);
+    }
+
+    #[test]
+    fn legacy_0_3_0_sequential_drain_shape_fails_to_deserialize() {
+        // 0.3.0 minted tokens with this shape. The new SDK rejects them so
+        // callers see a clear failure instead of silent data loss; the
+        // CHANGELOG documents this as a breaking change.
+        let legacy = r#"{"kind":"sequential_drain","current_min_epk":"00","current_max_epk":"FF","left_most":{"kind":"request","server_continuation":"tok"}}"#;
+        let result: Result<PipelineNodeState, _> = serde_json::from_str(legacy);
+        assert!(
+            result.is_err(),
+            "legacy 0.3.0 SequentialDrain shape must fail to deserialize under the new schema"
+        );
+    }
+
+    #[test]
+    fn unknown_kind_fails_to_deserialize() {
+        let bogus = r#"{"kind":"something_new"}"#;
+        let result: Result<PipelineNodeState, _> = serde_json::from_str(bogus);
+        assert!(result.is_err());
+    }
 }

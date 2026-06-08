@@ -256,6 +256,7 @@ impl<'de> Deserialize<'de> for ContinuationToken {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::driver::dataflow::RangedChildState;
     use crate::models::{
         AccountReference, ContainerProperties, ContainerReference, FeedRange, ItemReference,
         PartitionKey, PartitionKeyDefinition, SystemProperties,
@@ -348,17 +349,19 @@ mod tests {
         let token = ContinuationToken::encode_v1(
             &query_op(),
             &PipelineNodeState::SequentialDrain {
-                current_min_epk: "3F".to_string(),
-                current_max_epk: "7F".to_string(),
-                left_most: Box::new(PipelineNodeState::Request {
-                    server_continuation: None,
-                }),
+                children: vec![RangedChildState {
+                    min_epk: "3F".to_string(),
+                    max_epk: "7F".to_string(),
+                    state: PipelineNodeState::Request {
+                        server_continuation: None,
+                    },
+                }],
             },
         )
         .unwrap();
         assert_eq!(
             decode_v1_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","current_min_epk":"3F","current_max_epk":"7F","left_most":{"kind":"request"}}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","children":[{"min_epk":"3F","max_epk":"7F","state":{"kind":"request"}}]}}"#,
         );
     }
 
@@ -442,7 +445,7 @@ mod tests {
     #[test]
     fn resolve_v1_sequential_drain_state() {
         let token = encode_v1_payload(
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","current_min_epk":"3F","current_max_epk":"7F","left_most":{"kind":"request"}}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","children":[{"min_epk":"3F","max_epk":"7F","state":{"kind":"request"}}]}}"#,
         );
         match token.resolve().unwrap() {
             ResolvedToken::ClientV1(state) => {
@@ -451,11 +454,13 @@ mod tests {
                 assert_eq!(
                     state.root,
                     PipelineNodeState::SequentialDrain {
-                        current_min_epk: "3F".to_string(),
-                        current_max_epk: "7F".to_string(),
-                        left_most: Box::new(PipelineNodeState::Request {
-                            server_continuation: None,
-                        }),
+                        children: vec![RangedChildState {
+                            min_epk: "3F".to_string(),
+                            max_epk: "7F".to_string(),
+                            state: PipelineNodeState::Request {
+                                server_continuation: None,
+                            },
+                        }],
                     },
                 );
             }

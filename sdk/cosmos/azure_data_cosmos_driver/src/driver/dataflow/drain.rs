@@ -14,7 +14,7 @@ use async_trait::async_trait;
 
 use crate::models::FeedRange;
 
-use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState};
+use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedChildState};
 
 /// Maximum number of consecutive split retries before giving up.
 ///
@@ -111,19 +111,35 @@ impl PipelineNode for SequentialDrain {
     }
 
     fn snapshot_state(&self) -> PipelineNodeState {
-        let Some(front) = self.children.front() else {
-            return PipelineNodeState::Drained;
-        };
-        let Some(range) = front.feed_range() else {
-            // Shouldn't happen for an EPK-ordered drain, but degrade gracefully:
-            // serialize the child snapshot directly with no cursor.
-            return front.snapshot_state();
-        };
-        PipelineNodeState::SequentialDrain {
-            current_min_epk: range.min_inclusive().as_str().to_string(),
-            current_max_epk: range.max_exclusive().as_str().to_string(),
-            left_most: Box::new(front.snapshot_state()),
+        // Walk every still-pending child and record its range + state. The
+        // resulting list is the authoritative remaining-work ledger: ranges
+        // that are not present here have already been drained and must not
+        // be re-queried on resume.
+        let mut children = Vec::with_capacity(self.children.len());
+        for child in &self.children {
+            let Some(range) = child.feed_range() else {
+                // A SequentialDrain only ever holds EPK-ranged leaves and
+                // their replacement nodes; a missing range is an invariant
+                // violation. In release builds, conservatively drop the entry
+                // (we'd rather error than re-emit data, but the only signal
+                // we have here is a snapshot — the next resume will fail
+                // loudly when this range's saved state is missing).
+                debug_assert!(
+                    false,
+                    "SequentialDrain child has no feed_range; snapshot will be incomplete"
+                );
+                continue;
+            };
+            children.push(RangedChildState {
+                min_epk: range.min_inclusive().as_str().to_string(),
+                max_epk: range.max_exclusive().as_str().to_string(),
+                state: child.snapshot_state(),
+            });
         }
+        if children.is_empty() {
+            return PipelineNodeState::Drained;
+        }
+        PipelineNodeState::SequentialDrain { children }
     }
 
     fn feed_range(&self) -> Option<&FeedRange> {
@@ -663,16 +679,64 @@ mod tests {
         let page = unwrap_page(drain.next_page(&mut context).await);
         assert_eq!(page.body_bytes(), b"c1-final");
 
-        // Snapshot must already reference child2 (cursor at "80"), not the
-        // just-drained child1.
+        // Snapshot must already reference only child2 (child1 was evicted on
+        // its terminal page). The first entry's min_epk should be "80".
         let snapshot = drain.snapshot_state();
-        let PipelineNodeState::SequentialDrain {
-            current_min_epk, ..
-        } = snapshot
-        else {
+        let PipelineNodeState::SequentialDrain { children } = snapshot else {
             panic!("expected SequentialDrain snapshot, got {snapshot:?}");
         };
-        assert_eq!(current_min_epk, "80");
+        assert_eq!(children.len(), 1);
+        assert_eq!(children[0].min_epk, "80");
+        assert_eq!(children[0].max_epk, "FF");
+    }
+
+    #[tokio::test]
+    async fn snapshot_preserves_all_pending_children() {
+        // Mid-fan-out: drain has not advanced past child1 yet, so the
+        // snapshot must record ALL three children's ranges + states.
+        // This is the Defect-B regression guard: the old shape only
+        // captured `front`, silently dropping child2/child3.
+        let child1 = MockLeaf::with_pages(vec![]).with_feed_range(
+            FeedRange::new(
+                EffectivePartitionKey::from("00"),
+                EffectivePartitionKey::from("55"),
+            )
+            .unwrap(),
+        );
+        let child2 = MockLeaf::with_pages(vec![]).with_feed_range(
+            FeedRange::new(
+                EffectivePartitionKey::from("55"),
+                EffectivePartitionKey::from("AA"),
+            )
+            .unwrap(),
+        );
+        let child3 = MockLeaf::with_pages(vec![]).with_feed_range(
+            FeedRange::new(
+                EffectivePartitionKey::from("AA"),
+                EffectivePartitionKey::from("FF"),
+            )
+            .unwrap(),
+        );
+        let drain =
+            SequentialDrain::new(vec![Box::new(child1), Box::new(child2), Box::new(child3)]);
+
+        let snapshot = drain.snapshot_state();
+        let PipelineNodeState::SequentialDrain { children } = snapshot else {
+            panic!("expected SequentialDrain snapshot, got {snapshot:?}");
+        };
+        assert_eq!(children.len(), 3);
+        assert_eq!(children[0].min_epk, "00");
+        assert_eq!(children[0].max_epk, "55");
+        assert_eq!(children[1].min_epk, "55");
+        assert_eq!(children[1].max_epk, "AA");
+        assert_eq!(children[2].min_epk, "AA");
+        assert_eq!(children[2].max_epk, "FF");
+    }
+
+    #[tokio::test]
+    async fn snapshot_of_empty_children_is_drained() {
+        let drain = SequentialDrain::new(vec![]);
+        assert!(matches!(drain.snapshot_state(), PipelineNodeState::Drained));
     }
 
     #[tokio::test]

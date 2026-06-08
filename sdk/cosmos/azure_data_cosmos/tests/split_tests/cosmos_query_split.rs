@@ -8,9 +8,11 @@ use super::framework;
 
 use std::error::Error;
 use std::num::NonZeroU32;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos::{
+    clients::ContainerClient,
     models::{ContainerProperties, ThroughputProperties},
     options::{MaxItemCountHint, QueryOptions},
     query::FeedScope,
@@ -28,6 +30,78 @@ const ITEMS_PER_PARTITION_KEY: usize = 5;
 // Splits _often_ complete in time, but when they don't, we don't necessarily want to block any given PR.
 const SPLIT_POLL_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 const SPLIT_POLL_INTERVAL: Duration = Duration::from_secs(15);
+
+/// Triggers a partition split on `container_client` by raising throughput to
+/// 13000 RU/s (>10k forces at least 2 physical partitions), then polls
+/// `read_feed_ranges` until the new topology becomes visible. Returns the
+/// observed physical partition count.
+///
+/// Returns [`InconclusiveError::SplitNotCompleted`] if the split has not
+/// completed within [`SPLIT_POLL_TIMEOUT`].
+async fn force_split_and_wait(container_client: &ContainerClient) -> Result<usize, Box<dyn Error>> {
+    let split_start = Instant::now();
+    let new_throughput = ThroughputProperties::manual(13000);
+    let mut poller = container_client
+        .begin_replace_throughput(new_throughput, None)
+        .await?;
+    println!("Throughput update initiated, polling for completion...");
+    let mut last_throughput = None;
+    let mut poll_count = 0;
+    while let Some(status) = poller.try_next().await? {
+        if split_start.elapsed() >= SPLIT_POLL_TIMEOUT {
+            return Err(InconclusiveError::SplitNotCompleted.into());
+        }
+
+        assert!(status.status().is_success());
+        last_throughput = Some(status.into_model()?);
+        if poll_count % 15 == 0 {
+            println!(
+                "Throughput update in progress... polled {} times, last observed throughput: {} RU/s",
+                poll_count,
+                last_throughput.as_ref().and_then(|t| t.throughput()).unwrap_or(0)
+            );
+        }
+        poll_count += 1;
+    }
+    let final_throughput =
+        last_throughput.expect("throughput poller should have yielded at least one response");
+    assert_eq!(Some(13000), final_throughput.throughput());
+    println!(
+        "Throughput update completed, new throughput: {} RU/s",
+        final_throughput.throughput().unwrap_or(0)
+    );
+
+    let mut iterations = 0;
+    let observed_ranges = loop {
+        let ranges = container_client
+            .read_feed_ranges(Some(
+                ReadFeedRangesOptions::default().with_force_refresh(true),
+            ))
+            .await?;
+        if ranges.len() >= 2 {
+            break ranges;
+        }
+        if split_start.elapsed() >= SPLIT_POLL_TIMEOUT {
+            return Err(InconclusiveError::SplitNotCompleted.into());
+        }
+
+        if iterations % 4 == 0 {
+            println!(
+                "Waiting for split to complete... elapsed: {:?}, last observed physical partition count: {}",
+                split_start.elapsed(),
+                ranges.len()
+            );
+        }
+        tokio::time::sleep(SPLIT_POLL_INTERVAL).await;
+        iterations += 1;
+    };
+    println!(
+        "Split observed after {:?}; physical partition count: {}",
+        split_start.elapsed(),
+        observed_ranges.len()
+    );
+    Ok(observed_ranges.len())
+}
 
 #[tokio::test]
 #[cfg_attr(
@@ -134,67 +208,7 @@ pub async fn query_continuation_survives_partition_split() -> Result<(), Box<dyn
 
             println!("Captured continuation token after fetching first page, now updating throughput to trigger split");
 
-            // Force a split by raising throughput to 13000 RU/s
-            // (>10k forces at least 2 physical partitions).
-            let split_start = Instant::now();
-            let new_throughput = ThroughputProperties::manual(13000);
-            let mut poller = container_client
-                .begin_replace_throughput(new_throughput, None)
-                .await?;
-            println!("Throughput update initiated, polling for completion...");
-            let mut last_throughput = None;
-            let mut poll_count = 0;
-            while let Some(status) = poller.try_next().await? {
-                if split_start.elapsed() >= SPLIT_POLL_TIMEOUT {
-                    return Err(InconclusiveError::SplitNotCompleted.into());
-                }
-
-                assert!(status.status().is_success());
-                last_throughput = Some(status.into_model()?);
-                if poll_count % 15 == 0 {
-                    println!(
-                        "Throughput update in progress... polled {} times, last observed throughput: {} RU/s",
-                        poll_count,
-                        last_throughput.as_ref().and_then(|t| t.throughput()).unwrap_or(0)
-                    );
-                }
-                poll_count += 1;
-            }
-            let final_throughput = last_throughput
-                .expect("throughput poller should have yielded at least one response");
-            assert_eq!(Some(13000), final_throughput.throughput());
-            println!("Throughput update completed, new throughput: {} RU/s", final_throughput.throughput().unwrap_or(0));
-
-            // Poll read_feed_ranges until we observe >= 2 physical
-            // partitions or the timeout elapses.
-            let mut iterations = 0;
-            let observed_ranges = loop {
-                let ranges = container_client
-                    .read_feed_ranges(Some(ReadFeedRangesOptions::default().with_force_refresh(true)))
-                    .await?;
-                if ranges.len() >= 2 {
-                    break ranges;
-                }
-                if split_start.elapsed() >= SPLIT_POLL_TIMEOUT {
-                    return Err(InconclusiveError::SplitNotCompleted.into());
-                }
-
-                // Every minute, print a message to indicate we're still waiting and the test isn't hanging
-                if iterations % 4 == 0 {
-                    println!(
-                        "Waiting for split to complete... elapsed: {:?}, last observed physical partition count: {}",
-                        split_start.elapsed(),
-                        ranges.len()
-                    );
-                }
-                tokio::time::sleep(SPLIT_POLL_INTERVAL).await;
-                iterations += 1;
-            };
-            println!(
-                "Split observed after {:?}; physical partition count: {}",
-                split_start.elapsed(),
-                observed_ranges.len()
-            );
+            force_split_and_wait(&container_client).await?;
 
             // Resume pagination using the saved continuation token.
             // Round-trip the token between every page so we keep exercising
@@ -240,6 +254,303 @@ pub async fn query_continuation_survives_partition_split() -> Result<(), Box<dyn
             // returned exactly once: no losses and no duplicates across the
             // split boundary. Sort both sides before comparing so an ordering
             // change cannot mask (or be mistaken for) a correctness failure.
+            let mut collected_sorted = collected.clone();
+            collected_sorted.sort();
+            let mut expected_sorted = expected_ids.clone();
+            expected_sorted.sort();
+            assert_eq!(
+                collected.len(),
+                expected_ids.len(),
+                "collected {} items but expected {} (duplicates or losses across split)",
+                collected.len(),
+                expected_ids.len()
+            );
+            assert_eq!(
+                collected_sorted, expected_sorted,
+                "items collected across split should match the seeded ground truth (order-independent)"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_timeout(Duration::from_secs(40 * 60))),
+    )
+    .await
+}
+
+/// Cross-partition query resume after a split, with a page-1 token captured
+/// mid-fan-out across multiple sibling partitions.
+///
+/// This is the canonical repro for the duplicate-emission defect: seed 50
+/// partition keys with one item each and read with a page size of 10 so the
+/// first page spans multiple sibling partitions and the continuation token
+/// captured between pages records mid-fan-out sibling state. After the split,
+/// resuming must not re-emit items the first page already returned. Pre-fix
+/// this returned 55 items for 50 seeded; the assertion is `collected.len() ==
+/// expected.len()` and the sorted-set check.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "split"),
+    ignore = "requires test_category 'split'"
+)]
+pub async fn query_resume_with_first_page_spanning_multiple_partition_keys(
+) -> Result<(), Box<dyn Error>> {
+    const PK_COUNT: usize = 50;
+    const PAGE_SIZE: u32 = 10;
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let properties =
+                ContainerProperties::new("QueryResumeWidePage", "/partitionKey".into());
+            let throughput = ThroughputProperties::manual(1000);
+            let container_client = Arc::new(
+                run_context
+                    .create_container(
+                        db_client,
+                        properties,
+                        Some(CreateContainerOptions::default().with_throughput(throughput)),
+                    )
+                    .await?,
+            );
+
+            println!("Container created; seeding {PK_COUNT} partition keys (one item each)");
+            let mut expected_ids: Vec<String> = Vec::new();
+            for p in 0..PK_COUNT {
+                let partition_key = format!("pk{p}");
+                let item = MockItem {
+                    id: format!("{p}"),
+                    partition_key: partition_key.clone(),
+                    merge_order: p,
+                };
+                expected_ids.push(item.id.clone());
+                container_client
+                    .create_item(item.partition_key.clone(), &item.id.clone(), item, None)
+                    .await?;
+            }
+
+            let ranges_before = container_client.read_feed_ranges(None).await?;
+            assert_eq!(
+                ranges_before.len(),
+                1,
+                "expected single physical partition before split, got {}",
+                ranges_before.len()
+            );
+
+            // Page 1 captures a continuation token spanning multiple sibling
+            // partitions — pre-fix this was the lossy snapshot point that
+            // dropped non-front siblings' pre-split state.
+            let mut collected: Vec<String> = Vec::new();
+            let saved_token = {
+                let options = QueryOptions::default().with_max_item_count(
+                    MaxItemCountHint::Limit(NonZeroU32::new(PAGE_SIZE).unwrap()),
+                );
+                let mut pages = container_client
+                    .query_items::<MockItem>(
+                        "SELECT * FROM c",
+                        FeedScope::full_container(),
+                        Some(options),
+                    )
+                    .await?
+                    .into_pages();
+
+                while collected.is_empty() {
+                    let first_page = pages
+                        .next()
+                        .await
+                        .expect("query should yield at least one page before split")?;
+                    for item in first_page.into_items() {
+                        collected.push(item.id);
+                    }
+                }
+
+                let token = pages.to_continuation_token()?;
+                ContinuationToken::from_string(token.as_str().to_owned())
+            };
+
+            println!(
+                "First page returned {} items; forcing split before resume",
+                collected.len()
+            );
+            force_split_and_wait(&container_client).await?;
+
+            let mut continuation = Some(saved_token);
+            loop {
+                let mut resume_options = QueryOptions::default().with_max_item_count(
+                    MaxItemCountHint::Limit(NonZeroU32::new(PAGE_SIZE).unwrap()),
+                );
+                if let Some(token) = continuation.take() {
+                    resume_options = resume_options.with_continuation_token(token);
+                }
+                let mut pages = container_client
+                    .query_items::<MockItem>(
+                        "SELECT * FROM c",
+                        FeedScope::full_container(),
+                        Some(resume_options),
+                    )
+                    .await?
+                    .into_pages();
+
+                let Some(page) = pages.next().await else {
+                    break;
+                };
+                let page = page?;
+                for item in page.into_items() {
+                    collected.push(item.id);
+                }
+                let token = pages.to_continuation_token()?;
+                let serialized = token.as_str().to_owned();
+                drop(pages);
+                continuation = Some(ContinuationToken::from_string(serialized));
+            }
+
+            let mut collected_sorted = collected.clone();
+            collected_sorted.sort();
+            let mut expected_sorted = expected_ids.clone();
+            expected_sorted.sort();
+            assert_eq!(
+                collected.len(),
+                expected_ids.len(),
+                "collected {} items but expected {} (duplicates or losses across split)",
+                collected.len(),
+                expected_ids.len()
+            );
+            assert_eq!(
+                collected_sorted, expected_sorted,
+                "items collected across split should match the seeded ground truth (order-independent)"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_timeout(Duration::from_secs(40 * 60))),
+    )
+    .await
+}
+
+/// Cross-partition query resume after several full pages and a split.
+///
+/// Seeds 5 partition keys × 10 items, drains the first 4 pages pre-split
+/// (round-tripping the continuation between every page), then forces a split
+/// and resumes. Exercises the case where the saved children's continuation
+/// tokens point deep into per-partition state, so the planner must honor the
+/// saved per-range tokens across the post-split topology.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "split"),
+    ignore = "requires test_category 'split'"
+)]
+pub async fn query_resume_after_draining_multiple_pages_then_split() -> Result<(), Box<dyn Error>> {
+    const PK_COUNT: usize = 5;
+    const ITEMS_PER_PK: usize = 10;
+    const PAGE_SIZE: u32 = 10;
+    const PAGES_PRE_SPLIT: usize = 4;
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let properties =
+                ContainerProperties::new("QueryResumeDeepPages", "/partitionKey".into());
+            let throughput = ThroughputProperties::manual(1000);
+            let container_client = Arc::new(
+                run_context
+                    .create_container(
+                        db_client,
+                        properties,
+                        Some(CreateContainerOptions::default().with_throughput(throughput)),
+                    )
+                    .await?,
+            );
+
+            let mut expected_ids: Vec<String> = Vec::new();
+            for p in 0..PK_COUNT {
+                let partition_key = format!("pk{p}");
+                for i in 0..ITEMS_PER_PK {
+                    let item = MockItem {
+                        id: format!("{p}-{i}"),
+                        partition_key: partition_key.clone(),
+                        merge_order: p * ITEMS_PER_PK + i,
+                    };
+                    expected_ids.push(item.id.clone());
+                    container_client
+                        .create_item(item.partition_key.clone(), &item.id.clone(), item, None)
+                        .await?;
+                }
+            }
+
+            let ranges_before = container_client.read_feed_ranges(None).await?;
+            assert_eq!(
+                ranges_before.len(),
+                1,
+                "expected single physical partition before split, got {}",
+                ranges_before.len()
+            );
+
+            // Drain PAGES_PRE_SPLIT pages, round-tripping the continuation
+            // between every page so each page boundary exercises a snapshot.
+            let mut collected: Vec<String> = Vec::new();
+            let mut continuation: Option<ContinuationToken> = None;
+            for page_idx in 0..PAGES_PRE_SPLIT {
+                let mut options = QueryOptions::default().with_max_item_count(
+                    MaxItemCountHint::Limit(NonZeroU32::new(PAGE_SIZE).unwrap()),
+                );
+                if let Some(token) = continuation.take() {
+                    options = options.with_continuation_token(token);
+                }
+                let mut pages = container_client
+                    .query_items::<MockItem>(
+                        "SELECT * FROM c",
+                        FeedScope::full_container(),
+                        Some(options),
+                    )
+                    .await?
+                    .into_pages();
+
+                let Some(page) = pages.next().await else {
+                    panic!("pre-split drain expected at least {PAGES_PRE_SPLIT} pages but stopped at {page_idx}");
+                };
+                let page = page?;
+                for item in page.into_items() {
+                    collected.push(item.id);
+                }
+                let token = pages.to_continuation_token()?;
+                let serialized = token.as_str().to_owned();
+                drop(pages);
+                continuation = Some(ContinuationToken::from_string(serialized));
+            }
+
+            println!(
+                "Drained {PAGES_PRE_SPLIT} pages pre-split ({} items); forcing split before resume",
+                collected.len()
+            );
+            force_split_and_wait(&container_client).await?;
+
+            // Resume from the post-page-4 continuation across the split.
+            loop {
+                let mut resume_options = QueryOptions::default().with_max_item_count(
+                    MaxItemCountHint::Limit(NonZeroU32::new(PAGE_SIZE).unwrap()),
+                );
+                if let Some(token) = continuation.take() {
+                    resume_options = resume_options.with_continuation_token(token);
+                }
+                let mut pages = container_client
+                    .query_items::<MockItem>(
+                        "SELECT * FROM c",
+                        FeedScope::full_container(),
+                        Some(resume_options),
+                    )
+                    .await?
+                    .into_pages();
+
+                let Some(page) = pages.next().await else {
+                    break;
+                };
+                let page = page?;
+                for item in page.into_items() {
+                    collected.push(item.id);
+                }
+                let token = pages.to_continuation_token()?;
+                let serialized = token.as_str().to_owned();
+                drop(pages);
+                continuation = Some(ContinuationToken::from_string(serialized));
+            }
+
             let mut collected_sorted = collected.clone();
             collected_sorted.sort();
             let mut expected_sorted = expected_ids.clone();
