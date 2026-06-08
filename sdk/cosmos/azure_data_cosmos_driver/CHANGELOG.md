@@ -10,6 +10,7 @@
 
 ### Bugs Fixed
 
+- Writes to multi-write Cosmos accounts now send the `x-ms-cosmos-allow-tentative-writes: true` request header (gated on `enableMultipleWriteLocations` from the account metadata). Without this header satellite write regions returned `403 / 3 (WriteForbidden)`, breaking write failover. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
 - Bootstrap account-metadata fetches now surface non-2xx responses as `CosmosError` with the wire status and body, instead of a `missing field _self` serde error. Diagnostics are populated on the same envelope used by the operation pipeline. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
 
 ### Other Changes
