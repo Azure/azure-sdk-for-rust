@@ -212,7 +212,7 @@ where
     }
 
     /* There's no sound way to have parallel workers operate on a borrowed buffer. Instead, we will
-     * parllelize only the reading from download streams, sending the resulting Bytes straight into
+     * parallelize only the reading from download streams, sending the resulting Bytes straight into
      * a channel.
      * Back here, we will asynchronously, but without concurrency, poll that channel and write the
      * Bytes it produces into the borrowed destination buffer.
@@ -452,7 +452,7 @@ fn start_download_task_channel<Behavior: PartitionedDownloadBehavior + Send + Sy
 
 /// Takes an AsyncResponseBody and streams it through a channel, using the given `destination_offset`
 /// to calculate the offset for each individual Bytes message.
-/// When recieving an error from `body`, sends that error through the channel and terminates.
+/// When receiving an error from `body`, sends that error through the channel and terminates.
 /// Immediately returns on error sending a message through the channel.
 async fn body_to_channel(
     mut body: AsyncResponseBody,
