@@ -3,15 +3,13 @@
 
 //! Integration coverage for multi-region failover via HTTP-transport fault injection.
 //!
-//! Gated on `feature = "fault_injection"` + env vars. Skip / fail behavior follows
-//! the same pattern as [`framework::resolve_test_env`]:
-//! - `AZURE_COSMOS_TEST_MODE=Skipped` → silent skip even when env vars are set.
-//! - `AZURE_COSMOS_TEST_MODE=Required` or running on Azure Pipelines (i.e.
-//!   `SYSTEM_TEAMPROJECTID` is set) → **panic** if the required env vars are
-//!   missing, so a misconfigured CI run reports a real failure instead of a
-//!   silent pass.
-//! - Otherwise (`AZURE_COSMOS_TEST_MODE=Allowed`, the default) → log to stderr
-//!   and skip cleanly when env vars are absent, which is the dev-loop default.
+//! These tests target a real, multi-region, multi-write Cosmos DB account. They are
+//! gated by `test_category = "multi_write"` (set via RUSTFLAGS by the
+//! `Session MultiWrite` live-test matrix entry — see
+//! `sdk/cosmos/live-platform-matrix.json` and `sdk/cosmos/test-resources.bicep`) so
+//! per-PR builds skip them entirely. Inside the live leg the framework reads
+//! `AZURE_COSMOS_CONNECTION_STRING` exported by the bicep template; if it is unset
+//! the tests skip cleanly via `DriverTestClient::run_with_*`.
 
 #![cfg(feature = "fault_injection")]
 
@@ -25,10 +23,14 @@ use azure_data_cosmos_driver::fault_injection::{
 use azure_data_cosmos_driver::models::{
     AccountReference, CosmosOperation, CosmosResponse, ItemReference, PartitionKey,
 };
-use azure_data_cosmos_driver::options::{OperationOptions, Region};
+use azure_data_cosmos_driver::models::{ContainerReference, DatabaseReference};
+use azure_data_cosmos_driver::options::OperationOptions;
+use azure_data_cosmos_driver::options::{ExcludedRegions, OperationOptionsBuilder, Region};
 use azure_data_cosmos_driver::{CosmosStatus, SubStatusCode};
 use azure_identity::DeveloperToolsCredential;
+use std::error::Error;
 use std::sync::Arc;
+use std::time::Duration;
 use uuid::Uuid;
 
 // The framework module is shared across test binaries; not all exports are used
@@ -37,73 +39,7 @@ use uuid::Uuid;
 #[allow(dead_code, unused_imports)]
 mod framework;
 
-use framework::{get_test_mode, is_azure_pipelines, CosmosTestMode};
-
-/// Centralizes the "should I skip or panic?" decision for tests that require
-/// real-account env vars. Mirrors `framework::resolve_test_env` so a single
-/// `AZURE_COSMOS_TEST_MODE` semantics applies across the driver test binaries.
-///
-/// Panics in `Required` mode or when running on Azure Pipelines so a
-/// misconfigured CI run cannot quietly skip every assertion — the original
-/// `eprintln!` pattern hid configuration drift behind a green build.
-fn skip_or_fail_missing_env(test_name: &str, required_vars: &str) {
-    if is_azure_pipelines() || get_test_mode() == CosmosTestMode::Required {
-        panic!(
-            "{test_name}: required environment variables are not set (need: {required_vars}). \
-             Test mode is Required (or running on Azure Pipelines), so this is a hard failure. \
-             Set AZURE_COSMOS_TEST_MODE=Skipped to opt out, or populate the env vars."
-        );
-    }
-    eprintln!(
-        "Skipping {test_name}: required environment variables are not set (need: {required_vars}). \
-         Set AZURE_COSMOS_TEST_MODE=Required to fail instead of skipping."
-    );
-}
-
-fn read_env(name: &str) -> Option<String> {
-    std::env::var(name).ok().filter(|v| !v.trim().is_empty())
-}
-
-fn build_account_from_env() -> Option<AccountReference> {
-    let endpoint = read_env("AZURE_COSMOS_ENDPOINT")?;
-    let key = read_env("AZURE_COSMOS_KEY")?;
-    let url = url::Url::parse(&endpoint).ok()?;
-    Some(AccountReference::with_master_key(url, key))
-}
-
-/// `AccountReference` using `DeveloperToolsCredential` (az login chain) for AAD-token coverage.
-/// Returns `None` if `AZURE_COSMOS_ENDPOINT` is unset or no credential chain is available.
-fn build_account_with_token_credential_from_env() -> Option<AccountReference> {
-    let endpoint = read_env("AZURE_COSMOS_ENDPOINT")?;
-    let url = url::Url::parse(&endpoint).ok()?;
-    let credential = DeveloperToolsCredential::new(None).ok()?;
-    Some(AccountReference::with_credential(url, credential))
-}
-
-/// Account, container, partition-key value, and the region the fault should be scoped to.
-/// Env: ENDPOINT, KEY, TEST_DATABASE, TEST_CONTAINER, TEST_PARTITION_KEY, TEST_REGION.
-struct DataPlaneEnv {
-    account: AccountReference,
-    db_name: String,
-    container_name: String,
-    partition_key_value: String,
-    fault_region: Region,
-}
-
-fn build_data_plane_env() -> Option<DataPlaneEnv> {
-    let account = build_account_from_env()?;
-    let db_name = read_env("AZURE_COSMOS_TEST_DATABASE")?;
-    let container_name = read_env("AZURE_COSMOS_TEST_CONTAINER")?;
-    let partition_key_value = read_env("AZURE_COSMOS_TEST_PARTITION_KEY")?;
-    let region_name = read_env("AZURE_COSMOS_TEST_REGION")?;
-    Some(DataPlaneEnv {
-        account,
-        db_name,
-        container_name,
-        partition_key_value,
-        fault_region: Region::from(region_name),
-    })
-}
+use framework::resolve_test_env;
 
 /// Persistent fault on every `MetadataReadDatabaseAccount` (GET /) request.
 /// Fires unconditionally on `get_or_create_driver`, regardless of the data-plane op that follows.
@@ -123,33 +59,6 @@ fn build_account_metadata_fault_rule(
     Arc::new(
         FaultInjectionRuleBuilder::new(id, result)
             .with_condition(condition)
-            .build(),
-    )
-}
-
-/// Region-scoped, hit-limited fault on a data-plane op (e.g. `CreateItem`).
-/// After `hit_limit` failures in the target region, attempts in other regions hit the real endpoint.
-fn build_region_scoped_data_plane_fault_rule(
-    id: &str,
-    operation_type: FaultOperationType,
-    region: Region,
-    error_type: FaultInjectionErrorType,
-    hit_limit: u32,
-) -> Arc<FaultInjectionRule> {
-    let condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(operation_type)
-        .with_region(region)
-        .build();
-
-    let result = FaultInjectionResultBuilder::new()
-        .with_error(error_type)
-        .with_probability(1.0)
-        .build();
-
-    Arc::new(
-        FaultInjectionRuleBuilder::new(id, result)
-            .with_condition(condition)
-            .with_hit_limit(hit_limit)
             .build(),
     )
 }
@@ -180,30 +89,6 @@ fn assert_preserves_upstream_status(
             "expected the injected sub-status to be preserved. Got: {err:?}"
         );
     }
-}
-
-/// Asserts the final request in `response`'s diagnostics was sent to a region
-/// other than `faulted_region` — i.e. failover (or session-retry) actually
-/// re-targeted the operation to a peer endpoint, not just retried in place.
-fn assert_final_request_left_faulted_region(response: &CosmosResponse, faulted_region: &Region) {
-    let diagnostics = response.diagnostics();
-    let requests = diagnostics.requests();
-    let final_request = requests
-        .last()
-        .expect("a successful response must have at least one request in its diagnostics");
-    let final_region = final_request
-        .region()
-        .expect("the final request should have a region label");
-    assert_ne!(
-        final_region,
-        faulted_region,
-        "the successful final request should have been routed to a region other \
-         than the faulted region {faulted_region:?}; instead it landed on \
-         {final_region:?} (endpoint: {endpoint}). Regions contacted across the \
-         operation: {contacted:?}.",
-        endpoint = final_request.endpoint(),
-        contacted = diagnostics.regions_contacted()
-    );
 }
 
 /// Installs a fault rule into a fresh `CosmosDriverRuntime`.
@@ -240,47 +125,51 @@ async fn run_metadata_fault_test(
     );
 }
 
-/// Canonical item body for the data-plane failover tests.
-fn make_item_body(id: &str, pk_value: &str) -> Vec<u8> {
-    format!(r#"{{"id":"{}","pk":"{}"}}"#, id, pk_value).into_bytes()
+/// Resolves the master-key-based `AccountReference` from the framework env, or
+/// prints a skip message and returns `None`. Mirrors the skip semantics of
+/// `DriverTestClient::run_*`.
+fn resolve_account_or_skip(test_name: &str) -> Option<AccountReference> {
+    match resolve_test_env() {
+        Ok(Some(env)) => Some(env.account),
+        Ok(None) => {
+            println!("Skipping {test_name}: Cosmos DB environment not configured");
+            None
+        }
+        Err(e) => panic!("{test_name}: failed to resolve test env: {e}"),
+    }
 }
 
-/// Seeds an item under a clean (unfaulted) runtime so a later faulted-read test has something to find.
-/// Panics on any failure — the seed must succeed before the read assertion is meaningful.
-async fn seed_item(env: &DataPlaneEnv, id: &str) {
-    let runtime = CosmosDriverRuntime::builder()
-        .build()
-        .await
-        .expect("seed runtime should be created");
-    let driver = runtime
-        .get_or_create_driver(env.account.clone(), None)
-        .await
-        .expect("seed driver should be created");
-    let container = driver
-        .resolve_container(&env.db_name, &env.container_name)
-        .await
-        .expect("seed container must resolve");
-    let pk = PartitionKey::from(env.partition_key_value.clone());
-    let item_ref = ItemReference::from_name(&container, pk, id.to_owned());
-    driver
-        .execute_singleton_operation(
-            CosmosOperation::create_item(item_ref)
-                .with_body(make_item_body(id, &env.partition_key_value)),
-            OperationOptions::default(),
-        )
-        .await
-        .expect("seed create_item must succeed before exercising the read fault");
+/// AAD variant: parses the bicep-exported endpoint from the framework env and
+/// wraps it with `DeveloperToolsCredential` for AAD-token coverage. Returns
+/// `None` if the env is unset or no credential chain is available.
+fn resolve_aad_account_or_skip(test_name: &str) -> Option<AccountReference> {
+    let env = match resolve_test_env() {
+        Ok(Some(env)) => env,
+        Ok(None) => {
+            println!("Skipping {test_name}: Cosmos DB environment not configured");
+            return None;
+        }
+        Err(e) => panic!("{test_name}: failed to resolve test env: {e}"),
+    };
+    let endpoint = env.account.endpoint().clone();
+    let Ok(credential) = DeveloperToolsCredential::new(None) else {
+        println!("Skipping {test_name}: DeveloperToolsCredential is not available");
+        return None;
+    };
+    Some(AccountReference::with_credential(endpoint, credential))
 }
 
 /// 403 WriteForbidden on GET / must surface as upstream HTTP status, not a serde failure.
 /// Pins the per-error-type slice of the account-metadata parser invariant.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 async fn write_forbidden_on_metadata_preserves_upstream_status() {
-    let Some(account) = build_account_from_env() else {
-        skip_or_fail_missing_env(
-            "write_forbidden_on_metadata_preserves_upstream_status",
-            "AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY",
-        );
+    let Some(account) =
+        resolve_account_or_skip("write_forbidden_on_metadata_preserves_upstream_status")
+    else {
         return;
     };
 
@@ -297,12 +186,14 @@ async fn write_forbidden_on_metadata_preserves_upstream_status() {
 /// 404/1002 ReadSessionNotAvailable on GET / must surface as upstream HTTP status, not a serde failure.
 /// Pins the per-error-type slice of the account-metadata parser invariant.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 async fn session_not_available_on_metadata_preserves_upstream_status() {
-    let Some(account) = build_account_from_env() else {
-        skip_or_fail_missing_env(
-            "session_not_available_on_metadata_preserves_upstream_status",
-            "AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY",
-        );
+    let Some(account) =
+        resolve_account_or_skip("session_not_available_on_metadata_preserves_upstream_status")
+    else {
         return;
     };
 
@@ -319,12 +210,14 @@ async fn session_not_available_on_metadata_preserves_upstream_status() {
 /// AAD smoke: drives `get_or_create_driver` under `DeveloperToolsCredential` with a persistent 503 fault.
 /// Closes the AAD-coverage gap — every other Cosmos integration test in this repo uses HMAC master keys only.
 #[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
 async fn aad_token_credential_account_metadata_smoke_test() {
-    let Some(account) = build_account_with_token_credential_from_env() else {
-        skip_or_fail_missing_env(
-            "aad_token_credential_account_metadata_smoke_test",
-            "AZURE_COSMOS_ENDPOINT plus a usable AAD credential chain (az login, managed identity, etc.)",
-        );
+    let Some(account) =
+        resolve_aad_account_or_skip("aad_token_credential_account_metadata_smoke_test")
+    else {
         return;
     };
 
@@ -338,137 +231,345 @@ async fn aad_token_credential_account_metadata_smoke_test() {
     .await;
 }
 
+// ── Data-plane failover helpers ─────────────────────────────────────────────
+
+/// The first preferred write region declared in `sdk/cosmos/test-resources.bicep`.
+/// Faults are scoped here so the test asserts the driver re-routes to the peer
+/// region (`West US 3`) instead of just retrying in place.
+const HUB_REGION: Region = Region::EAST_US_2;
+const SATELLITE_REGION: Region = Region::WEST_US_3;
+
+/// Region-scoped, hit-limited fault on a data-plane op (e.g. `CreateItem`).
+/// After `hit_limit` failures in the target region, attempts in other regions hit the real endpoint.
+fn build_region_scoped_data_plane_fault_rule(
+    id: &str,
+    operation_type: FaultOperationType,
+    region: Region,
+    error_type: FaultInjectionErrorType,
+    hit_limit: u32,
+) -> Arc<FaultInjectionRule> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(operation_type)
+        .with_region(region)
+        .build();
+
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(error_type)
+        .with_probability(1.0)
+        .build();
+
+    Arc::new(
+        FaultInjectionRuleBuilder::new(id, result)
+            .with_condition(condition)
+            .with_hit_limit(hit_limit)
+            .build(),
+    )
+}
+
+/// Asserts the final request in `response`'s diagnostics was sent to a region
+/// other than `faulted_region` — i.e. failover (or session-retry) actually
+/// re-targeted the operation to a peer endpoint, not just retried in place.
+fn assert_final_request_left_faulted_region(response: &CosmosResponse, faulted_region: &Region) {
+    let diagnostics = response.diagnostics();
+    let requests = diagnostics.requests();
+    let final_request = requests
+        .last()
+        .expect("a successful response must have at least one request in its diagnostics");
+    let final_region = final_request
+        .region()
+        .expect("the final request should have a region label");
+    assert_ne!(
+        final_region,
+        faulted_region,
+        "the successful final request should have been routed to a region other \
+         than the faulted region {faulted_region:?}; instead it landed on \
+         {final_region:?} (endpoint: {endpoint}). Regions contacted across the \
+         operation: {contacted:?}.",
+        endpoint = final_request.endpoint(),
+        contacted = diagnostics.regions_contacted()
+    );
+}
+
+/// Creates a fresh DB + container via raw `CosmosOperation`s + JSON bodies (mirrors
+/// `framework::DriverTestClient::{create_database, create_container_with_pk_paths}`).
+/// Caller is responsible for cleanup via [`delete_database`].
+async fn create_unique_db_and_container(
+    runtime: &Arc<CosmosDriverRuntime>,
+    account: &AccountReference,
+) -> Result<(DatabaseReference, ContainerReference), Box<dyn Error>> {
+    let driver = runtime.get_or_create_driver(account.clone(), None).await?;
+    let db_name = format!("failover-test-db-{}", Uuid::new_v4());
+    let container_name = "c".to_string();
+
+    // Create database.
+    let db_body = format!(r#"{{"id":"{db_name}"}}"#);
+    let db_op = CosmosOperation::create_database(account.clone()).with_body(db_body.into_bytes());
+    let db_result = driver
+        .execute_singleton_operation(db_op, OperationOptions::default())
+        .await?;
+    let db_diag = db_result.diagnostics();
+    let db_status = db_diag.status();
+    if !db_status.map(|s| s.is_success()).unwrap_or(false) {
+        return Err(format!("create database failed, status: {db_status:?}").into());
+    }
+    let db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
+
+    // Create container.
+    let container_body = format!(
+        r#"{{"id":"{container_name}","partitionKey":{{"paths":["/pk"],"kind":"Hash","version":2}}}}"#
+    );
+    let container_op =
+        CosmosOperation::create_container(db_ref.clone()).with_body(container_body.into_bytes());
+    let container_result = driver
+        .execute_singleton_operation(container_op, OperationOptions::default())
+        .await?;
+    let container_diag = container_result.diagnostics();
+    let container_status = container_diag.status();
+    if !container_status.map(|s| s.is_success()).unwrap_or(false) {
+        return Err(format!("create container failed, status: {container_status:?}").into());
+    }
+    let container_ref = driver
+        .resolve_container_by_name(&db_name, &container_name)
+        .await?;
+    Ok((db_ref, container_ref))
+}
+
+/// Best-effort DB cleanup.
+async fn delete_database(
+    runtime: &Arc<CosmosDriverRuntime>,
+    account: &AccountReference,
+    db: &DatabaseReference,
+) {
+    if let Ok(driver) = runtime.get_or_create_driver(account.clone(), None).await {
+        let op = CosmosOperation::delete_database(db.clone());
+        let _ = driver
+            .execute_singleton_operation(op, OperationOptions::default())
+            .await;
+    }
+}
+
+/// Warms up a single region by issuing a `CreateItem` that excludes every other
+/// region — forcing the operation through that specific regional endpoint until
+/// the region's resource cache learns about the just-created container.
+///
+/// Background: a freshly-created container is published on the global gateway
+/// (and the home region) immediately, but satellite regional endpoints can
+/// return `401 Unauthorized` with body
+/// `"The MAC signature found in the HTTP request is not the same as the computed signature"`
+/// for the first few seconds — effectively a cache-miss surfaced as 401 rather
+/// than 404. This loop polls until the region responds 2xx (or panics after
+/// `WARMUP_TIMEOUT`), so subsequent fault-injection failover assertions are
+/// deterministic. Mirrors Java's pattern of touching a pre-existing shared
+/// container before fault rules are installed.
+async fn warmup_region(
+    runtime: &Arc<CosmosDriverRuntime>,
+    account: &AccountReference,
+    container: &ContainerReference,
+    target_region: Region,
+    all_regions: &[Region],
+) -> Result<(), Box<dyn Error>> {
+    const WARMUP_TIMEOUT: Duration = Duration::from_secs(30);
+    const RETRY_DELAY: Duration = Duration::from_millis(500);
+
+    let excluded: ExcludedRegions = all_regions
+        .iter()
+        .filter(|r| *r != &target_region)
+        .cloned()
+        .collect();
+    let options = OperationOptionsBuilder::new()
+        .with_excluded_regions(excluded)
+        .build();
+
+    let driver = runtime.get_or_create_driver(account.clone(), None).await?;
+    let start = std::time::Instant::now();
+    let mut last_err = None;
+    while start.elapsed() < WARMUP_TIMEOUT {
+        let item_id = format!("warmup-{}-{}", target_region, Uuid::new_v4());
+        let body = format!(r#"{{"id":"{item_id}","pk":"warmup"}}"#).into_bytes();
+        let item_ref =
+            ItemReference::from_name(container, PartitionKey::from("warmup".to_string()), item_id);
+        let op = CosmosOperation::create_item(item_ref).with_body(body);
+        match driver
+            .execute_singleton_operation(op, options.clone())
+            .await
+        {
+            Ok(_) => return Ok(()),
+            Err(e) => {
+                last_err = Some(e);
+                tokio::time::sleep(RETRY_DELAY).await;
+            }
+        }
+    }
+    Err(format!(
+        "warmup of region {target_region:?} timed out after {WARMUP_TIMEOUT:?}; \
+         last error: {last_err:?}"
+    )
+    .into())
+}
+
 /// Region-scoped 403/3 fault on CreateItem with a hit limit; asserts the rule fired and the op
 /// eventually succeeded — proving the driver re-routed to a region where the fault was not in effect.
+///
+/// The rule is built **disabled**, warmup writes are issued to both write regions
+/// (so neither has a cold resource-cache when failover lands on it), and only
+/// then is the rule enabled and the real operation exercised.
 #[tokio::test]
-async fn write_forbidden_triggers_refresh_and_failover() {
-    let Some(env) = build_data_plane_env() else {
-        skip_or_fail_missing_env(
-            "write_forbidden_triggers_refresh_and_failover",
-            "AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, AZURE_COSMOS_TEST_DATABASE, \
-             AZURE_COSMOS_TEST_CONTAINER, AZURE_COSMOS_TEST_PARTITION_KEY, and \
-             AZURE_COSMOS_TEST_REGION (the multi-write region the fault should be scoped to)",
-        );
-        return;
-    };
-
-    let rule = build_region_scoped_data_plane_fault_rule(
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
+async fn write_forbidden_triggers_refresh_and_failover() -> Result<(), Box<dyn Error>> {
+    run_data_plane_failover_test(
         "data-plane-write-forbidden-region-scoped",
         FaultOperationType::CreateItem,
-        env.fault_region.clone(),
         FaultInjectionErrorType::WriteForbidden,
-        // 3 failures in the faulted region; the next attempt routes elsewhere.
         3,
-    );
-
-    let runtime = build_runtime_with_rule(&rule).await;
-
-    let driver = runtime
-        .get_or_create_driver(env.account, None)
-        .await
-        .expect("get_or_create_driver should succeed against a real account");
-
-    let container = driver
-        .resolve_container(&env.db_name, &env.container_name)
-        .await
-        .expect("container must resolve before exercising the data-plane fault");
-
-    // Use a UUID id so reruns of the test don't collide on each other.
-    let item_id = format!("failover-write-{}", Uuid::new_v4());
-    let pk = PartitionKey::from(env.partition_key_value.clone());
-    let item_ref = ItemReference::from_name(&container, pk, item_id.clone());
-
-    let result = driver
-        .execute_singleton_operation(
-            CosmosOperation::create_item(item_ref)
-                .with_body(make_item_body(&item_id, &env.partition_key_value)),
-            OperationOptions::default(),
-        )
-        .await;
-
-    assert!(
-        rule.hit_count() >= 1,
-        "the region-scoped WriteForbidden fault should have fired at least once \
-         in region {:?} before the driver re-routed; hit_count was 0",
-        env.fault_region
-    );
-    let response = result.unwrap_or_else(|err| {
-        panic!(
-            "the driver should have failed over to another region after the \
-             region-scoped WriteForbidden fault exhausted its hit_limit; instead \
-             the operation failed with: {err:?}. If the configured account does \
-             not actually have a second write region available, point \
-             AZURE_COSMOS_TEST_REGION at a region that is not the only write region."
-        )
-    });
-    assert_final_request_left_faulted_region(&response, &env.fault_region);
+        async |driver, container, fault_region| {
+            let item_id = format!("failover-write-{}", Uuid::new_v4());
+            let body = format!(r#"{{"id":"{item_id}","pk":"p"}}"#).into_bytes();
+            let item_ref =
+                ItemReference::from_name(&container, PartitionKey::from("p".to_string()), item_id);
+            let op = CosmosOperation::create_item(item_ref).with_body(body);
+            let response = driver
+                .execute_singleton_operation(op, Default::default())
+                .await
+                .map_err(|e| -> Box<dyn Error> {
+                    format!(
+                        "the driver should have failed over to another write region after the \
+                         region-scoped WriteForbidden fault exhausted its hit_limit in \
+                         {fault_region:?}; instead the operation failed with: {e:?}"
+                    )
+                    .into()
+                })?;
+            assert_final_request_left_faulted_region(&response, &fault_region);
+            Ok(())
+        },
+    )
+    .await
 }
 
 /// Region-scoped 404/1002 fault on ReadItem with a hit limit, after seeding the item on a clean runtime.
 /// Asserts the rule fired and the read succeeded — proving cross-region session retry advanced.
 #[tokio::test]
-async fn session_not_available_retries_across_locations() {
-    let Some(env) = build_data_plane_env() else {
-        skip_or_fail_missing_env(
-            "session_not_available_retries_across_locations",
-            "AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, AZURE_COSMOS_TEST_DATABASE, \
-             AZURE_COSMOS_TEST_CONTAINER, AZURE_COSMOS_TEST_PARTITION_KEY, and \
-             AZURE_COSMOS_TEST_REGION",
-        );
-        return;
-    };
-
-    // Seed an item under a clean runtime so the faulted read has something to find.
-    let seed_id = format!("failover-read-{}", Uuid::new_v4());
-    seed_item(&env, &seed_id).await;
-
-    let rule = build_region_scoped_data_plane_fault_rule(
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
+async fn session_not_available_retries_across_locations() -> Result<(), Box<dyn Error>> {
+    run_data_plane_failover_test(
         "data-plane-read-session-not-available-region-scoped",
         FaultOperationType::ReadItem,
-        env.fault_region.clone(),
         FaultInjectionErrorType::ReadSessionNotAvailable,
-        // Driver session retry has its own internal cap; 5 region-local
-        // failures is enough to exhaust it without exhausting global retries.
         5,
-    );
+        async |driver, container, fault_region| {
+            // Seed an item we can read back. Pre-warmup already wrote a couple,
+            // but those use the warmup PK; seed one under our own PK.
+            let item_id = format!("failover-read-{}", Uuid::new_v4());
+            let body = format!(r#"{{"id":"{item_id}","pk":"p"}}"#).into_bytes();
+            let item_ref = ItemReference::from_name(
+                &container,
+                PartitionKey::from("p".to_string()),
+                item_id.clone(),
+            );
+            driver
+                .execute_singleton_operation(
+                    CosmosOperation::create_item(item_ref.clone()).with_body(body),
+                    Default::default(),
+                )
+                .await?;
 
-    let runtime = build_runtime_with_rule(&rule).await;
+            let response = driver
+                .execute_singleton_operation(
+                    CosmosOperation::read_item(item_ref),
+                    Default::default(),
+                )
+                .await
+                .map_err(|e| -> Box<dyn Error> {
+                    format!(
+                        "session retry should have advanced to the next preferred region and \
+                         the read should have eventually succeeded; instead it failed with: \
+                         {e:?} (faulted region: {fault_region:?})"
+                    )
+                    .into()
+                })?;
+            assert_final_request_left_faulted_region(&response, &fault_region);
+            Ok(())
+        },
+    )
+    .await
+}
 
-    let driver = runtime
-        .get_or_create_driver(env.account, None)
-        .await
-        .expect("get_or_create_driver should succeed against a real account");
+/// Common scaffolding for the two data-plane failover tests.
+/// Builds a region-scoped fault rule **disabled**, sets up a fresh DB+container
+/// on a separate clean runtime, warms up both write regions, then builds a
+/// runtime with the rule, enables it, and invokes the test closure.
+async fn run_data_plane_failover_test<F, Fut>(
+    rule_id: &str,
+    op_type: FaultOperationType,
+    err_type: FaultInjectionErrorType,
+    hit_limit: u32,
+    exercise: F,
+) -> Result<(), Box<dyn Error>>
+where
+    F: FnOnce(
+        Arc<azure_data_cosmos_driver::driver::CosmosDriver>,
+        ContainerReference,
+        Region,
+    ) -> Fut,
+    Fut: std::future::Future<Output = Result<(), Box<dyn Error>>>,
+{
+    let Some(env) = resolve_test_env()? else {
+        println!("Skipping {rule_id}: Cosmos DB environment not configured");
+        return Ok(());
+    };
+    let account = env.account;
 
-    let container = driver
-        .resolve_container(&env.db_name, &env.container_name)
-        .await
-        .expect("container must resolve before exercising the data-plane fault");
+    // Setup runtime: NO fault rule. Used for DB/container creation + warmup so
+    // those operations are unaffected by the rule we will exercise.
+    let setup_runtime = CosmosDriverRuntime::builder().build().await?;
+    let (db_ref, container_ref) = create_unique_db_and_container(&setup_runtime, &account).await?;
 
-    let pk = PartitionKey::from(env.partition_key_value.clone());
-    let item_ref = ItemReference::from_name(&container, pk, seed_id.clone());
-
-    let result = driver
-        .execute_singleton_operation(
-            CosmosOperation::read_item(item_ref),
-            OperationOptions::default(),
+    let all_regions = [HUB_REGION, SATELLITE_REGION];
+    let mut warmup_err = None;
+    for r in &all_regions {
+        if let Err(e) = warmup_region(
+            &setup_runtime,
+            &account,
+            &container_ref,
+            r.clone(),
+            &all_regions,
         )
-        .await;
+        .await
+        {
+            warmup_err = Some(format!("warmup of {r:?} failed: {e}"));
+            break;
+        }
+    }
+    if let Some(msg) = warmup_err {
+        delete_database(&setup_runtime, &account, &db_ref).await;
+        return Err(msg.into());
+    }
+
+    // Exercise runtime: install the fault rule, run the test closure.
+    let rule = build_region_scoped_data_plane_fault_rule(
+        rule_id, op_type, HUB_REGION, err_type, hit_limit,
+    );
+    let exercise_runtime = CosmosDriverRuntime::builder()
+        .with_fault_injection_rules(vec![Arc::clone(&rule)])?
+        .build()
+        .await?;
+    let exercise_driver = exercise_runtime
+        .get_or_create_driver(account.clone(), None)
+        .await?;
+
+    let result = exercise(exercise_driver, container_ref.clone(), HUB_REGION).await;
 
     assert!(
         rule.hit_count() >= 1,
-        "the region-scoped ReadSessionNotAvailable fault should have fired at \
-         least once in region {:?} before the driver advanced to the next \
-         preferred region; hit_count was 0",
-        env.fault_region
+        "the region-scoped fault should have fired at least once in {HUB_REGION:?} \
+         before the driver failed over; hit_count was 0. Test result: {result:?}"
     );
-    let response = result.unwrap_or_else(|err| {
-        panic!(
-            "session retry should have advanced to the next preferred region and \
-             the read should have eventually succeeded; instead it failed with: \
-             {err:?}. If the configured account has only one read region, point \
-             AZURE_COSMOS_TEST_REGION at a region that has at least one peer \
-             available for read failover."
-        )
-    });
-    assert_final_request_left_faulted_region(&response, &env.fault_region);
+
+    delete_database(&setup_runtime, &account, &db_ref).await;
+    result
 }
