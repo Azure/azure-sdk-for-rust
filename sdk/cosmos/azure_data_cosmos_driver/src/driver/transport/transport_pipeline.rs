@@ -233,7 +233,7 @@ pub(crate) async fn execute_transport_pipeline(
 
         // Apply standard Cosmos headers
         apply_cosmos_headers(&mut http_request, ctx.user_agent);
-        // V1 RCS emission: per Java parity, when RCS is non-Default on a read,
+        // V1 RCS emission: when RCS is non-Default on a read,
         // set `x-ms-cosmos-read-consistency-strategy` and strip any
         // `x-ms-consistency-level` header. Gateway20 emits the equivalent via
         // the RNTBD `ReadConsistencyStrategy` token in

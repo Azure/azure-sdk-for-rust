@@ -259,7 +259,7 @@ mod tests {
         assert!(view.max_session_retry_count().is_none());
     }
 
-    /// Rule 2 + Rule 3 (Java parity, Azure/azure-sdk-for-java#48787):
+    /// Rule 2 + Rule 3 (RCS resolution):
     /// An explicit per-request `Default` overrides a client-level non-`Default`,
     /// resulting in no RCS being emitted on the wire.
     #[test]

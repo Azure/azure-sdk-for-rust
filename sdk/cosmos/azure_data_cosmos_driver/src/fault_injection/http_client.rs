@@ -127,7 +127,7 @@ impl FaultClient {
         }
 
         if let Some(region) = condition.region() {
-            if !request.url.as_str().contains(region.as_str()) {
+            if !host_matches_region(&request.url, region.as_str()) {
                 return Some(FaultInjectionEvaluation::RegionMismatch {
                     rule_id: rule.id().to_owned(),
                 });
@@ -395,9 +395,35 @@ impl TransportClient for FaultClient {
     }
 }
 
+/// Returns true when `url`'s host's first DNS label corresponds to the given
+/// Cosmos region slug.
+///
+/// Matches the regional-endpoint conventions used by both the in-memory
+/// emulator and real accounts:
+///
+/// - emulator: `<region>.emulator.local`            (first label equals the region slug)
+/// - real:     `<account>-<region>.documents.azure.com`  (first label ends with `-<region>`)
+///
+/// Plain substring matching on the full URL produces false positives between
+/// adjacent regions whose slugs share a prefix (e.g. `eastus` and `eastus2`).
+/// Anchoring on the first DNS label avoids that.
+///
+/// Returns `false` when the URL has no host.
+fn host_matches_region(url: &url::Url, region: &str) -> bool {
+    let Some(host) = url.host_str() else {
+        return false;
+    };
+    let first_label = host.split('.').next().unwrap_or("");
+    if first_label == region {
+        return true;
+    }
+    let suffix = format!("-{region}");
+    first_label.ends_with(&suffix)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::FaultClient;
+    use super::{host_matches_region, FaultClient};
     use crate::diagnostics::TransportKind;
     use crate::driver::transport::cosmos_transport_client::{
         HttpRequest, HttpResponse, TransportClient, TransportError,
@@ -1163,6 +1189,69 @@ mod tests {
         assert!(matches!(
             evals.as_slice(),
             [super::FaultInjectionEvaluation::TransportKindMismatch { rule_id }] if rule_id == "gw20-only"
+        ));
+    }
+
+    fn url(s: &str) -> Url {
+        Url::parse(s).unwrap()
+    }
+
+    #[test]
+    fn region_matches_emulator_host() {
+        // Emulator regional endpoint: first label is exactly the region slug.
+        assert!(host_matches_region(
+            &url("https://eastus.emulator.local/dbs"),
+            "eastus"
+        ));
+        assert!(host_matches_region(
+            &url("https://westus.emulator.local/"),
+            "westus"
+        ));
+    }
+
+    #[test]
+    fn region_matches_real_account_host() {
+        // Real regional endpoint: first label is `<account>-<region>`.
+        assert!(host_matches_region(
+            &url("https://myacct-eastus.documents.azure.com/dbs"),
+            "eastus"
+        ));
+        assert!(host_matches_region(
+            &url("https://myacct-eastus2.documents.azure.com/"),
+            "eastus2"
+        ));
+        assert!(host_matches_region(
+            &url("https://myacct-westus3.documents.azure.com/"),
+            "westus3"
+        ));
+    }
+
+    #[test]
+    fn region_no_false_positive_between_adjacent_slugs() {
+        // The whole point of label-anchored matching: `eastus` must NOT match
+        // a `<account>-eastus2` host, even though "eastus" is a substring of
+        // it. This is the bug the test rewrite fixes.
+        assert!(!host_matches_region(
+            &url("https://myacct-eastus2.documents.azure.com/"),
+            "eastus"
+        ));
+        assert!(!host_matches_region(
+            &url("https://eastus2.emulator.local/"),
+            "eastus"
+        ));
+        assert!(!host_matches_region(
+            &url("https://myacct-westus3.documents.azure.com/"),
+            "westus"
+        ));
+    }
+
+    #[test]
+    fn region_no_false_positive_when_region_appears_in_path() {
+        // The region slug must come from the host, not from the URL path or
+        // query string.
+        assert!(!host_matches_region(
+            &url("https://myacct-westus3.documents.azure.com/dbs/eastus"),
+            "eastus"
         ));
     }
 }

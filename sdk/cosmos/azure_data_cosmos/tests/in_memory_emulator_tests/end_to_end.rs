@@ -1196,11 +1196,11 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 
     // ── Real account comparison (if available) ───────────────────
     //
-    // `resolve_real_client_with_fault_injection` currently returns `None`
-    // unconditionally on CI accounts because the fault-injection region
-    // filter is a substring match (see the function's comment for full
-    // details). The emulator portion above already covers the failover
-    // semantics end-to-end.
+    // Runs the same 503-on-East scenario against the ARM-provisioned account
+    // (when one is configured) and asserts the real service's response
+    // matches the emulator's. Returns `Ok(None)` when no real account is
+    // available (local dev, emulator-only CI legs) so the emulator portion
+    // remains the single source of truth in those modes.
     if let Ok(Some(real_client)) =
         resolve_real_client_with_fault_injection(fault_condition, fault_result).await
     {
@@ -1245,50 +1245,19 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 }
 
 /// Builds a real-account `CosmosClient` with fault injection rules matching the
-/// emulator test. Returns `None` when no real account is configured.
+/// emulator test. Returns `Ok(None)` when no real account is configured (so
+/// the test reduces to its emulator-only leg).
 ///
 /// Fault injection is applied at the driver runtime level via
 /// `with_fault_injection_rules` on the runtime builder, then passed into the
 /// SDK via `CosmosClientBuilder::with_driver_runtime_builder`.
-///
-/// # Why this currently always returns `Ok(None)`
-///
-/// The fault-injection region filter at
-/// `azure_data_cosmos_driver::fault_injection::http_client` matches with
-/// `request.url.as_str().contains(region.as_str())` (substring), so a rule
-/// scoped to `Region::EAST_US` (substring `"eastus"`) also matches Cosmos
-/// regional endpoints of the form `<account>-eastus2.documents.azure.com`.
-/// ARM-provisioned test resources live in `East US 2` / `West US 3` (see
-/// `sdk/cosmos/test-resources.bicep`), so the rule fires on every attempt
-/// against those accounts. With no East-US/West-US split available on the
-/// real account, the retry budget is exhausted and the test panics.
-///
-/// The emulator portion of the test still exercises the failover semantics
-/// end-to-end against exact-named regions (`eastus.emulator.local` /
-/// `westus.emulator.local`) where the substring filter behaves correctly.
-/// Re-enable the real-account comparison once the fault-injection region
-/// match becomes exact, or once a multi-region account with an exact
-/// `East US` region is wired into the test pipeline.
 #[cfg(feature = "fault_injection")]
 async fn resolve_real_client_with_fault_injection(
-    _condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
-    _result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
-) -> Result<Option<CosmosClient>, Box<dyn Error>> {
-    Ok(None)
-}
-
-#[cfg(feature = "fault_injection")]
-#[allow(dead_code)]
-async fn _real_client_with_fault_injection_legacy(
-    _condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
-    _result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
+    condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
+    result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
 ) -> Result<Option<CosmosClient>, Box<dyn Error>> {
     use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-    use azure_data_cosmos_driver::fault_injection::{
-        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
-        FaultInjectionRuleBuilder, FaultOperationType,
-    };
-    use azure_data_cosmos_driver::options::Region as DriverRegion;
+    use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
     use std::sync::Arc;
 
     let mode = std::env::var(TEST_MODE_ENV_VAR)
@@ -1318,17 +1287,12 @@ async fn _real_client_with_fault_injection_legacy(
         azure_core::credentials::Secret::new(key),
     );
 
-    // Build a driver-level fault injection rule.
-    let fi_result = FaultInjectionResultBuilder::new()
-        .with_error(FaultInjectionErrorType::ServiceUnavailable)
-        .build();
-    let fi_condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(FaultOperationType::ReadItem)
-        .with_region(DriverRegion::EAST_US)
-        .build();
+    // Mirror the emulator-side rule against the real account, using the same
+    // condition/result the caller built so both legs of the test share a
+    // single source of truth.
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("sdk-read-503-east-real", fi_result)
-            .with_condition(fi_condition)
+        FaultInjectionRuleBuilder::new("sdk-read-503-east-real", result)
+            .with_condition(condition)
             .build(),
     );
 

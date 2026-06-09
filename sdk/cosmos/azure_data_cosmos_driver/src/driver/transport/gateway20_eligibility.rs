@@ -7,12 +7,10 @@ use crate::models::{OperationType, ResourceType};
 
 /// Returns `true` when the resource and operation pair is eligible for Gateway 2.0.
 ///
-/// `ResourceType::Document` operations (CRUD, query, batch, read-feed) and
-/// `ResourceType::StoredProcedure` with `OperationType::Execute` are eligible.
-/// Stored-procedure CRUD on the definitions themselves and every other
-/// resource type fall back to standard Gateway via the eligibility-fallback
-/// path. This matches .NET's `ThinClientStoreClient` which routes both
-/// document operations and stored-procedure execution through Gateway 2.0.
+/// Only `ResourceType::Document` is currently eligible, matching Java's
+/// `ThinClientStoreModel`. Stored-procedure execution is explicitly out of
+/// scope for Rust SDK GA; every non-Document resource type falls back to
+/// standard Gateway via the eligibility-fallback path.
 ///
 /// `OperationType::Patch` always returns `false`: the driver short-circuits
 /// `Patch` operations to the driver-side `patch_handler` pipeline stage in
@@ -44,25 +42,10 @@ pub(crate) fn is_operation_supported_by_gateway20(
             | OperationType::Execute
             | OperationType::Patch => false,
         },
-        ResourceType::StoredProcedure => match operation_type {
-            OperationType::Execute => true,
-            OperationType::Create
-            | OperationType::Read
-            | OperationType::Replace
-            | OperationType::Upsert
-            | OperationType::Delete
-            | OperationType::Query
-            | OperationType::SqlQuery
-            | OperationType::QueryPlan
-            | OperationType::ReadFeed
-            | OperationType::Batch
-            | OperationType::Head
-            | OperationType::HeadFeed
-            | OperationType::Patch => false,
-        },
         ResourceType::DatabaseAccount
         | ResourceType::Database
         | ResourceType::DocumentCollection
+        | ResourceType::StoredProcedure
         | ResourceType::Trigger
         | ResourceType::UserDefinedFunction
         | ResourceType::PartitionKeyRange
@@ -128,10 +111,10 @@ mod tests {
                 | OperationType::Execute
                 | OperationType::Patch => false,
             },
-            ResourceType::StoredProcedure => matches!(operation_type, OperationType::Execute),
             ResourceType::DatabaseAccount
             | ResourceType::Database
             | ResourceType::DocumentCollection
+            | ResourceType::StoredProcedure
             | ResourceType::Trigger
             | ResourceType::UserDefinedFunction
             | ResourceType::PartitionKeyRange
@@ -149,41 +132,6 @@ mod tests {
                     "unexpected Gateway 2.0 eligibility for {resource_type:?} {operation_type:?}"
                 );
             }
-        }
-    }
-
-    #[test]
-    fn stored_procedure_execute_is_gateway20_eligible() {
-        // StoredProcedure::Execute routes via Gateway 2.0 (matches .NET
-        // `ThinClientStoreClient` which forwards ExecuteJavaScript through
-        // the thin client). Document::Execute is not a real operation in
-        // Cosmos and remains ineligible.
-        assert!(is_operation_supported_by_gateway20(
-            ResourceType::StoredProcedure,
-            OperationType::Execute
-        ));
-        assert!(!is_operation_supported_by_gateway20(
-            ResourceType::Document,
-            OperationType::Execute
-        ));
-    }
-
-    #[test]
-    fn stored_procedure_definition_crud_is_gateway1() {
-        // StoredProcedure CRUD operates on the SP definition resource and
-        // is not supported by Gateway 2.0; it falls through to standard
-        // Gateway. Only `Execute` of an existing SP is G2-eligible.
-        for op in [
-            OperationType::Create,
-            OperationType::Read,
-            OperationType::Replace,
-            OperationType::Upsert,
-            OperationType::Delete,
-        ] {
-            assert!(
-                !is_operation_supported_by_gateway20(ResourceType::StoredProcedure, op),
-                "StoredProcedure {op:?} must NOT be Gateway 2.0 eligible"
-            );
         }
     }
 }

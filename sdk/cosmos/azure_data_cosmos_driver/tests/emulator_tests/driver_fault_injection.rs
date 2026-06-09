@@ -700,8 +700,7 @@ fn build_rntbd_response_with_unknown_token(request_charge: f64, body: &[u8]) -> 
     frame
 }
 
-/// Gateway 2.0 server-response-delay fault injection (Java parity:
-/// `FaultInjectionServerErrorRuleOnGatewayV2Tests.faultInjectionServerErrorRuleTests_ServerResponseDelay`).
+/// Gateway 2.0 server-response-delay fault injection.
 ///
 /// A rule scoped to [`TransportKind::Gateway20`] with `with_delay(...)` and
 /// no error type should cause every matched G2 request to take at least the
@@ -768,8 +767,7 @@ pub async fn gateway20_server_response_delay_is_injected() -> Result<(), Box<dyn
     .await
 }
 
-/// Gateway 2.0 hit-limit caps fault firing (Java parity:
-/// `FaultInjectionServerErrorRuleOnGatewayV2Tests.faultInjectionServerErrorRuleTests_HitLimit`).
+/// Gateway 2.0 hit-limit caps fault firing.
 ///
 /// A rule with `with_hit_limit(N)` scoped to [`TransportKind::Gateway20`]
 /// fires for the first N matching G2 attempts and then stops. The test

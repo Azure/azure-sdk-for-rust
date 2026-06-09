@@ -1356,6 +1356,7 @@ mod tests {
             location: crate::driver::routing::LocationIndex::initial(0),
             failover_retry_count: 1,
             session_token_retry_count: 0,
+            retry_with_state: None,
             max_failover_retries: 1,
             max_session_retries: 1,
             can_use_multiple_write_locations: false,
@@ -2006,5 +2007,24 @@ mod tests {
         assert!(!super::is_region_confirming_status(&CosmosStatus::new(
             StatusCode::ServiceUnavailable
         )));
+    }
+
+    #[test]
+    fn try_handle_retry_with_returns_none_for_non_449_status() {
+        // Sanity: only 449 triggers this policy; every other status must
+        // fall through so other handlers see it.
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        for status in [
+            CosmosStatus::new(StatusCode::Ok),
+            CosmosStatus::new(StatusCode::ServiceUnavailable),
+            CosmosStatus::new(StatusCode::TooManyRequests),
+            CosmosStatus::new(StatusCode::Gone),
+            CosmosStatus::new(StatusCode::RequestTimeout),
+        ] {
+            assert!(
+                super::try_handle_retry_with(&state, &status).is_none(),
+                "non-449 status {status:?} must not be claimed by try_handle_retry_with",
+            );
+        }
     }
 }

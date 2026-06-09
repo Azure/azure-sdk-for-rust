@@ -154,172 +154,30 @@ Beyond 449 and 404/1002, Gateway 2.0 follows the timeout/408 handling defined in
 
 ### 4.3 Fail-fast on Gateway 2.0 transport failures
 
-> **Status**: Design proposal — not yet implemented. Implementation is tracked as a follow-up to the Gateway 2.0 enablement work; this section reserves the design surface and the test plan so the implementation lands behaviorally consistent with the rest of the routing rules.
-
 #### 4.3.1 Problem
 
-Gateway 2.0 endpoints are advertised by the account on a different host (and may be advertised on a non-443 port — the test fixture in `routing_systems.rs` uses `:444`). Some enterprise networks block outbound TCP to non-443 ports, or block the Gateway 2.0 hostnames specifically. In those environments **every** Gateway 2.0 attempt from the client will fail at the transport layer (TCP refused, TCP timeout, TLS handshake failure, or HTTP/2 negotiation failure) while Gateway V1 on the *standard* gateway host:443 still works.
+Gateway 2.0 endpoints are advertised by the account on a different host (and may be advertised on a non-443 port — the test fixture in `routing_systems.rs` uses `:444`). Some enterprise networks block outbound TCP to non-443 ports. In those environments **every** Gateway 2.0 attempt from the client will fail at the transport layer (TCP refused, TCP timeout, TLS handshake failure, or HTTP/2 negotiation failure) while Gateway V1 on the *standard* gateway host:443 still works.
 
 Today the `endpoint_is_available()` check in `operation_pipeline.rs` skips a *single* G2 endpoint after we mark it `UnavailableReason::TransportError`, but the retry then immediately picks the *next* G2 endpoint. In a blanket-firewall scenario all G2 endpoints have the same outcome, so the operation exhausts its retry budget on G2 and fails — even though G1 would have succeeded immediately. Today the customer sees a generic transport error with no clear remediation.
 
 Java and .NET both choose **fail-fast** here: `ThinClientStoreModel` extends `RxGatewayStoreModel` and inherits the standard regional retry stack, with **no automatic G2 → G1 fallback**. (Confirmed by inspection of `Azure/azure-sdk-for-java/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/ThinClientStoreModel.java` and the equivalent paths in `Azure/azure-cosmos-dotnet-v3`.)
 
-#### 4.3.2 Decision — fail-fast (parity with Java/.NET)
+#### 4.3.2 Decision — fail-fast
 
 Keep the regional-retry behavior. A single attempt against an unreachable G2 endpoint fails, the endpoint is marked `TransportError`, the retry tries the next region's G2 endpoint, and the operation eventually fails with a transport error if all G2 regions are unreachable. The error and diagnostics surface a clear, actionable hint pointing the operator at `options.gateway20_disabled = true`. The operator must then explicitly opt out to route through G1.
 
 Why fail-fast was chosen:
 
-- **Java/.NET parity.** `ThinClientStoreModel` in Java extends `RxGatewayStoreModel` and inherits the standard regional retry stack with **no** automatic G2 → G1 fallback. .NET takes the same approach. (Confirmed by inspection of `Azure/azure-sdk-for-java/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/ThinClientStoreModel.java` and the equivalent paths in `Azure/azure-cosmos-dotnet-v3`.) Diverging without strong evidence would increase the support matrix and cause customer confusion when migrating SDKs.
+- **Established peer-SDK behavior.** `ThinClientStoreModel` in Java extends `RxGatewayStoreModel` and inherits the standard regional retry stack with **no** automatic G2 → G1 fallback. .NET takes the same approach. (Confirmed by inspection of `Azure/azure-sdk-for-java/sdk/cosmos/azure-cosmos/src/main/java/com/azure/cosmos/implementation/ThinClientStoreModel.java` and the equivalent paths in `Azure/azure-cosmos-dotnet-v3`.) Diverging without strong evidence would increase the support matrix and cause customer confusion when migrating SDKs.
 - **No silent latency surprise.** Auto-switching transport modes mid-workload would change the latency profile in ways the customer did not ask for. Customers tuning their workload around the selected transport would see a hidden regression they cannot attribute.
 - **Operational guarantees stay honest.** The guarantees published for the selected transport are tied to that transport staying selected for the duration of the workload. Auto-degrading would silently violate that contract for the affected client.
 - **No hidden state.** Firewall mis-configuration is exactly the kind of infrastructure problem that should bubble up loudly so the customer can react. A circuit breaker would mask it.
 - **Simplicity.** No new state, no concurrency contract, no probe semantics, no recovery logic. Customers behind firewalls get a single deterministic verdict and a one-line remediation: set `options.gateway20_disabled = true`.
 
-Cons we accept: customers in firewalled networks see a hard failure on every operation until they manually opt out. We mitigate this with a discoverable error message and connection-pool documentation.
+> **Future optimization (not in scope).** `AccountEndpointState.unavailable_endpoints` currently keys by `endpoint.url()` alone, which returns the G1 regional URL regardless of which transport an attempt used. A G2 transport failure therefore poisons the same region's G1 selection until the TTL expires, slowing recovery after an operator sets `gateway20_disabled = true`. A follow-up should extend the key to `(Url, TransportMode)` so G1 and G2 markers are independent; `TransportMode` is already carried on every `RoutingDecision`, so the change is mechanical at the marker call sites.
 
-#### 4.3.3 Design
+#### 4.3.3 Open sub-questions for this section
 
-##### Behavior summary
-
-1. Per-region retry within G2 follows the existing regional retry stack: `UnavailableReason::TransportError` marks the failed endpoint, and the next G2 endpoint is tried.
-2. When the operation has tried at least one G2 endpoint per region in `thinClientReadableLocations` and **every** observed transport failure is connectivity-class, the operation MUST fail with a single consolidated error that:
-   - Identifies the per-attempt `TransportFailureClass`.
-   - Lists the endpoints attempted.
-   - Includes the explicit guidance: "All Gateway 2.0 endpoints failed with connectivity-class errors. Set `options.gateway20_disabled = true` to disable Gateway 2.0 if your network blocks the Gateway 2.0 hostnames or ports."
-3. The error MUST NOT auto-fallback to Gateway V1. The operator picks the transport explicitly.
-4. Mixed-failure outcomes (some G2 attempts return HTTP responses, others fail at the transport layer) MUST NOT include the firewall hint — at least one path proved open and the firewall hypothesis is rejected.
-
-##### Trip signal classification
-
-We still need a structured classifier so the SDK can decide whether to attach the firewall hint. Use a closed `TransportFailureClass` enum produced at error-construction time in `cosmos_transport_client.rs` and `sharded_transport.rs` — not a late `is_connectivity_failure() -> bool` over an opaque error.
-
-```text
-enum TransportFailureClass {
-    // hint-eligible (network/firewall-class signals)
-    DnsFailure,
-    ConnectRefused,
-    ConnectTimeout,
-    TlsHandshakeFailure,
-    Http2NegotiationFailure,
-    PreResponseReset,         // RST/EOF before any HTTP/2 response headers
-                              // received, only when the transport layer can
-                              // structurally prove this; otherwise classify
-                              // as `MidStreamFailure`
-
-    // NOT hint-eligible
-    HttpResponse,             // the proxy returned any HTTP response (200..599)
-    PostSendTimeout,          // timeout fired after a request was on the wire
-    MidStreamFailure,         // GOAWAY / stream reset / RST after at least one
-                              // response frame was observed
-    AuthFailure,
-    DecodeError,              // malformed RNTBD body
-    OperationCancelled,       // user-side cancellation
-}
-```
-
-The classifier MUST live where the error is constructed so it produces a structured value at the source. Adding a late `is_connectivity_failure(&self) -> bool` accessor over an opaque error is **not** acceptable; it forces string-matching on reqwest/hyper error chains and produces non-deterministic verdicts.
-
-Edge cases the rubber-duck pass surfaced:
-
-- **Timeout that fires during connect / TLS / HTTP/2 setup** counts as `ConnectTimeout` / `TlsHandshakeFailure` / `Http2NegotiationFailure` respectively (not `PostSendTimeout`). The transport layer MUST distinguish these by tracking which phase of the connection lifecycle it is in.
-- **`Connection reset by peer` before any response headers** counts as `PreResponseReset` ONLY when the transport can prove (e.g. via a per-connection state flag) that no response frame was observed; otherwise classify as `MidStreamFailure`. When in doubt, do NOT classify as connectivity.
-- **Mid-stream HTTP/2 reset / GOAWAY / stream reset after at least one response frame** is `MidStreamFailure` and is NOT hint-eligible — the path is open by definition, the proxy is unhealthy.
-- **HTTP responses of any status** are `HttpResponse` and are NOT hint-eligible. A G2 proxy returning 401/403/500/503/etc. proves the network is open.
-
-##### Error contract: when to attach the firewall hint
-
-The SDK MUST attach the "set `gateway20_disabled = true`" hint to the consolidated error if and only if **all** of the following hold:
-
-1. The operation routed through G2 (was G2-eligible per `is_operation_supported_by_gateway20()` and the account advertises G2 endpoints).
-2. The operation tried at least one G2 endpoint per region in `thinClientReadableLocations` (i.e. exhausted regional retry).
-3. **Every** observed `TransportFailureClass` in the per-attempt diagnostics is hint-eligible (one of `DnsFailure`, `ConnectRefused`, `ConnectTimeout`, `TlsHandshakeFailure`, `Http2NegotiationFailure`, `PreResponseReset`).
-4. **No** attempt observed a non-hint-eligible class (`HttpResponse`, `PostSendTimeout`, `MidStreamFailure`, `AuthFailure`, `DecodeError`, `OperationCancelled`).
-
-If any single attempt observed a non-hint-eligible class, the consolidated error uses standard messaging — the firewall hypothesis is rejected.
-
-##### Avoiding cross-contamination of the G1 endpoint cache
-
-The current `mark_endpoint_unavailable()` in `driver/routing/routing_systems.rs:169` and the `endpoint_is_available()` check in `driver/pipeline/operation_pipeline.rs:425` both key the unavailable-endpoints map by `endpoint.url()` — which today returns the **same** per-region URL regardless of whether the request used the G1 or G2 transport. As a result, a G2 transport failure on `westus2` would mark `westus2`'s G1 URL unavailable too. After the operator opts out via `gateway20_disabled = true` (the action this spec asks them to take), the next G1 operation would skip the healthy same-region G1 endpoint and fail over cross-region unnecessarily.
-
-The fail-fast change MUST address this in one of two ways:
-
-1. **Preferred**: extend the unavailable-endpoints cache key from `endpoint.url()` to `(endpoint.url(), TransportMode)`, so G2 transport failures only suppress G2 selection on that endpoint and leave G1 selection on the same endpoint unaffected. This also helps non-firewall scenarios — a G2 outage at one endpoint should not block G1 traffic to the same region.
-2. **Fallback**: route G2 transport failures into a separate `unavailable_endpoints_g2` map; the existing `unavailable_endpoints` map then sees G1-only failures and is read by G1 routing only.
-
-This is a real bug in the current code (independent of the fail-fast decision), surfaced by this design but worth fixing on its own merits — and required for the operator's `gateway20_disabled = true` opt-out to actually recover affected per-region G1 endpoints.
-
-##### Diagnostics requirements
-
-Every retry attempt MUST surface in the diagnostics envelope:
-
-- A `gateway20_decision_reason` field (closed enum) recording why this attempt did or did not route via G2:
-
-  ```text
-  enum Gateway20DecisionReason {
-      Eligible,                  // request routed via G2
-      OperatorDisabled,          // options.gateway20_disabled = true
-      NoGateway20Endpoints,      // account does not advertise G2 endpoints
-      OperationIneligible,       // is_operation_supported_by_gateway20() = false
-  }
-  ```
-
-  These four cases are mutually exclusive and exhaustive at the routing decision point. Customer support MUST be able to look at a single attempt's diagnostics and know which one applied.
-
-- For attempts that produced a transport error: the `TransportFailureClass` of the error.
-
-The consolidated operation error MUST cite the per-attempt diagnostics so the firewall hypothesis can be verified from a single trace blob.
-
-#### 4.3.4 Test plan
-
-The following tests are non-negotiable for the fail-fast contract to land. They MUST be added in the same change that adds the `TransportFailureClass` classifier and the firewall-hint contract.
-
-##### Unit tests — driver crate (`tests/gateway20_pipeline_tests.rs` or a sibling)
-
-| # | Scenario | Expected result |
-| --- | --- | --- |
-| U1 | `TransportFailureClass` classifier per-variant coverage. | Each `io::Error` / `reqwest::Error` shape produces the correct closed-enum variant at construction time. |
-| U2 | Single connectivity failure on one G2 endpoint, account has multiple regions. | Operation succeeds via the next region's G2 endpoint (existing regional retry); no firewall hint surfaced. |
-| U3 | All G2 endpoints fail with `ConnectRefused`. | Operation fails with consolidated transport error; firewall hint included; per-attempt diagnostics list every endpoint attempted. |
-| U4 | All G2 endpoints fail with mixed connectivity classes (`DnsFailure` + `TlsHandshakeFailure`). | Operation fails with consolidated transport error; firewall hint included (all classes are hint-eligible). |
-| U5 | All G2 endpoints fail with HTTP 503 (`HttpResponse`). | Operation fails per existing 503-exhausted policy; **no** firewall hint (the path was open). |
-| U6 | Mixed: westus2 G2 fails with `ConnectRefused`, westus3 G2 returns HTTP 503. | Operation fails per existing 503 policy; **no** firewall hint (the proof of an open path on westus3 rejects the firewall hypothesis). |
-| U7 | All G2 endpoints fail with `MidStreamFailure` (GOAWAY mid-response). | Operation fails per existing transport-error policy; **no** firewall hint (mid-stream proves the path was open). |
-| U8 | All G2 endpoints fail with `PostSendTimeout`. | Operation fails per existing timeout policy; **no** firewall hint (request reached the wire). |
-| U9 | `options.gateway20_disabled = true`. | No G2 attempts are scheduled; operation routes via G1 from the start; diagnostics report `gateway20_decision_reason = OperatorDisabled`. |
-| U10 | G2-ineligible operation type, account advertises G2 endpoints. | Operation routes via G1; diagnostics report `gateway20_decision_reason = OperationIneligible`; no firewall hint regardless of G1 outcome. |
-| U11 | Account does not advertise G2 endpoints. | Operation routes via G1; diagnostics report `gateway20_decision_reason = NoGateway20Endpoints`; no firewall hint. |
-| U12 | After a G2 transport failure on westus2, the operator sets `gateway20_disabled = true` and issues a G1 operation against westus2. | G1 operation routes to westus2 successfully — proves G2 transport failures do not poison the G1 unavailable-endpoint cache (validates the cache-isolation fix). |
-| U13 | Single-endpoint account; sole G2 endpoint fails with `ConnectRefused`. | Operation fails with consolidated transport error; firewall hint included (single connectivity failure is sufficient when there is only one region to try). |
-
-##### Fault-injection tests — emulator (`tests/emulator_tests/cosmos_fault_injection.rs`)
-
-Inject the listed failures via the existing fault-injection rules (extended in Phase 6) on a real-but-emulated G2 transport. Each test asserts the operation outcome AND the diagnostics envelope.
-
-| # | Injected fault | Expected result |
-| --- | --- | --- |
-| F1 | Inject `connect_refused` on every G2 endpoint. | Operation fails with consolidated transport error; firewall hint present in error message; diagnostics show per-attempt `TransportFailureClass = ConnectRefused`. |
-| F2 | Inject TLS handshake failure on every G2 endpoint. | Same as F1; classifier produces `TlsHandshakeFailure`; firewall hint present. |
-| F3 | Inject HTTP/2 negotiation failure (server returns HTTP/1.x bytes) on every G2 endpoint. | Same as F1; classifier produces `Http2NegotiationFailure`; firewall hint present. |
-| F4 | Inject HTTP 503 on every G2 endpoint. | Operation fails with standard 503-exhausted error; **no** firewall hint; diagnostics show `TransportFailureClass = HttpResponse`. |
-| F5 | Inject `connect_refused` on G2 westus2 only (account has multiple regions). | Operation succeeds via G2 westus3 (existing regional retry); no firewall hint. |
-| F6 | Inject `connect_refused` on G2 westus2 + HTTP 503 on G2 westus3. | Operation fails with standard 503-exhausted error; **no** firewall hint (mixed outcomes reject the firewall hypothesis). |
-| F7 | After F1 fails, set `options.gateway20_disabled = true` on the same client and retry the workload. | Operations succeed via G1 against the same per-region URLs that were marked unavailable for G2 — validates the cache-isolation fix end-to-end. |
-
-##### Live tests — Gateway 2.0 live pipeline (`tests/emulator_tests/gateway20_e2e.rs`)
-
-The live job already authenticates against a dedicated Gateway 2.0-enabled account (per Q2). Add the following tests, marked with the existing live-only attribute:
-
-| # | Scenario | Expected result |
-| --- | --- | --- |
-| L1 | Normal operation against the Gateway 2.0 account. | Diagnostics show `gateway20_decision_reason = Eligible`. |
-| L2 | Set `options.gateway20_disabled = true`, run the same workload. | Diagnostics show `gateway20_decision_reason = OperatorDisabled`. |
-
-A "firewall in CI" test (force outbound block to G2 hostnames) is **not** added to the standard live job because it requires container-network manipulation that the SDK live pipeline is not currently set up to perform. Java has the same gap (its `Http2ConnectionLifecycleTests` lives in the explicitly-excluded `manual-thinclient-network-delay` group). Track as a separate manual test ticket; the fault-injection coverage above demonstrates the contract.
-
-#### 4.3.5 Open sub-questions for this section
-
-- **Q4b — Should the firewall hint mention the specific port (`:444`)?** Default position: no — the test fixture uses `:444` but production may use a different port; the hint stays abstract ("Gateway 2.0 hostnames or ports") and the per-attempt diagnostics carry the exact endpoint URLs.
 - **Q4c — Should `gateway20_disabled` accept a structured reason for diagnostic logging instead of a `bool`?** Default position: no, scope creep. Operator-set settings are settings, not telemetry. If we want to record _why_ the operator opted out, that belongs in customer-side logs.
 
 ---
@@ -392,18 +250,18 @@ Phase 6's "RNTBD unknown-token tolerance" unit test pins this behavior: a hand-c
 
 The Rust SDK already wires the HTTP request header `x-ms-cosmos-sdk-supportedcapabilities` (`COSMOS_SDK_SUPPORTEDCAPABILITIES`, `azure_data_cosmos/src/constants.rs:157`) and emits it on every gateway request from `azure_data_cosmos_driver/src/driver/transport/cosmos_headers.rs:14-31`. Today the value sent over the wire is the literal string `"0"` — i.e., zero capabilities advertised.
 
-Phase 1 must change the emitted value to `IgnoreUnknownRntbdTokens` (bit 3, decimal 8), matching the minimum capability set the .NET SDK asserts in its contract tests (`SDKSupportedCapabilities.cs`). The header value is a string-encoded decimal of the bitwise OR of the enum bits; the precise integer value should be looked up against `SDKSupportedCapabilities.cs` at implementation time and committed as a Rust constant alongside the existing `COSMOS_SDK_SUPPORTEDCAPABILITIES` header name.
+Phase 1 must change the emitted value to `IgnoreUnknownRntbdTokens` (bit 3, decimal 8). The header value is a string-encoded decimal of the bitwise OR of the enum bits; the precise integer value should be committed as a Rust constant alongside the existing `COSMOS_SDK_SUPPORTEDCAPABILITIES` header name.
 
 The `IgnoreUnknownRntbdTokens` bit is the contract that backs the silent-skip behavior in "Metadata token filtering" above: the proxy/backend uses this advertisement to decide whether it is safe to add new RNTBD tokens without coordinating with this SDK release. Advertising the bit while *also* failing or warning on unknown tokens would be a contract violation; advertising `"0"` while silently skipping unknown tokens is "merely conservative" but causes the proxy to assume zero forward-compat tolerance — both are wrong. Phase 1 must reconcile both ends.
 
 ##### Capability bit composition (Rust = `8`, Java = `11`)
 
-The bitmask the Rust driver advertises is **`8`** (`IgnoreUnknownRntbdTokens`). Pinned in `azure_data_cosmos_driver/src/driver/transport/cosmos_headers.rs:16-22` with a `const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 8);` invariant. The bits are sourced from .NET `SDKSupportedCapabilities.cs` and the C++ proxy enum:
+The bitmask the Rust driver advertises is **`8`** (`IgnoreUnknownRntbdTokens`). Pinned in `azure_data_cosmos_driver/src/driver/transport/cosmos_headers.rs:16-22` with a `const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 8);` invariant. The bits are:
 
 | Bit  | Decimal | Capability             | Rust advertises | Java advertises | Notes                                                                                                                                |
 | ---- | ------- | ---------------------- | --------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | 0    | 1       | `PartitionMerge`       | **no**          | yes             | Forward-compat with merged partition-key ranges. The Rust driver does not yet handle merged ranges in its partition-key routing, so advertising the bit without honoring the behavior could cause incorrect routing on accounts that surface merged ranges. Track in a follow-up when the driver grows merged-range support. |
-| 1    | 2       | (Java-only capability; name per Java `SDKSupportedCapabilities`) | **no**   | yes             | Java opts in to an additional capability the Rust driver does not yet consume. Unilaterally advertising it without honoring the corresponding behavior could cause mis-framing or unexpected proxy behavior. Verify the exact capability name against Java/.NET source before adding. Track in a follow-up if/when the driver grows the corresponding support. |
+| 1    | 2       | (Java-only capability; name per Java `SDKSupportedCapabilities`) | **no**   | yes             | Java opts in to an additional capability the Rust driver does not yet consume. Unilaterally advertising it without honoring the corresponding behavior could cause mis-framing or unexpected proxy behavior. Track in a follow-up if/when the driver grows the corresponding support. |
 | 3    | 8       | `IgnoreUnknownRntbdTokens` | yes          | yes             | Forward-compat with new RNTBD response tokens added by future proxy/backend versions; backed by the silent-skip behavior in "Metadata token filtering" above.                                            |
 
 Total: Rust `8`; Java `1 | 2 | 8 = 11`. The three-bit gap is intentional and conservative — the Rust driver only advertises capabilities it actually implements end-to-end. Adding any further bit requires implementing the corresponding behavior first, then updating the constant in `cosmos_headers.rs` and re-pinning `Phase 6`'s header-value test.
@@ -462,7 +320,7 @@ This phase wires RNTBD serialization into the existing transport pipeline and ad
 
 #### What Will Be Done
 
-- **Operation filtering** — `is_operation_supported_by_gateway20(resource_type, operation_type) → bool`. `ResourceType::Document` operations (CRUD, query, batch, read-feed) and `ResourceType::StoredProcedure` with `OperationType::Execute` are eligible, matching .NET's `ThinClientStoreClient` which forwards both document operations and `ExecuteJavaScript` through the thin client. StoredProcedure CRUD on the SP definition itself and every other resource type fall through to the standard gateway via the eligibility-fallback path.
+- **Operation filtering** — `is_operation_supported_by_gateway20(resource_type, operation_type) → bool`. Only `ResourceType::Document` operations (CRUD, query, batch, read-feed) are eligible, matching Java's `ThinClientStoreModel`. Every other resource type falls through to the standard gateway via the eligibility-fallback path.
 - **EPK computation** — Call `EffectivePartitionKey::compute()` (point) or `::compute_range()` (feed/cross-partition) from the driver layer. Do **not** call `azure_data_cosmos::hash::get_hashed_partition_key_string` (§3.5). SDK call sites that currently use it must route through the driver's implementation as part of this phase.
 - **EPK error propagation** — If EPK computation returns `Err` (MultiHash-requires-V2, component-count mismatch, etc.), surface as `CosmosStatus::BadRequest` to the caller. **Do not** fall back to standard gateway — the same inputs would be equally broken there.
 - **Header injection** — When `transport_mode == Gateway20`, inject the Gateway 2.0 headers listed below.
@@ -488,8 +346,7 @@ Only `ResourceType::Document` is eligible for gateway 2.0 (following Java's appr
 | ReadFeed | Yes | LatestVersion change feed only; excludes AllVersionsAndDeletes |
 | Batch | Yes | Transactional same-PK batch (single resource, single request). |
 | Bulk | Yes | SDK-side fan-out of independent CRUD ops; each fan-out leg is a separate eligible Document op. Distinct from Batch. |
-| StoredProcedure Execute | **Yes** | Stored-procedure execution routes via Gateway 2.0, matching .NET `ThinClientStoreClient` which forwards `ExecuteJavaScript` through the thin client. SP CRUD on the definition itself (`Create`/`Read`/`Replace`/`Delete`/`Upsert`) is **not** eligible and falls through to the standard gateway. |
-| All other resource types | **No** | Metadata operations use standard gateway |
+| All other resource types | **No** | Metadata operations and stored-procedure execution use standard gateway |
 
 #### Header naming (proxy headers, in HTTP/2 request headers — not RNTBD tokens)
 
@@ -613,6 +470,34 @@ EDIT  sdk/cosmos/azure_data_cosmos/src/...        — Replace SDK-side get_hashe
 
 Gateway 2.0 read locations pair **only** with read regions; Gateway 2.0 write locations pair **only** with write regions. A write region that advertises no Gateway 2.0 URL falls back to standard gateway **for writes** (this was deliberate in PR #3942: session retries that reroute reads to write endpoints would otherwise cross the read/write Gateway 2.0 split). This is a correctness invariant — do not "fix" it by cross-pairing.
 
+#### Connectivity probe (HTTP/2 reachability gate)
+
+After endpoint discovery resolves `thinClient{Writable,Readable}Locations` into `CosmosEndpoint::gateway20_url`, the driver runs a lightweight HTTP/2 **connectivity probe** against every discovered proxy endpoint before any data-plane RNTBD traffic is allowed to flow. The probe proves TCP + TLS + HTTP/2 reachability to the proxy port — without it, firewall / NSG / Private Endpoint misconfigurations surface later as opaque RNTBD timeouts that customers struggle to attribute.
+
+**Wire contract** (matches the proxy-side `Nghttp2ProxyProtocolHandler` definition and the cross-SDK contract in `Product/Cosmos/CLUB/Docs/Photon/Router/ProxyConnectivityProbeDesign.md`, ADO PR 2107592):
+
+| Element | Value |
+| --- | --- |
+| Method + Path | `POST /connectivity-probe` |
+| Request body | empty |
+| Response body | empty |
+| Protocol | HTTP/2 required (no HTTP/1.1 fallback) |
+| `200 OK` | Probe enabled, proxy ready |
+| `503 Service Unavailable` | Proxy reachable but federation flag `enableConnectivityProbe` is OFF |
+| Any other status / network failure / timeout | Proxy unreachable |
+
+**Gating policy** (Rust SDK mirrors the cross-SDK guidance from Arooshi Avasthy):
+
+1. **Strict** — only `200` counts as success. A `503` (feature disabled) fails the probe; the federation has not opted in to Gateway 2.0 yet, so the data plane stays on Gateway V1.
+2. **All-or-nothing** — if any probed region returns non-200, drop Gateway 2.0 for *all* regions and use Gateway V1 everywhere until a subsequent probe pass succeeds on every region.
+3. **No SDK-side opt-out** — the probe runs whenever `thinClient*Locations` are advertised. The federation flag is the operator-facing kill switch; the only customer-facing knob is `options.gateway20_disabled = true`, which short-circuits the entire G2 code path (probe included).
+
+**Lifecycle and timing.** The probe runs (a) on the first `getDatabaseAccount` response that advertises thin-client locations, and (b) every time endpoint discovery refreshes those advertisements. Probes execute in parallel across regions with a per-endpoint deadline of `DEFAULT_PROBE_TIMEOUT` (5s) — short enough to keep the gating loop responsive but long enough to absorb cold-TCP / TLS-handshake latency.
+
+**Diagnostics.** Each probe call records `(region, role, url, outcome)` into the same diagnostics surface as data-plane requests, so a customer support case can show the exact probe verdict per region. `ProbeFailure::Network(message)` preserves the underlying transport error text verbatim (DNS failure, TLS handshake, connection refused, timeout, etc.) so operators can correlate against their firewall logs.
+
+**Module entry point.** `driver::transport::connectivity_probe::ConnectivityProbe` (trait) + `Http2ConnectivityProbe` (production impl). The trait isolates the probe surface so test code can substitute deterministic outcomes without standing up a real proxy.
+
 #### Endpoint Discovery Flow (Existing)
 
 Account metadata response includes:
@@ -629,6 +514,7 @@ Account metadata response includes:
 ```
 EDIT  src/driver/cache/account_metadata_cache.rs   — Verify Gateway 2.0 endpoint parsing (audit only)
 EDIT  src/driver/transport/cosmos_headers.rs       — Add x-ms-cosmos-use-thinclient header (NEW)
+NEW   src/driver/transport/connectivity_probe.rs   — HTTP/2 reachability probe + ConnectivityProbe trait
 TEST  src/driver/routing/routing_systems.rs        — Add tests for read/write pairing edge cases
 ```
 
@@ -744,11 +630,11 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | RNTBD serialization | Yes | | | Round-trip, edge cases, malformed input |
 | RNTBD unknown-token tolerance | Yes | | | Inject synthetic unknown token IDs into a response frame; deserializer must skip + log, never panic / error / drop the rest of the response |
 | EPK computation | Yes | | | Single/hierarchical PK, hash versions 1 and 2, error cases (MultiHash V1, wrong component count) |
-| Operation filtering | Yes | | | All ResourceType × OperationType combos; asserts StoredProc Execute is **eligible** (routes via G2) while StoredProc CRUD is rejected |
+| Operation filtering | Yes | | | All ResourceType × OperationType combos; asserts only `Document` ops are eligible and every other resource type (including `StoredProcedure`) falls through to the standard gateway |
 | Header injection | Yes | | | Point vs feed EPK headers, proxy type headers, range-header un-padded form |
 | HPK + Gateway 2.0: full vs partial PK | Yes | | Yes | Hierarchical container (2- and 3-component PK paths). **Full PK** (all components specified) on a point op → emits `x-ms-effective-partition-key` carrying the single EPK from `EffectivePartitionKey::compute()`. **Partial PK** (1- or 2-component prefix) on a feed / cross-partition / delete-by-PK op → emits `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max` carrying the EPK range from `EffectivePartitionKey::compute_range()`. Asserted at unit level (header presence + exact wire form, range bounds for each prefix length) and E2E (round-trip against a live HPK container). |
 | Account-name RNTBD token | Yes | | | `GlobalDatabaseAccountName` (`0x00CE`, `String`) present in the RNTBD metadata stream of every Gateway 2.0 request (point, feed, batch, bulk, change feed). Value matches the host label of the account endpoint URL. |
-| SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `IgnoreUnknownRntbdTokens` (`"8"`), **not** `"0"`. Pin against the integer value sourced from .NET `SDKSupportedCapabilities.cs`. |
+| SDK-supported-capabilities header | Yes | | | `x-ms-cosmos-sdk-supportedcapabilities` value emitted is the bitmask string for `IgnoreUnknownRntbdTokens` (`"8"`), **not** `"0"`. |
 | Consistency reconciliation: token + header encoding | Yes | | | RNTBD token `0x00F0` Byte round-trip for all 4 strategies; HTTP header `x-ms-cosmos-read-consistency-strategy` exact wire-string mapping for all 4 strategies; `Default` emits neither carrier on either transport. |
 | Consistency reconciliation: dual-header rejection | Yes | | | SDK never emits both `x-ms-consistency-level` AND `x-ms-cosmos-read-consistency-strategy` on V1; never emits both `ConsistencyLevel` and `ReadConsistencyStrategy` RNTBD tokens on V2. Verified across all 16 (CL × RCS, request-level × client-level) combinations. |
 | Consistency reconciliation: 4-source precedence | Yes | | | Request-RCS > Request-CL > Client-RCS > Client-CL > account default; `Default` at any RCS layer is a pass-through. Representative subset matching Java's data-provider tests. |
@@ -768,7 +654,7 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 | Retry: 410 Gone | | Yes | | PKRange refresh (sub-status specific); NameCacheStale → collection cache |
 | Retry: 404 / sub-status 1002 (ReadSessionNotAvailable) | | Yes | | Retry routes to a **remote-preferred** region (assert local-region retry only when no other region is available); assert PLF region wins when PLF has pinned the PKRangeId; assert that **no PKRange cache refresh** is triggered |
 | Operator override (`gateway20_disabled = true`) | Yes | Yes | | All eligible Document ops (point + feed + batch + change feed) route through standard gateway; default `false` does not change behavior |
-| Eligibility fallback | | Yes | | StoredProc CRUD on the SP definition → standard gateway |
+| Eligibility fallback | | Yes | | StoredProcedure Execute (and all other non-Document resource types) → standard gateway |
 | PLF precedence | | Yes | | Region without gw20_url + PLF override → standard gateway path |
 | Multi-region failover | | Yes | Yes | Preferred regions, failover |
 | Fault injection | | Yes | | Timeout, 503, network error |
@@ -801,4 +687,4 @@ A **new dedicated CI pipeline** is required for gateway 2.0 live tests. Gateway 
 - **Q1 — HTTP/2 prior knowledge vs ALPN**: _Resolved_. Gateway 2.0 always uses HTTP/2; the proxy does not accept HTTP/1.x. Rust uses HTTP/2 with prior knowledge on the Gateway 2.0 transport (no ALPN fallback to HTTP/1.x). The broader ALPN default in `TRANSPORT_PIPELINE_SPEC.md` does **not** apply to Gateway 2.0; if HTTP/2 negotiation fails, the request fails and the existing retry policies handle it.
 - **Q2 — Live test account provisioning**: Cosmos DB account configuration flags required to enable Gateway 2.0 endpoints are not part of the standard Bicep templates. _Resolution_: hardcode a dedicated, pre-provisioned Gateway 2.0 account for the gateway 2.0 live tests pipeline and reuse it across runs (rather than provisioning per-run via Bicep). Account name and credentials stored in pipeline secrets (`AZURE_COSMOS_GW20_ENDPOINT`, `AZURE_COSMOS_GW20_KEY`); pipeline reads endpoint from environment variables.
 - **Q3 — EPK range header names**: _Resolved_. The Gateway 2.0 proxy requires the Java header names `x-ms-thinclient-range-min` / `x-ms-thinclient-range-max`. Phase 2 introduces new constants (`GATEWAY20_RANGE_MIN`, `GATEWAY20_RANGE_MAX`) on the Gateway 2.0 path; the existing `START_EPK` / `END_EPK` (`x-ms-start-epk` / `x-ms-end-epk`) constants remain for any non-Gateway-2.0 callers but are **not** emitted on Gateway 2.0 requests.
-- **Q4 — Connectivity-failure handling (G2 → G1)**: _Specified, not yet implemented_. See §4.3 for the full design and test plan. Decision is **fail-fast** (parity with Java/.NET): when all G2 endpoints fail with connectivity-class errors, surface a consolidated error pointing the operator at `options.gateway20_disabled = true`. The fail-fast contract — and the structured `TransportFailureClass` classifier and the G1/G2 endpoint-cache isolation it depends on — must land before we can claim "Gateway 2.0 default-on is safe for customers behind firewalls".
+- **Q4 — Connectivity-failure handling (G2 → G1)**: Decision is **fail-fast**: when all G2 endpoints fail with connectivity-class errors, the operation surfaces the standard transport error without auto-fallback. Operators opt out via `options.gateway20_disabled = true`. See §4.3.

@@ -655,7 +655,7 @@ mod tests {
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x03));
     }
 
-    /// Rule 1+5 (Java parity, Azure/azure-sdk-for-java#48787):
+    /// Rule 1+5 (RCS resolution):
     /// non-`Default` RCS on the wrap path emits token `0x00F0` and SUPPRESSES
     /// the legacy `ConsistencyLevel` token `0x0010`.
     #[test]

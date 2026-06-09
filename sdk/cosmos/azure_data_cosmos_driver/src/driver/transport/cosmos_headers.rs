@@ -56,7 +56,7 @@ pub(crate) fn apply_cosmos_headers(request: &mut HttpRequest, user_agent: &Heade
 ///
 /// When `strategy` is non-`Default`:
 ///   - sets `x-ms-cosmos-read-consistency-strategy: <strategy>` (string form), and
-///   - removes any `x-ms-consistency-level` header (Java parity: RCS wins over
+///   - removes any `x-ms-consistency-level` header (RCS wins over
 ///     CL, including caller-injected custom headers).
 ///
 /// When `strategy` is `Default` or `is_read = false`, this is a no-op so the

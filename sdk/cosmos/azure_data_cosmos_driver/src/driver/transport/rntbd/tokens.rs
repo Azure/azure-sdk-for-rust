@@ -297,10 +297,9 @@ impl Token {
 
     /// `ReadConsistencyStrategy` token (id `0x00F0`, `Byte`).
     ///
-    /// Java parity (Azure/azure-sdk-for-java#48787). Server requires this token
-    /// in place of `ConsistencyLevel` when the caller specifies a non-`Default`
-    /// read consistency strategy on a read request. `Default` MUST never be
-    /// serialized (callers gate on `is_non_default`).
+    /// Server requires this token in place of `ConsistencyLevel` when the caller
+    /// specifies a non-`Default` read consistency strategy on a read request.
+    /// `Default` MUST never be serialized (callers gate on `is_non_default`).
     pub(crate) fn read_consistency_strategy(value: ReadConsistencyStrategy) -> Self {
         let value = match value {
             ReadConsistencyStrategy::Eventual => 0x01,
@@ -874,10 +873,9 @@ mod tests {
 
     #[test]
     fn read_consistency_strategy_token_byte_mapping_matches_java() {
-        // Java parity (Azure/azure-sdk-for-java#48787): the RNTBD
-        // `ReadConsistencyStrategy` token has id `0x00F0`, `Byte` type, and
-        // these exact byte values. A drift here means the SDK and the gateway
-        // disagree about what consistency the caller requested.
+        // The RNTBD `ReadConsistencyStrategy` token has id `0x00F0`, `Byte`
+        // type, and these exact byte values. A drift here means the SDK and
+        // the gateway disagree about what consistency the caller requested.
         let cases = [
             (ReadConsistencyStrategy::Eventual, 0x01u8),
             (ReadConsistencyStrategy::Session, 0x02u8),
@@ -898,7 +896,7 @@ mod tests {
             );
             assert_eq!(
                 encoded[3], expected_byte,
-                "{strategy:?} byte value diverged from Java parity"
+                "{strategy:?} byte value mismatch"
             );
         }
     }

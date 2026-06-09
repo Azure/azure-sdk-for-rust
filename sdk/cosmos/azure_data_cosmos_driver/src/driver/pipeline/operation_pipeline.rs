@@ -170,7 +170,7 @@ pub(crate) async fn execute_operation_pipeline(
     let session_consistency_active = !session_capturing_disabled
         && read_consistency_strategy.is_session_effective(account_default_consistency);
 
-    // Rule 4 (Java parity, Azure/azure-sdk-for-java#48787): GlobalStrong is
+    // Rule 4 (RCS validation): GlobalStrong is
     // valid only on reads against accounts whose default consistency is Strong.
     // For writes or non-Strong accounts, server-side semantics would not be
     // applied — fail fast client-side with BadRequest before incurring a round
