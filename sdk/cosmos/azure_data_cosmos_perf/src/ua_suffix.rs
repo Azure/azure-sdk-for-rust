@@ -131,7 +131,7 @@ mod tests {
         // end on a partial codepoint.
         let configured: String = "\u{1F600}".repeat(12);
         let composite = compose_suffix(&configured, "deadbeef").unwrap();
-        // Round-trip validates UTF-8 well-formedness.
+        // Round-trip validates UTF-8 well-formed bytes.
         let _ = std::str::from_utf8(composite.as_bytes()).expect("valid UTF-8");
         assert!(composite.ends_with("-deadbeef"));
     }
