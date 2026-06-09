@@ -4,7 +4,7 @@
 //! Native FFI query plan provider using the QueryPlanInterop C++ library.
 //!
 //! This module provides a safe Rust wrapper around `Cosmos.QueryPlanInterop.dll`
-//! (Windows) / `libQueryPlanInterop.so` (Linux), which generates partitioned
+//! (Windows) / `libqueryplaninterop.so` (Linux), which generates partitioned
 //! query execution plans for Cosmos DB SQL queries.
 //!
 //! The native library is loaded dynamically at runtime -- no compile-time
@@ -67,7 +67,7 @@ pub(crate) use crate::driver::dataflow::query_plan::{
 /// [`get_query_plan`](NativeQueryPlanProvider::get_query_plan) -- no `OnceLock`
 /// or `Option` handling leaks into the driver code.
 pub(crate) struct NativeQueryPlanProvider {
-    inner: std::sync::OnceLock<Option<provider::QueryPlanProvider>>,
+    inner: std::sync::OnceLock<Result<provider::QueryPlanProvider, error::QueryPlanError>>,
     last_config: std::sync::Mutex<String>,
 }
 
@@ -102,10 +102,10 @@ impl NativeQueryPlanProvider {
     ) -> Result<crate::driver::dataflow::query_plan::QueryPlan, error::QueryPlanError> {
         let provider = self
             .inner
-            .get_or_init(|| provider::QueryPlanProvider::new(query_engine_config).ok())
+            .get_or_init(|| provider::QueryPlanProvider::new(query_engine_config))
             .as_ref()
-            .ok_or_else(|| error::QueryPlanError::LibraryNotAvailable {
-                message: "native query plan library not available".to_string(),
+            .map_err(|e| error::QueryPlanError::LibraryNotAvailable {
+                message: format!("{e}"),
             })?;
 
         // Update the provider if the query engine configuration changed

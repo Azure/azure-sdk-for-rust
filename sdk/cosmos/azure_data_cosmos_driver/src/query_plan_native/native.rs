@@ -153,7 +153,6 @@ mod platform {
         fn LoadLibraryA(name: *const u8) -> *mut c_void;
         fn GetProcAddress(module: *mut c_void, name: *const u8) -> *mut c_void;
         fn FreeLibrary(module: *mut c_void) -> i32;
-        fn SetDllDirectoryA(path: *const u8) -> i32;
     }
 
     /// # Safety
@@ -161,15 +160,18 @@ mod platform {
     /// The library name must refer to a valid shared library on the system.
     ///
     /// Search order:
-    /// 1. QUERY_PLAN_INTEROP_LIB_DIR environment variable
+    /// 1. QUERY_PLAN_INTEROP_LIB_DIR environment variable (loads by absolute path)
     /// 2. OS default search (PATH)
     pub unsafe fn load_library(name: &str) -> Option<LibHandle> {
-        // Try QUERY_PLAN_INTEROP_LIB_DIR if set.
+        // Try QUERY_PLAN_INTEROP_LIB_DIR if set — build an absolute path
+        // to avoid mutating the process-wide DLL search directory.
         if let Ok(dir) = std::env::var("QUERY_PLAN_INTEROP_LIB_DIR") {
-            if let Ok(c_dir) = CString::new(dir) {
+            let full_path = format!("{}\\{}", dir.trim_end_matches('\\'), name);
+            if let Ok(c_path) = CString::new(full_path) {
                 // SAFETY: CString guarantees a valid nul-terminated string.
-                unsafe {
-                    SetDllDirectoryA(c_dir.as_ptr().cast());
+                let h = unsafe { LoadLibraryA(c_path.as_ptr().cast()) };
+                if !h.is_null() {
+                    return Some(h);
                 }
             }
         }

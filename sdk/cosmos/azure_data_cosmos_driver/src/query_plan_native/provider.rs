@@ -155,7 +155,7 @@ impl QueryPlanProvider {
         }
 
         let payload =
-            String::from_utf8(buffer[..result_length as usize].to_vec()).map_err(|e| {
+            std::str::from_utf8(&buffer[..result_length as usize]).map_err(|e| {
                 QueryPlanError::InvalidArgument {
                     context: format!("native library returned invalid UTF-8: {e}"),
                 }
@@ -165,11 +165,11 @@ impl QueryPlanProvider {
             return if payload.is_empty() {
                 Err(QueryPlanError::from_hresult(hr))
             } else {
-                Err(QueryPlanError::from_hresult_with_payload(hr, payload))
+                Err(QueryPlanError::from_hresult_with_payload(hr, payload.to_string()))
             };
         }
 
-        let info: QueryPlan = serde_json::from_str(&payload)?;
+        let info: QueryPlan = serde_json::from_str(payload)?;
         Ok(info)
     }
 }
