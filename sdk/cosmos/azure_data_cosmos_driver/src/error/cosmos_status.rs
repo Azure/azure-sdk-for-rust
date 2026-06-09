@@ -1371,13 +1371,15 @@ impl SubStatusCode {
         SubStatusCode(20211);
 
     /// A continuation token's `SequentialDrain` children list is malformed
-    /// (out of order, overlapping, or has min > max) (20212).
+    /// (out of order, overlapping, or has min > max) (20212). Member of the
+    /// continuation-token family — see also 20200, 20203-05.
     pub const CLIENT_CONTINUATION_TOKEN_INVALID_CHILDREN: SubStatusCode = SubStatusCode(20212);
 
     /// A continuation token's saved range could not be honored on resume
     /// because the topology no longer covers it (20213). Surfacing this as
     /// an error rather than silently dropping the range prevents duplicate
-    /// emission or data loss.
+    /// emission or data loss. Member of the continuation-token family —
+    /// see also 20200, 20203-05.
     pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
 
     // ----- 20300-20349: SDK-detected service contract violations -----

@@ -50,6 +50,13 @@ pub(crate) enum PipelineNodeState {
 /// must currently be a [`PipelineNodeState::Request`] (in-progress or
 /// not-yet-started) or [`PipelineNodeState::Drained`]; nested
 /// `SequentialDrain` is not supported.
+///
+/// `Drained` per-entry state is structurally valid but is not produced by
+/// the current `snapshot_state` writer (drained front children are popped
+/// off the queue before the snapshot, so a sibling can never reach the
+/// snapshot already drained). The variant is intentionally accepted so
+/// future writers can use it as an explicit "this sub-range completed"
+/// watermark without breaking the schema.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct RangedChildState {
     pub(crate) min_epk: String,

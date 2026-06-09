@@ -22,6 +22,23 @@ use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, Ranged
 /// loops if the topology provider keeps returning splits.
 const MAX_SPLIT_RETRIES: usize = 10;
 
+/// Sentinel `RangedChildState` emitted by `snapshot_state` when an
+/// invariant violation (a child without a `feed_range`) would otherwise
+/// silently drop the child's range from the snapshot. The min > max shape
+/// is rejected by the planner's continuation-token validator with
+/// `CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE`, surfacing the corrupt
+/// snapshot at the next resume instead of letting the planner treat the
+/// missing range as already-drained scope.
+fn poison_sentinel_child() -> RangedChildState {
+    RangedChildState {
+        min_epk: "FF".to_owned(),
+        max_epk: "00".to_owned(),
+        state: PipelineNodeState::Request {
+            server_continuation: None,
+        },
+    }
+}
+
 /// Drains child nodes sequentially in EPK order.
 ///
 /// Each call to `next_page` returns the next page from the left-most (lowest EPK)
@@ -114,21 +131,21 @@ impl PipelineNode for SequentialDrain {
         // Walk every still-pending child and record its range + state. The
         // resulting list is the authoritative remaining-work ledger: ranges
         // that are not present here have already been drained and must not
-        // be re-queried on resume.
+        // be re-queried on resume. Gaps outside any saved range are treated
+        // as already-drained scope by the planner — so any missing-range
+        // child silently dropped here would re-emit as silent data loss on
+        // resume. Instead we emit a single poison sentinel that the
+        // planner's continuation-token validator hard-fails on.
         let mut children = Vec::with_capacity(self.children.len());
         for child in &self.children {
             let Some(range) = child.feed_range() else {
-                // A SequentialDrain only ever holds EPK-ranged leaves and
-                // their replacement nodes; a missing range is an invariant
-                // violation. In release builds, conservatively drop the entry
-                // (we'd rather error than re-emit data, but the only signal
-                // we have here is a snapshot — the next resume will fail
-                // loudly when this range's saved state is missing).
                 debug_assert!(
                     false,
-                    "SequentialDrain child has no feed_range; snapshot will be incomplete"
+                    "SequentialDrain child has no feed_range; emitting poison sentinel",
                 );
-                continue;
+                return PipelineNodeState::SequentialDrain {
+                    children: vec![poison_sentinel_child()],
+                };
             };
             children.push(RangedChildState {
                 min_epk: range.min_inclusive().as_str().to_string(),
@@ -769,5 +786,22 @@ mod tests {
             other => panic!("expected Page, got {other:?}"),
         }
         assert!(matches!(drain.snapshot_state(), PipelineNodeState::Drained));
+    }
+
+    /// Hits the M1 hardening path: the poison sentinel emitted by
+    /// `snapshot_state` when a child lacks a `feed_range` (an invariant
+    /// violation) must be a min>max entry. That shape is rejected by the
+    /// planner's continuation-token validator on the next resume with
+    /// `CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE`, preventing the
+    /// missing range from being treated as already-drained scope.
+    #[test]
+    fn poison_sentinel_child_has_min_greater_than_max() {
+        let sentinel = poison_sentinel_child();
+        assert!(
+            sentinel.min_epk > sentinel.max_epk,
+            "poison sentinel must have min>max so the validator rejects it; got min={} max={}",
+            sentinel.min_epk,
+            sentinel.max_epk,
+        );
     }
 }

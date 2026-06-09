@@ -152,13 +152,16 @@ pub async fn query_continuation_survives_partition_split() -> Result<(), Box<dyn
 
             println!("Documents inserted, starting query with pagination to capture continuation token");
 
-            // Confirm single physical partition.
+            // Confirm starting partition count. We accept >= 1 to be robust
+            // to backend topology choices on shared test accounts; the
+            // post-split check below requires strictly more partitions.
             let ranges_before = container_client.read_feed_ranges(None).await?;
             assert!(
-                ranges_before.len() == 1,
-                "expected single physical partition before split, got {}",
+                !ranges_before.is_empty(),
+                "expected at least one physical partition before split, got {}",
                 ranges_before.len()
             );
+            let partitions_before = ranges_before.len();
 
             // Fetch a single page and capture a continuation token.
             let mut collected: Vec<String> = Vec::new();
@@ -208,7 +211,11 @@ pub async fn query_continuation_survives_partition_split() -> Result<(), Box<dyn
 
             println!("Captured continuation token after fetching first page, now updating throughput to trigger split");
 
-            force_split_and_wait(&container_client).await?;
+            let partitions_after = force_split_and_wait(&container_client).await?;
+            assert!(
+                partitions_after > partitions_before,
+                "split must increase partition count: before={partitions_before}, after={partitions_after}"
+            );
 
             // Resume pagination using the saved continuation token.
             // Round-trip the token between every page so we keep exercising
@@ -328,12 +335,12 @@ pub async fn query_resume_with_first_page_spanning_multiple_partition_keys(
             }
 
             let ranges_before = container_client.read_feed_ranges(None).await?;
-            assert_eq!(
-                ranges_before.len(),
-                1,
-                "expected single physical partition before split, got {}",
+            assert!(
+                !ranges_before.is_empty(),
+                "expected at least one physical partition before split, got {}",
                 ranges_before.len()
             );
+            let partitions_before = ranges_before.len();
 
             // Page 1 captures a continuation token spanning multiple sibling
             // partitions — pre-fix this was the lossy snapshot point that
@@ -370,7 +377,11 @@ pub async fn query_resume_with_first_page_spanning_multiple_partition_keys(
                 "First page returned {} items; forcing split before resume",
                 collected.len()
             );
-            force_split_and_wait(&container_client).await?;
+            let partitions_after = force_split_and_wait(&container_client).await?;
+            assert!(
+                partitions_after > partitions_before,
+                "split must increase partition count: before={partitions_before}, after={partitions_after}"
+            );
 
             let mut continuation = Some(saved_token);
             loop {
@@ -475,12 +486,12 @@ pub async fn query_resume_after_draining_multiple_pages_then_split() -> Result<(
             }
 
             let ranges_before = container_client.read_feed_ranges(None).await?;
-            assert_eq!(
-                ranges_before.len(),
-                1,
-                "expected single physical partition before split, got {}",
+            assert!(
+                !ranges_before.is_empty(),
+                "expected at least one physical partition before split, got {}",
                 ranges_before.len()
             );
+            let partitions_before = ranges_before.len();
 
             // Drain PAGES_PRE_SPLIT pages, round-tripping the continuation
             // between every page so each page boundary exercises a snapshot.
@@ -519,7 +530,11 @@ pub async fn query_resume_after_draining_multiple_pages_then_split() -> Result<(
                 "Drained {PAGES_PRE_SPLIT} pages pre-split ({} items); forcing split before resume",
                 collected.len()
             );
-            force_split_and_wait(&container_client).await?;
+            let partitions_after = force_split_and_wait(&container_client).await?;
+            assert!(
+                partitions_after > partitions_before,
+                "split must increase partition count: before={partitions_before}, after={partitions_after}"
+            );
 
             // Resume from the post-page-4 continuation across the split.
             loop {

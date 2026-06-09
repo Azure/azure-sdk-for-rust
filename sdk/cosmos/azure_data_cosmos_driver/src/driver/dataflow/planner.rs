@@ -278,15 +278,33 @@ async fn plan_resume_from_saved_children(
             continue;
         }
         if !range_fully_covered(&saved_child.range, &coverage[idx]) {
+            let coverage_summary = if coverage[idx].is_empty() {
+                "(no overlapping topology ranges)".to_string()
+            } else {
+                let mut sorted = coverage[idx].clone();
+                sorted.sort_by(|a, b| a.min_inclusive().cmp(b.min_inclusive()));
+                sorted
+                    .iter()
+                    .map(|r| {
+                        format!(
+                            "[{}, {})",
+                            r.min_inclusive().as_str(),
+                            r.max_exclusive().as_str()
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" + ")
+            };
             return Err(crate::error::CosmosError::builder()
                 .with_status(
                     crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED,
                 )
                 .with_message(format!(
                     "continuation token saved range [{}, {}) could not be fully covered \
-                     by the current topology; the query cannot be safely resumed",
+                     by the current topology (covered: {}); the query cannot be safely resumed",
                     saved_child.range.min_inclusive().as_str(),
                     saved_child.range.max_exclusive().as_str(),
+                    coverage_summary,
                 ))
                 .build());
         }
@@ -317,6 +335,15 @@ fn range_fully_covered(range: &FeedRange, pieces: &[FeedRange]) -> bool {
     sorted.sort_by(|a, b| a.min_inclusive().cmp(b.min_inclusive()));
     let mut cursor = range.min_inclusive().clone();
     for piece in sorted {
+        debug_assert!(
+            piece.min_inclusive() >= range.min_inclusive()
+                && piece.max_exclusive() <= range.max_exclusive(),
+            "range_fully_covered piece [{}, {}) is not a subset of range [{}, {})",
+            piece.min_inclusive().as_str(),
+            piece.max_exclusive().as_str(),
+            range.min_inclusive().as_str(),
+            range.max_exclusive().as_str(),
+        );
         if piece.min_inclusive() > &cursor {
             return false;
         }
@@ -358,6 +385,20 @@ fn validate_saved_children(
                     "continuation token has invalid SequentialDrain child range (min `{}` > max `{}`)",
                     min.as_str(),
                     max.as_str(),
+                ))
+                .build());
+        }
+        if min == max {
+            // A zero-width child is structurally well-formed but cannot
+            // contribute coverage; reject explicitly so the caller sees a
+            // diagnostic message that points at the entry itself rather
+            // than at a downstream "could not be fully covered" failure.
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
+                .with_message(format!(
+                    "continuation token has zero-width SequentialDrain child range (min == max == `{}`); \
+                     zero-width entries cannot carry remaining work",
+                    min.as_str(),
                 ))
                 .build());
         }
@@ -1410,6 +1451,66 @@ mod tests {
         assert_drain_requests_with_partitions_and_continuation(
             pipeline,
             &[("40", "60", "pk-c", "40", "60", Some("tok"))],
+        );
+    }
+
+    /// 0.3.0 could mint a top-level bare `Request` continuation shape for
+    /// single-physical-partition queries — at the time the planner treated
+    /// that as a full-range cursor. The 0.4.0 planner rejects it. The
+    /// CHANGELOG documents both shapes as breaking. This test guards the
+    /// CHANGELOG promise: 0.3.0 bare-`Request` tokens MUST fail on resume
+    /// (with any error), not silently succeed.
+    #[tokio::test]
+    async fn legacy_0_3_0_top_level_request_shape_fails_to_resume() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let legacy = PipelineNodeState::Request {
+            server_continuation: Some("OLD".to_owned()),
+        };
+
+        let result =
+            build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(legacy)).await;
+        let err = result.expect_err("0.3.0 bare-Request shape must be rejected on resume");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+            "expected SHAPE_MISMATCH for top-level bare Request shape; got {err:?}",
+        );
+    }
+
+    /// L4: zero-width child entries are well-formed JSON but cannot carry
+    /// remaining work. They must be rejected with a message that points
+    /// at the entry itself rather than at a downstream "could not be
+    /// fully covered" error.
+    #[tokio::test]
+    async fn rejects_zero_width_saved_child_entry_with_clear_message() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            children: vec![RangedChildState {
+                min_epk: "40".to_owned(),
+                max_epk: "40".to_owned(),
+                state: PipelineNodeState::Request {
+                    server_continuation: Some("tok".to_owned()),
+                },
+            }],
+        };
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect_err("zero-width saved child must be rejected");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+        );
+        let rendered = err.to_string();
+        assert!(
+            rendered.contains("zero-width"),
+            "error message should describe the zero-width entry; got: {rendered}"
         );
     }
 }

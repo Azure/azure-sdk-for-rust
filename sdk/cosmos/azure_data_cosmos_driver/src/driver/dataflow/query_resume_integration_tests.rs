@@ -737,3 +737,113 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     expected.sort();
     assert_eq!(all_pages, expected);
 }
+
+/// O10: cascading splits — the back sibling from a first split itself
+/// splits again before the user gets back to it. The new planner's
+/// interval-join shape should clone the saved back-sibling token to each
+/// of the grand-child leaves the back range is now resolved to. This
+/// guards the "split-of-a-split" path that the basic post-split tests
+/// don't reach, and is the highest-likely-to-regress hole around the
+/// per-range list shape.
+#[tokio::test]
+async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
+    let op = cross_partition_query_operation();
+    let plan = full_range_plan();
+
+    // ── Session 1: pre-split, single physical partition. ─────────────
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-pre")])]);
+    let mut executor1 =
+        MockRequestExecutor::new(vec![Ok(page_response(b"page-1-pre", Some("T1")))]);
+    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
+        .await
+        .unwrap();
+    let pages_s1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
+    assert_eq!(pages_s1, vec![b"page-1-pre".to_vec()]);
+
+    let state_s1 = pipeline1.snapshot_state();
+    drop(pipeline1);
+
+    // ── Session 2: first split → [, 80) + [80, FF). Drain the front
+    // child to completion so only the back child remains pending with
+    // T1. Snapshot again.
+    let resumed_s2 = round_trip_state(state_s1, &op);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor2 =
+        MockRequestExecutor::new(vec![Ok(page_response(b"page-1-postsplit-left", None))]);
+    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_s2))
+        .await
+        .unwrap();
+    let pages_s2 = drain_pages(&mut pipeline2, &mut executor2, 1).await;
+    assert_eq!(pages_s2, vec![b"page-1-postsplit-left".to_vec()]);
+
+    let state_s2 = pipeline2.snapshot_state();
+    drop(pipeline2);
+
+    // Sanity-check: snapshot now has just the back child owing T1
+    // (front child drained; popped off the queue).
+    match &state_s2 {
+        PipelineNodeState::SequentialDrain { children } => {
+            assert_eq!(children.len(), 1);
+            assert_eq!(children[0].min_epk, "80");
+            assert_eq!(children[0].max_epk, "FF");
+            assert!(matches!(
+                children[0].state,
+                PipelineNodeState::Request {
+                    server_continuation: Some(ref c),
+                } if c == "T1"
+            ));
+        }
+        other => panic!("expected SequentialDrain snapshot at session 2, got {other:?}"),
+    }
+
+    // ── Session 3: cascading split — the back range [80, FF) has
+    // itself split into [80, C0) + [C0, FF). The planner must clone T1
+    // to BOTH grand-children. Drain both to completion.
+    let resumed_s3 = round_trip_state(state_s2, &op);
+    let mut topology3 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("80", "C0", "pk-back-left"),
+        resolved("C0", "FF", "pk-back-right"),
+    ])]);
+    let mut executor3 = MockRequestExecutor::new(vec![
+        Ok(page_response(b"page-1-back-left", None)),
+        Ok(page_response(b"page-1-back-right", None)),
+    ]);
+    let mut pipeline3 = build_sequential_drain(&plan, &mut topology3, &op, Some(resumed_s3))
+        .await
+        .unwrap();
+    let pages_s3 = drain_all(&mut pipeline3, &mut executor3).await;
+    assert_eq!(
+        pages_s3,
+        vec![b"page-1-back-left".to_vec(), b"page-1-back-right".to_vec()],
+    );
+
+    // BOTH grand-children must have been queried with T1 — neither
+    // None. If the planner accidentally moved the token to the first
+    // grand-child only (the Defect-1 shape, but at the resume-decode
+    // layer instead of the in-memory fan-out), the second grand-child
+    // would carry None and re-emit the full [C0, FF) post-split data
+    // that T1 was already past.
+    assert_eq!(
+        executor3.continuation_calls,
+        vec![Some("T1".to_owned()), Some("T1".to_owned())],
+        "both back-range grand-children must receive the preserved pre-split T1",
+    );
+
+    let mut all_pages: Vec<Vec<u8>> = pages_s1
+        .into_iter()
+        .chain(pages_s2.into_iter())
+        .chain(pages_s3.into_iter())
+        .collect();
+    all_pages.sort();
+    let mut expected: Vec<Vec<u8>> = vec![
+        b"page-1-pre".to_vec(),
+        b"page-1-postsplit-left".to_vec(),
+        b"page-1-back-left".to_vec(),
+        b"page-1-back-right".to_vec(),
+    ];
+    expected.sort();
+    assert_eq!(all_pages, expected);
+}
