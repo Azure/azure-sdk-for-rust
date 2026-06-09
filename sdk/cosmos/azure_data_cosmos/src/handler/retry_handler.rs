@@ -4,7 +4,7 @@
 use crate::cosmos_request::CosmosRequest;
 use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
-use crate::retry_policies::{RetryPolicy, RetryResult};
+use crate::retry_policies::{convert_gone_to_service_unavailable, RetryPolicy, RetryResult};
 use crate::routing::global_endpoint_manager::GlobalEndpointManager;
 use crate::routing::global_partition_endpoint_manager::GlobalPartitionEndpointManager;
 use async_trait::async_trait;
@@ -139,7 +139,15 @@ impl RetryHandler for BackOffRetryHandler {
             let retry_result = retry_policy.should_retry(&result).await;
 
             match retry_result {
-                RetryResult::DoNotRetry => return result,
+                RetryResult::DoNotRetry => {
+                    // If the data-plane policy exhausted its partition-key-range Gone
+                    // budget, surface the terminal failure as 503 (preserving the
+                    // original sub-status) instead of letting a raw 410 escape.
+                    if let Some(sub_status) = retry_policy.terminal_gone_substatus() {
+                        return convert_gone_to_service_unavailable(result, sub_status);
+                    }
+                    return result;
+                }
                 RetryResult::Retry { after } => get_async_runtime().sleep(after).await,
             }
         }

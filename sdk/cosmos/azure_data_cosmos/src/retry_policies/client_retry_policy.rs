@@ -29,6 +29,13 @@ const MAX_RETRY_COUNT_ON_ENDPOINT_FAILURE: usize = 120;
 /// the endpoint unavailable.
 const MAX_RETRY_COUNT_ON_CONNECTION_FAILURE: usize = 3;
 
+/// Maximum number of in-line retries for the partition-key-range Gone family
+/// (410 with sub-status 1000/1002/1007) before the terminal outcome is surfaced
+/// as 503 Service Unavailable. A small fixed bound (one routing-cache refresh +
+/// one retry) mirrors the dedicated PartitionKeyRangeGone retry policy used by
+/// the other Cosmos SDKs and avoids retry amplification on writes.
+const MAX_RETRY_COUNT_ON_PARTITION_KEY_RANGE_GONE: usize = 1;
+
 /// Context information for routing retry attempts to specific endpoints.
 #[derive(Clone, Debug)]
 struct RetryContext {
@@ -66,6 +73,20 @@ pub(crate) struct ClientRetryPolicy {
     /// Counter tracking the number of consecutive connection failure retry attempts
     /// on the current endpoint before marking it unavailable.
     connection_retry_count: usize,
+
+    /// Counter tracking the number of partition-key-range Gone (410.1000/1002/1007)
+    /// retry attempts for the current request.
+    partition_key_range_gone_retry_count: usize,
+
+    /// When set, the next `before_send_request` flags the request for a routing-cache
+    /// refresh (name cache, partition-key-range and collection routing map) so that
+    /// SDK-routing paths re-resolve a stale routing map instead of replaying it.
+    refresh_routing_on_next_attempt: bool,
+
+    /// Set when the partition-key-range Gone family has exhausted its in-line retry
+    /// budget. Signals the retry handler to surface the terminal failure as
+    /// 503 Service Unavailable while preserving this original Cosmos sub-status.
+    terminal_gone_substatus: Option<SubStatusCode>,
 
     /// Whether the current request is a read operation (true) or write operation (false)
     operation_type: Option<OperationType>,
@@ -117,6 +138,9 @@ impl ClientRetryPolicy {
             session_token_retry_count: 0,
             service_unavailable_retry_count: 0,
             connection_retry_count: 0,
+            partition_key_range_gone_retry_count: 0,
+            refresh_routing_on_next_attempt: false,
+            terminal_gone_substatus: None,
             operation_type: None,
             request: None,
             can_use_multiple_write_locations: false,
@@ -214,6 +238,16 @@ impl ClientRetryPolicy {
         {
             self.partition_key_range_location_cache
                 .try_add_partition_level_location_override(request);
+        }
+
+        // If a prior attempt hit the partition-key-range Gone family, flag the
+        // request so SDK-routing paths refresh the (now demonstrably stale)
+        // routing caches before this attempt instead of replaying the stale map.
+        if self.refresh_routing_on_next_attempt {
+            request.force_name_cache_refresh = true;
+            request.force_partition_key_range_refresh = true;
+            request.force_collection_routing_map_refresh = true;
+            self.refresh_routing_on_next_attempt = false;
         }
 
         self.request = Some(request.clone());
@@ -497,6 +531,45 @@ impl ClientRetryPolicy {
         }
     }
 
+    /// Handles the partition-key-range Gone family (410.1000/1002/1007).
+    ///
+    /// A 410 carrying one of these sub-statuses means the routing information the
+    /// request was resolved against is stale (a split/merge/migration moved the
+    /// range). We retry a small, fixed number of times, flagging a routing-cache
+    /// refresh for the next attempt so SDK-routing paths re-resolve instead of
+    /// replaying the stale map. Once the bound is exhausted we stop retrying and
+    /// record the sub-status so the retry handler can surface the terminal failure
+    /// as 503 Service Unavailable (preserving the sub-status) rather than letting a
+    /// raw, unclassifiable 410 escape to the caller.
+    ///
+    /// Applies to reads and writes alike: a 410 from routing resolution means the
+    /// operation was not applied, so retrying a write is safe.
+    fn should_retry_on_partition_key_range_gone(
+        &mut self,
+        sub_status: SubStatusCode,
+    ) -> RetryResult {
+        self.partition_key_range_gone_retry_count += 1;
+
+        if self.partition_key_range_gone_retry_count <= MAX_RETRY_COUNT_ON_PARTITION_KEY_RANGE_GONE
+        {
+            self.refresh_routing_on_next_attempt = true;
+            return RetryResult::Retry {
+                after: Duration::ZERO,
+            };
+        }
+
+        // Bound exhausted: surface as 503 with the original sub-status preserved.
+        self.terminal_gone_substatus = Some(sub_status);
+        RetryResult::DoNotRetry
+    }
+
+    /// Returns the sub-status to preserve when a terminal partition-key-range Gone
+    /// must be surfaced as 503 Service Unavailable, or `None` if no such conversion
+    /// is pending. Consulted by the retry handler after a `DoNotRetry` decision.
+    pub(crate) fn terminal_gone_substatus(&self) -> Option<SubStatusCode> {
+        self.terminal_gone_substatus
+    }
+
     /// Routes HTTP status codes to appropriate retry handling logic.
     ///
     /// # Summary
@@ -587,6 +660,26 @@ impl ClientRetryPolicy {
             && sub_status_code == Some(SubStatusCode::LEASE_NOT_FOUND)
         {
             return Some(self.should_retry_on_unavailable_endpoint_status_codes());
+        }
+
+        // Gone - partition-key-range staleness family (410.1000 NameCacheIsStale,
+        // 410.1002 PartitionKeyRangeGone, 410.1007 CompletingSplit). This must be
+        // matched on the (Gone, sub-status) tuple: sub-status 1002 is also used by
+        // 404 ReadSessionNotAvailable (handled above), so keying on sub-status
+        // alone would conflate the two. Without this branch a 410.1002 escapes the
+        // pipeline as a raw, unclassifiable 410 (writes) or burns non-curative
+        // cross-region failover (reads). Instead we drive a bounded routing-cache
+        // refresh + retry and, on exhaustion, surface 503 (see the retry handler).
+        if status_code == StatusCode::Gone
+            && matches!(
+                sub_status_code,
+                Some(SubStatusCode::NAME_CACHE_IS_STALE)
+                    | Some(SubStatusCode::PARTITION_KEY_RANGE_GONE)
+                    | Some(SubStatusCode::COMPLETING_SPLIT)
+            )
+        {
+            // sub_status_code is Some in every arm of the match above.
+            return Some(self.should_retry_on_partition_key_range_gone(sub_status_code.unwrap()));
         }
 
         // For read operations, retry on any status code that is not explicitly non-retryable.
@@ -1011,6 +1104,101 @@ mod tests {
             }
             _ => panic!("Expected retry for Gone with LeaseNotFound on write"),
         }
+    }
+
+    #[tokio::test]
+    async fn gone_partition_key_range_retries_then_converts_to_503_read() {
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Read);
+        let error = create_error_with_substatus(
+            StatusCode::Gone,
+            SubStatusCode::PARTITION_KEY_RANGE_GONE.value() as u32,
+        );
+
+        // First 410/1002: bounded retry, routing refresh flagged, no terminal conversion yet.
+        let first = policy.should_retry_error(&error).await;
+        assert!(first.is_retry(), "first 410/1002 should retry");
+        assert_eq!(policy.partition_key_range_gone_retry_count, 1);
+        assert!(policy.refresh_routing_on_next_attempt);
+        assert!(policy.terminal_gone_substatus().is_none());
+
+        // Second 410/1002: bound exhausted -> stop retrying, terminal 503 conversion pending.
+        let second = policy.should_retry_error(&error).await;
+        assert!(!second.is_retry(), "second 410/1002 should stop retrying");
+        assert_eq!(
+            policy.terminal_gone_substatus(),
+            Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+            "terminal Gone must surface as 503 preserving sub-status 1002"
+        );
+    }
+
+    #[tokio::test]
+    async fn gone_partition_key_range_retries_then_converts_to_503_write() {
+        // Writes must also recover: a 410 from routing resolution means the
+        // operation was not applied, so a bounded retry is safe (Q4=B).
+        let mut policy = create_test_policy_with_preferred_locations();
+        policy.operation_type = Some(OperationType::Create);
+        let error = create_error_with_substatus(
+            StatusCode::Gone,
+            SubStatusCode::PARTITION_KEY_RANGE_GONE.value() as u32,
+        );
+
+        assert!(
+            policy.should_retry_error(&error).await.is_retry(),
+            "writes must also retry a 410/1002"
+        );
+        assert!(
+            !policy.should_retry_error(&error).await.is_retry(),
+            "writes must stop after the bound and convert"
+        );
+        assert_eq!(
+            policy.terminal_gone_substatus(),
+            Some(SubStatusCode::PARTITION_KEY_RANGE_GONE)
+        );
+    }
+
+    #[tokio::test]
+    async fn gone_name_cache_stale_and_completing_split_take_gone_branch() {
+        for ss in [
+            SubStatusCode::NAME_CACHE_IS_STALE,
+            SubStatusCode::COMPLETING_SPLIT,
+        ] {
+            let mut policy = create_test_policy_with_preferred_locations();
+            policy.operation_type = Some(OperationType::Read);
+            let error = create_error_with_substatus(StatusCode::Gone, ss.value() as u32);
+
+            assert!(
+                policy.should_retry_error(&error).await.is_retry(),
+                "410/{} should take the Gone-family retry branch",
+                ss.value()
+            );
+            assert_eq!(policy.partition_key_range_gone_retry_count, 1);
+            assert!(policy.refresh_routing_on_next_attempt);
+        }
+    }
+
+    #[tokio::test]
+    async fn not_found_session_not_available_not_treated_as_gone() {
+        // 404/1002 ReadSessionNotAvailable shares sub-status 1002 with 410/1002
+        // PartitionKeyRangeGone. It must keep the session-retry path, untouched by
+        // the new Gone-family branch (regression guard for the overloaded 1002).
+        let mut policy = create_test_policy();
+        policy.operation_type = Some(OperationType::Read);
+        let error = create_error_with_substatus(
+            StatusCode::NotFound,
+            SubStatusCode::READ_SESSION_NOT_AVAILABLE.value() as u32,
+        );
+
+        let _ = policy.should_retry_error(&error).await;
+        assert_eq!(
+            policy.session_token_retry_count, 1,
+            "404/1002 must use the session-not-available path"
+        );
+        assert_eq!(
+            policy.partition_key_range_gone_retry_count, 0,
+            "404/1002 must NOT use the Gone-family path"
+        );
+        assert!(policy.terminal_gone_substatus().is_none());
     }
 
     #[tokio::test]

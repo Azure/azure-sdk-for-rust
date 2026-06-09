@@ -7,6 +7,10 @@
 - Added `tokio` feature to `default` features.
 - Changed `default_ttl` and `analytical_storage_ttl` fields on `ContainerProperties` from `Option<Duration>` to `TimeToLive`, a new enum with variants `Forever`, `NoDefault`, and `Seconds(u32)`, to correctly handle the `-1` wire value (TTL enabled with no default expiration).
 
+### Bugs Fixed
+
+- Fixed `410 Gone` responses carrying a partition-key-range routing sub-status (`1000` NameCacheIsStale, `1002` PartitionKeyRangeGone, `1007` CompletingSplit) escaping the retry pipeline as a raw, unclassifiable `410` (returned directly to the caller on writes, or after non-curative cross-region failover on reads). These are now retried within a small bound — flagging a routing-cache refresh so SDK-routing paths re-resolve stale routing information — and, on exhaustion, surfaced as `503 Service Unavailable` with the original sub-status preserved. This aligns the surfaced status with the rest of the Gone family so application-layer retry/circuit-breaker logic (wired for `503`, not `410`) can classify it.
+
 ## 0.31.0 (2026-02-25)
 
 ### Features Added
