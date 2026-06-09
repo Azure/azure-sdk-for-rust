@@ -71,6 +71,14 @@ pub(crate) mod request_header_names {
     /// preserve the existing single-master 1002 retry behavior. Mirrors
     /// .NET parity (Azure/azure-cosmos-dotnet-v3#5447).
     pub const HUB_REGION_PROCESSING_ONLY: &str = "x-ms-cosmos-hub-region-processing-only";
+
+    /// Request-only header that opts the client into multi-master tentative
+    /// writes. Multi-write Cosmos accounts require this header on every write;
+    /// without it, satellite write regions return `403 / 3 (WriteForbidden)`
+    /// because the request looks like single-master traffic to a non-primary
+    /// region. The same wire name appears under
+    /// [`response_header_names::HAS_TENTATIVE_WRITES`] on responses.
+    pub const ALLOW_TENTATIVE_WRITES: &str = "x-ms-cosmos-allow-tentative-writes";
 }
 
 /// Standard Cosmos DB response header names.

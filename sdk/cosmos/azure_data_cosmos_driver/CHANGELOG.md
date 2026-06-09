@@ -17,6 +17,8 @@
 ### Bugs Fixed
 - Data-plane and non-account metadata operations now fall back to the hub/primary write region endpoint instead of the global account endpoint when all regional endpoints are excluded or unavailable. ([#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503))
 
+- Writes to multi-write Cosmos accounts now send the `x-ms-cosmos-allow-tentative-writes: true` request header (gated on `enableMultipleWriteLocations` from the account metadata). Without this header satellite write regions returned `403 / 3 (WriteForbidden)`, breaking write failover. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
+- Bootstrap account-metadata fetches now surface non-2xx responses as `CosmosError` with the wire status and body, instead of a `missing field _self` serde error. Diagnostics are populated on the same envelope used by the operation pipeline. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
 - A transient failure while refreshing the partition key range cache no longer replaces a known-good cached routing map with an empty placeholder; the previous map is preserved until the next successful refresh. ([#4549](https://github.com/Azure/azure-sdk-for-rust/pull/4549))
 
 ### Other Changes

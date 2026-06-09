@@ -12,6 +12,8 @@
 
 ### Bugs Fixed
 
+- Writes to multi-write Cosmos accounts now send the `x-ms-cosmos-allow-tentative-writes: true` request header. Without it, satellite write regions returned `403 / 3 (WriteForbidden)`, breaking write failover to non-primary regions. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
+
 ### Other Changes
 
 ## 0.34.0 (2026-05-29)
