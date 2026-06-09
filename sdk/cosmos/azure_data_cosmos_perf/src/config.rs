@@ -63,6 +63,24 @@ pub struct Config {
     #[arg(long, default_value_t = false)]
     pub no_creates: bool,
 
+    /// Disable the per-feed-range query operation.
+    ///
+    /// When enabled (the default), the harness fans out
+    /// `SELECT VALUE COUNT(1) FROM c` across the container's physical
+    /// partitions, round-robin one range per call.
+    #[arg(long, default_value_t = false)]
+    pub no_feed_range_queries: bool,
+
+    /// Interval in seconds between background refreshes of the cached feed
+    /// range list. Set to 0 to disable the background refresher (the cache
+    /// then stays at the seed snapshot taken once at startup).
+    ///
+    /// When the refresher is active, its own latency is reported under a
+    /// separate `ReadFeedRanges` stats line so its overhead is visible
+    /// alongside the other operations.
+    #[arg(long, default_value_t = 60)]
+    pub feed_range_refresh_secs: u64,
+
     /// Number of concurrent operations (minimum: 1).
     #[arg(long, default_value_t = 50)]
     pub concurrency: usize,

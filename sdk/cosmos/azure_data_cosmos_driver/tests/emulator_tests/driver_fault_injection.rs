@@ -834,9 +834,8 @@ pub async fn gateway20_hit_limit_caps_fault_count() -> Result<(), Box<dyn Error>
 // 449 RetryWith is the Cosmos backend's signal for transient concurrency
 // conflicts that the client must retry in the same region. The driver
 // implements the policy in `try_handle_retry_with` (in
-// `driver::pipeline::retry_evaluation`) matching .NET/Java's
-// `RetryWithRetryPolicy`: 10ms initial delay + a small random salt,
-// exponential backoff up to ~1s per retry, ~30s cumulative cap.
+// `driver::pipeline::retry_evaluation`): 10ms initial delay + a small random
+// salt, exponential backoff up to ~1s per retry, ~30s cumulative cap.
 //
 // These tests use the same fault-injection harness as the other live-account
 // tests in this file; the `RetryWith` variant on `FaultInjectionErrorType`
@@ -1014,3 +1013,218 @@ pub async fn gateway20_449_retry_with_succeeds_after_hit_limit() -> Result<(), B
     )
     .await
 }
+/// End-to-end validation that the configurable 429 (throttle) retry budget —
+/// [`ThrottlingRetryOptions::max_retry_count`](azure_data_cosmos_driver::options::ThrottlingRetryOptions::max_retry_count),
+/// exposed on the nested `OperationOptions::throttling_retry_options` group —
+/// is honored across the full driver stack against a live emulator account.
+///
+/// A fault rule injects an HTTP 429 (`TooManyRequests`) on **every**
+/// `ReadItem` transport attempt with probability `1.0`. Because the injected
+/// 429 carries no sub-status it is a *generic* throttle: the operation
+/// pipeline classifies it as region-confirming (no cross-region failover), so
+/// the entire retry budget is spent inside a single transport-pipeline
+/// invocation. Counting `rule.hit_count()` therefore yields the exact number
+/// of read attempts that reached the (faulted) transport client.
+///
+/// Wire-attempt accounting for `max_retry_count = N`:
+///
+/// * **Total = `N + 1`** attempts on the wire (1 initial + N retries) for
+///   any N, including `N == 0`. The one-shot forced-final-retry safety net
+///   in `execute_transport_pipeline` is gated on `attempt_count <
+///   max_attempts`, so once the count budget is exhausted the safety net is
+///   suppressed too — matching the .NET-parity
+///   `MaxRetryAttemptsOnRateLimitedRequests` semantic.
+/// * The forced-final retry still fires when the *cumulative-wait* budget
+///   (rather than the count) is the limiter; this test uses a generous
+///   300-second wait budget so the count is always the sole limiter.
+///
+/// This mirrors the unit-level coverage in
+/// `transport_pipeline::tests::execute_transport_pipeline_honors_configured_max_throttle_attempts`
+/// but exercises the real option-resolution → fault-injection → transport
+/// retry path instead of driving the loop directly.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
+) -> Result<(), Box<dyn Error>> {
+    // (configured throttle-retry budget, expected total ReadItem attempts).
+    // Total = 1 initial + N retries (the forced-final retry is suppressed
+    // once the count budget is exhausted; it only fires when the
+    // cumulative-wait budget is the limiter).
+    for (max_throttle_retry_count, expected_hits) in [(0_u32, 1_u32), (1, 2), (3, 4), (5, 6)] {
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "always-429",
+                FaultInjectionResultBuilder::new()
+                    .with_error(FaultInjectionErrorType::TooManyRequests)
+                    .with_probability(1.0)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::ReadItem)
+                    .build(),
+            )
+            .build(),
+        );
+
+        // Pin the throttle-retry budget at the runtime layer of the option
+        // view. A generous cumulative-wait budget keeps the attempt count the
+        // sole limiter for these small retry counts. No end-to-end latency
+        // policy is set, so the transport request carries no deadline and the
+        // forced-final retry is immediate.
+        let operation_options = OperationOptionsBuilder::new()
+            .with_throttling_retry_options(
+                ThrottlingRetryOptionsBuilder::new()
+                    .with_max_retry_count(max_throttle_retry_count)
+                    .with_max_retry_wait_time(Duration::from_secs(300))
+                    .build(),
+            )
+            .build();
+
+        let rule_for_assert = Arc::clone(&rule);
+        Box::pin(
+            DriverTestClient::run_with_unique_db_and_fault_injection_options(
+                vec![rule],
+                operation_options,
+                async move |context, database| {
+                    let container_name = context.unique_container_name();
+                    let container = context
+                        .create_container(&database, &container_name, "/pk")
+                        .await?;
+
+                    // Seed the item with a write. The fault rule targets only
+                    // ReadItem, so the seeding write is unaffected.
+                    let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+                    context
+                        .create_item(&container, "item1", "pk1", item_json)
+                        .await?;
+
+                    // The read always observes 429 and ultimately fails once
+                    // the throttle budget is exhausted.
+                    let read_result = context.read_item(&container, "item1", "pk1").await;
+                    assert!(
+                        read_result.is_err(),
+                        "read must fail once the throttle budget is exhausted \
+                         (max_throttle_retry_count={max_throttle_retry_count})",
+                    );
+
+                    assert_eq!(
+                        rule_for_assert.hit_count(),
+                        expected_hits,
+                        "max_throttle_retry_count={max_throttle_retry_count} must yield \
+                         {expected_hits} ReadItem attempts on the wire, but the 429 fault \
+                         rule fired {} time(s)",
+                        rule_for_assert.hit_count(),
+                    );
+
+                    Ok(())
+                },
+            ),
+        )
+        .await?;
+    }
+
+    Ok(())
+}
+
+/// Verifies that a transient failure on a force-refresh of the partition-key
+/// range cache does NOT regress the cached routing map to empty.
+///
+/// Scenario:
+/// 1. Install (but disable) a one-shot `ServiceUnavailable` fault on
+///    `MetadataPartitionKeyRanges`.
+/// 2. Warm the routing-map cache successfully (fault disabled).
+/// 3. Enable the fault, then force-refresh the cache. The fetch fails.
+/// 4. Assert the post-refresh routing map is still populated, proving the
+///    cache kept the previously cached map rather than replacing it with an
+///    empty placeholder that would break routing until the next explicit
+///    invalidation.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn pkrange_refresh_transient_failure_preserves_cached_routing_map(
+) -> Result<(), Box<dyn Error>> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::MetadataPartitionKeyRanges)
+        .build();
+
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .with_probability(1.0)
+        .build();
+
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("pkrange-refresh-transient", result)
+            .with_condition(condition)
+            .with_hit_limit(1)
+            .build(),
+    );
+    // Start disabled so the warmup below isn't intercepted; we enable the
+    // rule immediately before force-refreshing so the failure is guaranteed
+    // to land on the refresh path under test.
+    rule.disable();
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_fault_injection(rules, async |context, database| {
+        let container_name = context.unique_container_name();
+        let container = context
+            .create_container(&database, &container_name, "/pk")
+            .await?;
+
+        // Warmup: fault is disabled, this populates the cache with real ranges.
+        let warmed = context
+            .resolve_all_partition_key_ranges(&container, false)
+            .await?;
+        assert!(
+            warmed.is_some_and(|r| !r.is_empty()),
+            "warmup resolve must populate the routing map"
+        );
+        assert_eq!(
+            rule.hit_count(),
+            0,
+            "warmup must not have triggered the disabled fault"
+        );
+
+        // Arm the fault and force-refresh. With the fix in place, the refresh
+        // sees the transient failure but preserves the previously cached map.
+        rule.enable();
+        let refreshed = context
+            .resolve_all_partition_key_ranges(&container, true)
+            .await?;
+
+        assert!(
+            refreshed.is_some(),
+            "force-refresh on transient failure must not return None"
+        );
+        let ranges = refreshed.unwrap();
+        assert!(
+            !ranges.is_empty(),
+            "force-refresh on transient failure must preserve the previously cached \
+             routing map -- empty ranges indicate the cache regressed to empty"
+        );
+
+        assert_eq!(
+            rule.hit_count(),
+            1,
+            "force-refresh must have triggered the fault exactly once"
+        );
+
+        // A subsequent non-refresh lookup must still see the populated cache.
+        let after = context
+            .resolve_all_partition_key_ranges(&container, false)
+            .await?;
+        assert!(
+            after.is_some_and(|r| !r.is_empty()),
+            "subsequent non-refresh lookup must observe the preserved routing map"
+        );
+
+        Ok(())
+    })
+    .await
+}
+

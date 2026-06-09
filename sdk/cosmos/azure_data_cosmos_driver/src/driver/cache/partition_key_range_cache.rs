@@ -207,7 +207,9 @@ impl PartitionKeyRangeCache {
     /// Otherwise, the new ranges are merged via [`ContainerRoutingMap::try_combine`].
     ///
     /// Returns a routing map for the container. If the initial fetch fails or
-    /// returns invalid ranges, an empty routing map is cached and returned.
+    /// returns invalid ranges, the previously cached routing map is preserved
+    /// when one exists; only when there is no previous map to fall back to is
+    /// an empty routing map cached and returned.
     pub(crate) async fn try_lookup<F, Fut>(
         &self,
         container: &ContainerReference,
@@ -300,11 +302,17 @@ where
         let result = match fetch_pk_ranges(container.clone(), continuation.clone()).await {
             Some(r) => r,
             None => {
+                // Falling back to the previously cached map (when one exists)
+                // mirrors the merge branch below and avoids regressing the
+                // cache to empty on a single transient fetch failure.
                 tracing::warn!(
-                    "Failed to fetch partition key ranges from service (iteration {})",
+                    "Failed to fetch partition key ranges from service (iteration {}); \
+                     falling back to previous routing map if available",
                     iteration
                 );
-                return ContainerRoutingMap::empty();
+                return previous_routing_map
+                    .map(|p| (*p).clone())
+                    .unwrap_or_else(ContainerRoutingMap::empty);
             }
         };
 
@@ -867,5 +875,67 @@ mod tests {
             .unwrap();
         assert_eq!(map2.ranges().len(), 1);
         assert_eq!(map2.ranges()[0].id, "0");
+    }
+
+    #[tokio::test]
+    async fn force_refresh_with_transient_fetch_failure_preserves_previous_map() {
+        // A force-refresh that hits a transient fetch failure on iteration 0
+        // must NOT regress the cached routing map to empty: the cached map is
+        // the only thing keeping routing decisions working until the next
+        // successful refresh.
+        use std::sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        };
+
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+
+        // Seed the cache with two ranges via a successful initial lookup.
+        let seeded = cache
+            .try_lookup(&container, false, two_range_fetch)
+            .await
+            .unwrap();
+        assert_eq!(seeded.ranges().len(), 2);
+
+        // Force-refresh with a fetcher that fails on the first call.
+        let call_count = Arc::new(AtomicUsize::new(0));
+        let count = call_count.clone();
+        let failing_fetch = move |_container: ContainerReference, _continuation: Option<String>| {
+            let count = count.clone();
+            async move {
+                count.fetch_add(1, Ordering::SeqCst);
+                None
+            }
+        };
+
+        let refreshed = cache
+            .try_lookup(&container, true, failing_fetch)
+            .await
+            .unwrap();
+
+        assert_eq!(
+            call_count.load(Ordering::SeqCst),
+            1,
+            "failing fetcher should be invoked exactly once before fallback"
+        );
+        assert_eq!(
+            refreshed.ranges().len(),
+            2,
+            "force-refresh on transient failure must preserve the previously cached map"
+        );
+        assert_eq!(refreshed.ranges()[0].id, "0");
+        assert_eq!(refreshed.ranges()[1].id, "1");
+
+        // The cached entry observed by a subsequent non-refresh lookup must
+        // also be the preserved map, not the empty placeholder that would
+        // result from the previous bug.
+        let after = cache
+            .try_lookup(&container, false, |_, _| async {
+                panic!("non-refresh lookup must hit cache, not call fetcher")
+            })
+            .await
+            .unwrap();
+        assert_eq!(after.ranges().len(), 2);
     }
 }

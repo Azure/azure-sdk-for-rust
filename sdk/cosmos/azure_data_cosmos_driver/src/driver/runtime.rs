@@ -173,6 +173,7 @@ pub struct CosmosDriverRuntime {
     machine_id: Arc<String>,
 
     /// Whether fault injection is enabled for this runtime.
+    #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
 
     /// Proxy configuration snapshot for diagnostics.
@@ -232,6 +233,7 @@ impl CosmosDriverRuntime {
     }
 
     /// Returns whether fault injection is enabled for this runtime.
+    #[cfg(feature = "fault_injection")]
     pub(crate) fn fault_injection_enabled(&self) -> bool {
         self.fault_injection_enabled
     }
@@ -719,8 +721,8 @@ impl CosmosDriverRuntimeBuilder {
 
         let connection_pool = self.connection_pool.unwrap_or_default();
         let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
-        #[allow(unused_mut)]
-        let mut fault_injection_enabled = false;
+        #[cfg(feature = "fault_injection")]
+        let fault_injection_enabled;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             let base_factory: Arc<dyn HttpClientFactory> = {
                 #[cfg(any(
@@ -754,6 +756,7 @@ impl CosmosDriverRuntimeBuilder {
                         ),
                     )
                 } else {
+                    fault_injection_enabled = false;
                     base_factory
                 }
             }
@@ -798,7 +801,22 @@ impl CosmosDriverRuntimeBuilder {
             connection_pool,
             bootstrap_transport,
             http_client_factory,
-            env_operation_options: Arc::new(OperationOptions::from_env()),
+            env_operation_options: Arc::new(OperationOptions {
+                // INVARIANT — when adding a new `#[option(nested)]` field to
+                // `OperationOptions`, you MUST add an explicit
+                // `<NestedType>::from_env()` call here under a matching field
+                // initializer. The `CosmosOptions` derive macro's
+                // `from_env_vars` does *not* recurse into nested option
+                // groups (today; tracked as a macro follow-up to fix this
+                // ergonomically — see the comment in
+                // `azure_data_cosmos_macros/src/env.rs`). Skipping the
+                // explicit call here silently drops the nested group's env
+                // vars at the env layer, which surfaces only as "per-env
+                // overrides for the new group are ignored" at runtime — no
+                // compile-time guard catches it.
+                throttling_retry_options: Some(crate::options::ThrottlingRetryOptions::from_env()),
+                ..OperationOptions::from_env()
+            }),
             operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,
@@ -811,6 +829,7 @@ impl CosmosDriverRuntimeBuilder {
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
             machine_id: Arc::new(vm_metadata.machine_id().to_owned()),
+            #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
             proxy_configuration,
         }))

@@ -107,6 +107,29 @@ impl InMemoryEmulatorHttpClient {
         });
         crate::driver::CosmosDriverRuntimeBuilder::new().with_http_client_factory(factory)
     }
+
+    /// Like [`Self::runtime_builder`] but composes the emulator factory with
+    /// a `FaultInjectingHttpClientFactory` so the supplied
+    /// [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)s
+    /// evaluate on every outbound request before reaching the emulator.
+    ///
+    /// Used by hedging integration tests to inject region-targeted delays
+    /// and error statuses without standing up a real network harness.
+    /// Rules are evaluated lowest-index first; see
+    /// [`crate::fault_injection`] for the rule-construction surface.
+    #[cfg(feature = "fault_injection")]
+    pub fn runtime_builder_with_fault_rules(
+        self: &Arc<Self>,
+        rules: Vec<Arc<crate::fault_injection::FaultInjectionRule>>,
+    ) -> crate::driver::CosmosDriverRuntimeBuilder {
+        let emulator_factory = Arc::new(EmulatorHttpClientFactory {
+            client: Arc::clone(self),
+        });
+        let fault_factory = Arc::new(
+            crate::fault_injection::FaultInjectingHttpClientFactory::new(emulator_factory, rules),
+        );
+        crate::driver::CosmosDriverRuntimeBuilder::new().with_http_client_factory(fault_factory)
+    }
 }
 
 impl std::fmt::Debug for InMemoryEmulatorHttpClient {

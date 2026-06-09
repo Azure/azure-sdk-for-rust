@@ -128,6 +128,41 @@ impl CosmosClientBuilder {
         self
     }
 
+    /// Sets the maximum number of retries for requests that the service
+    /// throttles (HTTP 429, rate-limited), along with the maximum cumulative
+    /// wait time across those retries, as a single grouped
+    /// [`ThrottlingRetryOptions`](crate::ThrottlingRetryOptions) value.
+    ///
+    /// Mirrors the .NET SDK's `MaxRetryAttemptsOnRateLimitedRequests` /
+    /// `MaxRetryWaitTimeOnRateLimitedRequests` (grouped here as the Java SDK
+    /// does via `CosmosClientBuilder.throttlingRetryOptions`). Build the value
+    /// with [`ThrottlingRetryOptionsBuilder`](crate::ThrottlingRetryOptionsBuilder):
+    ///
+    /// - `max_retry_count` bounds the transport-level retry loop that honors
+    ///   the service `x-ms-retry-after-ms` header (**default** `9`; a value of
+    ///   `0` disables throttle retries, surfacing the first 429 to the caller).
+    /// - `max_retry_wait_time` caps the cumulative retry delay (**default**
+    ///   30 seconds); once the accumulated delay would exceed it, no further
+    ///   throttle retry is attempted.
+    ///
+    /// **Scope**: applies *per transport-pipeline invocation*, not per logical
+    /// operation. An operation that fans out across regions (failover,
+    /// hedging) enters the transport pipeline once per leg, each with a fresh
+    /// throttle-retry budget. To cap an operation's *total* wall-clock time,
+    /// configure
+    /// [`OperationOptions::end_to_end_latency_policy`](crate::OperationOptions::end_to_end_latency_policy).
+    ///
+    /// This client-wide value can be overridden per request via
+    /// [`OperationOptions`](crate::OperationOptions).
+    ///
+    /// # Arguments
+    ///
+    /// * `options` - The grouped throttle-retry configuration.
+    pub fn with_throttling_retry_options(mut self, options: crate::ThrottlingRetryOptions) -> Self {
+        self.options.operation.throttling_retry_options = Some(options);
+        self
+    }
+
     /// Configures fault injection for testing.
     ///
     /// Accepts a vector of [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)
@@ -399,10 +434,21 @@ impl CosmosClientBuilder {
         // the env layer in the driver's option-resolution hierarchy, so it
         // pins the SDK's "enabled by default" behavior even when the env var
         // is unset.
-        let runtime_operation_options =
-            azure_data_cosmos_driver::options::OperationOptionsBuilder::new()
-                .with_per_partition_circuit_breaker_enabled(ppcb_enabled)
-                .build();
+        //
+        // Start from the client-level operation defaults (set via the builder,
+        // e.g. `with_throttling_retry_options`) so they are
+        // forwarded to the driver's runtime layer, then force the resolved
+        // PPCB default on top — but only when the SDK builder hasn't already
+        // set an explicit value. No public SDK setter exists today, but the
+        // `is_none()` guard prevents a future PR that adds one from silently
+        // having its value clobbered here.
+        let mut runtime_operation_options = self.options.operation.clone();
+        if runtime_operation_options
+            .per_partition_circuit_breaker_enabled
+            .is_none()
+        {
+            runtime_operation_options.per_partition_circuit_breaker_enabled = Some(ppcb_enabled);
+        }
         driver_runtime_builder =
             driver_runtime_builder.with_operation_options(runtime_operation_options);
 
@@ -600,6 +646,73 @@ mod tests {
                 .per_partition_circuit_breaker_enabled,
             Some(false),
             "explicit env-var opt-out must propagate to the driver runtime"
+        );
+    }
+
+    /// The client-wide throttle-retry setter must populate the operation
+    /// options that `build()` forwards to the driver's runtime layer.
+    #[test]
+    fn throttle_retry_setter_populates_operation_options() {
+        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
+            crate::ThrottlingRetryOptionsBuilder::new()
+                .with_max_retry_count(4)
+                .with_max_retry_wait_time(std::time::Duration::from_secs(15))
+                .build(),
+        );
+
+        let throttling = builder
+            .options
+            .operation
+            .throttling_retry_options
+            .as_ref()
+            .expect("throttling group should be populated");
+        assert_eq!(throttling.max_retry_count, Some(4));
+        assert_eq!(
+            throttling.max_retry_wait_time,
+            Some(std::time::Duration::from_secs(15))
+        );
+    }
+
+    /// A throttle-retry count of `0` (disable retries) must round-trip through
+    /// the builder unchanged so the driver can surface the first 429.
+    #[test]
+    fn throttle_retry_count_zero_round_trips() {
+        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
+            crate::ThrottlingRetryOptionsBuilder::new()
+                .with_max_retry_count(0)
+                .build(),
+        );
+        assert_eq!(
+            builder
+                .options
+                .operation
+                .throttling_retry_options
+                .as_ref()
+                .and_then(|t| t.max_retry_count),
+            Some(0)
+        );
+    }
+
+    /// The grouped `with_throttling_retry_options` setter must replace the
+    /// whole group with the supplied value.
+    #[test]
+    fn grouped_throttling_retry_options_setter_replaces_group() {
+        let group = crate::ThrottlingRetryOptionsBuilder::new()
+            .with_max_retry_count(2)
+            .with_max_retry_wait_time(std::time::Duration::from_secs(7))
+            .build();
+        let builder = CosmosClientBuilder::new().with_throttling_retry_options(group);
+
+        let throttling = builder
+            .options
+            .operation
+            .throttling_retry_options
+            .as_ref()
+            .expect("throttling group should be populated");
+        assert_eq!(throttling.max_retry_count, Some(2));
+        assert_eq!(
+            throttling.max_retry_wait_time,
+            Some(std::time::Duration::from_secs(7))
         );
     }
 

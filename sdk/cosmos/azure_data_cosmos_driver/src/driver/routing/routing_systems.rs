@@ -540,6 +540,154 @@ pub(crate) fn remove_probe_succeeded_entry(
     new_state
 }
 
+/// Records an alternate-region hedge win for the given `(partition, primary_region)`
+/// pair and, when the consecutive-win count reaches
+/// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`], trips the
+/// partition by installing an [`HealthStatus::Unhealthy`] entry in
+/// [`PartitionEndpointState::circuit_breaker_overrides`].
+///
+/// - The counter is keyed by `(partition_key_range_id, primary_region)` so that
+///   different primary regions accumulate independently.
+/// - The trip mirrors the shape produced by [`mark_partition_unavailable`]
+///   (same `PartitionFailoverEntry` construction, same jitter sampling), so
+///   the existing PPCB failback loop ([`expire_partition_overrides`]) recovers
+///   it without any additional plumbing.
+/// - Once the trip is installed, the counter for that pair is cleared — the
+///   trip itself is the persistent signal; future hedge wins start a fresh
+///   count against whichever region happens to be primary next.
+///
+/// Pure function: caller is responsible for the CAS swap.
+pub(crate) fn record_hedge_alternate_win(
+    state: &PartitionEndpointState,
+    account_state: &AccountEndpointState,
+    partition_key_range_id: &PartitionKeyRangeId,
+    primary_region: Option<&Region>,
+) -> PartitionEndpointState {
+    let mut new_state = state.clone();
+    let key = (partition_key_range_id.clone(), primary_region.cloned());
+    let count = new_state
+        .consecutive_hedge_wins
+        .entry(key.clone())
+        .or_insert(0);
+    *count = count.saturating_add(1);
+    let triggered = *count >= state.config.consecutive_hedge_win_threshold;
+    if !triggered {
+        return new_state;
+    }
+
+    // Threshold reached. Decide whether to skip or proceed based on the
+    // existing override entry's health status:
+    //
+    // * `Unhealthy` — an active PPCB trip is in place and routing already
+    //   goes to the alternate region. Hedge feedback shouldn't clobber the
+    //   richer state recorded by the real PPCB failure path; clear the
+    //   counter and return.
+    //
+    // * `ProbeCandidate` — failback is in progress: routing is sending
+    //   probes back to the original primary. Repeated hedge alternate-wins
+    //   prove the primary is *still* unhealthy (the probe lost the race),
+    //   so we must re-trip with a fresh `Unhealthy` entry. Mirrors
+    //   `mark_partition_unavailable`'s behavior when failures continue
+    //   against a probe candidate. Falling through replaces the stale
+    //   entry via the `insert` at the end of this function.
+    if let Some(existing) = new_state
+        .circuit_breaker_overrides
+        .get(partition_key_range_id.as_str())
+    {
+        if existing.health_status == HealthStatus::Unhealthy {
+            new_state.consecutive_hedge_wins.remove(&key);
+            return new_state;
+        }
+        // ProbeCandidate — fall through to install a fresh trip.
+    }
+
+    // Locate the endpoint matching the primary region. Without an endpoint
+    // identity we cannot install a meaningful trip (the override would have
+    // nothing to fail away from).
+    let primary_endpoint = primary_region.and_then(|region| {
+        account_state
+            .preferred_read_endpoints
+            .iter()
+            .chain(account_state.preferred_write_endpoints.iter())
+            .find(|e| e.region().is_some_and(|r| r == region))
+            .cloned()
+    });
+    let Some(primary_endpoint) = primary_endpoint else {
+        return new_state;
+    };
+
+    // Seed the failure counts to the configured thresholds so that
+    // [`can_circuit_breaker_trigger_failover`] accepts this entry on the
+    // very next routing decision. Without this seeding, an entry with
+    // `health_status = Unhealthy` and counts at 0 would be installed in
+    // `circuit_breaker_overrides` but never consulted by `resolve_endpoint`
+    // (the gate requires `count >= threshold`), so the hedge-driven trip
+    // would be observable in state but invisible to routing — defeating
+    // the whole point of the hedge-win trip.
+    //
+    // Both read and write counts are seeded because the same entry serves
+    // both code paths in [`can_circuit_breaker_trigger_failover`], and a
+    // hedge-driven trip signals partition-level degradation that applies
+    // to whichever operation type happens to arrive next.
+    let now = Instant::now();
+    let mut entry = PartitionFailoverEntry {
+        current_endpoint: primary_endpoint.clone(),
+        first_failed_endpoint: primary_endpoint.clone(),
+        failed_endpoints: Default::default(),
+        read_failure_count: state.config.read_failure_threshold,
+        write_failure_count: state.config.write_failure_threshold,
+        first_failure_time: now,
+        last_failure_time: now,
+        health_status: HealthStatus::Unhealthy,
+        failback_jitter: ppcb_failback_jitter(
+            state.config.partition_unavailability_duration,
+            partition_key_range_id,
+        ),
+    };
+
+    // Pick an alternate region. If no alternate exists there is nothing to
+    // route to, so leave routing untouched and let the counter continue to
+    // accumulate; a future topology change may add one.
+    let next_endpoints = &account_state.preferred_read_endpoints;
+    if !try_move_next_endpoint(&mut entry, next_endpoints, &primary_endpoint) {
+        return new_state;
+    }
+
+    new_state.consecutive_hedge_wins.remove(&key);
+    new_state
+        .circuit_breaker_overrides
+        .insert(partition_key_range_id.clone(), entry);
+    new_state
+}
+
+/// Resets the consecutive-hedge-win counter for the given `(partition,
+/// primary_region)` pair.
+///
+/// A direct primary-region win
+/// clears any accumulated count so transient cross-region latency spikes do
+/// not stack into a trip over arbitrarily long timescales.
+///
+/// Intentionally does **not** touch [`PartitionEndpointState::circuit_breaker_overrides`]:
+/// an existing trip recovers exclusively via the PPCB failback sweep, not via
+/// primary wins (a stale `Unhealthy` entry would route to the alternate, so
+/// the primary never gets a chance to "win" against an active trip anyway).
+///
+/// Pure function: caller is responsible for the CAS swap.
+pub(crate) fn record_hedge_primary_win(
+    state: &PartitionEndpointState,
+    partition_key_range_id: &PartitionKeyRangeId,
+    primary_region: Option<&Region>,
+) -> PartitionEndpointState {
+    let key = (partition_key_range_id.clone(), primary_region.cloned());
+    if !state.consecutive_hedge_wins.contains_key(&key) {
+        // Fast path: no counter for this pair, no clone needed.
+        return state.clone();
+    }
+    let mut new_state = state.clone();
+    new_state.consecutive_hedge_wins.remove(&key);
+    new_state
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1655,5 +1803,353 @@ mod tests {
             state.preferred_write_endpoints[2].region().unwrap(),
             &Region::WEST_US_3
         );
+    }
+
+    // ── Hedge feedback (PPCB §9.5) ────────────────────────────────────
+
+    /// Convenience: produce a partition state with the hedge-win threshold
+    /// reduced for tests. Defaults are valid but 5 alternate-wins per test
+    /// is noisy; 3 is enough to cover the "below threshold / at threshold"
+    /// transition.
+    fn partition_state_with_hedge_threshold(threshold: u32) -> PartitionEndpointState {
+        let config = PartitionFailoverConfig {
+            consecutive_hedge_win_threshold: threshold,
+            ..PartitionFailoverConfig::default()
+        };
+        let mut state = PartitionEndpointState::new(config);
+        state.per_partition_automatic_failover_enabled = true;
+        state.per_partition_circuit_breaker_enabled = true;
+        state
+    }
+
+    #[test]
+    fn hedge_alternate_win_increments_counter_below_threshold() {
+        let state = partition_state_with_hedge_threshold(3);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let primary = Region::new("eastus".to_string());
+
+        let after = record_hedge_alternate_win(&state, &account, &pk_range, Some(&primary));
+
+        assert_eq!(
+            after.consecutive_hedge_wins[&(pk_range.clone(), Some(primary))],
+            1,
+            "first hedge win increments to 1",
+        );
+        assert!(
+            after.circuit_breaker_overrides.is_empty(),
+            "no trip until threshold reached",
+        );
+    }
+
+    #[test]
+    fn hedge_alternate_win_at_threshold_installs_unhealthy_entry() {
+        let mut state = partition_state_with_hedge_threshold(3);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let primary = Region::new("eastus".to_string());
+
+        for _ in 0..3 {
+            state = record_hedge_alternate_win(&state, &account, &pk_range, Some(&primary));
+        }
+
+        let entry = state
+            .circuit_breaker_overrides
+            .get(pk_range.as_str())
+            .expect("threshold-th win must install a circuit breaker entry");
+        assert_eq!(entry.health_status, HealthStatus::Unhealthy);
+        assert_eq!(
+            entry.first_failed_endpoint,
+            regional_endpoint("eastus"),
+            "first_failed_endpoint must match the primary region that lost",
+        );
+        assert_eq!(
+            entry.current_endpoint,
+            regional_endpoint("westus"),
+            "current_endpoint must point at the alternate region after the trip",
+        );
+        assert!(
+            !state
+                .consecutive_hedge_wins
+                .contains_key(&(pk_range, Some(primary))),
+            "counter must be cleared after the trip is installed",
+        );
+    }
+
+    #[test]
+    fn hedge_alternate_win_seeds_failure_counts_to_trigger_failover() {
+        // Spec §9.5: the hedge-driven trip must redirect routing on the
+        // very next request — not just record the entry in state.
+        // `can_circuit_breaker_trigger_failover` gates on
+        // `count >= threshold`, so the entry's failure counts must be
+        // seeded to the configured thresholds at install time. Without
+        // this seeding the trip would be observable in state but
+        // invisible to the endpoint resolver.
+        let mut state = partition_state_with_hedge_threshold(3);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let primary = Region::new("eastus".to_string());
+
+        for _ in 0..3 {
+            state = record_hedge_alternate_win(&state, &account, &pk_range, Some(&primary));
+        }
+
+        let entry = state
+            .circuit_breaker_overrides
+            .get(pk_range.as_str())
+            .expect("threshold-th win must install a circuit breaker entry");
+        assert_eq!(
+            entry.read_failure_count, state.config.read_failure_threshold,
+            "read_failure_count must equal the configured threshold so a \
+             read attempt's `can_circuit_breaker_trigger_failover` returns true",
+        );
+        assert_eq!(
+            entry.write_failure_count, state.config.write_failure_threshold,
+            "write_failure_count must equal the configured threshold so a \
+             write attempt's `can_circuit_breaker_trigger_failover` returns true",
+        );
+        assert!(
+            can_circuit_breaker_trigger_failover(
+                entry,
+                /* is_read_only = */ true,
+                &state.config
+            ),
+            "the freshly-installed hedge-trip entry must immediately pass \
+             the failover gate for read operations",
+        );
+        assert!(
+            can_circuit_breaker_trigger_failover(
+                entry,
+                /* is_read_only = */ false,
+                &state.config
+            ),
+            "the freshly-installed hedge-trip entry must immediately pass \
+             the failover gate for write operations",
+        );
+    }
+
+    #[test]
+    fn hedge_primary_win_resets_counter_only() {
+        let state = partition_state_with_hedge_threshold(3);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let primary = Region::new("eastus".to_string());
+
+        // Accumulate 2 wins (one below threshold).
+        let s1 = record_hedge_alternate_win(&state, &account, &pk_range, Some(&primary));
+        let s2 = record_hedge_alternate_win(&s1, &account, &pk_range, Some(&primary));
+        assert_eq!(
+            s2.consecutive_hedge_wins[&(pk_range.clone(), Some(primary.clone()))],
+            2
+        );
+
+        // Primary win clears the counter.
+        let s3 = record_hedge_primary_win(&s2, &pk_range, Some(&primary));
+        assert!(s3.consecutive_hedge_wins.is_empty());
+        assert!(s3.circuit_breaker_overrides.is_empty());
+
+        // A subsequent alternate win starts the count from 1 again — the
+        // primary win must have fully reset, not just decremented.
+        let s4 = record_hedge_alternate_win(&s3, &account, &pk_range, Some(&primary));
+        assert_eq!(s4.consecutive_hedge_wins[&(pk_range, Some(primary))], 1);
+        assert!(s4.circuit_breaker_overrides.is_empty());
+    }
+
+    #[test]
+    fn hedge_primary_win_does_not_touch_existing_trip() {
+        // Existing trip + primary win should NOT remove the trip (only the
+        // failback loop owns recovery).
+        let mut state = partition_state_with_hedge_threshold(1);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let primary = Region::new("eastus".to_string());
+
+        state = record_hedge_alternate_win(&state, &account, &pk_range, Some(&primary));
+        assert!(state
+            .circuit_breaker_overrides
+            .contains_key(pk_range.as_str()));
+
+        let after = record_hedge_primary_win(&state, &pk_range, Some(&primary));
+        assert!(
+            after
+                .circuit_breaker_overrides
+                .contains_key(pk_range.as_str()),
+            "primary wins must never clear an active PPCB trip; only the failback sweep does",
+        );
+    }
+
+    #[test]
+    fn hedge_counter_keyed_per_partition() {
+        let mut state = partition_state_with_hedge_threshold(2);
+        let account = multi_master_account();
+        let pk_a = pk("pk-A");
+        let pk_b = pk("pk-B");
+        let primary = Region::new("eastus".to_string());
+
+        // 1 win on pk_a, 1 win on pk_b — neither should trip even though the
+        // *total* equals the threshold.
+        state = record_hedge_alternate_win(&state, &account, &pk_a, Some(&primary));
+        state = record_hedge_alternate_win(&state, &account, &pk_b, Some(&primary));
+
+        assert!(state.circuit_breaker_overrides.is_empty());
+        assert_eq!(state.consecutive_hedge_wins.len(), 2);
+    }
+
+    #[test]
+    fn hedge_counter_keyed_per_primary_region() {
+        let mut state = partition_state_with_hedge_threshold(2);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let east = Region::new("eastus".to_string());
+        let west = Region::new("westus".to_string());
+
+        // 1 win against eastus-primary, 1 against westus-primary — different
+        // keys, neither trips.
+        state = record_hedge_alternate_win(&state, &account, &pk_range, Some(&east));
+        state = record_hedge_alternate_win(&state, &account, &pk_range, Some(&west));
+
+        assert!(state.circuit_breaker_overrides.is_empty());
+        assert_eq!(state.consecutive_hedge_wins.len(), 2);
+    }
+
+    #[test]
+    fn hedge_alternate_win_skips_trip_when_existing_ppcb_entry_present() {
+        // A hard PPCB failure beat hedge feedback to the partition. The hedge
+        // win at threshold must NOT clobber the existing entry — but it must
+        // still clear its own counter so it doesn't try again on the next win.
+        let mut state = partition_state_with_hedge_threshold(1);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let primary = Region::new("eastus".to_string());
+
+        let existing = PartitionFailoverEntry {
+            current_endpoint: regional_endpoint("westus"),
+            first_failed_endpoint: regional_endpoint("eastus"),
+            failed_endpoints: HashSet::new(),
+            read_failure_count: 42, // distinctive value to detect clobbering
+            write_failure_count: 0,
+            first_failure_time: Instant::now(),
+            last_failure_time: Instant::now(),
+            health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
+        };
+        state
+            .circuit_breaker_overrides
+            .insert(pk_range.clone(), existing);
+
+        let after = record_hedge_alternate_win(&state, &account, &pk_range, Some(&primary));
+
+        let entry = &after.circuit_breaker_overrides[pk_range.as_str()];
+        assert_eq!(
+            entry.read_failure_count, 42,
+            "existing PPCB entry must be preserved verbatim",
+        );
+        assert!(
+            after.consecutive_hedge_wins.is_empty(),
+            "counter must be cleared even when the trip is skipped, so we don't loop on every subsequent hedge win",
+        );
+    }
+
+    #[test]
+    fn hedge_alternate_win_re_trips_when_existing_entry_is_probe_candidate() {
+        // Regression for PPCB-vs-hedging interaction:
+        //
+        // After the first hedge-driven trip, the failback sweep transitions
+        // the entry from Unhealthy to ProbeCandidate. While the primary is
+        // STILL unhealthy, routing sends probes back to it, the probes lose
+        // the hedge race to the alternate, and `record_hedge_alternate_win`
+        // is invoked again. We must re-trip with a fresh `Unhealthy` entry
+        // — not silently clear the counter and leave the stale ProbeCandidate
+        // entry in place — otherwise the partition never fails back over
+        // and routing keeps probing a degraded primary indefinitely.
+        let mut state = partition_state_with_hedge_threshold(1);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let primary = Region::new("eastus".to_string());
+
+        let stale_probe_candidate = PartitionFailoverEntry {
+            current_endpoint: regional_endpoint("westus"),
+            first_failed_endpoint: regional_endpoint("eastus"),
+            failed_endpoints: HashSet::new(),
+            read_failure_count: 0,
+            write_failure_count: 0,
+            first_failure_time: Instant::now(),
+            last_failure_time: Instant::now(),
+            health_status: HealthStatus::ProbeCandidate,
+            failback_jitter: Duration::ZERO,
+        };
+        state
+            .circuit_breaker_overrides
+            .insert(pk_range.clone(), stale_probe_candidate);
+
+        let after = record_hedge_alternate_win(&state, &account, &pk_range, Some(&primary));
+
+        let entry = &after.circuit_breaker_overrides[pk_range.as_str()];
+        assert_eq!(
+            entry.health_status,
+            HealthStatus::Unhealthy,
+            "stale ProbeCandidate must be replaced with a fresh Unhealthy entry"
+        );
+        assert_eq!(
+            entry.read_failure_count, state.config.read_failure_threshold,
+            "re-trip must seed read_failure_count to the threshold so \
+             can_circuit_breaker_trigger_failover accepts the entry on the \
+             very next routing decision"
+        );
+        assert_eq!(
+            entry.first_failed_endpoint,
+            regional_endpoint("eastus"),
+            "re-trip must record the still-unhealthy primary as the first \
+             failed endpoint"
+        );
+        assert_eq!(
+            entry.current_endpoint,
+            regional_endpoint("westus"),
+            "re-trip must point routing at the alternate region"
+        );
+        assert!(
+            after.consecutive_hedge_wins.is_empty(),
+            "counter must be cleared after the re-trip is installed"
+        );
+    }
+
+    #[test]
+    fn hedge_alternate_win_no_op_when_primary_region_unknown_to_account() {
+        // Pathological case: we record per (partition,
+        // primary_region) — but if the primary_region we were told about
+        // doesn't match any endpoint in the account snapshot, we cannot
+        // install a meaningful trip. Counter still increments (it's keyed
+        // on the value, not the endpoint identity), but no trip happens.
+        let mut state = partition_state_with_hedge_threshold(1);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+        let unknown_region = Region::new("mars-central-1".to_string());
+
+        state = record_hedge_alternate_win(&state, &account, &pk_range, Some(&unknown_region));
+
+        assert_eq!(
+            state.consecutive_hedge_wins[&(pk_range, Some(unknown_region))],
+            1,
+            "counter still tracks the (partition, primary_region) pair even if we can't trip",
+        );
+        assert!(
+            state.circuit_breaker_overrides.is_empty(),
+            "no trip without an endpoint identity to route away from",
+        );
+    }
+
+    #[test]
+    fn hedge_alternate_win_with_none_primary_region_does_not_trip() {
+        // Default-endpoint accounts pass primary_region=None. The counter
+        // still tracks the pair (None branch), but the lookup for an
+        // endpoint matching `None` always fails so no trip is installed.
+        let mut state = partition_state_with_hedge_threshold(1);
+        let account = multi_master_account();
+        let pk_range = pk("pk-1");
+
+        state = record_hedge_alternate_win(&state, &account, &pk_range, None);
+
+        assert_eq!(state.consecutive_hedge_wins[&(pk_range, None)], 1);
+        assert!(state.circuit_breaker_overrides.is_empty());
     }
 }

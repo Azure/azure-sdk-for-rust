@@ -515,4 +515,49 @@ mod tests {
         assert!(props.write_region().is_none());
         assert!(props.readable_regions().is_empty());
     }
+
+    #[test]
+    fn error_envelope_service_unavailable_does_not_parse_as_account_properties() {
+        // Shape returned by the gateway for HTTP 503.
+        let body = r#"{"code":"ServiceUnavailable","message":"Service is currently unavailable."}"#;
+        let err = serde_json::from_str::<AccountProperties>(body)
+            .expect_err("503 error envelope must not deserialize as AccountProperties");
+        // Confirms the pre-fix surface: serde fails on missing AccountProperties fields.
+        assert!(
+            err.to_string().contains("_self") || err.to_string().contains("missing field"),
+            "expected serde to fail on the missing AccountProperties fields, got: {err}"
+        );
+    }
+
+    #[test]
+    fn error_envelope_unauthorized_does_not_parse_as_account_properties() {
+        // Shape returned for HTTP 401 (AAD InvalidToken / TokenExpired / RBAC propagation race).
+        let body = r#"{"code":"Unauthorized","message":"The input authorization token can't serve the request."}"#;
+        serde_json::from_str::<AccountProperties>(body)
+            .expect_err("401 error envelope must not deserialize as AccountProperties");
+    }
+
+    #[test]
+    fn error_envelope_forbidden_does_not_parse_as_account_properties() {
+        // Shape returned for HTTP 403 (data-plane RBAC, WriteForbidden, firewall block, etc.).
+        let body = r#"{"code":"Forbidden","message":"Request is blocked by your Cosmos DB account firewall settings."}"#;
+        serde_json::from_str::<AccountProperties>(body)
+            .expect_err("403 error envelope must not deserialize as AccountProperties");
+    }
+
+    #[test]
+    fn error_envelope_too_many_requests_does_not_parse_as_account_properties() {
+        // Shape returned by the gateway for HTTP 429.
+        let body = r#"{"code":"TooManyRequests","message":"Request rate is large."}"#;
+        serde_json::from_str::<AccountProperties>(body)
+            .expect_err("429 error envelope must not deserialize as AccountProperties");
+    }
+
+    #[test]
+    fn plain_text_error_body_does_not_parse_as_account_properties() {
+        // Some proxies / LBs / fault injectors emit plain-text non-JSON bodies on non-2xx.
+        let body = "Service Unavailable - Injected fault";
+        serde_json::from_str::<AccountProperties>(body)
+            .expect_err("plain-text body must not deserialize as AccountProperties");
+    }
 }
