@@ -278,13 +278,16 @@ async fn plan_resume_from_saved_children(
             continue;
         }
         if !range_fully_covered(&saved_child.range, &coverage[idx]) {
+            const MAX_COVERAGE_PIECES_RENDERED: usize = 8;
             let coverage_summary = if coverage[idx].is_empty() {
                 "(no overlapping topology ranges)".to_string()
             } else {
                 let mut sorted = coverage[idx].clone();
                 sorted.sort_by(|a, b| a.min_inclusive().cmp(b.min_inclusive()));
-                sorted
+                let total = sorted.len();
+                let rendered: Vec<String> = sorted
                     .iter()
+                    .take(MAX_COVERAGE_PIECES_RENDERED)
                     .map(|r| {
                         format!(
                             "[{}, {})",
@@ -292,8 +295,12 @@ async fn plan_resume_from_saved_children(
                             r.max_exclusive().as_str()
                         )
                     })
-                    .collect::<Vec<_>>()
-                    .join(" + ")
+                    .collect();
+                if total > MAX_COVERAGE_PIECES_RENDERED {
+                    format!("{} + ... ({} total ranges)", rendered.join(" + "), total)
+                } else {
+                    rendered.join(" + ")
+                }
             };
             return Err(crate::error::CosmosError::builder()
                 .with_status(
@@ -1512,5 +1519,157 @@ mod tests {
             rendered.contains("zero-width"),
             "error message should describe the zero-width entry; got: {rendered}"
         );
+    }
+
+    /// S2: end-to-end verification of the M1 poison-sentinel contract.
+    /// `SequentialDrain::snapshot_state` emits a `min="FF" / max="00"`
+    /// entry when an internal invariant violation would otherwise silently
+    /// drop a child's range. This test pins down the planner's reaction to
+    /// that exact wire shape so a future change to the validator's
+    /// comparison semantics (e.g., `EffectivePartitionKey::Ord`) can't
+    /// silently downgrade the M1 fail-loud path to a silent
+    /// re-query.
+    #[tokio::test]
+    async fn poison_sentinel_wire_shape_is_rejected_by_validator() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            children: vec![RangedChildState {
+                min_epk: "FF".to_owned(),
+                max_epk: "00".to_owned(),
+                state: PipelineNodeState::Request {
+                    server_continuation: None,
+                },
+            }],
+        };
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect_err("poison sentinel must be rejected by the validator");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "poison sentinel must trip the min>max validator path",
+        );
+    }
+
+    /// S2 variant: when the poison sentinel is *appended* to legitimate
+    /// children (S3 — preserving diagnostic context), the validator must
+    /// still reject the whole payload. Guards against a future "skip
+    /// invalid entries, continue with the valid ones" relaxation that
+    /// would silently swallow the snapshot corruption.
+    #[tokio::test]
+    async fn poison_sentinel_appended_to_valid_children_still_rejects() {
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            children: vec![
+                RangedChildState {
+                    min_epk: "".to_owned(),
+                    max_epk: "80".to_owned(),
+                    state: PipelineNodeState::Request {
+                        server_continuation: Some("real-token".to_owned()),
+                    },
+                },
+                RangedChildState {
+                    min_epk: "FF".to_owned(),
+                    max_epk: "00".to_owned(),
+                    state: PipelineNodeState::Request {
+                        server_continuation: None,
+                    },
+                },
+            ],
+        };
+
+        let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect_err("appended poison sentinel must still be rejected");
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+        );
+    }
+
+    /// O5: symmetric variant of the cascading-split scenario — the FRONT
+    /// sibling splits between snapshots instead of the back one. The
+    /// planner's interval-join logic is symmetric in the two siblings,
+    /// but an asymmetry-by-accident regression (e.g., assuming the
+    /// "still-pending" sibling is always the back one) would be invisible
+    /// to the existing back-split test.
+    #[tokio::test]
+    async fn cascading_split_of_front_sibling_propagates_token_to_grand_children() {
+        // Saved state: split into front [, 80) (still pending, owes T1)
+        // and back [80, FF) (already drained). Then topology resolves
+        // the front into two grand-children [, 40) + [40, 80).
+        let plan = plan_with_ranges(vec![qr("", "FF")]);
+        let op = cross_partition_query_operation();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            rr("", "40", "pkrange-front-left"),
+            rr("40", "80", "pkrange-front-right"),
+            rr("80", "FF", "pkrange-back"),
+        ])]);
+
+        let resume = PipelineNodeState::SequentialDrain {
+            children: vec![
+                RangedChildState {
+                    min_epk: "".to_owned(),
+                    max_epk: "80".to_owned(),
+                    state: PipelineNodeState::Request {
+                        server_continuation: Some("T1".to_owned()),
+                    },
+                },
+                RangedChildState {
+                    min_epk: "80".to_owned(),
+                    max_epk: "FF".to_owned(),
+                    state: PipelineNodeState::Drained,
+                },
+            ],
+        };
+
+        let pipeline = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
+            .await
+            .expect("front-sibling cascading split must plan cleanly");
+
+        // Walk the planned children: the two front grand-children must
+        // each carry T1; the back range must be a Drained leaf (no
+        // re-query). The exact structure mirrors the back-split case in
+        // `query_resume_integration_tests::cascading_split_..._grand_child`.
+        let snap = pipeline.snapshot_state();
+        let children = match snap {
+            PipelineNodeState::SequentialDrain { children } => children,
+            other => panic!("expected SequentialDrain, got {other:?}"),
+        };
+        // Only the two front grand-children should be planned — the
+        // back range was Drained on resume, so the planner correctly
+        // emits no leaf for it.
+        assert_eq!(
+            children.len(),
+            2,
+            "expected 2 front grand-children (drained back range omitted), got {children:?}",
+        );
+        for (idx, expected_min, expected_max) in [(0, "", "40"), (1, "40", "80")] {
+            assert_eq!(
+                children[idx].min_epk, expected_min,
+                "child {idx} min_epk mismatch",
+            );
+            assert_eq!(
+                children[idx].max_epk, expected_max,
+                "child {idx} max_epk mismatch",
+            );
+            assert!(
+                matches!(
+                    children[idx].state,
+                    PipelineNodeState::Request {
+                        server_continuation: Some(ref c),
+                    } if c == "T1"
+                ),
+                "front grand-child {idx} must carry T1; got {:?}",
+                children[idx].state,
+            );
+        }
     }
 }

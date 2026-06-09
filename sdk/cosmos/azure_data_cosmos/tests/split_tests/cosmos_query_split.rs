@@ -33,12 +33,20 @@ const SPLIT_POLL_INTERVAL: Duration = Duration::from_secs(15);
 
 /// Triggers a partition split on `container_client` by raising throughput to
 /// 13000 RU/s (>10k forces at least 2 physical partitions), then polls
-/// `read_feed_ranges` until the new topology becomes visible. Returns the
-/// observed physical partition count.
+/// `read_feed_ranges` until the topology grows past `starting_partitions`.
+/// Returns the observed physical partition count.
 ///
-/// Returns [`InconclusiveError::SplitNotCompleted`] if the split has not
-/// completed within [`SPLIT_POLL_TIMEOUT`].
-async fn force_split_and_wait(container_client: &ContainerClient) -> Result<usize, Box<dyn Error>> {
+/// Pass the partition count observed BEFORE the throughput bump so the wait
+/// loop is robust against accounts that already start at >= 2 physical
+/// partitions — otherwise the loop would return immediately with no actual
+/// topology change.
+///
+/// Returns [`InconclusiveError::SplitNotCompleted`] if a strictly larger
+/// topology has not appeared within [`SPLIT_POLL_TIMEOUT`].
+async fn force_split_and_wait(
+    container_client: &ContainerClient,
+    starting_partitions: usize,
+) -> Result<usize, Box<dyn Error>> {
     let split_start = Instant::now();
     let new_throughput = ThroughputProperties::manual(13000);
     let mut poller = container_client
@@ -78,7 +86,7 @@ async fn force_split_and_wait(container_client: &ContainerClient) -> Result<usiz
                 ReadFeedRangesOptions::default().with_force_refresh(true),
             ))
             .await?;
-        if ranges.len() >= 2 {
+        if ranges.len() > starting_partitions {
             break ranges;
         }
         if split_start.elapsed() >= SPLIT_POLL_TIMEOUT {
@@ -211,7 +219,7 @@ pub async fn query_continuation_survives_partition_split() -> Result<(), Box<dyn
 
             println!("Captured continuation token after fetching first page, now updating throughput to trigger split");
 
-            let partitions_after = force_split_and_wait(&container_client).await?;
+            let partitions_after = force_split_and_wait(&container_client, partitions_before).await?;
             assert!(
                 partitions_after > partitions_before,
                 "split must increase partition count: before={partitions_before}, after={partitions_after}"
@@ -377,7 +385,7 @@ pub async fn query_resume_with_first_page_spanning_multiple_partition_keys(
                 "First page returned {} items; forcing split before resume",
                 collected.len()
             );
-            let partitions_after = force_split_and_wait(&container_client).await?;
+            let partitions_after = force_split_and_wait(&container_client, partitions_before).await?;
             assert!(
                 partitions_after > partitions_before,
                 "split must increase partition count: before={partitions_before}, after={partitions_after}"
@@ -530,7 +538,7 @@ pub async fn query_resume_after_draining_multiple_pages_then_split() -> Result<(
                 "Drained {PAGES_PRE_SPLIT} pages pre-split ({} items); forcing split before resume",
                 collected.len()
             );
-            let partitions_after = force_split_and_wait(&container_client).await?;
+            let partitions_after = force_split_and_wait(&container_client, partitions_before).await?;
             assert!(
                 partitions_after > partitions_before,
                 "split must increase partition count: before={partitions_before}, after={partitions_after}"

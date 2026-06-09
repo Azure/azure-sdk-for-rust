@@ -134,24 +134,35 @@ impl PipelineNode for SequentialDrain {
         // be re-queried on resume. Gaps outside any saved range are treated
         // as already-drained scope by the planner — so any missing-range
         // child silently dropped here would re-emit as silent data loss on
-        // resume. Instead we emit a single poison sentinel that the
-        // planner's continuation-token validator hard-fails on.
-        let mut children = Vec::with_capacity(self.children.len());
-        for child in &self.children {
+        // resume. Instead we APPEND a poison sentinel that the planner's
+        // continuation-token validator hard-fails on (min > max), keeping
+        // the surviving children's ranges in the wire payload so the error
+        // path retains diagnostic context.
+        let mut children = Vec::with_capacity(self.children.len() + 1);
+        let mut saw_missing_range = false;
+        for (idx, child) in self.children.iter().enumerate() {
             let Some(range) = child.feed_range() else {
                 debug_assert!(
                     false,
-                    "SequentialDrain child has no feed_range; emitting poison sentinel",
+                    "SequentialDrain child {idx} has no feed_range; emitting poison sentinel",
                 );
-                return PipelineNodeState::SequentialDrain {
-                    children: vec![poison_sentinel_child()],
-                };
+                tracing::warn!(
+                    child_index = idx,
+                    surviving_children = self.children.len() - 1,
+                    "SequentialDrain child has no feed_range during snapshot_state; appending poison sentinel — next resume will hard-fail via the continuation-token validator",
+                );
+                saw_missing_range = true;
+                continue;
             };
             children.push(RangedChildState {
                 min_epk: range.min_inclusive().as_str().to_string(),
                 max_epk: range.max_exclusive().as_str().to_string(),
                 state: child.snapshot_state(),
             });
+        }
+        if saw_missing_range {
+            children.push(poison_sentinel_child());
+            return PipelineNodeState::SequentialDrain { children };
         }
         if children.is_empty() {
             return PipelineNodeState::Drained;
