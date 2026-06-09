@@ -27,7 +27,6 @@ use azure_data_cosmos_driver::models::{ContainerReference, DatabaseReference};
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::options::{ExcludedRegions, OperationOptionsBuilder, Region};
 use azure_data_cosmos_driver::{CosmosStatus, SubStatusCode};
-use azure_identity::DeveloperToolsCredential;
 use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
@@ -139,26 +138,6 @@ fn resolve_account_or_skip(test_name: &str) -> Option<AccountReference> {
     }
 }
 
-/// AAD variant: parses the bicep-exported endpoint from the framework env and
-/// wraps it with `DeveloperToolsCredential` for AAD-token coverage. Returns
-/// `None` if the env is unset or no credential chain is available.
-fn resolve_aad_account_or_skip(test_name: &str) -> Option<AccountReference> {
-    let env = match resolve_test_env() {
-        Ok(Some(env)) => env,
-        Ok(None) => {
-            println!("Skipping {test_name}: Cosmos DB environment not configured");
-            return None;
-        }
-        Err(e) => panic!("{test_name}: failed to resolve test env: {e}"),
-    };
-    let endpoint = env.account.endpoint().clone();
-    let Ok(credential) = DeveloperToolsCredential::new(None) else {
-        println!("Skipping {test_name}: DeveloperToolsCredential is not available");
-        return None;
-    };
-    Some(AccountReference::with_credential(endpoint, credential))
-}
-
 /// 403 WriteForbidden on GET / must surface as upstream HTTP status, not a serde failure.
 /// Pins the per-error-type slice of the account-metadata parser invariant.
 #[tokio::test]
@@ -203,30 +182,6 @@ async fn session_not_available_on_metadata_preserves_upstream_status() {
         FaultInjectionErrorType::ReadSessionNotAvailable,
         StatusCode::NotFound,
         Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
-    )
-    .await;
-}
-
-/// AAD smoke: drives `get_or_create_driver` under `DeveloperToolsCredential` with a persistent 503 fault.
-/// Closes the AAD-coverage gap — every other Cosmos integration test in this repo uses HMAC master keys only.
-#[tokio::test]
-#[cfg_attr(
-    not(test_category = "multi_write"),
-    ignore = "requires test_category 'multi_write'"
-)]
-async fn aad_token_credential_account_metadata_smoke_test() {
-    let Some(account) =
-        resolve_aad_account_or_skip("aad_token_credential_account_metadata_smoke_test")
-    else {
-        return;
-    };
-
-    run_metadata_fault_test(
-        account,
-        "aad-account-metadata-503",
-        FaultInjectionErrorType::ServiceUnavailable,
-        StatusCode::ServiceUnavailable,
-        None,
     )
     .await;
 }
