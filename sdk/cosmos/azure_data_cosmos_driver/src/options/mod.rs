@@ -36,7 +36,10 @@ pub use diagnostics_options::{
 pub use driver_options::{DriverOptions, DriverOptionsBuilder};
 pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
-pub use operation_options::{OperationOptions, OperationOptionsBuilder, OperationOptionsView};
+pub use operation_options::{
+    OperationOptions, OperationOptionsBuilder, OperationOptionsView, ThrottlingRetryOptions,
+    ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView,
+};
 pub use policies::{
     ContentResponseOnWrite, EmulatorServerCertValidation, EndToEndOperationLatencyPolicy,
     ExcludedRegions,

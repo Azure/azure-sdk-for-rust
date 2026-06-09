@@ -348,8 +348,8 @@ pub(crate) struct ThrottleRetryState {
 }
 
 /// Hard-coded defaults for throttle retry.
-const DEFAULT_MAX_THROTTLE_ATTEMPTS: u32 = 9;
-const DEFAULT_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(30);
+pub(crate) const DEFAULT_MAX_THROTTLE_ATTEMPTS: u32 = 9;
+pub(crate) const DEFAULT_MAX_THROTTLE_WAIT: Duration = Duration::from_secs(30);
 const DEFAULT_MAX_PER_RETRY_DELAY: Duration = Duration::from_secs(5);
 const DEFAULT_FALLBACK_BASE_DELAY: Duration = Duration::from_millis(5);
 const DEFAULT_BACKOFF_FACTOR: f64 = 2.0;
@@ -357,12 +357,24 @@ const DEFAULT_BACKOFF_JITTER_RATIO: f64 = 0.25;
 
 impl ThrottleRetryState {
     /// Creates a new throttle retry state with default parameters.
+    #[cfg(test)]
     pub fn new() -> Self {
+        Self::with_limits(DEFAULT_MAX_THROTTLE_ATTEMPTS, DEFAULT_MAX_THROTTLE_WAIT)
+    }
+
+    /// Creates a new throttle retry state with caller-supplied limits for the
+    /// maximum number of 429 retries (`max_attempts`) and the cumulative wait
+    /// budget (`max_wait_time`). All other backoff parameters keep their
+    /// defaults.
+    ///
+    /// `max_attempts == 0` disables throttle retries: the first 429 is
+    /// propagated to the caller.
+    pub fn with_limits(max_attempts: u32, max_wait_time: Duration) -> Self {
         Self {
             attempt_count: 0,
-            max_attempts: DEFAULT_MAX_THROTTLE_ATTEMPTS,
+            max_attempts,
             cumulative_delay: Duration::ZERO,
-            max_wait_time: DEFAULT_MAX_THROTTLE_WAIT,
+            max_wait_time,
             max_per_retry_delay: DEFAULT_MAX_PER_RETRY_DELAY,
             fallback_base_delay: DEFAULT_FALLBACK_BASE_DELAY,
             backoff_factor: DEFAULT_BACKOFF_FACTOR,
@@ -626,6 +638,29 @@ mod tests {
         assert_eq!(state.max_per_retry_delay, Duration::from_secs(5));
         assert_eq!(state.backoff_jitter_ratio, 0.25);
         assert!(!state.forced_final_retry_used);
+    }
+
+    #[test]
+    fn throttle_retry_state_with_limits_overrides_attempts_and_wait() {
+        let state = ThrottleRetryState::with_limits(3, Duration::from_secs(7));
+        assert_eq!(state.attempt_count, 0);
+        assert_eq!(state.max_attempts, 3);
+        assert_eq!(state.max_wait_time, Duration::from_secs(7));
+        // Backoff parameters keep their defaults.
+        assert_eq!(state.fallback_base_delay, Duration::from_millis(5));
+        assert_eq!(state.max_per_retry_delay, Duration::from_secs(5));
+        assert_eq!(state.backoff_jitter_ratio, 0.25);
+    }
+
+    #[test]
+    fn throttle_retry_state_new_matches_with_limits_defaults() {
+        let from_new = ThrottleRetryState::new();
+        let from_limits = ThrottleRetryState::with_limits(
+            DEFAULT_MAX_THROTTLE_ATTEMPTS,
+            DEFAULT_MAX_THROTTLE_WAIT,
+        );
+        assert_eq!(from_new.max_attempts, from_limits.max_attempts);
+        assert_eq!(from_new.max_wait_time, from_limits.max_wait_time);
     }
 
     #[test]
