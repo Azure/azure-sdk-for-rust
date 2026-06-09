@@ -3,9 +3,11 @@
 
 //! Per-feed-range query operation.
 //!
-//! Each `execute()` runs `SELECT VALUE COUNT(1) FROM c` against ONE
-//! `FeedRange`, round-robin'd from a cache shared with
-//! [`FeedRangeRefresher`](super::feed_range_refresher::FeedRangeRefresher).
+//! Each `execute()` runs `SELECT * FROM c` against ONE `FeedRange`,
+//! round-robin'd from a cache shared with
+//! [`FeedRangeRefresher`](super::feed_range_refresher::FeedRangeRefresher),
+//! and drains every page so the harness exercises continuation-token
+//! handling across multi-page responses per feed range.
 //! The harness's existing worker pool provides concurrency — N workers
 //! each issue one query at a time, naturally matching the concurrency
 //! of every other operation.
@@ -72,9 +74,9 @@ impl Operation for FeedRangeQueryOperation {
         let idx = self.cursor.fetch_add(1, Ordering::Relaxed) % snapshot.len();
         let fr = snapshot[idx].clone();
 
-        let query = Query::from("SELECT VALUE COUNT(1) FROM c");
+        let query = Query::from("SELECT * FROM c");
         let mut stream = container
-            .query_items::<serde_json::Value>(query, FeedScope::range(fr), None)
+            .query_items::<super::PerfItem>(query, FeedScope::range(fr), None)
             .await?
             .into_pages();
 
