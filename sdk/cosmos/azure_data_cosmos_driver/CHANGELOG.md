@@ -15,6 +15,8 @@
 - Removed `CosmosDriver::resolve_container_by_rid` and the supporting `CosmosOperation::read_container_by_rid` factory and `ContainerCache::get_or_fetch_by_rid`. These RID-keyed entry points had no callers; container resolution now goes exclusively through `resolve_container` / `resolve_container_by_name`. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
 
 ### Bugs Fixed
+- Terminal partition-key-range Gone on a point operation no longer surfaces to the caller as a raw, unclassifiable HTTP 410. A 410 with a partition-routing sub-status (`1002` PartitionKeyRangeGone, `1007` CompletingSplit, `1008` CompletingPartitionMigration) already drives a forced routing-cache refresh and retry in the dataflow layer; if the partition is still gone after that retry, the failure is now surfaced as `503 Service Unavailable` with the original sub-status preserved, so application-layer retry/circuit-breaker logic (wired for 503, not 410) can classify it. Rust sibling of Azure/azure-cosmos-dotnet-v3#5924.
+
 - Data-plane and non-account metadata operations now fall back to the hub/primary write region endpoint instead of the global account endpoint when all regional endpoints are excluded or unavailable. ([#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503))
 
 - Writes to multi-write Cosmos accounts now send the `x-ms-cosmos-allow-tentative-writes: true` request header (gated on `enableMultipleWriteLocations` from the account metadata). Without this header satellite write regions returned `403 / 3 (WriteForbidden)`, breaking write failover. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))

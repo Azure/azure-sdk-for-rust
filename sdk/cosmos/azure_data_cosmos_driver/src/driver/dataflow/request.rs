@@ -7,12 +7,41 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey};
+use crate::error::CosmosError;
+use crate::models::{CosmosOperation, CosmosResponse, CosmosStatus, FeedRange, PartitionKey};
+
+use azure_core::http::StatusCode;
 
 use super::{
     PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, PipelineNodeState,
     ResolvedRange,
 };
+
+/// Converts a still-failing partition-topology-change error (HTTP 410 with a
+/// partition-routing sub-status such as 1002 `PartitionKeyRangeGone`) into a
+/// synthetic 503 Service Unavailable, preserving the original sub-status and
+/// chaining the original error as the source.
+///
+/// The dataflow layer reaches this only after it has already forced a routing
+/// refresh and retried, so a terminal 410 means the range is genuinely
+/// unavailable. Surfacing it as a raw 410 leaves it unclassifiable by
+/// application resilience logic, which is wired for 503 — the same defect the
+/// .NET SDK fixed in Azure/azure-cosmos-dotnet-v3#5924. A synthetic error is
+/// required because a wire error pins its status to the response's 410.
+fn partition_gone_as_service_unavailable(error: CosmosError) -> CosmosError {
+    let mut status = CosmosStatus::new(StatusCode::ServiceUnavailable);
+    if let Some(sub_status) = error.status().sub_status() {
+        status = status.with_sub_status(sub_status.value());
+    }
+
+    let mut builder = CosmosError::builder()
+        .with_status(status)
+        .with_context("partition key range is gone after a routing refresh");
+    if let Some(diagnostics) = error.diagnostics() {
+        builder = builder.with_diagnostics(diagnostics);
+    }
+    builder.with_source(error).build()
+}
 
 /// The target of a request node.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -266,7 +295,7 @@ impl Request {
                 // the gateway should have been able to route the request
                 // to the correct partition even if it has split.
                 // But we can do a single retry without forcing a topology refresh to see if it succeeds.
-                context
+                match context
                     .execute_request(
                         &self.operation,
                         self.target.clone(),
@@ -274,7 +303,8 @@ impl Request {
                         continuation,
                     )
                     .await
-                    .map(|response| {
+                {
+                    Ok(response) => {
                         tracing::trace!(
                             target = ?self.target,
                             status = ?response.status(),
@@ -290,8 +320,16 @@ impl Request {
                         } else {
                             response
                         };
-                        self.handle_response(response)
-                    })
+                        Ok(self.handle_response(response))
+                    }
+                    // The forced-refresh retry still hit a gone partition: the
+                    // range is genuinely unavailable. Surface 503 instead of
+                    // letting a raw 410 bubble up to the caller.
+                    Err(retry_error) if retry_error.status().is_partition_topology_change() => {
+                        Err(partition_gone_as_service_unavailable(retry_error))
+                    }
+                    Err(retry_error) => Err(retry_error),
+                }
             }
             RequestTarget::EffectivePartitionKeyRange { .. } => {
                 let range = self
@@ -603,7 +641,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn request_returns_second_logical_partition_key_topology_change() {
+    async fn request_surfaces_503_after_terminal_logical_partition_key_topology_change() {
         let mut request = Request::new(Arc::new(operation()), logical_partition_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Err(gone_error())]);
         let mut topology = NoopTopologyProvider;
@@ -611,7 +649,12 @@ mod tests {
 
         let error = request.next_page(&mut context).await.unwrap_err();
 
-        assert!(error.status().is_partition_topology_change());
+        // The first 410/1002 forces a routing refresh and retries; the second is
+        // terminal, so it must surface as 503 (preserving the sub-status) rather
+        // than bubbling up to the caller as a raw, unclassifiable 410.
+        assert_eq!(error.status().status_code(), StatusCode::ServiceUnavailable);
+        assert_eq!(error.status().sub_status().map(|s| s.value()), Some(1002));
+        assert!(!error.status().is_partition_topology_change());
         assert_eq!(
             executor.refresh_calls,
             vec![
@@ -620,6 +663,34 @@ mod tests {
             ]
         );
         assert_eq!(executor.continuation_calls, vec![None, None]);
+    }
+
+    #[test]
+    fn partition_gone_conversion_preserves_sub_status_and_chains_source() {
+        // Covers a different family member (1007 CompletingSplit) and asserts the
+        // synthetic 503 keeps the sub-status and chains the original as source.
+        let original = CosmosError::builder()
+            .with_status(CosmosStatus::from_parts(
+                StatusCode::Gone,
+                Some(crate::models::SubStatusCode::COMPLETING_SPLIT),
+            ))
+            .with_message("completing split")
+            .build();
+
+        let converted = partition_gone_as_service_unavailable(original);
+
+        assert_eq!(
+            converted.status().status_code(),
+            StatusCode::ServiceUnavailable
+        );
+        assert_eq!(
+            converted.status().sub_status().map(|s| s.value()),
+            Some(1007)
+        );
+        assert!(
+            std::error::Error::source(&converted).is_some(),
+            "the original 410 should be chained as the source"
+        );
     }
 
     #[tokio::test]

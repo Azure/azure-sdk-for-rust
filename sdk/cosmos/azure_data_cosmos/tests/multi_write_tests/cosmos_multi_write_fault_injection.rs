@@ -172,9 +172,13 @@ pub async fn item_read_fault_injection_timeout() -> Result<(), Box<dyn Error>> {
     ignore = "requires test_category 'multi_write'"
 )]
 pub async fn item_read_fault_injection_partition_is_gone() -> Result<(), Box<dyn Error>> {
+    // An injected 410/1002 PartitionKeyRangeGone drives a forced routing-cache
+    // refresh and retry in the dataflow layer; since the fault keeps firing, the
+    // terminal failure is surfaced as 503 (not a raw 410) so it is classifiable
+    // by application 503-retry logic. See Azure/azure-cosmos-dotnet-v3#5924.
     verify_read_fails_with_injected_error(
         FaultInjectionErrorType::PartitionIsGone,
-        StatusCode::Gone,
+        StatusCode::ServiceUnavailable,
     )
     .await
 }
