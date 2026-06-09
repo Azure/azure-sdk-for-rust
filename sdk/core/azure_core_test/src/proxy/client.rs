@@ -230,6 +230,8 @@ impl Client {
         request.insert_header(CONTENT_TYPE, "application/json");
         request.insert_headers(&sanitizer)?;
         request.add_optional_header(&options.recording_id);
+        // Send the sanitizer settings so configured redaction rules reach the test-proxy.
+        request.set_json(&sanitizer)?;
         self.pipeline
             .send(
                 &ctx,
@@ -356,4 +358,84 @@ pub struct ClientRemoveSanitizersOptions<'a> {
     /// Remove sanitizers only for the given recording ID.
     pub recording_id: Option<&'a RecordingId>,
     pub method_options: ClientMethodOptions<'a>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{super::sanitizers::HeaderRegexSanitizer, Client};
+    use crate::http::MockHttpClient;
+    use azure_core::{
+        http::{
+            headers::{Headers, CONTENT_TYPE},
+            AsyncRawResponse, ClientOptions, Pipeline, StatusCode, Transport,
+        },
+        Bytes,
+    };
+    use futures::FutureExt as _;
+    use serde_json::{json, Value};
+    use std::sync::Arc;
+
+    #[tokio::test]
+    async fn add_sanitizer_sends_configuration_body() {
+        let mock_client = Arc::new(MockHttpClient::new(|req| {
+            async move {
+                assert_eq!(req.url().path(), "/Admin/AddSanitizer");
+                assert_eq!(req.headers().get_str(&CONTENT_TYPE)?, "application/json");
+                assert_eq!(
+                    req.headers()
+                        .get_str(&super::super::ABSTRACTION_IDENTIFIER)?,
+                    "HeaderRegexSanitizer"
+                );
+
+                // The sanitizer payload carries the redaction rule the proxy must apply.
+                let body = Bytes::from(req.body());
+                let actual: Value =
+                    serde_json::from_slice(body.as_ref()).expect("sanitizer body should be JSON");
+                assert_eq!(
+                    actual,
+                    json!({
+                        "key": "x-ms-copy-source",
+                        "value": "Sanitized",
+                        "regex": "sig=([^&]+)",
+                        "groupForReplace": "1"
+                    })
+                );
+
+                Ok(AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    Vec::new(),
+                ))
+            }
+            .boxed()
+        }));
+        let client = Client {
+            endpoint: "https://localhost".parse().expect("valid endpoint"),
+            pipeline: Pipeline::new(
+                option_env!("CARGO_PKG_NAME"),
+                option_env!("CARGO_PKG_VERSION"),
+                ClientOptions {
+                    transport: Some(Transport::new(mock_client)),
+                    ..Default::default()
+                },
+                Vec::default(),
+                Vec::default(),
+                None,
+            ),
+        };
+
+        client
+            .add_sanitizer(
+                HeaderRegexSanitizer {
+                    key: "x-ms-copy-source".to_string(),
+                    value: Some("Sanitized".to_string()),
+                    regex: Some("sig=([^&]+)".to_string()),
+                    group_for_replace: Some("1".to_string()),
+                    ..Default::default()
+                },
+                None,
+            )
+            .await
+            .expect("add_sanitizer should send sanitizer configuration");
+    }
 }

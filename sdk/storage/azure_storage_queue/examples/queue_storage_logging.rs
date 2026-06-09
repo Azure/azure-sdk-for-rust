@@ -146,17 +146,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let message = QueueMessage {
         message_text: Some(message_text.to_string()),
     };
-    let sent = queue_client.send_message(message.try_into()?, None).await?;
-    let sent_message: SentMessage = sent
+    let sent_message: SentMessage = queue_client
+        .send_message(message.try_into()?, None)
+        .await?
         .into_model()?
-        .items
-        .and_then(|v| v.into_iter().next())
-        .ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::DataConversion,
-                "Expected a sent message in the response",
-            )
-        })?;
+        .into_message()?;
     println!(
         "Message sent. ID: {}",
         sent_message.message_id.as_deref().unwrap_or("")

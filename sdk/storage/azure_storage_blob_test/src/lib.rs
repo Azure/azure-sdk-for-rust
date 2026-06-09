@@ -2,12 +2,14 @@
 // Licensed under the MIT License.
 
 use std::{
+    future::Future,
     slice,
     sync::{
         atomic::{AtomicUsize, Ordering},
         mpsc::Sender,
         Arc,
     },
+    time::Duration,
 };
 
 use async_trait::async_trait;
@@ -539,5 +541,42 @@ impl Policy for FailFirstPolicy {
             ));
         }
         next[0].send(ctx, request, &next[1..]).await
+    }
+}
+
+/// Polls an async condition until it returns `true`, with behavior adapted to the test mode.
+///
+/// - **Live**: polls every 5 seconds up to 60 seconds total, panicking on timeout.
+/// - **Record**: sleeps 15 seconds, then returns (caller asserts after).
+/// - **Playback**: returns immediately.
+///
+/// # Arguments
+///
+/// * `recording` - The current test recording context.
+/// * `check` - An async closure that returns `Ok(true)` when the condition is met.
+pub async fn poll_until<F, Fut>(recording: &Recording, mut check: F) -> Result<()>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<bool>>,
+{
+    match recording.test_mode() {
+        TestMode::Live => {
+            let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
+            loop {
+                if check().await? {
+                    return Ok(());
+                }
+                assert!(
+                    tokio::time::Instant::now() < deadline,
+                    "Timed out after 60s waiting for eventual consistency"
+                );
+                tokio::time::sleep(Duration::from_secs(5)).await;
+            }
+        }
+        TestMode::Record => {
+            tokio::time::sleep(Duration::from_secs(15)).await;
+            Ok(())
+        }
+        TestMode::Playback => Ok(()),
     }
 }

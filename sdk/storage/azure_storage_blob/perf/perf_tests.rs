@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 mod download_blob_test;
-/// list_blob performance test.
 mod list_blob_test;
+mod options;
 mod upload_blob_test;
 
 use azure_core_test::perf::PerfRunner;
