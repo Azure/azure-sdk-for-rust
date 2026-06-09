@@ -137,8 +137,8 @@ pub(crate) fn resolve_availability_strategy(
     }
 
     // Priority 2 — driver default (temporarily disabled). When the master
-    // switch is flipped back on, an unconfigured operation falls back to
-    // `min(1000ms, request_timeout / 2)`.
+    // switch is flipped back on, an operation with no explicit strategy
+    // falls back to `min(1000ms, request_timeout / 2)`.
     if DRIVER_DEFAULT_HEDGING_ENABLED {
         Some(HedgingStrategy::new(default_threshold(request_timeout)))
     } else {
