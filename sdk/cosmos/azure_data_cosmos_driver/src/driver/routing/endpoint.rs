@@ -84,6 +84,11 @@ impl CosmosEndpoint {
         self.0.region.as_ref()
     }
 
+    /// Returns `true` if this is a global (region-less) endpoint.
+    pub fn is_global(&self) -> bool {
+        self.0.region.is_none()
+    }
+
     /// Returns the standard gateway URL for this endpoint.
     pub fn url(&self) -> &Url {
         &self.0.gateway_url

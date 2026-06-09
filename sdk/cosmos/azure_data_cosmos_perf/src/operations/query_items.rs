@@ -42,10 +42,13 @@ impl Operation for QueryItemsOperation {
         let query =
             Query::from("SELECT * FROM c WHERE c.partition_key = @pk").with_parameter("@pk", pk)?;
 
-        let mut stream = container
-            .query_items::<serde_json::Value>(query, FeedScope::partition(pk), None)
-            .await?
-            .into_pages();
+        let mut stream = Box::pin(container.query_items::<serde_json::Value>(
+            query,
+            FeedScope::partition(pk),
+            None,
+        ))
+        .await?
+        .into_pages();
 
         // Sum backend durations across pages so a multi-page query reports
         // the total server processing time, mirroring how the client-observed
