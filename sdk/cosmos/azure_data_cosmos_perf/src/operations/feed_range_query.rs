@@ -75,10 +75,14 @@ impl Operation for FeedRangeQueryOperation {
         let fr = snapshot[idx].clone();
 
         let query = Query::from("SELECT * FROM c");
-        let mut stream = container
-            .query_items::<super::PerfItem>(query, FeedScope::range(fr), None)
-            .await?
-            .into_pages();
+        // Box::pin keeps this future off the worker's stack — clippy's
+        // `large_futures` (-D in CI) fires on the un-pinned form (~16 KB).
+        let mut stream = Box::pin(
+            container
+                .query_items::<super::PerfItem>(query, FeedScope::range(fr), None)
+                .await?
+                .into_pages(),
+        );
 
         // Sum backend durations across pages so a multi-page response
         // reports the total server processing time, matching the
