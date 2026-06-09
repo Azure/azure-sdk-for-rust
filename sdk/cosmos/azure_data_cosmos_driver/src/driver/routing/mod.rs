@@ -19,7 +19,8 @@ pub(crate) use location_effects::{LocationEffect, UnavailablePartition};
 pub(crate) use location_state_store::{LocationSnapshot, LocationStateStore};
 #[allow(unused_imports)] // Spec-defined system function; kept for future steps.
 pub(crate) use routing_systems::{
-    build_account_endpoint_state, can_circuit_breaker_trigger_failover, expire_partition_overrides,
-    expire_unavailable_endpoints, is_eligible_for_ppaf, is_eligible_for_ppcb,
-    mark_endpoint_unavailable, mark_partition_unavailable, remove_probe_succeeded_entry,
+    advance_hub_region_discovery, build_account_endpoint_state, cache_hub_region,
+    can_circuit_breaker_trigger_failover, expire_partition_overrides, expire_unavailable_endpoints,
+    is_eligible_for_ppaf, is_eligible_for_ppcb, mark_endpoint_unavailable,
+    mark_partition_unavailable, remove_probe_succeeded_entry,
 };

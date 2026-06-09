@@ -488,6 +488,115 @@ fn try_move_next_endpoint(
     false
 }
 
+/// Inserts or updates the per-partition failover entry after a successful
+/// response confirmed the supplied endpoint as the hub.
+///
+/// Writes into [`PartitionEndpointState::failover_overrides`] — the same
+/// per-partition map used by PPAF. On a single-master account the
+/// partition's hub region is its write region, so the entry serves both
+/// PPAF-write routing and hub-region read routing.
+///
+/// **Existing-entry semantics**: only `current_endpoint` is updated. The
+/// `failed_endpoints` set, `first_failed_endpoint`, `last_failure_time`,
+/// and `health_status` are preserved as-is so that:
+///
+/// 1. A subsequent `403/3` against the new hub can advance through
+///    `try_move_next_endpoint` without re-trying endpoints that were
+///    already known to be non-hub.
+/// 2. Any PPAF state (from a prior write rotation) is not silently
+///    wiped by a hub-region read confirmation.
+pub(crate) fn cache_hub_region(
+    current_state: &PartitionEndpointState,
+    _account_state: &AccountEndpointState,
+    pk_range_id: &PartitionKeyRangeId,
+    hub_endpoint: &CosmosEndpoint,
+) -> PartitionEndpointState {
+    if !current_state.per_partition_automatic_failover_enabled {
+        return current_state.clone();
+    }
+    if hub_endpoint.region().is_none() {
+        return current_state.clone();
+    }
+
+    let mut new_state = current_state.clone();
+    let now = Instant::now();
+
+    new_state
+        .failover_overrides
+        .entry(pk_range_id.clone())
+        .and_modify(|entry| {
+            // Only update `current_endpoint` — preserve all other fields so
+            // PPAF rotation history and failed_endpoints tracking are
+            // retained across read-side confirmations.
+            entry.current_endpoint = hub_endpoint.clone();
+        })
+        .or_insert_with(|| PartitionFailoverEntry {
+            current_endpoint: hub_endpoint.clone(),
+            first_failed_endpoint: hub_endpoint.clone(),
+            failed_endpoints: Default::default(),
+            read_failure_count: 0,
+            write_failure_count: 0,
+            first_failure_time: now,
+            last_failure_time: now,
+            health_status: HealthStatus::Unhealthy,
+            // Hub-region entries do not participate in background failback,
+            // so the jitter is unused (mirrors PPAF entries).
+            failback_jitter: Duration::ZERO,
+        });
+
+    new_state
+}
+
+/// Advances the per-partition failover entry to the next preferred read
+/// endpoint after a `403/3 (WriteForbidden)` response on a hub-region
+/// discovery attempt.
+///
+/// Creates a new entry if none exists (cold cache), or rotates the
+/// existing `current_endpoint` to the next un-tried preferred read
+/// endpoint (warm cache that found a stale hub). If all preferred reads
+/// have been exhausted, the entry is removed so the next attempt falls
+/// back to the default selection logic in `resolve_endpoint`.
+///
+/// Pure function: returns a new `PartitionEndpointState`. The caller is
+/// responsible for the CAS swap.
+pub(crate) fn advance_hub_region_discovery(
+    current_state: &PartitionEndpointState,
+    account_state: &AccountEndpointState,
+    pk_range_id: &PartitionKeyRangeId,
+    failed_endpoint: &CosmosEndpoint,
+) -> PartitionEndpointState {
+    let mut new_state = current_state.clone();
+    let now = Instant::now();
+    let next_endpoints = &account_state.preferred_read_endpoints;
+
+    let entry = new_state
+        .failover_overrides
+        .entry(pk_range_id.clone())
+        .or_insert_with(|| PartitionFailoverEntry {
+            current_endpoint: failed_endpoint.clone(),
+            first_failed_endpoint: failed_endpoint.clone(),
+            failed_endpoints: Default::default(),
+            read_failure_count: 0,
+            write_failure_count: 0,
+            first_failure_time: now,
+            last_failure_time: now,
+            health_status: HealthStatus::Unhealthy,
+            failback_jitter: Duration::ZERO,
+        });
+
+    entry.last_failure_time = now;
+
+    if !try_move_next_endpoint(entry, next_endpoints, failed_endpoint) {
+        // All preferred-read endpoints exhausted — drop the entry so the
+        // next attempt falls back to default selection in resolve_endpoint
+        // (and the operation will be aborted by the failover-budget guard
+        // in try_handle_write_forbidden once that budget is depleted).
+        new_state.failover_overrides.remove(pk_range_id.as_str());
+    }
+
+    new_state
+}
+
 /// Transitions expired partition entries from `Unhealthy` to `ProbeCandidate`,
 /// producing a new `PartitionEndpointState`.
 ///
@@ -1543,5 +1652,162 @@ mod tests {
             state.preferred_write_endpoints[2].region().unwrap(),
             &Region::WEST_US_3
         );
+    }
+
+    // ── Hub region cache tests ────────────────────────────────────────
+
+    /// A partition state with PPAF enabled — the new gate that
+    /// `cache_hub_region` checks before populating the cache.
+    fn partition_state_ppaf_enabled() -> PartitionEndpointState {
+        let mut ps = PartitionEndpointState::default();
+        ps.per_partition_automatic_failover_enabled = true;
+        ps
+    }
+
+    /// A partition state with PPAF disabled — `cache_hub_region` is a
+    /// no-op against this state.
+    fn partition_state_ppaf_disabled() -> PartitionEndpointState {
+        PartitionEndpointState::default()
+    }
+
+    /// Regression test for the .NET parity invariant: when
+    /// `cache_hub_region` updates an existing entry (e.g., one populated
+    /// by a prior PPAF rotation or a prior 403/3 discovery), it must
+    /// preserve the `failed_endpoints` set so that a subsequent 403/3
+    /// rotation does not re-try already-tried endpoints. Mirrors .NET
+    /// PR #5648's `SetCurrent`-only update in
+    /// `TryCacheHubRegionLocationForPartition`.
+    #[test]
+    fn cache_hub_region_updates_existing_entry_preserving_failed_set() {
+        let mut ps = partition_state_ppaf_enabled();
+        let account = single_master_account();
+        let old_hub = regional_endpoint("westus");
+        let new_hub = regional_endpoint("eastus");
+
+        let mut failed = std::collections::HashSet::new();
+        failed.insert(regional_endpoint("centralus"));
+        let original_failed = failed.clone();
+        let original_first_failed = old_hub.clone();
+        ps.failover_overrides.insert(
+            pk("0"),
+            PartitionFailoverEntry {
+                current_endpoint: old_hub.clone(),
+                first_failed_endpoint: original_first_failed.clone(),
+                failed_endpoints: failed,
+                read_failure_count: 7,
+                write_failure_count: 3,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let result = cache_hub_region(&ps, &account, &pk("0"), &new_hub);
+        let entry = result.failover_overrides.get(&pk("0")).unwrap();
+        // current_endpoint MUST flip to the new hub.
+        assert_eq!(entry.current_endpoint, new_hub);
+        // Every other field MUST be preserved (.NET SetCurrent-only semantics).
+        assert_eq!(
+            entry.failed_endpoints, original_failed,
+            "failed_endpoints must be preserved so 403/3 rotation does not re-try already-tried endpoints",
+        );
+        assert_eq!(
+            entry.first_failed_endpoint, original_first_failed,
+            "first_failed_endpoint must be preserved so PPAF probe-back logic is not disrupted",
+        );
+        assert_eq!(
+            entry.read_failure_count, 7,
+            "read_failure_count must be preserved (no failure happened — this is a 2xx hub confirmation)",
+        );
+        assert_eq!(
+            entry.write_failure_count, 3,
+            "write_failure_count must be preserved (no failure happened — this is a 2xx hub confirmation)",
+        );
+    }
+
+    /// Hub-region caching is a PPAF-only feature. On accounts without
+    /// PPAF, `cache_hub_region` is a no-op so the unified cache does
+    /// not accumulate state. Mirrors the latest .NET PR's
+    /// `IsPartitionLevelAutomaticFailoverEnabled()` gate in
+    /// `TryCacheHubRegionLocationForPartition`.
+    #[test]
+    fn cache_hub_region_skips_when_ppaf_disabled() {
+        let ps = partition_state_ppaf_disabled();
+        let account = single_master_account();
+        let result = cache_hub_region(&ps, &account, &pk("0"), &regional_endpoint("eastus"));
+        assert!(
+            result.failover_overrides.is_empty(),
+            "hub-region cache must not populate when PPAF is disabled on the account",
+        );
+    }
+
+    #[test]
+    fn cache_hub_region_skips_non_regional_endpoint() {
+        let ps = partition_state_ppaf_enabled();
+        let account = single_master_account();
+        let non_regional = default_endpoint();
+        assert!(non_regional.region().is_none());
+
+        let result = cache_hub_region(&ps, &account, &pk("0"), &non_regional);
+        assert!(result.failover_overrides.is_empty());
+    }
+
+    #[test]
+    fn advance_hub_region_discovery_rotates_existing_entry() {
+        let mut ps = partition_state_ppaf_enabled();
+        let account = single_master_account();
+        let eastus = regional_endpoint("eastus");
+        let westus = regional_endpoint("westus");
+        ps.failover_overrides.insert(
+            pk("0"),
+            PartitionFailoverEntry {
+                current_endpoint: eastus.clone(),
+                first_failed_endpoint: eastus.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &eastus);
+        let entry = result.failover_overrides.get(&pk("0")).unwrap();
+        assert_eq!(entry.current_endpoint, westus);
+    }
+
+    #[test]
+    fn advance_hub_region_discovery_removes_entry_when_exhausted() {
+        let mut ps = partition_state_ppaf_enabled();
+        let account = single_master_account();
+        let eastus = regional_endpoint("eastus");
+        let westus = regional_endpoint("westus");
+
+        // Pre-populate so the only un-tried endpoint is westus, currently
+        // pointing at westus — and the failed-endpoint set already covers eastus.
+        let mut failed = std::collections::HashSet::new();
+        failed.insert(eastus.clone());
+        ps.failover_overrides.insert(
+            pk("0"),
+            PartitionFailoverEntry {
+                current_endpoint: westus.clone(),
+                first_failed_endpoint: eastus.clone(),
+                failed_endpoints: failed,
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: Instant::now(),
+                last_failure_time: Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &westus);
+        // Both endpoints have failed — entry is removed so default selection
+        // applies on the next attempt.
+        assert!(result.failover_overrides.get(&pk("0")).is_none());
     }
 }
