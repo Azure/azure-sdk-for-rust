@@ -22,10 +22,6 @@ async fn readme(ctx: TestContext) -> Result<()> {
     )?;
 
     let mut key_options = KeyClientOptions::default();
-    // Pin to the API version recorded in cassettes (matches the asset tag).
-    // Keys crate is at 1.0.0 which defaults to 2025-07-01, but recordings here
-    // were captured against 2026-03-01-preview while we tested both crates together.
-    key_options.api_version = String::from("2026-03-01-preview");
     recording.instrument(&mut key_options.client_options);
 
     let key_client = KeyClient::new(
