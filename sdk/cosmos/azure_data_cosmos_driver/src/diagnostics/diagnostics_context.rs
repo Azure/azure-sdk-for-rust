@@ -8,7 +8,7 @@
 //! serialization helpers, and the diagnostics context itself.
 
 use crate::{
-    driver::routing::CosmosEndpoint,
+    driver::{pipeline::hedging_diagnostics::HedgeDiagnostics, routing::CosmosEndpoint},
     models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
     options::{DiagnosticsOptions, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
@@ -1210,6 +1210,10 @@ pub(crate) struct DiagnosticsContextBuilder {
     #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
 
+    /// Diagnostics from a cross-region hedging execution, if one occurred.
+    /// `None` when hedging was not selected for this operation.
+    hedge_diagnostics: Option<HedgeDiagnostics>,
+
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
     test_system_usage: Option<SystemUsageSnapshot>,
@@ -1228,6 +1232,7 @@ impl DiagnosticsContextBuilder {
             machine_id: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: false,
+            hedge_diagnostics: None,
             #[cfg(test)]
             test_system_usage: None,
         }
@@ -1241,6 +1246,50 @@ impl DiagnosticsContextBuilder {
     /// Sets the machine identifier (from [`VmMetadataService`](crate::system::VmMetadataService)).
     pub(crate) fn set_machine_id(&mut self, machine_id: Arc<String>) {
         self.machine_id = Some(machine_id);
+    }
+
+    /// Sets the hedging diagnostics for this operation.
+    pub(crate) fn set_hedge_diagnostics(&mut self, diagnostics: HedgeDiagnostics) {
+        self.hedge_diagnostics = Some(diagnostics);
+    }
+
+    /// Creates a fresh builder for a single hedge attempt.
+    ///
+    /// Shares operation-level context (`activity_id`, `options`,
+    /// `cpu_monitor`, `machine_id`, fault-injection flag) with the parent
+    /// but starts with an empty request list and a fresh `started_at`, so
+    /// per-attempt durations measure from launch rather than from
+    /// operation start. The winning attempt's requests are merged back
+    /// via [`merge_hedge_attempt`](Self::merge_hedge_attempt).
+    pub(crate) fn clone_for_hedge_attempt(&self) -> Self {
+        Self {
+            activity_id: self.activity_id.clone(),
+            started_at: Instant::now(),
+            requests: Vec::with_capacity(2),
+            status: None,
+            options: Arc::clone(&self.options),
+            cpu_monitor: self.cpu_monitor.clone(),
+            machine_id: self.machine_id.clone(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled: self.fault_injection_enabled,
+            hedge_diagnostics: None,
+            #[cfg(test)]
+            test_system_usage: self.test_system_usage.clone(),
+        }
+    }
+
+    /// Absorbs a hedge attempt's per-request diagnostics back into the
+    /// parent builder.
+    ///
+    /// Only the request list is moved; the attempt's `status` and
+    /// `hedge_diagnostics` are discarded because those operation-level
+    /// fields are written directly on the parent.
+    pub(crate) fn merge_hedge_attempt(&mut self, attempt: Self) {
+        if self.requests.is_empty() {
+            self.requests = attempt.requests;
+        } else {
+            self.requests.extend(attempt.requests);
+        }
     }
 
     /// Sets whether fault injection is enabled for this operation's runtime.
@@ -1481,6 +1530,7 @@ impl DiagnosticsContextBuilder {
             fault_injection_enabled: self.fault_injection_enabled,
             #[cfg(not(feature = "fault_injection"))]
             fault_injection_enabled: false,
+            hedge_diagnostics: self.hedge_diagnostics,
             #[cfg(test)]
             test_system_usage: self.test_system_usage,
             cached_json_detailed: OnceLock::new(),
@@ -1553,6 +1603,15 @@ pub struct DiagnosticsContext {
 
     /// Whether fault injection was enabled when this operation executed.
     fault_injection_enabled: bool,
+
+    /// Diagnostics from a cross-region hedging execution, if one occurred.
+    ///
+    /// `Some(_)` if and only if a hedging strategy was resolved and active
+    /// for the operation — i.e. `should_hedge()` returned `true` and
+    /// `execute_hedged()` was entered (spec §10.1 attachment contract).
+    /// `None` in all other cases (no strategy resolved, strategy
+    /// `Disabled`, eligibility check failed, etc.).
+    hedge_diagnostics: Option<HedgeDiagnostics>,
 
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
@@ -1627,6 +1686,7 @@ impl DiagnosticsContext {
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
             fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
+            hedge_diagnostics: None,
             #[cfg(test)]
             test_system_usage: last.test_system_usage.clone(),
             cached_json_detailed: OnceLock::new(),
@@ -1692,6 +1752,18 @@ impl DiagnosticsContext {
     /// ```
     pub fn requests(&self) -> Arc<Vec<RequestDiagnostics>> {
         Arc::clone(&self.requests)
+    }
+
+    /// Returns the hedging diagnostics for this operation, if hedging was
+    /// selected.
+    ///
+    /// This is `Some(_)` if and only
+    /// if `should_hedge()` returned `true` and `execute_hedged()` was
+    /// entered — even when the primary won before the threshold elapsed.
+    /// `None` means hedging was not selected for this operation (no
+    /// strategy resolved, strategy `Disabled`, or eligibility check failed).
+    pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics> {
+        self.hedge_diagnostics.as_ref()
     }
 
     /// Returns the machine identifier, if available.
@@ -1829,6 +1901,7 @@ impl Clone for DiagnosticsContext {
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
             fault_injection_enabled: self.fault_injection_enabled,
+            hedge_diagnostics: self.hedge_diagnostics.clone(),
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
             // OnceLock does not implement Clone, so we propagate any cached
@@ -1857,6 +1930,7 @@ impl PartialEq for DiagnosticsContext {
             && self.requests == other.requests
             && self.status == other.status
             && self.options == other.options
+            && self.hedge_diagnostics == other.hedge_diagnostics
     }
 }
 

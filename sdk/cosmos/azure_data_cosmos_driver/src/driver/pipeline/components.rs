@@ -7,6 +7,7 @@
 //! represent the state that flows through pipeline stages. Each pipeline stage
 //! operates on only the components it needs.
 
+use std::sync::{atomic::AtomicBool, Arc};
 use std::time::{Duration, Instant};
 
 use azure_core::http::{headers::Headers, Method};
@@ -16,6 +17,7 @@ use crate::{
     diagnostics::{ExecutionContext, RequestSentStatus},
     driver::{
         jitter::with_jitter,
+        pipeline::hedging_diagnostics::HedgingStrategyConfig,
         routing::{
             partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint, LocationEffect,
             LocationIndex,
@@ -23,7 +25,7 @@ use crate::{
         transport::AuthorizationContext,
     },
     models::{CosmosResponseHeaders, CosmosStatus},
-    options::Region,
+    options::{HedgeThreshold, Region},
 };
 
 // ── Operation-Level Components ─────────────────────────────────────────
@@ -108,34 +110,17 @@ pub(crate) struct OperationRetryState {
     /// Hub-region-processing-only latch.
     ///
     /// Sticky within a single operation. Set on the retry triggered by the
-    /// FIRST `404 / 1002 (READ_SESSION_NOT_AVAILABLE)` on a single-master
+    /// first `404 / 1002 (READ_SESSION_NOT_AVAILABLE)` on a single-master
     /// data-plane account; once set, every subsequent transport attempt
     /// for this operation emits the
     /// `x-ms-cosmos-hub-region-processing-only: True` header.
-    ///
-    /// Bounded by operation lifetime — `OperationRetryState` is
-    /// constructed fresh per call to `execute_operation_pipeline` (single
-    /// production call site), so the latch never leaks across operations.
-    ///
-    /// LOAD-BEARING for SE-003 mitigation — see
-    /// HUB_REGION_PROCESSING_HEADER_SPEC.md AG-1..AG-4. If a future
-    /// refactor adds a second production construction site for
-    /// `OperationRetryState`, the SE-003 mitigation argument needs to be
-    /// re-validated.
-    ///
-    /// **Cross-region hedging coordination.** The orchestrator added in
-    /// `azure_data_cosmos_driver/docs/HEDGING_SPEC.md` §9.5 constructs an
-    /// `OperationRetryState` *per hedge*, so this per-state latch is
-    /// per-hedge by default. The hedging spec requires augmenting this
-    /// state with a `shared_hub_region_latch: Option<Arc<AtomicBool>>`
-    /// that is `Some` only when running inside `execute_with_hedging()`,
-    /// is CAS-set alongside this field in `build_session_retry_state`,
-    /// and is OR'd into the emission decision in `apply_hub_region_header`.
-    /// This mirrors .NET v3's `CrossRegionAvailabilityContext` shared
-    /// object introduced by azure-cosmos-dotnet-v3#5815. Any change to
-    /// the latch trigger or emission rule here MUST update both call
-    /// sites and §9.5 of the hedging spec.
     pub hub_region_processing_only: bool,
+    /// Cross-hedge shared hub-region-processing-only latch.
+    ///
+    /// `Some(_)` only when this `OperationRetryState` is running inside
+    /// the cross-region hedging race past the threshold; `None` otherwise
+    /// (non-hedged pipeline, and the pre-threshold zero-overhead path).
+    pub shared_hub_region_latch: Option<Arc<AtomicBool>>,
     /// Regions excluded for this operation.
     pub excluded_regions: Vec<Region>,
     /// Session-retry routing override for read operations.
@@ -191,6 +176,18 @@ pub(crate) struct OperationRetryState {
     /// counters drive threshold-based failover and need the failure signal
     /// immediately.
     pub pending_write_effects: Vec<LocationEffect>,
+    /// Whether a cross-region hedge race has already been dispatched for
+    /// this operation.
+    ///
+    /// Sticky within a single operation. Set when the operation pipeline
+    /// dispatches `execute_hedged` (either from STAGE 2b on the first
+    /// attempt, or from STAGE 7 after upgrading a `FailoverRetry` /
+    /// `SessionRetry` action). Read by STAGE 5b to suppress a second
+    /// hedge upgrade on the post-`BothTransient` fallback path — each
+    /// race already burned two regions of RU, and re-upgrading on the
+    /// next iteration would burn another two without giving the
+    /// surrounding failover loop a chance to make sequential progress.
+    pub hedge_already_fired: bool,
 }
 
 /// How a session retry should resolve endpoints for a read operation.
@@ -220,18 +217,38 @@ impl OperationRetryState {
             can_use_multiple_write_locations,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             partition_key_range_id: None,
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         }
     }
 
     /// Whether failover retry budget allows another attempt.
     pub fn can_retry_failover(&self) -> bool {
         self.failover_retry_count < self.max_failover_retries
+    }
+
+    /// Attaches the cross-hedge shared hub-region-processing-only
+    /// latch. Called by
+    /// `execute_hedged` after the threshold elapses and the
+    /// eligibility predicate (data-plane ∧ single-master) holds, so the
+    /// zero-overhead happy path never constructs an `Arc<AtomicBool>`.
+    ///
+    /// Currently exercised by Part 5 unit tests only — the production
+    /// hedge path constructs the `Arc` directly inside `execute_hedged`
+    /// without an intermediate `OperationRetryState` because each hedge
+    /// today runs a single transport attempt (no per-hedge retry loop).
+    /// When §8.4 lands per-hedge operation-level retry, the secondary's
+    /// `OperationRetryState` constructor will switch to this builder.
+    #[allow(dead_code)] // reserved for §8.4 per-hedge retry state
+    pub fn with_shared_hub_region_latch(mut self, latch: Arc<AtomicBool>) -> Self {
+        self.shared_hub_region_latch = Some(latch);
+        self
     }
 
     /// Whether session retry budget allows another attempt.
@@ -557,6 +574,36 @@ pub(crate) enum OperationAction {
     },
     /// Retry for session consistency.
     SessionRetry { new_state: OperationRetryState },
+    /// Race the primary attempt against a single secondary cross-region hedge.
+    ///
+    /// Emitted in two places:
+    ///
+    /// * On the **first** transport attempt, when the eligibility check
+    ///   (`should_hedge` + threshold strategy + ≥ 2 preferred read
+    ///   endpoints) holds. The primary is launched immediately and races
+    ///   the threshold timer; if it elapses, the secondary is spawned.
+    /// * On a **retry upgrade**, when `evaluate_transport_result` would
+    ///   otherwise return `FailoverRetry` / `SessionRetry` and the
+    ///   operation is still hedge-eligible.
+    ///
+    /// The pipeline dispatches this variant to `execute_hedged()`, which
+    /// races the primary against the `secondary_routing` after
+    /// `threshold` elapses. `strategy_config` rides along as the snapshot
+    /// for the winning response's `HedgeDiagnostics`.
+    ///
+    /// `new_state` carries the post-transition `OperationRetryState`
+    /// forwarded from `FailoverRetry` / `SessionRetry` on the
+    /// retry-upgrade path; STAGE 7 applies it via `advance_to_next_attempt`
+    /// before building `AttemptContext` so the race inherits the failover
+    /// exclusions, hub-region latch, and advanced retry counters.
+    /// First-attempt (STAGE 2b) callers pass the live `retry_state` so
+    /// the variant stays uniform.
+    Hedge {
+        secondary_routing: RoutingDecision,
+        threshold: HedgeThreshold,
+        strategy_config: HedgingStrategyConfig,
+        new_state: OperationRetryState,
+    },
     /// Abort the operation with this error.
     ///
     /// The typed `CosmosStatus` is always available via `error.status()`;

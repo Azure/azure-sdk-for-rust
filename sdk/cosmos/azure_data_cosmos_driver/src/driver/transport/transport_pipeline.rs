@@ -174,7 +174,7 @@ pub(crate) struct TransportPipelineContext<'a> {
 /// handles 429 throttle retry internally. Returns a `TransportResult` to the
 /// operation pipeline for higher-level decision making.
 ///
-/// This is the core transport loop described in §5.2 of the spec.
+/// This is the core transport loop.
 pub(crate) async fn execute_transport_pipeline(
     request: TransportRequest,
     ctx: &TransportPipelineContext<'_>,

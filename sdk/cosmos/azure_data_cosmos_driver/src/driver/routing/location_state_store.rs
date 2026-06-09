@@ -26,7 +26,9 @@ use super::{
     build_account_endpoint_state, expire_partition_overrides, expire_unavailable_endpoints,
     mark_endpoint_unavailable, mark_partition_unavailable,
     partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
-    AccountEndpointState, CosmosEndpoint, LocationEffect,
+    partition_key_range_id::PartitionKeyRangeId,
+    record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
+    LocationEffect,
 };
 
 /// Immutable location snapshot consumed by one operation-loop iteration.
@@ -567,6 +569,61 @@ impl LocationStateStore {
         let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
         self.background_task_manager.spawn(async move {
             account_refresh_loop(weak_store, BACKGROUND_REFRESH_INTERVAL).await;
+        });
+    }
+
+    /// Records that the alternate (secondary) hedge attempt completed before
+    /// the primary in
+    /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
+    ///
+    /// Increments a per-`(partition, primary_region)` counter atomically
+    /// via [`Self::apply_partition`]. When the counter reaches
+    /// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`] the
+    /// partition is tripped by installing an `Unhealthy` entry in
+    /// `circuit_breaker_overrides` (the same shape PPCB uses for hard
+    /// failures), so subsequent requests route away from the degraded
+    /// primary region. The trip is recovered by the existing PPCB
+    /// failback sweep.
+    ///
+    /// `primary_region` is `None` for default-endpoint accounts whose
+    /// snapshot does not carry a named region.
+    pub fn record_consecutive_hedge_win(
+        &self,
+        partition: &PartitionKeyRangeId,
+        primary_region: Option<&Region>,
+    ) {
+        tracing::debug!(
+            partition = %partition,
+            primary_region = ?primary_region.map(Region::as_str),
+            "recorded alternate-region hedge win",
+        );
+        let account = self.account_snapshot();
+        self.apply_partition(|current| {
+            record_hedge_alternate_win(current, &account, partition, primary_region)
+        });
+    }
+
+    /// Records that the primary attempt won in
+    /// [`execute_hedged`](crate::driver::pipeline::operation_pipeline).
+    ///
+    /// Clears the per-`(partition, primary_region)` consecutive-hedge-win
+    /// counter atomically via [`Self::apply_partition`] so transient
+    /// cross-region latency spikes do not accumulate into a trip over
+    /// arbitrarily long timescales. Does not touch
+    /// `circuit_breaker_overrides` — an existing trip recovers via the
+    /// failback sweep, not via primary wins.
+    pub fn record_primary_win(
+        &self,
+        partition: &PartitionKeyRangeId,
+        primary_region: Option<&Region>,
+    ) {
+        tracing::debug!(
+            partition = %partition,
+            primary_region = ?primary_region.map(Region::as_str),
+            "recorded primary-region hedge win",
+        );
+        self.apply_partition(|current| {
+            record_hedge_primary_win(current, partition, primary_region)
         });
     }
 }

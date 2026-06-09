@@ -13,10 +13,11 @@ pub use azure_data_cosmos_driver::models::{
 };
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{
-    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
-    OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
-    ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView,
-    ThroughputControlGroupOptions, UserAgentSuffix,
+    AvailabilityStrategy, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+    HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder,
+    OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region, ThrottlingRetryOptions,
+    ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlGroupOptions,
+    UserAgentSuffix,
 };
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
