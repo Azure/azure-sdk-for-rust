@@ -154,18 +154,20 @@ impl QueryPlanProvider {
             hr = call_native(&mut buffer, &mut result_length);
         }
 
-        let payload =
-            std::str::from_utf8(&buffer[..result_length as usize]).map_err(|e| {
-                QueryPlanError::InvalidArgument {
-                    context: format!("native library returned invalid UTF-8: {e}"),
-                }
-            })?;
+        let payload = std::str::from_utf8(&buffer[..result_length as usize]).map_err(|e| {
+            QueryPlanError::InvalidArgument {
+                context: format!("native library returned invalid UTF-8: {e}"),
+            }
+        })?;
 
         if query_plan_native::failed(hr) {
             return if payload.is_empty() {
                 Err(QueryPlanError::from_hresult(hr))
             } else {
-                Err(QueryPlanError::from_hresult_with_payload(hr, payload.to_string()))
+                Err(QueryPlanError::from_hresult_with_payload(
+                    hr,
+                    payload.to_string(),
+                ))
             };
         }
 
