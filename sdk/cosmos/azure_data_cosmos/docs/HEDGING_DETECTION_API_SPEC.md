@@ -39,7 +39,7 @@ The Hedging Detection API is **additive** on `DiagnosticsContext` and **compleme
 
 ## 2. Verified existing surface inventory
 
-Citations are to the `main` branch at the merge of PR #4330 (commit `5f5d8c49d`, "Cosmos: Adds Cross-Region Hedging Design Spec to Driver Crate (#4330)").
+Citations are to the `main` branch at the merge of PR #4330 — commit [`5f5d8c49d02b579a2afd2297857b919900ff1dad`](https://github.com/Azure/azure-sdk-for-rust/commit/5f5d8c49d02b579a2afd2297857b919900ff1dad) ("Cosmos: Adds Cross-Region Hedging Design Spec to Driver Crate (#4330)"). The `diagnostics_context.rs` line numbers below are SHA-pinned via [this permalink](https://github.com/Azure/azure-sdk-for-rust/blob/5f5d8c49d02b579a2afd2297857b919900ff1dad/sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs).
 
 | Item                               | Location                                                                                                  | Visibility                                            |
 |------------------------------------|-----------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
@@ -66,7 +66,7 @@ Citations are to the `main` branch at the merge of PR #4330 (commit `5f5d8c49d`,
 
 ## 3. Proposed additive methods on `DiagnosticsContext`
 
-All three accessors are added to `DiagnosticsContext` in `azure_data_cosmos_driver` and exposed on `CosmosDiagnosticsContext` via the existing re-export (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`). The reason-carrying return of `requested_regions()` (§3.1) requires two **new public types** in `azure_data_cosmos` — `RequestedRegion` and `RequestedRegionReason` — to realize the cross-SDK contract's per-region-reason shape (see §3.5 and §5).
+All three accessors are added to `DiagnosticsContext` in `azure_data_cosmos_driver` and exposed on `CosmosDiagnosticsContext` via the existing re-export (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`). The reason-carrying return of `requested_regions()` (§3.1) requires two **new types** — `RequestedRegion` and `RequestedRegionReason`. Because the accessors are inherent methods on the driver's `DiagnosticsContext` and `azure_data_cosmos` depends on `azure_data_cosmos_driver` (never the reverse), these two types are **defined in the driver and re-exported from `azure_data_cosmos`**, exactly like `DiagnosticsContext`/`CosmosDiagnosticsContext` itself (see §3.5 and §5).
 
 ### 3.1 `pub fn requested_regions(&self) -> Vec<RequestedRegion>`
 
@@ -116,7 +116,7 @@ pub fn responded_regions(&self) -> Vec<&Region> { ... }
 
 - **Shape:** region references only — **no reason**. This follows the cross-SDK contract's `responded_regions()`, which returns region identifiers only. No new type is required.
 - **Source:** `self.requests.iter()`.
-- **Filter:** include only entries with `Some(region)` AND `completed_at.is_some()` (a response actually arrived).
+- **Filter:** include only entries that (a) have `Some(region)` AND (b) actually produced a service response. Note that `completed_at.is_some()` alone is **not** sufficient: the driver sets `completed_at` from three sites — `complete()` (a real response arrived), `timeout()` (client-side end-to-end timeout), and `fail_transport()` (transport-level failure) (`diagnostics_context.rs:505,531,552`). The correct predicate excludes the latter two: `region.is_some() && completed_at.is_some() && !timed_out() && error.is_none()` (a non-2xx HTTP status such as 404/429 still counts — it is a response from the region; `error` is only set on transport failures). The implementation may instead expose a small `pub(crate)` helper (e.g., `responded_with_service_reply()`) on `RequestDiagnostics` to centralize this predicate.
 - **Dedup:** **none**.
 - **Order:** **completion order**. The current `requests` collection is in *dispatch* order; producing completion order requires one of:
   - **(a)** the orchestrator appending in completion order (changes the existing append discipline — rejected because it would harm `requested_regions()` semantics);
@@ -175,7 +175,7 @@ For all three accessors, a `RequestDiagnostics` whose `region` is `None` (pre-re
 
 ### 3.5 New public types — `RequestedRegion` and `RequestedRegionReason`
 
-These realize the cross-SDK contract's `RequestedRegion` value type and `RequestedRegionReason` enumeration (§1), in idiomatic Rust. They live in `azure_data_cosmos` (the public SDK crate), not the driver — see §5.
+These realize the cross-SDK contract's `RequestedRegion` value type and `RequestedRegionReason` enumeration (§1), in idiomatic Rust. Because the accessors that return them are inherent methods on the driver's `DiagnosticsContext`, both types are **defined in `azure_data_cosmos_driver` and re-exported from `azure_data_cosmos`** (the crate dependency runs SDK → driver only; the driver cannot reference SDK types). This matches the existing treatment of `DiagnosticsContext` (re-exported as `CosmosDiagnosticsContext`) — see §5.
 
 ```rust
 /// A single region the SDK dispatched a request to, tagged with the
@@ -294,25 +294,28 @@ Rust has no first-class "variant alias" or "deprecated variant alias that resolv
 
 ## 5. Public-crate re-export decision
 
-The accessors live on `DiagnosticsContext` in the driver crate. `DiagnosticsContext` is already re-exported as `azure_data_cosmos::CosmosDiagnosticsContext` (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`). The remaining question is what reason-carrying shape `requested_regions()` returns and which types become public in `azure_data_cosmos`.
+The accessors live on `DiagnosticsContext` in the driver crate. `DiagnosticsContext` is already re-exported as `azure_data_cosmos::CosmosDiagnosticsContext` (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`). The remaining question is what reason-carrying shape `requested_regions()` returns and where the per-region-reason types are defined.
 
-The cross-SDK contract resolves the open part of this decision: it **does** expose per-region reason (a `RequestedRegion { region, reason }` pair). For contract conformance the Rust SDK follows suit.
+**Crate-layering constraint.** `azure_data_cosmos` depends on `azure_data_cosmos_driver`; the driver has **no** back-dependency on the SDK. An inherent method on the driver's `DiagnosticsContext` therefore cannot return an SDK-defined type. Any reason-carrying return type for `requested_regions()` must be **driver-defined** (and then re-exported), unless the accessors themselves are moved out of the driver (e.g., an SDK-side extension trait or wrapper).
 
-| | **Option A — re-export driver `ExecutionContext`** | **Option B — SDK-owned `RequestedRegion` + `RequestedRegionReason` (RECOMMENDED — realizes the cross-SDK contract)** |
-|---|---|---|
-| Public surface | Adds driver `ExecutionContext` to `azure_data_cosmos` | Adds two SDK-owned types; driver `ExecutionContext` stays private |
-| Per-region reason | Exposed (raw driver enum) | Exposed (clean SDK enum) |
-| Matches "No Model Sharing" (AGENTS.md) | No (re-exports a driver-internal model) | **Yes** (SDK owns its public model; maps from the driver enum at the boundary) |
-| Cross-SDK conformance | Partial (different enum shape/values) | **Full** (`RequestedRegion` + `RequestedRegionReason` match the contract's names) |
-| Effort to revisit | Hard once shipped | Easy: mapping lives in one `From` impl |
+The cross-SDK contract requires per-region reason (a `RequestedRegion { region, reason }` pair). Within the layering constraint, the realistic options are:
 
-**Recommendation: Option B.** It honors the "No Model Sharing" principle, gives the Rust SDK a clean public enum whose variant names match the cross-SDK contract (`OperationRetry`, `Hedging`, …), and keeps the driver's `ExecutionContext` free to evolve. The driver-private `ExecutionContext` is projected to `RequestedRegionReason` via the `From` impl in §3.5. Open Question (i) in §10 invites the team to confirm the `Unknown`-omission and reserved-variant choices.
+| | **Option A — re-export driver `ExecutionContext` directly** | **Option B — driver-defined `RequestedRegion` + `RequestedRegionReason`, re-exported by the SDK (RECOMMENDED)** | **Option C — SDK-owned types via an SDK-side extension trait** |
+|---|---|---|---|
+| Where the accessors live | Inherent on driver `DiagnosticsContext` | Inherent on driver `DiagnosticsContext` | SDK extension trait on `CosmosDiagnosticsContext` |
+| Per-region reason type | Raw driver `ExecutionContext` (re-exported) | Clean driver enum `RequestedRegionReason` (re-exported) | SDK-owned `RequestedRegionReason` |
+| Public-name stability | Tied to the internal `ExecutionContext` taxonomy | Stable contract names, decoupled from `ExecutionContext` | Stable contract names |
+| Cross-SDK conformance | Partial (enum shape/values differ from the contract) | **Full** (names match the contract) | Full |
+| `From<ExecutionContext>` mapping | n/a | Driver-internal (both types in driver) | Must be SDK-internal; the driver enum must already be public |
+| Cost / friction | Low | Low (mirrors existing `DiagnosticsContext` re-export) | Higher (extension-trait ergonomics; discoverability) |
+
+**Recommendation: Option B.** Define `RequestedRegion` and `RequestedRegionReason` in the driver alongside `ExecutionContext`, keep the accessors inherent on `DiagnosticsContext`, and re-export both types from `azure_data_cosmos` — the same pattern already used for `DiagnosticsContext`. The driver-internal `ExecutionContext` is projected to `RequestedRegionReason` via the `From` impl in §3.5, so the public surface carries the stable contract names while `ExecutionContext` stays driver-private and free to evolve. This is **not** strict "No Model Sharing" — it shares a *purpose-built, stable* public model from the driver, consistent with the precedent that the entire diagnostics model (`DiagnosticsContext`) is already driver-owned and re-exported. If the team wants strict SDK ownership of the public model, Option C moves the accessors into an SDK-side extension trait at the cost of exposing the driver `ExecutionContext` (or a driver projection) for the trait to map from. Open Question (i) in §10 invites the team to confirm Option B vs. C and the `Unknown`-omission / reserved-variant choices.
 
 ---
 
 ## 6. Reconciliation with PR #4330's `HEDGING_SPEC.md`
 
-PR #4330 is **merged** into `main`. The authoritative `HedgeDiagnostics` definition is in `sdk/cosmos/azure_data_cosmos_driver/docs/HEDGING_SPEC.md` and reads:
+PR #4330 is **merged** into `main`. The authoritative `HedgeDiagnostics` definition is in `sdk/cosmos/azure_data_cosmos_driver/docs/HEDGING_SPEC.md` ([SHA-pinned permalink](https://github.com/Azure/azure-sdk-for-rust/blob/5f5d8c49d02b579a2afd2297857b919900ff1dad/sdk/cosmos/azure_data_cosmos_driver/docs/HEDGING_SPEC.md)) and reads:
 
 ```rust
 pub struct DiagnosticsContext {
@@ -439,13 +442,13 @@ These entries are **drafts**. They are not added to any `CHANGELOG.md` in this s
 
 `### Features Added`
 
-- Added the cross-SDK Hedging Detection API on `CosmosDiagnosticsContext`: `hedging_started() -> bool`, `requested_regions() -> Vec<RequestedRegion>` (dispatch order, duplicates allowed, each entry tagged with a `RequestedRegionReason`), and `responded_regions() -> Vec<&Region>` (arrival order, duplicates allowed). Adds the public `RequestedRegion` struct and `RequestedRegionReason` enum that realize the cross-SDK contract's per-region-reason surface. `RequestedRegionReason` is `#[non_exhaustive]`; `TransportRetry` and `CircuitBreakerProbe` are reserved and not populated by the initial implementation.
+- Added the cross-SDK Hedging Detection API on `CosmosDiagnosticsContext`: `hedging_started() -> bool`, `requested_regions() -> Vec<RequestedRegion>` (dispatch order, duplicates allowed, each entry tagged with a `RequestedRegionReason`), and `responded_regions() -> Vec<&Region>` (arrival order, duplicates allowed). Re-exports the `RequestedRegion` struct and `RequestedRegionReason` enum (defined in `azure_data_cosmos_driver`) that realize the cross-SDK contract's per-region-reason surface. `RequestedRegionReason` is `#[non_exhaustive]`; `TransportRetry` and `CircuitBreakerProbe` are reserved and not populated by the initial implementation.
 
 ### 9.2 `sdk/cosmos/azure_data_cosmos_driver/CHANGELOG.md` (under the next unreleased version, currently `0.3.0`)
 
 `### Features Added`
 
-- Added `DiagnosticsContext::requested_regions()`, `responded_regions()`, and `hedging_started()` backing the SDK's cross-SDK Hedging Detection API.
+- Added `DiagnosticsContext::requested_regions()`, `responded_regions()`, and `hedging_started()` backing the SDK's cross-SDK Hedging Detection API, along with the public `RequestedRegion` struct and `RequestedRegionReason` enum (re-exported by `azure_data_cosmos`).
 
 `### Breaking Changes`
 
@@ -455,7 +458,7 @@ These entries are **drafts**. They are not added to any `CHANGELOG.md` in this s
 
 ## 10. Open questions
 
-- **(i) Public enum shape — RESOLVED toward the cross-SDK contract.** The contract exposes a `RequestedRegion { region, reason }` pair with a `RequestedRegionReason`. This spec adopts the same shape (§3.5, §5, Option B). Remaining sub-questions for team confirmation: (a) omitting the `Unknown` sentinel in Rust (justified in §3.5); (b) keeping `TransportRetry` / `CircuitBreakerProbe` as reserved variants.
+- **(i) Public enum shape & ownership — RESOLVED toward the cross-SDK contract, pending placement confirmation.** The contract exposes a `RequestedRegion { region, reason }` pair with a `RequestedRegionReason`. This spec adopts the same shape (§3.5). Because the accessors are inherent on the driver's `DiagnosticsContext` and the driver cannot depend on the SDK, §5 recommends **Option B** (types defined in the driver, re-exported by `azure_data_cosmos`). Sub-questions for team confirmation: (a) Option B vs. **Option C** (SDK-side extension trait owning the public types); (b) omitting the `Unknown` sentinel in Rust (justified in §3.5); (c) keeping `TransportRetry` / `CircuitBreakerProbe` as reserved variants.
 - **(ii) Driver rename vs. boundary-only mapping.** §4 renames the driver-private `ExecutionContext::Retry → OperationRetry` (gate Q5=B accepts the resulting serialized-string break). An alternative is to leave `ExecutionContext::Retry` untouched and only name the *public* `RequestedRegionReason::OperationRetry`, mapping at the boundary. The driver rename is recommended for internal consistency, but the team may prefer the boundary-only approach to avoid the diagnostics-string break entirely.
 - **(iii) Completion-order index for `responded_regions()`.** §3.2 proposes a driver-private `Vec<usize>` completion-order index (option (c)). Confirm vs. the cheaper accessor-time stable sort by `completed_at` (option (b)). For the typically-small request counts per operation, (b) may be simpler with negligible cost.
 - **(iv) `Deserialize` on `ExecutionContext`.** Decide whether the implementation PR adds a `Deserialize` derive (and the paired `#[serde(alias = "retry")]`) to support round-tripping persisted diagnostics, or leaves `ExecutionContext` `Serialize`-only (§4.1). No consumer requires `Deserialize` today.
