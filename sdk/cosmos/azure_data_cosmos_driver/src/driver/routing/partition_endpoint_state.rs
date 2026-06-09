@@ -33,7 +33,7 @@ pub(crate) struct PartitionEndpointState {
     pub per_partition_circuit_breaker_enabled: bool,
 
     /// Per-`(partition, primary_region)` count of consecutive alternate-region
-    /// hedge wins. Per [`HEDGING_SPEC.md`] §9.5: incremented when the alternate
+    /// hedge wins: incremented when the alternate
     /// hedge attempt finishes before the primary, reset on a direct primary-region
     /// win. When the count reaches [`PartitionFailoverConfig::consecutive_hedge_win_threshold`]
     /// the partition is tripped by installing an [`HealthStatus::Unhealthy`]
@@ -43,8 +43,8 @@ pub(crate) struct PartitionEndpointState {
     /// only reset the counter, never the trip itself.
     ///
     /// `Option<Region>` accommodates default-endpoint accounts whose snapshots
-    /// do not carry a named region (matches the spec invariant that the counter
-    /// key is `(partition, primary_region)` with `primary_region` allowed to be
+    /// do not carry a named region (the counter key is
+    /// `(partition, primary_region)` with `primary_region` allowed to be
     /// absent).
     pub consecutive_hedge_wins: HashMap<(PartitionKeyRangeId, Option<Region>), u32>,
 
@@ -156,7 +156,7 @@ pub(crate) struct PartitionFailoverConfig {
     /// [`OperationOptions::consecutive_hedge_win_threshold`] or
     /// `AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD`.
     ///
-    /// Per [`HEDGING_SPEC.md`] §9.5: cross-region hedging surfaces a steady
+    /// Cross-region hedging surfaces a steady
     /// signal of primary-region degradation when the alternate consistently
     /// beats the primary. Tripping the partition routes subsequent requests
     /// away from the degraded region until the failback loop allows a probe.

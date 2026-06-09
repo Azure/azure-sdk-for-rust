@@ -3,13 +3,10 @@
 
 //! Availability strategy types for cross-region hedging.
 //!
-//! See `docs/HEDGING_SPEC.md` §4 ("Configuration Surface") for the full design.
-//!
 //! These types model **what** the SDK should do when a primary request is slow
 //! to respond; they do **not** by themselves trigger any behavior. The hedging
-//! pipeline stage consumes a resolved [`AvailabilityStrategy`] (see
-//! `docs/HEDGING_SPEC.md` §11) to decide whether to issue a hedged request to a
-//! secondary region.
+//! pipeline stage consumes a resolved [`AvailabilityStrategy`] to decide
+//! whether to issue a hedged request to a secondary region.
 
 use std::time::Duration;
 
@@ -79,8 +76,6 @@ impl HedgingStrategy {
 }
 
 /// Strategy controlling whether the SDK issues hedged cross-region requests.
-///
-/// See `docs/HEDGING_SPEC.md` §4.2.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum AvailabilityStrategy {

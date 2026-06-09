@@ -1715,7 +1715,7 @@ impl DiagnosticsContext {
     /// Returns the hedging diagnostics for this operation, if hedging was
     /// selected.
     ///
-    /// Per the spec §10.1 attachment contract, this is `Some(_)` if and only
+    /// This is `Some(_)` if and only
     /// if `should_hedge()` returned `true` and `execute_hedged()` was
     /// entered — even when the primary won before the threshold elapsed.
     /// `None` means hedging was not selected for this operation (no

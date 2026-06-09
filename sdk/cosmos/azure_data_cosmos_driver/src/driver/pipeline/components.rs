@@ -234,7 +234,7 @@ impl OperationRetryState {
     }
 
     /// Attaches the cross-hedge shared hub-region-processing-only
-    /// latch (spec `docs/HEDGING_SPEC.md` §9.6). Called by
+    /// latch. Called by
     /// `execute_hedged` after the threshold elapses and the
     /// eligibility predicate (data-plane ∧ single-master) holds, so the
     /// zero-overhead happy path never constructs an `Arc<AtomicBool>`.

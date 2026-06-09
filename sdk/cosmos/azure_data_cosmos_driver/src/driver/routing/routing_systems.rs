@@ -546,7 +546,6 @@ pub(crate) fn remove_probe_succeeded_entry(
 /// partition by installing an [`HealthStatus::Unhealthy`] entry in
 /// [`PartitionEndpointState::circuit_breaker_overrides`].
 ///
-/// Per [`HEDGING_SPEC.md`] §9.5:
 /// - The counter is keyed by `(partition_key_range_id, primary_region)` so that
 ///   different primary regions accumulate independently.
 /// - The trip mirrors the shape produced by [`mark_partition_unavailable`]
@@ -624,7 +623,7 @@ pub(crate) fn record_hedge_alternate_win(
     // `circuit_breaker_overrides` but never consulted by `resolve_endpoint`
     // (the gate requires `count >= threshold`), so the hedge-driven trip
     // would be observable in state but invisible to routing — defeating
-    // the whole point of §9.5 (HEDGING_SPEC.md).
+    // the whole point of the hedge-win trip.
     //
     // Both read and write counts are seeded because the same entry serves
     // both code paths in [`can_circuit_breaker_trigger_failover`], and a
@@ -664,7 +663,7 @@ pub(crate) fn record_hedge_alternate_win(
 /// Resets the consecutive-hedge-win counter for the given `(partition,
 /// primary_region)` pair.
 ///
-/// Per [`HEDGING_SPEC.md`] §9.5 invariant #2: a direct primary-region win
+/// A direct primary-region win
 /// clears any accumulated count so transient cross-region latency spikes do
 /// not stack into a trip over arbitrarily long timescales.
 ///
@@ -2004,7 +2003,7 @@ mod tests {
 
     #[test]
     fn hedge_alternate_win_no_op_when_primary_region_unknown_to_account() {
-        // Pathological case: spec invariant says we record per (partition,
+        // Pathological case: we record per (partition,
         // primary_region) — but if the primary_region we were told about
         // doesn't match any endpoint in the account snapshot, we cannot
         // install a meaningful trip. Counter still increments (it's keyed

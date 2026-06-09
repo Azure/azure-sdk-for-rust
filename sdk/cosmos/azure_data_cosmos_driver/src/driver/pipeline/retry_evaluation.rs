@@ -229,7 +229,7 @@ pub(crate) fn evaluate_transport_result(
 /// Side effects observed by a single hedge leg, returned by
 /// [`evaluate_hedge_leg_effects`] so the race coordinator can mirror the
 /// non-hedged [`evaluate_transport_result`] path without consuming the
-/// `TransportResult`. See HEDGING_SPEC.md §6.5 and §9.6.
+/// `TransportResult`.
 #[derive(Debug, Default)]
 pub(crate) struct HedgeLegEvaluation {
     pub(crate) effects: Vec<LocationEffect>,
@@ -262,7 +262,7 @@ pub(crate) fn evaluate_hedge_leg_effects(
             ..
         } => {
             // Mirror `build_session_retry_state`'s four-condition latch
-            // trigger (HEDGING_SPEC.md §9.6).
+            // trigger.
             if status.is_read_session_not_available()
                 && retry_state.can_retry_session()
                 && retry_state.is_dataplane
@@ -460,7 +460,7 @@ fn try_handle_read_session_not_available(
 /// 4. `!hub_region_processing_only` — defense-in-depth idempotency;
 ///    structurally already guaranteed by latch-once semantics.
 ///
-/// **Hedging coordination (future).** Per HEDGING_SPEC.md §9.5, when
+/// **Hedging coordination (future).** When
 /// `OperationRetryState` gains a `shared_hub_region_latch:
 /// Option<Arc<AtomicBool>>` (populated by `execute_with_hedging()`),
 /// this function MUST also CAS-set the shared latch with
@@ -477,7 +477,7 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
         && !retry_state.hub_region_processing_only
     {
         new_state.hub_region_processing_only = true;
-        // Cross-hedge propagation (HEDGING_SPEC.md §9.6). When this
+        // Cross-hedge propagation. When this
         // operation is running inside `execute_hedged` the shared
         // `Arc<AtomicBool>` lets sibling hedges discover the 1002 latch
         // without re-running the 404/1002 cycle themselves. `Release`
@@ -1200,7 +1200,7 @@ mod tests {
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
-    /// Regression guard for HEDGING_SPEC.md §7.2.1: a cross-region hedge
+    /// Regression guard: a cross-region hedge
     /// can only be spawned from a region-changing retry action, and for a
     /// 429 that path is gated to sub-status `3092`
     /// (`SystemResourceUnavailable`). Every other throttle sub-status —
@@ -1256,8 +1256,8 @@ mod tests {
                     action,
                     OperationAction::FailoverRetry { .. } | OperationAction::SessionRetry { .. }
                 ),
-                "429/{sub:?} must not become a region-changing retry \
-                 (HEDGING_SPEC.md §7.2.1); got {action:?}",
+                "429/{sub:?} must not become a region-changing retry; \
+                 got {action:?}",
             );
         }
     }
@@ -1998,7 +1998,7 @@ mod tests {
         }
     }
 
-    // ── Shared hub-region latch (Part 5 / HEDGING_SPEC.md §9.6) ───────
+    // ── Shared hub-region latch (Part 5) ──────────────────────────
 
     use std::sync::{
         atomic::{AtomicBool, Ordering},
@@ -2181,7 +2181,7 @@ mod tests {
     /// effects (matches `try_handle_read_session_not_available`'s
     /// empty-effects contract). The hedge race coordinator uses this
     /// signal to flip the parent `hub_region_processing_only` latch at
-    /// the `BothTransient` upgrade boundary — HEDGING_SPEC.md §9.6.
+    /// the `BothTransient` upgrade boundary.
     #[test]
     fn hedge_leg_effects_1002_signals_session_unavailable() {
         let op = make_read_operation();

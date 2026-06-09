@@ -437,8 +437,7 @@ mod tests {
     #[test]
     fn is_final_result_429_ru_budget_and_hot_partition_are_final() {
         // RU-budget / hot-partition throttles are account-/partition-wide;
-        // racing a second region cannot relieve them, so they are final
-        // (HEDGING_SPEC §7.2.1).
+        // racing a second region cannot relieve them, so they are final.
         assert!(status(429, Some(3200)).is_final_result()); // RU_BUDGET_EXCEEDED
         assert!(status(429, Some(3210)).is_final_result()); // RU_BUDGET_EXCEEDED_FOR_MASTER
         assert!(status(429, Some(3214)).is_final_result()); // HOT_PARTITION_KEY_THROTTLED
@@ -708,19 +707,15 @@ mod tests {
         );
     }
 
-    /// Spec D1 regression — §5.2 threshold derivation.
+    /// Threshold derivation must be stable across repeated calls.
     ///
     /// Calling `evaluate_hedge_eligibility` repeatedly with the same
     /// **configured** `request_timeout` must return the same threshold
     /// every time, regardless of how much wall-clock time has elapsed
-    /// between calls. The caller's contract (per `execute_operation_pipeline`
-    /// STAGE 2b / 5b) is to pass the configured value from
+    /// between calls. The caller must pass the configured value from
     /// `OperationOptionsView::end_to_end_latency_policy()`, **not** the
-    /// remaining time until the deadline. Before the D1 fix, the call
-    /// sites passed `deadline.map(|d| d.saturating_duration_since(now))`,
-    /// which would shrink with elapsed time on STAGE 5b retry-driven
-    /// upgrades and silently violate the spec's `min(1000ms, configured / 2)`
-    /// formula.
+    /// remaining time until the deadline — otherwise the threshold would
+    /// shrink with elapsed time on retry-driven upgrades.
     #[test]
     fn evaluate_hedge_eligibility_threshold_stable_across_repeated_calls() {
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
@@ -747,14 +742,13 @@ mod tests {
         assert_eq!(
             second.threshold.get(),
             first.threshold.get(),
-            "threshold must be stable across calls — D1 regression: \
-             caller must pass configured request_timeout (not remaining \
-             deadline) so the §5.2 default does not shrink between \
-             STAGE 2b and STAGE 5b",
+            "threshold must be stable across calls: the caller must pass \
+             the configured request_timeout (not remaining deadline) so \
+             the default does not shrink between attempts",
         );
     }
 
-    /// Spec §6.3 regression — alternate selection must skip the primary.
+    /// Alternate selection must skip the primary.
     ///
     /// Before this fix, the alternate was unconditionally
     /// `applicable_regions[1]`. When the primary had been promoted off
@@ -796,7 +790,7 @@ mod tests {
         assert_eq!(secondary_region.as_ref(), Some(&Region::EAST_US));
     }
 
-    /// Spec §6.3 — companion to
+    /// Companion to
     /// `evaluate_secondary_skips_primary_when_primary_is_not_index_zero`.
     ///
     /// When the primary has been promoted all the way to the *last*
@@ -836,7 +830,7 @@ mod tests {
         );
     }
 
-    /// Spec §6.3 regression — degenerate case: only the primary is
+    /// Degenerate case: only the primary is
     /// applicable (e.g. user excluded every other region, or every other
     /// preferred endpoint aliases to the same region/endpoint_key).
     /// `evaluate_hedge_eligibility` must return `None` rather than build a

@@ -1645,7 +1645,7 @@ impl CosmosStatus {
     }
 
     /// Returns `true` when this status is a **final** (non-retriable) outcome
-    /// for the purposes of cross-region hedging (HEDGING_SPEC §7.1 / §7.2.1).
+    /// for the purposes of cross-region hedging.
     ///
     /// Final statuses are:
     /// * any 1xx / 2xx / 3xx response,

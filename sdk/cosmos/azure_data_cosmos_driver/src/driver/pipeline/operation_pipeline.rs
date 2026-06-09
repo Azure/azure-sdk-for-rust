@@ -133,7 +133,7 @@ impl OperationOverrides {
 /// Executes a Cosmos DB operation through the new pipeline architecture.
 ///
 /// This is the entry point called by `CosmosDriver::execute_operation`.
-/// It orchestrates the 7-stage operation loop described in the spec.
+/// It orchestrates the 7-stage operation loop.
 ///
 /// When `pre_resolved_pk_range_id` is `Some`, it is used to seed the
 /// `OperationRetryState` so that partition-level failover overrides (PPAF/PPCB)
@@ -384,14 +384,8 @@ pub(crate) async fn execute_operation_pipeline(
                         partition_key_range_id: race_pk_range_id,
                         observed_session_unavailable: race_observed_1002,
                     } => {
-                        // Both legs returned a retriable failure with
-                        // budget remaining — fall back into the failover
-                        // loop against the regions we have not yet tried.
-                        // `try_advance_after_both_transient` charges two
-                        // failover-retry slots and advances the
-                        // LocationIndex by two; if the budget is
-                        // exhausted, it returns the last error which we
-                        // surface verbatim.
+                        // Both legs failed with retriable errors; fall back
+                        // into the failover loop against the untried regions.
                         tracing::warn!(
                             activity_id = %activity_id,
                             primary_region = ?primary_region.as_ref().map(crate::options::Region::as_str),
@@ -399,10 +393,9 @@ pub(crate) async fn execute_operation_pipeline(
                             "hedge race: both transient on STAGE 2b; attempting failover fallback",
                         );
                         diagnostics = returned_diagnostics;
-                        // Fold the race-observed PK-range-id and 1002 latch
-                        // back into the parent retry_state so the failover
-                        // fallback behaves like a non-hedged attempt that
-                        // saw the same conditions.
+                        // Fold race-observed PK-range-id and 1002 latch back
+                        // into retry_state so the fallback behaves like a
+                        // non-hedged attempt that saw the same conditions.
                         if retry_state.partition_key_range_id.is_none() {
                             retry_state.partition_key_range_id = race_pk_range_id;
                         }
@@ -415,15 +408,11 @@ pub(crate) async fn execute_operation_pipeline(
                             secondary_region.as_ref(),
                             last_error,
                         ) {
-                            // Budget exhausted — the race is now the
-                            // operation's terminal outcome, so stamp the
-                            // both-transient hedge result before grafting
-                            // accumulated diagnostics onto the terminal
-                            // error (callers must not see
-                            // `.hedge_diagnostics() == None` on a
-                            // hedge-eligible operation that died here).
-                            // `deadline_elapsed = false`: the failover
-                            // budget, not the deadline, ended the race.
+                            // Budget exhausted: the race is the terminal
+                            // outcome, so stamp the both-transient result
+                            // before grafting diagnostics onto the error.
+                            // `deadline_elapsed = false`: the budget, not
+                            // the deadline, ended the race.
                             diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
                                 strategy_config,
                                 primary_region_for_diag,
@@ -822,12 +811,10 @@ pub(crate) async fn execute_operation_pipeline(
                             secondary_region.as_ref(),
                             last_error,
                         ) {
-                            // Budget exhausted — the race is now the
-                            // operation's terminal outcome, so stamp the
-                            // both-transient hedge result before grafting
-                            // diagnostics onto the terminal error (see
-                            // STAGE 2b). `deadline_elapsed = false`: the
-                            // failover budget, not the deadline, ended it.
+                            // Budget exhausted: stamp the both-transient
+                            // result before grafting diagnostics onto the
+                            // error (see STAGE 2b). `deadline_elapsed =
+                            // false`: the budget, not the deadline, ended it.
                             diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
                                 strategy_config,
                                 primary_region_for_diag,
@@ -2461,32 +2448,16 @@ pub(crate) enum HedgedRaceResult {
     /// 3. Otherwise advance the [`LocationIndex`] past the two consumed
     ///    regions and `continue` the operation loop.
     ///
-    /// The race has already attached `HedgeDiagnostics::both_transient`
-    /// to `diagnostics`; the caller threads it back into the loop so the
-    /// next attempt's request trail merges into the same diagnostics
-    /// context (one operation-scoped diagnostics chain regardless of how
-    /// many race-and-retry cycles it takes to terminate).
-    ///
-    /// The `primary_region` / `secondary_region` fields are reported
-    /// for telemetry (so operators can see which two regions burnt RU
-    /// in the failed race) and to drive a future per-region skip-set
-    /// the loop will consult when in-hedge retry lands. Today they are
-    /// surfaced only via tracing.
-    ///
+    /// `primary_region` / `secondary_region` are surfaced via tracing.
     /// `partition_key_range_id` and `observed_session_unavailable` carry
-    /// state the race observed that the failover-loop fallback must fold
-    /// back into `retry_state` before re-entering — see
-    /// `pk_range_id_from_result` and `propagate_hedge_session_unavailable`
-    /// for the write-back contract.
+    /// state the race observed that the fallback folds back into
+    /// `retry_state` before re-entering.
     ///
     /// `strategy_config` and the `*_for_diag` regions are carried so the
-    /// failover-loop fallback can stamp `HedgeDiagnostics::both_transient`
-    /// when (and only when) the failover budget is exhausted — at that
-    /// point the race *is* the operation's terminal outcome, so its hedge
-    /// diagnostics must reach the caller. They are intentionally **not**
-    /// stamped on the non-terminal (`continue`) path because a later
-    /// successful retry would otherwise carry a misleading
-    /// `terminal_state = BothTransient`.
+    /// fallback can stamp `HedgeDiagnostics::both_transient` only when the
+    /// failover budget is exhausted (the terminal outcome). They are not
+    /// stamped on the non-terminal path, where a later successful retry
+    /// would otherwise carry a misleading `terminal_state = BothTransient`.
     BothTransient {
         primary_region: Option<Region>,
         secondary_region: Option<Region>,
@@ -2507,8 +2478,7 @@ pub(crate) enum HedgedRaceResult {
 ///
 /// Called at every classify site in [`execute_hedged`] so the hedged
 /// path's routing-state and hub-region-latch mutations stay symmetric
-/// with the non-hedged `evaluate_transport_result` path — see
-/// HEDGING_SPEC.md §6.5 invariant #10 and §9.6.
+/// with the non-hedged `evaluate_transport_result` path.
 async fn apply_hedge_leg_effects(
     ctx: &AttemptContext<'_>,
     retry_state_snapshot: &OperationRetryState,
@@ -3287,14 +3257,12 @@ fn finalize_both_transient(
         );
         HedgedRaceResult::Terminal(Err(application_cancelled_error(parent_diagnostics)))
     } else {
-        // Non-terminal: the failover loop will run more attempts. Do
-        // NOT stamp HedgeDiagnostics here — a later successful retry
-        // would otherwise carry a misleading
-        // `terminal_state = BothTransient`. Instead, carry
-        // `strategy_config` and the `*_for_diag` regions on the
-        // `BothTransient` variant so the failover-loop fallback can stamp
-        // `HedgeDiagnostics::both_transient` if (and only if) the
-        // failover budget turns out to be exhausted.
+        // Non-terminal: the failover loop will run more attempts. Do not
+        // stamp HedgeDiagnostics here — a later successful retry would
+        // carry a misleading `terminal_state = BothTransient`. Instead,
+        // carry `strategy_config` and the `*_for_diag` regions on the
+        // variant so the fallback can stamp it only if the failover budget
+        // turns out to be exhausted.
         tracing::debug!(
             activity_id = %activity_id,
             primary_region = ?primary_region.as_ref().map(Region::as_str),
@@ -3428,7 +3396,6 @@ fn try_advance_after_both_transient(
 /// `build_session_retry_state` would have latched on, and advances
 /// `session_token_retry_count` symmetrically so `max_session_retries`
 /// is honored across both non-hedged and hedge-fallback flows.
-/// See HEDGING_SPEC.md §9.6.
 fn propagate_hedge_session_unavailable(
     retry_state: &mut OperationRetryState,
     observed_session_unavailable: bool,
@@ -6067,7 +6034,7 @@ mod tests {
     #[test]
     fn result_is_final_429_ru_budget_and_hot_partition_are_final() {
         // RU-budget / hot-partition throttles cannot be relieved by racing a
-        // second region, so they short-circuit the race (HEDGING_SPEC §7.2.1).
+        // second region, so they short-circuit the race.
         assert!(super::result_is_final(&http_result(429, Some(3200)))); // RU_BUDGET_EXCEEDED
         assert!(super::result_is_final(&http_result(429, Some(3210)))); // RU_BUDGET_EXCEEDED_FOR_MASTER
         assert!(super::result_is_final(&http_result(429, Some(3214)))); // HOT_PARTITION_KEY_THROTTLED
@@ -6659,19 +6626,10 @@ mod tests {
         assert_eq!(state.failover_retry_count, 0);
     }
 
-    /// PR #4432 review (tvaron3): when a hedge race ends in
-    /// `BothTransient` **and** the failover budget is exhausted, the race
-    /// is the operation's terminal outcome — so the grafted diagnostics
-    /// must carry the both-transient `HedgeDiagnostics`.
-    ///
-    /// `finalize_both_transient` deliberately leaves the **non-terminal**
-    /// path unstamped (a later successful failover retry must not inherit
-    /// `terminal_state = BothTransient`); instead it carries
-    /// `strategy_config` + the diagnostic regions on the `BothTransient`
-    /// variant so the budget-exhausted handler (STAGE 2b / STAGE 7) can
-    /// stamp them. This test pins both halves of that contract: the
-    /// variant carries the data, and stamping it yields the expected
-    /// hedge diagnostics.
+    /// When a hedge race ends in `BothTransient` and the failover budget
+    /// is exhausted, the race is the terminal outcome, so the non-terminal
+    /// path must still carry `strategy_config` + the diagnostic regions on
+    /// the variant for the budget-exhausted handler to stamp them.
     #[test]
     fn both_transient_budget_exhausted_carries_hedge_diagnostics() {
         let threshold =
