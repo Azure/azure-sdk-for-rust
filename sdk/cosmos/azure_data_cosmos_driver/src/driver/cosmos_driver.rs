@@ -3517,6 +3517,7 @@ mod tests {
             request_timeout: std::time::Duration::from_secs(5),
             allow_invalid_cert: false,
             http2_keep_alive_while_idle: false,
+            transport_kind: None,
         };
         let transport_client =
             crate::driver::transport::http_client_factory::DefaultHttpClientFactory::new()

@@ -8,6 +8,7 @@
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::diagnostics::TransportKind;
 use azure_data_cosmos_driver::fault_injection::*;
+use azure_data_cosmos_driver::options::{OperationOptionsBuilder, ThrottlingRetryOptionsBuilder};
 use std::error::Error;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -1227,4 +1228,3 @@ pub async fn pkrange_refresh_transient_failure_preserves_cached_routing_map(
     })
     .await
 }
-

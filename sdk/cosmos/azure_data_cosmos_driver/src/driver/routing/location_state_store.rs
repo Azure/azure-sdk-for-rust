@@ -1016,6 +1016,7 @@ mod tests {
             Duration::from_secs(60),
             PartitionFailoverConfig::default(),
             Vec::new(),
+            None,
         );
 
         // Bootstrap: succeeds, seeds the cache.

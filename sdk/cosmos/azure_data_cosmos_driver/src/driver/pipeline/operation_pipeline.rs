@@ -358,6 +358,9 @@ pub(crate) async fn execute_operation_pipeline(
                     activity_id,
                     pipeline_type,
                     transport_security,
+                    account_name: account_name.clone(),
+                    effective_consistency,
+                    read_consistency_strategy,
                     session_manager,
                     session_consistency_active,
                     options,
@@ -769,6 +772,7 @@ pub(crate) async fn execute_operation_pipeline(
                     &retry_state,
                     &location,
                     pipeline_type.is_data_plane(),
+                    account_name.is_some(),
                     location_state_store.endpoint_unavailability_ttl(),
                 );
                 // Re-evaluate hedge eligibility against the *post-advance*
@@ -807,6 +811,9 @@ pub(crate) async fn execute_operation_pipeline(
                     activity_id,
                     pipeline_type,
                     transport_security,
+                    account_name: account_name.clone(),
+                    effective_consistency,
+                    read_consistency_strategy,
                     session_manager,
                     session_consistency_active,
                     options,
@@ -1923,6 +1930,16 @@ struct AttemptContext<'a> {
     activity_id: &'a ActivityId,
     pipeline_type: PipelineType,
     transport_security: TransportSecurity,
+    /// Global database account name parsed from `account_endpoint`. Used by
+    /// Gateway 2.0 request wrapping when an attempt routes to a G2 endpoint.
+    account_name: Option<String>,
+    /// Effective `DefaultConsistencyLevel` resolved for this operation
+    /// (read-strategy + account default). Threaded through hedge legs so they
+    /// build the request identically to the non-hedged path.
+    effective_consistency: DefaultConsistencyLevel,
+    /// Configured `ReadConsistencyStrategy` for this operation. Same threading
+    /// rationale as `effective_consistency`.
+    read_consistency_strategy: ReadConsistencyStrategy,
     session_manager: &'a SessionManager,
     /// Whether session consistency is in effect for this operation
     /// (drives session-token resolve/capture inside the attempt).
@@ -2260,6 +2277,8 @@ async fn perform_single_attempt(
         deadline: ctx.deadline,
         resolved_session_token,
         throughput_control: ctx.throughput_control,
+        effective_consistency: ctx.effective_consistency,
+        read_consistency_strategy: ctx.read_consistency_strategy,
     };
 
     let mut transport_request = build_transport_request(
@@ -2310,6 +2329,7 @@ async fn perform_single_attempt(
             pipeline_type: ctx.pipeline_type,
             transport_security: ctx.transport_security,
             endpoint_key: routing.endpoint.endpoint_key(),
+            account_name: ctx.account_name.clone(),
             max_throttle_attempts,
             max_throttle_wait_time,
         },
@@ -3569,7 +3589,7 @@ mod tests {
             EffectivePartitionKey, FeedRange, ItemReference, PartitionKey, PartitionKeyDefinition,
             SystemProperties, ThroughputControlGroupName,
         },
-        options::{PriorityLevel, ThroughputControlGroupSnapshot},
+        options::{PriorityLevel, ReadConsistencyStrategy, ThroughputControlGroupSnapshot},
     };
 
     fn test_account() -> AccountReference {
@@ -4561,6 +4581,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         };
         retry_state.is_dataplane = true;
 
@@ -4569,6 +4590,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(routing.endpoint, hub_endpoint);
@@ -4621,6 +4643,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         };
         retry_state.is_dataplane = true;
 
@@ -4629,6 +4652,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         // Even with all regions excluded, the hub write region is used as
@@ -4694,6 +4718,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         };
         retry_state.is_dataplane = true;
 
@@ -4702,6 +4727,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         // Excluded + unavailable: data-plane op must get the hub write
@@ -4780,6 +4806,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         };
         retry_state.is_dataplane = true;
 
@@ -4788,6 +4815,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
 
@@ -4865,6 +4893,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -4950,6 +4979,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -5023,6 +5053,7 @@ mod tests {
             &retry_state,
             &location,
             false,
+            true,
             Duration::from_secs(60),
         );
         assert_eq!(
@@ -6156,6 +6187,8 @@ mod tests {
             deadline: None,
             resolved_session_token: None,
             throughput_control: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: ReadConsistencyStrategy::Default,
         };
         build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")
@@ -6841,6 +6874,7 @@ mod tests {
             ppcb_active: false,
             pending_write_effects: Vec::new(),
             hedge_already_fired: false,
+            retry_with_state: None,
         }
     }
 

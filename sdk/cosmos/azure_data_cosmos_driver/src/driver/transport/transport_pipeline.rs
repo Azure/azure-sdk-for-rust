@@ -1239,6 +1239,7 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                account_name: None,
                 max_throttle_attempts: 0,
                 max_throttle_wait_time: Duration::from_secs(30),
             },
@@ -1300,6 +1301,7 @@ mod tests {
                 pipeline_type: PipelineType::DataPlane,
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
+                account_name: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_millis(1),
             },
@@ -1368,6 +1370,7 @@ mod tests {
                     pipeline_type: PipelineType::DataPlane,
                     transport_security: TransportSecurity::Secure,
                     endpoint_key: test_endpoint_key(),
+                    account_name: None,
                     max_throttle_attempts,
                     // Generous budget so the cumulative-wait cap is never the
                     // limiter for these small attempt counts.
@@ -1786,6 +1789,8 @@ mod tests {
             transport_security: TransportSecurity::Secure,
             endpoint_key,
             account_name,
+            max_throttle_attempts: 9,
+            max_throttle_wait_time: Duration::from_secs(30),
         }
     }
 

@@ -231,9 +231,11 @@ pub(crate) fn evaluate_hedge_eligibility(
     } else {
         TransportMode::Gateway
     };
+    let secondary_endpoint_key = secondary_ep.endpoint_key();
     let secondary_routing = RoutingDecision {
         selected_url: secondary_ep.selected_url(use_gateway20).clone(),
         transport_mode,
+        endpoint_key: secondary_endpoint_key,
         endpoint: secondary_ep,
     };
 
@@ -577,9 +579,11 @@ mod tests {
             .cloned()
             .unwrap_or_else(|| account.default_endpoint.clone());
         let url = ep.selected_url(false).clone();
+        let endpoint_key = ep.endpoint_key();
         RoutingDecision {
             selected_url: url,
             transport_mode: TransportMode::Gateway,
+            endpoint_key,
             endpoint: ep,
         }
     }
@@ -595,9 +599,11 @@ mod tests {
             .cloned()
             .expect("test fixture must supply enough preferred read endpoints");
         let url = ep.selected_url(false).clone();
+        let endpoint_key = ep.endpoint_key();
         RoutingDecision {
             selected_url: url,
             transport_mode: TransportMode::Gateway,
+            endpoint_key,
             endpoint: ep,
         }
     }
