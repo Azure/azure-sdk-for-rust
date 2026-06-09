@@ -796,6 +796,46 @@ mod tests {
         assert_eq!(secondary_region.as_ref(), Some(&Region::EAST_US));
     }
 
+    /// Spec §6.3 — companion to
+    /// `evaluate_secondary_skips_primary_when_primary_is_not_index_zero`.
+    ///
+    /// When the primary has been promoted all the way to the *last*
+    /// preferred-read endpoint (e.g. PPCB tripped every earlier region, or
+    /// repeated location-index advancement walked the primary to the tail),
+    /// the operation must still be hedged, and the alternate must be the
+    /// first applicable region distinct from the promoted primary.
+    #[test]
+    fn evaluate_hedges_when_primary_is_last_preferred_endpoint() {
+        let state =
+            account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2, Region::CENTRAL_US]);
+        let op = read_item_operation();
+        // Primary promoted off index 0 to the tail (index 2 = CENTRAL_US).
+        let primary = primary_routing_for_index(&state, 2);
+
+        let op_opts = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None).expect(
+            "request must still be hedged when the primary is not \
+             preferred_read_endpoints[0]",
+        );
+
+        let secondary_region = upgrade.secondary_routing.endpoint.region().cloned();
+        // First applicable region distinct from the primary, in
+        // `preferred_read_endpoints` order → EAST_US (index 0).
+        assert_eq!(secondary_region.as_ref(), Some(&Region::EAST_US));
+        assert_ne!(
+            secondary_region.as_ref(),
+            primary.endpoint.region(),
+            "alternate must differ from the promoted primary region",
+        );
+        assert_ne!(
+            upgrade.secondary_routing.endpoint.endpoint_key(),
+            primary.endpoint.endpoint_key(),
+            "alternate must differ from the promoted primary endpoint_key",
+        );
+    }
+
     /// Spec §6.3 regression — degenerate case: only the primary is
     /// applicable (e.g. user excluded every other region, or every other
     /// preferred endpoint aliases to the same region/endpoint_key).

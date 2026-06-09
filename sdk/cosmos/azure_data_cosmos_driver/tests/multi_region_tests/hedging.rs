@@ -38,7 +38,11 @@ use std::time::Duration;
 /// Primary region — the first entry in the `preferred_regions` list passed
 /// to the driver. The hedging evaluator targets this region for the primary
 /// leg and selects the next eligible entry as the alternate.
-const PRIMARY_REGION: Region = Region::NORTH_CENTRAL_US;
+///
+/// Must be one of the regions provisioned by `test-resources.bicep`
+/// (East US 2 + West US 3); `ALTERNATE_REGION` takes East US 2, so the
+/// primary uses West US 3.
+const PRIMARY_REGION: Region = Region::WEST_US_3;
 
 /// Alternate region — second entry in `preferred_regions`. Spec §6.2:
 /// `regions[1]` is the deterministic alternate-region target.

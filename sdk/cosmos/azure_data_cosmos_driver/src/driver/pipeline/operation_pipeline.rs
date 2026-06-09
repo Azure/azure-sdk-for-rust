@@ -376,6 +376,9 @@ pub(crate) async fn execute_operation_pipeline(
                     HedgedRaceResult::BothTransient {
                         primary_region,
                         secondary_region,
+                        strategy_config,
+                        primary_region_for_diag,
+                        secondary_region_for_diag,
                         last_error,
                         diagnostics: returned_diagnostics,
                         partition_key_range_id: race_pk_range_id,
@@ -412,9 +415,21 @@ pub(crate) async fn execute_operation_pipeline(
                             secondary_region.as_ref(),
                             last_error,
                         ) {
-                            // Budget exhausted — graft accumulated
-                            // diagnostics onto the terminal error so
-                            // callers don't see `.diagnostics() == None`.
+                            // Budget exhausted — the race is now the
+                            // operation's terminal outcome, so stamp the
+                            // both-transient hedge result before grafting
+                            // accumulated diagnostics onto the terminal
+                            // error (callers must not see
+                            // `.hedge_diagnostics() == None` on a
+                            // hedge-eligible operation that died here).
+                            // `deadline_elapsed = false`: the failover
+                            // budget, not the deadline, ended the race.
+                            diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
+                                strategy_config,
+                                primary_region_for_diag,
+                                secondary_region_for_diag,
+                                false,
+                            ));
                             let diagnostics_ctx = Arc::new(diagnostics.complete());
                             return Err(crate::error::CosmosErrorBuilder::from_error(e)
                                 .with_diagnostics(diagnostics_ctx)
@@ -775,6 +790,9 @@ pub(crate) async fn execute_operation_pipeline(
                     HedgedRaceResult::BothTransient {
                         primary_region,
                         secondary_region,
+                        strategy_config,
+                        primary_region_for_diag,
+                        secondary_region_for_diag,
                         last_error,
                         diagnostics: returned_diagnostics,
                         partition_key_range_id: race_pk_range_id,
@@ -804,8 +822,18 @@ pub(crate) async fn execute_operation_pipeline(
                             secondary_region.as_ref(),
                             last_error,
                         ) {
-                            // Budget exhausted — graft diagnostics
-                            // onto the terminal error (see STAGE 2b).
+                            // Budget exhausted — the race is now the
+                            // operation's terminal outcome, so stamp the
+                            // both-transient hedge result before grafting
+                            // diagnostics onto the terminal error (see
+                            // STAGE 2b). `deadline_elapsed = false`: the
+                            // failover budget, not the deadline, ended it.
+                            diagnostics.set_hedge_diagnostics(HedgeDiagnostics::both_transient(
+                                strategy_config,
+                                primary_region_for_diag,
+                                secondary_region_for_diag,
+                                false,
+                            ));
                             let diagnostics_ctx = Arc::new(diagnostics.complete());
                             return Err(crate::error::CosmosErrorBuilder::from_error(e)
                                 .with_diagnostics(diagnostics_ctx)
@@ -2450,9 +2478,21 @@ pub(crate) enum HedgedRaceResult {
     /// back into `retry_state` before re-entering — see
     /// `pk_range_id_from_result` and `propagate_hedge_session_unavailable`
     /// for the write-back contract.
+    ///
+    /// `strategy_config` and the `*_for_diag` regions are carried so the
+    /// failover-loop fallback can stamp `HedgeDiagnostics::both_transient`
+    /// when (and only when) the failover budget is exhausted — at that
+    /// point the race *is* the operation's terminal outcome, so its hedge
+    /// diagnostics must reach the caller. They are intentionally **not**
+    /// stamped on the non-terminal (`continue`) path because a later
+    /// successful retry would otherwise carry a misleading
+    /// `terminal_state = BothTransient`.
     BothTransient {
         primary_region: Option<Region>,
         secondary_region: Option<Region>,
+        strategy_config: HedgingStrategyConfig,
+        primary_region_for_diag: Region,
+        secondary_region_for_diag: Region,
         last_error: crate::error::CosmosError,
         diagnostics: DiagnosticsContextBuilder,
         partition_key_range_id: Option<PartitionKeyRangeId>,
@@ -3250,9 +3290,11 @@ fn finalize_both_transient(
         // Non-terminal: the failover loop will run more attempts. Do
         // NOT stamp HedgeDiagnostics here — a later successful retry
         // would otherwise carry a misleading
-        // `terminal_state = BothTransient`. `strategy_config` and the
-        // `*_for_diag` regions are used in the `if` arm above so they
-        // are not unused; they are simply dropped here.
+        // `terminal_state = BothTransient`. Instead, carry
+        // `strategy_config` and the `*_for_diag` regions on the
+        // `BothTransient` variant so the failover-loop fallback can stamp
+        // `HedgeDiagnostics::both_transient` if (and only if) the
+        // failover budget turns out to be exhausted.
         tracing::debug!(
             activity_id = %activity_id,
             primary_region = ?primary_region.as_ref().map(Region::as_str),
@@ -3264,6 +3306,9 @@ fn finalize_both_transient(
             last_error: transient_outcome_error(primary_region.as_ref(), secondary_region.as_ref()),
             primary_region,
             secondary_region,
+            strategy_config,
+            primary_region_for_diag,
+            secondary_region_for_diag,
             diagnostics: parent_diagnostics,
             partition_key_range_id,
             observed_session_unavailable,
@@ -6612,5 +6657,86 @@ mod tests {
             "exhausted budget must not mutate LocationIndex",
         );
         assert_eq!(state.failover_retry_count, 0);
+    }
+
+    /// PR #4432 review (tvaron3): when a hedge race ends in
+    /// `BothTransient` **and** the failover budget is exhausted, the race
+    /// is the operation's terminal outcome — so the grafted diagnostics
+    /// must carry the both-transient `HedgeDiagnostics`.
+    ///
+    /// `finalize_both_transient` deliberately leaves the **non-terminal**
+    /// path unstamped (a later successful failover retry must not inherit
+    /// `terminal_state = BothTransient`); instead it carries
+    /// `strategy_config` + the diagnostic regions on the `BothTransient`
+    /// variant so the budget-exhausted handler (STAGE 2b / STAGE 7) can
+    /// stamp them. This test pins both halves of that contract: the
+    /// variant carries the data, and stamping it yields the expected
+    /// hedge diagnostics.
+    #[test]
+    fn both_transient_budget_exhausted_carries_hedge_diagnostics() {
+        let threshold =
+            crate::options::HedgeThreshold::new(std::time::Duration::from_millis(200)).unwrap();
+        let strategy_config = super::HedgingStrategyConfig::new(threshold);
+        let primary_for_diag = crate::options::Region::new("region-a");
+        let secondary_for_diag = crate::options::Region::new("region-b");
+
+        // Non-terminal both-transient (deadline = None) must return the
+        // `BothTransient` variant carrying the data the budget-exhausted
+        // handler needs to stamp diagnostics.
+        let race = super::finalize_both_transient(
+            &crate::models::ActivityId::from_string("both-transient-budget".to_owned()),
+            None, // deadline not elapsed
+            strategy_config,
+            Some(crate::options::Region::new("region-a")),
+            Some(crate::options::Region::new("region-b")),
+            primary_for_diag.clone(),
+            secondary_for_diag.clone(),
+            test_diagnostics(),
+            None,
+            false,
+        );
+
+        let super::HedgedRaceResult::BothTransient {
+            strategy_config: carried_strategy,
+            primary_region_for_diag,
+            secondary_region_for_diag,
+            mut diagnostics,
+            ..
+        } = race
+        else {
+            panic!("deadline-not-elapsed both-transient must return BothTransient");
+        };
+
+        // The variant must carry exactly what the handler stamps —
+        // otherwise the hedge diagnostics would be silently dropped on
+        // the budget-exhausted terminal error.
+        assert_eq!(carried_strategy, strategy_config);
+        assert_eq!(primary_region_for_diag, primary_for_diag);
+        assert_eq!(secondary_region_for_diag, secondary_for_diag);
+
+        // Reproduce the budget-exhausted handler step: stamp the
+        // both-transient hedge result with `deadline_elapsed = false`
+        // (the budget, not the deadline, ended the race).
+        diagnostics.set_hedge_diagnostics(super::HedgeDiagnostics::both_transient(
+            carried_strategy,
+            primary_region_for_diag,
+            secondary_region_for_diag,
+            false,
+        ));
+        let ctx = diagnostics.complete();
+
+        let hedge = ctx
+            .hedge_diagnostics()
+            .expect("budget-exhausted both-transient must carry hedge diagnostics");
+        assert_eq!(
+            hedge.terminal_state(),
+            crate::diagnostics::HedgeTerminalState::BothTransient {
+                deadline_elapsed: false,
+            },
+        );
+        assert_eq!(hedge.primary_region(), &primary_for_diag);
+        assert_eq!(hedge.alternate_region(), Some(&secondary_for_diag));
+        // No leg produced a final response in a both-transient terminal.
+        assert_eq!(hedge.response_region(), None);
     }
 }

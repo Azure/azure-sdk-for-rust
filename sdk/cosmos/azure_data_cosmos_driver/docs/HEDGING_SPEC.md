@@ -1274,19 +1274,19 @@ emits the cancellation signal at the next transport `await` point.
 No `CancellationToken` is constructed.
 
 ```
-              execute_hedged()
-                    │
-        ┌─────────────────────────┐
-        │   tokio::select! biased; {  │
-        │     primary_fut,            │
-        │     secondary_fut,          │
-        │     deadline_signal(),      │
-        │   }                          │
-        └────────────┬──────────────┘
-                     ▼
+                execute_hedged()
+                       │
+        ┌────────────────────────────┐
+        │  tokio::select! biased; {  │
+        │    primary_fut,            │
+        │    secondary_fut,          │
+        │    deadline_signal(),      │
+        │  }                         │
+        └──────────────┬─────────────┘
+                       ▼
         winner returned → loser future dropped
-                     │
-                     ▼
+                       │
+                       ▼
         Drop chain runs through the transport pipeline
         → in-flight HTTP/AMQP request is cancelled at the
           next await point (TPS §5.1).
@@ -1883,8 +1883,7 @@ for the operation — i.e. `should_hedge()` returned `true` and the
 | `strategy_config` | The active strategy config (always populated) |
 | `primary_region` | `regions[0]` |
 | `alternate_region` | `None` |
-| `response_region` | `regions[0]` |
-| `was_hedge` | `false` |
+| `response_region` | `Some(regions[0])` |
 | `terminal_state` | `HedgeTerminalState::PrimaryWonPreThreshold` |
 
 This lets callers distinguish *"hedging was active and the primary won
@@ -1923,36 +1922,43 @@ the numerator.
 /// For terminal-error outcomes (deadline exceeded, both legs transient)
 /// this is recorded for observability but the operation still returns
 /// an `Err` to the caller.
-#[derive(Clone, Debug)]
+///
+/// All fields are private; read them through the accessors below.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct HedgeDiagnostics {
     /// The hedging strategy configuration that was active.
-    pub strategy_config: HedgingStrategyConfig,
+    strategy_config: HedgingStrategyConfig,
     /// The primary region the operation was initially dispatched to.
-    pub primary_region: Region,
+    primary_region: Region,
     /// The alternate region the hedge was dispatched to, if any.
     ///
     /// `None` when only the primary leg ran (terminal states
     /// `PrimaryWonPreThreshold` and `DeadlineExceededPreThreshold`);
     /// `Some(_)` otherwise.
-    pub alternate_region: Option<Region>,
-    /// The target region of the winning response.
+    alternate_region: Option<Region>,
+    /// The region whose response was returned to the caller.
     ///
-    /// For terminal-error states (`BothTransient`, `CancelledAwaitingPartner`,
-    /// `DeadlineExceededPreThreshold`) this is the primary region as a
-    /// sentinel — no response was actually returned to the caller.
-    pub response_region: Region,
-    /// Whether the alternate hedge produced the response returned to
-    /// the caller.
-    ///
-    /// **Invariant:** `was_hedge == true` if and only if
-    /// `terminal_state == HedgeTerminalState::AlternateWon`. Win-rate
-    /// metrics must use this field (or equivalently `terminal_state`)
-    /// rather than inspecting `alternate_region.is_some()`.
-    pub was_hedge: bool,
+    /// `Some(_)` only for the winning terminal states
+    /// (`PrimaryWonPreThreshold`, `PrimaryWonAfterHedge`, `AlternateWon`);
+    /// `None` for the terminal-error states where no leg produced a
+    /// final response (`BothTransient`, `CancelledAwaitingPartner`,
+    /// `DeadlineExceededPreThreshold`).
+    response_region: Option<Region>,
     /// Structured classification of how the hedge race terminated.
     /// See the terminal-state taxonomy table above for semantics.
-    pub terminal_state: HedgeTerminalState,
+    terminal_state: HedgeTerminalState,
+}
+
+impl HedgeDiagnostics {
+    pub fn strategy_config(&self) -> HedgingStrategyConfig { /* ... */ }
+    pub fn primary_region(&self) -> &Region { /* ... */ }
+    pub fn alternate_region(&self) -> Option<&Region> { /* ... */ }
+    pub fn response_region(&self) -> Option<&Region> { /* ... */ }
+    /// Authoritative classification of how the race ended. Replaced the
+    /// legacy `was_hedge` boolean — derive that via
+    /// `matches!(state, HedgeTerminalState::AlternateWon)`.
+    pub fn terminal_state(&self) -> HedgeTerminalState { /* ... */ }
 }
 
 /// Structured classification of how a hedge race terminated. Used by
