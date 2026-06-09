@@ -15,7 +15,10 @@ use std::{
 
 use crate::{
     diagnostics::ProxyConfiguration,
-    models::{AccountReference, ContainerReference, ThroughputControlGroupName, UserAgent},
+    models::{
+        normalize_wrapping_sdk_identifier, AccountReference, ContainerReference,
+        ThroughputControlGroupName, UserAgent,
+    },
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
         OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
@@ -54,7 +57,7 @@ use super::{
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use url::Url;
 ///
-/// # async fn example() -> azure_core::Result<()> {
+/// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
 /// let operation_options = OperationOptionsBuilder::new()
 ///     .with_max_failover_retry_count(5)
 ///     .build();
@@ -133,6 +136,14 @@ pub struct CosmosDriverRuntime {
     /// is more strict for this field.
     user_agent_suffix: Option<UserAgentSuffix>,
 
+    /// Optional wrapping-SDK identifier prepended to the User-Agent header.
+    ///
+    /// Set by higher-level SDKs (e.g., `azure_data_cosmos`) so requests can be
+    /// attributed to the wrapping SDK in addition to the driver. Example value:
+    /// `azsdk-rust-cosmos/0.34.0`. When unset, the User-Agent starts with the
+    /// driver's own identifier.
+    wrapping_sdk_identifier: Option<String>,
+
     /// Registry of throughput control groups.
     ///
     /// Groups are registered during builder construction and are immutable after
@@ -162,6 +173,7 @@ pub struct CosmosDriverRuntime {
     machine_id: Arc<String>,
 
     /// Whether fault injection is enabled for this runtime.
+    #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
 
     /// Proxy configuration snapshot for diagnostics.
@@ -221,6 +233,7 @@ impl CosmosDriverRuntime {
     }
 
     /// Returns whether fault injection is enabled for this runtime.
+    #[cfg(feature = "fault_injection")]
     pub(crate) fn fault_injection_enabled(&self) -> bool {
         self.fault_injection_enabled
     }
@@ -287,6 +300,12 @@ impl CosmosDriverRuntime {
         self.user_agent_suffix.as_ref()
     }
 
+    /// Returns the wrapping-SDK identifier, if one was supplied via
+    /// [`CosmosDriverRuntimeBuilder::with_wrapping_sdk_identifier`].
+    pub fn wrapping_sdk_identifier(&self) -> Option<&str> {
+        self.wrapping_sdk_identifier.as_deref()
+    }
+
     /// Returns the effective correlation dimension.
     ///
     /// Returns `correlation_id` if set, otherwise falls back to `user_agent_suffix`.
@@ -344,7 +363,7 @@ impl CosmosDriverRuntime {
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
     ///
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     ///
     /// let account = AccountReference::with_master_key(
@@ -365,7 +384,7 @@ impl CosmosDriverRuntime {
         self: &Arc<Self>,
         account: AccountReference,
         driver_options: Option<DriverOptions>,
-    ) -> azure_core::Result<Arc<CosmosDriver>> {
+    ) -> crate::error::Result<Arc<CosmosDriver>> {
         let key = account.endpoint().to_string();
 
         // Fast path: return an already-initialized driver.
@@ -409,6 +428,10 @@ impl CosmosDriverRuntime {
 /// 3. [`with_correlation_id()`](Self::with_correlation_id) if set
 /// 4. No suffix (base user agent only)
 ///
+/// If [`with_wrapping_sdk_identifier()`](Self::with_wrapping_sdk_identifier) is
+/// set, its value is prepended to the prefix so requests can be attributed to
+/// both the wrapping SDK and the driver.
+///
 /// # Throughput Control Groups
 ///
 /// Throughput control groups must be registered during builder construction.
@@ -423,6 +446,7 @@ pub struct CosmosDriverRuntimeBuilder {
     workload_id: Option<WorkloadId>,
     correlation_id: Option<CorrelationId>,
     user_agent_suffix: Option<UserAgentSuffix>,
+    wrapping_sdk_identifier: Option<String>,
     throughput_control_groups: ThroughputControlGroupRegistry,
     cpu_refresh_interval: Option<Duration>,
     #[cfg(feature = "fault_injection")]
@@ -503,6 +527,23 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
+    /// Sets a wrapping-SDK identifier prepended to the User-Agent header.
+    ///
+    /// Higher-level SDKs (such as `azure_data_cosmos`) call this to identify
+    /// themselves alongside the driver. The supplied value should already be a
+    /// complete token (e.g., `azsdk-rust-cosmos/0.34.0`); the driver only
+    /// sanitizes non-ASCII characters and trims whitespace. An empty or
+    /// whitespace-only value is treated as unset and clears any previously
+    /// configured identifier.
+    ///
+    /// When set, the User-Agent looks like:
+    /// `azsdk-rust-cosmos/0.34.0 azsdk-rust-cosmos-driver/0.3.0 linux/x86_64 rustc/1.85.0`
+    pub fn with_wrapping_sdk_identifier(mut self, identifier: impl Into<String>) -> Self {
+        let raw = identifier.into();
+        self.wrapping_sdk_identifier = normalize_wrapping_sdk_identifier(&raw);
+        self
+    }
+
     /// Sets the CPU/memory monitoring refresh interval.
     ///
     /// Controls how frequently the background CPU and memory sampling thread
@@ -551,7 +592,7 @@ impl CosmosDriverRuntimeBuilder {
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
     ///
-    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let account = AccountReference::with_master_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
@@ -580,11 +621,14 @@ impl CosmosDriverRuntimeBuilder {
     pub fn register_throughput_control_group(
         mut self,
         group: ThroughputControlGroupOptions,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         self.throughput_control_groups
             .register(group)
             .map_err(|e| {
-                azure_core::Error::with_message(azure_core::error::ErrorKind::Other, e.to_string())
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
+                    .with_message(e.to_string())
+                    .build()
             })?;
         Ok(self)
     }
@@ -617,7 +661,7 @@ impl CosmosDriverRuntimeBuilder {
     pub fn with_fault_injection_rules(
         mut self,
         rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         if rules.is_empty() {
             return Ok(self);
         }
@@ -632,10 +676,12 @@ impl CosmosDriverRuntimeBuilder {
 
         for rule in &rules {
             if !seen.insert(rule.id().to_string()) {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("duplicate fault injection rule id: {}", rule.id()),
-                ));
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
+                    )
+                    .with_message(format!("duplicate fault injection rule id: {}", rule.id()))
+                    .build());
             }
         }
 
@@ -659,22 +705,24 @@ impl CosmosDriverRuntimeBuilder {
     /// Returns an error if the HTTP transport cannot be created (e.g., TLS
     /// configuration failure).
     ///
-    pub async fn build(self) -> azure_core::Result<Arc<CosmosDriverRuntime>> {
-        // Compute user agent from suffix/workloadId/correlationId (in priority order)
+    pub async fn build(self) -> crate::error::Result<Arc<CosmosDriverRuntime>> {
+        // Compute user agent from suffix/workloadId/correlationId (in priority order),
+        // optionally prepending a wrapping-SDK identifier.
+        let wrapping = self.wrapping_sdk_identifier.as_deref();
         let user_agent = if let Some(ref suffix) = self.user_agent_suffix {
-            UserAgent::from_suffix(suffix)
+            UserAgent::from_suffix(wrapping, suffix)
         } else if let Some(workload_id) = self.workload_id {
-            UserAgent::from_workload_id(workload_id)
+            UserAgent::from_workload_id(wrapping, workload_id)
         } else if let Some(ref correlation_id) = self.correlation_id {
-            UserAgent::from_correlation_id(correlation_id)
+            UserAgent::from_correlation_id(wrapping, correlation_id)
         } else {
-            UserAgent::default()
+            UserAgent::from_wrapping_sdk_identifier(wrapping)
         };
 
         let connection_pool = self.connection_pool.unwrap_or_default();
         let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
-        #[allow(unused_mut)]
-        let mut fault_injection_enabled = false;
+        #[cfg(feature = "fault_injection")]
+        let fault_injection_enabled;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             let base_factory: Arc<dyn HttpClientFactory> = {
                 #[cfg(any(
@@ -708,6 +756,7 @@ impl CosmosDriverRuntimeBuilder {
                         ),
                     )
                 } else {
+                    fault_injection_enabled = false;
                     base_factory
                 }
             }
@@ -752,18 +801,35 @@ impl CosmosDriverRuntimeBuilder {
             connection_pool,
             bootstrap_transport,
             http_client_factory,
-            env_operation_options: Arc::new(OperationOptions::from_env()),
+            env_operation_options: Arc::new(OperationOptions {
+                // INVARIANT — when adding a new `#[option(nested)]` field to
+                // `OperationOptions`, you MUST add an explicit
+                // `<NestedType>::from_env()` call here under a matching field
+                // initializer. The `CosmosOptions` derive macro's
+                // `from_env_vars` does *not* recurse into nested option
+                // groups (today; tracked as a macro follow-up to fix this
+                // ergonomically — see the comment in
+                // `azure_data_cosmos_macros/src/env.rs`). Skipping the
+                // explicit call here silently drops the nested group's env
+                // vars at the env layer, which surfaces only as "per-env
+                // overrides for the new group are ignored" at runtime — no
+                // compile-time guard catches it.
+                throttling_retry_options: Some(crate::options::ThrottlingRetryOptions::from_env()),
+                ..OperationOptions::from_env()
+            }),
             operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,
+            wrapping_sdk_identifier: self.wrapping_sdk_identifier,
             throughput_control_groups: self.throughput_control_groups,
             driver_registry: RwLock::new(HashMap::new()),
             container_cache: ContainerCache::new(),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
             machine_id: Arc::new(vm_metadata.machine_id().to_owned()),
+            #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
             proxy_configuration,
         }))
@@ -846,6 +912,53 @@ mod tests {
         assert!(
             header_value.contains("test-app"),
             "User-Agent header '{header_value}' should contain the suffix 'test-app'"
+        );
+    }
+
+    /// `with_wrapping_sdk_identifier` is documented to treat empty or
+    /// whitespace-only input as unset and to strip non-ASCII. Verify that the
+    /// `wrapping_sdk_identifier()` accessor reflects that normalization so the
+    /// runtime view stays consistent with the rendered `User-Agent`.
+    #[tokio::test]
+    async fn wrapping_sdk_identifier_is_normalized_at_set_time() {
+        // Empty / whitespace-only → cleared.
+        for raw in ["", "   ", "\t\n"] {
+            let runtime = CosmosDriverRuntimeBuilder::new()
+                .with_wrapping_sdk_identifier(raw)
+                .build()
+                .await
+                .unwrap();
+            assert!(
+                runtime.wrapping_sdk_identifier().is_none(),
+                "expected wrapping identifier {raw:?} to normalize to None",
+            );
+            assert!(
+                runtime
+                    .user_agent()
+                    .as_str()
+                    .starts_with("azsdk-rust-cosmos-driver/"),
+                "User-Agent should not start with empty wrapping prefix: {}",
+                runtime.user_agent().as_str(),
+            );
+        }
+
+        // Non-ASCII trimmed and replaced; surrounding whitespace stripped.
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_wrapping_sdk_identifier("  azsdk-rust-café/1.0  ")
+            .build()
+            .await
+            .unwrap();
+        let identifier = runtime
+            .wrapping_sdk_identifier()
+            .expect("wrapping identifier should be set");
+        assert_eq!(identifier, "azsdk-rust-caf_/1.0");
+        assert!(
+            runtime
+                .user_agent()
+                .as_str()
+                .starts_with("azsdk-rust-caf_/1.0 azsdk-rust-cosmos-driver/"),
+            "unexpected User-Agent: {}",
+            runtime.user_agent().as_str(),
         );
     }
 }

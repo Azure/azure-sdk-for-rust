@@ -148,6 +148,7 @@ pub(crate) async fn handle_operation(
             region_name,
             parsed.db_id.as_deref().unwrap_or(""),
             parsed.coll_id.as_deref().unwrap_or(""),
+            parsed.if_none_match.as_deref(),
             start,
         ),
         OperationType::Create => {
@@ -587,6 +588,7 @@ fn handle_read_pkranges(
     region_name: &str,
     db_id: &str,
     coll_id: &str,
+    if_none_match: Option<&str>,
     start: Instant,
 ) -> AsyncRawResponse {
     let region_ref = match store.region(region_name) {
@@ -609,8 +611,25 @@ fn handle_read_pkranges(
 
     region_ref
         .with_container(db_id, coll_id, |state| {
+            // Honor If-None-Match for change-feed-style routing-map refreshes.
+            // The driver's `fetch_and_build_routing_map` loops calling
+            // `fetch_pk_ranges` with the previous etag as `If-None-Match` until
+            // the service returns 304 (or hits `MAX_FETCH_ITERATIONS`).
+            // Without 304 support the loop runs the maximum number of iterations,
+            // accumulates duplicate ranges, and `ContainerRoutingMap::try_create`
+            // produces an empty map — defeating PK-range pre-resolution and
+            // any feature that depends on it (PPCB, PPAF).
+            if let Some(client_etag) = if_none_match {
+                if client_etag == state.metadata.etag {
+                    return ResponseBuilder::new(StatusCode::NotModified, start)
+                        .with_request_charge(1.0)
+                        .with_etag(&state.metadata.etag)
+                        .build();
+                }
+            }
             let body = pkranges_to_json(state);
             success_response(StatusCode::Ok, &body, 1.0, "", start)
+                .with_etag(&state.metadata.etag)
                 .with_item_count(state.physical_partitions.len() as u32)
                 .build()
         })
@@ -639,7 +658,7 @@ fn resolve_partition_key(
     parsed: &ParsedRequest,
     body: &serde_json::Value,
     meta: &ContainerMetadata,
-) -> azure_core::Result<(Vec<super::epk::PartitionKeyComponent>, Epk)> {
+) -> crate::error::Result<(Vec<super::epk::PartitionKeyComponent>, Epk)> {
     let pk_components = if let Some(pk_header) = &parsed.partition_key_header {
         parse_partition_key_header(pk_header)?
     } else if body.is_null() {
@@ -647,10 +666,12 @@ fn resolve_partition_key(
         // extract a partition key from. Real Cosmos rejects point operations
         // that omit the partition key header in this case with 400 BadRequest;
         // mirror that so dual-backend tests stay consistent.
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "missing 'x-ms-documentdb-partitionkey' header on point operation",
-        ));
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("missing 'x-ms-documentdb-partitionkey' header on point operation")
+            .build());
     } else {
         extract_pk_from_body(body, meta.partition_key.paths())?
     };
@@ -665,7 +686,7 @@ fn resolve_partition_key(
 }
 
 /// Builds a 400 BadRequest response from a partition-key resolution error.
-fn bad_partition_key_response(err: azure_core::Error, start: Instant) -> AsyncRawResponse {
+fn bad_partition_key_response(err: crate::error::CosmosError, start: Instant) -> AsyncRawResponse {
     error_response(
         StatusCode::BadRequest,
         None,

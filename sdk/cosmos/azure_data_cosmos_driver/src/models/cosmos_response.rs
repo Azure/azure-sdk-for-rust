@@ -7,6 +7,46 @@ use crate::diagnostics::DiagnosticsContext;
 use crate::models::{CosmosResponseHeaders, CosmosStatus, ResponseBody};
 use std::sync::Arc;
 
+/// Wire-level payload of a Cosmos DB response — the response body plus the
+/// parsed Cosmos-specific headers. This is the portion of a response that
+/// is also meaningful on an [`CosmosError`](crate::error::CosmosError) (which keeps its
+/// own copy of [`CosmosStatus`] and the operation
+/// [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)).
+#[derive(Clone, Debug, Default)]
+#[non_exhaustive]
+pub(crate) struct CosmosResponsePayload {
+    /// Response body, possibly composed of multiple byte slices.
+    body: ResponseBody,
+
+    /// Extracted Cosmos-specific headers.
+    headers: CosmosResponseHeaders,
+}
+
+impl CosmosResponsePayload {
+    /// Creates a new payload from a body and parsed headers.
+    pub(crate) fn new(body: impl Into<ResponseBody>, headers: CosmosResponseHeaders) -> Self {
+        Self {
+            body: body.into(),
+            headers,
+        }
+    }
+
+    /// Returns a reference to the typed response body.
+    pub(crate) fn body(&self) -> &ResponseBody {
+        &self.body
+    }
+
+    /// Consumes the payload and returns the body.
+    pub(crate) fn into_body(self) -> ResponseBody {
+        self.body
+    }
+
+    /// Returns a reference to the extracted headers.
+    pub(crate) fn headers(&self) -> &CosmosResponseHeaders {
+        &self.headers
+    }
+}
+
 /// Result of a Cosmos DB operation.
 ///
 /// Contains the response body (as a [`ResponseBody`] of one or more
@@ -33,14 +73,11 @@ use std::sync::Arc;
 ///     // Deserialize body...
 /// }
 /// ```
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CosmosResponse {
-    /// Response body, possibly composed of multiple byte slices.
-    body: ResponseBody,
-
-    /// Extracted Cosmos-specific headers.
-    headers: CosmosResponseHeaders,
+    /// Wire-level payload (body + parsed headers).
+    payload: CosmosResponsePayload,
 
     /// Operation status including HTTP status code and optional sub-status.
     status: CosmosStatus,
@@ -62,23 +99,27 @@ impl CosmosResponse {
         diagnostics: Arc<DiagnosticsContext>,
     ) -> Self {
         Self {
-            body: body.into(),
-            headers,
+            payload: CosmosResponsePayload::new(body, headers),
             status,
             diagnostics,
         }
     }
 
+    /// Returns a reference to the wire-level payload (body + headers).
+    pub(crate) fn payload(&self) -> &CosmosResponsePayload {
+        &self.payload
+    }
+
     /// Returns a reference to the typed response body.
     pub fn body(&self) -> &ResponseBody {
-        &self.body
+        self.payload.body()
     }
 
     /// Test-only helper: returns the body as raw bytes, panicking if the body is
     /// not a [`ResponseBody::Bytes`] variant.
     #[cfg(test)]
     pub(crate) fn body_bytes(&self) -> &[u8] {
-        match &self.body {
+        match self.body() {
             ResponseBody::Bytes(b) => b.as_ref(),
             _ => panic!("expected ResponseBody::Bytes"),
         }
@@ -86,12 +127,12 @@ impl CosmosResponse {
 
     /// Consumes the response and returns the body.
     pub fn into_body(self) -> ResponseBody {
-        self.body
+        self.payload.into_body()
     }
 
     /// Returns a reference to the extracted headers.
     pub fn headers(&self) -> &CosmosResponseHeaders {
-        &self.headers
+        self.payload.headers()
     }
 
     /// Returns the operation status.
@@ -108,6 +149,42 @@ impl CosmosResponse {
     /// [`DiagnosticsContext`].
     pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         Arc::clone(&self.diagnostics)
+    }
+
+    /// Returns a borrow of the diagnostics [`Arc`] without cloning it.
+    pub fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext> {
+        &self.diagnostics
+    }
+
+    /// Prepends the per-request diagnostics from one or more prior
+    /// attempts onto this response's diagnostics, returning the response
+    /// with an aggregated [`DiagnosticsContext`].
+    ///
+    /// Used by the dataflow layer when an earlier attempt failed (for
+    /// example, with `410` / `PARTITION_KEY_RANGE_GONE`) and a subsequent
+    /// retry — which gets its own per-operation pipeline invocation and
+    /// therefore its own diagnostics — ultimately succeeded. Without this,
+    /// callers reading `response.diagnostics().request_count()` would only
+    /// see the final successful attempt; the per-operation contract is
+    /// "one operation = one [`DiagnosticsContext`] capturing **every**
+    /// attempt", so we splice the prior attempts in.
+    ///
+    /// Aggregation uses [`DiagnosticsContext::aggregate_sub_operations`],
+    /// which preserves insertion order — prior attempts come first,
+    /// followed by this response's own attempts.
+    pub(crate) fn with_aggregated_prior_diagnostics(
+        mut self,
+        prior: &[Arc<DiagnosticsContext>],
+    ) -> Self {
+        if prior.is_empty() {
+            return self;
+        }
+        let mut sources: Vec<Arc<DiagnosticsContext>> = prior.to_vec();
+        sources.push(Arc::clone(&self.diagnostics));
+        if let Some(aggregated) = DiagnosticsContext::aggregate_sub_operations(&sources) {
+            self.diagnostics = Arc::new(aggregated);
+        }
+        self
     }
 }
 

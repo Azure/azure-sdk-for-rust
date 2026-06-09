@@ -9,6 +9,7 @@ mod runner;
 mod seed;
 mod setup;
 mod stats;
+mod ua_suffix;
 
 /// Creates an AAD credential using WorkloadIdentity (AKS) with fallback to ManagedIdentity (VMs).
 fn create_aad_credential(
@@ -100,19 +101,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use azure_core::credentials::Secret;
     use azure_data_cosmos::{
-        CosmosAccountEndpoint, CosmosAccountReference, CosmosClientBuilder, RoutingStrategy,
+        AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy,
     };
     use clap::Parser;
 
     use crate::config::{AuthMethod, Config};
-    use crate::operations::create_operations;
+    use crate::operations::{create_operations, READ_FEED_RANGES_STAT};
     use crate::runner::{ConfigSnapshot, RunConfig};
     use crate::stats::Stats;
 
     let config = Config::parse();
 
     // Validate configuration
-    if config.no_reads && config.no_queries && config.no_upserts && config.no_creates {
+    if config.no_reads
+        && config.no_queries
+        && config.no_upserts
+        && config.no_creates
+        && config.no_feed_range_queries
+    {
         eprintln!("Error: all operations are disabled. Enable at least one.");
         std::process::exit(1);
     }
@@ -129,34 +135,57 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
+    // Resolve the (optional) user-agent suffix. Composes
+    // `{configured}-{first-8-chars-of-workload_id}` so a single perf
+    // run's traffic is correlatable in server-side telemetry with that
+    // run's client-side logs (which already carry `workload_id`).
+    // Empty configured suffix disables the suffix entirely.
+    let user_agent_suffix = match ua_suffix::resolve_user_agent_suffix(
+        &config.user_agent_suffix,
+        &config.workload_id,
+    ) {
+        Ok(s) => s,
+        Err(msg) => {
+            eprintln!("Error: {msg}");
+            std::process::exit(1);
+        }
+    };
+    if let Some(ref s) = user_agent_suffix {
+        println!("User-Agent suffix: {}", s.as_str());
+    } else {
+        println!("User-Agent suffix: <none>");
+    }
+
     // Build the Cosmos client using the builder pattern
     let application_region: azure_data_cosmos::regions::Region =
         config.application_region.clone().into();
     let strategy = RoutingStrategy::ProximityTo(application_region.clone());
 
-    let builder = CosmosClientBuilder::new();
+    let mut builder = CosmosClientBuilder::new();
+    if let Some(s) = user_agent_suffix.clone() {
+        builder = builder.with_user_agent_suffix(s);
+    }
 
-    let endpoint: CosmosAccountEndpoint = config.endpoint.parse()?;
+    let endpoint: AccountEndpoint = config.endpoint.parse()?;
     let client = match &config.auth {
         AuthMethod::Key => {
             let key = config.key.as_deref().ok_or(
                 "Account key is required for key auth. Use --key or set AZURE_COSMOS_KEY env var.",
             )?;
             let account =
-                CosmosAccountReference::with_master_key(endpoint, Secret::from(key.to_string()));
+                AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
             builder.build(account, strategy).await?
         }
         AuthMethod::Aad => {
             let credential = create_aad_credential()?;
-            let account = CosmosAccountReference::with_credential(endpoint, credential);
+            let account = AccountReference::with_credential(endpoint, credential);
             builder.build(account, strategy).await?
         }
     };
 
     let db_client = client.database_client(&config.database);
-    let container_client = db_client.container_client(&config.container).await?;
 
-    // Ensure the database exists (with retry logic for multi-region setups)
+    // Ensure the database exists (with retry logic for multi-region setups).
     setup::ensure_database(&client, &config.database).await?;
 
     // Convert TTL: 0 means disabled (None), >0 means that duration
@@ -166,8 +195,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(TimeToLive::Seconds(config.default_ttl as u32))
     };
 
-    // Ensure the container exists (with retry logic for multi-region setups)
-    setup::ensure_container(
+    // Ensure the container exists and grab the ContainerClient. We can't
+    // build the ContainerClient ahead of this — `container_client(name)`
+    // resolves metadata eagerly and would 404 on a brand-new database.
+    let container_client = setup::ensure_container(
         &db_client,
         &config.container,
         config.throughput,
@@ -180,8 +211,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         seed::seed_container(&container_client, config.seed_count, config.concurrency).await?;
     let seeded_items = seed::SharedItems::new(seeded_items);
 
-    // Create enabled operations
-    let ops = create_operations(&config, seeded_items);
+    // Create enabled operations. May async-call `read_feed_ranges` to
+    // seed the feed-range query op's cache.
+    let operations::OperationsBundle {
+        ops,
+        feed_range_refresher,
+    } = create_operations(&config, &container_client, seeded_items).await?;
     println!(
         "\nStarting perf test: {} operation(s), concurrency={}",
         ops.len(),
@@ -189,6 +224,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     for op in &ops {
         println!("  - {}", op.name());
+    }
+    if feed_range_refresher.is_some() {
+        println!(
+            "  Background: feed-range refresh every {}s",
+            config.feed_range_refresh_secs
+        );
     }
 
     let duration = config.duration.map(Duration::from_secs);
@@ -202,15 +243,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set up results container — either on the same account or a separate one
     let results_container = if let Some(ref results_endpoint) = config.results_endpoint {
         let results_auth = config.results_auth.as_ref().unwrap_or(&config.auth);
-        let results_ep: CosmosAccountEndpoint = results_endpoint.parse()?;
+        let results_ep: AccountEndpoint = results_endpoint.parse()?;
         let results_builder = CosmosClientBuilder::new();
+        let results_builder = if let Some(s) = user_agent_suffix.clone() {
+            results_builder.with_user_agent_suffix(s)
+        } else {
+            results_builder
+        };
         let results_strategy = RoutingStrategy::ProximityTo(application_region.clone());
         let results_client = match results_auth {
             AuthMethod::Key => {
                 let key = config.results_key.as_deref().ok_or(
                     "Results account key is required. Use --results-key or set AZURE_COSMOS_RESULTS_KEY.",
                 )?;
-                let account = CosmosAccountReference::with_master_key(
+                let account = AccountReference::with_authentication_key(
                     results_ep,
                     Secret::from(key.to_string()),
                 );
@@ -218,13 +264,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             AuthMethod::Aad => {
                 let credential = create_aad_credential()?;
-                let account = CosmosAccountReference::with_credential(results_ep, credential);
+                let account = AccountReference::with_credential(results_ep, credential);
                 results_builder.build(account, results_strategy).await?
             }
         };
         setup::ensure_database(&results_client, &config.results_database).await?;
         let results_db = results_client.database_client(&config.results_database);
-        setup::ensure_container(
+        let results_container = setup::ensure_container(
             &results_db,
             &config.results_container,
             10000,
@@ -235,11 +281,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "Perf results will be stored on separate account '{}' in '{}/{}'. Workload ID: {}",
             results_endpoint, config.results_database, config.results_container, config.workload_id,
         );
-        results_db
-            .container_client(&config.results_container)
-            .await?
+        results_container
     } else {
-        setup::ensure_container(
+        let results_container = setup::ensure_container(
             &db_client,
             &config.results_container,
             10000,
@@ -250,9 +294,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "Perf results will be stored in container '{}'. Workload ID: {}",
             config.results_container, config.workload_id,
         );
-        db_client
-            .container_client(&config.results_container)
-            .await?
+        results_container
     };
 
     // Resolve commit SHA: use CLI arg or auto-detect from git
@@ -295,11 +337,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Run the perf test
-    let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
+    let mut op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
+    if feed_range_refresher.is_some() {
+        // Pre-register the refresher's synthetic stats line so its
+        // latency/errors are aggregated alongside the regular ops.
+        op_names.push(READ_FEED_RANGES_STAT);
+    }
     let stats = Arc::new(Stats::new(&op_names));
     runner::run(RunConfig {
         container: container_client,
         operations: ops,
+        feed_range_refresher,
         stats,
         concurrency: config.concurrency,
         duration,

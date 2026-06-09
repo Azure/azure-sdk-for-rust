@@ -4,7 +4,6 @@
 //! Create operation.
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
@@ -37,7 +36,10 @@ impl Operation for CreateItemOperation {
         "CreateItem"
     }
 
-    async fn execute(&self, container: &ContainerClient) -> azure_core::Result<Option<Duration>> {
+    async fn execute(
+        &self,
+        container: &ContainerClient,
+    ) -> azure_data_cosmos::Result<Option<std::time::Duration>> {
         let id = Uuid::new_v4().to_string();
         let partition_key = Uuid::new_v4().to_string();
         let value = rand::rng().random_range(0..u64::MAX);

@@ -23,10 +23,11 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::{ContainerProperties, DatabaseProperties};
 use azure_data_cosmos::regions::Region;
-use azure_data_cosmos::CosmosAccountReference;
+use azure_data_cosmos::AccountEndpoint;
+use azure_data_cosmos::AccountReference;
 use azure_data_cosmos::{
     ContentResponseOnWrite, CosmosClient, CosmosClientBuilder, ItemReadOptions, ItemResponse,
-    ItemWriteOptions, OperationOptions, RoutingStrategy,
+    ItemWriteOptions, OperationOptions, RoutingStrategy, ThrottlingRetryOptionsBuilder,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
@@ -96,13 +97,13 @@ fn compare_item_responses(real: &ItemResponse, emu: &ItemResponse) {
 }
 
 /// Compares two SDK error responses: both must have the same HTTP status.
-fn compare_sdk_errors(real: &azure_core::Error, emu: &azure_core::Error) {
+fn compare_sdk_errors(real: &azure_data_cosmos::CosmosError, emu: &azure_data_cosmos::CosmosError) {
     assert_eq!(
-        real.http_status(),
-        emu.http_status(),
-        "Error status mismatch: real={:?} emulator={:?}",
-        real.http_status(),
-        emu.http_status(),
+        real.status().status_code(),
+        emu.status().status_code(),
+        "CosmosError status mismatch: real={:?} emulator={:?}",
+        real.status().status_code(),
+        emu.status().status_code(),
     );
 }
 
@@ -127,22 +128,17 @@ fn make_stale_session_token(token: &str) -> String {
     }
 }
 
-fn assert_read_session_not_available(err: &azure_core::Error, label: &str) {
+fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label: &str) {
     assert_eq!(
-        err.http_status(),
-        Some(StatusCode::NotFound),
+        err.status().status_code(),
+        StatusCode::NotFound,
         "{label}: stale session read should return 404",
     );
-    match err.kind() {
-        azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
-            assert_eq!(
-                error_code.as_deref(),
-                Some("1002"),
-                "{label}: stale session read should surface substatus 1002",
-            );
-        }
-        other => panic!("{label}: expected HttpResponse error, got {other}"),
-    }
+    assert_eq!(
+        err.status().sub_status().map(|s| s.value()),
+        Some(1002),
+        "{label}: stale session read should surface substatus 1002",
+    );
 }
 
 /// Asserts emulator-only response metadata when no real account is available.
@@ -175,7 +171,7 @@ async fn read_item_with_503_retry(
     label: &str,
 ) -> ItemResponse {
     const MAX_ATTEMPTS: usize = 5;
-    let mut last_err: Option<azure_core::Error> = None;
+    let mut last_err: Option<azure_data_cosmos::CosmosError> = None;
     for attempt in 1..=MAX_ATTEMPTS {
         match container.read_item(pk, id, None).await {
             Ok(resp) => {
@@ -183,13 +179,7 @@ async fn read_item_with_503_retry(
                 return resp;
             }
             Err(e) => {
-                let is_503 = matches!(
-                    e.kind(),
-                    azure_core::error::ErrorKind::HttpResponse {
-                        status: StatusCode::ServiceUnavailable,
-                        ..
-                    },
-                );
+                let is_503 = e.status().status_code() == StatusCode::ServiceUnavailable;
                 eprintln!(
                     "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed (is_503={is_503}): {e}",
                 );
@@ -237,8 +227,8 @@ impl SdkDualBackend {
         let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
         let emulator_store = emulator.store();
 
-        let emulator_account = CosmosAccountReference::with_master_key(
-            EMULATOR_GATEWAY_URL.parse().unwrap(),
+        let emulator_account = AccountReference::with_authentication_key(
+            EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
             azure_core::credentials::Secret::new("dGVzdGtleQ=="),
         );
 
@@ -440,6 +430,10 @@ async fn sdk_create_database_and_container_through_driver() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_create_and_read_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -502,6 +496,10 @@ async fn sdk_create_and_read_item() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_replace_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -591,6 +589,10 @@ async fn sdk_replace_item() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_upsert_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -680,6 +682,10 @@ async fn sdk_upsert_item() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_delete_item() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -722,7 +728,7 @@ async fn sdk_delete_item() {
         .read_item("pk1", &item.id, None)
         .await
         .expect_err("emulator: reading deleted item should fail");
-    assert_eq!(emu_err.http_status(), Some(StatusCode::NotFound));
+    assert_eq!(emu_err.status().status_code(), StatusCode::NotFound);
 
     if let Some(ref real) = real_container {
         let real_err = real
@@ -735,6 +741,10 @@ async fn sdk_delete_item() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn sdk_create_multiple_items_and_read_back() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -802,8 +812,8 @@ async fn sdk_create_duplicate_item_returns_conflict() {
         .await
         .expect_err("emulator: duplicate create should fail");
     assert_eq!(
-        emu_err.http_status(),
-        Some(StatusCode::Conflict),
+        emu_err.status().status_code(),
+        StatusCode::Conflict,
         "emulator: duplicate create should return 409",
     );
 
@@ -827,8 +837,8 @@ async fn sdk_read_nonexistent_item_returns_not_found() {
         .await
         .expect_err("emulator: reading nonexistent item should fail");
     assert_eq!(
-        emu_err.http_status(),
-        Some(StatusCode::NotFound),
+        emu_err.status().status_code(),
+        StatusCode::NotFound,
         "emulator: nonexistent item should return 404",
     );
 
@@ -947,8 +957,8 @@ async fn sdk_create_retries_after_429_throttling() {
             .unwrap(),
     );
 
-    let emulator_account = CosmosAccountReference::with_master_key(
-        EMULATOR_GATEWAY_URL.parse().unwrap(),
+    let emulator_account = AccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emulator_client = CosmosClientBuilder::new()
@@ -1005,6 +1015,102 @@ async fn sdk_create_retries_after_429_throttling() {
     let emu_read_doc: PaddedTestItem = emu_read.into_body().into_single().unwrap();
     assert_eq!(emu_read_doc.value, 42);
     assert_eq!(emu_read_doc.padding.len(), 8 * 1024);
+}
+
+/// Validates that the SDK-side `CosmosClientBuilder::with_throttling_retry_options`
+/// setter actually wires the grouped [`ThrottlingRetryOptions`] through to the
+/// driver's transport-level throttle-retry loop.
+///
+/// This is the negative counterpart to [`sdk_create_retries_after_429_throttling`]:
+/// the same throttling-enabled emulator setup is used, but the client is built
+/// with `max_retry_count = 0` (retries disabled). With retries disabled the
+/// driver must surface the first 429 to the caller instead of transparently
+/// retrying, proving the refactored grouped setter is honored end-to-end.
+#[tokio::test]
+async fn sdk_throttling_retry_options_disables_retry() {
+    let run_id = Uuid::new_v4().to_string()[..8].to_string();
+
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session)
+    .with_throttling_enabled(true);
+
+    let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let emulator_store = emulator.store();
+
+    let db_name = format!("sdk-throttle-no-retry-{run_id}");
+    emulator_store.create_database(&db_name);
+    emulator_store.create_container_with_config(
+        &db_name,
+        "throttle_coll",
+        serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"],
+            "kind": "Hash",
+            "version": 2
+        }))
+        .unwrap(),
+        ContainerConfig::new()
+            .with_partition_count(1)
+            .with_throughput(400)
+            .build()
+            .unwrap(),
+    );
+
+    let emulator_account = AccountReference::with_authentication_key(
+        EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
+        azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+    );
+    // Build the client with the grouped throttling-retry options setter,
+    // disabling throttle retries (max_retry_count = 0).
+    let emulator_client = CosmosClientBuilder::new()
+        .with_driver_runtime_builder(emulator.runtime_builder())
+        .with_throttling_retry_options(
+            ThrottlingRetryOptionsBuilder::new()
+                .with_max_retry_count(0)
+                .build(),
+        )
+        .build(
+            emulator_account,
+            RoutingStrategy::ProximityTo(Region::EAST_US),
+        )
+        .await
+        .unwrap();
+
+    let emu_container = emulator_client
+        .database_client(&db_name)
+        .container_client("throttle_coll")
+        .await
+        .unwrap();
+
+    // Seed a large item to consume the partition's RU budget so the next write
+    // is throttled (mirrors `sdk_create_retries_after_429_throttling`).
+    let seed = padded_test_item("seed-throttle", 1, 40 * 1024);
+    emu_container
+        .create_item("pk1", &seed.id, &seed, Some(write_options_with_content()))
+        .await
+        .unwrap();
+
+    // With retries disabled, the throttled create must surface the first 429
+    // rather than retrying until the RU budget refills.
+    let throttled = padded_test_item("throttled-item", 42, 8 * 1024);
+    let err = emu_container
+        .create_item(
+            "pk1",
+            &throttled.id,
+            &throttled,
+            Some(write_options_with_content()),
+        )
+        .await
+        .expect_err("create should fail fast with a 429 when throttle retries are disabled");
+
+    assert_eq!(
+        err.status().status_code(),
+        StatusCode::TooManyRequests,
+        "throttled create should surface HTTP 429 when retries are disabled",
+    );
 }
 
 // ─── Multi-region fault injection via SDK ────────────────────────────────────
@@ -1107,8 +1213,8 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
 
     // Build the SDK client with the emulator runtime.
-    let emu_account = CosmosAccountReference::with_master_key(
-        east_url.parse().unwrap(),
+    let emu_account = AccountReference::with_authentication_key(
+        east_url.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emu_client = CosmosClientBuilder::new()
@@ -1270,8 +1376,8 @@ async fn resolve_real_client_with_fault_injection(
     let endpoint = conn_str.account_endpoint().to_string();
     let key = conn_str.account_key().secret().to_string();
 
-    let account = CosmosAccountReference::with_master_key(
-        endpoint.parse().unwrap(),
+    let account = AccountReference::with_authentication_key(
+        endpoint.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new(key),
     );
 
@@ -1334,8 +1440,8 @@ async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
     let endpoint = conn_str.account_endpoint().to_string();
     let key = conn_str.account_key().secret().to_string();
 
-    let account = CosmosAccountReference::with_master_key(
-        endpoint.parse().unwrap(),
+    let account = AccountReference::with_authentication_key(
+        endpoint.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new(key),
     );
 

@@ -6,7 +6,68 @@
 //! This module provides newtypes for resource names and RIDs (resource identifiers),
 //! as well as internal ID enums that enforce either all-names or all-RIDs addressing.
 
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use std::borrow::Cow;
+
+// =============================================================================
+// RID Parsing (byte-level helpers)
+// =============================================================================
+//
+// Cosmos DB RIDs are base64-encoded byte sequences whose layout encodes the
+// resource hierarchy:
+//   [0..4)   database
+//   [4..8)   container (collection)
+//   [8..16)  document/sub-resource
+//
+// These helpers decode/encode the wire format. Cosmos uses standard Base64
+// with `-` substituted for `/`. They are intentionally inline-only — callers
+// extract whatever component they need and discard the rest.
+
+/// Errors that can occur when parsing a Cosmos DB RID.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum RidParseError {
+    /// The RID string is empty.
+    Empty,
+    /// The RID string length is not a multiple of 4 (invalid Base64 padding).
+    InvalidLength,
+    /// The RID string contains invalid Base64 characters.
+    InvalidBase64,
+}
+
+impl std::fmt::Display for RidParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Empty => write!(f, "RID string is empty"),
+            Self::InvalidLength => write!(f, "RID has invalid byte length"),
+            Self::InvalidBase64 => write!(f, "RID contains invalid Base64"),
+        }
+    }
+}
+
+impl std::error::Error for RidParseError {}
+
+/// Decodes a Cosmos DB RID string into its raw bytes.
+///
+/// RIDs use standard Base64 with `-` substituted for `/`.
+pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
+    if rid.is_empty() {
+        return Err(RidParseError::Empty);
+    }
+    if !rid.len().is_multiple_of(4) {
+        return Err(RidParseError::InvalidLength);
+    }
+    let b64 = rid.replace('-', "/");
+    STANDARD
+        .decode(&b64)
+        .map_err(|_| RidParseError::InvalidBase64)
+}
+
+/// Encodes raw bytes into a Cosmos DB RID string.
+///
+/// Uses standard Base64 with `/` replaced by `-`.
+pub(crate) fn encode_rid(bytes: &[u8]) -> String {
+    STANDARD.encode(bytes).replace('/', "-")
+}
 
 /// A resource name (user-provided identifier).
 ///
@@ -68,6 +129,22 @@ impl ResourceId {
     /// Returns the RID as a string slice.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+
+    /// Extracts the database RID embedded at the start of this RID.
+    ///
+    /// Cosmos DB RIDs encode the resource hierarchy in their bytes; the first
+    /// 4 decoded bytes always identify the parent database. This accessor
+    /// performs the parse inline (decode → take first 4 bytes → re-encode) and
+    /// discards everything else; nothing is cached.
+    ///
+    /// Returns `None` if `self` is empty or otherwise not a valid Cosmos RID.
+    pub(crate) fn database_rid(&self) -> Option<ResourceId> {
+        let bytes = decode_rid(self.as_str()).ok()?;
+        if bytes.len() < 4 {
+            return None;
+        }
+        Some(ResourceId::new(encode_rid(&bytes[0..4])))
     }
 }
 
@@ -159,7 +236,6 @@ impl ResourceIdentifier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use base64::{engine::general_purpose::STANDARD, Engine as _};
 
     // =========================================================================
     // ParsedResourceId (test-only)
@@ -237,54 +313,8 @@ mod tests {
     }
 
     // =========================================================================
-    // RID Parsing Utilities (test-only)
+    // Test helpers exercising the promoted byte-level utilities
     // =========================================================================
-
-    /// Errors that can occur when parsing a Cosmos DB RID.
-    #[derive(Clone, Debug, PartialEq, Eq)]
-    enum RidParseError {
-        /// The RID string is empty.
-        Empty,
-        /// The RID string length is not a multiple of 4 (invalid Base64 padding).
-        InvalidLength,
-        /// The RID string contains invalid Base64 characters.
-        InvalidBase64,
-    }
-
-    impl std::fmt::Display for RidParseError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Self::Empty => write!(f, "RID string is empty"),
-                Self::InvalidLength => write!(f, "RID has invalid byte length"),
-                Self::InvalidBase64 => write!(f, "RID contains invalid Base64"),
-            }
-        }
-    }
-
-    impl std::error::Error for RidParseError {}
-
-    /// Decodes a Cosmos DB RID string into its raw bytes.
-    ///
-    /// RIDs use standard Base64 with `-` substituted for `/`.
-    fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
-        if rid.is_empty() {
-            return Err(RidParseError::Empty);
-        }
-        if !rid.len().is_multiple_of(4) {
-            return Err(RidParseError::InvalidLength);
-        }
-        let b64 = rid.replace('-', "/");
-        STANDARD
-            .decode(&b64)
-            .map_err(|_| RidParseError::InvalidBase64)
-    }
-
-    /// Encodes raw bytes into a Cosmos DB RID string.
-    ///
-    /// Uses standard Base64 with `/` replaced by `-`.
-    fn encode_rid(bytes: &[u8]) -> String {
-        STANDARD.encode(bytes).replace('/', "-")
-    }
 
     /// Extracts the database RID string from a container (collection) RID string.
     fn extract_database_rid_from_container_rid(
@@ -405,6 +435,38 @@ mod tests {
         assert_eq!(parsed.database_rid().map(|r| r.as_str()), Some("db123"));
         assert_eq!(parsed.container_rid().map(|r| r.as_str()), Some("coll456"));
         assert_eq!(parsed.document_rid().map(|r| r.as_str()), Some("doc789"));
+    }
+
+    #[test]
+    fn resource_id_database_rid_extracts_first_4_bytes() {
+        // Container RID = 8 bytes; first 4 are database, second 4 are container.
+        let mut bytes = [0u8; 8];
+        bytes[0..4].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D]);
+        bytes[4..8].copy_from_slice(&[0x80, 0x01, 0x02, 0x03]);
+        let container_rid = ResourceId::new(encode_rid(&bytes));
+
+        let db_rid = container_rid.database_rid().expect("should parse");
+        assert_eq!(db_rid.as_str(), encode_rid(&[0x0A, 0x0B, 0x0C, 0x0D]));
+    }
+
+    #[test]
+    fn resource_id_database_rid_works_on_database_rid_itself() {
+        // A 4-byte (database-only) RID should still yield a valid db RID equal to itself.
+        let bytes: [u8; 4] = [0x01, 0x02, 0x03, 0x04];
+        let db_rid = ResourceId::new(encode_rid(&bytes));
+
+        let extracted = db_rid.database_rid().expect("should parse");
+        assert_eq!(extracted.as_str(), db_rid.as_str());
+    }
+
+    #[test]
+    fn resource_id_database_rid_returns_none_for_invalid_rid() {
+        // Empty
+        assert!(ResourceId::new("").database_rid().is_none());
+        // Bad base64 (length not multiple of 4)
+        assert!(ResourceId::new("abc").database_rid().is_none());
+        // Garbage characters
+        assert!(ResourceId::new("!!!!").database_rid().is_none());
     }
 
     // ===== RID parsing tests =====

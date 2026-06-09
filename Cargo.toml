@@ -68,12 +68,12 @@ version = "1.0.0"
 version = "1.0.0"
 
 [workspace.dependencies.azure_core_test]
-# azure_core_test is not published and only ever in dev-dependencies herein
-path = "sdk/core/azure_core_test"
+# azure_core_test should only ever be in dev-dependencies herein
+version = "0.1.0"
 
 [workspace.dependencies.azure_core_test_macros]
-# azure_core_test_macros is not published and only ever in dev-dependencies herein
-path = "sdk/core/azure_core_test_macros"
+# azure_core_test_macros should only ever be in dev-dependencies herein
+version = "0.1.0"
 
 [workspace.dependencies.azure_identity]
 # azure_identity should only ever be in dev-dependencies herein
@@ -82,24 +82,13 @@ version = "1.0.0"
 [workspace.dependencies.azure_storage_blob]
 version = "1.0.0"
 
-[workspace.dependencies.azure_data_cosmos]
-version = "0.34.0"
-path = "sdk/cosmos/azure_data_cosmos"
-
-[workspace.dependencies.azure_data_cosmos_driver]
-default-features = false
-version = "0.3.0"
-path = "sdk/cosmos/azure_data_cosmos_driver"
-
-[workspace.dependencies.azure_data_cosmos_macros]
-version = "0.1.0"
-
 [workspace.dependencies]
 async-lock = "3.4"
 async-stream = { version = "0.3.6" }
 async-trait = "0.1"
 base64 = "0.22"
 arc-swap = "1.7"
+backtrace = "0.3"
 bytes = "1.11.1"
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
@@ -121,7 +110,7 @@ h2 = "0.4.13"
 hdrhistogram = "7.5"
 hostname = "0.4"
 hmac = { version = "0.12" }
-include-file = { version = "0.5.1", default-features = false }
+include-file = { version = "1.0.0", default-features = false }
 openssl = { version = "0.10.79" }
 opentelemetry = { version = "0.31", features = ["trace"] }
 opentelemetry-appender-tracing = { version = "0.31" }

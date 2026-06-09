@@ -13,8 +13,8 @@ use futures::TryStreamExt;
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn database_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run(async |run_context| {

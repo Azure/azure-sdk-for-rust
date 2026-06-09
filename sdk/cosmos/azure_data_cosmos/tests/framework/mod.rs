@@ -39,3 +39,38 @@ pub struct MockItem {
     /// The global merge order of the item, which will be used by the mock query pipeline to sort items.
     pub merge_order: usize,
 }
+
+/// Error type returned by tests when they cannot conclusively determine pass or fail status, such as when a split doesn't complete within the expected time.
+#[derive(PartialEq, Eq)]
+pub enum InconclusiveError {
+    /// The test was inconclusive because a partition split did not complete within the expected time.
+    SplitNotCompleted,
+}
+
+// The Debug format is used when a test returns an error, so we need to include some context in the logs to make it clear.
+impl std::fmt::Debug for InconclusiveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InconclusiveError::SplitNotCompleted => {
+                write!(f, "InconclusiveError::SplitNotCompleted")
+            }
+        }
+    }
+}
+
+impl std::fmt::Display for InconclusiveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InconclusiveError::SplitNotCompleted => write!(
+                f,
+                "inconclusive: partition split did not complete within the expected time"
+            )?,
+        }
+        write!(
+            f,
+            " (an inconclusive result does NOT indicate a failure, only that this test couldn't complete because of backend delays or intermittent issues; this failure does NOT need to block PR merges)"
+        )
+    }
+}
+
+impl std::error::Error for InconclusiveError {}

@@ -264,6 +264,7 @@ impl_sanitizer!(RemoveHeaderSanitizer);
 
 #[derive(Clone, Debug, Serialize)]
 pub struct RemoveHeaderSanitizer {
+    #[serde(rename = "headersForRemoval")]
     #[serde(serialize_with = "join")]
     pub headers_for_removal: Vec<&'static str>,
 }
@@ -313,6 +314,83 @@ pub struct UriStringSanitizer {
 #[derive(Clone, Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UriSubscriptionIdSanitizer {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub condition: Option<ApplyCondition>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{HeaderRegexSanitizer, RemoveHeaderSanitizer, UriSubscriptionIdSanitizer};
+    use serde_json::json;
+
+    #[test]
+    fn header_regex_serializes_proxy_constructor_fields() {
+        let sanitizer = HeaderRegexSanitizer {
+            key: "x-ms-copy-source".to_string(),
+            value: Some("Sanitized".to_string()),
+            regex: Some("sig=([^&]+)".to_string()),
+            group_for_replace: Some("1".to_string()),
+            ..Default::default()
+        };
+
+        // Match the AddSanitizer constructor parameter names consumed by the test proxy.
+        let actual =
+            serde_json::to_value(sanitizer).expect("header regex sanitizer should serialize");
+        assert_eq!(
+            actual,
+            json!({
+                "key": "x-ms-copy-source",
+                "value": "Sanitized",
+                "regex": "sig=([^&]+)",
+                "groupForReplace": "1"
+            })
+        );
+    }
+
+    #[test]
+    fn remove_header_serializes_proxy_constructor_fields() {
+        let sanitizer = RemoveHeaderSanitizer {
+            headers_for_removal: vec!["Location", "Transfer-Encoding"],
+        };
+
+        // The proxy constructor expects headersForRemoval, not the Rust field name.
+        let actual =
+            serde_json::to_value(sanitizer).expect("remove header sanitizer should serialize");
+        assert_eq!(
+            actual,
+            json!({
+                "headersForRemoval": "Location,Transfer-Encoding"
+            })
+        );
+    }
+
+    #[test]
+    fn uri_subscription_id_omits_absent_optional_fields() {
+        let sanitizer = UriSubscriptionIdSanitizer::default();
+
+        // Omit absent optionals so the proxy constructor can apply its defaults.
+        let actual = serde_json::to_value(sanitizer)
+            .expect("URI subscription ID sanitizer should serialize");
+        assert_eq!(actual, json!({}));
+    }
+
+    #[test]
+    fn uri_subscription_id_serializes_configured_value() {
+        let sanitizer = UriSubscriptionIdSanitizer {
+            value: Some("11111111-1111-1111-1111-111111111111".to_string()),
+            ..Default::default()
+        };
+
+        // Preserve explicitly configured values while still omitting absent optionals.
+        let actual = serde_json::to_value(sanitizer)
+            .expect("URI subscription ID sanitizer should serialize configured fields");
+        assert_eq!(
+            actual,
+            json!({
+                "value": "11111111-1111-1111-1111-111111111111"
+            })
+        );
+    }
 }

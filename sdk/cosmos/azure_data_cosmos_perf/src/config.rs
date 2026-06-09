@@ -63,6 +63,24 @@ pub struct Config {
     #[arg(long, default_value_t = false)]
     pub no_creates: bool,
 
+    /// Disable the per-feed-range query operation.
+    ///
+    /// When enabled (the default), the harness fans out
+    /// `SELECT VALUE COUNT(1) FROM c` across the container's physical
+    /// partitions, round-robin one range per call.
+    #[arg(long, default_value_t = false)]
+    pub no_feed_range_queries: bool,
+
+    /// Interval in seconds between background refreshes of the cached feed
+    /// range list. Set to 0 to disable the background refresher (the cache
+    /// then stays at the seed snapshot taken once at startup).
+    ///
+    /// When the refresher is active, its own latency is reported under a
+    /// separate `ReadFeedRanges` stats line so its overhead is visible
+    /// alongside the other operations.
+    #[arg(long, default_value_t = 60)]
+    pub feed_range_refresh_secs: u64,
+
     /// Number of concurrent operations (minimum: 1).
     #[arg(long, default_value_t = 50)]
     pub concurrency: usize,
@@ -135,6 +153,21 @@ pub struct Config {
     /// If omitted, auto-detected via `git rev-parse --short HEAD`.
     #[arg(long)]
     pub commit_sha: Option<String>,
+
+    /// User-Agent suffix appended to every Cosmos DB request.
+    ///
+    /// Forwarded to `CosmosClientBuilder::with_user_agent_suffix` for both the
+    /// primary and results clients so perf-harness traffic can be isolated in
+    /// server-side telemetry. Pass an empty string to omit the suffix
+    /// entirely. Constraints (max 25 characters, HTTP-header-safe) come from
+    /// `UserAgentSuffix`; invalid values cause the process to exit with a
+    /// descriptive error.
+    #[arg(
+        long,
+        env = "AZURE_COSMOS_USER_AGENT_SUFFIX",
+        default_value = "rust-perf"
+    )]
+    pub user_agent_suffix: String,
 }
 
 /// Authentication method for connecting to Cosmos DB.

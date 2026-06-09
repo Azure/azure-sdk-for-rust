@@ -15,7 +15,7 @@ use serde::{de::DeserializeOwned, Deserialize};
 use crate::{
     driver_bridge,
     models::{CosmosResponse, DiagnosticsContext, ResponseHeaders},
-    ContinuationToken, SessionToken,
+    ContinuationToken,
 };
 
 /// Represents a single page of results from a Cosmos DB feed.
@@ -67,18 +67,6 @@ impl<T> FeedPage<T> {
         &self.headers
     }
 
-    /// Returns the request charge (RU consumption) for this page, if available.
-    pub fn request_charge(&self) -> Option<f64> {
-        self.headers.request_charge().map(|rc| rc.value())
-    }
-
-    /// Returns the session token from this page, if available.
-    pub fn session_token(&self) -> Option<SessionToken> {
-        self.headers
-            .session_token()
-            .map(|st| SessionToken::from(st.as_str().to_string()))
-    }
-
     /// Returns the diagnostics for this page.
     ///
     /// The returned [`DiagnosticsContext`] surfaces the full per-operation
@@ -94,7 +82,7 @@ impl<T> FeedPage<T> {
 /// Wraps a [`FeedPage`] and adds query-specific metadata such as
 /// [`index_metrics()`](Self::index_metrics) and [`query_metrics()`](Self::query_metrics).
 ///
-/// This type is yielded by [`FeedItemIterator`] and [`FeedPageIterator`] for query operations.
+/// This type is yielded by [`QueryItemIterator`] and [`QueryPageIterator`] for query operations.
 #[derive(Debug)]
 pub struct QueryFeedPage<T> {
     /// The underlying feed page with common fields.
@@ -108,6 +96,17 @@ pub struct QueryFeedPage<T> {
 }
 
 impl<T> QueryFeedPage<T> {
+    /// Returns a reference to the underlying [`FeedPage`].
+    ///
+    /// Use this when passing a query page to APIs that accept the more general
+    /// [`FeedPage`] type. The query-specific metadata (index metrics, query
+    /// metrics) is not visible through the returned reference; access it via
+    /// [`index_metrics`](Self::index_metrics) and
+    /// [`query_metrics`](Self::query_metrics) on this `QueryFeedPage` instead.
+    pub fn as_feed_page(&self) -> &FeedPage<T> {
+        &self.page
+    }
+
     /// Gets the items in this page of results.
     pub fn items(&self) -> &[T] {
         self.page.items()
@@ -121,16 +120,6 @@ impl<T> QueryFeedPage<T> {
     /// Returns the parsed Cosmos-specific response headers for this page.
     pub fn headers(&self) -> &ResponseHeaders {
         self.page.headers()
-    }
-
-    /// Returns the request charge (RU consumption) for this page, if available.
-    pub fn request_charge(&self) -> Option<f64> {
-        self.page.request_charge()
-    }
-
-    /// Returns the session token from this page, if available.
-    pub fn session_token(&self) -> Option<SessionToken> {
-        self.page.session_token()
     }
 
     /// Returns the diagnostics for this page.
@@ -170,7 +159,7 @@ pub(crate) struct FeedBody<T> {
 }
 
 impl<T: DeserializeOwned> QueryFeedPage<T> {
-    pub(crate) fn from_response(response: CosmosResponse) -> azure_core::Result<Self> {
+    pub(crate) fn from_response(response: CosmosResponse) -> crate::Result<Self> {
         // Convert once to the driver header struct: this module owns the
         // FeedPage wire-up and needs every parsed field, so reaching for the
         // SDK wrapper accessors here would be pure ceremony.
@@ -193,10 +182,9 @@ impl<T: DeserializeOwned> QueryFeedPage<T> {
     }
 }
 
-type DriverPageFuture =
-    BoxFuture<'static, (OperationPlan, azure_core::Result<Option<DriverResponse>>)>;
+type DriverPageFuture = BoxFuture<'static, (OperationPlan, crate::Result<Option<DriverResponse>>)>;
 
-/// Live pipeline state held by [`FeedPageIterator`] / [`FeedItemIterator`].
+/// Live pipeline state held by [`QueryPageIterator`] / [`QueryItemIterator`].
 #[pin_project::pin_project]
 struct LiveState {
     driver: Arc<CosmosDriver>,
@@ -229,7 +217,7 @@ impl LiveState {
     fn poll_next_page<T: DeserializeOwned + Send + 'static>(
         self: Pin<&mut Self>,
         cx: &mut task::Context<'_>,
-    ) -> task::Poll<Option<azure_core::Result<QueryFeedPage<T>>>> {
+    ) -> task::Poll<Option<crate::Result<QueryFeedPage<T>>>> {
         // Because we want to be able to use the OperationPlan to generate a continuation token on-demand (generating the token has a perf cost),
         // we can't use a utility like `futures::stream::unfold` to drive the pagination, since that would move the plan into the future and make it inaccessible for token generation until the future completes.
         // So, instead, we have to manually drive the pagination loop here in `poll_next_page`, which allows us to keep the plan in `self` and only move it into the future when we actually need to fetch the next page.
@@ -256,7 +244,10 @@ impl LiveState {
                 let container = this.container.clone();
                 let options = this.options.clone();
                 let fut: DriverPageFuture = Box::pin(async move {
-                    let result = driver.execute_plan(&mut plan, container, options).await;
+                    let result = driver
+                        .execute_plan(&mut plan, container, options)
+                        .await
+                        .map_err(Into::into);
                     (plan, result)
                 });
                 this.in_flight.insert(fut)
@@ -308,18 +299,18 @@ impl LiveState {
     ///
     /// This can ONLY be called when there is no page fetch currently in-flight.
     /// Attempting to call this method while a page fetch is in-flight will result in an error, since the internal state is being mutated and cannot be safely snapshotted.
-    fn to_continuation_token(&self) -> azure_core::Result<ContinuationToken> {
+    fn to_continuation_token(&self) -> crate::Result<ContinuationToken> {
         let plan = self.plan.as_ref().ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "to_continuation_token called while a page fetch is in flight",
-            )
+            crate::DriverCosmosError::builder()
+                .with_status(crate::CosmosStatus::CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT)
+                .with_message("to_continuation_token called while a page fetch is in flight")
+                .build()
         })?;
-        plan.to_continuation_token()
+        plan.to_continuation_token().map_err(Into::into)
     }
 }
 
-/// Internal source of pages for [`FeedPageIterator`] and [`FeedItemIterator`].
+/// Internal source of pages for [`QueryPageIterator`] and [`QueryItemIterator`].
 ///
 /// Production iterators use the [`Live`](Self::Live) variant which drives the
 /// underlying [`OperationPlan`]. Unit tests use [`Synthetic`](Self::Synthetic)
@@ -328,7 +319,7 @@ impl LiveState {
 enum PageSource<T: Send> {
     Live(Pin<Box<LiveState>>),
     #[cfg(test)]
-    Synthetic(std::collections::VecDeque<azure_core::Result<QueryFeedPage<T>>>),
+    Synthetic(std::collections::VecDeque<crate::Result<QueryFeedPage<T>>>),
     #[cfg(not(test))]
     #[allow(dead_code)]
     _Phantom(PhantomData<fn() -> T>),
@@ -338,7 +329,7 @@ impl<T: Send + DeserializeOwned + 'static> PageSource<T> {
     fn poll_next_page(
         self: Pin<&mut Self>,
         cx: &mut task::Context<'_>,
-    ) -> task::Poll<Option<azure_core::Result<QueryFeedPage<T>>>> {
+    ) -> task::Poll<Option<crate::Result<QueryFeedPage<T>>>> {
         match self.project() {
             PageSourceProj::Live(state) => state.as_mut().poll_next_page::<T>(cx),
             #[cfg(test)]
@@ -353,15 +344,15 @@ impl<T: Send + DeserializeOwned + 'static> PageSource<T> {
 ///
 /// See [`QueryFeedPage`] for more details on Cosmos DB feeds.
 #[pin_project::pin_project]
-pub struct FeedItemIterator<T: Send> {
+pub struct QueryItemIterator<T: Send> {
     #[pin]
     source: PageSource<T>,
     current: Option<std::vec::IntoIter<T>>,
     _marker: PhantomData<fn() -> T>,
 }
 
-impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
-    /// Creates a new `FeedItemIterator` backed by the given operation plan.
+impl<T: Send + DeserializeOwned + 'static> QueryItemIterator<T> {
+    /// Creates a new `QueryItemIterator` backed by the given operation plan.
     pub(crate) fn new(
         driver: Arc<CosmosDriver>,
         container: Option<ContainerReference>,
@@ -381,16 +372,16 @@ impl<T: Send + DeserializeOwned + 'static> FeedItemIterator<T> {
     /// IMPORTANT: This will DISCARD any items from the current page that have
     /// not yet been yielded by the item iterator. Use this method before
     /// consuming any items to cleanly switch to page-based iteration.
-    pub fn into_pages(self) -> FeedPageIterator<T> {
-        FeedPageIterator {
+    pub fn into_pages(self) -> QueryPageIterator<T> {
+        QueryPageIterator {
             source: self.source,
             _marker: PhantomData,
         }
     }
 }
 
-impl<T: Send + DeserializeOwned + 'static> Stream for FeedItemIterator<T> {
-    type Item = azure_core::Result<T>;
+impl<T: Send + DeserializeOwned + 'static> Stream for QueryItemIterator<T> {
+    type Item = crate::Result<T>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -425,13 +416,13 @@ impl<T: Send + DeserializeOwned + 'static> Stream for FeedItemIterator<T> {
 /// resumption via
 /// [`to_continuation_token`](Self::to_continuation_token).
 #[pin_project::pin_project]
-pub struct FeedPageIterator<T: Send> {
+pub struct QueryPageIterator<T: Send> {
     #[pin]
     source: PageSource<T>,
     _marker: PhantomData<fn() -> T>,
 }
 
-impl<T: Send + DeserializeOwned + 'static> FeedPageIterator<T> {
+impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
     /// Captures the current iterator position as a [`ContinuationToken`].
     ///
     /// Pass the returned token to a subsequent
@@ -447,22 +438,25 @@ impl<T: Send + DeserializeOwned + 'static> FeedPageIterator<T> {
     ///
     /// Returns an error if a page fetch is currently in flight (the plan
     /// state is being mutated and cannot be safely snapshotted).
-    pub fn to_continuation_token(&self) -> azure_core::Result<ContinuationToken> {
+    pub fn to_continuation_token(&self) -> crate::Result<ContinuationToken> {
         match &self.source {
             PageSource::Live(state) => state.to_continuation_token(),
             #[cfg(test)]
-            PageSource::Synthetic(_) => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "synthetic test iterator does not support to_continuation_token",
-            )),
+            PageSource::Synthetic(_) => Err(crate::DriverCosmosError::builder()
+                .with_status(crate::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("synthetic test iterator does not support to_continuation_token")
+                .build()
+                .into()),
             #[cfg(not(test))]
             PageSource::_Phantom(_) => unreachable!(),
         }
     }
 }
 
-impl<T: Send + DeserializeOwned + 'static> Stream for FeedPageIterator<T> {
-    type Item = azure_core::Result<QueryFeedPage<T>>;
+impl<T: Send + DeserializeOwned + 'static> Stream for QueryPageIterator<T> {
+    type Item = crate::Result<QueryFeedPage<T>>;
 
     fn poll_next(
         self: Pin<&mut Self>,
@@ -493,9 +487,9 @@ mod tests {
     }
 
     fn synthetic_item_iter<T: Send + DeserializeOwned + 'static>(
-        pages: Vec<azure_core::Result<QueryFeedPage<T>>>,
-    ) -> FeedItemIterator<T> {
-        FeedItemIterator {
+        pages: Vec<crate::Result<QueryFeedPage<T>>>,
+    ) -> QueryItemIterator<T> {
+        QueryItemIterator {
             source: PageSource::Synthetic(pages.into()),
             current: None,
             _marker: PhantomData,
@@ -541,10 +535,13 @@ mod tests {
     async fn item_iterator_propagates_errors() {
         let pages = vec![
             Ok(create_test_page(vec![1, 2])),
-            Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                "test error",
-            )),
+            Err(crate::DriverCosmosError::builder()
+                .with_status(crate::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("test error")
+                .build()
+                .into()),
         ];
 
         let mut item_iter = synthetic_item_iter(pages);

@@ -6,9 +6,8 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use azure_core::http::StatusCode;
 
-use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey, SubStatusCode};
+use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey};
 
 use super::{
     PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, PipelineNodeState,
@@ -27,30 +26,49 @@ pub(crate) enum RequestTarget {
     /// An EPK slice that must be queried inside a broader physical partition key range
     /// (assuming the cached topology remains valid).
     EffectivePartitionKeyRange {
-        /// EPK range scoped by this request.
-        range: FeedRange,
+        /// EPK range scoped by this request, when narrower than `partition_key_range`.
+        range: Option<FeedRange>,
         /// Partition key range ID containing `range`.
         partition_key_range_id: String,
+        /// EPK range owned by the physical partition key range ID.
+        partition_key_range: FeedRange,
     },
 }
 
 impl RequestTarget {
-    /// Returns the EPK slice owned by this request target, if any.
-    fn owned_range(&self) -> Option<&FeedRange> {
-        match self {
-            RequestTarget::EffectivePartitionKeyRange { range, .. } => Some(range),
-            _ => None,
+    /// Creates a target for an effective partition key range inside a physical partition.
+    pub(crate) fn effective_partition_key_range(
+        range: FeedRange,
+        partition_key_range_id: String,
+        partition_key_range: FeedRange,
+    ) -> Self {
+        let range = if range == partition_key_range {
+            None
+        } else {
+            Some(range)
+        };
+
+        Self::EffectivePartitionKeyRange {
+            range,
+            partition_key_range_id,
+            partition_key_range,
         }
     }
 
-    /// Returns `true` if this target's EPK range starts at the same point as `parent_range`.
-    fn covers_start_of(&self, parent_range: &FeedRange) -> bool {
-        self.owned_range()
-            .is_some_and(|range| range.min_inclusive() == parent_range.min_inclusive())
+    /// Returns the EPK slice owned by this request target, if any.
+    fn owned_range(&self) -> Option<&FeedRange> {
+        match self {
+            RequestTarget::EffectivePartitionKeyRange {
+                range,
+                partition_key_range,
+                ..
+            } => Some(range.as_ref().unwrap_or(partition_key_range)),
+            _ => None,
+        }
     }
 }
 
-fn intersect_feed_ranges(left: &FeedRange, right: &FeedRange) -> Option<FeedRange> {
+pub(crate) fn intersect_feed_ranges(left: &FeedRange, right: &FeedRange) -> Option<FeedRange> {
     let min = if left.min_inclusive() >= right.min_inclusive() {
         left.min_inclusive().clone()
     } else {
@@ -131,7 +149,7 @@ impl PipelineNode for Request {
     async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         tracing::trace!(
             target = ?self.target,
             state = ?self.state,
@@ -154,7 +172,7 @@ impl PipelineNode for Request {
             .await
         {
             Ok(response) => Ok(self.handle_response(response)),
-            Err(error) if is_partition_topology_change(&error) => {
+            Err(error) if error.status().is_partition_topology_change() => {
                 self.handle_partition_topology_change(context, error, continuation)
                     .await
             }
@@ -222,9 +240,21 @@ impl Request {
     async fn handle_partition_topology_change(
         &mut self,
         context: &mut PipelineContext<'_>,
-        error: azure_core::Error,
+        error: crate::error::CosmosError,
         continuation: Option<String>,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
+        // Capture the failed attempt's diagnostics before consuming the
+        // error. The per-operation pipeline that produced this error
+        // owns its own `DiagnosticsContext`; the dataflow retry below
+        // will spin up another full pipeline invocation with a fresh
+        // context. Without splicing the prior context onto the
+        // retry's response, callers reading
+        // `response.diagnostics().request_count()` would only see the
+        // final successful attempt — violating the
+        // "one operation = one `DiagnosticsContext` capturing every
+        // attempt" contract. Always capture, regardless of branch, so
+        // the splice happens uniformly on every successful retry path.
+        let prior_diagnostics = error.diagnostics();
         match &self.target {
             RequestTarget::NonPartitioned => {
                 // Non-partitioned resources don't have partition topology changes.
@@ -250,11 +280,37 @@ impl Request {
                             status = ?response.status(),
                             "retry after logical partition key topology change succeeded"
                         );
+                        // Splice the prior failed attempt's diagnostics
+                        // onto the retry's diagnostics so the surfaced
+                        // `CosmosResponse` reflects every attempt the
+                        // operation made (see `prior_diagnostics`
+                        // capture above for rationale).
+                        let response = if let Some(prior) = prior_diagnostics {
+                            response.with_aggregated_prior_diagnostics(&[prior])
+                        } else {
+                            response
+                        };
                         self.handle_response(response)
                     })
             }
-            RequestTarget::EffectivePartitionKeyRange { range, .. } => {
-                let range = range.clone();
+            RequestTarget::EffectivePartitionKeyRange { .. } => {
+                let range = self
+                    .target
+                    .owned_range()
+                    .expect("effective partition key range target must have an owned range")
+                    .clone();
+                // TODO(diagnostics-aggregation): the split path replaces
+                // this node with one or more sub-range `Request` nodes
+                // that each execute independently in subsequent
+                // `next_page` calls. Splicing `prior_diagnostics` into
+                // every sub-node's first response would require
+                // threading the prior context through the replacement
+                // nodes; tracked as a follow-up. For now, prior
+                // attempts on the EPK-range split path are still
+                // captured by the replacement node when it triggers
+                // its own dataflow retry, but not aggregated onto the
+                // first successful sub-range response.
+                let _ = prior_diagnostics;
                 self.split_for_topology_change(context, &range).await
             }
         }
@@ -266,10 +322,15 @@ impl Request {
         &self,
         context: &mut PipelineContext<'_>,
         range: &FeedRange,
-    ) -> azure_core::Result<PageResult> {
+    ) -> crate::error::Result<PageResult> {
         let resolved = context
             .resolve_ranges(range, PartitionRoutingRefresh::ForceRefresh)
             .await?;
+
+        let continuation = match &self.state {
+            RequestState::Continuing { continuation } => Some(continuation.clone()),
+            _ => None,
+        };
 
         let replacement_nodes: Vec<Box<dyn PipelineNode>> = resolved
             .into_iter()
@@ -282,55 +343,23 @@ impl Request {
                     "topology provider must return ranges that overlap the request's owned EPK range",
                 );
 
-                let target = RequestTarget::EffectivePartitionKeyRange {
-                    range: owned_range,
+                let target = RequestTarget::effective_partition_key_range(
+                    owned_range,
                     partition_key_range_id,
-                };
+                    resolved_range,
+                );
 
-                // Carry over the server continuation to the first replacement that
-                // covers the same starting EPK. For a split, only the left-most child
-                // inherits the continuation since it resumes where this node left off.
-                let continuation = match (target.covers_start_of(range), &self.state) {
-                    (
-                        true,
-                        RequestState::Continuing {
-                            continuation: latest_server_continuation,
-                        },
-                    ) => Some(latest_server_continuation.clone()),
-                    _ => None,
-                };
-                Box::new(Request::new(self.operation.clone(), target, continuation))
+                Box::new(Request::new(
+                    self.operation.clone(),
+                    target,
+                    continuation.clone(),
+                ))
                     as Box<dyn PipelineNode>
             })
             .collect();
 
         Ok(PageResult::SplitRequired { replacement_nodes })
     }
-}
-
-// Partition topology changes are a specific subset of `Gone` substatus codes.
-// Other substatus mappings live in `pipeline::retry_evaluation`; this one stays
-// here because it drives pipeline-level repair (splitting a node into
-// replacements) rather than per-attempt retry.
-fn is_partition_topology_change(error: &azure_core::Error) -> bool {
-    match error.kind() {
-        azure_core::error::ErrorKind::HttpResponse {
-            status, error_code, ..
-        } if *status == StatusCode::Gone => error_code
-            .as_deref()
-            .and_then(|code| code.parse::<u32>().ok())
-            .is_some_and(is_partition_topology_change_substatus),
-        _ => false,
-    }
-}
-
-fn is_partition_topology_change_substatus(substatus: u32) -> bool {
-    matches!(
-        SubStatusCode::new(substatus),
-        SubStatusCode::PARTITION_KEY_RANGE_GONE
-            | SubStatusCode::COMPLETING_SPLIT
-            | SubStatusCode::COMPLETING_PARTITION_MIGRATION
-    )
 }
 
 #[cfg(test)]
@@ -374,7 +403,7 @@ mod tests {
             &'a mut self,
             range: &'a FeedRange,
             _refresh: PartitionRoutingRefresh,
-        ) -> futures::future::BoxFuture<'a, azure_core::Result<Vec<ResolvedRange>>> {
+        ) -> futures::future::BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
             let resolved = self
                 .resolved_ranges
                 .iter()
@@ -387,10 +416,12 @@ mod tests {
 
             Box::pin(async move {
                 if resolved.is_empty() {
-                    Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        "scenario topology produced no overlapping ranges",
-                    ))
+                    Err(crate::error::CosmosError::builder()
+                        .with_status(crate::error::CosmosStatus::new(
+                            azure_core::http::StatusCode::BadRequest,
+                        ))
+                        .with_message("scenario topology produced no overlapping ranges")
+                        .build())
                 } else {
                     Ok(resolved)
                 }
@@ -407,7 +438,7 @@ mod tests {
             _target: RequestTarget,
             _partition_routing_refresh: PartitionRoutingRefresh,
             _continuation: Option<String>,
-        ) -> futures::future::BoxFuture<'a, azure_core::Result<CosmosResponse>> {
+        ) -> futures::future::BoxFuture<'a, crate::error::Result<CosmosResponse>> {
             Box::pin(async { Err(gone_error()) })
         }
     }
@@ -441,7 +472,7 @@ mod tests {
         continuation: Option<&str>,
     ) -> RequestSpec {
         request_spec(
-            effective_partition_key_range_target(min, max, partition_key_range_id),
+            effective_partition_key_range_target(min, max, partition_key_range_id, min, max),
             continuation,
         )
     }
@@ -450,10 +481,18 @@ mod tests {
         min: &str,
         max: &str,
         partition_key_range_id: &str,
+        partition_min: &str,
+        partition_max: &str,
         continuation: Option<&str>,
     ) -> RequestSpec {
         request_spec(
-            effective_partition_key_range_target(min, max, partition_key_range_id),
+            effective_partition_key_range_target(
+                min,
+                max,
+                partition_key_range_id,
+                partition_min,
+                partition_max,
+            ),
             continuation,
         )
     }
@@ -525,15 +564,22 @@ mod tests {
         min: &str,
         max: &str,
         partition_key_range_id: &str,
+        partition_min: &str,
+        partition_max: &str,
     ) -> RequestTarget {
-        RequestTarget::EffectivePartitionKeyRange {
-            range: FeedRange::new(
+        RequestTarget::effective_partition_key_range(
+            FeedRange::new(
                 EffectivePartitionKey::from(min),
                 EffectivePartitionKey::from(max),
             )
             .unwrap(),
-            partition_key_range_id: partition_key_range_id.to_string(),
-        }
+            partition_key_range_id.to_string(),
+            FeedRange::new(
+                EffectivePartitionKey::from(partition_min),
+                EffectivePartitionKey::from(partition_max),
+            )
+            .unwrap(),
+        )
     }
 
     #[tokio::test]
@@ -565,7 +611,7 @@ mod tests {
 
         let error = request.next_page(&mut context).await.unwrap_err();
 
-        assert!(is_partition_topology_change(&error));
+        assert!(error.status().is_partition_topology_change());
         assert_eq!(
             executor.refresh_calls,
             vec![
@@ -585,7 +631,7 @@ mod tests {
 
         let error = request.next_page(&mut context).await.unwrap_err();
 
-        assert!(!is_partition_topology_change(&error));
+        assert!(!error.status().is_partition_topology_change());
         assert_eq!(
             executor.refresh_calls,
             vec![PartitionRoutingRefresh::UseCached]
@@ -653,7 +699,7 @@ mod tests {
             ]],
             vec![
                 partition_key_request("", "40", "1", Some("server-token")),
-                partition_key_request("40", "80", "2", None),
+                partition_key_request("40", "80", "2", Some("server-token")),
             ],
         )
         .await;
@@ -668,8 +714,8 @@ mod tests {
             ],
             vec![vec![physical_partition("", "80", "merged")]],
             vec![
-                effective_partition_key_request("", "40", "merged", Some("merge-token")),
-                effective_partition_key_request("40", "80", "merged", None),
+                effective_partition_key_request("", "40", "merged", "", "80", Some("merge-token")),
+                effective_partition_key_request("40", "80", "merged", "", "80", None),
             ],
         )
         .await;
@@ -700,8 +746,8 @@ mod tests {
     async fn topology_rewrite_can_return_from_merged_epk_slices_to_exact_pk_ranges() {
         assert_topology_rewrite(
             vec![
-                effective_partition_key_request("", "40", "merged", Some("ct")),
-                effective_partition_key_request("40", "80", "merged", None),
+                effective_partition_key_request("", "40", "merged", "", "80", Some("ct")),
+                effective_partition_key_request("40", "80", "merged", "", "80", None),
             ],
             vec![vec![
                 physical_partition("", "40", "left"),
@@ -737,10 +783,10 @@ mod tests {
             ],
             vec![
                 partition_key_request("00", "10", "split-a", Some("ct")),
-                effective_partition_key_request("10", "20", "split-b", None),
-                effective_partition_key_request("20", "30", "split-b", None),
-                effective_partition_key_request("30", "40", "split-c", None),
-                effective_partition_key_request("40", "50", "split-c", None),
+                effective_partition_key_request("10", "20", "split-b", "10", "30", Some("ct")),
+                effective_partition_key_request("20", "30", "split-b", "10", "30", None),
+                effective_partition_key_request("30", "40", "split-c", "30", "50", None),
+                effective_partition_key_request("40", "50", "split-c", "30", "50", None),
                 partition_key_request("50", "80", "split-d", None),
             ],
         )
@@ -751,14 +797,21 @@ mod tests {
     async fn topology_provider_error_propagates() {
         let mut request = Request::new(Arc::new(operation()), epk_range_target(), None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
-        let mut topology = MockTopologyProvider::new(vec![Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "topology fetch failed",
-        ))]);
+        let mut topology =
+            MockTopologyProvider::new(vec![Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("topology fetch failed")
+                .build())]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();
-        assert_eq!(err.to_string(), "topology fetch failed");
+        let rendered = err.to_string();
+        assert!(
+            rendered.ends_with("topology fetch failed"),
+            "unexpected: {rendered}"
+        );
     }
 
     #[tokio::test]
@@ -769,6 +822,6 @@ mod tests {
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let err = request.next_page(&mut context).await.unwrap_err();
-        assert!(is_partition_topology_change(&err));
+        assert!(err.status().is_partition_topology_change());
     }
 }

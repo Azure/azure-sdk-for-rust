@@ -217,7 +217,7 @@ impl HeaderValidationSpec {
 /// Snapshot of a [`CosmosResponse`] for deferred comparison.
 pub struct ResponseSnapshot {
     pub status_code: u16,
-    pub sub_status_code: Option<u32>,
+    pub sub_status_code: Option<u16>,
     pub headers: CosmosResponseHeaders,
     pub body: Option<serde_json::Value>,
     #[allow(dead_code)]

@@ -51,7 +51,7 @@ impl Pipeline {
     pub(crate) async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
-    ) -> azure_core::Result<Option<CosmosResponse>> {
+    ) -> crate::error::Result<Option<CosmosResponse>> {
         match self.root.next_page(context).await? {
             PageResult::Page { response, .. } => Ok(Some(response)),
             PageResult::Drained => Ok(None),
@@ -59,10 +59,12 @@ impl Pipeline {
             // or `DrainedLeaf`, none of which can bubble `SplitRequired` up past
             // their parent. If a future node type ever does, surfacing it as an
             // explicit error is preferable to silently dropping the page.
-            PageResult::SplitRequired { .. } => Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "root node cannot request a split; splits must be handled by a parent node",
-            )),
+            PageResult::SplitRequired { .. } => Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT)
+                .with_message(
+                    "root node cannot request a split; splits must be handled by a parent node",
+                )
+                .build()),
         }
     }
 
@@ -96,7 +98,7 @@ impl OperationPlan {
     /// each node's progress. The result can be passed back to
     /// [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation)
     /// (with the same operation) to resume where this plan left off.
-    pub fn to_continuation_token(&self) -> azure_core::Result<ContinuationToken> {
+    pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken> {
         ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state())
     }
 }

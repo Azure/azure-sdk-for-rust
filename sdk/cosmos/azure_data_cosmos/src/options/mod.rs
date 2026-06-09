@@ -9,13 +9,15 @@ use std::fmt::Display;
 // Re-exported types that form part of the azure_data_cosmos public API.
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
-    ETag, MaxItemCount as MaxItemCountHint, Precondition, SessionToken, ThroughputControlGroupName,
+    ETag, MaxItemCountHint, Precondition, SessionToken, ThroughputControlGroupName,
 };
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{
-    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions,
-    OperationOptionsBuilder, OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region,
-    ThroughputControlGroupOptions, UserAgentSuffix,
+    AvailabilityStrategy, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+    HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder,
+    OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region, ThrottlingRetryOptions,
+    ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlGroupOptions,
+    UserAgentSuffix,
 };
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
@@ -30,7 +32,6 @@ pub struct CosmosClientOptions {
     /// unless overridden by per-request options.
     pub(crate) operation: OperationOptions,
     pub(crate) user_agent_suffix: Option<UserAgentSuffix>,
-    pub(crate) application_region: Option<Region>,
 }
 
 impl CosmosClientOptions {
@@ -49,6 +50,10 @@ impl CosmosClientOptions {
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct CreateContainerOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+
     pub(crate) throughput: Option<ThroughputProperties>,
 }
 
@@ -58,27 +63,81 @@ impl CreateContainerOptions {
         self.throughput = Some(throughput);
         self
     }
+
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
 }
 
 /// Options to be passed to [`ContainerClient::replace()`](crate::clients::ContainerClient::replace()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReplaceContainerOptions;
+pub struct ReplaceContainerOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl ReplaceContainerOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`CosmosClient::create_database()`](crate::CosmosClient::create_database()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct CreateDatabaseOptions;
+pub struct CreateDatabaseOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl CreateDatabaseOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`ContainerClient::delete()`](crate::clients::ContainerClient::delete()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct DeleteContainerOptions;
+pub struct DeleteContainerOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl DeleteContainerOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`DatabaseClient::delete()`](crate::clients::DatabaseClient::delete()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct DeleteDatabaseOptions;
+pub struct DeleteDatabaseOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl DeleteDatabaseOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Specifies consistency levels for Cosmos DB accounts.
 ///
@@ -197,7 +256,7 @@ impl ItemWriteOptions {
 /// Options for [`ContainerClient::patch_item()`](crate::clients::ContainerClient::patch_item()).
 ///
 /// PATCH is implemented driver-side as a Read-Modify-Write (RMW) loop:
-/// the driver reads the current item, applies your [`PatchSpec`](crate::PatchSpec)
+/// the driver reads the current item, applies your [`PatchInstructions`](crate::PatchInstructions)
 /// locally, and issues an ETag-guarded Replace. If the Replace returns
 /// 412 PreconditionFailed (another writer raced), the loop restarts.
 ///
@@ -220,7 +279,7 @@ impl ItemWriteOptions {
 ///   evaluation requires either native wire-level PATCH (so the server
 ///   evaluates the predicate inside the same transaction) or a client-side
 ///   SQL subset evaluator; neither is in scope for this preview. The
-///   driver's [`PatchSpec`](crate::PatchSpec) has no `condition` field, so
+///   driver's [`PatchInstructions`](crate::PatchInstructions) has no `condition` field, so
 ///   there is no way to attach a predicate to a PATCH request.
 ///
 /// The session token lives on the dedicated
@@ -316,12 +375,86 @@ impl BatchOptions {
 /// Options to be passed to [`DatabaseClient::query_containers()`](crate::clients::DatabaseClient::query_containers()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct QueryContainersOptions;
+pub struct QueryContainersOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl QueryContainersOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`CosmosClient::query_databases()`](crate::CosmosClient::query_databases()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct QueryDatabasesOptions;
+pub struct QueryDatabasesOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl QueryDatabasesOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
+
+/// Options that apply to feed-style operations (paged reads, queries, etc.).
+///
+/// These settings control paging behavior — how many items the service should
+/// return per page and where to resume from. They are surfaced as a separate
+/// struct so other feed-style APIs can adopt them without re-declaring the
+/// same fields.
+///
+/// Today, `FeedOptions` is composed into [`QueryOptions`] via its
+/// [`feed`](QueryOptions::feed) field; [`QueryOptions`] also exposes
+/// [`with_max_item_count`](QueryOptions::with_max_item_count) and
+/// [`with_continuation_token`](QueryOptions::with_continuation_token)
+/// shortcuts that delegate to the inner [`FeedOptions`].
+#[derive(Clone, Default)]
+#[non_exhaustive]
+pub struct FeedOptions {
+    /// Maximum number of items the service should return per page
+    /// (`x-ms-max-item-count`).
+    ///
+    /// `None` omits the header so the SDK / service defaults apply. See
+    /// [`MaxItemCountHint`] for the two explicit values.
+    ///
+    /// This is a _hint_ to the server, not a client-side guarantee of the
+    /// maximum returned page size. In a cross-partition query, each partition
+    /// may return up to this many items, so the total page size could be up
+    /// to this value times the number of partitions involved.
+    pub max_item_count: Option<MaxItemCountHint>,
+
+    /// Continuation token from a prior page iterator, used to resume the feed.
+    ///
+    /// See [`QueryPageIterator::to_continuation_token`](crate::QueryPageIterator::to_continuation_token).
+    pub continuation_token: Option<ContinuationToken>,
+}
+
+impl FeedOptions {
+    /// Sets the maximum number of items the service should return per page.
+    ///
+    /// Pass [`MaxItemCountHint::Limit`] with a concrete page size, or
+    /// [`MaxItemCountHint::ServerDecides`] to let the service choose.
+    pub fn with_max_item_count(mut self, max_item_count: MaxItemCountHint) -> Self {
+        self.max_item_count = Some(max_item_count);
+        self
+    }
+
+    /// Sets a continuation token to resume the feed at a previous position.
+    pub fn with_continuation_token(mut self, continuation_token: ContinuationToken) -> Self {
+        self.continuation_token = Some(continuation_token);
+        self
+    }
+}
 
 /// Options for query operations.
 ///
@@ -329,12 +462,22 @@ pub struct QueryDatabasesOptions;
 ///
 /// General-purpose settings such as custom headers and excluded regions are configured
 /// via the [`operation`](Self::operation) field. See [`OperationOptions`] for details.
+///
+/// Paging-related settings (`max_item_count`, `continuation_token`) are configured via
+/// the [`feed`](Self::feed) field — see [`FeedOptions`]. The convenience setters
+/// [`with_max_item_count`](Self::with_max_item_count) and
+/// [`with_continuation_token`](Self::with_continuation_token) delegate to the inner
+/// [`FeedOptions`].
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct QueryOptions {
     /// General-purpose options that apply to this request.
     /// See [`OperationOptions`] for available settings and layered resolution behavior.
     pub operation: OperationOptions,
+
+    /// Feed-paging options (max item count, continuation token) for this query.
+    /// See [`FeedOptions`].
+    pub feed: FeedOptions,
 
     /// Session token for session-consistent queries.
     pub session_token: Option<SessionToken>,
@@ -348,22 +491,6 @@ pub struct QueryOptions {
     /// response (`x-ms-documentdb-populatequerymetrics`). Surfaced via
     /// `QueryFeedPage::query_metrics()`.
     pub populate_query_metrics: Option<bool>,
-
-    /// Maximum number of items the service should return per page
-    /// (`x-ms-max-item-count`).
-    ///
-    /// `None` omits the header so the SDK / service defaults apply. See
-    /// [`MaxItemCountHint`] for the two explicit values.
-    ///
-    /// This is a _hint_ to the server, not a client-side guarantee of the maximum returned page size.
-    /// In a cross-partition query, each partition may return up to this many items,
-    /// so the total page size could be up to this value times the number of partitions involved.
-    pub max_item_count: Option<MaxItemCountHint>,
-
-    /// Continuation token from a prior page iterator, used to resume the query.
-    ///
-    /// See [`FeedPageIterator::to_continuation_token`](crate::FeedPageIterator::to_continuation_token).
-    pub continuation_token: Option<ContinuationToken>,
 }
 
 impl QueryOptions {
@@ -376,6 +503,12 @@ impl QueryOptions {
     /// Sets the [`OperationOptions`] for this request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
+        self
+    }
+
+    /// Sets the [`FeedOptions`] (max item count, continuation token) for this query.
+    pub fn with_feed_options(mut self, feed: FeedOptions) -> Self {
+        self.feed = feed;
         self
     }
 
@@ -393,16 +526,21 @@ impl QueryOptions {
 
     /// Sets the maximum number of items the service should return per page.
     ///
-    /// Pass [`MaxItemCountHint::Limit`] with a concrete page size, or
-    /// [`MaxItemCountHint::ServerDecides`] to let the service choose.
+    /// Delegates to [`FeedOptions::with_max_item_count`] on the inner
+    /// [`feed`](Self::feed). Pass [`MaxItemCountHint::Limit`] with a concrete
+    /// page size, or [`MaxItemCountHint::ServerDecides`] to let the service
+    /// choose.
     pub fn with_max_item_count(mut self, max_item_count: MaxItemCountHint) -> Self {
-        self.max_item_count = Some(max_item_count);
+        self.feed = self.feed.with_max_item_count(max_item_count);
         self
     }
 
     /// Sets a continuation token to resume the query at a previous position.
+    ///
+    /// Delegates to [`FeedOptions::with_continuation_token`] on the inner
+    /// [`feed`](Self::feed).
     pub fn with_continuation_token(mut self, continuation_token: ContinuationToken) -> Self {
-        self.continuation_token = Some(continuation_token);
+        self.feed = self.feed.with_continuation_token(continuation_token);
         self
     }
 }
@@ -410,23 +548,63 @@ impl QueryOptions {
 /// Options to be passed to [`ContainerClient::read()`](crate::clients::ContainerClient::read()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReadContainerOptions;
+pub struct ReadContainerOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl ReadContainerOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to [`DatabaseClient::read()`](crate::clients::DatabaseClient::read()).
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ReadDatabaseOptions;
+pub struct ReadDatabaseOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl ReadDatabaseOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options to be passed to operations related to Throughput offers.
 #[derive(Clone, Default)]
 #[non_exhaustive]
-pub struct ThroughputOptions;
+pub struct ThroughputOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+}
+
+impl ThroughputOptions {
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
+        self
+    }
+}
 
 /// Options for [`ContainerClient::read_feed_ranges()`](crate::clients::ContainerClient::read_feed_ranges)
 /// and [`ContainerClient::feed_range_from_partition_key()`](crate::clients::ContainerClient::feed_range_from_partition_key).
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
 pub struct ReadFeedRangesOptions {
+    /// General-purpose options that apply to this request.
+    /// See [`OperationOptions`] for available settings and layered resolution behavior.
+    pub operation: OperationOptions,
+
     force_refresh: bool,
 }
 
@@ -434,6 +612,12 @@ impl ReadFeedRangesOptions {
     /// When `true`, discards any cached routing map and fetches a fresh copy from the service.
     pub fn with_force_refresh(mut self, force_refresh: bool) -> Self {
         self.force_refresh = force_refresh;
+        self
+    }
+
+    /// Sets the [`OperationOptions`] for this request.
+    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+        self.operation = operation;
         self
     }
 

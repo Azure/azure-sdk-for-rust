@@ -8,10 +8,10 @@
 //!
 //! Feed ranges can also be serialized to base64-encoded JSON for cross-SDK storage and transport.
 
-use azure_core::{error::ErrorKind, fmt::SafeDebug};
+use azure_core::fmt::SafeDebug;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
-use std::{cmp, fmt, str::FromStr};
+use std::{fmt, str::FromStr};
 
 use crate::models::{effective_partition_key::EffectivePartitionKey, ItemReference, PartitionKey};
 use crate::models::{partition_key_range::PartitionKeyRange, PartitionKeyDefinition};
@@ -71,12 +71,16 @@ impl FeedRange {
     pub fn new(
         min_inclusive: EffectivePartitionKey,
         max_exclusive: EffectivePartitionKey,
-    ) -> azure_core::Result<Self> {
+    ) -> crate::error::Result<Self> {
         if min_inclusive > max_exclusive {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
-                "feed range min_inclusive must be less than or equal to max_exclusive",
-            ));
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(
+                    "feed range min_inclusive must be less than or equal to max_exclusive",
+                )
+                .build());
         }
 
         Ok(Self(FeedRangeRepr::Range {
@@ -88,8 +92,8 @@ impl FeedRange {
     /// Creates a feed range covering the entire partition key space (`""..FF`).
     pub fn full() -> Self {
         Self(FeedRangeRepr::Range {
-            min_inclusive: EffectivePartitionKey::min(),
-            max_exclusive: EffectivePartitionKey::max(),
+            min_inclusive: EffectivePartitionKey::MIN.clone(),
+            max_exclusive: EffectivePartitionKey::MAX.clone(),
         })
     }
 
@@ -126,6 +130,18 @@ impl FeedRange {
             FeedRangeRepr::LogicalPartition { partition_key, .. } => Some(partition_key),
             FeedRangeRepr::Range { .. } => None,
         }
+    }
+
+    /// Returns `true` if this feed range represents a single logical partition (or
+    /// a hierarchical-partition-key prefix), as opposed to an explicit `[min, max)`
+    /// EPK range.
+    ///
+    /// Logical-partition feed ranges have implicit single-partition targeting semantics
+    /// that are lost when combined with arbitrary EPK ranges, so callers that wish to
+    /// merge feed ranges (for example, session-token coalescing) typically exclude this
+    /// variant before doing so.
+    pub fn is_logical_partition(&self) -> bool {
+        matches!(self.0, FeedRangeRepr::LogicalPartition { .. })
     }
 
     /// Returns the inclusive lower bound of this range.
@@ -166,38 +182,6 @@ impl FeedRange {
         self.min_inclusive() < other.max_exclusive() && other.min_inclusive() < self.max_exclusive()
     }
 
-    /// Returns `true` if this feed range can be combined with `other`.
-    ///
-    /// Two ranges can be combined when they overlap or are adjacent
-    /// (one's max equals the other's min).
-    pub fn can_merge(&self, other: &FeedRange) -> bool {
-        match (&self.0, &other.0) {
-            // Logical partition feed ranges cannot be merged with any other range,
-            // even an identical one, because they carry the implicit expectation
-            // of targeting a single logical partition.
-            (FeedRangeRepr::LogicalPartition { .. }, _)
-            | (_, FeedRangeRepr::LogicalPartition { .. }) => false,
-            (FeedRangeRepr::Range { .. }, FeedRangeRepr::Range { .. }) => {
-                self.overlaps(other)
-                    || self.max_exclusive() == other.min_inclusive()
-                    || other.max_exclusive() == self.min_inclusive()
-            }
-        }
-    }
-
-    /// Combines this feed range with `other` into a bounding range.
-    pub fn merge_with(&self, other: &FeedRange) -> FeedRange {
-        debug_assert!(
-            self.can_merge(other),
-            "merge_with called on disjoint ranges or logical partition range: self={:?}, other={:?}",
-            self, other
-        );
-        Self(FeedRangeRepr::Range {
-            min_inclusive: cmp::min(self.min_inclusive().clone(), other.min_inclusive().clone()),
-            max_exclusive: cmp::max(self.max_exclusive().clone(), other.max_exclusive().clone()),
-        })
-    }
-
     fn to_json(&self) -> FeedRangeJson {
         FeedRangeJson {
             range: RangeJson {
@@ -209,22 +193,21 @@ impl FeedRange {
         }
     }
 
-    fn from_json(json: FeedRangeJson) -> azure_core::Result<Self> {
+    fn from_json(json: FeedRangeJson) -> crate::error::Result<Self> {
         if !json.range.is_min_inclusive || json.range.is_max_inclusive {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
-                "feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)",
-            ));
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message("feed range must have [min, max) semantics (isMinInclusive=true, isMaxInclusive=false)").build());
         }
 
         let min = EffectivePartitionKey::from(json.range.min);
         let max = EffectivePartitionKey::from(json.range.max);
 
         if min > max {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
-                "feed range min must be less than or equal to max",
-            ));
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("feed range min must be less than or equal to max")
+                .build());
         }
 
         Ok(Self(FeedRangeRepr::Range {
@@ -235,7 +218,7 @@ impl FeedRange {
 }
 
 impl TryFrom<&PartitionKeyRange> for FeedRange {
-    type Error = azure_core::Error;
+    type Error = crate::error::CosmosError;
 
     /// Creates a `FeedRange` from a driver `PartitionKeyRange`.
     ///
@@ -243,10 +226,12 @@ impl TryFrom<&PartitionKeyRange> for FeedRange {
     /// (min inclusive, max exclusive). Returns an error if the range is inverted.
     fn try_from(pkr: &PartitionKeyRange) -> Result<Self, Self::Error> {
         if pkr.min_inclusive > pkr.max_exclusive {
-            return Err(azure_core::Error::with_message(
-                ErrorKind::DataConversion,
-                "partition key range min_inclusive must be <= max_exclusive",
-            ));
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message("partition key range min_inclusive must be <= max_exclusive")
+                .build());
         }
 
         Ok(Self(FeedRangeRepr::Range {
@@ -266,16 +251,29 @@ impl fmt::Display for FeedRange {
 }
 
 impl FromStr for FeedRange {
-    type Err = azure_core::Error;
+    type Err = crate::error::CosmosError;
 
     /// Parses a feed range from a base64-encoded JSON string.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let decoded_bytes = base64::engine::general_purpose::STANDARD
             .decode(s)
-            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
+            .map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message("feed range is not valid base64")
+                    .with_source(e)
+                    .build()
+            })?;
 
-        let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes)
-            .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))?;
+        let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes).map_err(|e| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("feed range JSON is invalid")
+                .with_source(e)
+                .build()
+        })?;
 
         Self::from_json(json)
     }
@@ -379,90 +377,6 @@ mod tests {
         .unwrap();
         assert!(!a.overlaps(&b));
         assert!(!b.overlaps(&a));
-    }
-
-    #[test]
-    fn can_merge_adjacent() {
-        let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("50"),
-        )
-        .unwrap();
-        let b = FeedRange::new(
-            EffectivePartitionKey::from("50"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        assert!(a.can_merge(&b));
-        assert!(b.can_merge(&a));
-    }
-
-    #[test]
-    fn can_merge_overlapping_is_commutative() {
-        let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("70"),
-        )
-        .unwrap();
-        let b = FeedRange::new(
-            EffectivePartitionKey::from("40"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        assert!(a.can_merge(&b));
-        assert!(b.can_merge(&a));
-    }
-
-    #[test]
-    fn can_merge_disjoint_is_false_both_directions() {
-        let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("30"),
-        )
-        .unwrap();
-        let b = FeedRange::new(
-            EffectivePartitionKey::from("50"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        assert!(!a.can_merge(&b));
-        assert!(!b.can_merge(&a));
-    }
-
-    #[test]
-    fn can_merge_rejects_logical_partition_ranges_symmetrically() {
-        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
-        let logical = FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
-        let explicit = FeedRange::new(
-            EffectivePartitionKey::from(""),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        assert!(!logical.can_merge(&explicit));
-        assert!(!explicit.can_merge(&logical));
-        assert!(!logical.can_merge(&logical));
-    }
-
-    #[test]
-    fn merge_with_bounds() {
-        let a = FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("50"),
-        )
-        .unwrap();
-        let b = FeedRange::new(
-            EffectivePartitionKey::from("30"),
-            EffectivePartitionKey::from("FF"),
-        )
-        .unwrap();
-
-        let merged = a.merge_with(&b);
-        assert_eq!(merged.min_inclusive().as_str(), "00");
-        assert_eq!(merged.max_exclusive().as_str(), "FF");
     }
 
     #[test]

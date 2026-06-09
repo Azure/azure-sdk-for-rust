@@ -11,6 +11,12 @@
 //!   2. Partition split / 410 Gone handling — when a data operation returns 410
 //!      (PartitionIsGone), the pipeline performs a failover retry and the operation
 //!      ultimately succeeds.
+//!
+//! These tests are gated on `test_category = "emulator"` only — they are
+//! intentionally not run against `test_category = "emulator_vnext"` because
+//! partition-failover semantics depend on PK-range cache + multi-replica
+//! gateway behavior that the vnext (Linux) emulator does not model the same
+//! way as the legacy Windows emulator.
 
 #![cfg(feature = "fault_injection")]
 
@@ -236,11 +242,20 @@ pub async fn partition_split_on_read_retries_and_succeeds() -> Result<(), Box<dy
             "410 fault should have been hit exactly once (the hit limit)"
         );
 
-        // The diagnostics should show more than one request (the initial 410 + the retry).
+        // The diagnostics on the surfaced response must capture EVERY
+        // attempt the operation made — that's the
+        // "one operation = one `DiagnosticsContext`" contract. The first
+        // attempt failed with the injected 410; the dataflow layer
+        // caught `is_partition_topology_change()`, invalidated the
+        // partition-key-range cache, and re-executed the request. The
+        // re-execution gets its own per-operation pipeline (and
+        // therefore its own diagnostics), but the dataflow retry path
+        // splices the failed attempt's diagnostics onto the retry's
+        // response before returning, so the caller sees both attempts.
         let diagnostics = read_response.diagnostics();
         assert!(
             diagnostics.request_count() > 1,
-            "Expected more than 1 request attempt (got {}) — the 410 should trigger a retry",
+            "Expected more than 1 request attempt (got {}) — the 410 should trigger a retry, and the dataflow layer must aggregate prior attempt diagnostics onto the final response",
             diagnostics.request_count()
         );
 
@@ -282,8 +297,8 @@ pub async fn partition_split_on_create_aborts_non_idempotent_write() -> Result<(
             .create_container(&database, &container_name, "/pk")
             .await?;
 
-        // CreateItem with a persistent 410 — the write is non-idempotent and the
-        // driver does not have PPAF enabled, so the operation should abort.
+        // CreateItem with a persistent 410 — the driver retries across
+        // available endpoints but eventually exhausts its retry budget.
         let item_json = br#"{"id": "split-create-1", "pk": "pk1", "value": "test"}"#;
         let create_result = context
             .create_item(&container, "split-create-1", "pk1", item_json)
@@ -291,7 +306,7 @@ pub async fn partition_split_on_create_aborts_non_idempotent_write() -> Result<(
 
         assert!(
             create_result.is_err(),
-            "CreateItem should fail when partition is permanently gone (non-idempotent, no PPAF)"
+            "CreateItem should fail when partition is permanently gone (retry budget exhausted)"
         );
 
         // Confirm the fault was hit.

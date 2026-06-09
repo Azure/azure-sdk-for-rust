@@ -8,8 +8,8 @@
 //! serialization helpers, and the diagnostics context itself.
 
 use crate::{
-    driver::routing::CosmosEndpoint,
-    models::{ActivityId, CosmosStatus, RequestCharge, SubStatusCode},
+    driver::{pipeline::hedging_diagnostics::HedgeDiagnostics, routing::CosmosEndpoint},
+    models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge, SubStatusCode},
     options::{DiagnosticsOptions, DiagnosticsVerbosity, Region},
     system::CpuMemoryMonitor,
 };
@@ -1210,6 +1210,10 @@ pub(crate) struct DiagnosticsContextBuilder {
     #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
 
+    /// Diagnostics from a cross-region hedging execution, if one occurred.
+    /// `None` when hedging was not selected for this operation.
+    hedge_diagnostics: Option<HedgeDiagnostics>,
+
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
     test_system_usage: Option<SystemUsageSnapshot>,
@@ -1228,6 +1232,7 @@ impl DiagnosticsContextBuilder {
             machine_id: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled: false,
+            hedge_diagnostics: None,
             #[cfg(test)]
             test_system_usage: None,
         }
@@ -1241,6 +1246,50 @@ impl DiagnosticsContextBuilder {
     /// Sets the machine identifier (from [`VmMetadataService`](crate::system::VmMetadataService)).
     pub(crate) fn set_machine_id(&mut self, machine_id: Arc<String>) {
         self.machine_id = Some(machine_id);
+    }
+
+    /// Sets the hedging diagnostics for this operation.
+    pub(crate) fn set_hedge_diagnostics(&mut self, diagnostics: HedgeDiagnostics) {
+        self.hedge_diagnostics = Some(diagnostics);
+    }
+
+    /// Creates a fresh builder for a single hedge attempt.
+    ///
+    /// Shares operation-level context (`activity_id`, `options`,
+    /// `cpu_monitor`, `machine_id`, fault-injection flag) with the parent
+    /// but starts with an empty request list and a fresh `started_at`, so
+    /// per-attempt durations measure from launch rather than from
+    /// operation start. The winning attempt's requests are merged back
+    /// via [`merge_hedge_attempt`](Self::merge_hedge_attempt).
+    pub(crate) fn clone_for_hedge_attempt(&self) -> Self {
+        Self {
+            activity_id: self.activity_id.clone(),
+            started_at: Instant::now(),
+            requests: Vec::with_capacity(2),
+            status: None,
+            options: Arc::clone(&self.options),
+            cpu_monitor: self.cpu_monitor.clone(),
+            machine_id: self.machine_id.clone(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled: self.fault_injection_enabled,
+            hedge_diagnostics: None,
+            #[cfg(test)]
+            test_system_usage: self.test_system_usage.clone(),
+        }
+    }
+
+    /// Absorbs a hedge attempt's per-request diagnostics back into the
+    /// parent builder.
+    ///
+    /// Only the request list is moved; the attempt's `status` and
+    /// `hedge_diagnostics` are discarded because those operation-level
+    /// fields are written directly on the parent.
+    pub(crate) fn merge_hedge_attempt(&mut self, attempt: Self) {
+        if self.requests.is_empty() {
+            self.requests = attempt.requests;
+        } else {
+            self.requests.extend(attempt.requests);
+        }
     }
 
     /// Sets whether fault injection is enabled for this operation's runtime.
@@ -1307,6 +1356,48 @@ impl DiagnosticsContextBuilder {
         let handle = RequestHandle(self.requests.len());
         self.requests.push(request);
         handle
+    }
+
+    /// Records the response headers and completion of a request in one shot.
+    ///
+    /// Convenience wrapper around [`update_request`](Self::update_request) +
+    /// [`complete_request`](Self::complete_request) that copies the standard Cosmos
+    /// response-header fields (`request_charge`, `activity_id`, `session_token`,
+    /// `server_duration_ms`) onto the request before marking it complete.
+    ///
+    /// Must be called at most once per [`RequestHandle`]. Subsequent calls
+    /// `debug_assert!` (the `update_request` step rejects already-completed
+    /// handles) and are no-ops in release builds.
+    pub(crate) fn record_response(
+        &mut self,
+        handle: RequestHandle,
+        status_code: StatusCode,
+        headers: &CosmosResponseHeaders,
+    ) {
+        if let Some(request) = self.requests.get(handle.0) {
+            debug_assert!(
+                !request.is_completed(),
+                "record_response called after the request was already completed"
+            );
+            if request.is_completed() {
+                return;
+            }
+        }
+        self.update_request(handle, |req| {
+            if let Some(charge) = headers.request_charge {
+                req.with_charge(charge);
+            }
+            if let Some(activity_id) = headers.activity_id.clone() {
+                req.with_activity_id(activity_id);
+            }
+            if let Some(token) = headers.session_token.clone() {
+                req.with_session_token(token.to_string());
+            }
+            if let Some(duration) = headers.server_duration_ms {
+                req.with_server_duration_ms(duration);
+            }
+        });
+        self.complete_request(handle, status_code, headers.substatus);
     }
 
     /// Records completion of a request.
@@ -1439,6 +1530,7 @@ impl DiagnosticsContextBuilder {
             fault_injection_enabled: self.fault_injection_enabled,
             #[cfg(not(feature = "fault_injection"))]
             fault_injection_enabled: false,
+            hedge_diagnostics: self.hedge_diagnostics,
             #[cfg(test)]
             test_system_usage: self.test_system_usage,
             cached_json_detailed: OnceLock::new(),
@@ -1511,6 +1603,15 @@ pub struct DiagnosticsContext {
 
     /// Whether fault injection was enabled when this operation executed.
     fault_injection_enabled: bool,
+
+    /// Diagnostics from a cross-region hedging execution, if one occurred.
+    ///
+    /// `Some(_)` if and only if a hedging strategy was resolved and active
+    /// for the operation — i.e. `should_hedge()` returned `true` and
+    /// `execute_hedged()` was entered (spec §10.1 attachment contract).
+    /// `None` in all other cases (no strategy resolved, strategy
+    /// `Disabled`, eligibility check failed, etc.).
+    hedge_diagnostics: Option<HedgeDiagnostics>,
 
     /// Test-only override for system usage snapshot, bypassing the CPU monitor.
     #[cfg(test)]
@@ -1585,6 +1686,7 @@ impl DiagnosticsContext {
             cpu_monitor: last.cpu_monitor.clone(),
             machine_id: last.machine_id.clone(),
             fault_injection_enabled: sources.iter().any(|c| c.fault_injection_enabled),
+            hedge_diagnostics: None,
             #[cfg(test)]
             test_system_usage: last.test_system_usage.clone(),
             cached_json_detailed: OnceLock::new(),
@@ -1650,6 +1752,18 @@ impl DiagnosticsContext {
     /// ```
     pub fn requests(&self) -> Arc<Vec<RequestDiagnostics>> {
         Arc::clone(&self.requests)
+    }
+
+    /// Returns the hedging diagnostics for this operation, if hedging was
+    /// selected.
+    ///
+    /// This is `Some(_)` if and only
+    /// if `should_hedge()` returned `true` and `execute_hedged()` was
+    /// entered — even when the primary won before the threshold elapsed.
+    /// `None` means hedging was not selected for this operation (no
+    /// strategy resolved, strategy `Disabled`, or eligibility check failed).
+    pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics> {
+        self.hedge_diagnostics.as_ref()
     }
 
     /// Returns the machine identifier, if available.
@@ -1787,6 +1901,7 @@ impl Clone for DiagnosticsContext {
             cpu_monitor: self.cpu_monitor.clone(),
             machine_id: self.machine_id.clone(),
             fault_injection_enabled: self.fault_injection_enabled,
+            hedge_diagnostics: self.hedge_diagnostics.clone(),
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
             // OnceLock does not implement Clone, so we propagate any cached
@@ -1815,10 +1930,39 @@ impl PartialEq for DiagnosticsContext {
             && self.requests == other.requests
             && self.status == other.status
             && self.options == other.options
+            && self.hedge_diagnostics == other.hedge_diagnostics
     }
 }
 
 impl Eq for DiagnosticsContext {}
+
+impl std::fmt::Display for DiagnosticsContext {
+    /// `{ctx}` — one-line summary suitable for `tracing` fields and log
+    /// lines: `activity=… duration=…ms requests=N charge=…RU [status=…]`.
+    ///
+    /// `{ctx:#}` — the one-line summary followed by the summarized
+    /// diagnostics JSON (`DiagnosticsVerbosity::Summary`). The detailed
+    /// JSON remains available via
+    /// [`to_json_string`](Self::to_json_string).
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "activity={} duration={}ms requests={} charge={}RU",
+            self.activity_id(),
+            self.duration().as_millis(),
+            self.request_count(),
+            self.total_request_charge(),
+        )?;
+        if let Some(status) = self.status() {
+            write!(f, " status={status}")?;
+        }
+        if f.alternate() {
+            f.write_str("\n")?;
+            f.write_str(self.to_json_string(Some(DiagnosticsVerbosity::Summary)))?;
+        }
+        Ok(())
+    }
+}
 
 /// Builds a summary for requests in a single region.
 fn build_region_summary(
@@ -2273,6 +2417,72 @@ mod tests {
     }
 
     #[test]
+    fn to_json_detailed_with_known_sub_status() {
+        // Verifies that when a request completes with a sub-status that has
+        // a well-known name (e.g. 3200 → RUBudgetExceeded), the serialized
+        // `status` field carries the full `[Kind] {code}/{sub} ({name})`
+        // form produced by `CosmosStatus::Display`.
+        let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
+            let handle = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            builder.complete_request(
+                handle,
+                StatusCode::TooManyRequests,
+                Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+            );
+        });
+
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let value = normalize_diagnostics_json(json);
+        let status = value
+            .get("requests")
+            .and_then(|r| r.as_array())
+            .and_then(|a| a.first())
+            .and_then(|r| r.get("status"))
+            .and_then(|s| s.as_str())
+            .expect("status field must be a string");
+        assert_eq!(
+            status, "429/3200 (RUBudgetExceeded)",
+            "named sub-status must serialize as `[Kind] {{code}}/{{sub}} ({{name}})`"
+        );
+    }
+
+    #[test]
+    fn to_json_detailed_with_unknown_sub_status() {
+        // Verifies the `[Kind] {code}/{sub}` form (no name suffix) when the
+        // sub-status code is not in the well-known table.
+        let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
+            let handle = builder.start_test_request(
+                ExecutionContext::Initial,
+                Some(Region::WEST_US_2),
+                "https://test.documents.azure.com",
+            );
+            builder.complete_request(
+                handle,
+                StatusCode::TooManyRequests,
+                Some(SubStatusCode::new(65000)),
+            );
+        });
+
+        let json = ctx.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let value = normalize_diagnostics_json(json);
+        let status = value
+            .get("requests")
+            .and_then(|r| r.as_array())
+            .and_then(|a| a.first())
+            .and_then(|r| r.get("status"))
+            .and_then(|s| s.as_str())
+            .expect("status field must be a string");
+        assert_eq!(
+            status, "429/65000",
+            "unknown sub-status must serialize as `[Kind] {{code}}/{{sub}}` with no name suffix"
+        );
+    }
+
+    #[test]
     fn to_json_summary() {
         let ctx = make_context_with(ActivityId::from_string("test-id".to_string()), |builder| {
             // Add several requests to trigger deduplication
@@ -2285,7 +2495,11 @@ mod tests {
                 builder.update_request(handle, |req| {
                     req.request_charge = RequestCharge::new(i as f64)
                 });
-                builder.complete_request(handle, StatusCode::TooManyRequests, None);
+                builder.complete_request(
+                    handle,
+                    StatusCode::TooManyRequests,
+                    Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+                );
             }
         });
 
@@ -2303,7 +2517,7 @@ mod tests {
                 "first": {
                     "execution_context": "retry",
                     "endpoint": "https://test.documents.azure.com/",
-                    "status": "429",
+                    "status": "429/3200 (RUBudgetExceeded)",
                     "request_charge": 0.0,
                     "duration_ms": 0,
                     "timed_out": false
@@ -2311,15 +2525,16 @@ mod tests {
                 "last": {
                     "execution_context": "retry",
                     "endpoint": "https://test.documents.azure.com/",
-                    "status": "429",
+                    "status": "429/3200 (RUBudgetExceeded)",
                     "request_charge": 4.0,
                     "duration_ms": 0,
                     "timed_out": false
                 },
                 "deduplicated_groups": [{
                     "endpoint": "https://test.documents.azure.com/",
-                    "status": "429",
+                    "status": "429/3200 (RUBudgetExceeded)",
                     "execution_context": "retry",
+
                     "count": 3,
                     "total_request_charge": 6.0,
                     "min_duration_ms": 0,

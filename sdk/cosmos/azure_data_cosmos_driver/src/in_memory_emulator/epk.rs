@@ -52,24 +52,28 @@ pub(crate) fn compute_epk(
 /// - Object / array components return `BadRequest` (HTTP 400).
 pub(crate) fn parse_partition_key_header(
     header: &str,
-) -> azure_core::Result<Vec<PartitionKeyValue>> {
+) -> crate::error::Result<Vec<PartitionKeyValue>> {
     let trimmed = header.trim();
     if trimmed.is_empty() || trimmed == "[]" {
         return Ok(Vec::new());
     }
 
     let value: serde_json::Value = serde_json::from_str(trimmed).map_err(|e| {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            format!("invalid partition key header: {}", e),
-        )
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message(format!("invalid partition key header: {e}"))
+            .build()
     })?;
 
     let arr = value.as_array().ok_or_else(|| {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "partition key header must be a JSON array",
-        )
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("partition key header must be a JSON array")
+            .build()
     })?;
 
     arr.iter().map(json_to_pk_component).collect()
@@ -87,12 +91,14 @@ pub(crate) fn parse_partition_key_header(
 pub(crate) fn extract_pk_from_body(
     body: &serde_json::Value,
     pk_paths: &[impl AsRef<str>],
-) -> azure_core::Result<Vec<PartitionKeyValue>> {
+) -> crate::error::Result<Vec<PartitionKeyValue>> {
     if !body.is_object() {
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "document body must be a JSON object to extract a partition key",
-        ));
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("document body must be a JSON object to extract a partition key")
+            .build());
     }
     pk_paths
         .iter()
@@ -107,7 +113,7 @@ pub(crate) fn extract_pk_from_body(
 fn extract_pk_at_path(
     body: &serde_json::Value,
     path: &str,
-) -> azure_core::Result<PartitionKeyValue> {
+) -> crate::error::Result<PartitionKeyValue> {
     let path_str = path.trim_start_matches('/');
     if path_str.is_empty() {
         return json_to_pk_component(body);
@@ -117,51 +123,62 @@ fn extract_pk_at_path(
     let mut current = body;
     for (i, segment) in segments.iter().enumerate() {
         let obj = current.as_object().ok_or_else(|| {
-            azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
-                    "partition key path component '{}' encountered a non-object intermediate",
-                    segment
-                ),
-            )
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
+                    "partition key path component '{segment}' encountered a non-object intermediate"
+                ))
+                .build()
         })?;
         match obj.get(*segment) {
             Some(next) if i == last_idx => return json_to_pk_component(next),
             Some(next) => current = next,
-            None => return Ok(PartitionKeyValue::undefined()),
+            None => return Ok(PartitionKeyValue::UNDEFINED),
         }
     }
     // Unreachable: loop returns or assigns on every iteration.
-    Ok(PartitionKeyValue::undefined())
+    Ok(PartitionKeyValue::UNDEFINED)
 }
 
 /// Converts a single JSON value to a [`PartitionKeyValue`], rejecting non-scalars
 /// and non-finite numbers the way the real service does.
-fn json_to_pk_component(value: &serde_json::Value) -> azure_core::Result<PartitionKeyValue> {
+fn json_to_pk_component(value: &serde_json::Value) -> crate::error::Result<PartitionKeyValue> {
     match value {
         serde_json::Value::Null => Ok(Option::<&str>::None.into()),
         serde_json::Value::Bool(b) => Ok(PartitionKeyValue::from(*b)),
         serde_json::Value::String(s) => Ok(PartitionKeyValue::from(s.clone())),
         serde_json::Value::Number(n) => {
             let f = n.as_f64().ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "partition key number is not representable as f64",
-                )
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message("partition key number is not representable as f64")
+                    .build()
             })?;
             if !f.is_finite() {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    "partition key numbers must be finite (NaN and Infinity are not allowed)",
-                ));
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message(
+                        "partition key numbers must be finite (NaN and Infinity are not allowed)",
+                    )
+                    .build());
             }
             Ok(PartitionKeyValue::from(f))
         }
         serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
-            Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                "partition key components must be scalar (null, bool, number, or string)",
-            ))
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(
+                    "partition key components must be scalar (null, bool, number, or string)",
+                )
+                .build())
         }
     }
 }
@@ -243,7 +260,7 @@ mod tests {
     fn extract_pk_missing_path_is_undefined() {
         let body = serde_json::json!({"id": "doc1"});
         let components = extract_pk_from_body(&body, &["/missing"]).unwrap();
-        assert_eq!(components, vec![PartitionKeyValue::undefined()]);
+        assert_eq!(components, vec![PartitionKeyValue::UNDEFINED]);
     }
 
     #[test]

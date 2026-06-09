@@ -100,11 +100,11 @@ async fn verify_read_fails_with_injected_error(
                 expected_status
             ));
             assert_eq!(
-                Some(expected_status),
-                err.http_status(),
+                expected_status,
+                err.status().status_code(),
                 "expected {:?}, got {:?}",
                 expected_status,
-                err.http_status()
+                err.status().status_code()
             );
 
             Ok(())
@@ -347,19 +347,21 @@ pub async fn fault_injection_read_region_retry_503() -> Result<(), Box<dyn Error
     .await
 }
 
-/// Test that a transport-generated 503 on a non-idempotent write aborts (not retried).
+/// Test that a transport-generated 503 on a non-idempotent write is retried
+/// via cross-region failover.
 ///
 /// Fault injection simulates transport-level failures (e.g. connection drops) which
-/// produce a synthetic 503/20003 (`TransportGenerated503`). These are distinct from
-/// HTTP-level 503s returned by the service: transport errors on non-idempotent writes
-/// are NOT retried because we cannot know whether the server processed the request.
-/// HTTP-level 503s ARE retried for all operations (see retry_evaluation.rs Block 2).
+/// produce a synthetic 503/20003 (`TransportGenerated503`). The Rust driver always
+/// retries writes (including non-idempotent ones) for availability, relying on
+/// Cosmos DB's conflict detection (409/412) to catch actual duplicates.
+/// The driver fails over to the satellite region and the write succeeds there.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
-pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<(), Box<dyn Error>> {
+pub async fn fault_injection_transport_generated_503_write_retries_via_failover(
+) -> Result<(), Box<dyn Error>> {
     let server_error = FaultInjectionResultBuilder::new()
         .with_error(FaultInjectionErrorType::ServiceUnavailable)
         .build();
@@ -369,7 +371,7 @@ pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<()
         .with_region(HUB_REGION)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("write-region-transport-503", server_error)
+    let rule = FaultInjectionRuleBuilder::new("write-region-http-503", server_error)
         .with_condition(condition)
         .with_hit_limit(1)
         .build();
@@ -406,16 +408,18 @@ pub async fn fault_injection_transport_generated_503_write_aborts() -> Result<()
             let pk = format!("Partition-{}", unique_id);
             let item_id = format!("Item-{}", unique_id);
 
-            // Transport-generated 503 on a non-idempotent write (upsert) should NOT
-            // be retried — the driver cannot know if the server processed the request.
-            let result = fault_container_client
+            // Transport-generated 503 on a non-idempotent write (upsert) is retried
+            // via cross-region failover — the driver prefers availability over
+            // idempotency concerns, and Cosmos DB's conflict detection catches
+            // actual duplicates.
+            let response = fault_container_client
                 .upsert_item(&pk, &item_id, &item, None)
-                .await;
+                .await
+                .expect("write should succeed after failover to satellite");
 
-            assert!(
-                result.is_err(),
-                "Transport-generated 503 on non-idempotent write should abort, not retry"
-            );
+            // After the transport 503 on hub, the driver fails over to the
+            // satellite region. Assert satellite was contacted.
+            assert_region_contacted_with_retry(&response.diagnostics(), &SATELLITE_REGION);
 
             Ok(())
         },
@@ -521,8 +525,11 @@ pub async fn fault_injection_read_region_retry_404_1002() -> Result<(), Box<dyn 
 }
 
 /// Test write failover on connection error — inject ConnectionError on hub for CreateItem.
-/// The retry policy retries 3 times on the same endpoint, then fails over to satellite.
-/// hit_limit(4) ensures the fault fires for all local retries plus the one that triggers failover.
+/// Connection errors produce `TRANSPORT_CONNECTION_FAILED` (`definitely_not_sent`).
+/// The transport layer performs 1 local shard retry (MAX_LOCAL_CONNECTIVITY_RETRIES=1),
+/// then escalates to the operation pipeline which marks the hub unavailable and does
+/// a cross-region failover to satellite. Total fault hits on hub = 2 (initial + 1 local
+/// retry). hit_limit(2) is the exact budget.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
@@ -540,7 +547,7 @@ pub async fn fault_injection_write_connection_error_failover() -> Result<(), Box
 
     let rule = FaultInjectionRuleBuilder::new("write-conn-error-hub", result)
         .with_condition(condition)
-        .with_hit_limit(4)
+        .with_hit_limit(2)
         .build();
 
     let fault_builder = vec![Arc::new(rule)];

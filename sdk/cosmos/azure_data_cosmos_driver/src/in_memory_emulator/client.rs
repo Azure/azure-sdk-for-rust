@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! `InMemoryEmulatorHttpClient` — implements `azure_core::http::HttpClient`.
+//! `InMemoryEmulatorHttpClient` — dispatches requests against an in-memory
+//! Cosmos DB store. Used as a [`TransportClient`] implementation by the
+//! driver and called directly by integration tests.
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use azure_core::http::{AsyncRawResponse, HttpClient, Request};
+use azure_core::http::{AsyncRawResponse, Request};
 use azure_core::Bytes;
 
 use super::config::VirtualAccountConfig;
@@ -19,6 +21,7 @@ use crate::driver::transport::cosmos_transport_client::{
     TransportError,
 };
 use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
+use crate::models::CosmosStatus;
 use crate::options::ConnectionPoolOptions;
 
 /// An HTTP client that intercepts all requests and serves them from an in-memory store.
@@ -78,7 +81,7 @@ impl InMemoryEmulatorHttpClient {
     /// # Example
     ///
     /// ```no_run
-    /// # async fn example() -> azure_core::Result<()> {
+    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// use azure_data_cosmos_driver::in_memory_emulator::*;
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use url::Url;
@@ -104,6 +107,29 @@ impl InMemoryEmulatorHttpClient {
         });
         crate::driver::CosmosDriverRuntimeBuilder::new().with_http_client_factory(factory)
     }
+
+    /// Like [`Self::runtime_builder`] but composes the emulator factory with
+    /// a `FaultInjectingHttpClientFactory` so the supplied
+    /// [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)s
+    /// evaluate on every outbound request before reaching the emulator.
+    ///
+    /// Used by hedging integration tests to inject region-targeted delays
+    /// and error statuses without standing up a real network harness.
+    /// Rules are evaluated lowest-index first; see
+    /// [`crate::fault_injection`] for the rule-construction surface.
+    #[cfg(feature = "fault_injection")]
+    pub fn runtime_builder_with_fault_rules(
+        self: &Arc<Self>,
+        rules: Vec<Arc<crate::fault_injection::FaultInjectionRule>>,
+    ) -> crate::driver::CosmosDriverRuntimeBuilder {
+        let emulator_factory = Arc::new(EmulatorHttpClientFactory {
+            client: Arc::clone(self),
+        });
+        let fault_factory = Arc::new(
+            crate::fault_injection::FaultInjectingHttpClientFactory::new(emulator_factory, rules),
+        );
+        crate::driver::CosmosDriverRuntimeBuilder::new().with_http_client_factory(fault_factory)
+    }
 }
 
 impl std::fmt::Debug for InMemoryEmulatorHttpClient {
@@ -114,9 +140,15 @@ impl std::fmt::Debug for InMemoryEmulatorHttpClient {
     }
 }
 
-#[async_trait]
-impl HttpClient for InMemoryEmulatorHttpClient {
-    async fn execute_request(&self, request: &Request) -> azure_core::Result<AsyncRawResponse> {
+impl InMemoryEmulatorHttpClient {
+    /// Dispatches a request against the in-memory store and returns the
+    /// emulated response. Inherent method (no longer implements
+    /// `azure_core::HttpClient`) so the entire emulator pipeline can
+    /// surface typed [`crate::error::CosmosError`] values directly.
+    pub async fn execute_request(
+        &self,
+        request: &Request,
+    ) -> crate::error::Result<AsyncRawResponse> {
         // Notify any attached observer first so tests can assert on the
         // outgoing request shape (headers, URL, method) before the emulator
         // mutates state. The fast path when no observer is attached is a
@@ -131,13 +163,12 @@ impl HttpClient for InMemoryEmulatorHttpClient {
         let region_name = match resolve_region(request.url(), self.store.config()) {
             Some(r) => r,
             None => {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!(
+                return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+                    .with_message(format!(
                         "in-memory emulator: request URL host '{}' does not match any configured region",
                         request.url().host_str().unwrap_or("<none>"),
-                    ),
-                ));
+                    ))
+                    .build());
             }
         };
 
@@ -164,7 +195,7 @@ impl HttpClientFactory for EmulatorHttpClientFactory {
         &self,
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
-    ) -> azure_core::Result<Arc<dyn TransportClient>> {
+    ) -> crate::error::Result<Arc<dyn TransportClient>> {
         Ok(Arc::new(EmulatorTransportClient {
             emulator: Arc::clone(&self.client),
         }))
@@ -207,10 +238,12 @@ impl TransportClient for EmulatorTransportClient {
 
         // Collect the buffered response
         let raw = async_response.try_into_raw_response().await.map_err(|e| {
-            TransportError::new(
-                azure_core::Error::new(azure_core::error::ErrorKind::Io, e),
-                crate::diagnostics::RequestSentStatus::Sent,
-            )
+            let cosmos_err = crate::error::CosmosError::builder()
+                .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                .with_message(e.to_string())
+                .with_source(e)
+                .build();
+            TransportError::new(cosmos_err, crate::diagnostics::RequestSentStatus::Sent)
         })?;
 
         let status = u16::from(raw.status());

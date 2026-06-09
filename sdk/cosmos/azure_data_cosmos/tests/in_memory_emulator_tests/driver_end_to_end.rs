@@ -106,6 +106,10 @@ async fn setup_with_container() -> (
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn create_and_read_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -195,6 +199,10 @@ async fn create_and_read_item_through_driver() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn create_database_and_container_through_driver() {
     let backend = DualBackend::setup().await.unwrap();
     let db_name = format!("dual-cp-{}", &backend.run_id);
@@ -297,6 +305,10 @@ async fn create_database_and_container_through_driver() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn delete_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -396,6 +408,10 @@ async fn delete_item_through_driver() {
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn replace_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -576,20 +592,16 @@ async fn read_with_stale_session_token_returns_404_1002() {
 
     let emu_err = emu_err.expect_err("Emulator should return an error for stale session read");
     assert_eq!(
-        emu_err.http_status(),
+        Some(emu_err.status().status_code()),
         Some(azure_core::http::StatusCode::NotFound),
         "Emulator error should be HTTP 404",
     );
-    match emu_err.kind() {
-        azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
-            assert_eq!(
-                error_code.as_deref(),
-                Some("1002"),
-                "Emulator error should have substatus 1002",
-            );
-        }
-        other => panic!("Expected HttpResponse error, got: {other}"),
-    }
+    let error_code = emu_err.status().sub_status().map(|s| s.value().to_string());
+    assert_eq!(
+        error_code.as_deref(),
+        Some("1002"),
+        "Emulator error should have substatus 1002",
+    );
 
     // ── Real account (if available) ──────────────────────────────
     if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
@@ -610,21 +622,20 @@ async fn read_with_stale_session_token_returns_404_1002() {
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
         assert_eq!(
-            real_err.http_status(),
+            Some(real_err.status().status_code()),
             Some(azure_core::http::StatusCode::NotFound),
             "Real error should be HTTP 404",
         );
-        match real_err.kind() {
-            azure_core::error::ErrorKind::HttpResponse { error_code, .. } => {
-                if error_code.as_deref() != Some("1002") {
-                    eprintln!(
-                        "  [warning] Real service returned substatus {:?} instead of 1002 — \
-                         gateway may not enforce session consistency for V1 tokens on this account",
-                        error_code,
-                    );
-                }
-            }
-            other => panic!("Expected HttpResponse error, got: {other}"),
+        let error_code = real_err
+            .status()
+            .sub_status()
+            .map(|s| s.value().to_string());
+        if error_code.as_deref() != Some("1002") {
+            eprintln!(
+                "  [warning] Real service returned substatus {:?} instead of 1002 — \
+                 gateway may not enforce session consistency for V1 tokens on this account",
+                error_code,
+            );
         }
     }
 
@@ -699,6 +710,10 @@ async fn read_after_split_refreshes_driver_routing_map() {
     backend.cleanup_real_database(&db_name).await;
 }
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn upsert_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
@@ -893,8 +908,17 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .unwrap();
 
+    // Disable cross-region hedging on this read so the §5.2 driver-default
+    // (≥2 preferred regions) does not race the West US 404/1002 against an
+    // East US hedge. This test exercises the session-retry path on a paused
+    // satellite; with hedging enabled the secondary leg in East US would
+    // succeed (West US is intentionally stale) and mask the per-region
+    // failure the test is asserting.
     let no_session_retry = OperationOptionsBuilder::new()
         .with_max_session_retry_count(0)
+        .with_availability_strategy(
+            azure_data_cosmos_driver::options::AvailabilityStrategy::Disabled,
+        )
         .build();
 
     let west_read_before_resume = driver
@@ -909,7 +933,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .expect_err("paused satellite should not observe the hub write yet");
     assert_eq!(
-        west_read_before_resume.http_status(),
+        Some(west_read_before_resume.status().status_code()),
         Some(azure_core::http::StatusCode::NotFound),
         "read should fail while West US replication is paused",
     );
@@ -1078,6 +1102,10 @@ async fn create_retries_after_429_throttling() {
 /// scenario runs against a real account and responses are compared.
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn read_failover_on_503_via_fault_injection() {
     use azure_core::http::Url;
     use azure_data_cosmos_driver::fault_injection::{
@@ -1476,6 +1504,10 @@ async fn setup_with_v1_container() -> (
 }
 
 #[tokio::test]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: dual-backend test fails against vnext gateway"
+)]
 async fn v1_create_read_replace_delete_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_v1_container().await;
 
@@ -1634,6 +1666,55 @@ async fn v1_writes_distribute_across_partitions() {
         distinct_pkranges.len() > 1,
         "V1 writes routed to only {:?} distinct pkrange(s) — distribution is broken",
         distinct_pkranges,
+    );
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+/// Asserts that a failed operation's `CosmosError` carries the rich
+/// per-operation `DiagnosticsContext` so callers can recover ActivityId,
+/// region, transport shard, and per-attempt event history on the error path.
+#[tokio::test]
+async fn error_carries_extractable_diagnostics() {
+    let (backend, db_name, emu_container, _real_container) = setup_with_container().await;
+
+    let read_missing = backend
+        .emulator_driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk-not-here"),
+                "id-that-does-not-exist",
+            )),
+            OperationOptions::default(),
+        )
+        .await;
+
+    let err = read_missing.expect_err("read of missing item must fail");
+    assert_eq!(
+        u16::from(err.status().status_code()),
+        404,
+        "missing-item read should surface as 404",
+    );
+
+    let diagnostics = err
+        .diagnostics()
+        .expect("error must carry diagnostics context attached by the pipeline");
+
+    let json = diagnostics.to_json_string(None);
+    assert!(
+        json.contains("\"activity_id\""),
+        "diagnostics JSON should include activity_id, got: {json}",
+    );
+
+    let final_status = diagnostics
+        .status()
+        .expect("diagnostics must record the final operation status");
+    assert_eq!(
+        u16::from(final_status.status_code()),
+        404,
+        "diagnostics status_code should be 404 for missing item, got: {:?}",
+        final_status.status_code(),
     );
 
     backend.cleanup_real_database(&db_name).await;

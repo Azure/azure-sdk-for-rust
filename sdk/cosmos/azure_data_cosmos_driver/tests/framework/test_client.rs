@@ -12,7 +12,10 @@ use azure_data_cosmos_driver::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference, ItemReference, PartitionKey,
     },
-    options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
+    options::{
+        ConnectionPoolOptions, DriverOptions, EmulatorServerCertValidation, OperationOptions,
+        Region,
+    },
 };
 use std::{error::Error, future::Future, sync::Arc};
 use tracing_subscriber::EnvFilter;
@@ -221,6 +224,68 @@ impl DriverTestClient {
             .with_fault_injection_rules(rules)?
             .with_operation_options(operation_options)
             .build()
+            .await?;
+
+        let client = Self {
+            runtime,
+            account: env.account,
+        };
+        let context = DriverTestRunContext::new(client);
+
+        let db_name = context.unique_database_name();
+        let db_ref = context.create_database(&db_name).await?;
+
+        let result = f(context.clone(), db_ref.clone()).await;
+
+        // Cleanup (best effort)
+        let _ = context.delete_database(&db_ref).await;
+
+        result
+    }
+
+    /// Like [`run_with_unique_db_and_fault_injection_options`](Self::run_with_unique_db_and_fault_injection_options)
+    /// but additionally pre-configures driver-level `preferred_regions`,
+    /// which is required for cross-region hedging eligibility per
+    /// `HEDGING_SPEC.md` §5.2 (the §5.1 `should_hedge()` short-circuits
+    /// when no application-preferred regions are configured).
+    ///
+    /// Pre-warms the runtime's per-account driver cache with explicit
+    /// [`DriverOptions`] so subsequent `get_or_create_driver(.., None)`
+    /// calls from the per-operation test helpers (`read_item`,
+    /// `create_item_with_pk`, …) hit the cached driver and inherit the
+    /// configured `preferred_regions`.
+    #[cfg(feature = "fault_injection")]
+    pub async fn run_with_unique_db_and_hedging<F, Fut>(
+        rules: Vec<Arc<FaultInjectionRule>>,
+        runtime_operation_options: OperationOptions,
+        preferred_regions: Vec<Region>,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(env) = resolve_test_env()? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .with_fault_injection_rules(rules)?
+            .with_operation_options(runtime_operation_options)
+            .build()
+            .await?;
+
+        // Pre-warm the driver cache so per-operation helpers (which call
+        // `get_or_create_driver(.., None)`) hit the cached driver with our
+        // `preferred_regions`. The cache is keyed on the account endpoint
+        // (see `CosmosDriverRuntime::get_or_create_driver`).
+        let driver_options = DriverOptions::builder(env.account.clone())
+            .with_preferred_regions(preferred_regions)
+            .build();
+        let _ = runtime
+            .get_or_create_driver(env.account.clone(), Some(driver_options))
             .await?;
 
         let client = Self {
@@ -493,7 +558,7 @@ impl DriverTestRunContext {
     ///
     /// Mirrors [`read_item`](Self::read_item)'s shape but builds the
     /// [`CosmosOperation::patch_item`] body from a
-    /// [`PatchSpec`](azure_data_cosmos_driver::models::PatchSpec). The
+    /// [`PatchInstructions`](azure_data_cosmos_driver::models::PatchInstructions). The
     /// returned [`CosmosResponse`] is the synthetic response produced by the
     /// patch handler — its body is the locally-merged post-image and its
     /// status/diagnostics are inherited from the underlying conditional
@@ -506,7 +571,7 @@ impl DriverTestRunContext {
         container: &ContainerReference,
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
-        patch: &azure_data_cosmos_driver::models::PatchSpec,
+        patch: &azure_data_cosmos_driver::models::PatchInstructions,
         max_attempts: Option<std::num::NonZeroU8>,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
@@ -529,6 +594,28 @@ impl DriverTestRunContext {
             .expect("PATCH operation must return a response");
 
         Ok(result)
+    }
+
+    /// Resolves all partition key ranges for a container, optionally forcing
+    /// a refresh of the cached routing map. Exposes the driver's internal
+    /// `resolve_all_partition_key_ranges` for tests that need to exercise the
+    /// pkrange-cache refresh path directly.
+    pub async fn resolve_all_partition_key_ranges(
+        &self,
+        container: &ContainerReference,
+        force_refresh: bool,
+    ) -> Result<
+        Option<Vec<azure_data_cosmos_driver::models::partition_key_range::PartitionKeyRange>>,
+        Box<dyn Error>,
+    > {
+        let driver = self
+            .client
+            .runtime
+            .get_or_create_driver(self.client.account.clone(), None)
+            .await?;
+        Ok(driver
+            .resolve_all_partition_key_ranges(container, force_refresh)
+            .await)
     }
 
     /// Validates diagnostics for a successful data plane operation.
@@ -570,12 +657,24 @@ impl DriverTestRunContext {
             "Should use data plane pipeline for item operations"
         );
 
-        // Check transport security for emulator
-        if first_request.endpoint().contains("localhost") {
+        // Check transport security for emulator. The legacy emulator and the
+        // vnext emulator in HTTPS mode use a self-signed cert and surface as
+        // `EmulatorWithInsecureCertificates`. The vnext emulator in HTTP mode
+        // has no TLS at all and is classified as `Secure` today (the enum
+        // predates plain-HTTP emulator support — tracked separately).
+        if first_request.endpoint().contains("localhost")
+            || first_request.endpoint().contains("127.0.0.1")
+        {
+            let expected = if first_request.endpoint().starts_with("https://") {
+                TransportSecurity::EmulatorWithInsecureCertificates
+            } else {
+                TransportSecurity::Secure
+            };
             assert_eq!(
                 first_request.transport_security(),
-                TransportSecurity::EmulatorWithInsecureCertificates,
-                "Should use emulator transport security for localhost"
+                expected,
+                "Unexpected transport security for emulator endpoint {}",
+                first_request.endpoint()
             );
         }
 

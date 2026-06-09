@@ -25,7 +25,9 @@ struct BatchTestItem {
     name: String,
 }
 
-async fn create_container(run_context: &TestRunContext) -> azure_core::Result<ContainerClient> {
+async fn create_container(
+    run_context: &TestRunContext,
+) -> azure_data_cosmos::Result<ContainerClient> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("BatchContainer-{}", Uuid::new_v4());
     run_context
@@ -42,8 +44,8 @@ async fn create_container(run_context: &TestRunContext) -> azure_core::Result<Co
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -107,8 +109,8 @@ pub async fn batch_create_and_read() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -188,8 +190,8 @@ pub async fn batch_mixed_operations() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -248,8 +250,8 @@ pub async fn batch_atomicity_on_failure() -> Result<(), Box<dyn Error>> {
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
 pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -280,8 +282,8 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
             );
             let err = response.unwrap_err();
             assert_eq!(
-                err.http_status(),
-                Some(StatusCode::BadRequest),
+                err.status().status_code(),
+                StatusCode::BadRequest,
                 "Expected BadRequest (400) status code"
             );
 
@@ -294,8 +296,12 @@ pub async fn batch_fails_when_exceeding_max_operations() -> Result<(), Box<dyn E
 
 #[tokio::test]
 #[cfg_attr(
-    not(test_category = "emulator"),
-    ignore = "requires test_category 'emulator'"
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+#[cfg_attr(
+    test_category = "emulator_vnext",
+    ignore = "skipped on vnext emulator: behavioral divergence"
 )]
 pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
@@ -329,8 +335,8 @@ pub async fn batch_fails_when_exceeding_max_payload_size() -> Result<(), Box<dyn
             );
             let err = response.unwrap_err();
             assert_eq!(
-                err.http_status(),
-                Some(StatusCode::PayloadTooLarge),
+                err.status().status_code(),
+                StatusCode::PayloadTooLarge,
                 "Expected RequestEntityTooLarge (413) status code"
             );
 
