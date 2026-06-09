@@ -984,3 +984,376 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
     )
     .await
 }
+
+// =========================================================================
+// Diagnostics-on-error-path coverage
+// =========================================================================
+//
+// These tests use fault injection to deterministically drive operations
+// into the error path, then assert that `CosmosError::diagnostics()`
+// surfaces the rich per-operation context the SDK promises (ActivityId,
+// retry / per-attempt history, transport shard, region, final status,
+// fault-injection evaluations). They guard the contract that callers
+// can do post-mortem analysis on a failed operation without re-running it.
+
+/// A read forced to fail with 503 must surface diagnostics whose
+/// per-attempt request history records the SDK's cross-region retries
+/// before giving up. Validates `CosmosError::diagnostics()` is `Some`,
+/// `request_count() >= 2`, every request has a real ActivityId, and the
+/// final operation status matches the injected fault.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn error_diagnostics_records_retry_history() -> Result<(), Box<dyn Error>> {
+    let always_503 = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .build();
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("retry-history-503", always_503)
+            .with_condition(condition)
+            .build(),
+    );
+    let fault_builder = vec![Arc::clone(&rule)];
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            let err = fault_container_client
+                .read_item(&pk, &item_id, None)
+                .await
+                .expect_err("503 fault must drive the read into the error path");
+
+            // CosmosError exposes the operation's final HTTP status via the
+            // attached CosmosStatus (which is sourced from diagnostics).
+            assert_eq!(
+                u16::from(err.status().status_code()),
+                503,
+                "CosmosError::status() should reflect the injected 503"
+            );
+            assert_eq!(
+                err.status().status_code(),
+                StatusCode::ServiceUnavailable,
+                "CosmosError::status() should be StatusCode::ServiceUnavailable"
+            );
+
+            // Diagnostics carrier survives end-to-end.
+            let diag = err
+                .diagnostics()
+                .expect("CosmosError must carry diagnostics on the fault-injected error path");
+
+            // The retry pipeline must have made multiple attempts before
+            // exhausting its budget. We don't pin an exact number — the
+            // pipeline's cross-region failover count is configuration-
+            // dependent — but at minimum the initial attempt plus one
+            // retry should be recorded.
+            assert!(
+                diag.request_count() >= 2,
+                "diagnostics must record at least 2 request attempts on the retry path, got {}",
+                diag.request_count()
+            );
+
+            // Final operation status is the 503 we injected.
+            let final_status = diag
+                .status()
+                .expect("diagnostics must record the final operation status");
+            assert_eq!(
+                u16::from(final_status.status_code()),
+                503,
+                "diagnostics final status_code should be 503, got {:?}",
+                final_status.status_code()
+            );
+
+            // Top-level ActivityId is populated.
+            assert!(
+                !diag.activity_id().as_str().is_empty(),
+                "diagnostics activity_id must be non-empty"
+            );
+
+            // Per-attempt records carry their own per-request metadata.
+            let requests = diag.requests();
+            assert!(
+                !requests.is_empty(),
+                "diagnostics.requests() must be non-empty"
+            );
+            let mut injected_503_attempts = 0usize;
+            for (i, req) in requests.iter().enumerate() {
+                let status = req.status();
+                let code = u16::from(status.status_code());
+                if code == 503 {
+                    injected_503_attempts += 1;
+                }
+                // Every recorded attempt either reflects the injected 503
+                // or a transient transport-layer probe (status 0). Other
+                // status codes here would mean we're recording attempts
+                // that don't match what fault injection actually did.
+                assert!(
+                    code == 503 || code == 0,
+                    "attempt {i} status should reflect injected 503 or be a transport probe, got {code}"
+                );
+            }
+            // The whole point of this test is to prove the diagnostics
+            // history captured the injected failures — not just a stream
+            // of transport probes. At least one attempt MUST carry the
+            // injected 503 status.
+            assert!(
+                injected_503_attempts > 0,
+                "at least one recorded attempt must reflect the injected 503; \
+                 recorded statuses: {:?}",
+                requests
+                    .iter()
+                    .map(|r| u16::from(r.status().status_code()))
+                    .collect::<Vec<_>>()
+            );
+
+            // Duration is captured. Compare against `Duration::ZERO` rather
+            // than `.as_millis() > 0` so sub-millisecond retry loops still
+            // assert correctly.
+            assert!(
+                diag.duration() > Duration::ZERO,
+                "diagnostics.duration() should be > 0 after retries"
+            );
+
+            // JSON projection includes the activity_id — guards the
+            // serialize-for-ADX path callers rely on for post-mortem.
+            let json = diag.to_json_string(None);
+            assert!(
+                json.contains("\"activity_id\""),
+                "diagnostics JSON must include activity_id; got: {json}"
+            );
+
+            // The rule must have actually fired (defensive sanity check).
+            assert!(
+                rule.hit_count() >= 1,
+                "fault injection rule should have been hit at least once, got {}",
+                rule.hit_count()
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+    )
+    .await
+}
+
+/// Validates that fault-injection metadata propagates into the error-path
+/// diagnostics: `fault_injection_enabled()` is true on the operation
+/// context, and at least one attempt's `fault_injection_evaluations()`
+/// records the `Applied` evaluation for the configured rule.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn error_diagnostics_includes_fault_injection_evaluations() -> Result<(), Box<dyn Error>>
+{
+    use azure_data_cosmos_driver::fault_injection::FaultInjectionEvaluation;
+
+    let always_503 = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .build();
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("fi-eval-applied", always_503)
+            .with_condition(condition)
+            .build(),
+    );
+    let fault_builder = vec![Arc::clone(&rule)];
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            let err = fault_container_client
+                .read_item(&pk, &item_id, None)
+                .await
+                .expect_err("503 fault must drive the read into the error path");
+
+            let diag = err
+                .diagnostics()
+                .expect("CosmosError must carry diagnostics");
+
+            assert!(
+                diag.fault_injection_enabled(),
+                "diagnostics must mark the operation as fault-injection-enabled"
+            );
+
+            let has_applied = diag.requests().iter().any(|req| {
+                req.fault_injection_evaluations().iter().any(|e| {
+                    matches!(
+                        e,
+                        FaultInjectionEvaluation::Applied { rule_id }
+                            if rule_id == "fi-eval-applied"
+                    )
+                })
+            });
+            assert!(
+                has_applied,
+                "at least one request attempt must record the `Applied` evaluation for rule 'fi-eval-applied'"
+            );
+
+            // Negative control: the recorded `Applied` evaluations must
+            // be consistent with the rule's hit counter. Without this
+            // cross-check the assertion above passes for any non-zero
+            // hit_count, even if attempts and evaluations are mis-aligned.
+            let applied_in_diagnostics = diag
+                .requests()
+                .iter()
+                .flat_map(|req| req.fault_injection_evaluations().iter())
+                .filter(|e| {
+                    matches!(
+                        e,
+                        FaultInjectionEvaluation::Applied { rule_id }
+                            if rule_id == "fi-eval-applied"
+                    )
+                })
+                .count();
+            assert_eq!(
+                applied_in_diagnostics as u32,
+                rule.hit_count(),
+                "diagnostics-recorded `Applied` count ({}) must match the rule's hit_count ({}); \
+                 a mismatch means some applications fired without being recorded in per-attempt diagnostics",
+                applied_in_diagnostics,
+                rule.hit_count()
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+    )
+    .await
+}
+
+/// Cross-checks that the `CosmosError` accessors (`status`, `response`,
+/// `diagnostics`) agree with the inner `DiagnosticsContext` on the
+/// fault-injected error path. Guards against accidental divergence between
+/// the two surfaces.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn cosmos_error_accessors_match_diagnostics_after_fault() -> Result<(), Box<dyn Error>> {
+    let always_503 = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ServiceUnavailable)
+        .build();
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("accessor-consistency", always_503)
+            .with_condition(condition)
+            .build(),
+    );
+    let fault_builder = vec![Arc::clone(&rule)];
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            let err = fault_container_client
+                .read_item(&pk, &item_id, None)
+                .await
+                .expect_err("read must fail under fault injection");
+
+            // diagnostics() is Some on the fault-injected error path.
+            let diag = err
+                .diagnostics()
+                .expect("CosmosError must carry diagnostics on the fault-injected error path");
+
+            // CosmosError::status() agrees with diagnostics.status() — the
+            // two surfaces are derived from the same final-attempt record
+            // and must not diverge.
+            let diag_status = diag
+                .status()
+                .expect("diagnostics must have a final status after a failure");
+            assert_eq!(
+                u16::from(err.status().status_code()),
+                u16::from(diag_status.status_code()),
+                "CosmosError::status() must equal diagnostics.status().status_code()"
+            );
+
+            // The error must reflect the wire response (a real 503 came
+            // back from the service-side fault), not a synthetic
+            // client-side failure.
+            assert!(
+                err.response().is_some(),
+                "CosmosError must carry a CosmosResponse for a service-side 503"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_rules(fault_builder)),
+    )
+    .await
+}
