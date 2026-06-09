@@ -183,7 +183,12 @@ PPAF is an **opt-in** feature for **single-master write accounts only**. When en
 
 ## Per-Partition Circuit Breaker (PPCB)
 
-PPCB is an **opt-out** feature (enabled by default) that provides partition-level health tracking and routing:
+PPCB provides partition-level health tracking and routing. It is **currently
+disabled by default** (temporarily); enable it explicitly via
+`OperationOptions::per_partition_circuit_breaker_enabled` (or the
+`AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` environment variable).
+Note that a server-side account configured for per-partition automatic
+failover (PPAF) can still activate PPCB independently of this client setting.
 
 | Account Type | Reads | Writes |
 |--------------|-------|--------|

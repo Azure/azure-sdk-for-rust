@@ -530,7 +530,7 @@ The Cosmos SDK manages its own transport, retry, and telemetry pipeline internal
 | `consistency_level` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | `OperationOptions.read_consistency_strategy` | **Replaced** with `ReadConsistencyStrategy` |
 | `request_timeout` | `CosmosClientOptions` | `ConnectionOptions.request_timeout` | Moved to option group |
 | `enable_remote_region_preferred_for_session_retry` | `CosmosClientOptions` | — | **Removed**; remote-region-preferred is now always-on behavior |
-| `enable_partition_level_circuit_breaker` | `CosmosClientOptions` | — | **Removed**; partition-level circuit breaker is always enabled |
+| `enable_partition_level_circuit_breaker` | `CosmosClientOptions` | `OperationOptions.per_partition_circuit_breaker_enabled` | **Moved**; partition-level circuit breaker is currently **disabled by default** (temporarily) and opt-in via this field or the `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` environment variable |
 | `disable_partition_level_failover` | `CosmosClientOptions` | — | **Removed**; disabling PPAF degrades availability |
 | `enable_upgrade_consistency_to_local_quorum` | `CosmosClientOptions` | — | **Removed**; use `ReadConsistencyStrategy::LatestCommitted` instead |
 | `throughput_bucket` | `CosmosClientOptions`, `ItemOptions`, `QueryOptions` | — | **Deferred** to throughput control follow-up spec |

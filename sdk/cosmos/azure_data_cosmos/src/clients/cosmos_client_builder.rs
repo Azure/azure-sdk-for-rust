@@ -331,19 +331,19 @@ impl CosmosClientBuilder {
             std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
         > = self.fault_injection_rules;
 
-        // Preserve the SDK's historical default: per-partition circuit breaker
-        // (PPCB) is enabled unless the user explicitly opts out via
-        // `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED=false`. The
-        // driver itself defaults to `false`, so the SDK reads the env var
-        // here and explicitly sets it as a runtime-level default on the
-        // driver. The runtime layer sits above the env layer in the driver's
-        // option-resolution hierarchy, so this guarantees PPCB is on by
-        // default for SDK clients while still letting users disable it via
-        // the env var.
+        // Per-partition circuit breaker (PPCB) default.
+        //
+        // TEMPORARILY DISABLED: PPCB is turned off by default for now. When
+        // the env var is unset the SDK no longer forces PPCB on — it resolves
+        // to `false`, matching the driver's own default. Users can still opt
+        // in explicitly via
+        // `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED=true`. To
+        // restore the SDK's historical "enabled by default" behavior, change
+        // the `unwrap_or(false)` below back to `unwrap_or(true)`.
         let ppcb_enabled = std::env::var(AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED)
             .ok()
             .and_then(|v| v.parse::<bool>().ok())
-            .unwrap_or(true);
+            .unwrap_or(false);
 
         let driver_user_agent_suffix = self.options.user_agent_suffix.clone();
 
@@ -384,8 +384,8 @@ impl CosmosClientBuilder {
 
         // Apply the SDK's PPCB default at the runtime layer. This sits above
         // the env layer in the driver's option-resolution hierarchy, so it
-        // pins the SDK's "enabled by default" behavior even when the env var
-        // is unset.
+        // pins the SDK's resolved PPCB default even when the env var is
+        // unset.
         //
         // Start from the client-level operation defaults (set via the builder,
         // e.g. `with_throttling_retry_options`) so they are
@@ -531,27 +531,24 @@ mod tests {
         assert!(runtime.user_agent_suffix().is_none());
     }
 
-    /// Regression test: the SDK must default to per-partition circuit breaker
-    /// (PPCB) **enabled** unless the user explicitly opts out via
-    /// `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED=false`. The
-    /// underlying driver defaults to `false`, so the SDK must explicitly set
-    /// the runtime-level option to preserve historical behavior.
+    /// Regression test: PPCB is **temporarily disabled by default**. With the
+    /// env var unset, the SDK no longer forces PPCB on — it resolves to
+    /// `false`, matching the underlying driver default.
     ///
     /// This test mirrors the wiring from `CosmosClientBuilder::build()`:
-    /// read the env var with `unwrap_or(true)`, then push it onto the
-    /// runtime as the SDK's default. We deliberately do NOT touch the
-    /// process env var here because tests share a process; instead we
-    /// inline the same default-resolution logic and assert the runtime
-    /// reflects the chosen value.
+    /// read the env var with `unwrap_or(false)`, then push it onto the
+    /// runtime. We deliberately do NOT touch the process env var here because
+    /// tests share a process; instead we inline the same default-resolution
+    /// logic and assert the runtime reflects the chosen value.
     #[tokio::test]
-    async fn ppcb_default_is_enabled_when_env_var_unset() {
-        // Simulate "env var unset" → SDK's default is `true`.
+    async fn ppcb_default_is_disabled_when_env_var_unset() {
+        // Simulate "env var unset" → SDK's default is now `false`.
         let ppcb_enabled = Option::<String>::None
             .and_then(|v: String| v.parse::<bool>().ok())
-            .unwrap_or(true);
+            .unwrap_or(false);
         assert!(
-            ppcb_enabled,
-            "SDK's PPCB default must be `true` when env var is unset"
+            !ppcb_enabled,
+            "SDK's PPCB default must be `false` when env var is unset"
         );
 
         let runtime_op_options = azure_data_cosmos_driver::options::OperationOptionsBuilder::new()
@@ -567,8 +564,8 @@ mod tests {
             runtime
                 .operation_options()
                 .per_partition_circuit_breaker_enabled,
-            Some(true),
-            "PPCB must be enabled by default on a CosmosClient-built runtime"
+            Some(false),
+            "PPCB must be disabled by default on a CosmosClient-built runtime"
         );
     }
 
@@ -580,7 +577,7 @@ mod tests {
         // Simulate `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED=false`.
         let ppcb_enabled = Some("false".to_string())
             .and_then(|v| v.parse::<bool>().ok())
-            .unwrap_or(true);
+            .unwrap_or(false);
         assert!(!ppcb_enabled, "env var `false` must opt out of PPCB");
 
         let runtime_op_options = azure_data_cosmos_driver::options::OperationOptionsBuilder::new()

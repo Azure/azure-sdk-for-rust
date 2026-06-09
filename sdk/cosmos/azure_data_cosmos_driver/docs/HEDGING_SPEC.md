@@ -601,6 +601,18 @@ skip hedging even on a multi-region account.
 
 ### 5.2 Default activation
 
+> **⚠️ TEMPORARILY DISABLED IN CODE.** The default-on activation described
+> in this section is currently turned **off** behind the
+> `DRIVER_DEFAULT_HEDGING_ENABLED` constant in
+> `driver/pipeline/hedging_eligibility.rs` (`resolve_availability_strategy`
+> returns `None` when no strategy is configured). Hedging is therefore
+> **opt-in** for now: it only runs when the caller sets
+> `AvailabilityStrategy::Hedging(..)` at the operation, account, or runtime
+> layer. The design intent below remains the target behavior — flip the
+> constant back to `true` to restore it. The threshold math
+> (`min(1000ms, request_timeout / 2)`) stays covered by the
+> `default_threshold_*` unit tests.
+
 Hedging is **on by default** for accounts that satisfy the §5.1
 eligibility rules — it is independent of PPAF and PPCB. Rationale: the
 Rust driver is greenfield, so we do not need the .NET / Java
