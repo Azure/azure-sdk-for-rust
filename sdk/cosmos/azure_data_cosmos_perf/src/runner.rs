@@ -489,7 +489,7 @@ async fn upsert_error(
     let status = error.status();
     let status_code = u16::from(status.status_code());
     let sub_status = status.sub_status().map(|s| s.value());
-    let diagnostics = error.diagnostics().as_deref().and_then(diagnostics_to_json);
+    let diagnostics = error.diagnostics().as_deref().map(diagnostics_to_json);
 
     let doc = ErrorResult {
         id: id.clone(),
@@ -515,16 +515,11 @@ async fn upsert_error(
 
 /// Serializes a finalized [`DiagnosticsContext`] to a `serde_json::Value` so it
 /// can be embedded as a `dynamic` column in the upserted document (rather than
-/// a quoted JSON string). Returns `None` if either the diagnostics JSON or the
-/// re-parse fails — both are non-fatal: the surrounding error row is still
-/// written, just without the diagnostics field.
-fn diagnostics_to_json(diagnostics: &DiagnosticsContext) -> Option<serde_json::Value> {
+/// a quoted JSON string). Panics if the roundtrip fails — `to_json_string`
+/// always produces valid JSON, so a failure here is a serialization bug we
+/// want surfaced immediately in the perf harness.
+fn diagnostics_to_json(diagnostics: &DiagnosticsContext) -> serde_json::Value {
     let json_str = diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed));
-    match serde_json::from_str(json_str) {
-        Ok(value) => Some(value),
-        Err(e) => {
-            eprintln!("Warning: failed to parse diagnostics JSON for error row: {e}");
-            None
-        }
-    }
+    serde_json::from_str(json_str)
+        .expect("DiagnosticsContext::to_json_string should always produce valid JSON")
 }
