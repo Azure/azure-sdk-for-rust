@@ -22,6 +22,7 @@
     "keyout",
     "managecontacts",
     "manageissuers",
+    "maxresults",
     "newkey",
     "oaep",
     "purgeable",
