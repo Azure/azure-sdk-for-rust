@@ -1,5 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+// This illustrative example CLI composes several Cosmos operation futures that
+// sit near clippy's default 16 KiB threshold; the production-oriented
+// `large_futures` lint adds no value for an example binary, so allow it here.
+#![allow(clippy::large_futures)]
 
 use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClient, RoutingStrategy};
 use azure_identity::DeveloperToolsCredential;

@@ -908,8 +908,17 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .unwrap();
 
+    // Disable cross-region hedging on this read so the §5.2 driver-default
+    // (≥2 preferred regions) does not race the West US 404/1002 against an
+    // East US hedge. This test exercises the session-retry path on a paused
+    // satellite; with hedging enabled the secondary leg in East US would
+    // succeed (West US is intentionally stale) and mask the per-region
+    // failure the test is asserting.
     let no_session_retry = OperationOptionsBuilder::new()
         .with_max_session_retry_count(0)
+        .with_availability_strategy(
+            azure_data_cosmos_driver::options::AvailabilityStrategy::Disabled,
+        )
         .build();
 
     let west_read_before_resume = driver
@@ -1657,6 +1666,55 @@ async fn v1_writes_distribute_across_partitions() {
         distinct_pkranges.len() > 1,
         "V1 writes routed to only {:?} distinct pkrange(s) — distribution is broken",
         distinct_pkranges,
+    );
+
+    backend.cleanup_real_database(&db_name).await;
+}
+
+/// Asserts that a failed operation's `CosmosError` carries the rich
+/// per-operation `DiagnosticsContext` so callers can recover ActivityId,
+/// region, transport shard, and per-attempt event history on the error path.
+#[tokio::test]
+async fn error_carries_extractable_diagnostics() {
+    let (backend, db_name, emu_container, _real_container) = setup_with_container().await;
+
+    let read_missing = backend
+        .emulator_driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk-not-here"),
+                "id-that-does-not-exist",
+            )),
+            OperationOptions::default(),
+        )
+        .await;
+
+    let err = read_missing.expect_err("read of missing item must fail");
+    assert_eq!(
+        u16::from(err.status().status_code()),
+        404,
+        "missing-item read should surface as 404",
+    );
+
+    let diagnostics = err
+        .diagnostics()
+        .expect("error must carry diagnostics context attached by the pipeline");
+
+    let json = diagnostics.to_json_string(None);
+    assert!(
+        json.contains("\"activity_id\""),
+        "diagnostics JSON should include activity_id, got: {json}",
+    );
+
+    let final_status = diagnostics
+        .status()
+        .expect("diagnostics must record the final operation status");
+    assert_eq!(
+        u16::from(final_status.status_code()),
+        404,
+        "diagnostics status_code should be 404 for missing item, got: {:?}",
+        final_status.status_code(),
     );
 
     backend.cleanup_real_database(&db_name).await;

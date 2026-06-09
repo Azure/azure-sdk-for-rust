@@ -15,10 +15,11 @@
 //! [`ConnectionPoolOptions`] and [`DiagnosticsOptions`] are captured once at
 //! initialization time and do not participate in per-operation layered resolution.
 
+mod availability_strategy;
 mod connection_pool;
 mod diagnostics_options;
 mod driver_options;
-mod env_parsing;
+pub(crate) mod env_parsing;
 mod identity;
 mod operation_options;
 mod policies;
@@ -27,6 +28,7 @@ mod read_consistency;
 mod region;
 mod throughput_control;
 
+pub use availability_strategy::{AvailabilityStrategy, HedgeThreshold, HedgingStrategy};
 pub use connection_pool::{ConnectionPoolOptions, ConnectionPoolOptionsBuilder};
 pub use diagnostics_options::{
     DiagnosticsOptions, DiagnosticsOptionsBuilder, DiagnosticsVerbosity,

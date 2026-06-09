@@ -12,8 +12,8 @@ use azure_data_cosmos_macros::CosmosOptions;
 use crate::{
     models::ThroughputControlGroupName,
     options::{
-        ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
-        ReadConsistencyStrategy,
+        AvailabilityStrategy, ContentResponseOnWrite, EndToEndOperationLatencyPolicy,
+        ExcludedRegions, ReadConsistencyStrategy,
     },
 };
 
@@ -187,6 +187,32 @@ pub struct OperationOptions {
     /// coarser-grained.
     #[option(env = "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")]
     pub per_partition_circuit_breaker_enabled: Option<bool>,
+
+    /// Consecutive alternate-region hedge wins on the same
+    /// `(partition, primary_region)` pair before the per-partition circuit
+    /// breaker (PPCB) trips the partition away from that primary.
+    ///
+    /// **Default**: `5` (matches the .NET v3 SDK convention).
+    ///
+    /// **Tuning**: Lower values trip the partition faster when the primary
+    /// region is chronically slow but the alternate is healthy — useful
+    /// when operators want hedging to drive failover aggressively. Higher
+    /// values are more tolerant of occasional latency spikes that the
+    /// hedge happens to win, avoiding spurious failovers when both regions
+    /// are healthy and the primary just happened to lose the race. Set
+    /// well above `max_failover_retries` to effectively disable hedge-win
+    /// driven trips while keeping the hedge race itself active.
+    #[option(env = "AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD")]
+    pub consecutive_hedge_win_threshold: Option<u32>,
+
+    /// Cross-region availability strategy controlling whether eligible
+    /// requests are hedged to additional regions when the primary is slow.
+    ///
+    /// **Default**: `None` — the driver applies the built-in default
+    /// strategy. Setting
+    /// `Some(AvailabilityStrategy::Disabled)` at any layer turns hedging
+    /// off for that scope.
+    pub availability_strategy: Option<AvailabilityStrategy>,
 
     // Additional headers beyond those natively supported by the driver.
     // May be removed in the future as we analyze exactly what options are needed.
@@ -395,6 +421,72 @@ mod tests {
         assert!(options.excluded_regions.is_none());
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
+        assert!(options.availability_strategy.is_none());
+    }
+
+    #[test]
+    fn builder_round_trips_availability_strategy() {
+        use crate::options::{HedgeThreshold, HedgingStrategy};
+        use std::time::Duration;
+
+        let strategy = AvailabilityStrategy::Hedging(HedgingStrategy::new(
+            HedgeThreshold::new(Duration::from_millis(500)).unwrap(),
+        ));
+
+        let options = OperationOptionsBuilder::new()
+            .with_availability_strategy(strategy)
+            .build();
+
+        assert_eq!(options.availability_strategy, Some(strategy));
+    }
+
+    #[test]
+    fn builder_round_trips_disabled_availability_strategy() {
+        let options = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+
+        assert_eq!(
+            options.availability_strategy,
+            Some(AvailabilityStrategy::Disabled)
+        );
+    }
+
+    #[test]
+    fn availability_strategy_resolves_via_view() {
+        use crate::options::{HedgeThreshold, HedgingStrategy};
+        use std::sync::Arc;
+        use std::time::Duration;
+
+        let account_strategy = AvailabilityStrategy::Hedging(HedgingStrategy::new(
+            HedgeThreshold::new(Duration::from_millis(800)).unwrap(),
+        ));
+        let operation_strategy = AvailabilityStrategy::Disabled;
+
+        let account = Arc::new(OperationOptions {
+            availability_strategy: Some(account_strategy),
+            ..Default::default()
+        });
+
+        let operation = OperationOptions {
+            availability_strategy: Some(operation_strategy),
+            ..Default::default()
+        };
+
+        let view_op_overrides =
+            OperationOptionsView::new(None, None, Some(account.clone()), Some(&operation));
+        assert_eq!(
+            view_op_overrides.availability_strategy(),
+            Some(&operation_strategy)
+        );
+
+        let empty_operation = OperationOptions::default();
+        let view_account_wins =
+            OperationOptionsView::new(None, None, Some(account), Some(&empty_operation));
+        assert_eq!(
+            view_account_wins.availability_strategy(),
+            Some(&account_strategy)
+        );
     }
 
     /// The nested [`ThrottlingRetryOptions`] group must participate in the

@@ -8,7 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::options::OperationOptionsView;
+use crate::options::{OperationOptionsView, Region};
 
 use super::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint};
 
@@ -32,6 +32,22 @@ pub(crate) struct PartitionEndpointState {
     /// PPCB enabled (from env var + account property).
     pub per_partition_circuit_breaker_enabled: bool,
 
+    /// Per-`(partition, primary_region)` count of consecutive alternate-region
+    /// hedge wins: incremented when the alternate
+    /// hedge attempt finishes before the primary, reset on a direct primary-region
+    /// win. When the count reaches [`PartitionFailoverConfig::consecutive_hedge_win_threshold`]
+    /// the partition is tripped by installing an [`HealthStatus::Unhealthy`]
+    /// entry in [`Self::circuit_breaker_overrides`] (same shape PPCB uses for hard
+    /// failures), so subsequent reads route away from the degraded primary region.
+    /// The trip is recovered by the existing PPCB failback sweep — primary wins
+    /// only reset the counter, never the trip itself.
+    ///
+    /// `Option<Region>` accommodates default-endpoint accounts whose snapshots
+    /// do not carry a named region (the counter key is
+    /// `(partition, primary_region)` with `primary_region` allowed to be
+    /// absent).
+    pub consecutive_hedge_wins: HashMap<(PartitionKeyRangeId, Option<Region>), u32>,
+
     /// Configuration read from env vars at construction time.
     pub config: PartitionFailoverConfig,
 
@@ -50,6 +66,7 @@ impl PartitionEndpointState {
             per_partition_circuit_breaker_enabled: config.circuit_breaker_option_enabled,
             failover_overrides: HashMap::new(),
             circuit_breaker_overrides: HashMap::new(),
+            consecutive_hedge_wins: HashMap::new(),
             per_partition_automatic_failover_enabled: false,
             config,
             #[cfg(test)]
@@ -132,6 +149,18 @@ pub(crate) struct PartitionFailoverConfig {
 
     /// Whether PPCB is enabled via options (default: false).
     pub circuit_breaker_option_enabled: bool,
+
+    /// Consecutive alternate-region hedge wins on the same
+    /// `(partition, primary_region)` pair before PPCB trips the partition.
+    /// Default `5` matches the .NET v3 SDK convention; override via
+    /// [`OperationOptions::consecutive_hedge_win_threshold`] or
+    /// `AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD`.
+    ///
+    /// Cross-region hedging surfaces a steady
+    /// signal of primary-region degradation when the alternate consistently
+    /// beats the primary. Tripping the partition routes subsequent requests
+    /// away from the degraded region until the failback loop allows a probe.
+    pub consecutive_hedge_win_threshold: u32,
 }
 
 impl Default for PartitionFailoverConfig {
@@ -143,6 +172,7 @@ impl Default for PartitionFailoverConfig {
             partition_unavailability_duration: Duration::from_secs(5),
             failback_sweep_interval: Duration::from_secs(300),
             circuit_breaker_option_enabled: false,
+            consecutive_hedge_win_threshold: 5,
         }
     }
 }
@@ -185,6 +215,11 @@ impl PartitionFailoverConfig {
             .copied()
             .unwrap_or(false);
 
+        let consecutive_hedge_win_threshold = view
+            .consecutive_hedge_win_threshold()
+            .copied()
+            .unwrap_or(defaults.consecutive_hedge_win_threshold);
+
         Self {
             read_failure_threshold,
             write_failure_threshold,
@@ -194,6 +229,7 @@ impl PartitionFailoverConfig {
             ),
             failback_sweep_interval: Duration::from_secs(failback_sweep_secs.max(1)),
             circuit_breaker_option_enabled,
+            consecutive_hedge_win_threshold,
         }
     }
 }
@@ -214,6 +250,7 @@ mod tests {
         );
         assert_eq!(config.failback_sweep_interval, Duration::from_secs(300));
         assert!(!config.circuit_breaker_option_enabled);
+        assert_eq!(config.consecutive_hedge_win_threshold, 5);
     }
 
     #[test]
@@ -221,8 +258,43 @@ mod tests {
         let state = PartitionEndpointState::default();
         assert!(state.failover_overrides.is_empty());
         assert!(state.circuit_breaker_overrides.is_empty());
+        assert!(state.consecutive_hedge_wins.is_empty());
         assert!(!state.per_partition_automatic_failover_enabled);
         assert!(!state.per_partition_circuit_breaker_enabled);
         assert!(!state.config.circuit_breaker_option_enabled);
+    }
+
+    #[test]
+    fn from_options_uses_user_supplied_consecutive_hedge_win_threshold() {
+        use crate::options::{OperationOptions, OperationOptionsView};
+
+        // User opts into a more aggressive trip threshold (2 wins instead
+        // of the default 5).
+        let op = OperationOptions {
+            consecutive_hedge_win_threshold: Some(2),
+            ..Default::default()
+        };
+        let view = OperationOptionsView::new(None, None, None, Some(&op));
+        let config = PartitionFailoverConfig::from_options(&view);
+
+        assert_eq!(
+            config.consecutive_hedge_win_threshold, 2,
+            "consecutive_hedge_win_threshold must be honored from OperationOptions",
+        );
+    }
+
+    #[test]
+    fn from_options_falls_back_to_default_consecutive_hedge_win_threshold() {
+        use crate::options::{OperationOptions, OperationOptionsView};
+
+        let op = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op));
+        let config = PartitionFailoverConfig::from_options(&view);
+
+        assert_eq!(
+            config.consecutive_hedge_win_threshold,
+            PartitionFailoverConfig::default().consecutive_hedge_win_threshold,
+            "absent option must fall back to the compile-time default",
+        );
     }
 }
