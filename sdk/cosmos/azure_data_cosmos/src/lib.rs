@@ -36,7 +36,8 @@ pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
 pub(crate) use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 pub use models::{
     BatchResponse, CosmosNumber, DiagnosticsContext, ItemResponse, PatchInstructions,
-    PatchOperation, ResourceResponse, ResponseBody, ResponseHeaders,
+    PatchOperation, RequestedRegion, RequestedRegionReason, ResourceResponse, ResponseBody,
+    ResponseHeaders,
 };
 pub use options::*;
 pub use query::Query;

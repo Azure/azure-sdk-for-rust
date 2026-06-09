@@ -25,7 +25,8 @@ pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
     DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,
     RequestDiagnostics, RequestEvent, RequestEventType, RequestHandle, RequestSentStatus,
-    TransportHttpVersion, TransportKind, TransportSecurity, TransportShardDiagnostics,
+    RequestedRegion, RequestedRegionReason, TransportHttpVersion, TransportKind, TransportSecurity,
+    TransportShardDiagnostics,
 };
 pub use proxy_configuration::ProxyConfiguration;
 

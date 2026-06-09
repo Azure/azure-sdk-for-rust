@@ -1,10 +1,10 @@
 # Hedging Detection API — Spec
 
-**Status:** Draft (spec-only; no production code change in this PR)
-**Target branch:** `main` (the `release/azure_data_cosmos-previews` preview branch has since merged into `main`)
+**Status:** Implemented in this PR (spec + implementation landed together), targeting `main`.
+**Target branch:** `main`
 **Tracking issue:** [Azure/azure-sdk-for-rust#4410](https://github.com/Azure/azure-sdk-for-rust/issues/4410)
 **Cross-SDK contract:** The cross-SDK Hedging Detection API (a per-operation diagnostics surface shared in shape across the Cosmos DB SDKs). This Rust spec adopts that contract; the type/method names below are the contract's canonical names rendered in idiomatic Rust.
-**Sequencing:** Lands AFTER [PR #4330](https://github.com/Azure/azure-sdk-for-rust/pull/4330) (now **merged**, via `release/azure_data_cosmos-previews`, into `main`) and BEFORE any hedging-implementation PR.
+**Sequencing:** Lands AFTER both the hedging *design spec* ([PR #4330](https://github.com/Azure/azure-sdk-for-rust/pull/4330)) and the hedging *implementation* ([PR #4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432)), both already merged into `main`.
 
 ---
 
@@ -20,18 +20,18 @@ The Azure Cosmos DB SDKs are converging on a cross-SDK Hedging Detection API exp
 | `RequestedRegion` | a dispatched region paired with its reason | `{ region, reason }` value type |
 | `RequestedRegionReason` | why the SDK chose a region for a dispatch | enumeration: `Initial`, `OperationRetry`, `TransportRetry`, `Hedging`, `RegionFailover`, `CircuitBreakerProbe`; non-exhaustive |
 
-This document specifies the Rust SDK's adoption of that contract on `azure_data_cosmos::CosmosDiagnosticsContext` (re-export of `azure_data_cosmos_driver::diagnostics::DiagnosticsContext`).
+This document specifies the Rust SDK's adoption of that contract on `azure_data_cosmos::DiagnosticsContext` (re-export of `azure_data_cosmos_driver::diagnostics::DiagnosticsContext`).
 
-This spec is **sequenced** with respect to PR #4330 ("Cosmos: Adds Cross-Region Hedging Design Spec to Driver Crate"), which has merged (via `release/azure_data_cosmos-previews`) into `main`:
+This spec is **sequenced** with respect to PR #4330 ("Cosmos: Adds Cross-Region Hedging Design Spec to Driver Crate") and the hedging implementation (#4432), both merged into `main`:
 
 | Phase                                                | Artifact                                          | Status                  |
 |------------------------------------------------------|---------------------------------------------------|-------------------------|
 | Hedging Design Spec                                  | `sdk/cosmos/azure_data_cosmos_driver/docs/HEDGING_SPEC.md` (PR #4330) | **Merged** into `main` |
-| **Hedging Detection API spec (this document)**       | `sdk/cosmos/azure_data_cosmos/docs/HEDGING_DETECTION_API_SPEC.md`     | **This PR, draft**      |
-| Hedging implementation (orchestrator + dispatch)     | Separate future PR — emits `ExecutionContext::Hedging`, populates `HedgeDiagnostics` | Future                  |
-| Hedging Detection API implementation (this spec → code) | Separate future PR — adds the three accessors + the public `RequestedRegion` / `RequestedRegionReason` types specified below | Future, after the above |
+| Hedging implementation (orchestrator + dispatch)     | Emits `ExecutionContext::Hedging`, populates `HedgeDiagnostics` (PR #4432) | **Merged** into `main` |
+| **Hedging Detection API spec (this document)**       | `sdk/cosmos/azure_data_cosmos/docs/HEDGING_DETECTION_API_SPEC.md`     | **This PR**             |
+| Hedging Detection API implementation (this spec → code) | Adds the three accessors + the public `RequestedRegion` / `RequestedRegionReason` types specified below | **This PR** (landed with the spec) |
 
-This PR adds **exactly one Markdown file** and changes no production code, matching PR #4330's doc-only pattern.
+This PR adds the spec Markdown file **and** the Hedging Detection API implementation it describes (the three accessors, the public `RequestedRegion` / `RequestedRegionReason` types, and the `Retry → OperationRetry` rename). The spec and its implementation were small enough to land together rather than in the separate follow-up PR originally envisioned.
 
 The Hedging Detection API is **additive** on `DiagnosticsContext` and **complementary** to (not a replacement for) PR #4330's `DiagnosticsContext::hedge_diagnostics: Option<HedgeDiagnostics>` field. The two surfaces are explicitly reconciled in §6 below.
 
@@ -43,7 +43,7 @@ Citations are to the `main` branch at the merge of PR #4330 — commit [`5f5d8c4
 
 | Item                               | Location                                                                                                  | Visibility                                            |
 |------------------------------------|-----------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
-| `DiagnosticsContext`               | `sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs`                              | `pub` in driver; re-exported as `azure_data_cosmos::CosmosDiagnosticsContext` (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`) |
+| `DiagnosticsContext`               | `sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs`                              | `pub` in driver; re-exported as `azure_data_cosmos::DiagnosticsContext` (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`) |
 | `RequestDiagnostics`               | `sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs`                              | `pub` in driver; **NOT** re-exported from `azure_data_cosmos` |
 | `ExecutionContext`                 | `sdk/cosmos/azure_data_cosmos_driver/src/diagnostics/diagnostics_context.rs:35`                           | `pub` in driver; **NOT** re-exported                  |
 | `ExecutionContext` derives         | `#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize)]`, `#[serde(rename_all = "snake_case")]`, `#[non_exhaustive]` | `Serialize` only — **no `Deserialize`** is derived today (relevant to §4) |
@@ -66,7 +66,7 @@ Citations are to the `main` branch at the merge of PR #4330 — commit [`5f5d8c4
 
 ## 3. Proposed additive methods on `DiagnosticsContext`
 
-All three accessors are added to `DiagnosticsContext` in `azure_data_cosmos_driver` and exposed on `CosmosDiagnosticsContext` via the existing re-export (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`). The reason-carrying return of `requested_regions()` (§3.1) requires two **new types** — `RequestedRegion` and `RequestedRegionReason`. Because the accessors are inherent methods on the driver's `DiagnosticsContext` and `azure_data_cosmos` depends on `azure_data_cosmos_driver` (never the reverse), these two types are **defined in the driver and re-exported from `azure_data_cosmos`**, exactly like `DiagnosticsContext`/`CosmosDiagnosticsContext` itself (see §3.5 and §5).
+All three accessors are added to `DiagnosticsContext` in `azure_data_cosmos_driver` and exposed on `DiagnosticsContext` via the existing re-export (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`). The reason-carrying return of `requested_regions()` (§3.1) requires two **new types** — `RequestedRegion` and `RequestedRegionReason`. Because the accessors are inherent methods on the driver's `DiagnosticsContext` and `azure_data_cosmos` depends on `azure_data_cosmos_driver` (never the reverse), these two types are **defined in the driver and re-exported from `azure_data_cosmos`**, exactly like `DiagnosticsContext`/`DiagnosticsContext` itself (see §3.5 and §5).
 
 ### 3.1 `pub fn requested_regions(&self) -> Vec<RequestedRegion>`
 
@@ -109,7 +109,7 @@ pub fn requested_regions(&self) -> Vec<RequestedRegion> { ... }
 /// after the hedge winner). `responded_regions().len() > 1` does NOT
 /// imply more than one distinct region responded.
 ///
-/// To dedupe, callers can collect into a set, for example:
+/// To deduplicate, callers can collect into a set, for example:
 /// `let unique: Vec<&Region> = ctx.responded_regions().into_iter().collect::<std::collections::BTreeSet<_>>().into_iter().collect();`
 pub fn responded_regions(&self) -> Vec<&Region> { ... }
 ```
@@ -147,14 +147,14 @@ pub fn hedging_started(&self) -> bool { ... }
 
 This matches the cross-SDK contract's `hedging_started()`: `true` iff at least one hedge arm was actually dispatched; `false` for the primary-wins-under-threshold case.
 
-**Definition (post-hedging-implementation PR):**
+**Definition (as shipped against `main`'s landed hedging implementation, [#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432)):**
 
 ```rust
-fn hedging_started(&self) -> bool {
+pub fn hedging_started(&self) -> bool {
     self
         .hedge_diagnostics
         .as_ref()
-        .map(|hd| hd.total_requests_launched >= 2)
+        .map(|hd| hd.alternate_region().is_some())
         .unwrap_or(false)
     || self
         .requests
@@ -163,11 +163,13 @@ fn hedging_started(&self) -> bool {
 }
 ```
 
+`HedgeDiagnostics::alternate_region()` is `Some` exactly when the orchestrator dispatched an alternate hedge leg (i.e., fan-out happened); it is `None` for the primary-wins-under-threshold and deadline-exceeded-pre-threshold terminal states. This is `main`'s equivalent of the cross-SDK contract's "≥ 2 requests launched" predicate (`main`'s `HedgeDiagnostics` classifies the race via `terminal_state` / `alternate_region` rather than a `total_requests_launched` counter).
+
 **Why the disjunction (and not either predicate alone) — SE-023:**
 
-- **Why NOT `hedge_diagnostics.is_some()` alone.** PR #4330's `HedgeDiagnostics` is `Some` whenever a hedging strategy is *active for this operation*, including the **primary-wins-under-threshold** case — exactly one request launched (`total_requests_launched == 1`), threshold delay never elapsed, no fan-out. The cross-SDK contract requires `hedging_started() == true` iff the SDK **actually dispatched to a hedge region**, i.e., `total_requests_launched >= 2` — not "strategy was active". Returning `true` for `total_requests_launched == 1` would contradict the cross-SDK contract.
-- **Why NOT the `ExecutionContext::Hedging` predicate alone.** A future internal refactor to `HedgeDiagnostics` (e.g., a field rename, or a change of semantics around `total_requests_launched`) could silently cause the two predicates to drift out of sync. The disjunction is the **safe** definition: it returns `true` whenever *either* signal indicates fan-out occurred, and the mandatory invariant test in §8 enforces that the two signals stay equivalent after the implementation PR lands.
-- **Pre-implementation behavior.** Until the hedging implementation PR lands (the follow-up to PR #4330), no production code populates `hedge_diagnostics` and no production code emits `ExecutionContext::Hedging`. Therefore `hedging_started()` returns `false` for all operations — which is the correct answer: no fan-out has happened.
+- **Why NOT `hedge_diagnostics.is_some()` alone.** `HedgeDiagnostics` is `Some` whenever a hedging strategy is *active for this operation*, including the **primary-wins-under-threshold** case — only the primary leg ran (`alternate_region() == None`), threshold delay never elapsed, no fan-out. The cross-SDK contract requires `hedging_started() == true` iff the SDK **actually dispatched to a hedge region**, i.e., `alternate_region().is_some()` — not "strategy was active". Returning `true` for the primary-only case would contradict the cross-SDK contract.
+- **Why NOT the `ExecutionContext::Hedging` predicate alone.** A future internal refactor to `HedgeDiagnostics` (e.g., a change of semantics around `alternate_region` / `terminal_state`) could silently cause the two predicates to drift out of sync. The disjunction is the **safe** definition: it returns `true` whenever *either* signal indicates fan-out occurred, and the invariant test in §8 enforces that the two signals stay equivalent.
+- **Behavior on `main`.** `main` now populates `hedge_diagnostics` and emits `ExecutionContext::Hedging` from the hedging orchestrator ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432)). When no read is hedged (hedging disabled, or a non-read/non-eligible operation), `hedge_diagnostics` is `None` and no request is tagged `Hedging`, so `hedging_started()` returns `false` — the correct answer: no fan-out has happened.
 
 ### 3.4 Pre-region-selection failures
 
@@ -175,7 +177,7 @@ For all three accessors, a `RequestDiagnostics` whose `region` is `None` (pre-re
 
 ### 3.5 New public types — `RequestedRegion` and `RequestedRegionReason`
 
-These realize the cross-SDK contract's `RequestedRegion` value type and `RequestedRegionReason` enumeration (§1), in idiomatic Rust. Because the accessors that return them are inherent methods on the driver's `DiagnosticsContext`, both types are **defined in `azure_data_cosmos_driver` and re-exported from `azure_data_cosmos`** (the crate dependency runs SDK → driver only; the driver cannot reference SDK types). This matches the existing treatment of `DiagnosticsContext` (re-exported as `CosmosDiagnosticsContext`) — see §5.
+These realize the cross-SDK contract's `RequestedRegion` value type and `RequestedRegionReason` enumeration (§1), in idiomatic Rust. Because the accessors that return them are inherent methods on the driver's `DiagnosticsContext`, both types are **defined in `azure_data_cosmos_driver` and re-exported from `azure_data_cosmos`** (the crate dependency runs SDK → driver only; the driver cannot reference SDK types). This matches the existing treatment of `DiagnosticsContext` (re-exported as `DiagnosticsContext`) — see §5.
 
 ```rust
 /// A single region the SDK dispatched a request to, tagged with the
@@ -294,7 +296,7 @@ Rust has no first-class "variant alias" or "deprecated variant alias that resolv
 
 ## 5. Public-crate re-export decision
 
-The accessors live on `DiagnosticsContext` in the driver crate. `DiagnosticsContext` is already re-exported as `azure_data_cosmos::CosmosDiagnosticsContext` (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`). The remaining question is what reason-carrying shape `requested_regions()` returns and where the per-region-reason types are defined.
+The accessors live on `DiagnosticsContext` in the driver crate. `DiagnosticsContext` is already re-exported as `azure_data_cosmos::DiagnosticsContext` (`sdk/cosmos/azure_data_cosmos/src/models/mod.rs:37`). The remaining question is what reason-carrying shape `requested_regions()` returns and where the per-region-reason types are defined.
 
 **Crate-layering constraint.** `azure_data_cosmos` depends on `azure_data_cosmos_driver`; the driver has **no** back-dependency on the SDK. An inherent method on the driver's `DiagnosticsContext` therefore cannot return an SDK-defined type. Any reason-carrying return type for `requested_regions()` must be **driver-defined** (and then re-exported), unless the accessors themselves are moved out of the driver (e.g., an SDK-side extension trait or wrapper).
 
@@ -302,7 +304,7 @@ The cross-SDK contract requires per-region reason (a `RequestedRegion { region, 
 
 | | **Option A — re-export driver `ExecutionContext` directly** | **Option B — driver-defined `RequestedRegion` + `RequestedRegionReason`, re-exported by the SDK (RECOMMENDED)** | **Option C — SDK-owned types via an SDK-side extension trait** |
 |---|---|---|---|
-| Where the accessors live | Inherent on driver `DiagnosticsContext` | Inherent on driver `DiagnosticsContext` | SDK extension trait on `CosmosDiagnosticsContext` |
+| Where the accessors live | Inherent on driver `DiagnosticsContext` | Inherent on driver `DiagnosticsContext` | SDK extension trait on `DiagnosticsContext` |
 | Per-region reason type | Raw driver `ExecutionContext` (re-exported) | Clean driver enum `RequestedRegionReason` (re-exported) | SDK-owned `RequestedRegionReason` |
 | Public-name stability | Tied to the internal `ExecutionContext` taxonomy | Stable contract names, decoupled from `ExecutionContext` | Stable contract names |
 | Cross-SDK conformance | Partial (enum shape/values differ from the contract) | **Full** (names match the contract) | Full |
@@ -320,49 +322,46 @@ PR #4330 is **merged** into `main`. The authoritative `HedgeDiagnostics` definit
 ```rust
 pub struct DiagnosticsContext {
     // ... existing fields ...
-    pub hedge_diagnostics: Option<HedgeDiagnostics>,
+    hedge_diagnostics: Option<HedgeDiagnostics>, // accessor: hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>
 }
 
+// `main`'s landed shape (#4432). Fields are private; values are read through
+// accessors. The race outcome is classified by `terminal_state`, not a
+// `total_requests_launched` counter.
 pub struct HedgeDiagnostics {
-    /// The hedging strategy configuration that was active.
-    pub strategy_config: HedgingStrategyConfig,   // non-optional
-    /// Regions that had requests launched (up to and including the winner).
-    pub regions_contacted: Vec<Region>,
-    /// The target region of the winning response.
-    pub response_region: Region,                  // non-optional
-    /// How many hedge requests were launched (including primary): 1 or 2.
-    pub total_requests_launched: usize,
-    /// Whether the primary or the alternate hedge won.
-    pub was_hedge: bool,
+    strategy_config: HedgingStrategyConfig,   // -> strategy_config() -> HedgingStrategyConfig
+    primary_region: Region,                   // -> primary_region() -> &Region (always populated)
+    alternate_region: Option<Region>,         // -> alternate_region() -> Option<&Region> (Some iff fan-out)
+    response_region: Option<Region>,          // -> response_region() -> Option<&Region> (Some iff a leg won)
+    terminal_state: HedgeTerminalState,        // -> terminal_state() -> HedgeTerminalState (authoritative outcome)
 }
 ```
 
-> **Correction vs. the original draft.** The original draft paraphrased `strategy_config` and `response_region` as `Option<...>`. In the merged spec both are **non-optional** (`HedgeDiagnostics` is itself wrapped in `Option` on `DiagnosticsContext`, so optionality lives at the container level). The §3.3 doc-comment is corrected accordingly (`hedge_diagnostics.as_ref().map(|hd| &hd.strategy_config)`).
+> **Reconciled with `main`.** `main`'s `HedgeDiagnostics` ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432)) does **not** carry `total_requests_launched`, `was_hedge`, or a `regions_contacted` list; it exposes `primary_region` / `alternate_region` / `response_region` (the latter two `Option`) plus an authoritative `terminal_state`. "Fan-out happened" is therefore `alternate_region().is_some()`, and "the alternate won" is `matches!(terminal_state(), HedgeTerminalState::AlternateWon)`. The §3.3 `hedging_started()` definition uses `alternate_region().is_some()` accordingly.
 
 The two surfaces — the Rust-native `HedgeDiagnostics` field and the cross-SDK Hedging Detection API accessors — **coexist** on the same `DiagnosticsContext`. They serve different audiences (Rust-native rich detail vs. cross-SDK uniform shape) and are computed from overlapping but distinct internal sources.
 
 ### 6.1 Reconciliation table
 
-| Surface | Cross-SDK accessor (this spec)                              | Rust-native field (PR #4330)                                                                                              | Relationship after both PRs land |
+| Surface | Cross-SDK accessor (this spec)                              | Rust-native `HedgeDiagnostics` (#4432)                                                                                              | Relationship on `main` |
 |---|---|---|---|
-| "Did fan-out happen?" | `hedging_started() -> bool`                                 | `hedge_diagnostics.map(\|hd\| hd.total_requests_launched >= 2).unwrap_or(false)`                                          | **Equivalent** after implementation PR; equivalence is asserted by the invariant test in §8 (SE-023). |
-| "Was a hedging strategy active?" | *not exposed* (intentionally; see §3.3 doc-comment) | `hedge_diagnostics.is_some()` (with `strategy_config` always present when so)             | `hedge_diagnostics.is_some()` is a **superset** of `hedging_started()` — true for primary-wins-under-threshold. |
-| Regions tried | `requested_regions() -> Vec<RequestedRegion>` (dispatch order, duplicates, includes non-hedge attempts, **carries reason**) | `hedge_diagnostics.regions_contacted: Vec<Region>` (hedge-specific) | Different scope: `requested_regions()` always reflects every dispatched attempt (initial + retries + transport-retries + region-failovers + hedge fan-out); `HedgeDiagnostics::regions_contacted` reflects only hedge fan-out. Both are useful. |
-| Regions that responded | `responded_regions() -> Vec<&Region>` (completion order, duplicates) | `hedge_diagnostics.response_region: Region` (single winner) | Different shape: `responded_regions()` is a complete list (including late losers); `response_region` is the single winner. `responded_regions().first()` is the winner only if responses arrived strictly in completion order — see §10 Open Question (iii). |
-| Reason per region | `RequestedRegion.reason: RequestedRegionReason` (per cross-SDK contract) | *not exposed* (PR #4330 does not break out per-region reason) | Cross-SDK contract requires per-region reason; **now satisfied** by §3.5 (was previously deferred). |
+| "Did fan-out happen?" | `hedging_started() -> bool`                                 | `hedge_diagnostics().map(\|hd\| hd.alternate_region().is_some()).unwrap_or(false)`                                          | **Equivalent**; equivalence is asserted by the invariant test in §8 (SE-023). |
+| "Was a hedging strategy active?" | *not exposed* (intentionally; see §3.3 doc-comment) | `hedge_diagnostics().is_some()` (with `strategy_config` always present when so)             | `hedge_diagnostics().is_some()` is a **superset** of `hedging_started()` — true for primary-wins-under-threshold. |
+| Regions tried | `requested_regions() -> Vec<RequestedRegion>` (dispatch order, duplicates, includes non-hedge attempts, **carries reason**) | `hedge_diagnostics().primary_region()` + `alternate_region()` (hedge-specific) | Different scope: `requested_regions()` always reflects every dispatched attempt (initial + retries + transport-retries + region-failovers + hedge fan-out); `HedgeDiagnostics` reflects only the hedge primary/alternate. Both are useful. |
+| Regions that responded | `responded_regions() -> Vec<&Region>` (completion order, duplicates) | `hedge_diagnostics().response_region(): Option<&Region>` (single winner, `None` for terminal-error states) | Different shape: `responded_regions()` is a complete list (including late losers); `response_region()` is the single winner. `responded_regions().first()` is the winner only if responses arrived strictly in completion order — see §10 Open Question (iii). |
+| Reason per region | `RequestedRegion.reason: RequestedRegionReason` (per cross-SDK contract) | *not exposed* (`HedgeDiagnostics` does not break out per-region reason) | Cross-SDK contract requires per-region reason; **now satisfied** by §3.5 (was previously deferred). |
 
-### 6.2 Invariant after the implementation PR lands
+### 6.2 Invariant (live on `main`)
 
 ```rust
 // SE-023 invariant — asserted by the test in §8.
 for ctx in /* every DiagnosticsContext produced by every test */ {
     let from_hedge_diag = ctx
-        .hedge_diagnostics
-        .as_ref()
-        .map(|hd| hd.total_requests_launched >= 2)
+        .hedge_diagnostics()
+        .map(|hd| hd.alternate_region().is_some())
         .unwrap_or(false);
     let from_requests = ctx
-        .requests
+        .requests()
         .iter()
         .any(|r| matches!(r.execution_context(), ExecutionContext::Hedging));
     assert_eq!(from_hedge_diag, from_requests);
@@ -375,12 +374,11 @@ This invariant is the load-bearing reason `hedging_started()` is defined as a di
 
 ## 7. Sequencing
 
-1. **PR #4330 — DONE.** Merged (via `release/azure_data_cosmos-previews`) into `main`; brings `HEDGING_SPEC.md` and the design contract for `hedge_diagnostics: Option<HedgeDiagnostics>`.
-2. **This spec PR merges.** Adds `HEDGING_DETECTION_API_SPEC.md`. No production code change.
-3. **Hedging implementation PR** (separate, future). Implements the orchestrator that populates `HedgeDiagnostics` **and** dispatches `RequestDiagnostics` with `ExecutionContext::Hedging`. Without this PR, both signals used by `hedging_started()` remain inactive — `hedging_started()` returns `false` for every operation, which is the correct answer (no fan-out has happened).
-4. **Hedging Detection API implementation PR** (separate, future). Implements the three accessors specified here, the public `RequestedRegion` / `RequestedRegionReason` types (§3.5), the `Retry → OperationRetry` rename (§4), the re-export decision (§5), the test additions (§8), and the CHANGELOG entries (§9).
+1. **PR #4330 — DONE.** The Cross-Region Hedging *design spec* merged into `main`.
+2. **Hedging implementation — DONE ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432)).** `main` now has the orchestrator that populates `HedgeDiagnostics` **and** dispatches `RequestDiagnostics` with `ExecutionContext::Hedging`, plus the public `AvailabilityStrategy` / `HedgingStrategy` / `HedgeThreshold` surface. Both signals used by `hedging_started()` are therefore live.
+3. **This PR.** Adds `HEDGING_DETECTION_API_SPEC.md` **and** the Hedging Detection API implementation it describes: the three accessors, the public `RequestedRegion` / `RequestedRegionReason` types (§3.5), the `Retry → OperationRetry` rename (§4), the re-export decision (§5), driver-level unit tests for the accessors and the `From<ExecutionContext>` mapping (§8.1 non-emulator cases plus §8.4 type-level checks), and the CHANGELOG entries (§9). Because hedging already landed (Step 2), `hedging_started()` is wired to `hedge_diagnostics` from the start.
 
-Steps 3 and 4 may be combined or kept separate at the implementer's discretion; this spec does not require either ordering between them, but the invariant test in §8 only becomes meaningful once Step 3 lands.
+The hedging-active emulator/fault-injection tests (§8.3) and the SE-023 invariant assertion across live multi-region runs (§8.2) are valuable follow-ups but are not required for this PR, which relies on driver-level unit coverage.
 
 ---
 
@@ -398,18 +396,17 @@ In `sdk/cosmos/azure_data_cosmos/tests/emulator_tests/cosmos_items.rs` and `cosm
 
 These cases prove the accessors are **well-defined even when hedging is disabled / not yet implemented**, and that the `ExecutionContext → RequestedRegionReason` mapping (§3.5) is exercised on real dispatch history.
 
-### 8.2 SE-023 mandatory invariant test (added on the hedging implementation PR)
+### 8.2 SE-023 invariant test (recommended follow-up, live on `main`)
 
 For every `DiagnosticsContext` produced by every emulator / fault-injection / live-multi-region test, assert the two `hedging_started()` signals agree:
 
 ```rust
 let from_hedge_diag = ctx
-    .hedge_diagnostics
-    .as_ref()
-    .map(|hd| hd.total_requests_launched >= 2)
+    .hedge_diagnostics()
+    .map(|hd| hd.alternate_region().is_some())
     .unwrap_or(false);
 let from_requests = ctx
-    .requests
+    .requests()
     .iter()
     .any(|r| matches!(r.execution_context(), ExecutionContext::Hedging));
 assert_eq!(
@@ -419,12 +416,12 @@ assert_eq!(
 assert_eq!(ctx.hedging_started(), from_hedge_diag || from_requests);
 ```
 
-### 8.3 Hedging-active tests (added on / after the hedging implementation PR)
+### 8.3 Hedging-active tests (recommended follow-up)
 
 Using the fault-injection harness described in `HEDGING_SPEC.md` (e.g., `hedging_read_primary_fast`, alternate-wins, both-fail cases):
 
 - **Primary wins under threshold** (`hedging_read_primary_fast`): `hedging_started() == false`; `requested_regions()` has exactly one entry tagged `Initial`; no entry tagged `Hedging`.
-- **Alternate hedge wins:** `hedging_started() == true`; `requested_regions()` contains at least one `Hedging`-tagged entry; `responded_regions()` contains the winning region; the winning region equals `hedge_diagnostics.response_region`.
+- **Alternate hedge wins:** `hedging_started() == true`; `requested_regions()` contains at least one `Hedging`-tagged entry; `responded_regions()` contains the winning region; the winning region equals `hedge_diagnostics().response_region()`.
 - **Late loser response:** `responded_regions().len()` may exceed the number of distinct regions; the test asserts duplicates are preserved (not deduped).
 
 ### 8.4 Type-level tests for the public enum
@@ -434,17 +431,17 @@ Using the fault-injection harness described in `HEDGING_SPEC.md` (e.g., `hedging
 
 ---
 
-## 9. CHANGELOG entries (drafted here; landed by the implementation PR)
+## 9. CHANGELOG entries (landed in this PR)
 
-These entries are **drafts**. They are not added to any `CHANGELOG.md` in this spec-only PR; the Hedging Detection API implementation PR (Step 4 in §7) lands them.
+The entries below are added to both crates' `CHANGELOG.md` files in this PR, under their respective unreleased versions.
 
-### 9.1 `sdk/cosmos/azure_data_cosmos/CHANGELOG.md` (under the next unreleased version, currently `0.34.0`)
+### 9.1 `sdk/cosmos/azure_data_cosmos/CHANGELOG.md` (under the next unreleased version, currently `0.35.0`)
 
 `### Features Added`
 
-- Added the cross-SDK Hedging Detection API on `CosmosDiagnosticsContext`: `hedging_started() -> bool`, `requested_regions() -> Vec<RequestedRegion>` (dispatch order, duplicates allowed, each entry tagged with a `RequestedRegionReason`), and `responded_regions() -> Vec<&Region>` (arrival order, duplicates allowed). Re-exports the `RequestedRegion` struct and `RequestedRegionReason` enum (defined in `azure_data_cosmos_driver`) that realize the cross-SDK contract's per-region-reason surface. `RequestedRegionReason` is `#[non_exhaustive]`; `TransportRetry` and `CircuitBreakerProbe` are reserved and not populated by the initial implementation.
+- Added the cross-SDK Hedging Detection API on `DiagnosticsContext`: `hedging_started() -> bool`, `requested_regions() -> Vec<RequestedRegion>` (dispatch order, duplicates allowed, each entry tagged with a `RequestedRegionReason`), and `responded_regions() -> Vec<&Region>` (arrival order, duplicates allowed). Re-exports the `RequestedRegion` struct and `RequestedRegionReason` enum (defined in `azure_data_cosmos_driver`) that realize the cross-SDK contract's per-region-reason surface. `RequestedRegionReason` is `#[non_exhaustive]`; `TransportRetry` and `CircuitBreakerProbe` are reserved and not populated by the initial implementation.
 
-### 9.2 `sdk/cosmos/azure_data_cosmos_driver/CHANGELOG.md` (under the next unreleased version, currently `0.3.0`)
+### 9.2 `sdk/cosmos/azure_data_cosmos_driver/CHANGELOG.md` (under the next unreleased version, currently `0.4.0`)
 
 `### Features Added`
 
@@ -470,7 +467,7 @@ These entries are **drafts**. They are not added to any `CHANGELOG.md` in this s
 
 | Concept | Rust (this spec) | Cross-SDK contract |
 |---|---|---|
-| Did fan-out happen? | `CosmosDiagnosticsContext::hedging_started() -> bool` | `hedging_started()` |
+| Did fan-out happen? | `DiagnosticsContext::hedging_started() -> bool` | `hedging_started()` |
 | Regions dispatched to (with reason) | `requested_regions() -> Vec<RequestedRegion>` | `requested_regions()` |
 | Regions that responded (identifiers only) | `responded_regions() -> Vec<&Region>` | `responded_regions()` |
 | Per-region pair | `RequestedRegion { region: Region, reason: RequestedRegionReason }` | `RequestedRegion { region, reason }` |
