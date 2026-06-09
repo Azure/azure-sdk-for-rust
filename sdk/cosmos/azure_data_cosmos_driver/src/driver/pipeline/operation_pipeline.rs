@@ -2153,6 +2153,20 @@ async fn perform_single_attempt(
         PipelineType::Metadata => ctx.transport.get_metadata_transport(ctx.account_endpoint)?,
     };
 
+    // Resolve the per-leg throttle (429) retry budget from the same effective
+    // options the main pipeline uses, so a hedge leg honors the configured
+    // `ThrottlingRetryOptions` identically to a non-hedged attempt. Each leg
+    // enters the transport pipeline once and starts with a fresh budget.
+    let throttling_retry_options = ctx.options.throttling_retry_options();
+    let max_throttle_attempts = throttling_retry_options
+        .max_retry_count()
+        .copied()
+        .unwrap_or(DEFAULT_MAX_THROTTLE_ATTEMPTS);
+    let max_throttle_wait_time = throttling_retry_options
+        .max_retry_wait_time()
+        .copied()
+        .unwrap_or(DEFAULT_MAX_THROTTLE_WAIT);
+
     let result = execute_transport_pipeline(
         transport_request,
         &TransportPipelineContext {
@@ -2164,6 +2178,8 @@ async fn perform_single_attempt(
             pipeline_type: ctx.pipeline_type,
             transport_security: ctx.transport_security,
             endpoint_key: routing.endpoint.endpoint_key(),
+            max_throttle_attempts,
+            max_throttle_wait_time,
         },
         diagnostics,
     )
