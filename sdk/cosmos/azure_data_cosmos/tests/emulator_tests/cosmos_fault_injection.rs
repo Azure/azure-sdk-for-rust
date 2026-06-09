@@ -944,3 +944,66 @@ pub async fn fault_injection_enable_disable_rule() -> Result<(), Box<dyn Error>>
     )
     .await
 }
+
+/// Injecting a partition-key-range Gone (410/1002) on point operations must NOT
+/// surface a raw 410 to the caller. The Gone-family is retried within a small
+/// bound and, on exhaustion, converted to 503 Service Unavailable so application
+/// resilience logic (wired for 503, not 410) can classify it. Regression test for
+/// the Rust sibling of Azure/azure-cosmos-dotnet-v3#5924.
+#[tokio::test]
+pub async fn fault_injection_partition_key_range_gone_surfaces_503() -> Result<(), Box<dyn Error>> {
+    let server_error = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::PartitionIsGone) // 410 / 1002
+        .with_probability(1.0)
+        .build();
+
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("partition-key-range-gone", server_error)
+        .with_condition(condition)
+        .build();
+
+    let fault_builder = FaultInjectionClientBuilder::new().with_rule(Arc::new(rule));
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = create_test_item(&unique_id);
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            container_client.create_item(&pk, &item, None).await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await;
+
+            let result = fault_container_client
+                .read_item::<TestItem>(&pk, &item_id, None)
+                .await;
+            let err = result.expect_err("read should fail when partition is gone");
+            assert_eq!(
+                Some(StatusCode::ServiceUnavailable),
+                err.http_status(),
+                "terminal 410/1002 must be surfaced as 503, not a raw 410"
+            );
+
+            Ok(())
+        },
+        Some(TestOptions::new().with_fault_injection_builder(fault_builder)),
+    )
+    .await
+}

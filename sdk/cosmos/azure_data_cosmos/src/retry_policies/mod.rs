@@ -11,6 +11,7 @@ use crate::retry_policies::client_retry_policy::ClientRetryPolicy;
 use crate::retry_policies::metadata_request_retry_policy::MetadataRequestRetryPolicy;
 use crate::retry_policies::resource_throttle_retry_policy::ResourceThrottleRetryPolicy;
 use azure_core::error::ErrorKind;
+use azure_core::http::headers::Headers;
 use azure_core::http::{RawResponse, StatusCode};
 use azure_core::time::Duration;
 
@@ -124,6 +125,61 @@ impl RetryPolicy {
             RetryPolicy::ResourceThrottle(p) => p.should_retry(response).await,
             RetryPolicy::Metadata(p) => p.should_retry(response).await,
         }
+    }
+
+    /// Returns the Cosmos sub-status to preserve when a terminal partition-key-range
+    /// Gone (410.1000/1002/1007) must be surfaced as 503 Service Unavailable instead
+    /// of a raw 410, or `None` when no such conversion is pending. Only the data-plane
+    /// [`ClientRetryPolicy`] produces this signal.
+    pub fn terminal_gone_substatus(&self) -> Option<SubStatusCode> {
+        match self {
+            RetryPolicy::Client(p) => p.terminal_gone_substatus(),
+            RetryPolicy::ResourceThrottle(_) | RetryPolicy::Metadata(_) => None,
+        }
+    }
+}
+
+/// Rewrites a terminal partition-key-range Gone result (410 with sub-status
+/// 1000/1002/1007) into a 503 Service Unavailable while preserving the original
+/// Cosmos sub-status, so application-layer resilience logic (which is wired for
+/// 503, not 410) can classify and react to it.
+///
+/// Cosmos gateway responses for non-success status codes arrive here as an
+/// `Err(HttpResponse { status: Gone, .. })`; the rare `Ok(RawResponse)` form with a
+/// Gone status is handled too. Any other result is returned unchanged.
+pub(crate) fn convert_gone_to_service_unavailable(
+    result: azure_core::Result<RawResponse>,
+    sub_status: SubStatusCode,
+) -> azure_core::Result<RawResponse> {
+    let mut headers = match &result {
+        Ok(response) if response.status() == StatusCode::Gone => response.headers().clone(),
+        Err(err) if err.http_status() == Some(StatusCode::Gone) => Headers::new(),
+        // Not a Gone result: leave it untouched.
+        _ => return result,
+    };
+    headers.insert(SUB_STATUS, sub_status.to_string());
+
+    match result {
+        Ok(_) => Ok(RawResponse::from_bytes(
+            StatusCode::ServiceUnavailable,
+            headers,
+            Vec::new(),
+        )),
+        Err(_) => Err(azure_core::Error::with_message(
+            ErrorKind::HttpResponse {
+                status: StatusCode::ServiceUnavailable,
+                error_code: Some("ServiceUnavailable".to_string()),
+                raw_response: Some(Box::new(RawResponse::from_bytes(
+                    StatusCode::ServiceUnavailable,
+                    headers,
+                    Vec::new(),
+                ))),
+            },
+            format!(
+                "partition key range is gone (sub-status {sub_status}); routing information was stale \
+                 and could not be refreshed within the retry budget, surfaced as 503 Service Unavailable"
+            ),
+        )),
     }
 }
 
@@ -282,5 +338,67 @@ mod tests {
     fn credential_is_not_sent() {
         let err = azure_core::Error::with_message(ErrorKind::Credential, "auth failed");
         assert_eq!(err.request_sent_status(), RequestSentStatus::NotSent);
+    }
+
+    fn gone_error_with_substatus(value: &str) -> azure_core::Error {
+        let mut headers = azure_core::http::headers::Headers::new();
+        headers.insert(SUB_STATUS, value.to_string());
+        let raw = RawResponse::from_bytes(StatusCode::Gone, headers, Vec::new());
+        azure_core::Error::new(
+            ErrorKind::HttpResponse {
+                status: StatusCode::Gone,
+                error_code: None,
+                raw_response: Some(Box::new(raw)),
+            },
+            "partition key range gone",
+        )
+    }
+
+    #[test]
+    fn convert_gone_error_to_service_unavailable_preserves_substatus() {
+        let converted = convert_gone_to_service_unavailable(
+            Err(gone_error_with_substatus("1002")),
+            SubStatusCode::PARTITION_KEY_RANGE_GONE,
+        );
+        let err = converted.expect_err("a Gone error must remain an error");
+        assert_eq!(err.http_status(), Some(StatusCode::ServiceUnavailable));
+        assert_eq!(
+            get_substatus_code_from_error(&err),
+            Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+            "the original sub-status must be preserved on the 503"
+        );
+    }
+
+    #[test]
+    fn convert_gone_ok_response_to_service_unavailable_preserves_substatus() {
+        let mut headers = azure_core::http::headers::Headers::new();
+        headers.insert(SUB_STATUS, "1002");
+        let response = RawResponse::from_bytes(StatusCode::Gone, headers, Vec::new());
+
+        let converted = convert_gone_to_service_unavailable(
+            Ok(response),
+            SubStatusCode::PARTITION_KEY_RANGE_GONE,
+        )
+        .expect("ok response must remain ok");
+        assert_eq!(converted.status(), StatusCode::ServiceUnavailable);
+        assert_eq!(
+            get_substatus_code_from_response(&converted),
+            Some(SubStatusCode::PARTITION_KEY_RANGE_GONE)
+        );
+    }
+
+    #[test]
+    fn convert_leaves_non_gone_results_untouched() {
+        let response = RawResponse::from_bytes(
+            StatusCode::Ok,
+            azure_core::http::headers::Headers::new(),
+            Vec::new(),
+        );
+        let converted = convert_gone_to_service_unavailable(
+            Ok(response),
+            SubStatusCode::PARTITION_KEY_RANGE_GONE,
+        )
+        .expect("non-gone ok stays ok");
+        assert_eq!(converted.status(), StatusCode::Ok);
     }
 }
