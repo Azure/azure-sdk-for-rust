@@ -9,6 +9,7 @@ mod runner;
 mod seed;
 mod setup;
 mod stats;
+mod ua_suffix;
 
 /// Creates an AAD credential using WorkloadIdentity (AKS) with fallback to ManagedIdentity (VMs).
 fn create_aad_credential(
@@ -100,19 +101,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use azure_core::credentials::Secret;
     use azure_data_cosmos::{
-        AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy, UserAgentSuffix,
+        AccountEndpoint, AccountReference, CosmosClientBuilder, RoutingStrategy,
     };
     use clap::Parser;
 
     use crate::config::{AuthMethod, Config};
-    use crate::operations::create_operations;
+    use crate::operations::{create_operations, READ_FEED_RANGES_STAT};
     use crate::runner::{ConfigSnapshot, RunConfig};
     use crate::stats::Stats;
 
     let config = Config::parse();
 
     // Validate configuration
-    if config.no_reads && config.no_queries && config.no_upserts && config.no_creates {
+    if config.no_reads
+        && config.no_queries
+        && config.no_upserts
+        && config.no_creates
+        && config.no_feed_range_queries
+    {
         eprintln!("Error: all operations are disabled. Enable at least one.");
         std::process::exit(1);
     }
@@ -129,22 +135,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
 
-    // Resolve the (optional) user-agent suffix once and reuse it for both the
-    // primary and results clients. Empty string disables the suffix; any
-    // non-empty value must pass `UserAgentSuffix` validation (max 25 chars,
-    // HTTP-header-safe).
-    let user_agent_suffix = if config.user_agent_suffix.is_empty() {
-        None
-    } else {
-        match UserAgentSuffix::try_new(config.user_agent_suffix.clone()) {
-            Some(s) => Some(s),
-            None => {
-                eprintln!(
-                    "Error: --user-agent-suffix {:?} is invalid (must be \u{2264} 25 ASCII characters and HTTP-header-safe).",
-                    config.user_agent_suffix
-                );
-                std::process::exit(1);
-            }
+    // Resolve the (optional) user-agent suffix. Composes
+    // `{configured}-{first-8-chars-of-workload_id}` so a single perf
+    // run's traffic is correlatable in server-side telemetry with that
+    // run's client-side logs (which already carry `workload_id`).
+    // Empty configured suffix disables the suffix entirely.
+    let user_agent_suffix = match ua_suffix::resolve_user_agent_suffix(
+        &config.user_agent_suffix,
+        &config.workload_id,
+    ) {
+        Ok(s) => s,
+        Err(msg) => {
+            eprintln!("Error: {msg}");
+            std::process::exit(1);
         }
     };
     if let Some(ref s) = user_agent_suffix {
@@ -208,8 +211,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         seed::seed_container(&container_client, config.seed_count, config.concurrency).await?;
     let seeded_items = seed::SharedItems::new(seeded_items);
 
-    // Create enabled operations
-    let ops = create_operations(&config, seeded_items);
+    // Create enabled operations. May async-call `read_feed_ranges` to
+    // seed the feed-range query op's cache.
+    let operations::OperationsBundle {
+        ops,
+        feed_range_refresher,
+    } = create_operations(&config, &container_client, seeded_items).await?;
     println!(
         "\nStarting perf test: {} operation(s), concurrency={}",
         ops.len(),
@@ -217,6 +224,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     for op in &ops {
         println!("  - {}", op.name());
+    }
+    if feed_range_refresher.is_some() {
+        println!(
+            "  Background: feed-range refresh every {}s",
+            config.feed_range_refresh_secs
+        );
     }
 
     let duration = config.duration.map(Duration::from_secs);
@@ -324,11 +337,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Run the perf test
-    let op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
+    let mut op_names: Vec<&str> = ops.iter().map(|op| op.name()).collect();
+    if feed_range_refresher.is_some() {
+        // Pre-register the refresher's synthetic stats line so its
+        // latency/errors are aggregated alongside the regular ops.
+        op_names.push(READ_FEED_RANGES_STAT);
+    }
     let stats = Arc::new(Stats::new(&op_names));
     runner::run(RunConfig {
         container: container_client,
         operations: ops,
+        feed_range_refresher,
         stats,
         concurrency: config.concurrency,
         duration,

@@ -16,7 +16,7 @@ use sysinfo::System;
 use tokio::task::JoinSet;
 use uuid::Uuid;
 
-use crate::operations::Operation;
+use crate::operations::{FeedRangeRefresher, Operation};
 use crate::stats::{self, Stats};
 
 /// Walks the `std::error::Error::source()` chain and joins messages with " → ".
@@ -149,6 +149,12 @@ struct ErrorResult {
 pub struct RunConfig {
     pub container: ContainerClient,
     pub operations: Vec<Arc<dyn Operation>>,
+    /// Optional background task that periodically refreshes the
+    /// shared feed-range cache used by `FeedRangeQueryOperation`. When
+    /// present, its tick latency is recorded under the
+    /// [`crate::operations::READ_FEED_RANGES_STAT`] stats line and the
+    /// run loop spawns its `run` future before workers start.
+    pub feed_range_refresher: Option<FeedRangeRefresher>,
     pub stats: Arc<Stats>,
     pub concurrency: usize,
     pub duration: Option<Duration>,
@@ -185,6 +191,7 @@ pub async fn run(config: RunConfig) {
     let RunConfig {
         container,
         operations,
+        feed_range_refresher,
         stats,
         concurrency,
         duration,
@@ -196,6 +203,16 @@ pub async fn run(config: RunConfig) {
         config_snapshot,
     } = config;
     let cancelled = Arc::new(AtomicBool::new(false));
+
+    // Spawn the optional feed-range refresher BEFORE workers so its
+    // first refresh has a head start on warming the cache.
+    if let Some(refresher) = feed_range_refresher {
+        let refresher_stats = stats.clone();
+        let refresher_cancel = cancelled.clone();
+        tokio::spawn(async move {
+            refresher.run(refresher_stats, refresher_cancel).await;
+        });
+    }
 
     // Set up Ctrl+C handler
     let cancel_flag = cancelled.clone();
