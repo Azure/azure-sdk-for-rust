@@ -7,8 +7,6 @@
 //! produces `OperationAction::Hedge { secondary_routing }` and by the
 //! `execute_hedged()` race loop.
 
-use std::time::Duration;
-
 use crate::{
     driver::{
         pipeline::{
@@ -22,24 +20,6 @@ use crate::{
         AvailabilityStrategy, HedgeThreshold, HedgingStrategy, OperationOptionsView, Region,
     },
 };
-
-/// Default hedge threshold cap used by [`resolve_availability_strategy`]
-/// when no operation- / account- / env-level strategy is configured.
-///
-/// The driver-default threshold is `min(1000ms, request_timeout / 2)`;
-/// this constant is the upper bound.
-const DEFAULT_THRESHOLD_CAP: Duration = Duration::from_millis(1000);
-
-/// Master switch for the built-in driver-default hedging strategy.
-///
-/// TEMPORARILY `false`: when `false`, an operation that leaves
-/// `availability_strategy` unset gets **no** hedging
-/// ([`resolve_availability_strategy`] returns `None`). Callers can still
-/// opt in explicitly via `AvailabilityStrategy::Hedging(..)` at the
-/// operation / account / runtime layer. Flip back to `true` to restore the
-/// built-in default that enabled hedging for every eligible multi-region
-/// read.
-const DRIVER_DEFAULT_HEDGING_ENABLED: bool = false;
 
 /// Resource types eligible for cross-region hedging in the current phase.
 ///
@@ -111,56 +91,21 @@ pub(crate) fn should_hedge(
 
 /// Resolves the effective [`HedgingStrategy`] for a single operation.
 ///
-/// Priority order (highest first):
-///
-/// 1. Operation / account / runtime `availability_strategy` (resolved by
-///    [`OperationOptionsView`] before we are called).
-/// 2. Driver default — **temporarily disabled** (see
-///    [`DRIVER_DEFAULT_HEDGING_ENABLED`]).
-///
-/// Returns `Some(_)` only when layer 1 carries an explicit
-/// `AvailabilityStrategy::Hedging(..)`. It returns `None` both when layer 1
-/// is `AvailabilityStrategy::Disabled` **and** when no strategy is
-/// configured, because the built-in driver default that used to enable
-/// hedging for every eligible multi-region read is turned off for now.
-/// The "single-region account / insufficient regions" case is enforced
-/// separately in [`should_hedge`].
+/// Returns `Some(_)` only when the caller has set an explicit
+/// `AvailabilityStrategy::Hedging(..)` at the operation, account, or
+/// runtime layer (resolved by [`OperationOptionsView`] before we are
+/// called). Returns `None` for `AvailabilityStrategy::Disabled` and when
+/// no strategy is configured — the built-in driver default that used to
+/// enable hedging for every eligible multi-region read is temporarily
+/// off. The "single-region account / insufficient regions" case is
+/// enforced separately in [`should_hedge`].
 pub(crate) fn resolve_availability_strategy(
     view: &OperationOptionsView<'_>,
-    request_timeout: Option<Duration>,
 ) -> Option<HedgingStrategy> {
-    // Priority 1 — code-level strategy.
     match view.availability_strategy() {
-        Some(AvailabilityStrategy::Disabled) => return None,
-        Some(AvailabilityStrategy::Hedging(s)) => return Some(*s),
-        None => {}
+        Some(AvailabilityStrategy::Hedging(s)) => Some(*s),
+        Some(AvailabilityStrategy::Disabled) | None => None,
     }
-
-    // Priority 2 — driver default (temporarily disabled). When the master
-    // switch is flipped back on, an operation with no explicit strategy
-    // falls back to `min(1000ms, request_timeout / 2)`.
-    if DRIVER_DEFAULT_HEDGING_ENABLED {
-        Some(HedgingStrategy::new(default_threshold(request_timeout)))
-    } else {
-        None
-    }
-}
-
-/// Computes the driver-default threshold: `min(1000ms, request_timeout / 2)`,
-/// falling back to `request_timeout` itself when `t/2 == 0` (sub-ms input),
-/// then to `1000ms` only when no timeout is configured.
-fn default_threshold(request_timeout: Option<Duration>) -> HedgeThreshold {
-    let candidate = match request_timeout {
-        Some(t) if !t.is_zero() => (t / 2).min(DEFAULT_THRESHOLD_CAP),
-        _ => DEFAULT_THRESHOLD_CAP,
-    };
-
-    HedgeThreshold::new(candidate)
-        .or_else(|| request_timeout.and_then(HedgeThreshold::new))
-        .unwrap_or_else(|| {
-            HedgeThreshold::new(DEFAULT_THRESHOLD_CAP)
-                .expect("DEFAULT_THRESHOLD_CAP is statically non-zero")
-        })
 }
 
 /// Outcome of [`evaluate_hedge_eligibility`] — everything the pipeline
@@ -188,9 +133,7 @@ pub(crate) struct HedgeUpgrade {
 /// **different region** than the primary (the primary is not necessarily
 /// `preferred_read_endpoints[0]` once PPCB overrides, probe-candidate
 /// routing, location-index advancement, or prior retry state have moved
-/// it). `request_timeout` is plumbed through to
-/// [`resolve_availability_strategy`] so the driver default
-/// (`min(1000ms, request_timeout / 2)`) can be computed.
+/// it).
 ///
 /// Returns `None` when hedging is disabled, the operation is ineligible,
 /// or no applicable region distinct from `primary` exists — in all cases
@@ -201,9 +144,8 @@ pub(crate) fn evaluate_hedge_eligibility(
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
     primary: &RoutingDecision,
-    request_timeout: Option<Duration>,
 ) -> Option<HedgeUpgrade> {
-    let strategy = resolve_availability_strategy(options, request_timeout)?;
+    let strategy = resolve_availability_strategy(options)?;
 
     let user_excluded: Vec<Region> = options
         .excluded_regions()
@@ -268,6 +210,8 @@ pub(crate) fn evaluate_hedge_eligibility(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::time::Duration;
 
     use azure_core::http::StatusCode;
     use url::Url;
@@ -525,23 +469,7 @@ mod tests {
         // The built-in driver default is temporarily disabled, so an
         // operation that leaves `availability_strategy` unset resolves to
         // `None` (no hedging).
-        assert!(resolve_availability_strategy(&view, None).is_none());
-    }
-
-    // The two tests below exercise `default_threshold` directly so the
-    // threshold math stays covered while the built-in default is disabled.
-    // They double as the regression suite for re-enabling
-    // `DRIVER_DEFAULT_HEDGING_ENABLED`.
-    #[test]
-    fn default_threshold_uses_half_request_timeout_when_under_cap() {
-        let threshold = default_threshold(Some(Duration::from_millis(600)));
-        assert_eq!(threshold.get(), Duration::from_millis(300));
-    }
-
-    #[test]
-    fn default_threshold_caps_at_1000ms() {
-        let threshold = default_threshold(Some(Duration::from_secs(30)));
-        assert_eq!(threshold.get(), Duration::from_millis(1000));
+        assert!(resolve_availability_strategy(&view).is_none());
     }
 
     #[test]
@@ -551,7 +479,7 @@ mod tests {
             .build();
         let view = empty_view(&op);
 
-        assert!(resolve_availability_strategy(&view, None).is_none());
+        assert!(resolve_availability_strategy(&view).is_none());
     }
 
     #[test]
@@ -563,7 +491,7 @@ mod tests {
             .build();
         let view = empty_view(&op);
 
-        let strategy = resolve_availability_strategy(&view, None).expect("Some");
+        let strategy = resolve_availability_strategy(&view).expect("Some");
         assert_eq!(strategy.threshold().get(), Duration::from_millis(200));
     }
 
@@ -625,7 +553,7 @@ mod tests {
     /// given threshold. Routing-focused eligibility tests use this so they
     /// keep exercising `evaluate_hedge_eligibility` (and assert the outcome
     /// stems from the real eligibility gates) while the built-in driver
-    /// default is temporarily disabled (see `DRIVER_DEFAULT_HEDGING_ENABLED`).
+    /// default is temporarily disabled.
     fn hedging_enabled_opts(threshold: Duration) -> OperationOptions {
         OperationOptionsBuilder::new()
             .with_availability_strategy(AvailabilityStrategy::Hedging(HedgingStrategy::new(
@@ -643,7 +571,7 @@ mod tests {
         let op_opts = hedging_enabled_opts(Duration::from_millis(1000));
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary)
             .expect("eligible multi-region read");
 
         // Secondary pinned to applicable[1] = WEST_US_2.
@@ -668,7 +596,7 @@ mod tests {
         let op_opts = hedging_enabled_opts(Duration::from_millis(1000));
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary).is_none());
     }
 
     #[test]
@@ -680,7 +608,7 @@ mod tests {
         let op_opts = hedging_enabled_opts(Duration::from_millis(1000));
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary).is_none());
     }
 
     #[test]
@@ -694,7 +622,7 @@ mod tests {
             .build();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary).is_none());
     }
 
     #[test]
@@ -707,7 +635,7 @@ mod tests {
         op_opts.excluded_regions = Some([Region::WEST_US_2].into_iter().collect());
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary).is_none());
     }
 
     #[test]
@@ -723,7 +651,7 @@ mod tests {
         let op_opts = hedging_enabled_opts(Duration::from_millis(1000));
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary)
             .expect("eligible three-region read");
 
         let url_str = upgrade.secondary_routing.selected_url.as_str();
@@ -744,10 +672,7 @@ mod tests {
     /// With an explicitly-configured hedging strategy, calling
     /// `evaluate_hedge_eligibility` repeatedly must return the same
     /// threshold every time, regardless of how much wall-clock time has
-    /// elapsed between calls. (The built-in driver default that derived the
-    /// threshold from `request_timeout` is temporarily disabled — its
-    /// `min(1000ms, request_timeout / 2)` math is covered directly by the
-    /// `default_threshold_*` tests above.)
+    /// elapsed between calls.
     #[test]
     fn evaluate_hedge_eligibility_threshold_stable_across_repeated_calls() {
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
@@ -757,11 +682,11 @@ mod tests {
         let op_opts = hedging_enabled_opts(Duration::from_millis(400));
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let first = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
-            .expect("first call eligible");
+        let first =
+            evaluate_hedge_eligibility(&op, &view, &state, &primary).expect("first call eligible");
         std::thread::sleep(Duration::from_millis(10));
-        let second = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
-            .expect("second call eligible");
+        let second =
+            evaluate_hedge_eligibility(&op, &view, &state, &primary).expect("second call eligible");
 
         assert_eq!(
             first.threshold.get(),
@@ -798,7 +723,7 @@ mod tests {
         let op_opts = hedging_enabled_opts(Duration::from_millis(1000));
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary)
             .expect("eligible three-region read");
 
         let secondary_region = upgrade.secondary_routing.endpoint.region().cloned();
@@ -836,7 +761,7 @@ mod tests {
         let op_opts = hedging_enabled_opts(Duration::from_millis(1000));
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None).expect(
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary).expect(
             "request must still be hedged when the primary is not \
              preferred_read_endpoints[0]",
         );
@@ -880,7 +805,7 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
         assert!(
-            evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none(),
+            evaluate_hedge_eligibility(&op, &view, &state, &primary).is_none(),
             "no distinct alternate exists — must fall back to non-hedged decision",
         );
     }

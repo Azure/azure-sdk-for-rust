@@ -262,12 +262,10 @@ pub(crate) async fn execute_operation_pipeline(
     // current variant that is out of spec scope).
     retry_state.is_dataplane = pipeline_type.is_data_plane();
 
-    // The hedge threshold is `min(1000ms, request_timeout / 2)` where
-    // `request_timeout` is the **configured** end-to-end latency budget,
-    // not the time remaining until the deadline. We compute the
-    // configured timeout once here and pass it (not the remaining
-    // duration) into `evaluate_hedge_eligibility` / `maybe_upgrade_to_hedge`
-    // below so the threshold stays stable across retry-driven upgrades.
+    // The configured end-to-end latency policy gives us the deadline for
+    // the surrounding retry loop. It is the **configured** budget, not the
+    // remaining time, so deadline scheduling stays stable across
+    // retry-driven upgrades.
     let configured_request_timeout = options.end_to_end_latency_policy().map(|p| p.timeout());
     let deadline = configured_request_timeout.map(|t| Instant::now() + t);
 
@@ -315,13 +313,9 @@ pub(crate) async fn execute_operation_pipeline(
         //   `AvailabilityStrategy::Disabled`. All gated by
         //   [`evaluate_hedge_eligibility`].
         if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
-            if let Some(upgrade) = evaluate_hedge_eligibility(
-                operation,
-                options,
-                &location.account,
-                &routing,
-                configured_request_timeout,
-            ) {
+            if let Some(upgrade) =
+                evaluate_hedge_eligibility(operation, options, &location.account, &routing)
+            {
                 let attempt_ctx = AttemptContext {
                     operation,
                     overrides: &overrides,
@@ -556,14 +550,7 @@ pub(crate) async fn execute_operation_pipeline(
         let action = if retry_state.hedge_already_fired {
             action
         } else {
-            maybe_upgrade_to_hedge(
-                action,
-                operation,
-                options,
-                &location.account,
-                &routing,
-                configured_request_timeout,
-            )
+            maybe_upgrade_to_hedge(action, operation, options, &location.account, &routing)
         };
 
         // ── STAGE 6: Apply location effects ────────────────────────────
@@ -731,7 +718,6 @@ pub(crate) async fn execute_operation_pipeline(
                     options,
                     &location.account,
                     &primary_routing,
-                    configured_request_timeout,
                 ) {
                     Some(upgrade) => upgrade.secondary_routing,
                     None => {
@@ -2060,9 +2046,7 @@ fn finalize_hedge_attempt(
 ///
 /// Only `FailoverRetry` and `SessionRetry` are eligible for upgrade —
 /// `Complete` is the operation's terminal success path, and `Abort`
-/// already signals a non-retryable error. `request_timeout` is passed to
-/// [`evaluate_hedge_eligibility`] so it can compute the driver default
-/// threshold (`min(1000ms, request_timeout / 2)`).
+/// already signals a non-retryable error.
 ///
 /// Forwards the incoming variant's `new_state` into the rewritten
 /// `Hedge` variant so STAGE 7 can apply it to the live `retry_state`
@@ -2074,7 +2058,6 @@ fn maybe_upgrade_to_hedge(
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
     primary: &RoutingDecision,
-    request_timeout: Option<Duration>,
 ) -> OperationAction {
     // Extract `new_state` from the retry-upgrade-eligible variants;
     // return everything else unchanged.
@@ -2084,7 +2067,7 @@ fn maybe_upgrade_to_hedge(
         _ => return action,
     };
 
-    match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
+    match evaluate_hedge_eligibility(operation, options, account_state, primary) {
         Some(upgrade) => {
             // Hedge consumes two failover-budget slots on the race
             // (primary + secondary) and a third on BothTransient
