@@ -371,7 +371,7 @@ pub async fn fault_injection_transport_generated_503_write_retries_via_failover(
         .with_region(HUB_REGION)
         .build();
 
-    let rule = FaultInjectionRuleBuilder::new("write-region-transport-503", server_error)
+    let rule = FaultInjectionRuleBuilder::new("write-region-http-503", server_error)
         .with_condition(condition)
         .with_hit_limit(1)
         .build();

@@ -173,6 +173,7 @@ pub struct CosmosDriverRuntime {
     machine_id: Arc<String>,
 
     /// Whether fault injection is enabled for this runtime.
+    #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
 
     /// Proxy configuration snapshot for diagnostics.
@@ -232,6 +233,7 @@ impl CosmosDriverRuntime {
     }
 
     /// Returns whether fault injection is enabled for this runtime.
+    #[cfg(feature = "fault_injection")]
     pub(crate) fn fault_injection_enabled(&self) -> bool {
         self.fault_injection_enabled
     }
@@ -719,8 +721,8 @@ impl CosmosDriverRuntimeBuilder {
 
         let connection_pool = self.connection_pool.unwrap_or_default();
         let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
-        #[allow(unused_mut)]
-        let mut fault_injection_enabled = false;
+        #[cfg(feature = "fault_injection")]
+        let fault_injection_enabled;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             let base_factory: Arc<dyn HttpClientFactory> = {
                 #[cfg(any(
@@ -754,6 +756,7 @@ impl CosmosDriverRuntimeBuilder {
                         ),
                     )
                 } else {
+                    fault_injection_enabled = false;
                     base_factory
                 }
             }
@@ -826,6 +829,7 @@ impl CosmosDriverRuntimeBuilder {
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
             machine_id: Arc::new(vm_metadata.machine_id().to_owned()),
+            #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
             proxy_configuration,
         }))

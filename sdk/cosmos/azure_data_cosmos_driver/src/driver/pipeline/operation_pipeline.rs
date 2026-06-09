@@ -309,6 +309,12 @@ pub(crate) async fn execute_operation_pipeline(
         // remainder of the operation's transport attempts (AC-1, AC-2).
         apply_hub_region_header(&mut transport_request, &retry_state);
 
+        apply_tentative_writes_header(
+            &mut transport_request,
+            operation,
+            location.account.multiple_write_locations_enabled,
+        );
+
         apply_optional_request_headers(&mut transport_request, operation, options);
 
         tracing::trace!(
@@ -996,8 +1002,10 @@ fn build_transport_request(
                 &operation.resource_type(),
             )
         {
-            use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-            headers.insert(FAULT_INJECTION_OPERATION, fault_op.as_str());
+            crate::driver::transport::cosmos_headers::apply_fault_injection_operation_tag(
+                &mut headers,
+                fault_op,
+            );
         }
     }
 
@@ -1163,6 +1171,24 @@ fn apply_hub_region_header(
         transport_request.headers.insert(
             HeaderName::from_static(request_header_names::HUB_REGION_PROCESSING_ONLY),
             HeaderValue::from_static("True"),
+        );
+    }
+}
+
+/// Emits `x-ms-cosmos-allow-tentative-writes: true` on writes when the account
+/// is multi-write. Without this header, satellite write regions reject writes
+/// with `403 / 3 (WriteForbidden)` because the request is treated as
+/// single-master traffic to a non-primary region. The header is gated on
+/// `enableMultipleWriteLocations` from the account metadata.
+fn apply_tentative_writes_header(
+    transport_request: &mut TransportRequest,
+    operation: &CosmosOperation,
+    multiple_write_locations_enabled: bool,
+) {
+    if multiple_write_locations_enabled && !operation.is_read_only() {
+        transport_request.headers.insert(
+            HeaderName::from_static(request_header_names::ALLOW_TENTATIVE_WRITES),
+            HeaderValue::from_static("true"),
         );
     }
 }
@@ -3732,6 +3758,75 @@ mod tests {
             value.is_none(),
             "hub-region header must not be present when latch is unset, got {value:?}",
         );
+    }
+
+    // ── apply_tentative_writes_header ────────────────────────────────
+    //
+    // Required on multi-write accounts. Without
+    // `x-ms-cosmos-allow-tentative-writes: true`, satellite write
+    // regions reject writes with `403 / 3 (WriteForbidden)`.
+
+    fn build_write_transport_request() -> super::TransportRequest {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("tentative-writes-test".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+            .expect("request should build")
+    }
+
+    fn tentative_writes_header(request: &super::TransportRequest) -> Option<&str> {
+        request.headers.get_optional_str(&HeaderName::from_static(
+            request_header_names::ALLOW_TENTATIVE_WRITES,
+        ))
+    }
+
+    /// Multi-write account + write op → header MUST be emitted as "true".
+    /// Without it, satellite write regions return
+    /// `403 / 3 (WriteForbidden)`.
+    #[test]
+    fn tentative_writes_header_set_for_write_on_multi_write_account() {
+        let mut request = build_write_transport_request();
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        super::apply_tentative_writes_header(&mut request, &operation, true);
+
+        assert_eq!(tentative_writes_header(&request), Some("true"));
+    }
+
+    /// Reads on a multi-write account never need the tentative-writes
+    /// header — they're idempotent and route per the read policy.
+    #[test]
+    fn tentative_writes_header_omitted_for_read_on_multi_write_account() {
+        let mut request = build_minimal_transport_request();
+        let operation = CosmosOperation::read_all_databases(test_account());
+
+        super::apply_tentative_writes_header(&mut request, &operation, true);
+
+        assert!(tentative_writes_header(&request).is_none());
+    }
+
+    /// Single-master accounts must not see the header even on writes; the
+    /// hub region rejects unknown headers in some build configurations
+    /// and this header is only meaningful for multi-write topologies.
+    #[test]
+    fn tentative_writes_header_omitted_for_write_on_single_master_account() {
+        let mut request = build_write_transport_request();
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
+
+        super::apply_tentative_writes_header(&mut request, &operation, false);
+
+        assert!(tentative_writes_header(&request).is_none());
     }
 
     // ── apply_failover_delay ──────────────────────────────────────────
