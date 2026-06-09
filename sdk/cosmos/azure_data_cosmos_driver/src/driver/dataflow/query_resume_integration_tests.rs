@@ -554,3 +554,186 @@ async fn resume_fails_loudly_when_saved_range_cannot_be_covered() {
         "error message should describe the unhonored-saved-range failure; got: {rendered}"
     );
 }
+
+/// End-to-end deterministic equivalent of the live multi-PK / single-item
+/// repro: three sessions, two serialize → resume round-trips, with the
+/// partition split landing between session 1 and session 2.
+///
+/// This is the only test that drives the exact loop the live repro takes:
+/// a single-leaf pre-split snapshot is decoded against a post-split
+/// topology AND that fanned-out state is snapshotted AGAIN mid-fan-out.
+/// Both defects must be fixed for the back sibling to carry its
+/// pre-split token through to the round that actually queries it.
+///
+/// With Defect 1 alone fixed, the back sibling enters the in-memory
+/// pipeline with `T1` at session 2 — but session 2's snapshot drops it,
+/// so by session 3 it has fresh-started.
+///
+/// With Defect 2 alone fixed, the snapshot preserves whatever was in
+/// memory — but Defect 1 means what was in memory is `None`, so the
+/// back sibling still fresh-starts at session 3.
+///
+/// Only with both fixed does the back sibling reach the executor at
+/// session 3 carrying the original `T1` — which is what suppresses the
+/// duplicates against a real server.
+#[tokio::test]
+async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
+    let op = cross_partition_query_operation();
+    let plan = full_range_plan();
+
+    // ── Session 1 ──────────────────────────────────────────────────────
+    // Pre-split: a single physical partition covers [, FF). Page 1
+    // returns a server continuation T1 that conceptually covers the
+    // whole range.
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-pre")])]);
+    let mut executor1 =
+        MockRequestExecutor::new(vec![Ok(page_response(b"page-1-pre", Some("T1")))]);
+    let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
+        .await
+        .unwrap();
+    let pages_s1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
+    assert_eq!(pages_s1, vec![b"page-1-pre".to_vec()]);
+    assert_eq!(executor1.continuation_calls, vec![None]);
+
+    let state_s1 = pipeline1.snapshot_state();
+    drop(pipeline1);
+
+    // The session-1 snapshot must carry exactly one child entry covering
+    // [, FF) with Request{T1}. This is what the public wire token then
+    // encodes.
+    match &state_s1 {
+        PipelineNodeState::SequentialDrain { children } => {
+            assert_eq!(children.len(), 1);
+            assert_eq!(children[0].min_epk, "");
+            assert_eq!(children[0].max_epk, "FF");
+            assert!(matches!(
+                children[0].state,
+                PipelineNodeState::Request {
+                    server_continuation: Some(ref c),
+                } if c == "T1"
+            ));
+        }
+        other => panic!("expected SequentialDrain snapshot at session 1, got {other:?}"),
+    }
+
+    // ── Session 2 ──────────────────────────────────────────────────────
+    // Between sessions, the partition split into [, 80) + [80, FF).
+    // Defect 1 territory: the planner must fan T1 out to BOTH children
+    // when decoding the session-1 token. We drain ONE page (the front
+    // child progresses to T2_a; the back child is still untouched and
+    // must remain Request{T1} in memory). Then we snapshot AGAIN —
+    // Defect 2 territory: that snapshot must carry both children, with
+    // the back child still owing T1.
+    let resumed_s2 = round_trip_state(state_s1, &op);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor2 = MockRequestExecutor::new(vec![Ok(page_response(
+        b"page-1-postsplit-left",
+        Some("T2_a"),
+    ))]);
+    let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_s2))
+        .await
+        .unwrap();
+    let pages_s2 = drain_pages(&mut pipeline2, &mut executor2, 1).await;
+    assert_eq!(pages_s2, vec![b"page-1-postsplit-left".to_vec()]);
+    // The single request issued in session 2 went to the LEFT child
+    // (front) carrying T1 — the visible Defect-1 evidence.
+    assert_eq!(
+        executor2.continuation_calls,
+        vec![Some("T1".to_owned())],
+        "session 2's first executor call must be the front child carrying the pre-split token",
+    );
+
+    let state_s2 = pipeline2.snapshot_state();
+    drop(pipeline2);
+
+    // Session-2 snapshot inspection — the canonical Defect-2 surface.
+    // Front child progressed to T2_a; back child must STILL carry T1.
+    // Before the fix this entry was silently dropped and the back child
+    // fresh-started at session 3 producing duplicates.
+    match &state_s2 {
+        PipelineNodeState::SequentialDrain { children } => {
+            assert_eq!(
+                children.len(),
+                2,
+                "session 2 snapshot must preserve both post-split children, not just the front; got {children:?}",
+            );
+            assert_eq!(children[0].min_epk, "");
+            assert_eq!(children[0].max_epk, "80");
+            assert!(matches!(
+                children[0].state,
+                PipelineNodeState::Request {
+                    server_continuation: Some(ref c),
+                } if c == "T2_a"
+            ));
+            assert_eq!(children[1].min_epk, "80");
+            assert_eq!(children[1].max_epk, "FF");
+            assert!(
+                matches!(
+                    children[1].state,
+                    PipelineNodeState::Request {
+                        server_continuation: Some(ref c),
+                    } if c == "T1"
+                ),
+                "back child must still owe pre-split T1, not None or T2_a; got {:?}",
+                children[1].state,
+            );
+        }
+        other => panic!("expected SequentialDrain snapshot at session 2, got {other:?}"),
+    }
+
+    // ── Session 3 ──────────────────────────────────────────────────────
+    // Resume from the session-2 token. Topology unchanged (no further
+    // splits). The front child drains in one more page (no continuation
+    // returned). Then the planner must visit the back child carrying
+    // T1 — NOT None — otherwise the server would re-return everything
+    // T1 was already past, which is exactly the duplicate-emission bug.
+    let resumed_s3 = round_trip_state(state_s2, &op);
+    let mut topology3 = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "pk-left"),
+        resolved("80", "FF", "pk-right"),
+    ])]);
+    let mut executor3 = MockRequestExecutor::new(vec![
+        Ok(page_response(b"page-2-postsplit-left", None)),
+        Ok(page_response(b"page-1-postsplit-right", None)),
+    ]);
+    let mut pipeline3 = build_sequential_drain(&plan, &mut topology3, &op, Some(resumed_s3))
+        .await
+        .unwrap();
+    let pages_s3 = drain_all(&mut pipeline3, &mut executor3).await;
+    assert_eq!(
+        pages_s3,
+        vec![
+            b"page-2-postsplit-left".to_vec(),
+            b"page-1-postsplit-right".to_vec(),
+        ],
+    );
+
+    // The whole reason for this test: the back child's request at
+    // session 3 must carry T1. With either defect unfixed, this value
+    // is None and the live test sees 55/50.
+    assert_eq!(
+        executor3.continuation_calls,
+        vec![Some("T2_a".to_owned()), Some("T1".to_owned())],
+        "session 3 must drain front from T2_a then visit back with the preserved pre-split T1",
+    );
+
+    // Aggregate no-duplicate / no-loss assertion across all three
+    // sessions — the user-visible symptom.
+    let mut all_pages: Vec<Vec<u8>> = pages_s1
+        .into_iter()
+        .chain(pages_s2.into_iter())
+        .chain(pages_s3.into_iter())
+        .collect();
+    all_pages.sort();
+    let mut expected: Vec<Vec<u8>> = vec![
+        b"page-1-pre".to_vec(),
+        b"page-1-postsplit-left".to_vec(),
+        b"page-2-postsplit-left".to_vec(),
+        b"page-1-postsplit-right".to_vec(),
+    ];
+    expected.sort();
+    assert_eq!(all_pages, expected);
+}
