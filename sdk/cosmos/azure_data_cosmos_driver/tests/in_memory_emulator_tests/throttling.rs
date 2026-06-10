@@ -519,7 +519,7 @@ async fn fault_injection_429_honors_configurable_throttle_retry_count() {
             .runtime_builder()
             .with_fault_injection_rules(vec![Arc::clone(&rule)])
             .expect("fault injection rules should register")
-            .with_operation_options(operation_options)
+            .with_default_operation_options(operation_options)
             .build()
             .await
             .expect("runtime should build against the in-memory emulator");

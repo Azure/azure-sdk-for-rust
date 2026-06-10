@@ -222,7 +222,7 @@ impl DriverTestClient {
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
             .with_fault_injection_rules(rules)?
-            .with_operation_options(operation_options)
+            .with_default_operation_options(operation_options)
             .build()
             .await?;
 
@@ -273,7 +273,7 @@ impl DriverTestClient {
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
             .with_fault_injection_rules(rules)?
-            .with_operation_options(runtime_operation_options)
+            .with_default_operation_options(runtime_operation_options)
             .build()
             .await?;
 

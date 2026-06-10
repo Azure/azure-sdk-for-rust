@@ -63,7 +63,7 @@ use super::{
 ///     .build();
 ///
 /// let cosmos_runtime = CosmosDriverRuntimeBuilder::new()
-///     .with_operation_options(operation_options)
+///     .with_default_operation_options(operation_options)
 ///     .build()
 ///     .await?;
 ///
@@ -76,7 +76,7 @@ use super::{
 /// let driver = cosmos_runtime.get_or_create_driver(account, None).await?;
 ///
 /// // Later, replace runtime defaults atomically
-/// // cosmos_runtime.set_operation_options(new_options);
+/// // cosmos_runtime.set_default_operation_options(new_options);
 /// # Ok(())
 /// # }
 /// ```
@@ -255,8 +255,8 @@ impl CosmosDriverRuntime {
     ///
     /// The returned `Arc` is a cheap clone of the current value.
     /// In-flight readers are unaffected by concurrent calls to
-    /// [`set_operation_options`](Self::set_operation_options).
-    pub fn operation_options(&self) -> Arc<OperationOptions> {
+    /// [`set_default_operation_options`](Self::set_default_operation_options).
+    pub fn default_operation_options(&self) -> Arc<OperationOptions> {
         // Poisoning is safe to ignore: the write side is an atomic Arc swap with no
         // multi-step mutation, so the value is always in a consistent state.
         self.operation_options
@@ -268,8 +268,9 @@ impl CosmosDriverRuntime {
     /// Replaces the default operation options atomically.
     ///
     /// In-flight operations that already obtained a snapshot via
-    /// [`operation_options`](Self::operation_options) are unaffected.
-    pub fn set_operation_options(&self, options: OperationOptions) {
+    /// [`default_operation_options`](Self::default_operation_options) are
+    /// unaffected.
+    pub fn set_default_operation_options(&self, options: OperationOptions) {
         *self
             .operation_options
             .write()
@@ -417,7 +418,7 @@ impl CosmosDriverRuntime {
 /// Builder for creating [`CosmosDriverRuntime`].
 ///
 /// Use `OperationOptionsBuilder` to create operation options, then pass them
-/// to this builder via [`with_operation_options()`](Self::with_operation_options).
+/// to this builder via [`with_default_operation_options()`](Self::with_default_operation_options).
 ///
 /// # User Agent
 ///
@@ -477,10 +478,12 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    /// Sets the operation options (defaults for operations at the runtime layer).
+    /// Sets the default operation options at the runtime layer.
     ///
+    /// These act as the lowest-priority layer in the option-resolution
+    /// hierarchy (per-op → per-driver → runtime → env → built-in default).
     /// Use `OperationOptionsBuilder` to create the operation options.
-    pub fn with_operation_options(mut self, options: OperationOptions) -> Self {
+    pub fn with_default_operation_options(mut self, options: OperationOptions) -> Self {
         self.operation_options = Some(options);
         self
     }

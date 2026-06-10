@@ -399,7 +399,7 @@ impl CosmosClientBuilder {
             runtime_operation_options.per_partition_circuit_breaker_enabled = Some(ppcb_enabled);
         }
         driver_runtime_builder =
-            driver_runtime_builder.with_operation_options(runtime_operation_options);
+            driver_runtime_builder.with_default_operation_options(runtime_operation_options);
 
         #[cfg(feature = "fault_injection")]
         if !driver_fi_rules.is_empty() {
@@ -555,14 +555,14 @@ mod tests {
             .with_per_partition_circuit_breaker_enabled(ppcb_enabled)
             .build();
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_operation_options(runtime_op_options)
+            .with_default_operation_options(runtime_op_options)
             .build()
             .await
             .expect("runtime builds");
 
         assert_eq!(
             runtime
-                .operation_options()
+                .default_operation_options()
                 .per_partition_circuit_breaker_enabled,
             Some(true),
             "PPCB must be enabled by default on a CosmosClient-built runtime"
@@ -584,14 +584,14 @@ mod tests {
             .with_per_partition_circuit_breaker_enabled(ppcb_enabled)
             .build();
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_operation_options(runtime_op_options)
+            .with_default_operation_options(runtime_op_options)
             .build()
             .await
             .expect("runtime builds");
 
         assert_eq!(
             runtime
-                .operation_options()
+                .default_operation_options()
                 .per_partition_circuit_breaker_enabled,
             Some(false),
             "explicit env-var opt-out must propagate to the driver runtime"

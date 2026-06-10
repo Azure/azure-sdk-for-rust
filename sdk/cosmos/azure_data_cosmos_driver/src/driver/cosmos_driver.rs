@@ -980,7 +980,9 @@ impl CosmosDriver {
         let endpoint_unavailability_ttl = options
             .operation_options()
             .endpoint_unavailability_ttl
-            .or(runtime.operation_options().endpoint_unavailability_ttl)
+            .or(runtime
+                .default_operation_options()
+                .endpoint_unavailability_ttl)
             .unwrap_or_else(|| {
                 std::env::var("AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS")
                     .ok()
@@ -993,7 +995,7 @@ impl CosmosDriver {
         // No per-operation overrides exist at construction time.
         let init_view = OperationOptionsView::new(
             Some(Arc::clone(runtime.env_operation_options())),
-            Some(runtime.operation_options()),
+            Some(runtime.default_operation_options()),
             Some(options.operation_options().clone()),
             None,
         );
@@ -1129,7 +1131,7 @@ impl CosmosDriver {
     ) -> OperationOptionsView<'a> {
         OperationOptionsView::new(
             Some(Arc::clone(self.runtime.env_operation_options())),
-            Some(self.runtime.operation_options()),
+            Some(self.runtime.default_operation_options()),
             Some(self.options.operation_options().clone()),
             Some(operation_options),
         )
@@ -2072,11 +2074,11 @@ mod tests {
     async fn default_operation_options() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         assert!(runtime
-            .operation_options()
+            .default_operation_options()
             .throughput_control_group
             .is_none());
         assert!(runtime
-            .operation_options()
+            .default_operation_options()
             .max_failover_retry_count
             .is_none());
         // user_agent is always available with base prefix
@@ -2097,13 +2099,13 @@ mod tests {
             .build();
 
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_operation_options(opts)
+            .with_default_operation_options(opts)
             .build()
             .await
             .unwrap();
 
         assert_eq!(
-            runtime.operation_options().max_failover_retry_count,
+            runtime.default_operation_options().max_failover_retry_count,
             Some(7)
         );
     }
@@ -2243,7 +2245,7 @@ mod tests {
 
         // Initially none
         assert!(runtime
-            .operation_options()
+            .default_operation_options()
             .max_failover_retry_count
             .is_none());
 
@@ -2251,11 +2253,11 @@ mod tests {
         let new_opts = OperationOptionsBuilder::new()
             .with_max_failover_retry_count(5)
             .build();
-        runtime.set_operation_options(new_opts);
+        runtime.set_default_operation_options(new_opts);
 
         // Now set
         assert_eq!(
-            runtime.operation_options().max_failover_retry_count,
+            runtime.default_operation_options().max_failover_retry_count,
             Some(5)
         );
     }
