@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use azure_core::http::{ClientOptions, RequestContent, Url, XmlFormat};
-use azure_core_test::{recorded, TestContext, TestMode};
+use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
     BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersOptions,
@@ -12,11 +12,10 @@ use azure_storage_blob::models::{
 use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
 use azure_storage_blob_test::{
     create_test_blob, get_blob_name, get_blob_service_client, get_container_client,
-    get_container_name, recorded_test_setup, StorageAccount,
+    get_container_name, poll_until, recorded_test_setup, StorageAccount,
 };
 use futures::{StreamExt, TryStreamExt};
-use std::{collections::HashMap, error::Error, time::Duration};
-use tokio::time;
+use std::{collections::HashMap, error::Error};
 
 #[recorded::test]
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -190,16 +189,6 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     let blob1_name = get_blob_name(recording);
     create_test_blob(
         &container_client_1.blob_client(&blob1_name.clone()),
-        Some(RequestContent::from("hello world".as_bytes().into())),
-        Some(
-            BlockBlobClientUploadOptions::default()
-                .with_tags(HashMap::from([("foo".to_string(), "bar".to_string())])),
-        ),
-    )
-    .await?;
-    let blob2_name = get_blob_name(recording);
-    create_test_blob(
-        &container_client_1.blob_client(&blob2_name.clone()),
         Some(RequestContent::from("ferris the crab".as_bytes().into())),
         Some(
             BlockBlobClientUploadOptions::default()
@@ -207,33 +196,50 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
         ),
     )
     .await?;
+    let blob2_name = get_blob_name(recording);
+    let blob2_tags = HashMap::from([("tagged".to_string(), "true".to_string())]);
+    create_test_blob(
+        &container_client_1.blob_client(&blob2_name.clone()),
+        Some(RequestContent::from("six seven".as_bytes().into())),
+        Some(BlockBlobClientUploadOptions::default().with_tags(blob2_tags.clone())),
+    )
+    .await?;
     let blob3_name = get_blob_name(recording);
-    let blob3_tags = HashMap::from([("tagged".to_string(), "true".to_string())]);
     create_test_blob(
         &container_client_1.blob_client(&blob3_name.clone()),
-        Some(RequestContent::from("six seven".as_bytes().into())),
-        Some(BlockBlobClientUploadOptions::default().with_tags(blob3_tags.clone())),
+        Some(RequestContent::from("hello world".as_bytes().into())),
+        Some(
+            BlockBlobClientUploadOptions::default()
+                .with_tags(HashMap::from([("foo".to_string(), "bar".to_string())])),
+        ),
     )
     .await?;
 
-    // Sleep in live and record modes to allow tags to be indexed on the service
-    if ctx.recording().test_mode() == TestMode::Live
-        || ctx.recording().test_mode() == TestMode::Record
-    {
-        time::sleep(Duration::from_secs(15)).await;
-    }
-
-    // Find "hello world" blob by its tag {"foo": "bar"}
-    let blobs: Vec<_> = service_client
-        .find_blobs_by_tags("\"foo\"='bar'", None)?
-        .try_collect()
-        .await?;
-    assert!(
-        blobs
+    // Find "hello world" blob by its tag {"foo": "bar"}.
+    // In live mode, poll until tags are indexed (up to 60s total timeout).
+    // In record mode, use a fixed 15s sleep.
+    poll_until(ctx.recording(), || async {
+        let blobs: Vec<_> = service_client
+            .find_blobs_by_tags("\"foo\"='bar'", None)?
+            .try_collect()
+            .await?;
+        Ok(blobs
             .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob1_name),
-        "Failed to find \"{blob1_name}\" in filtered blob results."
-    );
+            .any(|blob| blob.name.as_deref() == Some(blob3_name.as_str())))
+    })
+    .await?;
+    {
+        let blobs: Vec<_> = service_client
+            .find_blobs_by_tags("\"foo\"='bar'", None)?
+            .try_collect()
+            .await?;
+        assert!(
+            blobs
+                .iter()
+                .any(|blob| blob.name.as_deref() == Some(blob3_name.as_str())),
+            "Failed to find \"{blob3_name}\" in filtered blob results."
+        );
+    }
 
     // Find "ferris the crab" blob by its tag {"fizz": "buzz"}
     let blobs: Vec<_> = service_client
@@ -243,20 +249,20 @@ async fn test_find_blobs_by_tags_service(ctx: TestContext) -> Result<(), Box<dyn
     assert!(
         blobs
             .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob2_name),
-        "Failed to find \"{blob2_name}\" in filtered blob results."
+            .any(|blob| blob.name.as_deref() == Some(blob1_name.as_str())),
+        "Failed to find \"{blob1_name}\" in filtered blob results."
     );
 
     // Find "six seven" blob by its tag {"tagged": "true"}
     let blobs: Vec<_> = service_client
-        .find_blobs_by_tags(&format_filter_expression(&blob3_tags)?, None)?
+        .find_blobs_by_tags(&format_filter_expression(&blob2_tags)?, None)?
         .try_collect()
         .await?;
     assert!(
         blobs
             .iter()
-            .any(|blob| blob.name.as_ref().unwrap() == &blob3_name),
-        "Failed to find \"{blob3_name}\" in filtered blob results."
+            .any(|blob| blob.name.as_deref() == Some(blob2_name.as_str())),
+        "Failed to find \"{blob2_name}\" in filtered blob results."
     );
 
     container_client_1.delete(None).await?;

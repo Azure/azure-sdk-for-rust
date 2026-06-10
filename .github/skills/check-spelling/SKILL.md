@@ -44,7 +44,7 @@ Example `sdk/keyvault/.cspell.json`:
 Seldom used words can be ignored within the file they are used by adding an appropriate comment e.g.:
 
 ```js
-// cspell:ignore <word>
+// cspell:ignore {word}
 ```
 
 ## Testing

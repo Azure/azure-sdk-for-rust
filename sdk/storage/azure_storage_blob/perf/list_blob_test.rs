@@ -5,12 +5,11 @@ use std::sync::{Arc, OnceLock};
 
 use azure_core::{error::ErrorKind, http::Url, Bytes};
 use azure_core_test::{
-    perf::{
-        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        PerfTestOptionKind,
-    },
+    perf::{CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata},
     TestContext,
 };
+
+use super::options;
 use azure_storage_blob::BlobContainerClient;
 use azure_storage_blob_test::get_test_credential;
 use futures::{FutureExt, TryStreamExt};
@@ -41,27 +40,7 @@ impl ListBlobTest {
         PerfTestMetadata {
             name: "list_blob",
             description: "List blobs in a container",
-            options: vec![
-                PerfTestOption {
-                    name: "count",
-                    display_message: "The number of blobs to list",
-                    mandatory: true,
-                    short_activator: Some('c'),
-                    long_activator: "count",
-                    expected_args_len: 1,
-                    option_type: PerfTestOptionKind::Uint32,
-                    ..Default::default()
-                },
-                PerfTestOption {
-                    name: "endpoint",
-                    display_message: "The endpoint of the blob storage",
-                    mandatory: false,
-                    short_activator: Some('e'),
-                    long_activator: "endpoint",
-                    expected_args_len: 1,
-                    ..Default::default()
-                },
-            ],
+            options: vec![options::count(), options::endpoint()],
             create_test: Self::create_list_blob_test,
         }
     }

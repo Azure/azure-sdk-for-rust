@@ -29,7 +29,8 @@ class Channels {
       [string] $content = Get-Content -Raw $path
       [Channels]::_stable = if ($content -Match 'channel\s+=\s+"([^"]+)"') {
         $Matches[1]
-      } else {
+      }
+      else {
         Write-Warning "Failed to get stable channel from $path"
         'stable'
       }
@@ -43,7 +44,8 @@ class Channels {
       [string] $content = Get-Content -Raw $path
       [Channels]::_msrv = if ($content -Match 'rust-version\s+=\s+"([^"]+)"') {
         $Matches[1]
-      } else {
+      }
+      else {
         Write-Warning "Failed to get MSRV from $path"
         'stable'
       }
@@ -55,10 +57,10 @@ class Channels {
   # Any other value (e.g. an explicit version) is passed through unchanged.
   static [string] Resolve([string] $toolchain) {
     $resolved = switch ($toolchain.ToLower()) {
-      'stable'  { [Channels]::Stable() }
+      'stable' { [Channels]::Stable() }
       'nightly' { [Channels]::Nightly() }
-      'msrv'    { [Channels]::MSRV() }
-      default   { $toolchain }
+      'msrv' { [Channels]::MSRV() }
+      default { $toolchain }
     }
     return $resolved
   }
@@ -100,18 +102,14 @@ function Get-AllPackageInfoFromRepo ([string] $ServiceDirectory) {
       $searchPath = Join-Path $searchPath $ServiceDirectory -Resolve
     }
 
-    # Enumerate packages that do not have "test" as an independent word in the
-    # name.
-    # Examples:
-    # "azure_core" - included
-    # "azure_core_test" - excluded
-    # "azure_attestation" - included
+    # Enumerate publishable workspace packages in the selected service directory.
+    # Internal test helper crates should set `publish = false` in their Cargo.toml
+    # so package discovery does not need to special-case names.
     $packages = Invoke-LoggedCommand "cargo metadata --format-version 1 --no-deps" -GroupOutput
     | ConvertFrom-Json -AsHashtable
     | Select-Object -ExpandProperty packages
     | Where-Object {
       $_.manifest_path.StartsWith($searchPath) `
-        -and ("test" -notin ($_.name -split '_')) `
         -and ($null -eq $_.publish)
     }
 

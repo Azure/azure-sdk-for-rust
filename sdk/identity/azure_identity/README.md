@@ -16,7 +16,7 @@ cargo add azure_identity
 
 ### Prerequisites
 
-* An [Azure subscription].
+- An [Azure subscription].
 
 ### Authenticate during local development
 
@@ -56,7 +56,7 @@ let client = SecretClient::new("https://TODO.vault.azure.net/", credential.clone
 
 This example demonstrates how to authenticate an Entra application with an access token from a managed identity. See [Configure an application to trust a managed identity](https://learn.microsoft.com/entra/workload-id/workload-identity-federation-config-app-trust-managed-identity) for more information about this scenario. This example shows a Key Vault client, however the same approach can work with any Azure SDK client that uses a `TokenCredential`.
 
-```rust no_run
+```rust ignore client-assertion
 use azure_core::credentials::TokenCredential;
 use azure_core::http::ClientMethodOptions;
 use azure_identity::{ClientAssertion, ClientAssertionCredential, ManagedIdentityCredential};

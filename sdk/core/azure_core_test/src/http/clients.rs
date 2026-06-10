@@ -14,6 +14,7 @@ use std::fmt;
 /// # Examples
 ///
 /// ```
+/// # use azure_core_examples::secrets as azure_security_keyvault_secrets;
 /// use azure_core::{
 ///     http::{headers::Headers, AsyncRawResponse, ClientOptions, StatusCode, Transport},
 ///     Bytes,

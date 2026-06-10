@@ -5,7 +5,8 @@
 
 use crate::{
     diagnostics::{
-        DiagnosticsContextBuilder, PipelineType, TransportHttpVersion, TransportSecurity,
+        DiagnosticsContextBuilder, ExecutionContext, PipelineType, RequestSentStatus,
+        TransportHttpVersion, TransportSecurity,
     },
     driver::{
         cache::{PartitionKeyRangeCache, PkRangeFetchResult},
@@ -25,13 +26,13 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        DatabaseProperties, DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
+        DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
         ThroughputControlGroupSnapshot,
     },
-    ActivityId, CosmosResponse, DiagnosticsOptions,
+    ActivityId, CosmosResponse,
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
@@ -221,8 +222,10 @@ impl CosmosDriver {
         )?;
         let user_agent = Self::user_agent_header(runtime);
         let props = Self::fetch_account_properties_with_transport(
+            runtime,
             &metadata_transport,
             account,
+            None,
             &user_agent,
         )
         .await?;
@@ -241,8 +244,14 @@ impl CosmosDriver {
         let metadata_transport = transport.get_metadata_transport(&endpoint)?;
         let user_agent =
             azure_core::http::headers::HeaderValue::from(runtime.user_agent().as_str().to_owned());
-        Self::fetch_account_properties_with_transport(&metadata_transport, account, &user_agent)
-            .await
+        Self::fetch_account_properties_with_transport(
+            runtime,
+            &metadata_transport,
+            account,
+            None,
+            &user_agent,
+        )
+        .await
     }
 
     /// Probes the gateway's HTTP version and returns the negotiated version.
@@ -367,15 +376,83 @@ impl CosmosDriver {
             .expect("auth is always present when cloned from existing AccountReference")
     }
 
-    /// Fetches account properties using a specific adaptive transport.
+    /// Builds the shared per-request `DiagnosticsContextBuilder` envelope used by both
+    /// the operation pipeline (`execute_operation_direct` Step 7) and the off-pipeline
+    /// account-properties bootstrap fetch. Returns the builder plus the resolved
+    /// `TransportSecurity` for the endpoint.
+    fn new_diagnostics_envelope(
+        runtime: &CosmosDriverRuntime,
+        activity_id: crate::models::ActivityId,
+        endpoint: &AccountEndpoint,
+    ) -> (DiagnosticsContextBuilder, TransportSecurity) {
+        let mut diagnostics = DiagnosticsContextBuilder::new(
+            activity_id,
+            Arc::new(crate::options::DiagnosticsOptions::default()),
+        );
+        diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
+        diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
+        #[cfg(feature = "fault_injection")]
+        if runtime.fault_injection_enabled() {
+            diagnostics.set_fault_injection_enabled(true);
+        }
+        let transport_security =
+            if bool::from(runtime.connection_pool().emulator_server_cert_validation())
+                && is_emulator_host(endpoint)
+            {
+                TransportSecurity::EmulatorWithInsecureCertificates
+            } else {
+                TransportSecurity::Secure
+            };
+        (diagnostics, transport_security)
+    }
+
+    /// Fetches account properties using a specific adaptive transport. Off-pipeline by
+    /// design (the driver / operation pipeline does not yet exist at bootstrap, nor for
+    /// the 5-minute background refresh callback) but still produces a `DiagnosticsContext`
+    /// matching the data-plane shape so error consumers see the same fields.
     async fn fetch_account_properties_with_transport(
+        runtime: &CosmosDriverRuntime,
         transport: &super::transport::adaptive_transport::AdaptiveTransport,
         account: &AccountReference,
+        region: Option<&crate::options::Region>,
         user_agent: &azure_core::http::headers::HeaderValue,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
+        let endpoint_url = endpoint.join_path("/");
+        // Diagnostics label tracks whether this is the global bootstrap probe (None)
+        // or a regional-fallback refresh (Some). Without this, regional refresh
+        // failures render with `region = None` and consumers lose the signal that
+        // distinguishes "primary down" from "this specific region down".
+        let cosmos_endpoint = match region {
+            Some(region) => CosmosEndpoint::regional(region.clone(), endpoint_url.clone()),
+            None => CosmosEndpoint::global(endpoint_url.clone()),
+        };
+
+        // Off-pipeline envelope: same shape as the operation pipeline's Step 7 so
+        // err.diagnostics() exposes the same fields data-plane callers see.
+        let (mut diagnostics, transport_security) = Self::new_diagnostics_envelope(
+            runtime,
+            crate::models::ActivityId::new_uuid(),
+            &endpoint,
+        );
+        // NOTE: `transport.diagnostics_http_version()` reflects the *currently configured*
+        // version on the adaptive transport. For the very first bootstrap call this is the
+        // pre-negotiation policy (the HTTP/2 probe in `CosmosDriver::initialize` runs AFTER
+        // this fetch in the `with_runtime` path used by `new`). Subsequent refreshes and
+        // `_with_version` calls record the post-negotiation value. Probing first would
+        // require a separate diagnostics envelope around the probe itself; we accept the
+        // pre-negotiation label on bootstrap as the lower-risk tradeoff.
+        let request_handle = diagnostics.start_request(
+            ExecutionContext::Initial,
+            PipelineType::Metadata,
+            transport_security,
+            transport.diagnostics_kind(),
+            transport.diagnostics_http_version(),
+            &cosmos_endpoint,
+        );
+
         let mut request = HttpRequest {
-            url: endpoint.join_path("/"),
+            url: endpoint_url,
             method: azure_core::http::Method::Get,
             headers: azure_core::http::headers::Headers::new(),
             body: None,
@@ -384,7 +461,17 @@ impl CosmosDriver {
             evaluation_collector: None,
         };
         cosmos_headers::apply_cosmos_headers(&mut request, user_agent);
-        request_signing::sign_request(
+
+        // Tag the request so `FaultInjectingHttpClient` can match
+        // `FaultOperationType::MetadataReadDatabaseAccount` rules against the
+        // bootstrap fetch. Mirrors the data-plane tag in `operation_pipeline`.
+        #[cfg(feature = "fault_injection")]
+        cosmos_headers::apply_fault_injection_operation_tag(
+            &mut request.headers,
+            crate::fault_injection::FaultOperationType::MetadataReadDatabaseAccount,
+        );
+
+        if let Err(err) = request_signing::sign_request(
             &mut request,
             account.auth(),
             &AuthorizationContext::new(
@@ -394,28 +481,94 @@ impl CosmosDriver {
             ),
         )
         .await
-        .map_err(|err| {
-            crate::error::CosmosErrorBuilder::from_error(err)
+        {
+            // Sign failure: request never went on the wire.
+            let sign_status = err.status();
+            diagnostics.fail_transport_request(
+                request_handle,
+                err.to_string(),
+                RequestSentStatus::NotSent,
+                sign_status,
+            );
+            diagnostics.set_operation_status(sign_status.status_code(), sign_status.sub_status());
+            return Err(crate::error::CosmosErrorBuilder::from_error(err)
                 .with_context(format!("AccountProperties sign_request for {endpoint}"))
-                .build()
-        })?;
+                .with_diagnostics(Arc::new(diagnostics.complete()))
+                .build());
+        }
 
-        let response = transport.send(&request).await.map_err(|e| {
-            crate::error::CosmosErrorBuilder::from_error(e.error)
-                .with_context(format!("AccountProperties fetch from {endpoint}"))
-                .build()
-        })?;
-        let props = Self::parse_account_properties_payload(&response.body).map_err(|err| {
-            let cosmos_headers =
-                crate::models::CosmosResponseHeaders::from_headers(&response.headers);
-            crate::error::CosmosErrorBuilder::from_error(err)
+        let response = match transport.send(&request).await {
+            Ok(r) => r,
+            Err(e) => {
+                let send_status = e.error.status();
+                diagnostics.fail_transport_request(
+                    request_handle,
+                    e.error.to_string(),
+                    e.request_sent,
+                    send_status,
+                );
+                diagnostics
+                    .set_operation_status(send_status.status_code(), send_status.sub_status());
+                return Err(crate::error::CosmosErrorBuilder::from_error(e.error)
+                    .with_context(format!("AccountProperties fetch from {endpoint}"))
+                    .with_diagnostics(Arc::new(diagnostics.complete()))
+                    .build());
+            }
+        };
+        let cosmos_headers = crate::models::CosmosResponseHeaders::from_headers(&response.headers);
+        let status_code = azure_core::http::StatusCode::from(response.status);
+        let sub_status = cosmos_headers.substatus;
+        let cosmos_status = crate::error::CosmosStatus::from_parts(status_code, sub_status);
+
+        diagnostics.record_response(request_handle, status_code, &cosmos_headers);
+
+        // Gate parsing on HTTP status. Non-2xx bodies (5xx envelopes, AAD 401/403, proxy text)
+        // would otherwise serde-fail and surface as `SERIALIZATION_RESPONSE_BODY_INVALID`.
+        // 3xx is treated as non-success here as a safety net: the production reqwest client
+        // built by `DefaultHttpClientFactory` keeps reqwest's default `Policy::limited(10)` and
+        // transparently follows 3xx redirects on the wire (see
+        // `bootstrap_transport_follows_3xx_redirects_against_real_server` for the end-to-end
+        // proof). A 3xx that still reaches this branch therefore means a redirect
+        // the transport could not follow — hop-limit exhausted, missing/relative
+        // Location, scheme downgrade blocked by reqwest, etc. — and we surface it
+        // as `CosmosError` with the upstream status preserved rather than letting
+        // the redirect body parse-fail.
+        if !status_code.is_success() {
+            diagnostics.set_operation_status(status_code, sub_status);
+            let diagnostics_arc = Arc::new(diagnostics.complete());
+            return Err(crate::error::CosmosError::builder()
+                .with_status(cosmos_status)
                 .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
+                    response.body,
                     cosmos_headers,
                 ))
-                .with_context(format!("AccountProperties payload from {endpoint}"))
-                .build()
-        })?;
+                .with_diagnostics(diagnostics_arc)
+                .with_message(format!(
+                    "AccountProperties fetch from {endpoint} returned HTTP {status_code}"
+                ))
+                .build());
+        }
+
+        let props = match Self::parse_account_properties_payload(&response.body) {
+            Ok(props) => props,
+            Err(err) => {
+                // Operation-status reflects the synthetic serialization failure, not
+                // the wire 2xx — keeps diagnostics consistent with the data-plane
+                // pipeline, where parse failures rebrand operation status.
+                let parse_status = err.status();
+                diagnostics
+                    .set_operation_status(parse_status.status_code(), parse_status.sub_status());
+                let diagnostics_arc = Arc::new(diagnostics.complete());
+                return Err(crate::error::CosmosErrorBuilder::from_error(err)
+                    .with_response_parts(crate::models::CosmosResponsePayload::new(
+                        crate::models::ResponseBody::NoPayload,
+                        cosmos_headers,
+                    ))
+                    .with_diagnostics(diagnostics_arc)
+                    .with_context(format!("AccountProperties payload from {endpoint}"))
+                    .build());
+            }
+        };
         tracing::info!(
             endpoint = %endpoint,
             write_region = ?props.write_region(),
@@ -491,8 +644,10 @@ impl CosmosDriver {
 
         let user_agent = Self::user_agent_header(runtime);
         match Self::fetch_account_properties_with_transport(
+            runtime,
             &metadata_transport,
             account,
+            None,
             &user_agent,
         )
         .await
@@ -555,7 +710,7 @@ impl CosmosDriver {
         };
 
         // Parse regional URLs once, filtering out the primary and any invalid URLs.
-        let regional_endpoints: Vec<Url> = cached_props
+        let regional_endpoints: Vec<(crate::options::Region, Url)> = cached_props
             .readable_locations
             .iter()
             .filter_map(|loc| {
@@ -564,7 +719,7 @@ impl CosmosDriver {
                 if ep == *primary_endpoint {
                     None
                 } else {
-                    Some(url)
+                    Some((loc.name.clone(), url))
                 }
             })
             .collect();
@@ -579,7 +734,7 @@ impl CosmosDriver {
             "primary endpoint refresh failed; trying regional endpoints"
         );
 
-        for regional_url in &regional_endpoints {
+        for (region, regional_url) in &regional_endpoints {
             let regional_account = Self::with_endpoint(account, regional_url.clone());
             let regional_ep = AccountEndpoint::from(&regional_account);
             let current_transport = transport_holder.load_full();
@@ -590,8 +745,10 @@ impl CosmosDriver {
 
             let user_agent = Self::user_agent_header(runtime);
             match Self::fetch_account_properties_with_transport(
+                runtime,
                 &regional_transport,
                 &regional_account,
+                Some(region),
                 &user_agent,
             )
             .await
@@ -714,39 +871,6 @@ impl CosmosDriver {
         let db_ref = DatabaseReference::from_name(self.account().clone(), db_name.to_owned());
         let options = OperationOptions::default();
 
-        let db_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_database(db_ref.clone()),
-                options.clone(),
-            )
-            .await?;
-        let db_headers = db_result.headers().clone();
-        let db_diagnostics = db_result.diagnostics();
-        let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("failed to deserialize database response")
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    db_headers.clone(),
-                ))
-                .with_diagnostics(db_diagnostics.clone())
-                .with_source(e)
-                .build()
-        })?;
-        let db_rid = db_props.system_properties.rid.ok_or_else(|| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("database response missing _rid")
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    db_headers,
-                ))
-                .with_diagnostics(db_diagnostics)
-                .with_source(std::io::Error::other("missing _rid"))
-                .build()
-        })?;
-
         let container_result = self
             .execute_singleton_operation(
                 CosmosOperation::read_container_by_name(db_ref, container_name.to_owned()),
@@ -778,92 +902,39 @@ impl CosmosDriver {
                     .with_message("container response missing _rid")
                     .with_response_parts(crate::models::CosmosResponsePayload::new(
                         crate::models::ResponseBody::NoPayload,
-                        container_headers,
+                        container_headers.clone(),
                     ))
-                    .with_diagnostics(container_diagnostics)
+                    .with_diagnostics(container_diagnostics.clone())
                     .with_source(std::io::Error::other("missing _rid"))
                     .build()
             })?;
 
-        Ok(ContainerReference::new(
-            self.account().clone(),
-            db_props.id.into_owned(),
-            db_rid,
-            container_props.id.clone().into_owned(),
-            container_rid,
-            &container_props,
-        ))
-    }
-
-    async fn fetch_container_by_rid(
-        &self,
-        db_rid: &str,
-        container_rid: &str,
-    ) -> crate::error::Result<ContainerReference> {
-        let db_ref = DatabaseReference::from_rid(self.account().clone(), db_rid.to_owned());
-        let options = OperationOptions::default();
-
-        let db_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_database(db_ref.clone()),
-                options.clone(),
-            )
-            .await?;
-        let db_headers = db_result.headers().clone();
-        let db_diagnostics = db_result.diagnostics();
-        let db_props: DatabaseProperties = db_result.into_body().into_single().map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message(format!(
-                    "failed to deserialize database response (db_rid='{db_rid}'): {e}"
-                ))
-                .with_response_parts(crate::models::CosmosResponsePayload::new(
-                    crate::models::ResponseBody::NoPayload,
-                    db_headers,
-                ))
-                .with_diagnostics(db_diagnostics)
-                .with_source(e)
-                .build()
-        })?;
-        let resolved_db_rid = db_props
-            .system_properties
-            .rid
-            .clone()
-            .unwrap_or_else(|| db_rid.to_owned());
-
-        let container_result = self
-            .execute_singleton_operation(
-                CosmosOperation::read_container_by_rid(db_ref, container_rid.to_owned()),
-                options,
-            )
-            .await?;
-        let container_headers = container_result.headers().clone();
-        let container_diagnostics = container_result.diagnostics();
-        let container_props: ContainerProperties = container_result
-            .into_body()
-            .into_single()
-            .map_err(|e| {
-                crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+        // Derive the database RID from the container RID's encoded byte
+        // layout. This avoids an extra `read_database` round-trip — the
+        // first 4 decoded bytes of the container RID are the parent database RID.
+        let db_rid = crate::models::resource_id::ResourceId::new(container_rid.clone())
+            .database_rid()
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
-                        "failed to deserialize container response (db_rid='{db_rid}', container_rid='{container_rid}'): {e}"
+                        "failed to extract database RID from container RID '{container_rid}'"
                     ))
-                    .with_response_parts(crate::models::CosmosResponsePayload::new(crate::models::ResponseBody::NoPayload, container_headers))
+                    .with_response_parts(crate::models::CosmosResponsePayload::new(
+                        crate::models::ResponseBody::NoPayload,
+                        container_headers,
+                    ))
                     .with_diagnostics(container_diagnostics)
-                    .with_source(e)
+                    .with_source(std::io::Error::other("invalid container _rid"))
                     .build()
             })?;
-        let resolved_container_rid = container_props
-            .system_properties
-            .rid
-            .clone()
-            .unwrap_or_else(|| container_rid.to_owned());
 
         Ok(ContainerReference::new(
             self.account().clone(),
-            db_props.id.into_owned(),
-            resolved_db_rid,
+            db_name.to_owned(),
+            db_rid.as_str().to_owned(),
             container_props.id.clone().into_owned(),
-            resolved_container_rid,
+            container_rid,
             &container_props,
         ))
     }
@@ -1516,32 +1587,14 @@ impl CosmosDriver {
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        // Step 7: Initialize diagnostics
-        let mut diagnostics_builder = DiagnosticsContextBuilder::new(
-            activity_id.clone(),
-            std::sync::Arc::new(DiagnosticsOptions::default()),
-        );
-        diagnostics_builder.set_cpu_monitor(self.runtime.cpu_monitor().clone());
-        diagnostics_builder.set_machine_id(Arc::clone(self.runtime.machine_id()));
-        if self.runtime.fault_injection_enabled() {
-            #[cfg(feature = "fault_injection")]
-            diagnostics_builder.set_fault_injection_enabled(true);
-        }
+        // Step 7: Initialize diagnostics (shared envelope shape with the bootstrap fetch).
+        let (diagnostics_builder, transport_security) =
+            Self::new_diagnostics_envelope(&self.runtime, activity_id.clone(), &endpoint);
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
         } else {
             PipelineType::Metadata
-        };
-        let transport_security = if bool::from(
-            self.runtime
-                .connection_pool()
-                .emulator_server_cert_validation(),
-        ) && is_emulator_host(&endpoint)
-        {
-            TransportSecurity::EmulatorWithInsecureCertificates
-        } else {
-            TransportSecurity::Secure
         };
 
         let user_agent = azure_core::http::headers::HeaderValue::from(
@@ -1645,38 +1698,6 @@ impl CosmosDriver {
                         crate::error::CosmosErrorBuilder::from_error(err)
                             .with_context(format!(
                                 "resolve container by name (db='{db_name_owned}', container='{container_name_owned}')"
-                            ))
-                            .build()
-                    })
-            })
-            .await?;
-
-        Ok(resolved.as_ref().clone())
-    }
-
-    /// Resolves a container by database RID and container RID.
-    ///
-    /// Attempts to resolve from `ContainerCache` first. On cache miss, fetches
-    /// metadata from the service and populates the cache.
-    pub async fn resolve_container_by_rid(
-        &self,
-        db_rid: &str,
-        container_rid: &str,
-    ) -> crate::error::Result<ContainerReference> {
-        let endpoint = self.account().endpoint().as_str().to_owned();
-        let db_rid_owned = db_rid.to_owned();
-        let container_rid_owned = container_rid.to_owned();
-
-        let resolved = self
-            .runtime
-            .container_cache()
-            .get_or_fetch_by_rid(&endpoint, container_rid, || async move {
-                self.fetch_container_by_rid(&db_rid_owned, &container_rid_owned)
-                    .await
-                    .map_err(|err| {
-                        crate::error::CosmosErrorBuilder::from_error(err)
-                            .with_context(format!(
-                                "resolve container by rid (db_rid='{db_rid_owned}', container_rid='{container_rid_owned}')"
                             ))
                             .build()
                     })
@@ -1956,6 +1977,9 @@ mod tests {
         Success,
         Http2Incompatible,
         ConnectionError,
+        /// 503 body the gateway returns under load (Cosmos-flavored JSON, no `_self`).
+        /// Without status-gating the driver would relabel it as a deserialization failure.
+        ServiceUnavailable503,
     }
 
     #[derive(Debug)]
@@ -1987,6 +2011,11 @@ mod tests {
                         .build(),
                     crate::diagnostics::RequestSentStatus::NotSent,
                 )),
+                ResponsePlan::ServiceUnavailable503 => Ok(HttpResponse {
+                    status: 503,
+                    headers: Headers::new(),
+                    body: br#"{"code":"ServiceUnavailable","message":"pgcosmos extension is still starting; retry request shortly"}"#.to_vec(),
+                }),
             }
         }
     }
@@ -2827,5 +2856,625 @@ mod tests {
                 .await;
 
         assert!(result.is_err(), "should fail without previous props");
+    }
+
+    /// Regression: 503 with a Cosmos error envelope must surface as upstream HTTP status,
+    /// not relabeled as `SERIALIZATION_RESPONSE_BODY_INVALID` ("missing field `_self`").
+    #[tokio::test]
+    async fn fetch_account_properties_surfaces_5xx_body_as_status_error() {
+        let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
+            plan: ResponsePlan::ServiceUnavailable503,
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let err = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+        )
+        .await
+        .expect_err(
+            "503 ServiceUnavailable response with a non-empty JSON envelope must surface as an error",
+        );
+
+        let status = err.status();
+        let rendered = format!("{err:?}");
+
+        assert_ne!(
+            status,
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "5xx body must NOT be reported as a deserialization failure; \
+             expected an upstream-status error (e.g. 503 ServiceUnavailable). \
+             Got status={status:?} err={rendered}"
+        );
+        assert!(
+            !rendered.contains("missing field `_self`"),
+            "the user-visible error must not leak the internal \
+             `missing field \\`_self\\`` serde detail. Got: {rendered}"
+        );
+        assert_eq!(
+            u16::from(status.status_code()),
+            503,
+            "the surfaced error should reflect the upstream HTTP 503 status. \
+             Got status={status:?} err={rendered}"
+        );
+        assert_eq!(
+            status.sub_status(),
+            None,
+            "no x-ms-substatus header should remain None, not Some(0). Got: {status:?}"
+        );
+        let diag = err.diagnostics().expect(
+            "Wire-attached diagnostics must be present once the metadata fetch is enveloped",
+        );
+        assert_eq!(
+            diag.requests().len(),
+            1,
+            "single bootstrap request must produce exactly one request record. Got: {diag:?}"
+        );
+        let req = &diag.requests()[0];
+        assert_eq!(
+            u16::from(req.status().status_code()),
+            503,
+            "request diagnostics must echo the upstream HTTP 503. Got: {req:?}"
+        );
+        assert!(
+            req.endpoint().contains("test.documents.azure.com"),
+            "request diagnostics must record the regional endpoint contacted. Got: {req:?}"
+        );
+        assert!(
+            err.response().is_some(),
+            "with_response_parts + with_diagnostics must promote the error to Wire, exposing response(). Got: {err:?}"
+        );
+    }
+
+    // Coverage for the other non-2xx shapes the status-gating fix must handle: AAD 401
+    // envelopes, plain-text proxy bodies, empty bodies, oversize bodies, and 2xx schema mismatches.
+
+    /// Minimal `TransportClient` returning one canned `(status, body)`.
+    /// Lets each coverage-gap test declare its exact wire response without growing `ResponsePlan`.
+    #[derive(Debug)]
+    struct RawResponseClient {
+        status: u16,
+        body: Vec<u8>,
+    }
+
+    #[async_trait]
+    impl TransportClient for RawResponseClient {
+        async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Ok(HttpResponse {
+                status: self.status,
+                headers: Headers::new(),
+                body: self.body.clone(),
+            })
+        }
+    }
+
+    async fn drive_fetch_with(
+        status: u16,
+        body: Vec<u8>,
+    ) -> std::result::Result<crate::driver::cache::AccountProperties, crate::error::CosmosError>
+    {
+        let client: Arc<dyn TransportClient> = Arc::new(RawResponseClient { status, body });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+        )
+        .await
+    }
+
+    /// AAD 401 envelope on GET / (RBAC race / token expiry / IMDS hiccup) must surface
+    /// upstream HTTP 401, not the synthetic `SERIALIZATION_RESPONSE_BODY_INVALID`.
+    #[tokio::test]
+    async fn fetch_account_properties_surfaces_aad_401_envelope() {
+        let body =
+            br#"{"code":"Unauthorized","message":"The input authorization token can't serve the request."}"#
+                .to_vec();
+        let err = drive_fetch_with(401, body)
+            .await
+            .expect_err("401 must surface as an error");
+
+        let status = err.status();
+        let rendered = format!("{err:?}");
+
+        assert_ne!(
+            status,
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "401 AAD envelope must not be relabeled as a serde failure. Got: {rendered}"
+        );
+        assert_eq!(
+            u16::from(status.status_code()),
+            401,
+            "expected the upstream HTTP 401 to be preserved. Got status={status:?} err={rendered}"
+        );
+        assert!(
+            !rendered.contains("missing field `_self`"),
+            "must not leak the internal serde `missing field _self` detail. Got: {rendered}"
+        );
+    }
+
+    /// Plain-text non-2xx body (proxy / LB / fault injector) must surface upstream HTTP status,
+    /// not the opaque "expected value at line 1 column 1" serde error. The body must be
+    /// reachable verbatim via `wire_payload()` for upstream-log correlation (the message
+    /// itself no longer embeds it now that diagnostics are wired in).
+    #[tokio::test]
+    async fn fetch_account_properties_surfaces_plain_text_non_2xx_body() {
+        let err = drive_fetch_with(502, b"Bad Gateway - injected upstream proxy fault".to_vec())
+            .await
+            .expect_err("502 must surface as an error");
+
+        let status = err.status();
+        let rendered = format!("{err:?}");
+
+        assert_ne!(
+            status,
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "plain-text non-2xx body must not be relabeled as a serde failure. Got: {rendered}"
+        );
+        assert_eq!(
+            u16::from(status.status_code()),
+            502,
+            "expected upstream HTTP 502 to be preserved. Got status={status:?} err={rendered}"
+        );
+        let payload = err
+            .wire_payload()
+            .expect("non-2xx must attach the upstream wire payload for correlation");
+        let body_text = match payload.body() {
+            crate::models::ResponseBody::Bytes(b) => std::str::from_utf8(b).unwrap_or_default(),
+            _ => "",
+        };
+        assert!(
+            body_text.contains("Bad Gateway"),
+            "wire_payload() must preserve the upstream body verbatim. Got: {body_text}"
+        );
+    }
+
+    /// Empty body on a non-2xx (some intermediaries strip bodies entirely) must not panic
+    /// and must still surface the upstream HTTP status.
+    #[tokio::test]
+    async fn fetch_account_properties_surfaces_empty_non_2xx_body() {
+        let err = drive_fetch_with(503, Vec::new())
+            .await
+            .expect_err("503 with empty body must still surface as an error");
+
+        let status = err.status();
+        let rendered = format!("{err:?}");
+
+        assert_ne!(
+            status,
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "empty non-2xx body must not be relabeled as a serde failure. Got: {rendered}"
+        );
+        assert_eq!(
+            u16::from(status.status_code()),
+            503,
+            "expected upstream HTTP 503 to be preserved. Got status={status:?} err={rendered}"
+        );
+    }
+
+    /// Oversize bodies must be preserved verbatim via `wire_payload()` (no in-message
+    /// excerpting / truncation any more). Diagnostics still bounds log volume because
+    /// per-request entries don't carry the body — only headers, status, and timing.
+    #[tokio::test]
+    async fn fetch_account_properties_preserves_large_non_2xx_body_via_wire_payload() {
+        let mut body = vec![b'A'; 600];
+        body.extend_from_slice(b"TAIL_SENTINEL");
+        let err = drive_fetch_with(500, body.clone())
+            .await
+            .expect_err("500 must surface as an error");
+
+        let rendered = format!("{err}");
+        assert!(
+            !rendered.contains("…[truncated]"),
+            "error message must no longer embed a body excerpt or truncation marker. Got: {rendered}"
+        );
+        let payload = err
+            .wire_payload()
+            .expect("non-2xx must attach the wire payload");
+        let body_bytes: &[u8] = match payload.body() {
+            crate::models::ResponseBody::Bytes(b) => b.as_ref(),
+            _ => &[],
+        };
+        assert_eq!(
+            body_bytes.len(),
+            body.len(),
+            "wire_payload() must preserve the full upstream body verbatim"
+        );
+        assert!(
+            body_bytes.ends_with(b"TAIL_SENTINEL"),
+            "wire_payload() must not truncate the tail of the body"
+        );
+        assert_eq!(
+            u16::from(err.status().status_code()),
+            500,
+            "upstream HTTP 500 must still be preserved alongside the body"
+        );
+    }
+
+    /// Non-UTF-8-safe truncation used to require byte-then-lossy conversion; with diagnostics
+    /// wired in, the body is no longer rendered into the message at all, so multi-byte
+    /// codepoints simply round-trip through `wire_payload()`.
+    #[tokio::test]
+    async fn fetch_account_properties_handles_non_ascii_body_without_panicking() {
+        let mut body = vec![b'A'; 511];
+        body.extend_from_slice("é".as_bytes());
+        body.extend_from_slice(b"tail");
+
+        let err = drive_fetch_with(500, body.clone())
+            .await
+            .expect_err("500 must surface as an error");
+
+        let payload = err
+            .wire_payload()
+            .expect("non-2xx must attach the wire payload");
+        let body_bytes: &[u8] = match payload.body() {
+            crate::models::ResponseBody::Bytes(b) => b.as_ref(),
+            _ => &[],
+        };
+        assert_eq!(
+            body_bytes,
+            body.as_slice(),
+            "multi-byte codepoints must round-trip through wire_payload() unchanged"
+        );
+    }
+
+    /// 2xx with valid JSON but wrong shape must still surface as `SERIALIZATION_RESPONSE_BODY_INVALID`
+    /// — the status-gating fix must not swallow legitimate schema mismatches. Diagnostics are
+    /// still attached so the call site is debuggable.
+    #[tokio::test]
+    async fn fetch_account_properties_2xx_invalid_body_still_reports_serialization_error() {
+        let err = drive_fetch_with(200, br#"{"unexpected":"shape"}"#.to_vec())
+            .await
+            .expect_err("2xx with non-AccountProperties body must still error");
+
+        assert_eq!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "2xx parse failures must continue to be classified as \
+             SERIALIZATION_RESPONSE_BODY_INVALID (the status-gating fix only \
+             changes the non-2xx branch). Got: {err:?}"
+        );
+        assert!(
+            err.wire_payload().is_some(),
+            "parse-failure branch must still attach CosmosResponseHeaders / payload. Got: {err:?}"
+        );
+        assert!(
+            err.diagnostics().is_some(),
+            "parse-failure branch must also carry diagnostics now that the bootstrap fetch is enveloped. Got: {err:?}"
+        );
+        let diagnostics = err.diagnostics().expect("diagnostics attached above");
+        assert_eq!(
+            diagnostics.status(),
+            Some(&crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID),
+            "operation_status must reflect the synthetic serialization status, not the wire 200. \
+             Otherwise diagnostics consumers see an HTTP 200 alongside a parse error. Got: {:?}",
+            diagnostics.status()
+        );
+    }
+
+    /// 3xx (redirect) must surface as a non-success error with the wire status preserved,
+    /// not silently retried or relabeled. The bootstrap transport does NOT follow redirects
+    /// — that responsibility belongs to the transport layer when explicitly configured, not
+    /// to the off-pipeline metadata fetch. A 3xx therefore means "the gateway is telling us
+    /// to go elsewhere and we can't honor that here," which must be visible to the caller.
+    #[tokio::test]
+    async fn fetch_account_properties_surfaces_3xx_as_non_success_with_wire_payload() {
+        let body = br#"<html><body>Moved</body></html>"#.to_vec();
+        let err = drive_fetch_with(307, body.clone())
+            .await
+            .expect_err("3xx must surface as an error — the bootstrap fetch must not parse a redirect body as AccountProperties");
+
+        assert_ne!(
+            err.status(),
+            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            "3xx must NOT be reclassified as a deserialization failure (the parse must be skipped). Got: {err:?}"
+        );
+        assert_eq!(
+            u16::from(err.status().status_code()),
+            307,
+            "the surfaced error must reflect the upstream redirect status. Got: {err:?}"
+        );
+        let payload = err
+            .wire_payload()
+            .expect("3xx must attach the wire payload so callers can inspect the redirect body");
+        match payload.body() {
+            crate::models::ResponseBody::Bytes(b) => {
+                assert_eq!(
+                    b.as_ref(),
+                    body.as_slice(),
+                    "redirect body must round-trip through wire_payload() unchanged"
+                );
+            }
+            other => panic!("expected Bytes payload, got: {other:?}"),
+        }
+        assert!(
+            err.diagnostics().is_some(),
+            "3xx must also carry diagnostics, matching every other status-error path. Got: {err:?}"
+        );
+    }
+
+    /// Transport-layer failure (e.g. connection refused, TLS handshake error) must produce
+    /// a `CosmosError` with diagnostics attached. The request is marked `Sent` because
+    /// `transport.send` returned an error from the wire side — the request reached the
+    /// network stack but the transport layer rejected it. Without this, network failures
+    /// during the 5-min background refresh would lose the diagnostics envelope and become
+    /// unattributable text strings.
+    #[tokio::test]
+    async fn fetch_account_properties_transport_error_produces_diagnostics() {
+        #[derive(Debug)]
+        struct FailingTransportClient;
+
+        #[async_trait]
+        impl TransportClient for FailingTransportClient {
+            async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                // Synthesize a transport-layer failure: the wire never produced an HTTP
+                // status, only an azure_core / network-style error.
+                let err = crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                    .with_message("connection refused")
+                    .build();
+                Err(TransportError::new(
+                    err,
+                    crate::diagnostics::RequestSentStatus::Sent,
+                ))
+            }
+        }
+
+        let client: Arc<dyn TransportClient> = Arc::new(FailingTransportClient);
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let err = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+        )
+        .await
+        .expect_err("transport-layer failure must surface as an error");
+
+        let diag = err.diagnostics().expect(
+            "transport-error path must attach diagnostics so off-pipeline failures stay debuggable",
+        );
+        assert_eq!(
+            diag.requests().len(),
+            1,
+            "single bootstrap request must produce exactly one request record. Got: {diag:?}"
+        );
+        let req = &diag.requests()[0];
+        assert!(
+            req.endpoint().contains("test.documents.azure.com"),
+            "request diagnostics must record the endpoint contacted. Got: {req:?}"
+        );
+        assert_eq!(
+            req.request_sent(),
+            crate::diagnostics::RequestSentStatus::Sent,
+            "transport.send returned an error after invocation; the request reached the wire side. Got: {req:?}"
+        );
+    }
+
+    /// Sign-request failure (e.g. broken TokenCredential, IMDS unreachable) must produce
+    /// a `CosmosError` with diagnostics attached and the request marked `NotSent`. The
+    /// sign step runs before `transport.send`, so the request never reached the wire.
+    /// Without this, AAD/MSI failures during the off-pipeline bootstrap fetch would lose
+    /// the diagnostics envelope entirely.
+    #[tokio::test]
+    async fn fetch_account_properties_sign_failure_produces_diagnostics_not_sent() {
+        use azure_core::credentials::{AccessToken, TokenCredential, TokenRequestOptions};
+
+        #[derive(Debug)]
+        struct BrokenCredential;
+
+        #[async_trait]
+        impl TokenCredential for BrokenCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                Err(azure_core::Error::with_message(
+                    azure_core::error::ErrorKind::Credential,
+                    "broken credential",
+                ))
+            }
+        }
+
+        // Use a transport that would succeed if we ever got there, so a failed assertion
+        // produces an obviously-wrong shape rather than a confused network-error message.
+        let client: Arc<dyn TransportClient> = Arc::new(ScriptedClient {
+            plan: ResponsePlan::Success,
+        });
+        let transport =
+            crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(client);
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = AccountReference::with_credential(
+            Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            Arc::new(BrokenCredential),
+        );
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let err = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+        )
+        .await
+        .expect_err("sign_request failure must surface as an error");
+
+        let diag = err.diagnostics().expect(
+            "sign-failure path must attach diagnostics so credential/IMDS failures stay debuggable",
+        );
+        assert_eq!(
+            diag.requests().len(),
+            1,
+            "single bootstrap request entry must exist even when sign fails. Got: {diag:?}"
+        );
+        let req = &diag.requests()[0];
+        assert_eq!(
+            req.request_sent(),
+            crate::diagnostics::RequestSentStatus::NotSent,
+            "sign_request runs before transport.send; the request must be recorded as NotSent. Got: {req:?}"
+        );
+        assert!(
+            req.endpoint().contains("test.documents.azure.com"),
+            "request diagnostics must record the endpoint that would have been contacted. Got: {req:?}"
+        );
+    }
+
+    /// End-to-end proof that the production reqwest transport built by
+    /// `DefaultHttpClientFactory` actually follows 3xx redirects on the wire,
+    /// which is what the inline comment in `fetch_account_properties_with_transport`
+    /// promises. Without this test, a future change that flipped the redirect
+    /// policy to `Policy::none()` (or any other regression that stopped
+    /// following) would silently rebrand every endpoint fronted by a redirecting
+    /// proxy (custom Front Door / proxy returning 307/308) as a `CosmosError` 307,
+    /// even though no real client wants that behavior.
+    ///
+    /// Spins up a localhost HTTP/1.1 server that returns `307 Temporary
+    /// Redirect` with `Location: <self>/follow` on the first request and
+    /// the canonical `AccountProperties` JSON on the second, then drives a
+    /// real `ReqwestTransportClient` through `fetch_account_properties_with_transport`
+    /// and asserts the call succeeds with the JSON-derived `id`.
+    #[tokio::test]
+    async fn bootstrap_transport_follows_3xx_redirects_against_real_server() {
+        use std::sync::atomic::{AtomicU32, Ordering as AtomicOrdering};
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let port = addr.port();
+        let request_count = Arc::new(AtomicU32::new(0));
+
+        let counter = Arc::clone(&request_count);
+        let server = tokio::spawn(async move {
+            for _ in 0..2 {
+                let Ok((mut socket, _peer)) = listener.accept().await else {
+                    return;
+                };
+                let mut buf = [0u8; 8192];
+                let mut read = 0;
+                // Read headers until CRLF CRLF. The bootstrap GET has no body so we
+                // don't need Content-Length parsing here.
+                loop {
+                    let n = match socket.read(&mut buf[read..]).await {
+                        Ok(0) | Err(_) => break,
+                        Ok(n) => n,
+                    };
+                    read += n;
+                    if buf[..read].windows(4).any(|w| w == b"\r\n\r\n") {
+                        break;
+                    }
+                    if read == buf.len() {
+                        break;
+                    }
+                }
+                let request = std::str::from_utf8(&buf[..read]).unwrap_or("");
+                let request_line = request.lines().next().unwrap_or("");
+                let n = counter.fetch_add(1, AtomicOrdering::SeqCst);
+
+                let response = if n == 0 {
+                    assert!(
+                        request_line.starts_with("GET / "),
+                        "first request must hit the root path; got: {request_line:?}"
+                    );
+                    format!(
+                        "HTTP/1.1 307 Temporary Redirect\r\n\
+                         Location: http://127.0.0.1:{port}/follow\r\n\
+                         Content-Length: 5\r\n\
+                         Connection: close\r\n\
+                         \r\n\
+                         MOVED"
+                    )
+                } else {
+                    assert!(
+                        request_line.starts_with("GET /follow "),
+                        "redirected request must hit /follow; got: {request_line:?}"
+                    );
+                    format!(
+                        "HTTP/1.1 200 OK\r\n\
+                         Content-Type: application/json\r\n\
+                         Content-Length: {}\r\n\
+                         Connection: close\r\n\
+                         \r\n\
+                         {}",
+                        ACCOUNT_PROPERTIES_PAYLOAD.len(),
+                        ACCOUNT_PROPERTIES_PAYLOAD,
+                    )
+                };
+                let _ = socket.write_all(response.as_bytes()).await;
+                let _ = socket.shutdown().await;
+            }
+        });
+
+        let pool = ConnectionPoolOptions::default();
+        let config = HttpClientConfig {
+            version_policy: HttpVersionPolicy::Http11Only,
+            request_timeout: std::time::Duration::from_secs(5),
+            allow_invalid_cert: false,
+            http2_keep_alive_while_idle: false,
+        };
+        let transport_client =
+            crate::driver::transport::http_client_factory::DefaultHttpClientFactory::new()
+                .build(&pool, config)
+                .expect("DefaultHttpClientFactory must build a real reqwest-backed transport");
+        let transport = crate::driver::transport::adaptive_transport::AdaptiveTransport::Gateway(
+            transport_client,
+        );
+
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let account = signed_test_account(&format!("http://127.0.0.1:{port}/"));
+        let user_agent = azure_core::http::headers::HeaderValue::from("cosmos-driver-test/0.0.0");
+
+        let result = CosmosDriver::fetch_account_properties_with_transport(
+            &runtime,
+            &transport,
+            &account,
+            None,
+            &user_agent,
+        )
+        .await;
+
+        // Ensure the server task has fully drained so the assertion message can
+        // report the final hop count (especially if the bootstrap fetch failed).
+        let _ = server.await;
+
+        let final_count = request_count.load(AtomicOrdering::SeqCst);
+        let props = result.unwrap_or_else(|err| panic!(
+            "bootstrap fetch must succeed against a redirecting proxy that returns 307 -> 200 JSON; \
+             this proves the reqwest transport follows redirects. saw {final_count} request(s). err: {err:?}"
+        ));
+        assert_eq!(
+            props.id, "test",
+            "fetched AccountProperties must come from the /follow hop, proving the transport followed the 307"
+        );
+        assert_eq!(
+            final_count, 2,
+            "transport must have made exactly 2 wire requests (initial + one redirect follow). Got: {final_count}"
+        );
     }
 }

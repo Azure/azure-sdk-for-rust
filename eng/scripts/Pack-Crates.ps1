@@ -147,6 +147,7 @@ try {
 
     foreach ($package in $packages) {
       $sourcePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "$($package.name)-$($package.version)")
+      $cratePath = [System.IO.Path]::Combine($RepoRoot, "target", "package", "tmp-crate", "$($package.name)-$($package.version).crate")
       $targetPath = [System.IO.Path]::Combine($OutputPath, $package.name)
       $targetContentsPath = [System.IO.Path]::Combine($targetPath, "contents")
       $targetApiReviewFile = [System.IO.Path]::Combine($targetPath, "$($package.name).rust.json")
@@ -160,7 +161,7 @@ try {
       Copy-Item -Path $sourcePath/* -Destination $targetContentsPath -Recurse
 
       Write-Host "Copying .crate file for '$($package.name)' to '$targetPath'"
-      Copy-Item -Path "$sourcePath.crate" -Destination $targetPath -Force
+      Copy-Item -Path $cratePath -Destination $targetPath -Force
 
       Write-Host "Creating API review file"
       $apiReviewFile = Create-ApiViewFile $package
