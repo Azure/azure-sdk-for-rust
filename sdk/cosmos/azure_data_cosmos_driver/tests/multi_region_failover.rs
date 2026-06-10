@@ -11,8 +11,6 @@
 //! `AZURE_COSMOS_CONNECTION_STRING` exported by the bicep template; if it is unset
 //! the tests skip cleanly via `DriverTestClient::run_with_*`.
 
-#![cfg(feature = "fault_injection")]
-
 use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::error::CosmosError;
