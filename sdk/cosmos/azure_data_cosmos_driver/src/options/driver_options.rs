@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::{
     models::AccountReference,
-    options::{OperationOptions, Region},
+    options::{OperationOptions, Region, UserAgentSuffix},
 };
 
 /// Configuration options for a Cosmos DB driver instance.
@@ -52,6 +52,14 @@ pub struct DriverOptions {
     /// endpoints matching these regions appear first. Regions that don't match
     /// any account endpoint are silently skipped.
     preferred_regions: Vec<Region>,
+    /// Optional driver-level override for the User-Agent suffix.
+    ///
+    /// When `Some`, this driver stamps requests with a User-Agent computed from
+    /// this suffix (combined with the runtime's wrapping-SDK identifier and
+    /// version metadata). When `None`, the driver inherits the runtime's
+    /// precomputed User-Agent string verbatim, including any suffix the runtime
+    /// itself was configured with.
+    user_agent_suffix: Option<UserAgentSuffix>,
 }
 
 impl DriverOptions {
@@ -76,6 +84,11 @@ impl DriverOptions {
     pub fn preferred_regions(&self) -> &[Region] {
         &self.preferred_regions
     }
+
+    /// Returns the driver-level User-Agent suffix override, if any.
+    pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix> {
+        self.user_agent_suffix.as_ref()
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -88,6 +101,7 @@ pub struct DriverOptionsBuilder {
     account: AccountReference,
     operation_options: Option<OperationOptions>,
     preferred_regions: Vec<Region>,
+    user_agent_suffix: Option<UserAgentSuffix>,
 }
 
 impl DriverOptionsBuilder {
@@ -97,6 +111,7 @@ impl DriverOptionsBuilder {
             account,
             operation_options: None,
             preferred_regions: Vec::new(),
+            user_agent_suffix: None,
         }
     }
 
@@ -116,12 +131,24 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Overrides the User-Agent suffix for requests made through this driver.
+    ///
+    /// When set, the driver computes its own User-Agent string combining the
+    /// runtime's wrapping-SDK identifier and version metadata with this suffix.
+    /// When unset, the driver inherits the runtime's precomputed User-Agent
+    /// string verbatim (cloning the shared `Arc` — no per-driver allocation).
+    pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
+        self.user_agent_suffix = Some(suffix);
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
             account: self.account,
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
             preferred_regions: self.preferred_regions,
+            user_agent_suffix: self.user_agent_suffix,
         }
     }
 }

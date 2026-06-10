@@ -118,7 +118,9 @@ pub struct CosmosDriverRuntime {
     ///
     /// This is automatically computed from the SDK version, platform info,
     /// and optional suffix (from user_agent_suffix, workload_id, or correlation_id).
-    user_agent: UserAgent,
+    /// Stored as an `Arc` so drivers without a per-driver UA override can clone
+    /// it cheaply and stamp requests with the same shared value.
+    user_agent: Arc<UserAgent>,
 
     /// Workload identifier for resource governance (1-50 if set).
     workload_id: Option<WorkloadId>,
@@ -282,7 +284,11 @@ impl CosmosDriverRuntime {
     /// The user agent is automatically computed with a static prefix containing
     /// SDK version and platform info, plus an optional suffix derived from
     /// `user_agent_suffix`, `workload_id`, or `correlation_id` (in priority order).
-    pub fn user_agent(&self) -> &UserAgent {
+    ///
+    /// Stored as an `Arc` so [`CosmosDriver`](super::CosmosDriver) instances
+    /// without a per-driver suffix override can clone this shared value
+    /// instead of recomputing the User-Agent.
+    pub fn user_agent(&self) -> &Arc<UserAgent> {
         &self.user_agent
     }
 
@@ -712,7 +718,7 @@ impl CosmosDriverRuntimeBuilder {
         // Compute user agent from suffix/workloadId/correlationId (in priority order),
         // optionally prepending a wrapping-SDK identifier.
         let wrapping = self.wrapping_sdk_identifier.as_deref();
-        let user_agent = if let Some(ref suffix) = self.user_agent_suffix {
+        let user_agent = Arc::new(if let Some(ref suffix) = self.user_agent_suffix {
             UserAgent::from_suffix(wrapping, suffix)
         } else if let Some(workload_id) = self.workload_id {
             UserAgent::from_workload_id(wrapping, workload_id)
@@ -720,7 +726,7 @@ impl CosmosDriverRuntimeBuilder {
             UserAgent::from_correlation_id(wrapping, correlation_id)
         } else {
             UserAgent::from_wrapping_sdk_identifier(wrapping)
-        };
+        });
 
         let connection_pool = self.connection_pool.unwrap_or_default();
         let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());

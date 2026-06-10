@@ -26,7 +26,7 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
         ContainerProperties, ContainerReference, ContinuationToken, CosmosOperation,
-        DatabaseReference, PartitionKey, ResolvedToken, ResourceType,
+        DatabaseReference, PartitionKey, ResolvedToken, ResourceType, UserAgent,
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
@@ -134,6 +134,14 @@ pub struct CosmosDriver {
     /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
+    /// User-Agent string stamped on every request issued by this driver.
+    ///
+    /// When the driver's [`DriverOptions::user_agent_suffix()`] is `None`, this
+    /// is a clone of the runtime's `Arc<UserAgent>` (cheap atomic refcount bump;
+    /// drivers without an override share one `UserAgent` allocation with the
+    /// runtime). When the suffix is `Some`, this is a freshly-computed
+    /// `UserAgent` wrapped in its own `Arc`.
+    user_agent: Arc<UserAgent>,
 }
 
 impl CosmosDriver {
@@ -220,7 +228,7 @@ impl CosmosDriver {
             version,
             &endpoint,
         )?;
-        let user_agent = Self::user_agent_header(runtime);
+        let user_agent = Self::user_agent_header(runtime.user_agent());
         let props = Self::fetch_account_properties_with_transport(
             runtime,
             &metadata_transport,
@@ -242,8 +250,7 @@ impl CosmosDriver {
         let endpoint = AccountEndpoint::from(account);
         let transport = runtime.bootstrap_transport();
         let metadata_transport = transport.get_metadata_transport(&endpoint)?;
-        let user_agent =
-            azure_core::http::headers::HeaderValue::from(runtime.user_agent().as_str().to_owned());
+        let user_agent = Self::user_agent_header(runtime.user_agent());
         Self::fetch_account_properties_with_transport(
             runtime,
             &metadata_transport,
@@ -589,8 +596,8 @@ impl CosmosDriver {
         })
     }
 
-    fn user_agent_header(runtime: &CosmosDriverRuntime) -> azure_core::http::headers::HeaderValue {
-        azure_core::http::headers::HeaderValue::from(runtime.user_agent().as_str().to_owned())
+    fn user_agent_header(user_agent: &UserAgent) -> azure_core::http::headers::HeaderValue {
+        azure_core::http::headers::HeaderValue::from(user_agent.as_str().to_owned())
     }
 
     fn endpoint_for_write_region(
@@ -609,7 +616,14 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
     ) -> crate::error::Result<super::cache::AccountProperties> {
-        Self::refresh_account_properties(&self.runtime, account, &self.transport, None).await
+        Self::refresh_account_properties(
+            &self.runtime,
+            account,
+            &self.transport,
+            &self.user_agent,
+            None,
+        )
+        .await
     }
 
     /// Fetches account properties using the current per-account transport.
@@ -635,6 +649,7 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+        user_agent: &Arc<UserAgent>,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let current_transport = transport_holder.load_full();
@@ -642,13 +657,13 @@ impl CosmosDriver {
         let endpoint = AccountEndpoint::from(account);
         let metadata_transport = current_transport.get_metadata_transport(&endpoint)?;
 
-        let user_agent = Self::user_agent_header(runtime);
+        let user_agent_header = Self::user_agent_header(user_agent);
         match Self::fetch_account_properties_with_transport(
             runtime,
             &metadata_transport,
             account,
             None,
-            &user_agent,
+            &user_agent_header,
         )
         .await
         {
@@ -681,6 +696,7 @@ impl CosmosDriver {
                             runtime,
                             account,
                             transport_holder,
+                            user_agent,
                             &endpoint,
                             primary_error,
                             previous_props,
@@ -701,6 +717,7 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
+        user_agent: &Arc<UserAgent>,
         primary_endpoint: &AccountEndpoint,
         primary_error: crate::error::CosmosError,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
@@ -743,7 +760,7 @@ impl CosmosDriver {
                 continue;
             };
 
-            let user_agent = Self::user_agent_header(runtime);
+            let user_agent = Self::user_agent_header(user_agent);
             match Self::fetch_account_properties_with_transport(
                 runtime,
                 &regional_transport,
@@ -947,6 +964,18 @@ impl CosmosDriver {
         let account_endpoint = AccountEndpoint::from(&account);
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
 
+        // Per-driver User-Agent: when the driver-level suffix override is unset,
+        // share the runtime's `Arc<UserAgent>` (cheap atomic refcount bump);
+        // when set, compute a fresh `UserAgent` from the runtime's wrapping-SDK
+        // identifier and the driver's suffix, owned by this driver alone.
+        let user_agent = match options.user_agent_suffix() {
+            Some(suffix) => Arc::new(UserAgent::from_suffix(
+                runtime.wrapping_sdk_identifier(),
+                suffix,
+            )),
+            None => Arc::clone(runtime.user_agent()),
+        };
+
         // Shared transport holder — used by both the driver and the refresh callback.
         // ArcSwap provides lock-free reads on the hot path (every operation)
         // and only incurs overhead on writes (transport swap, ~every 5 min).
@@ -956,17 +985,20 @@ impl CosmosDriver {
         let runtime_for_callback = Arc::clone(&runtime);
         let account_for_callback = account.clone();
         let transport_for_callback = Arc::clone(&transport);
+        let user_agent_for_callback = Arc::clone(&user_agent);
         let refresh_callback = Arc::new(
             move |previous_props: Option<Arc<super::cache::AccountProperties>>| {
                 let runtime = Arc::clone(&runtime_for_callback);
                 let account = account_for_callback.clone();
                 let transport_holder = Arc::clone(&transport_for_callback);
+                let user_agent = Arc::clone(&user_agent_for_callback);
                 let fut: BoxFuture<'static, crate::error::Result<super::cache::AccountProperties>> =
                     Box::pin(async move {
                         CosmosDriver::refresh_account_properties(
                             &runtime,
                             &account,
                             &transport_holder,
+                            &user_agent,
                             previous_props,
                         )
                         .await
@@ -1033,6 +1065,7 @@ impl CosmosDriver {
             pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
+            user_agent,
         }
     }
 
@@ -1049,6 +1082,17 @@ impl CosmosDriver {
     /// Returns the driver options.
     pub fn options(&self) -> &DriverOptions {
         &self.options
+    }
+
+    /// Returns the User-Agent stamped on every request this driver issues.
+    ///
+    /// When the driver was constructed with no
+    /// [`DriverOptions::user_agent_suffix()`] override, this returns a clone of
+    /// the runtime's `Arc<UserAgent>` — drivers built from the same runtime
+    /// without an override share one `UserAgent` allocation. Otherwise this
+    /// returns the driver's freshly-computed `UserAgent`.
+    pub fn user_agent(&self) -> &Arc<UserAgent> {
+        &self.user_agent
     }
 
     /// Returns the current per-account transport.
@@ -1599,9 +1643,8 @@ impl CosmosDriver {
             PipelineType::Metadata
         };
 
-        let user_agent = azure_core::http::headers::HeaderValue::from(
-            self.runtime.user_agent().as_str().to_owned(),
-        );
+        let user_agent =
+            azure_core::http::headers::HeaderValue::from(self.user_agent.as_str().to_owned());
 
         // Step 8: Execute via the new operation pipeline
         super::pipeline::operation_pipeline::execute_operation_pipeline(
@@ -1933,8 +1976,8 @@ mod tests {
         driver::CosmosDriverRuntimeBuilder,
         models::AccountReference,
         options::{
-            ContentResponseOnWrite, CorrelationId, OperationOptionsBuilder, UserAgentSuffix,
-            WorkloadId,
+            ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
+            UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -2585,10 +2628,15 @@ mod tests {
         );
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
-        let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
-                .await
-                .unwrap();
+        let properties = CosmosDriver::refresh_account_properties(
+            &runtime,
+            &account,
+            &transport_holder,
+            runtime.user_agent(),
+            None,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert_eq!(
@@ -2621,10 +2669,15 @@ mod tests {
         );
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
-        let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
-                .await
-                .unwrap();
+        let properties = CosmosDriver::refresh_account_properties(
+            &runtime,
+            &account,
+            &transport_holder,
+            runtime.user_agent(),
+            None,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert_eq!(
@@ -2658,10 +2711,15 @@ mod tests {
         );
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
-        let properties =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
-                .await
-                .unwrap();
+        let properties = CosmosDriver::refresh_account_properties(
+            &runtime,
+            &account,
+            &transport_holder,
+            runtime.user_agent(),
+            None,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
         assert_eq!(
@@ -2784,6 +2842,7 @@ mod tests {
             &runtime,
             &account,
             &transport_holder,
+            runtime.user_agent(),
             Some(multi_region_previous_props()),
         )
         .await;
@@ -2823,6 +2882,7 @@ mod tests {
             &runtime,
             &account,
             &transport_holder,
+            runtime.user_agent(),
             Some(multi_region_previous_props()),
         )
         .await;
@@ -2853,9 +2913,14 @@ mod tests {
         );
         let transport_holder = Arc::new(ArcSwap::from(current_transport));
 
-        let result =
-            CosmosDriver::refresh_account_properties(&runtime, &account, &transport_holder, None)
-                .await;
+        let result = CosmosDriver::refresh_account_properties(
+            &runtime,
+            &account,
+            &transport_holder,
+            runtime.user_agent(),
+            None,
+        )
+        .await;
 
         assert!(result.is_err(), "should fail without previous props");
     }
@@ -3478,5 +3543,86 @@ mod tests {
             final_count, 2,
             "transport must have made exactly 2 wire requests (initial + one redirect follow). Got: {final_count}"
         );
+    }
+
+    #[tokio::test]
+    async fn drivers_without_user_agent_suffix_share_runtime_arc() {
+        // Two drivers built from the same runtime with no per-driver
+        // suffix override must share the runtime's `Arc<UserAgent>`
+        // (no per-driver allocation, just an atomic refcount bump).
+        let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+            ResponsePlan::Success,
+            10,
+        )));
+        let runtime = Arc::new(
+            CosmosDriverRuntimeBuilder::new()
+                .with_http_client_factory(factory)
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        let driver_a = CosmosDriver::new(
+            Arc::clone(&runtime),
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account-a.documents.azure.com:443/",
+            ))
+            .build(),
+        );
+        let driver_b = CosmosDriver::new(
+            Arc::clone(&runtime),
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account-b.documents.azure.com:443/",
+            ))
+            .build(),
+        );
+
+        assert!(
+            Arc::ptr_eq(driver_a.user_agent(), runtime.user_agent()),
+            "driver A must share the runtime's User-Agent Arc"
+        );
+        assert!(
+            Arc::ptr_eq(driver_b.user_agent(), runtime.user_agent()),
+            "driver B must share the runtime's User-Agent Arc"
+        );
+        assert!(
+            Arc::ptr_eq(driver_a.user_agent(), driver_b.user_agent()),
+            "drivers A and B must share the same User-Agent Arc"
+        );
+    }
+
+    #[tokio::test]
+    async fn driver_user_agent_suffix_override_owns_distinct_arc() {
+        // A driver built with a per-driver suffix must compute its own
+        // `UserAgent` (distinct allocation; suffix actually appears).
+        let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
+            ResponsePlan::Success,
+            4,
+        )));
+        let runtime = Arc::new(
+            CosmosDriverRuntimeBuilder::new()
+                .with_http_client_factory(factory)
+                .with_user_agent_suffix(UserAgentSuffix::new("runtime-default"))
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        let driver = CosmosDriver::new(
+            Arc::clone(&runtime),
+            DriverOptionsBuilder::new(signed_test_account(
+                "https://account.documents.azure.com:443/",
+            ))
+            .with_user_agent_suffix(UserAgentSuffix::new("driver-override"))
+            .build(),
+        );
+
+        assert!(
+            !Arc::ptr_eq(driver.user_agent(), runtime.user_agent()),
+            "driver with override must NOT share the runtime's User-Agent Arc"
+        );
+        assert!(driver.user_agent().as_str().contains("driver-override"));
+        assert!(runtime.user_agent().as_str().contains("runtime-default"));
+        assert!(!driver.user_agent().as_str().contains("runtime-default"));
     }
 }
