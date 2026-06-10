@@ -122,7 +122,7 @@ struct PerfRunnerOptions<T: PerfTestFactory> {
     test_proxy: Option<Url>,
 
     #[command(subcommand)]
-    pub command: T,
+    pub subcommand: T,
 }
 
 // Options which do not belong to the core perf runner, but may belong to a subcommand.
@@ -219,7 +219,7 @@ impl<T: PerfTestFactory> PerfRunner<T> {
     /// A result indicating the success or failure of the test run.
     ///
     pub async fn run(&self) -> azure_core::Result<()> {
-        let test = &self.options.command;
+        let test = &self.options.subcommand;
         let test_mode = crate::TestMode::current_opt()?.unwrap_or(crate::TestMode::Live);
 
         println!("Test Configuration: {:#}", self.options);
@@ -460,9 +460,6 @@ impl<T: PerfTestFactory> PerfRunner<T> {
         println!();
     }
 }
-
-#[cfg(test)]
-mod config_tests;
 
 #[cfg(test)]
 mod framework_tests;
