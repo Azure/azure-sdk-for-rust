@@ -30,7 +30,7 @@ impl PerfTestFactory for FrameworkTests {
 
     fn name(&self) -> &'static str {
         match self {
-            FrameworkTests::Fibonacci1(args) => "fibonacci1",
+            FrameworkTests::Fibonacci1(_) => "fibonacci1",
         }
     }
 }
