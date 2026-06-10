@@ -6,8 +6,6 @@ This document provides guidance for AI agents (e.g., GitHub Copilot, MCP servers
 
 The Azure SDK for Rust provides Rust language bindings and client libraries for Azure services, following the [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html).
 
-⚠️ Under active development. Large breaking changes may occur before 1.0 release.
-
 - **Primary Language**: Rust
 - **Minimum Supported Rust Version (MSRV)**: found in the root `Cargo.toml` file
 - **Key Technologies**: Cargo, TypeSpec, OpenTelemetry, Test Proxy
@@ -17,11 +15,11 @@ The Azure SDK for Rust provides Rust language bindings and client libraries for 
 ```text
 .
 ├── sdk/                      # Service-specific crates organized by service
-│   └── <service>/            # Service directory (e.g., "keyvault", "storage")
-│       ├── <crate>/          # Service crate (e.g., "azure_security_keyvault_secrets")
-│       ├── assets.json       # Pointer to test recordings (may be under <crate>/)
-│       ├── test-resources.bicep # Test resource definitions (may be under <crate>/)
-│       └── tsp-location.yaml # Pointer to TypeSpec in azure-rest-api-specs (may be under <crate>/)
+│   └── {service}/            # Service directory (e.g., "keyvault", "storage")
+│       ├── {crate}/          # Service crate (e.g., "azure_security_keyvault_secrets")
+│       ├── assets.json       # Pointer to test recordings (may be under {crate}/)
+│       ├── test-resources.bicep # Test resource definitions (may be under {crate}/)
+│       └── tsp-location.yaml # Pointer to TypeSpec in azure-rest-api-specs (may be under {crate}/)
 ├── eng/                      # Engineering system scripts and common tooling
 ├── doc/                      # Additional documentation
 ├── .github/
@@ -36,7 +34,7 @@ The Azure SDK for Rust provides Rust language bindings and client libraries for 
 
 Always check if there is an MCP tool or skill available before performing operations manually, including listing Azure subscriptions, deploying resources, setting up a new crate, generating code, and other common workflows.
 
-All new crates must be generated from TypeSpec specifications in [Azure/azure-rest-api-specs]. TypeSpec specifications are located under `specification/<service>/`. Use the `create-crate` skill to set up a new crate.
+All new crates must be generated from TypeSpec specifications in [Azure/azure-rest-api-specs]. TypeSpec specifications are located under `specification/{service}/`. Use the `create-crate` skill to set up a new crate.
 
 ### Recommended Actions
 
@@ -45,7 +43,7 @@ AI agents can assist with:
 1. **Code Generation**
    - Writing new Rust code following the coding conventions below
    - Generating unit tests using `#[cfg(test)]` modules
-   - Creating integration tests with `#[recorded::test]` attributes (see `CONTRIBUTING.md` for details)
+   - Creating integration tests with `#[recorded::test]` attributes (see [CONTRIBUTING.md](CONTRIBUTING.md) for details)
    - Generating documentation tests in `.rs` files (avoid `no_run` when tests can be run)
    - Running `cargo fmt` and `cargo clippy` on all modified crates (see [Linting and Formatting](#linting-and-formatting))
 
@@ -58,7 +56,7 @@ AI agents can assist with:
 3. **Documentation**
    - Improving inline documentation (using `///` doc comments)
    - Updating README files (use ` ```rust no_run` for examples with placeholders)
-   - Creating or updating CHANGELOG entries (see `.github/instructions/changelog.instructions.md`)
+   - Creating or updating CHANGELOG entries (see [.github/instructions/changelog.instructions.md](.github/instructions/changelog.instructions.md))
    - Writing hero scenario examples in doc comments (avoid examples in `examples/` directories unless demonstrating primary use cases)
 
 4. **Issue Triage**
@@ -85,7 +83,7 @@ AI agents **should not**:
 2. **Break API Compatibility**
    - Avoid introducing breaking changes without explicit approval
    - Check if changes affect public APIs before proceeding
-   - Consider the deprecation process (see `doc/deprecation-process.md`)
+   - Consider the deprecation process (see [doc/deprecation-process.md](doc/deprecation-process.md))
 
 3. **Bypass CI/CD Checks**
    - Do not suggest skipping or disabling CI checks
@@ -102,7 +100,10 @@ AI agents **should not**:
 6. **Hand-Write Generated Clients**
    - Do not hand-write client, model, or operation code when a TypeSpec specification exists in [Azure/azure-rest-api-specs]
    - Use `tsp-client update` or the `azsdk_package_generate_code` MCP tool to generate client code from TypeSpec
-   - Hand-written wrapper code (e.g., custom client constructors in `clients.rs`) on top of generated code is acceptable. See `sdk/keyvault/azure_security_keyvault_secrets` for an example. Check how `src/clients.rs` imports generated clients and how those are exported to avoid duplicate type exports.
+   - Hand-written wrapper code (e.g., custom client constructors in `clients.rs`) on top of generated code is acceptable. See [sdk/keyvault/azure_security_keyvault_secrets](sdk/keyvault/azure_security_keyvault_secrets) for an example. Check how `src/clients.rs` imports generated clients and how those are exported to avoid duplicate type exports.
+
+7. **Modify `eng/common` directly**
+   - Do not edit files under `eng/common/` unless explicitly instructed.
 
 ## Persona
 
@@ -167,7 +168,7 @@ You are an expert Rust programmer. You write safe, efficient, maintainable, and 
 
 ```bash
 # Build a specific crate
-cargo build -p <crate-name>
+cargo build -p {crate-name}
 
 # Build entire workspace (not recommended unless necessary)
 cargo build --workspace
@@ -178,14 +179,14 @@ cargo build --workspace
 For crates with TypeSpec specifications:
 
 ```bash
-cd sdk/<service>/<crate-name>
+cd sdk/{service}/{crate-name}
 tsp-client update
 ```
 
 ### Running Examples
 
 ```bash
-cargo run --package <crate-name> --example <example-name>
+cargo run --package {crate-name} --example {example-name}
 ```
 
 ## Testing
@@ -194,19 +195,22 @@ When running `cargo test`, use `--all-features` to ensure no tests are missed.
 
 ```bash
 # Run tests for a specific crate
-cargo test -p <crate-name> --all-features
+cargo test -p {crate-name} --all-features
 
-# Run integration tests with recordings
-cargo test -p <crate-name> --test <test-name>
+# Run integration tests in playback mode with recordings
+cargo test -p {crate-name} --test {test-name}
 
 # Provision test resources (see CONTRIBUTING.md for details)
-eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory <service>
+eng/common/TestResources/New-TestResources.ps1 -ServiceDirectory {service}
 
 # Record new test sessions (requires provisioned resources)
-AZURE_TEST_MODE=record cargo test -p <crate-name> --test <test-name>
+AZURE_TEST_MODE=record cargo test -p {crate-name} --test {test-name}
+
+# Update assets after successfully recording and playing back tests
+test-proxy push -a sdk/{service}/assets.json
 ```
 
-See `CONTRIBUTING.md` for comprehensive testing guidance including debugging, Test Proxy usage, and trace logging.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for comprehensive testing guidance including debugging, Test Proxy usage, and trace logging.
 
 ### Test Generation
 
@@ -226,13 +230,13 @@ See `CONTRIBUTING.md` for comprehensive testing guidance including debugging, Te
 
 ```bash
 # Format code
-cargo fmt -p <crate-name>
+cargo fmt -p {crate-name}
 
 # Lint code
-cargo clippy -p <crate-name>
+cargo clippy -p {crate-name}
 
 # Auto-fix some issues
-cargo clippy --fix -p <crate-name>
+cargo clippy --fix -p {crate-name}
 ```
 
 ## CI/CD Integration
@@ -260,28 +264,28 @@ Integration tests use the Azure SDK Test Proxy for recording/playback. See `CONT
 
 Additional specialized instructions for specific workflows can be found in:
 
-- `.github/instructions/` - Task-specific instructions (loaded when pattern-matched)
-- `.github/prompts/` - Reusable Copilot prompts (use `#prompt` in Copilot)
-- `.github/skills/` - Copilot skills for common tasks:
+- [.github/instructions](.github/instructions) - Task-specific instructions (loaded when pattern-matched)
+- [.github/prompts](.github/prompts) - Reusable Copilot prompts (use `/{prompt-name}` in Copilot)
+- [.github/skills](.github/skills) - Copilot skills for common tasks (use `/{skill-name}` in Copilot):
   - `check-spelling` - Check and fix spelling in project source files using cSpell
   - `create-crate` - Create a new Azure SDK crate from a TypeSpec specification
   - `lint-markdown` - Check and fix formatting in markdown files using markdownlint-cli2
 
 ## Cross-References
 
-- **Contributing Guide**: `CONTRIBUTING.md`
-- **Changelog Updates**: `.github/instructions/changelog.instructions.md`
-- **Git Commit Standards**: `.github/instructions/git-commit.instructions.md`
-- **GitHub Pull Request Standards**: `.github/instructions/github-pullrequest.instructions.md`
-- **PowerShell Scripts**: `.github/instructions/pwsh.instructions.md`
-- **Deprecation Process**: `doc/deprecation-process.md`
+- **Contributing Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Changelog Updates**: [.github/instructions/changelog.instructions.md](.github/instructions/changelog.instructions.md)
+- **Git Commit Standards**: [.github/instructions/git-commit.instructions.md](.github/instructions/git-commit.instructions.md)
+- **GitHub Pull Request Standards**: [.github/instructions/github-pullrequest.instructions.md](.github/instructions/github-pullrequest.instructions.md)
+- **PowerShell Scripts**: [.github/instructions/pwsh.instructions.md](.github/instructions/pwsh.instructions.md)
+- **Deprecation Process**: [doc/deprecation-process.md](doc/deprecation-process.md)
 - **Azure SDK Design Guidelines**: <https://azure.github.io/azure-sdk/rust_introduction.html>
 
 ## Getting Help
 
 - **Issues**: <https://github.com/Azure/azure-sdk-for-rust/issues>
 - **Discussions**: Use issue comments or StackOverflow with `azure` + `rust` tags
-- **Code Owners**: See `.github/CODEOWNERS` for service-specific contacts
+- **Code Owners**: See [.github/CODEOWNERS](.github/CODEOWNERS) for service-specific contacts
 
 ---
 

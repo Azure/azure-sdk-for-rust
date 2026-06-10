@@ -9,7 +9,7 @@ Check markdown files for common mistakes.
 
 ## Installation and usage
 
-Run `npm ci` from this skill directory (`.github/skills/lint-markdown/`) first. Then run commands using `npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2 <command>` from the repository root.
+Run `npm ci` from this skill directory (`.github/skills/lint-markdown/`) first. Then run commands using `npm exec --prefix .github/skills/lint-markdown -- markdownlint-cli2 {command}` from the repository root.
 
 ## Configuration
 
