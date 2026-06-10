@@ -5,6 +5,7 @@
 //!
 //! These tests cover various scenarios for running the `PerfRunner` with different options and measurements.
 //!
+use clap::Args;
 use futures::FutureExt;
 
 use super::*;

@@ -6,9 +6,9 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     http::Url,
     time::Duration,
-    Error, Result,
+    Result,
 };
-use clap::{ArgMatches, Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use serde::Serialize;
 use std::{
     fmt::{Debug, Display},
