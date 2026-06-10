@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{common::recoverable::RecoverableConnection, error::Result};
-use async_lock::Mutex as AsyncMutex;
+use async_lock::RwLock;
 use azure_core::{
     async_runtime::{get_async_runtime, SpawnedTask},
     credentials::{AccessToken, TokenCredential},
@@ -42,7 +42,7 @@ impl Default for TokenRefreshTimes {
 }
 
 pub(crate) struct Authorizer {
-    authorization_scopes: AsyncMutex<HashMap<Url, AccessToken>>,
+    authorization_scopes: RwLock<HashMap<Url, AccessToken>>,
     authorization_refresher: OnceLock<SpawnedTask>,
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
@@ -63,7 +63,7 @@ impl Authorizer {
     ) -> Self {
         Self {
             authorization_refresher: OnceLock::new(),
-            authorization_scopes: AsyncMutex::new(HashMap::new()),
+            authorization_scopes: RwLock::new(HashMap::new()),
             token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             credential,
             recoverable_connection,
@@ -74,7 +74,7 @@ impl Authorizer {
 
     pub(crate) async fn clear(&self) {
         debug!("Clearing authorization scopes.");
-        let mut scopes = self.authorization_scopes.lock().await;
+        let mut scopes = self.authorization_scopes.write().await;
         scopes.clear();
     }
 
@@ -98,7 +98,7 @@ impl Authorizer {
         debug!("Authorizing path: {path}");
 
         // Fast path: cached token under a brief lock.
-        if let Some(token) = self.authorization_scopes.lock().await.get(path).cloned() {
+        if let Some(token) = self.authorization_scopes.read().await.get(path).cloned() {
             debug!("Token already exists for path: {path}");
             return Ok(token);
         }
@@ -128,7 +128,7 @@ impl Authorizer {
         // ours. Both CBS auths succeeded against the same link, so either
         // credential is acceptable to the broker.
         let stored = {
-            let mut scopes = self.authorization_scopes.lock().await;
+            let mut scopes = self.authorization_scopes.write().await;
             scopes.entry(path.clone()).or_insert(token).clone()
         };
 
@@ -215,7 +215,7 @@ impl Authorizer {
         loop {
             let mut expiration_times = vec![];
             {
-                let scopes = self.authorization_scopes.lock().await;
+                let scopes = self.authorization_scopes.read().await;
                 for (path, token) in scopes.iter() {
                     debug!(
                         "Token expiration time for path {}: {}",
@@ -299,7 +299,7 @@ impl Authorizer {
             // Refresh the tokens.
             // First, collect the tokens that need refreshing while holding the lock briefly
             let tokens_to_refresh = {
-                let scopes = self.authorization_scopes.lock().await;
+                let scopes = self.authorization_scopes.read().await;
                 let mut to_refresh = Vec::new();
                 for (url, token) in scopes.iter() {
                     if token.expires_on >= now + (token_refresh_bias) {
@@ -343,7 +343,7 @@ impl Authorizer {
 
             // Finally, update the scopes map with the new tokens
             if !updated_tokens.is_empty() {
-                let mut scopes = self.authorization_scopes.lock().await;
+                let mut scopes = self.authorization_scopes.write().await;
                 for (url, token) in updated_tokens.into_iter() {
                     scopes.insert(url.clone(), token);
                 }
@@ -478,7 +478,7 @@ mod tests {
         assert!(result.is_ok());
 
         // Verify token is stored
-        let scopes = authorizer.authorization_scopes.lock().await;
+        let scopes = authorizer.authorization_scopes.read().await;
         assert!(scopes.contains_key(&path));
 
         // Verify expiration time
