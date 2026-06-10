@@ -679,6 +679,13 @@ impl RecoverableConnection {
         if plan.clear_authorizer {
             self.authorizer.clear().await;
         }
+        // Clearing a cache drops its per-path `OnceCell` entries, so the next
+        // `ensure_*` for a path re-inits a fresh cell against the new connection.
+        // A task already mid-`get_or_try_init` (or holding a value it just read)
+        // keeps using the old cell until it next re-enters `ensure_*`, so there's
+        // a brief window where stale, pre-recovery links can still be handed out.
+        // Closing that window (invalidating in-flight work immediately via a
+        // recovery generation counter) is tracked in #4454.
         if plan.clear_sessions {
             self.session_instances.write().await.clear();
         }
