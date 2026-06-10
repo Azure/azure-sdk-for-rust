@@ -4,7 +4,6 @@
 //! Upsert operation.
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
@@ -36,7 +35,7 @@ impl Operation for UpsertItemOperation {
     async fn execute(
         &self,
         container: &ContainerClient,
-    ) -> azure_data_cosmos::Result<Option<Duration>> {
+    ) -> azure_data_cosmos::Result<Option<std::time::Duration>> {
         let seeded = self.items.random();
         let value = rand::rng().random_range(0..u64::MAX);
 
