@@ -2068,9 +2068,18 @@ mod tests {
             uuid::Uuid::parse_str(GATEWAY20_ACTIVITY_ID).unwrap(),
         );
         write_tokens(&mut bytes);
-        bytes.extend_from_slice(body);
+        if !body.is_empty() {
+            // PayloadPresent = true (id 0x0000, type Byte).
+            bytes.extend_from_slice(&0x0000_u16.to_le_bytes());
+            bytes.push(0x00);
+            bytes.push(1);
+        }
         let total_len = u32::try_from(bytes.len()).unwrap();
         bytes[0..4].copy_from_slice(&total_len.to_le_bytes());
+        if !body.is_empty() {
+            bytes.extend_from_slice(&(body.len() as u32).to_le_bytes());
+            bytes.extend_from_slice(body);
+        }
         HttpResponse {
             status: 200,
             headers: azure_core::http::headers::Headers::new(),

@@ -468,6 +468,9 @@ impl From<RntbdRequestToken> for u16 {
 
 /// RNTBD response metadata token IDs recognized by Slice 1.
 pub(super) enum RntbdResponseToken {
+    /// Payload-present flag. When true, a u32 LE body-length prefix and that
+    /// many body bytes follow the metadata section.
+    PayloadPresent,
     /// Continuation token.
     ContinuationToken,
     /// Entity tag.
@@ -499,6 +502,7 @@ impl TryFrom<u16> for RntbdResponseToken {
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
+            0x0000 => Ok(Self::PayloadPresent),
             0x0003 => Ok(Self::ContinuationToken),
             0x0004 => Ok(Self::ETag),
             0x000C => Ok(Self::RetryAfterMilliseconds),

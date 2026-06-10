@@ -53,11 +53,17 @@ pub(crate) struct RntbdResponse {
 impl RntbdResponse {
     /// Deserializes a Gateway 2.0 RNTBD response frame.
     ///
-    /// Unknown metadata token IDs are silently consumed when their token type is
-    /// known. Malformed token values and unknown token type bytes return errors.
-    /// The Slice 1 frame shape has no separate metadata length, so the parser
-    /// advances the tracking offset by decoding complete metadata tokens and
-    /// preserves any trailing bytes shorter than a token header as body bytes.
+    /// Wire layout (matches Java `RntbdResponse.decode`):
+    ///   * `u32` LE length — total bytes of `[u32 status + 16-byte activity id + metadata tokens]` (24 + metadata).
+    ///     The length does NOT include the trailing body section.
+    ///   * `u32` LE status (frame HTTP status).
+    ///   * 16-byte activity id (Microsoft GUID byte order).
+    ///   * Metadata token stream filling `length - 24` bytes.
+    ///   * When the `PayloadPresent` token (id `0x0000`) is true, a `u32` LE body length and that many body bytes
+    ///     follow immediately after the metadata section.
+    ///
+    /// Unknown metadata token IDs are silently consumed when their token type is known.
+    /// Malformed token values and unknown token type bytes return errors.
     pub(crate) fn deserialize(bytes: &[u8]) -> azure_core::Result<Self> {
         let mut src = bytes;
         let total_len = read_u32_le(&mut src)? as usize;
@@ -77,6 +83,7 @@ impl RntbdResponse {
         let http_status = read_u32_le(&mut frame)?;
         let activity_id = read_uuid_le(&mut frame)?;
 
+        let mut payload_present = false;
         let mut continuation_token = None;
         let mut etag = None;
         let mut retry_after_ms = None;
@@ -90,9 +97,12 @@ impl RntbdResponse {
         let mut transport_request_id = None;
         let mut session_token = None;
 
-        while frame.len() >= 3 {
+        while !frame.is_empty() {
             let token = Token::read_from(&mut frame)?;
             match RntbdResponseToken::try_from(token.id) {
+                Ok(RntbdResponseToken::PayloadPresent) => {
+                    payload_present = expect_byte(token, "PayloadPresent")? != 0;
+                }
                 Ok(RntbdResponseToken::ContinuationToken) => {
                     continuation_token = Some(expect_string(token, "ContinuationToken")?);
                 }
@@ -133,10 +143,24 @@ impl RntbdResponse {
             }
         }
 
+        let body = if payload_present {
+            let mut tail = &bytes[total_len..];
+            let body_len = read_u32_le(&mut tail)? as usize;
+            if body_len > tail.len() {
+                return Err(data_conversion_error(format!(
+                    "RNTBD response body length {body_len} exceeds remaining buffer length {}",
+                    tail.len()
+                )));
+            }
+            tail[..body_len].to_vec()
+        } else {
+            Vec::new()
+        };
+
         Ok(Self {
             status: map_rntbd_status_to_cosmos_status(http_status, sub_status),
             activity_id,
-            body: frame.to_vec(),
+            body,
             continuation_token,
             etag,
             retry_after_ms,
@@ -155,6 +179,13 @@ impl RntbdResponse {
 fn expect_string(token: Token, name: &str) -> azure_core::Result<String> {
     match token.value {
         TokenValue::String(value) => Ok(value),
+        _ => Err(unexpected_token_type(name)),
+    }
+}
+
+fn expect_byte(token: Token, name: &str) -> azure_core::Result<u8> {
+    match token.value {
+        TokenValue::Byte(value) => Ok(value),
         _ => Err(unexpected_token_type(name)),
     }
 }
@@ -225,29 +256,57 @@ mod tests {
     }
 
     #[test]
-    fn trailing_bytes_shorter_than_token_header_are_body() {
+    fn payload_present_with_body_is_decoded() {
         let mut frame = response_header(StatusCode::Ok);
-        frame.extend_from_slice(&[0xAA, 0xBB]);
-        patch_total_len(&mut frame);
-
-        let response = RntbdResponse::deserialize(&frame).unwrap();
-
-        assert_eq!(response.body, vec![0xAA, 0xBB]);
-    }
-
-    #[test]
-    fn metadata_before_short_body_is_preserved() {
-        let mut frame = response_header(StatusCode::Ok);
+        Token::new(0x0000, TokenValue::Byte(1))
+            .write_to(&mut frame)
+            .unwrap();
         Token::new(0x0015, TokenValue::Double(2.5))
             .write_to(&mut frame)
             .unwrap();
-        frame.extend_from_slice(&[0xAA, 0xBB]);
         patch_total_len(&mut frame);
+        let body = b"{\"id\":\"abc\"}";
+        frame.extend_from_slice(&(body.len() as u32).to_le_bytes());
+        frame.extend_from_slice(body);
 
         let response = RntbdResponse::deserialize(&frame).unwrap();
 
         assert_eq!(response.request_charge, Some(2.5));
-        assert_eq!(response.body, vec![0xAA, 0xBB]);
+        assert_eq!(response.body, body.to_vec());
+    }
+
+    #[test]
+    fn payload_present_false_keeps_body_empty() {
+        let mut frame = response_header(StatusCode::Ok);
+        Token::new(0x0000, TokenValue::Byte(0))
+            .write_to(&mut frame)
+            .unwrap();
+        Token::new(0x0015, TokenValue::Double(1.0))
+            .write_to(&mut frame)
+            .unwrap();
+        patch_total_len(&mut frame);
+        // Trailing bytes beyond total_len must not be read when payload_present is false.
+        frame.extend_from_slice(&[0xDE, 0xAD]);
+
+        let response = RntbdResponse::deserialize(&frame).unwrap();
+
+        assert!(response.body.is_empty());
+    }
+
+    #[test]
+    fn payload_present_with_truncated_body_is_rejected() {
+        let mut frame = response_header(StatusCode::Ok);
+        Token::new(0x0000, TokenValue::Byte(1))
+            .write_to(&mut frame)
+            .unwrap();
+        patch_total_len(&mut frame);
+        // Claim 16 body bytes but only provide 4.
+        frame.extend_from_slice(&16_u32.to_le_bytes());
+        frame.extend_from_slice(&[0, 1, 2, 3]);
+
+        let err = RntbdResponse::deserialize(&frame).unwrap_err();
+
+        assert_eq!(*err.kind(), azure_core::error::ErrorKind::DataConversion);
     }
 
     fn response_header(status_code: StatusCode) -> Vec<u8> {

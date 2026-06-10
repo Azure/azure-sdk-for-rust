@@ -644,15 +644,19 @@ pub async fn gateway20_unknown_rntbd_response_token_is_silently_skipped(
 /// unknown token ID (`0xFFFE`) sandwiched between two recognized tokens.
 ///
 /// Wire layout (matches `RntbdResponse::deserialize` in
-/// `src/driver/transport/rntbd/response.rs`):
+/// `src/driver/transport/rntbd/response.rs`, which mirrors the Java
+/// `RntbdResponse.decode` wire format):
 ///
 /// ```text
-///   u32 LE  total_len            (patched after building)
+///   u32 LE  total_len            (24 + metadata bytes; does NOT include body)
 ///   u16 LE  http status          (200 OK)
 ///   u16 LE  reserved             (0)
 ///   16 B    activity_id          (nil UUID; format-agnostic when all zeros)
 ///   token   unknown id 0xFFFE, type SmallString (0x07), value "future-feature"
 ///   token   id 0x0015, type Double (0x0E), value `request_charge`   (RequestCharge)
+///   token   id 0x0000, type Byte   (0x00), value 1                  (PayloadPresent)
+///   --- total_len boundary ---
+///   u32 LE  body_len
 ///   bytes   document body
 /// ```
 ///
@@ -665,8 +669,10 @@ fn build_rntbd_response_with_unknown_token(request_charge: f64, body: &[u8]) -> 
     const HTTP_STATUS_OK: u16 = 200;
     const TOKEN_TYPE_SMALL_STRING: u8 = 0x07;
     const TOKEN_TYPE_DOUBLE: u8 = 0x0E;
+    const TOKEN_TYPE_BYTE: u8 = 0x00;
     const UNKNOWN_TOKEN_ID: u16 = 0xFFFE;
     const REQUEST_CHARGE_TOKEN_ID: u16 = 0x0015;
+    const PAYLOAD_PRESENT_TOKEN_ID: u16 = 0x0000;
 
     let unknown_value: &[u8] = b"future-feature";
     assert!(
@@ -693,11 +699,19 @@ fn build_rntbd_response_with_unknown_token(request_charge: f64, body: &[u8]) -> 
     frame.push(TOKEN_TYPE_DOUBLE);
     frame.extend_from_slice(&request_charge.to_le_bytes());
 
-    // Inner body — surfaces verbatim through `unwrap_response_for_gateway20`.
-    frame.extend_from_slice(body);
+    // PayloadPresent token signals a body follows after the metadata section.
+    frame.extend_from_slice(&PAYLOAD_PRESENT_TOKEN_ID.to_le_bytes());
+    frame.push(TOKEN_TYPE_BYTE);
+    frame.push(if body.is_empty() { 0 } else { 1 });
 
+    // Patch total_len to mark the end of the metadata section (before the body).
     let total_len = u32::try_from(frame.len()).expect("synthetic frame fits in u32");
     frame[0..4].copy_from_slice(&total_len.to_le_bytes());
+
+    if !body.is_empty() {
+        frame.extend_from_slice(&(body.len() as u32).to_le_bytes());
+        frame.extend_from_slice(body);
+    }
     frame
 }
 
