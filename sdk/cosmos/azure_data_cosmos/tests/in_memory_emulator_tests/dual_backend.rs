@@ -24,7 +24,9 @@ use azure_data_cosmos_driver::{
         AccountReference, ConnectionString, ContainerReference, CosmosOperation, CosmosResponse,
         DatabaseReference,
     },
-    options::{ConnectionPoolOptions, EmulatorServerCertValidation, OperationOptions},
+    options::{
+        ConnectionPoolOptions, DriverOptions, EmulatorServerCertValidation, OperationOptions,
+    },
     CosmosDriver,
 };
 use std::{error::Error, sync::Arc};
@@ -90,7 +92,7 @@ impl DualBackend {
             "dGVzdGtleQ==",
         );
         let emulator_driver = emulator_runtime
-            .get_or_create_driver(emulator_account.clone(), None)
+            .create_driver(DriverOptions::builder(emulator_account.clone()).build())
             .await?;
 
         // ── Real account (optional) ─────────────────────────────
@@ -374,7 +376,9 @@ async fn resolve_real_account(
         .build()
         .await?;
 
-    let driver = runtime.get_or_create_driver(account.clone(), None).await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
 
     Ok(Some((driver, account)))
 }

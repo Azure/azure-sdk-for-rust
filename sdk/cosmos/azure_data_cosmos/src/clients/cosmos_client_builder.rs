@@ -418,9 +418,7 @@ impl CosmosClientBuilder {
         }
         let driver_runtime = driver_runtime_builder.build().await?;
         let driver_options = build_driver_options(driver_account, routing_strategy);
-        let driver = driver_runtime
-            .get_or_create_driver(driver_options.account().clone(), Some(driver_options))
-            .await?;
+        let driver = driver_runtime.create_driver(driver_options).await?;
 
         Ok(CosmosClient {
             context: ClientContext { driver },

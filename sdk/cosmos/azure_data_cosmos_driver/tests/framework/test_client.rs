@@ -30,6 +30,12 @@ use super::env::{
 pub struct DriverTestClient {
     runtime: Arc<CosmosDriverRuntime>,
     account: AccountReference,
+    /// Driver-level preferred regions applied to every driver created by the
+    /// per-operation helpers (`create_database`, `read_item`, …). Empty by
+    /// default; populated by [`run_with_unique_db_and_hedging`] for the
+    /// hedging path, which requires application-preferred regions to be set
+    /// per `HEDGING_SPEC.md` §5.2.
+    preferred_regions: Vec<Region>,
 }
 
 /// Resolved test environment containing account and connection pool configuration.
@@ -112,6 +118,7 @@ impl DriverTestClient {
         Ok(Some(Self {
             runtime,
             account: env.account,
+            preferred_regions: Vec::new(),
         }))
     }
 
@@ -136,6 +143,7 @@ impl DriverTestClient {
         Ok(Some(Self {
             runtime,
             account: env.account,
+            preferred_regions: Vec::new(),
         }))
     }
 
@@ -229,6 +237,7 @@ impl DriverTestClient {
         let client = Self {
             runtime,
             account: env.account,
+            preferred_regions: Vec::new(),
         };
         let context = DriverTestRunContext::new(client);
 
@@ -249,11 +258,10 @@ impl DriverTestClient {
     /// `HEDGING_SPEC.md` §5.2 (the §5.1 `should_hedge()` short-circuits
     /// when no application-preferred regions are configured).
     ///
-    /// Pre-warms the runtime's per-account driver cache with explicit
-    /// [`DriverOptions`] so subsequent `get_or_create_driver(.., None)`
-    /// calls from the per-operation test helpers (`read_item`,
-    /// `create_item_with_pk`, …) hit the cached driver and inherit the
-    /// configured `preferred_regions`.
+    /// The `preferred_regions` are stored on the client and applied to every
+    /// driver created by the per-operation helpers (`read_item`,
+    /// `create_item_with_pk`, …) via their internal
+    /// [`DriverOptions`].
     #[cfg(feature = "fault_injection")]
     pub async fn run_with_unique_db_and_hedging<F, Fut>(
         rules: Vec<Arc<FaultInjectionRule>>,
@@ -277,20 +285,10 @@ impl DriverTestClient {
             .build()
             .await?;
 
-        // Pre-warm the driver cache so per-operation helpers (which call
-        // `get_or_create_driver(.., None)`) hit the cached driver with our
-        // `preferred_regions`. The cache is keyed on the account endpoint
-        // (see `CosmosDriverRuntime::get_or_create_driver`).
-        let driver_options = DriverOptions::builder(env.account.clone())
-            .with_preferred_regions(preferred_regions)
-            .build();
-        let _ = runtime
-            .get_or_create_driver(env.account.clone(), Some(driver_options))
-            .await?;
-
         let client = Self {
             runtime,
             account: env.account,
+            preferred_regions,
         };
         let context = DriverTestRunContext::new(client);
 
@@ -352,6 +350,18 @@ impl DriverTestRunContext {
         format!("test-container-{}", &uuid_str[..8])
     }
 
+    /// Builds the per-operation [`DriverOptions`] used by the helpers in
+    /// this context. Carries the client's account and any
+    /// `preferred_regions` configured by the hedging entry point so that
+    /// every driver created by these helpers inherits them.
+    fn driver_options(&self) -> DriverOptions {
+        let mut builder = DriverOptions::builder(self.client.account.clone());
+        if !self.client.preferred_regions.is_empty() {
+            builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
+        }
+        builder.build()
+    }
+
     /// Creates a database using the driver.
     pub async fn create_database(
         &self,
@@ -360,7 +370,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .get_or_create_driver(self.client.account.clone(), None)
+            .create_driver(self.driver_options())
             .await?;
 
         let body = format!(r#"{{"id": "{}"}}"#, db_name);
@@ -392,7 +402,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .get_or_create_driver(self.client.account.clone(), None)
+            .create_driver(self.driver_options())
             .await?;
 
         let operation = CosmosOperation::delete_database(database.clone());
@@ -444,7 +454,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .get_or_create_driver(self.client.account.clone(), None)
+            .create_driver(self.driver_options())
             .await?;
 
         let paths_json = partition_key_paths
@@ -500,7 +510,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .get_or_create_driver(self.client.account.clone(), None)
+            .create_driver(self.driver_options())
             .await?;
 
         let pk = partition_key.into();
@@ -540,7 +550,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .get_or_create_driver(self.client.account.clone(), None)
+            .create_driver(self.driver_options())
             .await?;
 
         let pk = partition_key.into();
@@ -577,7 +587,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .get_or_create_driver(self.client.account.clone(), None)
+            .create_driver(self.driver_options())
             .await?;
 
         let pk = partition_key.into();
@@ -611,7 +621,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .get_or_create_driver(self.client.account.clone(), None)
+            .create_driver(self.driver_options())
             .await?;
         Ok(driver
             .resolve_all_partition_key_ranges(container, force_refresh)

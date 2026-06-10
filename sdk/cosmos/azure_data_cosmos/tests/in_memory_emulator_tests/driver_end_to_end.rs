@@ -16,7 +16,7 @@
 use azure_data_cosmos_driver::models::{
     CosmosOperation, DatabaseReference, ItemReference, PartitionKey, ResponseBody,
 };
-use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder};
+use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, OperationOptionsBuilder};
 use azure_data_cosmos_driver::CosmosResponse;
 
 #[cfg(feature = "fault_injection")]
@@ -852,13 +852,10 @@ async fn paused_satellite_converges_to_latest_hub_write() {
 
     let account = AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let driver = emulator_runtime
-        .get_or_create_driver(
-            account.clone(),
-            Some(
-                DriverOptionsBuilder::new(account)
-                    .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
-                    .build(),
-            ),
+        .create_driver(
+            DriverOptionsBuilder::new(account)
+                .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
+                .build(),
         )
         .await
         .unwrap();
@@ -1007,7 +1004,7 @@ async fn create_retries_after_429_throttling() {
         "dGVzdGtleQ==",
     );
     let driver = emulator_runtime
-        .get_or_create_driver(account.clone(), None)
+        .create_driver(DriverOptions::builder(account.clone()).build())
         .await
         .unwrap();
     let container = driver
@@ -1191,7 +1188,7 @@ async fn read_failover_on_503_via_fault_injection() {
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
         .build();
     let emu_driver = emulator_runtime
-        .get_or_create_driver(emu_account.clone(), Some(emu_driver_opts))
+        .create_driver(emu_driver_opts)
         .await
         .unwrap();
 
@@ -1376,10 +1373,7 @@ async fn try_real_failover_comparison(
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
         .build();
 
-    let driver = runtime
-        .get_or_create_driver(account.clone(), Some(driver_opts))
-        .await
-        .ok()?;
+    let driver = runtime.create_driver(driver_opts).await.ok()?;
 
     // Create a unique database for this test run.
     let run_id = uuid::Uuid::new_v4().to_string()[..8].to_string();

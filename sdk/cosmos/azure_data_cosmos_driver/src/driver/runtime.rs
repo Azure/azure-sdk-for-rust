@@ -5,7 +5,6 @@
 
 use azure_core::http::ClientOptions;
 use std::{
-    collections::HashMap,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc, RwLock,
@@ -16,8 +15,8 @@ use std::{
 use crate::{
     diagnostics::ProxyConfiguration,
     models::{
-        normalize_wrapping_sdk_identifier, AccountReference, ContainerReference,
-        ThroughputControlGroupName, UserAgent,
+        normalize_wrapping_sdk_identifier, ContainerReference, ThroughputControlGroupName,
+        UserAgent,
     },
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
@@ -44,8 +43,10 @@ use super::{
 ///
 /// # Thread Safety
 ///
-/// The runtime is thread-safe and can be shared across threads. Driver instances
-/// are managed as singletons per account endpoint, ensuring efficient resource usage.
+/// The runtime is thread-safe and can be shared across threads. Each call to
+/// [`create_driver`](Self::create_driver) produces a fresh [`CosmosDriver`];
+/// drivers built from the same runtime share its long-lived resources
+/// (bootstrap transport, metadata caches, CPU monitor, etc.).
 ///
 /// # Example
 ///
@@ -53,7 +54,9 @@ use super::{
 /// use azure_data_cosmos_driver::driver::{
 ///     CosmosDriverRuntime, CosmosDriverRuntimeBuilder,
 /// };
-/// use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder};
+/// use azure_data_cosmos_driver::options::{
+///     DriverOptions, OperationOptions, OperationOptionsBuilder,
+/// };
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use url::Url;
 ///
@@ -67,13 +70,15 @@ use super::{
 ///     .build()
 ///     .await?;
 ///
-/// // Get or create a driver for an account
+/// // Create a driver for an account
 /// let account = AccountReference::with_master_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
 ///
-/// let driver = cosmos_runtime.get_or_create_driver(account, None).await?;
+/// let driver = cosmos_runtime
+///     .create_driver(DriverOptions::builder(account).build())
+///     .await?;
 ///
 /// // Later, replace runtime defaults atomically
 /// // cosmos_runtime.set_default_operation_options(new_options);
@@ -151,11 +156,6 @@ pub struct CosmosDriverRuntime {
     /// Groups are registered during builder construction and are immutable after
     /// runtime creation (except for mutable target values within each group).
     throughput_control_groups: ThroughputControlGroupRegistry,
-
-    /// Registry of driver instances keyed by account endpoint.
-    ///
-    /// Ensures singleton driver per account reference.
-    driver_registry: RwLock<HashMap<String, Arc<CosmosDriver>>>,
 
     /// Shared container metadata cache used by drivers in this runtime.
     container_cache: ContainerCache,
@@ -346,21 +346,17 @@ impl CosmosDriverRuntime {
             .get_default_for_container(container)
     }
 
-    /// Gets or creates a driver for the specified account.
+    /// Creates a fresh driver bound to this runtime.
     ///
-    /// This method ensures singleton behavior - only one driver instance exists
-    /// per account endpoint. Subsequent calls with the same account endpoint
-    /// return the existing driver.
+    /// Each call returns a new [`CosmosDriver`] — the runtime no longer caches
+    /// drivers by account endpoint. Callers that want a single driver per
+    /// account must hold onto the returned `Arc` themselves. Drivers built from
+    /// the same runtime share runtime-owned resources (bootstrap transport,
+    /// account-metadata cache, container cache, CPU monitor, etc.).
     ///
     /// # Parameters
     ///
-    /// - `account`: The account reference (endpoint + credentials)
-    /// - `driver_options`: Optional driver-level options. If not provided, defaults are used.
-    ///
-    /// # Note
-    ///
-    /// If a driver already exists for the account, the `driver_options` parameter is ignored.
-    /// The existing driver with its original options is returned.
+    /// - `driver_options`: Driver-level options, including the account reference.
     ///
     /// # Example
     ///
@@ -378,46 +374,20 @@ impl CosmosDriverRuntime {
     ///     "my-key",
     /// );
     ///
-    /// // First call creates the driver
-    /// let driver = runtime.get_or_create_driver(account.clone(), None).await?;
-    ///
-    /// // Subsequent calls return the same driver instance
-    /// let driver2 = runtime.get_or_create_driver(account, None).await?;
-    /// // driver and driver2 point to the same instance
+    /// let driver = runtime
+    ///     .create_driver(DriverOptions::builder(account).build())
+    ///     .await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn get_or_create_driver(
+    pub async fn create_driver(
         self: &Arc<Self>,
-        account: AccountReference,
-        driver_options: Option<DriverOptions>,
+        driver_options: DriverOptions,
     ) -> crate::error::Result<Arc<CosmosDriver>> {
-        let key = account.endpoint().to_string();
-
-        // Fast path: return an already-initialized driver.
-        {
-            let registry = self.driver_registry.read().unwrap();
-            if let Some(driver) = registry.get(&key) {
-                tracing::trace!("retrieved existing driver");
-                return Ok(driver.clone());
-            }
-        }
-
         tracing::trace!("creating new driver");
-
-        // Slow path: create and initialize the driver *before* inserting into
-        // the registry. This ensures concurrent callers never observe an
-        // uninitialized driver. If two callers race, both will probe — but the
-        // first to finish inserts; the second discovers the existing entry and
-        // drops its duplicate.
-        let options = driver_options.unwrap_or_else(|| DriverOptions::builder(account).build());
-        let driver = Arc::new(CosmosDriver::new(Arc::clone(self), options));
-
+        let driver = Arc::new(CosmosDriver::new(Arc::clone(self), driver_options));
         driver.initialize().await?;
-
-        let mut registry = self.driver_registry.write().unwrap();
-        let entry = registry.entry(key).or_insert_with(|| driver.clone());
-        Ok(entry.clone())
+        Ok(driver)
     }
 }
 
@@ -609,7 +579,9 @@ impl CosmosDriverRuntimeBuilder {
     ///
     /// // Build the runtime first, then resolve the container via the driver.
     /// let runtime = CosmosDriverRuntimeBuilder::new().build().await?;
-    /// let driver = runtime.get_or_create_driver(account, None).await?;
+    /// let driver = runtime
+    ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
+    ///     .await?;
     /// let container = driver.resolve_container("mydb", "mycollection").await?;
     ///
     /// // Register a throughput control group on a new runtime builder.
@@ -833,7 +805,6 @@ impl CosmosDriverRuntimeBuilder {
             user_agent_suffix: self.user_agent_suffix,
             wrapping_sdk_identifier: self.wrapping_sdk_identifier,
             throughput_control_groups: self.throughput_control_groups,
-            driver_registry: RwLock::new(HashMap::new()),
             container_cache: ContainerCache::new(),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
@@ -850,29 +821,31 @@ static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(0);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::AccountReference;
     use url::Url;
 
     #[tokio::test]
-    async fn get_or_create_driver_removes_failed_initialization_from_registry() {
+    async fn create_driver_propagates_initialization_failures() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let account = AccountReference::with_master_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "***not-base64***",
         );
 
+        // Two attempts back-to-back — each call must surface the bad-credential
+        // failure independently; there is no driver cache, so the second call
+        // re-runs the full initialization path.
         let error = runtime
-            .get_or_create_driver(account.clone(), None)
+            .create_driver(DriverOptions::builder(account.clone()).build())
             .await
             .expect_err("invalid signing key should fail initialization");
         assert!(!error.to_string().is_empty());
-        assert!(runtime.driver_registry.read().unwrap().is_empty());
 
         let second_error = runtime
-            .get_or_create_driver(account, None)
+            .create_driver(DriverOptions::builder(account).build())
             .await
-            .expect_err("failed initialization should not poison the driver registry");
+            .expect_err("subsequent attempts must also surface the failure");
         assert!(!second_error.to_string().is_empty());
-        assert!(runtime.driver_registry.read().unwrap().is_empty());
     }
 
     /// Verifies that the user-agent suffix set on the runtime appears in the

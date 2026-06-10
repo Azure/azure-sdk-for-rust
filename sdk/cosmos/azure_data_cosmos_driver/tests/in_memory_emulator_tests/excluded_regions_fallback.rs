@@ -53,6 +53,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
 use azure_data_cosmos_driver::models::{
     AccountReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey,
 };
+use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::{ExcludedRegions, OperationOptions, Region};
 
 const EAST_URL: &str = "https://eastus.emulator.local";
@@ -152,7 +153,7 @@ async fn dataplane_excluded_all_preferred_multi_master_falls_back_to_hub() {
         .await
         .expect("runtime should build against the in-memory emulator");
     let driver = runtime
-        .get_or_create_driver(account(), None)
+        .create_driver(DriverOptions::builder(account()).build())
         .await
         .expect("driver should initialize");
 
@@ -224,7 +225,7 @@ async fn dataplane_excluded_all_preferred_single_master_falls_back_to_hub() {
         .await
         .expect("runtime should build against the in-memory emulator");
     let driver = runtime
-        .get_or_create_driver(account(), None)
+        .create_driver(DriverOptions::builder(account()).build())
         .await
         .expect("driver should initialize");
 
@@ -292,7 +293,7 @@ async fn metadata_excluded_all_preferred_falls_back_to_hub() {
         .await
         .expect("runtime should build against the in-memory emulator");
     let driver = runtime
-        .get_or_create_driver(account(), None)
+        .create_driver(DriverOptions::builder(account()).build())
         .await
         .expect("driver should initialize");
 

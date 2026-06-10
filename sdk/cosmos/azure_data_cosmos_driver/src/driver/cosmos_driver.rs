@@ -103,12 +103,14 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
 
 /// Cosmos DB driver instance.
 ///
-/// A driver represents a connection to a specific Cosmos DB account. It is created
-/// via [`CosmosDriverRuntime::get_or_create_driver()`] and is managed as a singleton
-/// per account endpoint.
+/// A driver represents a connection to a specific Cosmos DB account. It is
+/// created via [`CosmosDriverRuntime::create_driver()`]; each call returns a
+/// fresh instance — drivers built from the same runtime share runtime-owned
+/// resources (bootstrap transport, metadata caches, CPU monitor, etc.) but the
+/// driver lifetime is owned by the caller.
 ///
-/// The driver handles executing operations against Cosmos DB, merging options from
-/// operation, driver, and runtime levels.
+/// The driver handles executing operations against Cosmos DB, merging options
+/// from operation, driver, and runtime levels.
 #[non_exhaustive]
 #[derive(Debug)]
 pub struct CosmosDriver {
@@ -131,7 +133,7 @@ pub struct CosmosDriver {
     session_manager: SessionManager,
     /// Set to `true` after [`initialize()`](Self::initialize) completes successfully.
     /// Operations check this flag to fail fast if the driver is used before
-    /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
+    /// initialization. In normal usage `create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
     /// User-Agent string stamped on every request issued by this driver.
@@ -958,7 +960,7 @@ impl CosmosDriver {
 
     /// Creates a new driver instance.
     ///
-    /// This is internal - use [`CosmosDriverRuntime::get_or_create_driver()`] instead.
+    /// This is internal - use [`CosmosDriverRuntime::create_driver()`] instead.
     pub(crate) fn new(runtime: Arc<CosmosDriverRuntime>, options: DriverOptions) -> Self {
         let account = options.account().clone();
         let account_endpoint = AccountEndpoint::from(&account);
@@ -1110,7 +1112,7 @@ impl CosmosDriver {
     /// the account properties for regional endpoint resolution.
     ///
     /// This method is called automatically by
-    /// [`CosmosDriverRuntime::get_or_create_driver`](crate::CosmosDriverRuntime::get_or_create_driver).
+    /// [`CosmosDriverRuntime::create_driver`](crate::CosmosDriverRuntime::create_driver).
     /// Callers may invoke it again to retry if the initial attempt failed
     /// (the result is idempotent).
     pub async fn initialize(&self) -> crate::error::Result<()> {
@@ -1445,7 +1447,9 @@ impl CosmosDriver {
     ///     "my-key",
     /// );
     ///
-    /// let driver = runtime.get_or_create_driver(account, None).await?;
+    /// let driver = runtime
+    ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
+    ///     .await?;
     ///
     /// // Point operation: plan and execute in one call.
     /// let options = OperationOptionsBuilder::new()
@@ -1537,10 +1541,11 @@ impl CosmosDriver {
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
                 .with_message(format!(
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
-                     use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
+                     use CosmosDriverRuntime::create_driver() which initializes automatically"
                 ))
                 .build());
         }
@@ -1698,7 +1703,9 @@ impl CosmosDriver {
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
-    /// let driver = runtime.get_or_create_driver(account, None).await?;
+    /// let driver = runtime
+    ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
+    ///     .await?;
     ///
     /// // Resolve the container (fetched from service on each call)
     /// let container = driver.resolve_container("mydb", "mycontainer").await?;
@@ -1774,10 +1781,11 @@ impl CosmosDriver {
     ) -> crate::error::Result<OperationPlan> {
         if !self.initialized.load(Ordering::Acquire) {
             let endpoint = AccountEndpoint::from(self.options.account());
-            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
                 .with_message(format!(
                     "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
-                     use CosmosDriverRuntime::get_or_create_driver() which initializes automatically"
+                     use CosmosDriverRuntime::create_driver() which initializes automatically"
                 ))
                 .build());
         }

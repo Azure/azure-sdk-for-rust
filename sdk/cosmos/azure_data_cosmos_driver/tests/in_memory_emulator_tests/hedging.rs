@@ -224,7 +224,7 @@ async fn make_hedging_driver(
         .build();
 
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes against emulator metadata");
 
@@ -639,7 +639,7 @@ async fn hedging_disabled_per_operation() {
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
         .build();
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes against emulator metadata");
 
@@ -1017,7 +1017,7 @@ async fn hedging_with_ppcb_existing_failures() {
         .with_operation_options(driver_op_options)
         .build();
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes with PPCB enabled");
 
@@ -1115,7 +1115,7 @@ async fn hedging_alternate_wins_trip_ppcb() {
         .with_operation_options(driver_op_options)
         .build();
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes with PPCB enabled");
 
@@ -1336,7 +1336,7 @@ async fn hedging_exclude_regions_under_503_retry() {
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US, Region::CENTRAL_US])
         .build();
     let driver = runtime
-        .get_or_create_driver(account, Some(driver_options))
+        .create_driver(driver_options)
         .await
         .expect("driver initializes against 3-region emulator metadata");
 

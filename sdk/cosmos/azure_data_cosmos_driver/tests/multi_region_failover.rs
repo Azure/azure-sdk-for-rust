@@ -22,6 +22,7 @@ use azure_data_cosmos_driver::models::{
     AccountReference, CosmosOperation, CosmosResponse, ItemReference, PartitionKey,
 };
 use azure_data_cosmos_driver::models::{ContainerReference, DatabaseReference};
+use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::options::{ExcludedRegions, OperationOptionsBuilder, Region};
 use azure_data_cosmos_driver::{CosmosStatus, SubStatusCode};
@@ -39,7 +40,7 @@ mod framework;
 use framework::resolve_test_env;
 
 /// Persistent fault on every `MetadataReadDatabaseAccount` (GET /) request.
-/// Fires unconditionally on `get_or_create_driver`, regardless of the data-plane op that follows.
+/// Fires unconditionally on `create_driver`, regardless of the data-plane op that follows.
 fn build_account_metadata_fault_rule(
     id: &str,
     error_type: FaultInjectionErrorType,
@@ -98,7 +99,7 @@ async fn build_runtime_with_rule(rule: &Arc<FaultInjectionRule>) -> Arc<CosmosDr
         .expect("runtime should be created")
 }
 
-/// Installs a persistent metadata fault, calls `get_or_create_driver`, and asserts the surfaced
+/// Installs a persistent metadata fault, calls `create_driver`, and asserts the surfaced
 /// error preserves `(expected_status, expected_sub_status)` and the rule fired at least once.
 async fn run_metadata_fault_test(
     account: AccountReference,
@@ -111,9 +112,9 @@ async fn run_metadata_fault_test(
     let runtime = build_runtime_with_rule(&rule).await;
 
     let err = runtime
-        .get_or_create_driver(account, None)
+        .create_driver(DriverOptions::builder(account).build())
         .await
-        .expect_err("get_or_create_driver must fail under a persistent metadata fault");
+        .expect_err("create_driver must fail under a persistent metadata fault");
 
     assert_preserves_upstream_status(&err, expected_status, expected_sub_status);
     assert!(
@@ -250,7 +251,9 @@ async fn create_unique_db_and_container(
     runtime: &Arc<CosmosDriverRuntime>,
     account: &AccountReference,
 ) -> Result<(DatabaseReference, ContainerReference), Box<dyn Error>> {
-    let driver = runtime.get_or_create_driver(account.clone(), None).await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
     let db_name = format!("failover-test-db-{}", Uuid::new_v4());
     let container_name = "c".to_string();
 
@@ -293,7 +296,10 @@ async fn delete_database(
     account: &AccountReference,
     db: &DatabaseReference,
 ) {
-    if let Ok(driver) = runtime.get_or_create_driver(account.clone(), None).await {
+    if let Ok(driver) = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await
+    {
         let op = CosmosOperation::delete_database(db.clone());
         let _ = driver
             .execute_singleton_operation(op, OperationOptions::default())
@@ -333,7 +339,9 @@ async fn warmup_region(
         .with_excluded_regions(excluded)
         .build();
 
-    let driver = runtime.get_or_create_driver(account.clone(), None).await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
     let start = std::time::Instant::now();
     let mut last_err = None;
     while start.elapsed() < WARMUP_TIMEOUT {
@@ -512,7 +520,7 @@ where
         .build()
         .await?;
     let exercise_driver = exercise_runtime
-        .get_or_create_driver(account.clone(), None)
+        .create_driver(DriverOptions::builder(account.clone()).build())
         .await?;
 
     let result = exercise(exercise_driver, container_ref.clone(), HUB_REGION).await;
