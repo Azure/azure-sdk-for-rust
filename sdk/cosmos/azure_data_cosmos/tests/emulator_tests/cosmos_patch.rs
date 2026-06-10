@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
 
 // Use the shared test framework declared in `tests/emulator/mod.rs`.
 use super::framework;
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
-#[cfg(feature = "fault_injection")]
 use azure_data_cosmos::fault_injection::{
     CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
     FaultInjectionRuleBuilder, FaultOperationType,
@@ -15,12 +13,10 @@ use azure_data_cosmos::fault_injection::{
 use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
 use azure_data_cosmos::{PatchInstructions, PatchItemOptions, PatchOperation};
 use framework::TestClient;
-#[cfg(feature = "fault_injection")]
 use framework::TestOptions;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-#[cfg(feature = "fault_injection")]
 use std::sync::Arc;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
@@ -242,7 +238,6 @@ pub async fn patch_item_honors_max_attempts_option() -> Result<(), Box<dyn Error
 /// Build a [`FaultInjectionRule`] that returns a synthetic 412 for every
 /// `ReplaceItem` request, with an optional `hit_limit` to cap how many
 /// times it fires.
-#[cfg(feature = "fault_injection")]
 fn build_replace_412_rule(
     name: &str,
     hit_limit: Option<u32>,
@@ -268,7 +263,6 @@ fn build_replace_412_rule(
 /// container is bound to the fault-injection-aware `CosmosClient` exposed
 /// by `run_context.fault_client()`, so calls through it are subject to the
 /// fault rules registered on `TestOptions`.
-#[cfg(feature = "fault_injection")]
 async fn setup_fault_injected_container(
     run_context: &TestRunContext,
     db_client: &azure_data_cosmos::clients::DatabaseClient,
@@ -307,7 +301,6 @@ async fn setup_fault_injected_container(
 /// surface.
 ///
 /// Mirrors the driver-level emulator test `cosmos_patch_412_retry`.
-#[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -373,7 +366,6 @@ pub async fn patch_item_412_retry_succeeds() -> Result<(), Box<dyn Error>> {
 /// `PreconditionFailed` error.
 ///
 /// Mirrors the driver-level emulator test `cosmos_patch_412_exhaustion`.
-#[cfg(feature = "fault_injection")]
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),

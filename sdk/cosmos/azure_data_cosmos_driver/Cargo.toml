@@ -112,3 +112,25 @@ features = [
   "rustls",
   "tokio",
 ]
+
+# Explicit [[test]] entries gate the feature-dependent integration test
+# binaries. Cargo silently skips a target whose `required-features` are not
+# all enabled, so `cargo build --tests` / `cargo test` work without
+# `--all-features`. Auto-discovery still picks up every other test root.
+# `multi_write` is intentionally omitted here because it is gated on the
+# custom `test_category = "multi_write"` cfg (set via RUSTFLAGS), which
+# `required-features` cannot express.
+[[test]]
+name = "multi_region_failover"
+path = "tests/multi_region_failover.rs"
+required-features = ["fault_injection"]
+
+[[test]]
+name = "gateway_query_plan_comparison"
+path = "tests/gateway_query_plan_comparison.rs"
+required-features = ["__internal_testing"]
+
+[[test]]
+name = "in_memory_emulator"
+path = "tests/in_memory_emulator.rs"
+required-features = ["__internal_in_memory_emulator"]

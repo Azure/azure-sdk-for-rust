@@ -104,3 +104,27 @@ features = [
   "native_tls",
   "rustls",
 ]
+
+# Explicit [[test]] entries gate the feature-dependent integration test
+# binaries. Cargo silently skips a target whose `required-features` are not
+# all enabled, so `cargo build --tests` / `cargo test` work without
+# `--all-features`. Auto-discovery still picks up every other test root.
+[[test]]
+name = "emulator"
+path = "tests/emulator.rs"
+required-features = ["key_auth", "fault_injection"]
+
+[[test]]
+name = "multi_write"
+path = "tests/multi_write.rs"
+required-features = ["key_auth", "fault_injection"]
+
+[[test]]
+name = "split"
+path = "tests/split.rs"
+required-features = ["key_auth", "fault_injection"]
+
+[[test]]
+name = "in_memory_emulator"
+path = "tests/in_memory_emulator.rs"
+required-features = ["__internal_in_memory_emulator"]

@@ -9,9 +9,6 @@
 //! - Write operations (create, upsert, replace, delete) do NOT retry across
 //!   regions on 408 errors.
 
-#![cfg(feature = "key_auth")]
-#![cfg(feature = "fault_injection")]
-
 use super::framework;
 
 use azure_core::http::StatusCode;
