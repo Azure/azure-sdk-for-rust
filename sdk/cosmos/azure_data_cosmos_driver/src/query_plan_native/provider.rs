@@ -49,8 +49,7 @@ impl QueryPlanProvider {
     /// On the first call, this dynamically loads the native library.
     pub fn new(config_json: &str) -> Result<Self, QueryPlanError> {
         let lib = query_plan_native::query_plan_native_lib()?;
-        let c_config =
-            CString::new(config_json).map_err(|_| QueryPlanError::ConfigContainsNull)?;
+        let c_config = CString::new(config_json).map_err(|_| QueryPlanError::ConfigContainsNull)?;
 
         let (hr, handle) = lib.create_service_provider(&c_config);
 
@@ -64,8 +63,7 @@ impl QueryPlanProvider {
     /// Updates the service provider with new configuration.
     pub fn update(&self, config_json: &str) -> Result<(), QueryPlanError> {
         let lib = query_plan_native::query_plan_native_lib()?;
-        let c_config =
-            CString::new(config_json).map_err(|_| QueryPlanError::ConfigContainsNull)?;
+        let c_config = CString::new(config_json).map_err(|_| QueryPlanError::ConfigContainsNull)?;
 
         let hr = lib.update_service_provider(self.handle, &c_config);
 
