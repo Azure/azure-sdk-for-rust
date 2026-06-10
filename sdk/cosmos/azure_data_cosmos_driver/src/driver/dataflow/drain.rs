@@ -148,7 +148,8 @@ impl PipelineNode for SequentialDrain {
                 );
                 tracing::warn!(
                     child_index = idx,
-                    surviving_children = self.children.len() - 1,
+                    total_children = self.children.len(),
+                    children_collected_so_far = children.len(),
                     "SequentialDrain child has no feed_range during snapshot_state; appending poison sentinel — next resume will hard-fail via the continuation-token validator",
                 );
                 saw_missing_range = true;

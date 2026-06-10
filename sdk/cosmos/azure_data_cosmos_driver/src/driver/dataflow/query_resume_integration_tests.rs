@@ -16,7 +16,7 @@
 //!    scope — not just the first.
 //! 2. `SequentialDrain::snapshot_state` must record every still-pending
 //!    sibling, not just the front, so that pausing a fan-out query
-//!    mid-flight preserves the sibling siblings' un-started pre-split-token
+//!    mid-flight preserves the other siblings' unstarted pre-split-token
 //!    state across the serialize → resume boundary.
 //!
 //! Both regressions surfaced live as "items the caller already consumed on
