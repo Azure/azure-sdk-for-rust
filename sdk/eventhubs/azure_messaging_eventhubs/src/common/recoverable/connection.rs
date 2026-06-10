@@ -776,7 +776,7 @@ impl RecoverableConnection {
                 ) {
                     // Fail fast on auth failures, matching the .NET and Java Event Hubs
                     // SDKs, which both classify `amqp:unauthorized-access` as non-transient
-                    // / non-retriable. A runtime unauthorized-access almost always means a
+                    // / non-retryable. A runtime unauthorized-access almost always means a
                     // bad or revoked credential or missing RBAC, not a momentarily expired
                     // token; keeping tokens fresh is the CBS refresher's job (proactive
                     // pre-expiry renewal), not something to recover by reconnecting on a 401.
