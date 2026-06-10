@@ -340,14 +340,28 @@ impl RecoverableConnection {
 
     pub(crate) async fn close_receiver(self: &Arc<Self>, source_url: &Url) -> Result<()> {
         // Drop the map's write lock as soon as the cell is removed so the detach
-        // (network I/O) doesn't hold it. Peel the cell to its inner receiver; if
-        // the cell was never initialized this is `None` and there is nothing to
-        // detach.
-        let cell = self.receiver_instances.write().await.remove(source_url);
-        let Some(receiver) = cell
-            .and_then(|cell| Arc::try_unwrap(cell).ok())
-            .and_then(OnceCell::into_inner)
-        else {
+        // (network I/O) doesn't hold it.
+        let Some(cell) = self.receiver_instances.write().await.remove(source_url) else {
+            // No entry for this path; nothing to detach.
+            return Ok(());
+        };
+        let receiver = match Arc::try_unwrap(cell) {
+            Ok(cell) => cell.into_inner(),
+            Err(_) => {
+                // A concurrent `ensure_receiver` is mid-attach and still holds a
+                // clone of the cell. The map entry is already removed and
+                // `EventReceiver::closed` stops the stream from reattaching, so
+                // the in-flight receiver is dropped once its operation completes;
+                // we just can't detach it by value here.
+                trace!(
+                    source = %source_url,
+                    "close_receiver skipped detach; attach in flight"
+                );
+                return Ok(());
+            }
+        };
+        let Some(receiver) = receiver else {
+            // Cell was removed before any attach completed; nothing to detach.
             return Ok(());
         };
         let strong_count = Arc::strong_count(&receiver);
