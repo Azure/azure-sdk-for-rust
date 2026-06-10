@@ -1039,14 +1039,17 @@ pub(crate) mod tests {
                             ..Default::default()
                         }))
                         .await
-                        .unwrap();
+                        .expect("feed: create_batch");
                     batch
                         .try_add_event_data(
                             EventData::builder().with_body(b"heartbeat").build(),
                             None,
                         )
-                        .unwrap();
-                    producer.send_batch(batch, None).await.unwrap();
+                        .expect("feed: add heartbeat event");
+                    producer
+                        .send_batch(batch, None)
+                        .await
+                        .expect("feed: send_batch");
                     sleep(Duration::milliseconds(250)).await;
                 }
             }
@@ -1088,8 +1091,23 @@ pub(crate) mod tests {
         )
         .await?;
 
+        // Stop the feed and observe its cancellation. A clean cancel is
+        // expected; a panic in the feed (e.g. one of its `expect`s firing) is
+        // re-raised here instead of being silently swallowed, which would
+        // otherwise surface only as the receive loop starving for deliveries.
         feed.abort();
+        match feed.await {
+            Ok(()) => {}
+            Err(err) if err.is_cancelled() => {}
+            Err(err) => std::panic::resume_unwind(err.into_panic()),
+        }
 
+        // Close both clients explicitly so neither leaks its AMQP connection
+        // across live tests. The feed task has finished by now, so its producer
+        // clone is gone and the unwrap holds the sole reference.
+        if let Ok(producer) = Arc::try_unwrap(producer) {
+            producer.close().await?;
+        }
         if let Ok(consumer) = Arc::try_unwrap(consumer) {
             consumer.close().await?;
         }
