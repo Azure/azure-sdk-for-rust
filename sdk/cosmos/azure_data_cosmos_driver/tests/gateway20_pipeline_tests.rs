@@ -410,15 +410,15 @@ async fn v2_rntbd_never_emits_both_consistency_tokens() {
 // ----------------------------------------------------------------------------
 
 /// Every outgoing HTTP request must carry
-/// `x-ms-cosmos-sdk-supportedcapabilities: 8`. The bitmask "8" is
-/// `IgnoreUnknownRntbdTokens`, which Gateway 2.0 inspects to decide whether
-/// the SDK can tolerate unknown RNTBD tokens.
-///
-/// This is the load-bearing forward-compatibility advertisement for Gateway
-/// 2.0 — it MUST stay pinned to "8" until additional bits are coordinated
-/// with a service-side rollout.
+/// `x-ms-cosmos-sdk-supportedcapabilities: 11`. The bitmask "11" is
+/// `PARTITION_MERGE | CHANGE_FEED_WITH_START_TIME_POST_MERGE | IGNORE_UNKNOWN_RNTBD_TOKENS`
+/// (bits 0x01 | 0x02 | 0x08), matching Java's
+/// `HttpConstants.SUPPORTED_CAPABILITIES`. Gateway 2.0 inspects this
+/// to decide which features the SDK can tolerate; it MUST stay in sync
+/// with Java until additional bits are coordinated with a service-side
+/// rollout.
 #[tokio::test]
-async fn capabilities_header_value_is_pinned_to_eight() {
+async fn capabilities_header_value_is_pinned_to_eleven() {
     const CAPABILITIES: &str = "x-ms-cosmos-sdk-supportedcapabilities";
 
     let (runtime, transport) = capturing_runtime(false).await;
@@ -436,7 +436,7 @@ async fn capabilities_header_value_is_pinned_to_eight() {
         });
         assert_eq!(
             value.as_deref(),
-            Some("8"),
+            Some("11"),
             "capabilities header missing or wrong on request to {}",
             req.url
         );
