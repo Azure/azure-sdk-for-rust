@@ -14,14 +14,16 @@ const APPLICATION_JSON: HeaderValue = HeaderValue::from_static("application/json
 const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 const SDK_SUPPORTED_CAPABILITIES: HeaderName =
     HeaderName::from_static("x-ms-cosmos-sdk-supportedcapabilities");
+const PARTITION_MERGE_BIT: u32 = 1;
+const CHANGE_FEED_WITH_START_TIME_POST_MERGE_BIT: u32 = 2;
 const IGNORE_UNKNOWN_RNTBD_TOKENS_BIT: u32 = 8;
-pub(crate) const SUPPORTED_CAPABILITIES_BITS: u32 = IGNORE_UNKNOWN_RNTBD_TOKENS_BIT;
-const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 8);
-/// String-encoded SDK capabilities bitmask.
-///
-/// Derived from `IgnoreUnknownRntbdTokens` (8), which advertises Gateway 2.0
-/// forward compatibility with unknown RNTBD tokens.
-const SUPPORTED_CAPABILITIES_VALUE: &str = "8";
+pub(crate) const SUPPORTED_CAPABILITIES_BITS: u32 = PARTITION_MERGE_BIT
+    | CHANGE_FEED_WITH_START_TIME_POST_MERGE_BIT
+    | IGNORE_UNKNOWN_RNTBD_TOKENS_BIT;
+const _: () = assert!(SUPPORTED_CAPABILITIES_BITS == 11);
+/// String-encoded SDK capabilities bitmask. Matches Java's
+/// `SUPPORTED_CAPABILITIES = PARTITION_MERGE | CHANGE_FEED_WITH_START_TIME_POST_MERGE | IGNORE_UNKNOWN_RNTBD_TOKENS`.
+const SUPPORTED_CAPABILITIES_VALUE: &str = "11";
 const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
 const NO_CACHE: HeaderValue = HeaderValue::from_static("no-cache");
 pub(crate) const CONSISTENCY_LEVEL: HeaderName = HeaderName::from_static("x-ms-consistency-level");
@@ -116,7 +118,7 @@ mod tests {
 
         assert_eq!(
             SUPPORTED_CAPABILITIES_VALUE.parse::<u32>().unwrap(),
-            IGNORE_UNKNOWN_RNTBD_TOKENS_BIT
+            SUPPORTED_CAPABILITIES_BITS
         );
         assert_eq!(
             request

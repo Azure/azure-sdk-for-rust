@@ -335,17 +335,36 @@ impl Token {
         )
     }
 
-    pub(crate) fn document_name(value: String) -> Self {
+    pub(crate) fn collection_rid(value: String) -> Self {
         Self::new(
-            RntbdRequestToken::DocumentName.into(),
+            RntbdRequestToken::CollectionRid.into(),
             TokenValue::String(value),
         )
     }
 
-    pub(crate) fn transport_request_id(value: u32) -> Self {
+    /// Binary resource id (8 bytes) emitted alongside `CollectionRid`. Required by
+    /// the Gateway 2.0 proxy as the document routing key. Java emits both — see
+    /// `RntbdRequestHeader.ResourceId` (ID 0x0000, Bytes).
+    pub(crate) fn resource_id(value: Vec<u8>) -> Self {
         Self::new(
-            RntbdRequestToken::TransportRequestId.into(),
-            TokenValue::ULong(value),
+            RntbdRequestToken::ResourceId.into(),
+            TokenValue::Bytes(value),
+        )
+    }
+
+    /// String-form partition key (JSON array) emitted alongside `EffectivePartitionKey`.
+    /// Java emits both — see `RntbdRequestHeader.PartitionKey` (ID 0x002B, String).
+    pub(crate) fn partition_key(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::PartitionKey.into(),
+            TokenValue::String(value),
+        )
+    }
+
+    pub(crate) fn document_name(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::DocumentName.into(),
+            TokenValue::String(value),
         )
     }
 
@@ -360,6 +379,22 @@ impl Token {
         Self::new(
             RntbdRequestToken::SDKSupportedCapabilities.into(),
             TokenValue::ULong(value),
+        )
+    }
+
+    /// `AllowTentativeWrites` (ID 0x0066, Byte). Java emits `1` on every request.
+    pub(crate) fn allow_tentative_writes(value: bool) -> Self {
+        Self::new(
+            RntbdRequestToken::AllowTentativeWrites.into(),
+            TokenValue::Byte(u8::from(value)),
+        )
+    }
+
+    /// `ReturnPreference` (ID 0x0082, Byte). Java emits `1` on every request.
+    pub(crate) fn return_preference(value: bool) -> Self {
+        Self::new(
+            RntbdRequestToken::ReturnPreference.into(),
+            TokenValue::Byte(u8::from(value)),
         )
     }
 
@@ -408,6 +443,7 @@ impl Token {
 /// RNTBD request metadata token IDs used by Gateway 2.0 dispatch.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum RntbdRequestToken {
+    ResourceId,
     AuthorizationToken,
     PayloadPresent,
     Date,
@@ -415,9 +451,13 @@ pub(crate) enum RntbdRequestToken {
     ConsistencyLevel,
     DatabaseName,
     CollectionName,
+    CollectionRid,
     DocumentName,
     TransportRequestId,
+    PartitionKey,
     EffectivePartitionKey,
+    AllowTentativeWrites,
+    ReturnPreference,
     SDKSupportedCapabilities,
     GlobalDatabaseAccountName,
     ReadConsistencyStrategy,
@@ -428,6 +468,7 @@ impl TryFrom<u16> for RntbdRequestToken {
 
     fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
+            0x0000 => Ok(Self::ResourceId),
             0x0001 => Ok(Self::AuthorizationToken),
             0x0002 => Ok(Self::PayloadPresent),
             0x0003 => Ok(Self::Date),
@@ -436,8 +477,12 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x0015 => Ok(Self::DatabaseName),
             0x0016 => Ok(Self::CollectionName),
             0x0017 => Ok(Self::DocumentName),
+            0x002B => Ok(Self::PartitionKey),
+            0x0035 => Ok(Self::CollectionRid),
             0x004D => Ok(Self::TransportRequestId),
             0x005A => Ok(Self::EffectivePartitionKey),
+            0x0066 => Ok(Self::AllowTentativeWrites),
+            0x0082 => Ok(Self::ReturnPreference),
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
             0x00CE => Ok(Self::GlobalDatabaseAccountName),
             0x00F0 => Ok(Self::ReadConsistencyStrategy),
@@ -449,6 +494,7 @@ impl TryFrom<u16> for RntbdRequestToken {
 impl From<RntbdRequestToken> for u16 {
     fn from(value: RntbdRequestToken) -> Self {
         match value {
+            RntbdRequestToken::ResourceId => 0x0000,
             RntbdRequestToken::AuthorizationToken => 0x0001,
             RntbdRequestToken::PayloadPresent => 0x0002,
             RntbdRequestToken::Date => 0x0003,
@@ -457,8 +503,12 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::DatabaseName => 0x0015,
             RntbdRequestToken::CollectionName => 0x0016,
             RntbdRequestToken::DocumentName => 0x0017,
+            RntbdRequestToken::PartitionKey => 0x002B,
+            RntbdRequestToken::CollectionRid => 0x0035,
             RntbdRequestToken::TransportRequestId => 0x004D,
             RntbdRequestToken::EffectivePartitionKey => 0x005A,
+            RntbdRequestToken::AllowTentativeWrites => 0x0066,
+            RntbdRequestToken::ReturnPreference => 0x0082,
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
             RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
             RntbdRequestToken::ReadConsistencyStrategy => 0x00F0,

@@ -299,7 +299,13 @@ pub(crate) async fn execute_operation_pipeline(
         let location = location_state_store.snapshot();
 
         // ── STAGE 2: Resolve endpoint ──────────────────────────────────
-        let account_name = account_endpoint.global_database_account_name();
+        // Use the customer-provided global endpoint (not the per-attempt
+        // regional endpoint, which would produce a region-suffixed name like
+        // "account-eastus2"). The Gateway 2.0 RNTBD `GlobalDatabaseAccountName`
+        // token must carry the global account label.
+        let account_name =
+            AccountEndpoint::new(location_state_store.default_endpoint().url().clone())
+                .global_database_account_name();
         let routing = resolve_endpoint(
             operation,
             &retry_state,
@@ -527,6 +533,7 @@ pub(crate) async fn execute_operation_pipeline(
                 transport_security,
                 endpoint_key: routing.endpoint_key.clone(),
                 account_name: account_name.clone(),
+                collection_rid: operation.container().map(|c| c.rid().to_owned()),
                 max_throttle_attempts,
                 max_throttle_wait_time,
             },
@@ -2330,6 +2337,7 @@ async fn perform_single_attempt(
             transport_security: ctx.transport_security,
             endpoint_key: routing.endpoint.endpoint_key(),
             account_name: ctx.account_name.clone(),
+            collection_rid: ctx.operation.container().map(|c| c.rid().to_owned()),
             max_throttle_attempts,
             max_throttle_wait_time,
         },

@@ -154,6 +154,10 @@ pub(crate) struct TransportPipelineContext<'a> {
     pub endpoint_key: EndpointKey,
     /// Global database account name used by Gateway 2.0 request wrapping.
     pub account_name: Option<String>,
+    /// Container `_rid` used by Gateway 2.0 request wrapping. Emitted as the
+    /// RNTBD `CollectionRid` token (0x0035) so the thin-client proxy can resolve
+    /// the partition without an extra cache round-trip.
+    pub collection_rid: Option<String>,
     /// Maximum number of 429 (throttle) retries for this operation.
     ///
     /// Resolved by the operation pipeline from the effective
@@ -296,6 +300,7 @@ pub(crate) async fn execute_transport_pipeline(
                 effective_consistency: request.effective_consistency,
                 read_consistency_strategy: request.read_consistency_strategy,
                 account_name: ctx.account_name.as_deref(),
+                collection_rid: ctx.collection_rid.as_deref(),
             };
             match wrap_request_for_gateway20(&http_request, &wrap_inputs) {
                 Ok(wrapped_request) => http_request = wrapped_request,
@@ -1166,6 +1171,7 @@ mod tests {
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: endpoint.endpoint_key(),
                 account_name: None,
+                collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
             },
@@ -1240,6 +1246,7 @@ mod tests {
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
+                collection_rid: None,
                 max_throttle_attempts: 0,
                 max_throttle_wait_time: Duration::from_secs(30),
             },
@@ -1302,6 +1309,7 @@ mod tests {
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
+                collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_millis(1),
             },
@@ -1371,6 +1379,7 @@ mod tests {
                     transport_security: TransportSecurity::Secure,
                     endpoint_key: test_endpoint_key(),
                     account_name: None,
+                    collection_rid: None,
                     max_throttle_attempts,
                     // Generous budget so the cumulative-wait cap is never the
                     // limiter for these small attempt counts.
@@ -1548,6 +1557,7 @@ mod tests {
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
+                collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
             },
@@ -1600,6 +1610,7 @@ mod tests {
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
+                collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
             },
@@ -1640,6 +1651,7 @@ mod tests {
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
+                collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
             },
@@ -1678,6 +1690,7 @@ mod tests {
                 transport_security: TransportSecurity::Secure,
                 endpoint_key: test_endpoint_key(),
                 account_name: None,
+                collection_rid: None,
                 max_throttle_attempts: 9,
                 max_throttle_wait_time: Duration::from_secs(30),
             },
@@ -1789,6 +1802,7 @@ mod tests {
             transport_security: TransportSecurity::Secure,
             endpoint_key,
             account_name,
+            collection_rid: None,
             max_throttle_attempts: 9,
             max_throttle_wait_time: Duration::from_secs(30),
         }

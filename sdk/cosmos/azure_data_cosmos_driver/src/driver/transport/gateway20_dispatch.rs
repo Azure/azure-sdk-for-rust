@@ -3,8 +3,6 @@
 
 //! Gateway 2.0 HTTP dispatch helpers.
 
-use std::sync::atomic::{AtomicU32, Ordering};
-
 use azure_core::{
     error::ErrorKind,
     http::{
@@ -12,12 +10,17 @@ use azure_core::{
         Method,
     },
 };
+use base64::{
+    engine::general_purpose::{STANDARD as BASE64_STANDARD, URL_SAFE as BASE64_URL_SAFE},
+    Engine as _,
+};
 use uuid::Uuid;
 
 use crate::{
     constants::{GATEWAY20_RANGE_MAX, GATEWAY20_RANGE_MIN},
     models::{
-        cosmos_headers::response_header_names, effective_partition_key::EffectivePartitionKey,
+        cosmos_headers::{request_header_names, response_header_names},
+        effective_partition_key::EffectivePartitionKey,
         DefaultConsistencyLevel, OperationType, PartitionKey, PartitionKeyDefinition, ResourceType,
     },
     options::ReadConsistencyStrategy,
@@ -30,12 +33,23 @@ use super::{
     AuthorizationContext,
 };
 
+const X_MS_THINCLIENT_PROXY_OPERATION_TYPE: HeaderName =
+    HeaderName::from_static("x-ms-thinclient-proxy-operation-type");
+const X_MS_THINCLIENT_PROXY_RESOURCE_TYPE: HeaderName =
+    HeaderName::from_static("x-ms-thinclient-proxy-resource-type");
+const GLOBAL_DATABASE_ACCOUNT_NAME: HeaderName =
+    HeaderName::from_static("globaldatabaseaccountname");
+const X_MS_DOCUMENTDB_COLLECTION_RID: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-collection-rid");
 const X_MS_ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 const X_MS_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 const X_MS_LSN: HeaderName = HeaderName::from_static("x-ms-lsn");
 const X_MS_GLOBAL_COMMITTED_LSN: HeaderName = HeaderName::from_static("x-ms-global-committed-lsn");
 const X_MS_CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
-static TRANSPORT_REQUEST_ID: AtomicU32 = AtomicU32::new(0);
+const X_MS_VERSION: HeaderName = HeaderName::from_static("x-ms-version");
+const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
+const X_MS_COSMOS_USE_THINCLIENT: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-use-thinclient");
 
 /// Inputs resolved by the operation pipeline before a Gateway 2.0 dispatch.
 pub(crate) struct WrapInputs<'a> {
@@ -50,6 +64,7 @@ pub(crate) struct WrapInputs<'a> {
     /// this to read operations.
     pub(crate) read_consistency_strategy: ReadConsistencyStrategy,
     pub(crate) account_name: Option<&'a str>,
+    pub(crate) collection_rid: Option<&'a str>,
 }
 
 /// Wraps a signed Cosmos HTTP request into a Gateway 2.0 RNTBD request frame.
@@ -72,13 +87,29 @@ pub(crate) fn wrap_request_for_gateway20(
 
     let epk_payload = effective_partition_key_payload(inputs)?;
 
-    let mut metadata = Vec::with_capacity(11);
+    let mut metadata = Vec::with_capacity(16);
     if let Some(EpkPayload::Point(epk)) = epk_payload.as_ref() {
         metadata.push(Token::effective_partition_key(epk.clone()));
     }
     metadata.push(Token::global_database_account_name(account_name.to_owned()));
     metadata.push(Token::database_name(resource_names.database));
     metadata.push(Token::collection_name(resource_names.collection));
+    if let Some(rid) = inputs.collection_rid.filter(|s| !s.is_empty()) {
+        metadata.push(Token::collection_rid(rid.to_owned()));
+        // Java emits both CollectionRid (string, base64) and ResourceId (binary, 8 bytes).
+        // The proxy uses ResourceId as the document routing key — without it requests
+        // fail with sub-status 13007 ("error routing the request"). Cosmos rids may use
+        // either standard (`+/`) or url-safe (`-_`) base64; try url-safe first since
+        // standard rejects `-_`.
+        let decoded = BASE64_URL_SAFE
+            .decode(rid)
+            .or_else(|_| BASE64_STANDARD.decode(rid));
+        if let Ok(decoded) = decoded {
+            if !decoded.is_empty() {
+                metadata.push(Token::resource_id(decoded));
+            }
+        }
+    }
     metadata.push(Token::payload_present(has_payload));
     if inputs.resource_type == ResourceType::Document
         && inputs.operation_type != OperationType::Create
@@ -89,6 +120,20 @@ pub(crate) fn wrap_request_for_gateway20(
     }
     metadata.push(Token::authorization_token(authorization));
     metadata.push(Token::date(date));
+    // String-form partition key (e.g. `["pk1"]`) — Java emits this alongside
+    // EffectivePartitionKey. The V1 request already carries it as the
+    // x-ms-documentdb-partitionkey header, so forward that JSON unchanged.
+    let pk_header = HeaderName::from_static(request_header_names::PARTITION_KEY);
+    if let Some(pk_json) = request.headers.get_optional_str(&pk_header) {
+        if !pk_json.is_empty() {
+            metadata.push(Token::partition_key(pk_json.to_owned()));
+        }
+    }
+    // Java emits AllowTentativeWrites (0x0066) and ReturnPreference (0x0082) as
+    // constant `1` bytes on every Cosmos RNTBD request — both are required by
+    // the Gateway 2.0 proxy's header set.
+    metadata.push(Token::allow_tentative_writes(true));
+    metadata.push(Token::return_preference(true));
     // Rule 1+5: when RCS is non-Default on a read, emit the RNTBD
     // ReadConsistencyStrategy token (0x00F0) and DROP the ConsistencyLevel token.
     // Otherwise, emit ConsistencyLevel as before (Default => transparent on wire
@@ -100,7 +145,9 @@ pub(crate) fn wrap_request_for_gateway20(
     } else {
         metadata.push(Token::consistency_level(inputs.effective_consistency));
     }
-    metadata.push(Token::transport_request_id(next_transport_request_id()));
+    // TransportRequestId (0x004D) is in Java's thin-client exclusion list — the
+    // proxy assigns its own request id, so emitting one here triggers a routing
+    // error. See `RntbdConstants.thinClientExclusionList`.
     metadata.push(Token::sdk_supported_capabilities(
         SUPPORTED_CAPABILITIES_BITS,
     ));
@@ -126,6 +173,33 @@ pub(crate) fn wrap_request_for_gateway20(
         headers.insert(USER_AGENT, HeaderValue::from(user_agent.to_owned()));
     }
     headers.insert(X_MS_ACTIVITY_ID, HeaderValue::from(activity_id.to_string()));
+    // Forward x-ms-version (defaults match Java's CURRENT_VERSION = 2020-07-15)
+    // and Cache-Control. The proxy requires x-ms-version to dispatch the request.
+    if let Some(version) = request.headers.get_optional_str(&X_MS_VERSION) {
+        headers.insert(X_MS_VERSION, HeaderValue::from(version.to_owned()));
+    } else {
+        headers.insert(X_MS_VERSION, HeaderValue::from("2020-07-15"));
+    }
+    headers.insert(CACHE_CONTROL, HeaderValue::from("no-cache"));
+    headers.insert(X_MS_COSMOS_USE_THINCLIENT, HeaderValue::from("true"));
+    headers.insert(
+        X_MS_THINCLIENT_PROXY_OPERATION_TYPE,
+        HeaderValue::from(proxy_operation_type_name(inputs.operation_type)),
+    );
+    headers.insert(
+        X_MS_THINCLIENT_PROXY_RESOURCE_TYPE,
+        HeaderValue::from(proxy_resource_type_name(inputs.resource_type)),
+    );
+    headers.insert(
+        GLOBAL_DATABASE_ACCOUNT_NAME,
+        HeaderValue::from(account_name.to_owned()),
+    );
+    if let Some(rid) = inputs.collection_rid.filter(|s| !s.is_empty()) {
+        headers.insert(
+            X_MS_DOCUMENTDB_COLLECTION_RID,
+            HeaderValue::from(rid.to_owned()),
+        );
+    }
     if let Some(EpkPayload::Range { min, max }) = epk_payload.as_ref() {
         headers.insert(GATEWAY20_RANGE_MIN, HeaderValue::from(min.clone()));
         headers.insert(GATEWAY20_RANGE_MAX, HeaderValue::from(max.clone()));
@@ -143,8 +217,9 @@ pub(crate) fn wrap_request_for_gateway20(
         }
     }
 
+    let url = request.url.clone();
     Ok(HttpRequest {
-        url: request.url.clone(),
+        url,
         method: Method::Post,
         headers,
         body: Some(bytes::Bytes::from(frame)),
@@ -226,11 +301,44 @@ fn required_header(
         .ok_or_else(|| data_conversion_error(format!("missing required {display_name} header")))
 }
 
-fn next_transport_request_id() -> u32 {
-    // AcqRel ensures the increment is globally visible. Relaxed would also produce
-    // unique values across threads (fetch_add is atomic regardless of ordering),
-    // but AcqRel is preferred here for diagnostic clarity in concurrent traces.
-    TRANSPORT_REQUEST_ID.fetch_add(1, Ordering::AcqRel)
+// PascalCase names the Gateway 2.0 proxy expects for the
+// `x-ms-thinclient-proxy-operation-type` routing header. Match
+// `com.azure.cosmos.implementation.OperationType` so the proxy can
+// dispatch the request.
+fn proxy_operation_type_name(op: OperationType) -> &'static str {
+    match op {
+        OperationType::Create => "Create",
+        OperationType::Read => "Read",
+        OperationType::ReadFeed => "ReadFeed",
+        OperationType::Replace => "Replace",
+        OperationType::Delete => "Delete",
+        OperationType::Upsert => "Upsert",
+        OperationType::Query => "Query",
+        OperationType::SqlQuery => "SqlQuery",
+        OperationType::QueryPlan => "QueryPlan",
+        OperationType::Batch => "Batch",
+        OperationType::Head => "Head",
+        OperationType::HeadFeed => "HeadFeed",
+        OperationType::Execute => "ExecuteJavaScript",
+        OperationType::Patch => "Patch",
+    }
+}
+
+// PascalCase names the Gateway 2.0 proxy expects for the
+// `x-ms-thinclient-proxy-resource-type` routing header. Match
+// `com.azure.cosmos.implementation.ResourceType`.
+fn proxy_resource_type_name(rt: ResourceType) -> &'static str {
+    match rt {
+        ResourceType::DatabaseAccount => "DatabaseAccount",
+        ResourceType::Database => "Database",
+        ResourceType::DocumentCollection => "DocumentCollection",
+        ResourceType::Document => "Document",
+        ResourceType::StoredProcedure => "StoredProcedure",
+        ResourceType::Trigger => "Trigger",
+        ResourceType::UserDefinedFunction => "UserDefinedFunction",
+        ResourceType::PartitionKeyRange => "PartitionKeyRange",
+        ResourceType::Offer => "Offer",
+    }
 }
 
 /// Wire-form payload derived from the partition key + definition for a
@@ -425,24 +533,30 @@ mod tests {
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             account_name: Some("account"),
+            collection_rid: None,
         }
     }
 
-    fn parse_wrapped_request(request: &HttpRequest, token_count: usize) -> ParsedRequest {
-        let mut src = request.body.as_ref().unwrap().as_ref();
-        let total_len = take_u32(&mut src) as usize;
-        assert_eq!(total_len, request.body.as_ref().unwrap().len());
+    fn parse_wrapped_request(request: &HttpRequest, _token_count: usize) -> ParsedRequest {
+        let body_bytes = request.body.as_ref().unwrap();
+        let mut src = body_bytes.as_ref();
+        // RNTBD `LengthInBytes` is the request header section length only
+        // (length field + resource/operation type + activity id + metadata),
+        // excluding the body length prefix and body bytes.
+        let header_len = take_u32(&mut src) as usize;
         let resource_type = take_u16(&mut src);
         let operation_type = take_u16(&mut src);
         let activity_id = take_uuid(&mut src);
 
         let mut tokens = HashMap::new();
-        for _ in 0..token_count {
+        // Read tokens until the cursor reaches the end of the header section.
+        while body_bytes.len() - src.len() < header_len {
             let id = take_u16(&mut src);
             let token_type = take_u8(&mut src);
             let value = parse_token_value(token_type, &mut src);
             tokens.insert(id, value);
         }
+        assert_eq!(body_bytes.len() - src.len(), header_len);
 
         let body = if src.is_empty() {
             None
@@ -636,10 +750,10 @@ mod tests {
             parsed.tokens[&0x0017],
             ParsedTokenValue::String("doc1".into())
         );
-        assert_eq!(
-            parsed.tokens[&0x004D],
-            ParsedTokenValue::ULong(parsed_transport_id(&parsed))
-        );
+        // TransportRequestId (0x004D) is intentionally NOT emitted on the G2
+        // path — it is in Java's `thinClientExclusionList` and the proxy assigns
+        // its own request id.
+        assert!(!parsed.tokens.contains_key(&0x004D));
         assert_eq!(
             parsed.tokens[&0x00A2],
             ParsedTokenValue::ULong(SUPPORTED_CAPABILITIES_BITS)
@@ -648,6 +762,135 @@ mod tests {
             parsed.tokens[&0x00CE],
             ParsedTokenValue::String("account".into())
         );
+    }
+
+    /// End-to-end regression: the full G2 wrap pipeline produces a frame
+    /// whose first 4 bytes (`LengthInBytes`) cover only the header section
+    /// and exclude the body length prefix + body bytes. This is the exact
+    /// property the Gateway 2.0 proxy reads — getting it wrong is what
+    /// caused HTTP 400 sub-status 13007 ("error routing the request") on
+    /// every G2 Create request in CI. Pin it at the wrap-function boundary
+    /// in addition to the lower-level `RntbdRequestFrame::serialize` tests
+    /// so a future change to the wrap function that adds bytes between the
+    /// header and the body cannot regress this.
+    #[test]
+    fn wrap_writes_length_in_bytes_covering_header_only_for_create_with_payload() {
+        let payload = br#"{"id":"doc1","pk":"abc","data":"hello"}"#;
+        let request = signed_request(Some(payload));
+        let auth_context =
+            AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Create, None, None),
+        )
+        .unwrap();
+
+        let bytes = wrapped.body.as_ref().unwrap().as_ref();
+        let length_in_bytes = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as usize;
+
+        // The `LengthInBytes` field must be strictly less than the frame size
+        // (body prefix + body bytes follow). If it ever equals `bytes.len()`,
+        // the proxy will treat the body as additional metadata tokens and
+        // fail with sub-status 13007.
+        assert!(
+            length_in_bytes < bytes.len(),
+            "LengthInBytes ({length_in_bytes}) must exclude body section but equals total frame size ({})",
+            bytes.len()
+        );
+        // And the body-length prefix immediately at offset = header_len must
+        // match the actual payload length the proxy receives.
+        let body_len = u32::from_le_bytes([
+            bytes[length_in_bytes],
+            bytes[length_in_bytes + 1],
+            bytes[length_in_bytes + 2],
+            bytes[length_in_bytes + 3],
+        ]) as usize;
+        assert_eq!(body_len, payload.len());
+        assert_eq!(bytes.len(), length_in_bytes + 4 + payload.len());
+    }
+
+    #[test]
+    fn wrap_always_emits_allow_tentative_writes_and_return_preference_as_one() {
+        // Regression: Java's `RntbdRequest` emits `AllowTentativeWrites` (0x0066)
+        // and `ReturnPreference` (0x0082) as constant `1` bytes on every Cosmos
+        // RNTBD request. Without them the Gateway 2.0 proxy returns HTTP 400
+        // sub-status 13007 ("error routing the request"). Pin both tokens here
+        // so a future refactor cannot silently drop them.
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert_eq!(parsed.tokens[&0x0066], ParsedTokenValue::Byte(1));
+        assert_eq!(parsed.tokens[&0x0082], ParsedTokenValue::Byte(1));
+    }
+
+    #[test]
+    fn wrap_emits_collection_rid_and_decoded_resource_id_when_supplied() {
+        // Regression: the proxy uses the binary `ResourceId` token (0x0000, 8
+        // bytes) as the document routing key. Java emits both `CollectionRid`
+        // (string base64) and `ResourceId` (decoded bytes); Rust must too.
+        // Cosmos rids use URL-safe base64 (e.g. `wT0aAOnu_xc=`); pin the
+        // url-safe-first decode path so plain `STANDARD` rejection of `-_`
+        // does not cause us to silently drop the routing key.
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let mut inputs = wrap_inputs(&auth_context, OperationType::Read, None, None);
+        // "wT0aAOnu_xc=" -> 8 bytes containing the url-safe `_` (0x5F maps to 0xFF7F in std b64).
+        let rid = "wT0aAOnu_xc=";
+        inputs.collection_rid = Some(rid);
+
+        let wrapped = wrap_request_for_gateway20(&request, &inputs).unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert_eq!(
+            parsed.tokens[&0x0035],
+            ParsedTokenValue::String(rid.into()),
+            "CollectionRid (0x0035) must be the raw base64 string"
+        );
+        match &parsed.tokens[&0x0000] {
+            ParsedTokenValue::Bytes(bytes) => {
+                assert_eq!(bytes.len(), 8, "ResourceId must be 8 bytes");
+            }
+            other => panic!("expected ResourceId bytes, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn wrap_omits_collection_rid_and_resource_id_when_not_supplied() {
+        // The collection rid is optional from the operation pipeline; pin
+        // that absence means neither token is emitted (rather than e.g. an
+        // empty string token which the proxy would reject).
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert!(!parsed.tokens.contains_key(&0x0035));
+        assert!(!parsed.tokens.contains_key(&0x0000));
     }
 
     #[test]
@@ -946,6 +1189,7 @@ mod tests {
                 effective_consistency: DefaultConsistencyLevel::Session,
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
+                collection_rid: None,
             },
         )
         .unwrap();
@@ -982,6 +1226,7 @@ mod tests {
                 effective_consistency: DefaultConsistencyLevel::Session,
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
+                collection_rid: None,
             },
         )
         .unwrap();
@@ -1016,6 +1261,7 @@ mod tests {
                 effective_consistency: DefaultConsistencyLevel::Session,
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
+                collection_rid: None,
             },
         )
         .unwrap();
@@ -1245,13 +1491,6 @@ mod tests {
         let error = unwrap_response_for_gateway20(response).unwrap_err();
 
         assert_eq!(error.kind(), &ErrorKind::DataConversion);
-    }
-
-    fn parsed_transport_id(parsed: &ParsedRequest) -> u32 {
-        match parsed.tokens[&0x004D] {
-            ParsedTokenValue::ULong(value) => value,
-            _ => unreachable!(),
-        }
     }
 
     fn response_frame(
