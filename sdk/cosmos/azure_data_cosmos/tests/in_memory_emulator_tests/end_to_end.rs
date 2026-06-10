@@ -20,16 +20,15 @@
 //! individual scenarios can stay focused on the SDK operation under test.
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::models::ItemResponse;
-use azure_data_cosmos::models::{ContainerProperties, DatabaseProperties};
-use azure_data_cosmos::options::Region;
-use azure_data_cosmos::options::{
-    ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions, OperationOptions,
+use azure_data_cosmos::{
+    models::{ContainerProperties, DatabaseProperties, ItemResponse},
+    options::{
+        ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions, OperationOptions, Region,
+    },
+    AccountEndpoint, AccountReference, ContentResponseOnWrite, CosmosClient, CosmosClientBuilder,
+    CosmosRuntimeBuilder, ItemReadOptions, ItemResponse, ItemWriteOptions, OperationOptions,
+    OperationOptionsBuilder, RoutingStrategy, ThrottlingRetryOptionsBuilder,
 };
-use azure_data_cosmos::AccountEndpoint;
-use azure_data_cosmos::AccountReference;
-use azure_data_cosmos::{clients::ContainerClient, options::ThrottlingRetryOptionsBuilder};
-use azure_data_cosmos::{CosmosClient, CosmosClientBuilder, RoutingStrategy};
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
     VirtualRegion,
@@ -234,7 +233,11 @@ impl SdkDualBackend {
         );
 
         let emulator_client = CosmosClientBuilder::new()
-            .with_driver_runtime_builder(emulator.runtime_builder())
+            .with_runtime(
+                CosmosRuntimeBuilder::from_driver_builder(emulator.runtime_builder())
+                    .build()
+                    .await?,
+            )
             .build(
                 emulator_account,
                 RoutingStrategy::ProximityTo(Region::EAST_US),
@@ -963,7 +966,12 @@ async fn sdk_create_retries_after_429_throttling() {
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emulator_client = CosmosClientBuilder::new()
-        .with_driver_runtime_builder(emulator.runtime_builder())
+        .with_runtime(
+            CosmosRuntimeBuilder::from_driver_builder(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
         .build(
             emulator_account,
             RoutingStrategy::ProximityTo(Region::EAST_US),
@@ -1064,13 +1072,22 @@ async fn sdk_throttling_retry_options_disables_retry() {
         EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
-    // Build the client with the grouped throttling-retry options setter,
-    // disabling throttle retries (max_retry_count = 0).
+    // Build the client with the grouped throttling-retry options as the per-client
+    // default operation options, disabling throttle retries (max_retry_count = 0).
     let emulator_client = CosmosClientBuilder::new()
-        .with_driver_runtime_builder(emulator.runtime_builder())
-        .with_throttling_retry_options(
-            ThrottlingRetryOptionsBuilder::new()
-                .with_max_retry_count(0)
+        .with_runtime(
+            CosmosRuntimeBuilder::from_driver_builder(emulator.runtime_builder())
+                .build()
+                .await
+                .unwrap(),
+        )
+        .with_default_operation_options(
+            OperationOptionsBuilder::new()
+                .with_throttling_retry_options(
+                    ThrottlingRetryOptionsBuilder::new()
+                        .with_max_retry_count(0)
+                        .build(),
+                )
                 .build(),
         )
         .build(
@@ -1217,8 +1234,14 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     let emu_client = CosmosClientBuilder::new()
-        .with_driver_runtime_builder(runtime_builder)
-        .with_fault_injection(vec![Arc::clone(&emu_rule)])
+        .with_runtime(
+            CosmosRuntimeBuilder::from_driver_builder(runtime_builder)
+                .build()
+                .await
+                .unwrap(),
+        )
+        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
+        .unwrap()
         .build(emu_account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await
         .unwrap();
@@ -1396,7 +1419,7 @@ async fn resolve_real_client_with_fault_injection(
 
     // Apply fault injection at the SDK builder layer.
     let client = CosmosClientBuilder::new()
-        .with_fault_injection(vec![rule])
+        .with_fault_injection_rules(vec![rule])?
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await?;
 

@@ -321,6 +321,10 @@ impl TestClient {
         }
     }
 
+    #[cfg_attr(
+        feature = "allow_invalid_certificates",
+        allow(unused_variables, unused_assignments, unused_mut)
+    )]
     async fn from_connection_string(
         connection_string: &str,
         application_region: Option<Region>,
@@ -348,11 +352,11 @@ impl TestClient {
             .unwrap_or(HUB_REGION);
         let strategy = RoutingStrategy::ProximityTo(region);
 
-        // Configure invalid certificate acceptance (e.g., for emulator)
-        #[cfg(feature = "allow_invalid_certificates")]
-        if allow_invalid_certificates {
-            builder = builder.with_allow_emulator_invalid_certificates(true);
-        }
+        // Configure invalid certificate acceptance (e.g., for emulator).
+        // When the `allow_invalid_certificates` Cargo feature is enabled,
+        // the SDK's global runtime defaults to
+        // `EmulatorServerCertValidation::DangerousDisabled`, so emulator
+        // connections succeed without any per-client wiring here.
         #[cfg(not(feature = "allow_invalid_certificates"))]
         if allow_invalid_certificates {
             return Err(
@@ -364,7 +368,7 @@ impl TestClient {
 
         // Configure fault injection if rules provided
         if !fault_rules.is_empty() {
-            builder = builder.with_fault_injection(fault_rules);
+            builder = builder.with_fault_injection_rules(fault_rules)?;
         }
 
         let endpoint: azure_data_cosmos::AccountEndpoint =
@@ -901,12 +905,12 @@ impl TestRunContext {
         let parsed: ConnectionString = connection_string.parse()?;
 
         let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
-        let mut builder = CosmosClient::builder();
+        let builder = CosmosClient::builder();
 
-        #[cfg(feature = "allow_invalid_certificates")]
-        if env_var == "emulator" {
-            builder = builder.with_allow_emulator_invalid_certificates(true);
-        }
+        // No per-client `allow_invalid_certificates` setting is needed: the
+        // SDK's global runtime defaults emulator-server cert validation to
+        // `DangerousDisabled` when the `allow_invalid_certificates` Cargo
+        // feature is enabled.
 
         builder
             .build(

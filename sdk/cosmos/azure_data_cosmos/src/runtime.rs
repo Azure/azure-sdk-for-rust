@@ -22,7 +22,8 @@
 //! - tunnel through an HTTP proxy,
 //! - or configure runtime-wide throughput-control groups.
 //!
-//! Attach a custom runtime to a client with `CosmosClientBuilder::with_runtime`.
+//! Attach a custom runtime to a client with
+//! [`CosmosClientBuilder::with_runtime`](crate::CosmosClientBuilder::with_runtime).
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -50,7 +51,7 @@ use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 /// Use [`CosmosRuntime::global`] to obtain a process-wide shared default
 /// runtime, or [`CosmosRuntime::builder`] to construct a customized one.
 #[derive(Clone, Debug)]
-pub struct CosmosRuntime(#[allow(dead_code)] Arc<CosmosDriverRuntime>);
+pub struct CosmosRuntime(Arc<CosmosDriverRuntime>);
 
 impl CosmosRuntime {
     /// Returns a new [`CosmosRuntimeBuilder`] for configuring a custom runtime.
@@ -75,8 +76,10 @@ impl CosmosRuntime {
     /// Subsequent calls return the same runtime. Initialization failures are
     /// not cached — a retried call will attempt initialization again.
     ///
-    /// This is the runtime `CosmosClientBuilder::build` falls back to when
-    /// no runtime was supplied via `CosmosClientBuilder::with_runtime`.
+    /// This is the runtime
+    /// [`CosmosClientBuilder::build`](crate::CosmosClientBuilder::build) falls
+    /// back to when no runtime was supplied via
+    /// [`CosmosClientBuilder::with_runtime`](crate::CosmosClientBuilder::with_runtime).
     ///
     /// # Errors
     ///
@@ -94,7 +97,6 @@ impl CosmosRuntime {
     ///
     /// Used by the SDK's `CosmosClientBuilder::build` to wire the resolved
     /// runtime into a `CosmosDriver`.
-    #[allow(dead_code)]
     pub(crate) fn into_inner(self) -> Arc<CosmosDriverRuntime> {
         self.0
     }
@@ -105,7 +107,8 @@ impl CosmosRuntime {
 /// Use [`CosmosRuntime::builder`] (or [`CosmosRuntimeBuilder::new`]) to
 /// start, configure with the `with_*` and `register_*` setters, then call
 /// [`CosmosRuntimeBuilder::build`] to obtain the runtime. Attach it to one
-/// or more clients via `CosmosClientBuilder::with_runtime`.
+/// or more clients via
+/// [`CosmosClientBuilder::with_runtime`](crate::CosmosClientBuilder::with_runtime).
 #[derive(Default, Debug, Clone)]
 pub struct CosmosRuntimeBuilder(CosmosDriverRuntimeBuilder);
 
@@ -136,8 +139,8 @@ impl CosmosRuntimeBuilder {
     /// Sets the runtime-wide default User-Agent suffix.
     ///
     /// A per-client override may be supplied via
-    /// `CosmosClientBuilder::with_user_agent_suffix`; if absent, the
-    /// runtime's suffix is used.
+    /// [`CosmosClientBuilder::with_user_agent_suffix`](crate::CosmosClientBuilder::with_user_agent_suffix);
+    /// if absent, the runtime's suffix is used.
     pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
         self.0 = self.0.with_user_agent_suffix(suffix);
         self
@@ -158,8 +161,8 @@ impl CosmosRuntimeBuilder {
     ///
     /// Groups registered here are shared by every client built on top of
     /// the runtime; per-client groups may be added via
-    /// `CosmosClientBuilder::register_throughput_control_group` and are
-    /// merged on top.
+    /// [`CosmosClientBuilder::register_throughput_control_group`](crate::CosmosClientBuilder::register_throughput_control_group)
+    /// and are merged on top.
     ///
     /// # Errors
     ///
