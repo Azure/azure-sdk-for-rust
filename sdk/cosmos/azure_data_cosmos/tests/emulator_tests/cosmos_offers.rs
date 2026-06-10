@@ -6,10 +6,8 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::{
-    models::{ContainerProperties, ThroughputProperties},
-    CreateContainerOptions,
-};
+use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
+use azure_data_cosmos::options::CreateContainerOptions;
 use framework::TestClient;
 
 #[tokio::test]

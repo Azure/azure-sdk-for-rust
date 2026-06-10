@@ -6,12 +6,13 @@ use super::framework;
 
 use std::error::Error;
 
+use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{
+    models::PartitionKeyKind,
     models::{
-        ContainerProperties, IndexingMode, IndexingPolicy, PartitionKeyKind, PropertyPath,
-        ThroughputProperties,
+        ContainerProperties, IndexingMode, IndexingPolicy, PropertyPath, ThroughputProperties,
     },
-    CreateContainerOptions, Query,
+    Query,
 };
 use futures::TryStreamExt;
 

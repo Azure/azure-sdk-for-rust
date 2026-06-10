@@ -10,8 +10,10 @@ use azure_data_cosmos::fault_injection::{
     CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
     FaultInjectionRuleBuilder, FaultOperationType,
 };
-use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
-use azure_data_cosmos::{PatchInstructions, PatchItemOptions, PatchOperation};
+use azure_data_cosmos::models::ContainerProperties;
+use azure_data_cosmos::models::ItemResponse;
+use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
+use azure_data_cosmos::options::PatchItemOptions;
 use framework::TestClient;
 use framework::TestOptions;
 use framework::TestRunContext;
