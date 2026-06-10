@@ -76,14 +76,14 @@ pub(crate) struct RecoverableConnection {
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
     mgmt_client: AsyncMutex<Option<Arc<AmqpManagement>>>,
-    receiver_instances: AsyncMutex<HashMap<Url, Arc<AmqpReceiver>>>,
-    // The sender and session caches are keyed by path. Each entry is an
-    // independently-initialized `OnceCell`, so concurrent sends to *different*
-    // partitions never serialize on a shared lock, and the expensive attach
-    // (authorize + session begin + link attach) happens without holding the
-    // map-wide lock. See issue #2243.
+    // The sender, session, and receiver caches are keyed by path. Each entry is
+    // an independently-initialized `OnceCell`, so concurrent operations on
+    // *different* partitions never serialize on a shared lock, and the expensive
+    // attach (authorize + session begin + link attach) happens without holding
+    // the map-wide lock. See issues #2243 and #4563.
     sender_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSender>>>>>,
     session_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSession>>>>>,
+    receiver_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpReceiver>>>>>,
     pub(super) authorizer: Arc<Authorizer>,
     connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
     connection_name: String,
@@ -120,7 +120,7 @@ impl RecoverableConnection {
                 connections: AsyncMutex::new(None),
                 session_instances: RwLock::new(HashMap::new()),
                 sender_instances: RwLock::new(HashMap::new()),
-                receiver_instances: AsyncMutex::new(HashMap::new()),
+                receiver_instances: RwLock::new(HashMap::new()),
                 mgmt_client: AsyncMutex::new(None),
                 authorizer,
                 #[cfg(test)]
@@ -209,9 +209,16 @@ impl RecoverableConnection {
             }
         }
 
-        let mut receiver_instances = self.receiver_instances.lock().await;
-        for (source_url, receiver) in receiver_instances.drain() {
+        let mut receiver_instances = self.receiver_instances.write().await;
+        for (source_url, cell) in receiver_instances.drain() {
             trace!("Detaching receiver for source URL {}.", source_url);
+            let Some(receiver) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
+                trace!(
+                    "Failed to detach receiver for source URL {}, references exist.",
+                    source_url
+                );
+                continue;
+            };
             if let Ok(receiver) = Arc::try_unwrap(receiver) {
                 trace!("Detaching receiver for source URL {}.", source_url);
                 receiver.detach().await?;
@@ -332,24 +339,31 @@ impl RecoverableConnection {
     }
 
     pub(crate) async fn close_receiver(self: &Arc<Self>, source_url: &Url) -> Result<()> {
-        let mut receiver_instances = self.receiver_instances.lock().await;
-        if let Some(receiver) = receiver_instances.remove(source_url) {
-            let strong_count = Arc::strong_count(&receiver);
-            let r = Arc::try_unwrap(receiver);
-            if let Ok(receiver) = r {
-                trace!("Detaching receiver: {:?}", source_url);
-                receiver.detach().await?;
-            } else {
-                // In-flight `receive_delivery` holds a clone of the Arc.
-                // Map entry is already removed; `EventReceiver::closed`
-                // (set before this call by `request_close`) stops the
-                // stream from reattaching on its next poll.
-                warn!(
-                    source = %source_url,
-                    strong_count,
-                    "close_receiver could not detach by-value"
-                );
-            }
+        // Drop the map's write lock as soon as the cell is removed so the detach
+        // (network I/O) doesn't hold it. Peel the cell to its inner receiver; if
+        // the cell was never initialized this is `None` and there is nothing to
+        // detach.
+        let cell = self.receiver_instances.write().await.remove(source_url);
+        let Some(receiver) = cell
+            .and_then(|cell| Arc::try_unwrap(cell).ok())
+            .and_then(OnceCell::into_inner)
+        else {
+            return Ok(());
+        };
+        let strong_count = Arc::strong_count(&receiver);
+        if let Ok(receiver) = Arc::try_unwrap(receiver) {
+            trace!("Detaching receiver: {:?}", source_url);
+            receiver.detach().await?;
+        } else {
+            // In-flight `receive_delivery` holds a clone of the Arc.
+            // Map entry is already removed; `EventReceiver::closed`
+            // (set before this call by `request_close`) stops the
+            // stream from reattaching on its next poll.
+            warn!(
+                source = %source_url,
+                strong_count,
+                "close_receiver could not detach by-value"
+            );
         }
         Ok(())
     }
@@ -476,30 +490,49 @@ impl RecoverableConnection {
         message_source: &AmqpSource,
         receiver_options: &AmqpReceiverOptions,
     ) -> azure_core_amqp::Result<Arc<AmqpReceiver>> {
-        let mut receiver_instances = self.receiver_instances.lock().await;
-        if !receiver_instances.contains_key(source_url) {
-            self.ensure_connection().await?;
-            self.authorizer.authorize_path(self, source_url).await?;
+        // Resolve the per-path cell while holding the map lock only briefly, then
+        // attach (ensure connection + authorize + session begin + link attach)
+        // without holding it, so receivers for other partitions can be created
+        // concurrently and steady-state receives never serialize on a shared
+        // lock. See issues #2243 and #4563.
+        let cell = self.receiver_cell(source_url).await;
+        let receiver = cell
+            .get_or_try_init(|| async {
+                self.ensure_connection().await?;
+                self.authorizer.authorize_path(self, source_url).await?;
 
-            let session = self.get_session(source_url).await?;
+                let session = self.get_session(source_url).await?;
 
-            debug!("Create receiver on partition {source_url}.");
-            let receiver = AmqpReceiver::new();
-            receiver
-                .attach(
-                    &session,
-                    message_source.clone(),
-                    Some(receiver_options.clone()),
-                )
-                .await?;
+                debug!("Create receiver on partition {source_url}.");
+                let receiver = AmqpReceiver::new();
+                receiver
+                    .attach(
+                        &session,
+                        message_source.clone(),
+                        Some(receiver_options.clone()),
+                    )
+                    .await?;
+                Ok::<_, AmqpError>(Arc::new(receiver))
+            })
+            .await?;
 
-            receiver_instances.insert(source_url.clone(), Arc::new(receiver));
+        Ok(receiver.clone())
+    }
+
+    /// Returns the `OnceCell` that owns the receiver for `source_url`, inserting
+    /// an uninitialized one if absent. The read path is taken first so
+    /// steady-state lookups share a read lock; only first-time inserts take the
+    /// write lock.
+    async fn receiver_cell(&self, source_url: &Url) -> Arc<OnceCell<Arc<AmqpReceiver>>> {
+        if let Some(cell) = self.receiver_instances.read().await.get(source_url) {
+            return cell.clone();
         }
-
-        Ok(receiver_instances
-            .get(source_url)
-            .ok_or_else(|| AmqpError::with_message("Missing message receiver"))?
-            .clone())
+        self.receiver_instances
+            .write()
+            .await
+            .entry(source_url.clone())
+            .or_insert_with(|| Arc::new(OnceCell::new()))
+            .clone()
     }
 
     pub(super) async fn ensure_sender(
@@ -577,21 +610,21 @@ impl RecoverableConnection {
                 connection.authorizer.clear().await;
                 connection.session_instances.write().await.clear();
                 connection.sender_instances.write().await.clear();
-                connection.receiver_instances.lock().await.clear();
+                connection.receiver_instances.write().await.clear();
             }
             ErrorRecoveryAction::ReconnectSession => {
                 debug!("Recovering from session error: {:?}", reason);
                 // Recreate the session and sender/receiver as needed.
                 connection.session_instances.write().await.clear();
                 connection.sender_instances.write().await.clear();
-                connection.receiver_instances.lock().await.clear();
+                connection.receiver_instances.write().await.clear();
             }
             ErrorRecoveryAction::ReconnectLink => {
                 debug!("Recovering from link error: {:?}", reason);
                 // Recreate the session and sender/receiver as needed.
                 connection.session_instances.write().await.clear();
                 connection.sender_instances.write().await.clear();
-                connection.receiver_instances.lock().await.clear();
+                connection.receiver_instances.write().await.clear();
                 connection.mgmt_client.lock().await.take();
             }
             _ => {
@@ -757,12 +790,13 @@ mod tests {
         assert!(!connection_manager.connections.lock_blocking().is_some());
     }
 
-    // The per-path sender/session caches must hand out one shared `OnceCell` per
-    // path (so concurrent first-sends to a partition attach exactly once) and
-    // distinct cells for distinct paths (so sends to different partitions never
-    // share a cell and can initialize concurrently). See issue #2243.
+    // The per-path sender/session/receiver caches must hand out one shared
+    // `OnceCell` per path (so concurrent first-operations on a partition attach
+    // exactly once) and distinct cells for distinct paths (so operations on
+    // different partitions never share a cell and can initialize concurrently).
+    // See issues #2243 and #4563.
     #[tokio::test]
-    async fn sender_and_session_cells_are_keyed_by_path() {
+    async fn sender_session_and_receiver_cells_are_keyed_by_path() {
         let url = Url::parse("amqps://example.com").unwrap();
         let connection = RecoverableConnection::new(
             url,
@@ -775,7 +809,7 @@ mod tests {
         let path_a = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
         let path_b = Url::parse("amqps://example.com/eh/Partitions/1").unwrap();
 
-        // Same path resolves to the same cell, both for senders and sessions.
+        // Same path resolves to the same cell for senders, sessions, and receivers.
         assert!(Arc::ptr_eq(
             &connection.sender_cell(&path_a).await,
             &connection.sender_cell(&path_a).await
@@ -784,16 +818,25 @@ mod tests {
             &connection.session_cell(&path_a).await,
             &connection.session_cell(&path_a).await
         ));
+        assert!(Arc::ptr_eq(
+            &connection.receiver_cell(&path_a).await,
+            &connection.receiver_cell(&path_a).await
+        ));
 
         // Different paths resolve to different cells.
         assert!(!Arc::ptr_eq(
             &connection.sender_cell(&path_a).await,
             &connection.sender_cell(&path_b).await
         ));
+        assert!(!Arc::ptr_eq(
+            &connection.receiver_cell(&path_a).await,
+            &connection.receiver_cell(&path_b).await
+        ));
 
         // Cells are uninitialized until an attach succeeds.
         assert!(connection.sender_cell(&path_a).await.get().is_none());
         assert!(connection.session_cell(&path_a).await.get().is_none());
+        assert!(connection.receiver_cell(&path_a).await.get().is_none());
     }
 
     // The RecoverableConnection supports using a custom endpoint for connecting to Event Hubs proxies.
