@@ -96,6 +96,26 @@ pub(crate) struct RecoverableConnection {
 unsafe impl Send for RecoverableConnection {}
 unsafe impl Sync for RecoverableConnection {}
 
+/// Returns the per-path `OnceCell` for `key`, inserting an uninitialized one if
+/// absent. The read path is taken first so steady-state lookups share a read
+/// lock; only the first insert for a key takes the write lock. The attach then
+/// runs inside the returned `OnceCell`, so the map lock is never held across it
+/// and different paths set up concurrently. Shared by the sender, session, and
+/// receiver caches so all three keep identical concurrency semantics.
+async fn or_init_cell<T>(
+    map: &RwLock<HashMap<Url, Arc<OnceCell<Arc<T>>>>>,
+    key: &Url,
+) -> Arc<OnceCell<Arc<T>>> {
+    if let Some(cell) = map.read().await.get(key) {
+        return cell.clone();
+    }
+    map.write()
+        .await
+        .entry(key.clone())
+        .or_insert_with(|| Arc::new(OnceCell::new()))
+        .clone()
+}
+
 impl RecoverableConnection {
     pub fn new(
         url: Url,
@@ -414,18 +434,9 @@ impl RecoverableConnection {
     }
 
     /// Returns the `OnceCell` that owns the session for `source_url`, inserting an
-    /// uninitialized one if absent. The read path is taken first so steady-state
-    /// lookups share a read lock; only first-time inserts take the write lock.
+    /// uninitialized one if absent. See [`or_init_cell`] for the locking strategy.
     async fn session_cell(&self, source_url: &Url) -> Arc<OnceCell<Arc<AmqpSession>>> {
-        if let Some(cell) = self.session_instances.read().await.get(source_url) {
-            return cell.clone();
-        }
-        self.session_instances
-            .write()
-            .await
-            .entry(source_url.clone())
-            .or_insert_with(|| Arc::new(OnceCell::new()))
-            .clone()
+        or_init_cell(&self.session_instances, source_url).await
     }
 
     async fn create_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
@@ -534,19 +545,9 @@ impl RecoverableConnection {
     }
 
     /// Returns the `OnceCell` that owns the receiver for `source_url`, inserting
-    /// an uninitialized one if absent. The read path is taken first so
-    /// steady-state lookups share a read lock; only first-time inserts take the
-    /// write lock.
+    /// an uninitialized one if absent. See [`or_init_cell`] for the locking strategy.
     async fn receiver_cell(&self, source_url: &Url) -> Arc<OnceCell<Arc<AmqpReceiver>>> {
-        if let Some(cell) = self.receiver_instances.read().await.get(source_url) {
-            return cell.clone();
-        }
-        self.receiver_instances
-            .write()
-            .await
-            .entry(source_url.clone())
-            .or_insert_with(|| Arc::new(OnceCell::new()))
-            .clone()
+        or_init_cell(&self.receiver_instances, source_url).await
     }
 
     pub(super) async fn ensure_sender(
@@ -587,18 +588,9 @@ impl RecoverableConnection {
     }
 
     /// Returns the `OnceCell` that owns the sender for `path`, inserting an
-    /// uninitialized one if absent. The read path is taken first so steady-state
-    /// lookups share a read lock; only first-time inserts take the write lock.
+    /// uninitialized one if absent. See [`or_init_cell`] for the locking strategy.
     async fn sender_cell(&self, path: &Url) -> Arc<OnceCell<Arc<AmqpSender>>> {
-        if let Some(cell) = self.sender_instances.read().await.get(path) {
-            return cell.clone();
-        }
-        self.sender_instances
-            .write()
-            .await
-            .entry(path.clone())
-            .or_insert_with(|| Arc::new(OnceCell::new()))
-            .clone()
+        or_init_cell(&self.sender_instances, path).await
     }
 
     pub(super) async fn recover_from_error(
