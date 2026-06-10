@@ -28,7 +28,7 @@
 //! ## SDK gating policy
 //!
 //! The Rust SDK applies a **strict, all-or-nothing** policy that mirrors the
-//! Java/.NET cross-SDK guidance from Arooshi Avasthy:
+//! Java/.NET cross-SDK guidance:
 //!
 //! 1. **Strict**: only `200` counts as success. A `503` (feature disabled)
 //!    fails the probe. The federation has not opted in to Gateway 2.0 yet,

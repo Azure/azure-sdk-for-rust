@@ -315,7 +315,7 @@ pub fn compare_responses(
     let header_pairs = extract_header_pairs(&real.headers, &emulator.headers);
     for (name, real_val, emu_val) in &header_pairs {
         let mut rule = header_spec.rule_for(name);
-        if on_vnext && VNEXT_UNEMITTED_HEADERS.contains(&name.as_ref()) {
+        if on_vnext && VNEXT_UNEMITTED_HEADERS.contains(name) {
             rule = HeaderMatch::Ignore;
         }
         validate_header_field(name, real_val, emu_val, rule);

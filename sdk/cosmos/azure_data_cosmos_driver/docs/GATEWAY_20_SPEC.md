@@ -486,7 +486,7 @@ After endpoint discovery resolves `thinClient{Writable,Readable}Locations` into 
 | `503 Service Unavailable` | Proxy reachable but federation flag `enableConnectivityProbe` is OFF |
 | Any other status / network failure / timeout | Proxy unreachable |
 
-**Gating policy** (Rust SDK mirrors the cross-SDK guidance from Arooshi Avasthy):
+**Gating policy** (mirrors the cross-SDK guidance):
 
 1. **Strict** — only `200` counts as success. A `503` (feature disabled) fails the probe; the federation has not opted in to Gateway 2.0 yet, so the data plane stays on Gateway V1.
 2. **All-or-nothing** — if any probed region returns non-200, drop Gateway 2.0 for *all* regions and use Gateway V1 everywhere until a subsequent probe pass succeeds on every region.
