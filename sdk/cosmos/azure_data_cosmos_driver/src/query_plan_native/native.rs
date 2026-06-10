@@ -359,6 +359,7 @@ impl QueryPlanNativeLibrary {
     ///
     /// # Safety
     /// All pointer arguments must be valid for the duration of the call.
+    #[allow(clippy::too_many_arguments)]
     pub unsafe fn get_partition_key_ranges(
         &self,
         handle: ServiceProviderHandle,
