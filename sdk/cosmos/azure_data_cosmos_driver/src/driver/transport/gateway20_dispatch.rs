@@ -130,6 +130,18 @@ pub(crate) fn wrap_request_for_gateway20(
         headers.insert(GATEWAY20_RANGE_MIN, HeaderValue::from(min.clone()));
         headers.insert(GATEWAY20_RANGE_MAX, HeaderValue::from(max.clone()));
     }
+    // The G2 wrap synthesizes a fresh HTTP header set carrying only what the
+    // proxy needs (the RNTBD frame is in the body). The fault-injection
+    // operation tag must be forwarded so `FaultInjectingHttpClient` can match
+    // operation-typed rules against the G2 path the same way it matches V1.
+    #[cfg(feature = "fault_injection")]
+    {
+        use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
+        let fault_op_header = HeaderName::from_static(FAULT_INJECTION_OPERATION);
+        if let Some(op) = request.headers.get_optional_str(&fault_op_header) {
+            headers.insert(fault_op_header, HeaderValue::from(op.to_owned()));
+        }
+    }
 
     Ok(HttpRequest {
         url: request.url.clone(),
@@ -546,6 +558,39 @@ mod tests {
         assert!(
             global_account < payload_present,
             "GlobalDatabaseAccountName (0x00CE) must precede PayloadPresent (0x0002) per Java thin-client contract; got {emitted_ids:?}"
+        );
+    }
+
+    #[cfg(feature = "fault_injection")]
+    #[test]
+    fn wrap_forwards_fault_injection_operation_header() {
+        // Regression: the G2 wrap builds a fresh `Headers` map and used to
+        // drop `x-ms-fault-injection-operation`, causing
+        // `FaultInjectingHttpClient` to report `OperationMismatch` for any
+        // operation-typed rule on G2 traffic even when the V1 path matched.
+        use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(FAULT_INJECTION_OPERATION),
+            "ReadItem",
+        );
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+        )
+        .unwrap();
+        assert_eq!(
+            wrapped
+                .headers
+                .get_optional_str(&HeaderName::from_static(FAULT_INJECTION_OPERATION))
+                .map(|s| s.to_owned()),
+            Some("ReadItem".to_owned()),
+            "G2 wrap must forward the fault-injection operation header so FaultInjectingHttpClient can match operation-typed rules"
         );
     }
 
