@@ -10,6 +10,9 @@ use crate::{
     options::{OperationOptions, Region, UserAgentSuffix},
 };
 
+#[cfg(feature = "fault_injection")]
+use crate::fault_injection::FaultInjectionRule;
+
 /// Configuration options for a Cosmos DB driver instance.
 ///
 /// A driver represents a connection to a specific Cosmos DB account. It inherits
@@ -60,6 +63,19 @@ pub struct DriverOptions {
     /// precomputed User-Agent string verbatim, including any suffix the runtime
     /// itself was configured with.
     user_agent_suffix: Option<UserAgentSuffix>,
+    /// Driver-level fault injection rules.
+    ///
+    /// When `Some(rules)` and `rules` is non-empty, the driver wraps the
+    /// runtime's HTTP client factory with a fault-injecting factory that
+    /// evaluates these rules on every data-plane request. The bootstrap
+    /// transport (used for the initial account-metadata fetch) is never
+    /// wrapped, so fault rules targeting `MetadataReadDatabaseAccount` only
+    /// fire on the post-bootstrap refresh path.
+    ///
+    /// All drivers built from the same runtime can carry independent fault
+    /// rules; they do not interact.
+    #[cfg(feature = "fault_injection")]
+    fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
 }
 
 impl DriverOptions {
@@ -89,6 +105,15 @@ impl DriverOptions {
     pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix> {
         self.user_agent_suffix.as_ref()
     }
+
+    /// Returns the driver-level fault injection rules, if any.
+    ///
+    /// `None` means no rules were configured on this driver; an empty `Some`
+    /// is normalized to `None` at builder time and never returned here.
+    #[cfg(feature = "fault_injection")]
+    pub fn fault_injection_rules(&self) -> Option<&[Arc<FaultInjectionRule>]> {
+        self.fault_injection_rules.as_deref()
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -102,6 +127,8 @@ pub struct DriverOptionsBuilder {
     operation_options: Option<OperationOptions>,
     preferred_regions: Vec<Region>,
     user_agent_suffix: Option<UserAgentSuffix>,
+    #[cfg(feature = "fault_injection")]
+    fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
 }
 
 impl DriverOptionsBuilder {
@@ -112,6 +139,8 @@ impl DriverOptionsBuilder {
             operation_options: None,
             preferred_regions: Vec::new(),
             user_agent_suffix: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: None,
         }
     }
 
@@ -142,6 +171,56 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Installs fault injection rules for this driver.
+    ///
+    /// Rules are appended to any previously configured rules on the builder
+    /// (so multiple `with_fault_injection_rules` calls compose additively).
+    /// At driver-creation time, the driver wraps the runtime's HTTP client
+    /// factory with a fault-injecting factory that evaluates these rules
+    /// on every data-plane request. Bootstrap (the initial account-metadata
+    /// probe) is never wrapped, so rules targeting
+    /// `MetadataReadDatabaseAccount` only fire on post-bootstrap refreshes.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` when any rule's `id` collides with another rule already
+    /// configured on this builder, or with another rule in the same call.
+    /// Surfacing duplicates at builder time keeps the failure local to the
+    /// misconfiguration; otherwise a silent late drop would surface as "my
+    /// fault injection didn't fire" long after the duplicate was introduced.
+    #[cfg(feature = "fault_injection")]
+    pub fn with_fault_injection_rules(
+        mut self,
+        rules: Vec<Arc<FaultInjectionRule>>,
+    ) -> crate::error::Result<Self> {
+        if rules.is_empty() {
+            return Ok(self);
+        }
+
+        let mut seen: std::collections::HashSet<String> = self
+            .fault_injection_rules
+            .as_ref()
+            .map(|existing| existing.iter().map(|r| r.id().to_string()).collect())
+            .unwrap_or_default();
+
+        for rule in &rules {
+            if !seen.insert(rule.id().to_string()) {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
+                    )
+                    .with_message(format!("duplicate fault injection rule id: {}", rule.id()))
+                    .build());
+            }
+        }
+
+        match &mut self.fault_injection_rules {
+            Some(existing) => existing.extend(rules),
+            None => self.fault_injection_rules = Some(rules),
+        }
+        Ok(self)
+    }
+
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
@@ -149,6 +228,8 @@ impl DriverOptionsBuilder {
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
             preferred_regions: self.preferred_regions,
             user_agent_suffix: self.user_agent_suffix,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
         }
     }
 }

@@ -517,15 +517,18 @@ async fn fault_injection_429_honors_configurable_throttle_retry_count() {
 
         let runtime = emulator
             .runtime_builder()
-            .with_fault_injection_rules(vec![Arc::clone(&rule)])
-            .expect("fault injection rules should register")
             .with_default_operation_options(operation_options)
             .build()
             .await
             .expect("runtime should build against the in-memory emulator");
 
         let driver = runtime
-            .create_driver(DriverOptions::builder(account.clone()).build())
+            .create_driver(
+                DriverOptions::builder(account.clone())
+                    .with_fault_injection_rules(vec![Arc::clone(&rule)])
+                    .expect("fault injection rules should register")
+                    .build(),
+            )
             .await
             .expect("driver should initialize against the in-memory emulator");
 

@@ -144,6 +144,22 @@ pub struct CosmosDriver {
     /// runtime). When the suffix is `Some`, this is a freshly-computed
     /// `UserAgent` wrapped in its own `Arc`.
     user_agent: Arc<UserAgent>,
+    /// HTTP client factory used by every per-account transport this driver
+    /// builds.
+    ///
+    /// When the driver has no fault injection rules configured, this is a
+    /// clone of the runtime's factory `Arc`. When the driver has fault
+    /// injection rules, this is a fault-injecting wrapper around the runtime's
+    /// factory; the wrapper is owned by this driver alone and never affects
+    /// other drivers built from the same runtime.
+    http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
+    /// Whether this driver has fault injection rules installed.
+    ///
+    /// Mirrors `options.fault_injection_rules().is_some()`; cached at
+    /// construction time so the data-plane hot path can stamp the diagnostics
+    /// flag without re-checking the option.
+    #[cfg(feature = "fault_injection")]
+    fault_injection_enabled: bool,
 }
 
 impl CosmosDriver {
@@ -220,13 +236,15 @@ impl CosmosDriver {
 
     async fn fetch_account_properties_with_version(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         version: TransportHttpVersion,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<(super::cache::AccountProperties, CosmosTransport)> {
         let endpoint = AccountEndpoint::from(account);
         let (transport, metadata_transport) = Self::build_metadata_transport_for_version(
             runtime.connection_pool(),
-            Arc::clone(runtime.http_client_factory()),
+            Arc::clone(http_client_factory),
             version,
             &endpoint,
         )?;
@@ -237,6 +255,7 @@ impl CosmosDriver {
             account,
             None,
             &user_agent,
+            fault_injection_enabled,
         )
         .await?;
         Ok((props, transport))
@@ -248,6 +267,7 @@ impl CosmosDriver {
     async fn fetch_account_properties_with_runtime(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let transport = runtime.bootstrap_transport();
@@ -259,6 +279,7 @@ impl CosmosDriver {
             account,
             None,
             &user_agent,
+            fault_injection_enabled,
         )
         .await
     }
@@ -276,9 +297,18 @@ impl CosmosDriver {
     /// The returned version is used to create the per-account `CosmosTransport`.
     async fn fetch_initial_account_properties(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
-        match Self::fetch_initial_account_properties_for_endpoint(runtime, account).await {
+        match Self::fetch_initial_account_properties_for_endpoint(
+            runtime,
+            http_client_factory,
+            account,
+            fault_injection_enabled,
+        )
+        .await
+        {
             Ok(result) => Ok(result),
             Err(primary_error) if !account.backup_endpoints().is_empty() => {
                 tracing::warn!(
@@ -291,7 +321,9 @@ impl CosmosDriver {
                     let backup_account = Self::with_endpoint(account, backup_url.clone());
                     match Self::fetch_initial_account_properties_for_endpoint(
                         runtime,
+                        http_client_factory,
                         &backup_account,
+                        fault_injection_enabled,
                     )
                     .await
                     {
@@ -326,21 +358,27 @@ impl CosmosDriver {
     /// Probes the HTTP version for a single endpoint.
     async fn fetch_initial_account_properties_for_endpoint(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<(TransportHttpVersion, super::cache::AccountProperties)> {
         if !runtime.connection_pool().is_http2_allowed() {
             // User explicitly disabled HTTP/2 — skip the probe.
             let (props, _) = Self::fetch_account_properties_with_version(
                 runtime,
+                http_client_factory,
                 account,
                 TransportHttpVersion::Http11,
+                fault_injection_enabled,
             )
             .await?;
             return Ok((TransportHttpVersion::Http11, props));
         }
 
         // Try HTTP/2-only via the bootstrap transport (which is HTTP/2-only).
-        match Self::fetch_account_properties_with_runtime(runtime, account).await {
+        match Self::fetch_account_properties_with_runtime(runtime, account, fault_injection_enabled)
+            .await
+        {
             Ok(props) => {
                 tracing::trace!(
                     endpoint = %AccountEndpoint::from(account),
@@ -363,8 +401,10 @@ impl CosmosDriver {
 
                 let (props, _) = Self::fetch_account_properties_with_version(
                     runtime,
+                    http_client_factory,
                     account,
                     TransportHttpVersion::Http11,
+                    fault_injection_enabled,
                 )
                 .await?;
                 Ok((TransportHttpVersion::Http11, props))
@@ -393,6 +433,7 @@ impl CosmosDriver {
         runtime: &CosmosDriverRuntime,
         activity_id: crate::models::ActivityId,
         endpoint: &AccountEndpoint,
+        fault_injection_enabled: bool,
     ) -> (DiagnosticsContextBuilder, TransportSecurity) {
         let mut diagnostics = DiagnosticsContextBuilder::new(
             activity_id,
@@ -401,9 +442,11 @@ impl CosmosDriver {
         diagnostics.set_cpu_monitor(runtime.cpu_monitor().clone());
         diagnostics.set_machine_id(Arc::clone(runtime.machine_id()));
         #[cfg(feature = "fault_injection")]
-        if runtime.fault_injection_enabled() {
+        if fault_injection_enabled {
             diagnostics.set_fault_injection_enabled(true);
         }
+        #[cfg(not(feature = "fault_injection"))]
+        let _ = fault_injection_enabled;
         let transport_security =
             if bool::from(runtime.connection_pool().emulator_server_cert_validation())
                 && is_emulator_host(endpoint)
@@ -425,6 +468,7 @@ impl CosmosDriver {
         account: &AccountReference,
         region: Option<&crate::options::Region>,
         user_agent: &azure_core::http::headers::HeaderValue,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let endpoint_url = endpoint.join_path("/");
@@ -443,6 +487,7 @@ impl CosmosDriver {
             runtime,
             crate::models::ActivityId::new_uuid(),
             &endpoint,
+            fault_injection_enabled,
         );
         // NOTE: `transport.diagnostics_http_version()` reflects the *currently configured*
         // version on the adaptive transport. For the very first bootstrap call this is the
@@ -618,12 +663,24 @@ impl CosmosDriver {
         &self,
         account: &AccountReference,
     ) -> crate::error::Result<super::cache::AccountProperties> {
+        let fault_injection_enabled = {
+            #[cfg(feature = "fault_injection")]
+            {
+                self.fault_injection_enabled
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                false
+            }
+        };
         Self::refresh_account_properties(
             &self.runtime,
+            &self.http_client_factory,
             account,
             &self.transport,
             &self.user_agent,
             None,
+            fault_injection_enabled,
         )
         .await
     }
@@ -649,10 +706,12 @@ impl CosmosDriver {
     /// expected to be rare in steady-state operation.
     async fn refresh_account_properties(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         user_agent: &Arc<UserAgent>,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let current_transport = transport_holder.load_full();
         let current_version = current_transport.negotiated_version();
@@ -666,16 +725,19 @@ impl CosmosDriver {
             account,
             None,
             &user_agent_header,
+            fault_injection_enabled,
         )
         .await
         {
             Ok(props) => {
                 Self::maybe_restore_http2_after_refresh(
                     runtime,
+                    http_client_factory,
                     account,
                     transport_holder,
                     current_version,
                     &endpoint,
+                    fault_injection_enabled,
                 )
                 .await;
                 Ok(props)
@@ -683,11 +745,13 @@ impl CosmosDriver {
             Err(error) => {
                 match Self::handle_refresh_failure(
                     runtime,
+                    http_client_factory,
                     account,
                     transport_holder,
                     current_version,
                     &endpoint,
                     error,
+                    fault_injection_enabled,
                 )
                 .await
                 {
@@ -702,6 +766,7 @@ impl CosmosDriver {
                             &endpoint,
                             primary_error,
                             previous_props,
+                            fault_injection_enabled,
                         )
                         .await
                     }
@@ -715,6 +780,7 @@ impl CosmosDriver {
     /// Called when the primary global endpoint is unreachable. Iterates through
     /// readable regional endpoints from the previous account metadata and tries
     /// each one.
+    #[allow(clippy::too_many_arguments)]
     async fn refresh_via_regional_endpoints(
         runtime: &CosmosDriverRuntime,
         account: &AccountReference,
@@ -723,6 +789,7 @@ impl CosmosDriver {
         primary_endpoint: &AccountEndpoint,
         primary_error: crate::error::CosmosError,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let Some(cached_props) = previous_props else {
             return Err(primary_error);
@@ -769,6 +836,7 @@ impl CosmosDriver {
                 &regional_account,
                 Some(region),
                 &user_agent,
+                fault_injection_enabled,
             )
             .await
             {
@@ -799,10 +867,12 @@ impl CosmosDriver {
 
     async fn maybe_restore_http2_after_refresh(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
+        fault_injection_enabled: bool,
     ) {
         if !matches!(current_version, TransportHttpVersion::Http11)
             || !runtime.connection_pool().is_http2_allowed()
@@ -810,10 +880,12 @@ impl CosmosDriver {
             return;
         }
 
-        match Self::fetch_account_properties_with_runtime(runtime, account).await {
+        match Self::fetch_account_properties_with_runtime(runtime, account, fault_injection_enabled)
+            .await
+        {
             Ok(_) => match CosmosTransport::with_factory(
                 runtime.connection_pool().clone(),
-                Arc::clone(runtime.http_client_factory()),
+                Arc::clone(http_client_factory),
                 TransportHttpVersion::Http2,
             ) {
                 Ok(transport) => {
@@ -846,13 +918,16 @@ impl CosmosDriver {
     /// If the error indicates explicit HTTP/2 incompatibility, falls back to
     /// the alternate version directly. Otherwise, performs a full version probe
     /// to determine whether the gateway's protocol support has changed.
+    #[allow(clippy::too_many_arguments)]
     async fn handle_refresh_failure(
         runtime: &CosmosDriverRuntime,
+        http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
         account: &AccountReference,
         transport_holder: &Arc<ArcSwap<CosmosTransport>>,
         current_version: TransportHttpVersion,
         endpoint: &AccountEndpoint,
         error: crate::error::CosmosError,
+        fault_injection_enabled: bool,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         if Self::should_downgrade_http2(
             current_version,
@@ -869,9 +944,14 @@ impl CosmosDriver {
                 "Metadata refresh failed with protocol incompatibility; falling back to alternate HTTP version"
             );
 
-            let (props, fallback_transport) =
-                Self::fetch_account_properties_with_version(runtime, account, fallback_version)
-                    .await?;
+            let (props, fallback_transport) = Self::fetch_account_properties_with_version(
+                runtime,
+                http_client_factory,
+                account,
+                fallback_version,
+                fault_injection_enabled,
+            )
+            .await?;
 
             transport_holder.store(Arc::new(fallback_transport));
 
@@ -978,6 +1058,34 @@ impl CosmosDriver {
             None => Arc::clone(runtime.user_agent()),
         };
 
+        // Per-driver HTTP client factory: wrap with fault injection if rules
+        // are installed on this driver's options; otherwise share the
+        // runtime's factory `Arc`. Bootstrap transport (built at runtime
+        // construction time) is never wrapped, so rules targeting the
+        // initial account-metadata probe only take effect on post-bootstrap
+        // refreshes — matching the previous runtime-level FI semantics.
+        #[cfg(feature = "fault_injection")]
+        let fault_injection_enabled = options.fault_injection_rules().is_some();
+        let http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory> = {
+            #[cfg(feature = "fault_injection")]
+            {
+                if let Some(rules) = options.fault_injection_rules() {
+                    Arc::new(
+                        crate::fault_injection::FaultInjectingHttpClientFactory::new(
+                            Arc::clone(runtime.http_client_factory()),
+                            rules.to_vec(),
+                        ),
+                    )
+                } else {
+                    Arc::clone(runtime.http_client_factory())
+                }
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                Arc::clone(runtime.http_client_factory())
+            }
+        };
+
         // Shared transport holder — used by both the driver and the refresh callback.
         // ArcSwap provides lock-free reads on the hot path (every operation)
         // and only incurs overhead on writes (transport swap, ~every 5 min).
@@ -988,20 +1096,29 @@ impl CosmosDriver {
         let account_for_callback = account.clone();
         let transport_for_callback = Arc::clone(&transport);
         let user_agent_for_callback = Arc::clone(&user_agent);
+        let factory_for_callback = Arc::clone(&http_client_factory);
+        #[cfg(feature = "fault_injection")]
+        let fault_injection_for_callback = fault_injection_enabled;
+        #[cfg(not(feature = "fault_injection"))]
+        let fault_injection_for_callback = false;
         let refresh_callback = Arc::new(
             move |previous_props: Option<Arc<super::cache::AccountProperties>>| {
                 let runtime = Arc::clone(&runtime_for_callback);
                 let account = account_for_callback.clone();
                 let transport_holder = Arc::clone(&transport_for_callback);
                 let user_agent = Arc::clone(&user_agent_for_callback);
+                let factory = Arc::clone(&factory_for_callback);
+                let fault_injection_enabled = fault_injection_for_callback;
                 let fut: BoxFuture<'static, crate::error::Result<super::cache::AccountProperties>> =
                     Box::pin(async move {
                         CosmosDriver::refresh_account_properties(
                             &runtime,
+                            &factory,
                             &account,
                             &transport_holder,
                             &user_agent,
                             previous_props,
+                            fault_injection_enabled,
                         )
                         .await
                     });
@@ -1068,6 +1185,9 @@ impl CosmosDriver {
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
             user_agent,
+            http_client_factory,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled,
         }
     }
 
@@ -1097,6 +1217,26 @@ impl CosmosDriver {
         &self.user_agent
     }
 
+    /// Returns the per-driver HTTP client factory.
+    ///
+    /// Used by data-plane and refresh paths to build per-account transports.
+    /// Equivalent to the runtime's factory when this driver has no fault
+    /// injection rules; otherwise wraps the runtime's factory with a
+    /// fault-injecting factory carrying this driver's rules.
+    #[allow(dead_code)]
+    pub(crate) fn http_client_factory(
+        &self,
+    ) -> &Arc<dyn super::transport::http_client_factory::HttpClientFactory> {
+        &self.http_client_factory
+    }
+
+    /// Returns whether fault injection is enabled for this driver.
+    #[cfg(feature = "fault_injection")]
+    #[allow(dead_code)]
+    pub(crate) fn fault_injection_enabled(&self) -> bool {
+        self.fault_injection_enabled
+    }
+
     /// Returns the current per-account transport.
     ///
     /// Lock-free via `ArcSwap::load_full()` — returns a cloned `Arc` with no
@@ -1120,8 +1260,23 @@ impl CosmosDriver {
         let account_endpoint = AccountEndpoint::from(account);
 
         // Probe HTTP version and fetch account properties in one step.
-        let (negotiated_version, properties) =
-            Self::fetch_initial_account_properties(&self.runtime, account).await?;
+        let fault_injection_enabled = {
+            #[cfg(feature = "fault_injection")]
+            {
+                self.fault_injection_enabled
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                false
+            }
+        };
+        let (negotiated_version, properties) = Self::fetch_initial_account_properties(
+            &self.runtime,
+            &self.http_client_factory,
+            account,
+            fault_injection_enabled,
+        )
+        .await?;
 
         tracing::info!(
             endpoint = %account_endpoint,
@@ -1138,7 +1293,7 @@ impl CosmosDriver {
         // Create the per-account transport with the negotiated version.
         let new_transport = Arc::new(CosmosTransport::with_factory(
             self.runtime.connection_pool().clone(),
-            Arc::clone(self.runtime.http_client_factory()),
+            Arc::clone(&self.http_client_factory),
             negotiated_version,
         )?);
 
@@ -1639,8 +1794,22 @@ impl CosmosDriver {
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
         // Step 7: Initialize diagnostics (shared envelope shape with the bootstrap fetch).
-        let (diagnostics_builder, transport_security) =
-            Self::new_diagnostics_envelope(&self.runtime, activity_id.clone(), &endpoint);
+        let fault_injection_enabled = {
+            #[cfg(feature = "fault_injection")]
+            {
+                self.fault_injection_enabled
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                false
+            }
+        };
+        let (diagnostics_builder, transport_security) = Self::new_diagnostics_envelope(
+            &self.runtime,
+            activity_id.clone(),
+            &endpoint,
+            fault_injection_enabled,
+        );
 
         let pipeline_type = if is_dataplane {
             PipelineType::DataPlane
@@ -2604,10 +2773,14 @@ mod tests {
             .unwrap();
         let account = signed_test_account("https://localhost:8081/");
 
-        let (version, properties) =
-            CosmosDriver::fetch_initial_account_properties(&runtime, &account)
-                .await
-                .unwrap();
+        let (version, properties) = CosmosDriver::fetch_initial_account_properties(
+            &runtime,
+            runtime.http_client_factory(),
+            &account,
+            false,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(version, TransportHttpVersion::Http11);
         assert_eq!(properties.write_region().unwrap().as_str(), "westus2");
@@ -2638,10 +2811,12 @@ mod tests {
 
         let properties = CosmosDriver::refresh_account_properties(
             &runtime,
+            runtime.http_client_factory(),
             &account,
             &transport_holder,
             runtime.user_agent(),
             None,
+            false,
         )
         .await
         .unwrap();
@@ -2679,10 +2854,12 @@ mod tests {
 
         let properties = CosmosDriver::refresh_account_properties(
             &runtime,
+            runtime.http_client_factory(),
             &account,
             &transport_holder,
             runtime.user_agent(),
             None,
+            false,
         )
         .await
         .unwrap();
@@ -2721,10 +2898,12 @@ mod tests {
 
         let properties = CosmosDriver::refresh_account_properties(
             &runtime,
+            runtime.http_client_factory(),
             &account,
             &transport_holder,
             runtime.user_agent(),
             None,
+            false,
         )
         .await
         .unwrap();
@@ -2848,10 +3027,12 @@ mod tests {
 
         let result = CosmosDriver::refresh_account_properties(
             &runtime,
+            runtime.http_client_factory(),
             &account,
             &transport_holder,
             runtime.user_agent(),
             Some(multi_region_previous_props()),
+            false,
         )
         .await;
 
@@ -2888,10 +3069,12 @@ mod tests {
 
         let result = CosmosDriver::refresh_account_properties(
             &runtime,
+            runtime.http_client_factory(),
             &account,
             &transport_holder,
             runtime.user_agent(),
             Some(multi_region_previous_props()),
+            false,
         )
         .await;
 
@@ -2923,10 +3106,12 @@ mod tests {
 
         let result = CosmosDriver::refresh_account_properties(
             &runtime,
+            runtime.http_client_factory(),
             &account,
             &transport_holder,
             runtime.user_agent(),
             None,
+            false,
         )
         .await;
 
@@ -2953,6 +3138,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await
         .expect_err(
@@ -3050,6 +3236,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await
     }
@@ -3325,6 +3512,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await
         .expect_err("transport-layer failure must surface as an error");
@@ -3396,6 +3584,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await
         .expect_err("sign_request failure must surface as an error");
@@ -3531,6 +3720,7 @@ mod tests {
             &account,
             None,
             &user_agent,
+            false,
         )
         .await;
 

@@ -174,10 +174,6 @@ pub struct CosmosDriverRuntime {
     /// Kept in `Arc` because it is cloned into every diagnostics context.
     machine_id: Arc<String>,
 
-    /// Whether fault injection is enabled for this runtime.
-    #[cfg(feature = "fault_injection")]
-    fault_injection_enabled: bool,
-
     /// Proxy configuration snapshot for diagnostics.
     proxy_configuration: ProxyConfiguration,
 }
@@ -232,12 +228,6 @@ impl CosmosDriverRuntime {
     /// Returns the machine identifier for diagnostics.
     pub(crate) fn machine_id(&self) -> &Arc<String> {
         &self.machine_id
-    }
-
-    /// Returns whether fault injection is enabled for this runtime.
-    #[cfg(feature = "fault_injection")]
-    pub(crate) fn fault_injection_enabled(&self) -> bool {
-        self.fault_injection_enabled
     }
 
     /// Returns the proxy configuration snapshot.
@@ -426,8 +416,6 @@ pub struct CosmosDriverRuntimeBuilder {
     wrapping_sdk_identifier: Option<String>,
     throughput_control_groups: ThroughputControlGroupRegistry,
     cpu_refresh_interval: Option<Duration>,
-    #[cfg(feature = "fault_injection")]
-    fault_injection_rules: Option<Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>>,
     #[cfg(any(
         test,
         feature = "__internal_in_memory_emulator",
@@ -614,65 +602,6 @@ impl CosmosDriverRuntimeBuilder {
         Ok(self)
     }
 
-    /// Sets the fault injection rules for testing.
-    ///
-    /// When set, all HTTP clients created by the transport layer will
-    /// evaluate these rules before delegating to the real transport
-    /// (per Transport Pipeline Spec §7).
-    /// Appends the supplied rules to any rules already configured on this
-    /// builder (additive). Calling this multiple times accumulates rules in
-    /// insertion order. Mirrors the additive semantics of
-    /// [`Self::register_throughput_control_group`] so callers that compose a
-    /// runtime builder from multiple sources (e.g. the
-    /// `azure_data_cosmos::CosmosClientBuilder` adding its own rules on top of
-    /// a user-supplied builder) do not silently lose previously-configured
-    /// rules.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err` when any rule's `id` collides with another rule already
-    /// configured on this builder, or with another rule in the same call.
-    /// Rule ids identify a fault injection rule across reconfigure /
-    /// disable / re-enable operations, so silently keeping one of two rules
-    /// with the same id would surface as "my fault injection didn't fire"
-    /// long after the duplicate was introduced — and depend on insertion
-    /// order. Surfacing the collision at builder time keeps the failure
-    /// local to the misconfiguration.
-    #[cfg(feature = "fault_injection")]
-    pub fn with_fault_injection_rules(
-        mut self,
-        rules: Vec<std::sync::Arc<crate::fault_injection::FaultInjectionRule>>,
-    ) -> crate::error::Result<Self> {
-        if rules.is_empty() {
-            return Ok(self);
-        }
-
-        // Build the set of ids already present so collisions across both
-        // (existing-vs-new) and (new-vs-new) are caught in one pass.
-        let mut seen: std::collections::HashSet<String> = self
-            .fault_injection_rules
-            .as_ref()
-            .map(|existing| existing.iter().map(|r| r.id().to_string()).collect())
-            .unwrap_or_default();
-
-        for rule in &rules {
-            if !seen.insert(rule.id().to_string()) {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
-                    )
-                    .with_message(format!("duplicate fault injection rule id: {}", rule.id()))
-                    .build());
-            }
-        }
-
-        match &mut self.fault_injection_rules {
-            Some(existing) => existing.extend(rules),
-            None => self.fault_injection_rules = Some(rules),
-        }
-        Ok(self)
-    }
-
     /// Builds the [`CosmosDriverRuntime`].
     ///
     /// The user agent is computed from (in priority order):
@@ -702,49 +631,24 @@ impl CosmosDriverRuntimeBuilder {
 
         let connection_pool = self.connection_pool.unwrap_or_default();
         let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
-        #[cfg(feature = "fault_injection")]
-        let fault_injection_enabled;
         let http_client_factory: Arc<dyn HttpClientFactory> = {
-            let base_factory: Arc<dyn HttpClientFactory> = {
-                #[cfg(any(
-                    test,
-                    feature = "__internal_in_memory_emulator",
-                    feature = "__internal_mocking"
-                ))]
-                {
-                    self.http_client_factory
-                        .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
-                }
-
-                #[cfg(not(any(
-                    test,
-                    feature = "__internal_in_memory_emulator",
-                    feature = "__internal_mocking"
-                )))]
-                {
-                    Arc::new(DefaultHttpClientFactory::new())
-                }
-            };
-
-            #[cfg(feature = "fault_injection")]
+            #[cfg(any(
+                test,
+                feature = "__internal_in_memory_emulator",
+                feature = "__internal_mocking"
+            ))]
             {
-                if let Some(rules) = self.fault_injection_rules {
-                    fault_injection_enabled = true;
-                    Arc::new(
-                        crate::fault_injection::FaultInjectingHttpClientFactory::new(
-                            base_factory,
-                            rules,
-                        ),
-                    )
-                } else {
-                    fault_injection_enabled = false;
-                    base_factory
-                }
+                self.http_client_factory
+                    .unwrap_or_else(|| Arc::new(DefaultHttpClientFactory::new()))
             }
 
-            #[cfg(not(feature = "fault_injection"))]
+            #[cfg(not(any(
+                test,
+                feature = "__internal_in_memory_emulator",
+                feature = "__internal_mocking"
+            )))]
             {
-                base_factory
+                Arc::new(DefaultHttpClientFactory::new())
             }
         };
 
@@ -809,8 +713,6 @@ impl CosmosDriverRuntimeBuilder {
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
             machine_id: Arc::new(vm_metadata.machine_id().to_owned()),
-            #[cfg(feature = "fault_injection")]
-            fault_injection_enabled,
             proxy_configuration,
         }))
     }

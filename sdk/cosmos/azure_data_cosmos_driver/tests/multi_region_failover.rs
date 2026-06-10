@@ -89,11 +89,9 @@ fn assert_preserves_upstream_status(
     }
 }
 
-/// Installs a fault rule into a fresh `CosmosDriverRuntime`.
-async fn build_runtime_with_rule(rule: &Arc<FaultInjectionRule>) -> Arc<CosmosDriverRuntime> {
+/// Builds a fresh `CosmosDriverRuntime` (no FI applied — FI is per-driver).
+async fn build_runtime() -> Arc<CosmosDriverRuntime> {
     CosmosDriverRuntime::builder()
-        .with_fault_injection_rules(vec![Arc::clone(rule)])
-        .expect("rule installation should succeed")
         .build()
         .await
         .expect("runtime should be created")
@@ -109,10 +107,15 @@ async fn run_metadata_fault_test(
     expected_sub_status: Option<SubStatusCode>,
 ) {
     let rule = build_account_metadata_fault_rule(rule_id, error_type);
-    let runtime = build_runtime_with_rule(&rule).await;
+    let runtime = build_runtime().await;
 
     let err = runtime
-        .create_driver(DriverOptions::builder(account).build())
+        .create_driver(
+            DriverOptions::builder(account)
+                .with_fault_injection_rules(vec![Arc::clone(&rule)])
+                .expect("rule installation should succeed")
+                .build(),
+        )
         .await
         .expect_err("create_driver must fail under a persistent metadata fault");
 
@@ -511,16 +514,17 @@ where
         return Err(msg.into());
     }
 
-    // Exercise runtime: install the fault rule, run the test closure.
+    // Exercise runtime: install the fault rule on the per-driver options.
     let rule = build_region_scoped_data_plane_fault_rule(
         rule_id, op_type, HUB_REGION, err_type, hit_limit,
     );
-    let exercise_runtime = CosmosDriverRuntime::builder()
-        .with_fault_injection_rules(vec![Arc::clone(&rule)])?
-        .build()
-        .await?;
+    let exercise_runtime = CosmosDriverRuntime::builder().build().await?;
     let exercise_driver = exercise_runtime
-        .create_driver(DriverOptions::builder(account.clone()).build())
+        .create_driver(
+            DriverOptions::builder(account.clone())
+                .with_fault_injection_rules(vec![Arc::clone(&rule)])?
+                .build(),
+        )
         .await?;
 
     let result = exercise(exercise_driver, container_ref.clone(), HUB_REGION).await;

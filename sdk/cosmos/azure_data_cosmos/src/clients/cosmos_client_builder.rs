@@ -401,11 +401,6 @@ impl CosmosClientBuilder {
         driver_runtime_builder =
             driver_runtime_builder.with_default_operation_options(runtime_operation_options);
 
-        #[cfg(feature = "fault_injection")]
-        if !driver_fi_rules.is_empty() {
-            driver_runtime_builder =
-                driver_runtime_builder.with_fault_injection_rules(driver_fi_rules)?;
-        }
         for group in self.throughput_control_groups {
             driver_runtime_builder = driver_runtime_builder
                 .register_throughput_control_group(group)
@@ -417,7 +412,12 @@ impl CosmosClientBuilder {
                 })?;
         }
         let driver_runtime = driver_runtime_builder.build().await?;
-        let driver_options = build_driver_options(driver_account, routing_strategy);
+        let driver_options = build_driver_options(
+            driver_account,
+            routing_strategy,
+            #[cfg(feature = "fault_injection")]
+            driver_fi_rules,
+        )?;
         let driver = driver_runtime.create_driver(driver_options).await?;
 
         Ok(CosmosClient {
@@ -439,7 +439,10 @@ impl CosmosClientBuilder {
 fn build_driver_options(
     account: azure_data_cosmos_driver::models::AccountReference,
     strategy: RoutingStrategy,
-) -> azure_data_cosmos_driver::options::DriverOptions {
+    #[cfg(feature = "fault_injection")] fault_injection_rules: Vec<
+        std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
+    >,
+) -> crate::Result<azure_data_cosmos_driver::options::DriverOptions> {
     let preferred_regions = match strategy {
         RoutingStrategy::ProximityTo(region) =>
             crate::region_proximity::generate_preferred_region_list(&region)
@@ -453,9 +456,15 @@ fn build_driver_options(
                 }),
         RoutingStrategy::PreferredRegions(regions) => regions,
     };
-    azure_data_cosmos_driver::options::DriverOptions::builder(account)
-        .with_preferred_regions(preferred_regions)
-        .build()
+    let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(account)
+        .with_preferred_regions(preferred_regions);
+    #[cfg(feature = "fault_injection")]
+    if !fault_injection_rules.is_empty() {
+        builder = builder
+            .with_fault_injection_rules(fault_injection_rules)
+            .map_err(crate::CosmosError::from)?;
+    }
+    Ok(builder.build())
 }
 
 /// Builds a driver [`AccountReference`](azure_data_cosmos_driver::models::AccountReference)
@@ -677,7 +686,10 @@ mod tests {
         let opts = build_driver_options(
             test_account(),
             RoutingStrategy::ProximityTo(Region::EAST_US),
-        );
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
         let regions = opts.preferred_regions();
         assert!(
             !regions.is_empty(),
@@ -693,7 +705,10 @@ mod tests {
         let opts = build_driver_options(
             test_account(),
             RoutingStrategy::ProximityTo(Region::from("not-a-real-region")),
-        );
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
         assert!(
             opts.preferred_regions().is_empty(),
             "unrecognized region should yield an empty list"
@@ -707,7 +722,10 @@ mod tests {
         let opts = build_driver_options(
             test_account(),
             RoutingStrategy::PreferredRegions(input.clone()),
-        );
+            #[cfg(feature = "fault_injection")]
+            Vec::new(),
+        )
+        .expect("build_driver_options should succeed");
         assert_eq!(opts.preferred_regions(), input.as_slice());
     }
 }

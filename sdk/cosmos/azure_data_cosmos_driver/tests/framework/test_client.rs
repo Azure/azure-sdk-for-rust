@@ -36,6 +36,13 @@ pub struct DriverTestClient {
     /// hedging path, which requires application-preferred regions to be set
     /// per `HEDGING_SPEC.md` §5.2.
     preferred_regions: Vec<Region>,
+    /// Driver-level fault-injection rules applied to every driver created by
+    /// the per-operation helpers. Empty by default; populated by the
+    /// fault-injection entry points (`from_env_with_fault_injection`,
+    /// `run_with_fault_injection`, etc.) so that FI rules are configured on
+    /// each per-operation driver rather than on the shared runtime.
+    #[cfg(feature = "fault_injection")]
+    fault_injection_rules: Vec<Arc<FaultInjectionRule>>,
 }
 
 /// Resolved test environment containing account and connection pool configuration.
@@ -119,13 +126,15 @@ impl DriverTestClient {
             runtime,
             account: env.account,
             preferred_regions: Vec::new(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: Vec::new(),
         }))
     }
 
     /// Creates a new test client from environment variables with fault injection rules.
     ///
-    /// Behaves like [`from_env`](Self::from_env) but configures the runtime with fault injection
-    /// rules that will intercept matching operations.
+    /// Behaves like [`from_env`](Self::from_env) but configures the per-operation
+    /// drivers with fault injection rules that will intercept matching operations.
     #[cfg(feature = "fault_injection")]
     pub async fn from_env_with_fault_injection(
         rules: Vec<Arc<FaultInjectionRule>>,
@@ -136,7 +145,6 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_fault_injection_rules(rules)?
             .build()
             .await?;
 
@@ -144,6 +152,7 @@ impl DriverTestClient {
             runtime,
             account: env.account,
             preferred_regions: Vec::new(),
+            fault_injection_rules: rules,
         }))
     }
 
@@ -229,7 +238,6 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_fault_injection_rules(rules)?
             .with_default_operation_options(operation_options)
             .build()
             .await?;
@@ -238,6 +246,7 @@ impl DriverTestClient {
             runtime,
             account: env.account,
             preferred_regions: Vec::new(),
+            fault_injection_rules: rules,
         };
         let context = DriverTestRunContext::new(client);
 
@@ -280,7 +289,6 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_fault_injection_rules(rules)?
             .with_default_operation_options(runtime_operation_options)
             .build()
             .await?;
@@ -289,6 +297,7 @@ impl DriverTestClient {
             runtime,
             account: env.account,
             preferred_regions,
+            fault_injection_rules: rules,
         };
         let context = DriverTestRunContext::new(client);
 
@@ -351,15 +360,21 @@ impl DriverTestRunContext {
     }
 
     /// Builds the per-operation [`DriverOptions`] used by the helpers in
-    /// this context. Carries the client's account and any
-    /// `preferred_regions` configured by the hedging entry point so that
-    /// every driver created by these helpers inherits them.
-    fn driver_options(&self) -> DriverOptions {
+    /// this context. Carries the client's account, any `preferred_regions`
+    /// configured by the hedging entry point, and any fault-injection rules
+    /// configured by the FI entry points, so that every driver created by
+    /// these helpers inherits them.
+    fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
         let mut builder = DriverOptions::builder(self.client.account.clone());
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
         }
-        builder.build()
+        #[cfg(feature = "fault_injection")]
+        if !self.client.fault_injection_rules.is_empty() {
+            builder =
+                builder.with_fault_injection_rules(self.client.fault_injection_rules.clone())?;
+        }
+        Ok(builder.build())
     }
 
     /// Creates a database using the driver.
@@ -370,7 +385,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .create_driver(self.driver_options())
+            .create_driver(self.driver_options()?)
             .await?;
 
         let body = format!(r#"{{"id": "{}"}}"#, db_name);
@@ -402,7 +417,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .create_driver(self.driver_options())
+            .create_driver(self.driver_options()?)
             .await?;
 
         let operation = CosmosOperation::delete_database(database.clone());
@@ -454,7 +469,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .create_driver(self.driver_options())
+            .create_driver(self.driver_options()?)
             .await?;
 
         let paths_json = partition_key_paths
@@ -510,7 +525,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .create_driver(self.driver_options())
+            .create_driver(self.driver_options()?)
             .await?;
 
         let pk = partition_key.into();
@@ -550,7 +565,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .create_driver(self.driver_options())
+            .create_driver(self.driver_options()?)
             .await?;
 
         let pk = partition_key.into();
@@ -587,7 +602,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .create_driver(self.driver_options())
+            .create_driver(self.driver_options()?)
             .await?;
 
         let pk = partition_key.into();
@@ -621,7 +636,7 @@ impl DriverTestRunContext {
         let driver = self
             .client
             .runtime
-            .create_driver(self.driver_options())
+            .create_driver(self.driver_options()?)
             .await?;
         Ok(driver
             .resolve_all_partition_key_ranges(container, force_refresh)

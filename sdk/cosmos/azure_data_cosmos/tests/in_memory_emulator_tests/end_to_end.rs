@@ -1193,11 +1193,9 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
-    // Build the runtime with fault injection layered on top of the emulator.
-    let runtime_builder = emulator
-        .runtime_builder()
-        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
-        .expect("distinct fault injection rule id");
+    // Build the runtime from the emulator factory (FI applies at the SDK
+    // client builder layer, not on the shared runtime).
+    let runtime_builder = emulator.runtime_builder();
 
     // Provision resources in the emulator store.
     let db_name = format!("sdk-fi-{run_id}");
@@ -1220,6 +1218,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
     let emu_client = CosmosClientBuilder::new()
         .with_driver_runtime_builder(runtime_builder)
+        .with_fault_injection(vec![Arc::clone(&emu_rule)])
         .build(emu_account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await
         .unwrap();
@@ -1339,15 +1338,14 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 /// Builds a real-account `CosmosClient` with fault injection rules matching the
 /// emulator test. Returns `None` when no real account is configured.
 ///
-/// Fault injection is applied at the driver runtime level via
-/// `with_fault_injection_rules` on the runtime builder, then passed into the
-/// SDK via `CosmosClientBuilder::with_driver_runtime_builder`.
+/// Fault injection is applied at the SDK builder level via
+/// `with_fault_injection`; it is forwarded onto the per-driver options at
+/// build time.
 #[cfg(feature = "fault_injection")]
 async fn resolve_real_client_with_fault_injection(
     _condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
     _result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
 ) -> Result<Option<CosmosClient>, Box<dyn Error>> {
-    use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     use azure_data_cosmos_driver::fault_injection::{
         FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
         FaultInjectionRuleBuilder, FaultOperationType,
@@ -1396,11 +1394,9 @@ async fn resolve_real_client_with_fault_injection(
             .build(),
     );
 
-    // Apply fault injection to the runtime builder and pass it to the SDK.
-    let runtime_builder = CosmosDriverRuntime::builder().with_fault_injection_rules(vec![rule])?;
-
+    // Apply fault injection at the SDK builder layer.
     let client = CosmosClientBuilder::new()
-        .with_driver_runtime_builder(runtime_builder)
+        .with_fault_injection(vec![rule])
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await?;
 

@@ -1160,14 +1160,8 @@ async fn read_failover_on_503_via_fault_injection() {
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
 
-    // Build runtime with fault injection rules layered on top of the emulator.
-    let emulator_runtime = emulator
-        .runtime_builder()
-        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
-        .expect("distinct fault injection rule id")
-        .build()
-        .await
-        .unwrap();
+    // Build runtime; fault injection is configured per driver (not on the runtime).
+    let emulator_runtime = emulator.runtime_builder().build().await.unwrap();
 
     // Provision database and container.
     emulator_store.create_database("fi-testdb");
@@ -1186,6 +1180,8 @@ async fn read_failover_on_503_via_fault_injection() {
         AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let emu_driver_opts = DriverOptionsBuilder::new(emu_account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
+        .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
+        .expect("distinct fault injection rule id")
         .build();
     let emu_driver = emulator_runtime
         .create_driver(emu_driver_opts)
@@ -1363,14 +1359,14 @@ async fn try_real_failover_comparison(
 
     let runtime = CosmosDriverRuntime::builder()
         .with_connection_pool(pool)
-        .with_fault_injection_rules(vec![Arc::clone(&real_rule)])
-        .ok()?
         .build()
         .await
         .ok()?;
 
     let driver_opts = DriverOptionsBuilder::new(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
+        .with_fault_injection_rules(vec![Arc::clone(&real_rule)])
+        .ok()?
         .build();
 
     let driver = runtime.create_driver(driver_opts).await.ok()?;
