@@ -105,6 +105,7 @@
     "libclang",
     "LIBCLANG",
     "libqueryplaninterop",
+    "QUERYPLANINTEROP",
     "linearizability",
     "LLZA",
     "makelist",
