@@ -14,10 +14,7 @@ use std::{
 
 use crate::{
     diagnostics::ProxyConfiguration,
-    models::{
-        normalize_wrapping_sdk_identifier, ContainerReference, ThroughputControlGroupName,
-        UserAgent,
-    },
+    models::{normalize_wrapping_sdk_identifier, UserAgent},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
         OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
@@ -313,27 +310,11 @@ impl CosmosDriverRuntime {
             .or_else(|| self.user_agent_suffix.as_ref().map(|s| s.as_str()))
     }
 
-    /// Returns a throughput control group by container and name.
+    /// Returns the runtime's throughput control group registry.
     ///
-    /// This is a convenience method for looking up a specific group.
-    pub(crate) fn get_throughput_control_group(
-        &self,
-        container: &ContainerReference,
-        name: &ThroughputControlGroupName,
-    ) -> Option<&Arc<ThroughputControlGroupOptions>> {
-        self.throughput_control_groups
-            .get_by_container_and_name(container, name)
-    }
-
-    /// Returns the default throughput control group for a container.
-    ///
-    /// Returns `None` if no default group is registered for the container.
-    pub(crate) fn get_default_throughput_control_group(
-        &self,
-        container: &ContainerReference,
-    ) -> Option<&Arc<ThroughputControlGroupOptions>> {
-        self.throughput_control_groups
-            .get_default_for_container(container)
+    /// Used by `CosmosDriver` to compute its merged registry at construction.
+    pub(crate) fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
+        &self.throughput_control_groups
     }
 
     /// Creates a fresh driver bound to this runtime.
@@ -375,7 +356,7 @@ impl CosmosDriverRuntime {
         driver_options: DriverOptions,
     ) -> crate::error::Result<Arc<CosmosDriver>> {
         tracing::trace!("creating new driver");
-        let driver = Arc::new(CosmosDriver::new(Arc::clone(self), driver_options));
+        let driver = Arc::new(CosmosDriver::new(Arc::clone(self), driver_options)?);
         driver.initialize().await?;
         Ok(driver)
     }

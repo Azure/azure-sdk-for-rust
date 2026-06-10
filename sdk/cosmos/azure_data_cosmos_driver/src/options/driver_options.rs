@@ -7,7 +7,10 @@ use std::sync::Arc;
 
 use crate::{
     models::AccountReference,
-    options::{OperationOptions, Region, UserAgentSuffix},
+    options::{
+        OperationOptions, Region, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
+        UserAgentSuffix,
+    },
 };
 
 #[cfg(feature = "fault_injection")]
@@ -76,6 +79,14 @@ pub struct DriverOptions {
     /// rules; they do not interact.
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
+    /// Driver-level throughput control group registrations.
+    ///
+    /// At driver-creation time, the driver merges the runtime's registered
+    /// groups with these driver-level groups into a single registry. The
+    /// driver uses the merged registry to look up groups for every request.
+    /// Cross-layer name collisions (or two `is_default=true` groups for the
+    /// same container) error at driver creation.
+    throughput_control_groups: ThroughputControlGroupRegistry,
 }
 
 impl DriverOptions {
@@ -114,6 +125,15 @@ impl DriverOptions {
     pub fn fault_injection_rules(&self) -> Option<&[Arc<FaultInjectionRule>]> {
         self.fault_injection_rules.as_deref()
     }
+
+    /// Returns the driver-level throughput control group registry.
+    ///
+    /// This registry is merged with the runtime's registry at driver
+    /// creation; the merged registry is what gets consulted on the request
+    /// path.
+    pub(crate) fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
+        &self.throughput_control_groups
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -129,6 +149,7 @@ pub struct DriverOptionsBuilder {
     user_agent_suffix: Option<UserAgentSuffix>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
+    throughput_control_groups: ThroughputControlGroupRegistry,
 }
 
 impl DriverOptionsBuilder {
@@ -141,6 +162,7 @@ impl DriverOptionsBuilder {
             user_agent_suffix: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: None,
+            throughput_control_groups: ThroughputControlGroupRegistry::new(),
         }
     }
 
@@ -221,6 +243,31 @@ impl DriverOptionsBuilder {
         Ok(self)
     }
 
+    /// Registers a throughput-control group on this driver.
+    ///
+    /// At driver-creation time, the driver merges the runtime's registry
+    /// with the per-driver registry into a single registry consulted on
+    /// every request. Cross-layer collisions (duplicate `(container, name)`
+    /// key, or two `is_default=true` groups for the same container) are
+    /// detected and surfaced at driver creation.
+    ///
+    /// Calling this multiple times appends groups; collisions within this
+    /// builder are surfaced as soon as the conflict is introduced.
+    pub fn register_throughput_control_group(
+        mut self,
+        group: ThroughputControlGroupOptions,
+    ) -> crate::error::Result<Self> {
+        self.throughput_control_groups
+            .register(group)
+            .map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
+                    .with_message(e.to_string())
+                    .build()
+            })?;
+        Ok(self)
+    }
+
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
@@ -230,6 +277,7 @@ impl DriverOptionsBuilder {
             user_agent_suffix: self.user_agent_suffix,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
+            throughput_control_groups: self.throughput_control_groups,
         }
     }
 }

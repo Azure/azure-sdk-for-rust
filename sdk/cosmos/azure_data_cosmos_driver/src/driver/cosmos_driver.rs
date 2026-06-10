@@ -160,6 +160,15 @@ pub struct CosmosDriver {
     /// flag without re-checking the option.
     #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
+    /// Merged throughput-control group registry (runtime ∪ driver options).
+    ///
+    /// Each driver gets its own merged registry consulted on every request.
+    /// The merge is computed once at construction; cross-layer collisions
+    /// error before the driver exists. Groups carried over from the runtime
+    /// share their inner mutable settings via `Arc<RwLock<...>>`, so changes
+    /// made on the runtime's group are visible to every driver that inherited
+    /// it.
+    throughput_control_groups: crate::options::ThroughputControlGroupRegistry,
 }
 
 impl CosmosDriver {
@@ -1041,7 +1050,10 @@ impl CosmosDriver {
     /// Creates a new driver instance.
     ///
     /// This is internal - use [`CosmosDriverRuntime::create_driver()`] instead.
-    pub(crate) fn new(runtime: Arc<CosmosDriverRuntime>, options: DriverOptions) -> Self {
+    pub(crate) fn new(
+        runtime: Arc<CosmosDriverRuntime>,
+        options: DriverOptions,
+    ) -> crate::error::Result<Self> {
         let account = options.account().clone();
         let account_endpoint = AccountEndpoint::from(&account);
         let default_endpoint = CosmosEndpoint::global(account.endpoint().clone());
@@ -1176,7 +1188,19 @@ impl CosmosDriver {
         #[cfg(feature = "tokio")]
         location_state_store.start_account_refresh_loop();
 
-        Self {
+        // Merged throughput-control registry (runtime ∪ driver options).
+        // Cross-layer collisions surface here, before the driver is returned.
+        let mut throughput_control_groups = runtime.throughput_control_groups().clone();
+        throughput_control_groups
+            .extend(options.throughput_control_groups())
+            .map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
+                    .with_message(e.to_string())
+                    .build()
+            })?;
+
+        Ok(Self {
             runtime,
             options,
             transport,
@@ -1188,7 +1212,8 @@ impl CosmosDriver {
             http_client_factory,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
-        }
+            throughput_control_groups,
+        })
     }
 
     /// Returns the account reference.
@@ -1357,8 +1382,8 @@ impl CosmosDriver {
     ) -> crate::error::Result<Option<ThroughputControlGroupSnapshot>> {
         if let Some(name) = effective_options.throughput_control_group() {
             let group = self
-                .runtime
-                .get_throughput_control_group(container, name)
+                .throughput_control_groups
+                .get_by_container_and_name(container, name)
                 .ok_or_else(|| {
                     crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED)
                         .with_message(format!(
@@ -1373,8 +1398,8 @@ impl CosmosDriver {
 
         // No explicit name — fall back to the default group for the container.
         Ok(self
-            .runtime
-            .get_default_throughput_control_group(container)
+            .throughput_control_groups
+            .get_default_for_container(container)
             .map(|group| ThroughputControlGroupSnapshot::from(group.as_ref())))
     }
 
@@ -2490,7 +2515,8 @@ mod tests {
         // Driver has no operation options override either
         let driver_options = DriverOptions::builder(test_account()).build();
 
-        let driver = CosmosDriver::new(cosmos_runtime, driver_options);
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
 
         // Operation has DISABLED - should get DISABLED from operation options view
         let op_options = OperationOptionsBuilder::new()
@@ -2521,7 +2547,8 @@ mod tests {
         // Driver has no override
         let driver_options = DriverOptions::builder(test_account()).build();
 
-        let driver = CosmosDriver::new(cosmos_runtime, driver_options);
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
 
         // Operation sets ENABLED - should get ENABLED from operation options view
         let op_options = OperationOptionsBuilder::new()
@@ -3766,14 +3793,16 @@ mod tests {
                 "https://account-a.documents.azure.com:443/",
             ))
             .build(),
-        );
+        )
+        .expect("CosmosDriver::new should succeed in tests");
         let driver_b = CosmosDriver::new(
             Arc::clone(&runtime),
             DriverOptionsBuilder::new(signed_test_account(
                 "https://account-b.documents.azure.com:443/",
             ))
             .build(),
-        );
+        )
+        .expect("CosmosDriver::new should succeed in tests");
 
         assert!(
             Arc::ptr_eq(driver_a.user_agent(), runtime.user_agent()),
@@ -3813,7 +3842,8 @@ mod tests {
             ))
             .with_user_agent_suffix(UserAgentSuffix::new("driver-override"))
             .build(),
-        );
+        )
+        .expect("CosmosDriver::new should succeed in tests");
 
         assert!(
             !Arc::ptr_eq(driver.user_agent(), runtime.user_agent()),

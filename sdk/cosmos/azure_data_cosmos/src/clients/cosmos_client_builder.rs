@@ -406,17 +406,19 @@ impl CosmosClientBuilder {
                 .register_throughput_control_group(group)
                 .map_err(|e| {
                     crate::DriverCosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
+                        .with_status(crate::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
                         .with_message(format!("failed to register throughput control group: {e}"))
                         .build()
                 })?;
         }
+
         let driver_runtime = driver_runtime_builder.build().await?;
         let driver_options = build_driver_options(
             driver_account,
             routing_strategy,
             #[cfg(feature = "fault_injection")]
             driver_fi_rules,
+            self.throughput_control_groups,
         )?;
         let driver = driver_runtime.create_driver(driver_options).await?;
 
@@ -442,6 +444,7 @@ fn build_driver_options(
     #[cfg(feature = "fault_injection")] fault_injection_rules: Vec<
         std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
     >,
+    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
 ) -> crate::Result<azure_data_cosmos_driver::options::DriverOptions> {
     let preferred_regions = match strategy {
         RoutingStrategy::ProximityTo(region) =>
@@ -462,6 +465,11 @@ fn build_driver_options(
     if !fault_injection_rules.is_empty() {
         builder = builder
             .with_fault_injection_rules(fault_injection_rules)
+            .map_err(crate::CosmosError::from)?;
+    }
+    for group in throughput_control_groups {
+        builder = builder
+            .register_throughput_control_group(group)
             .map_err(crate::CosmosError::from)?;
     }
     Ok(builder.build())
@@ -688,6 +696,7 @@ mod tests {
             RoutingStrategy::ProximityTo(Region::EAST_US),
             #[cfg(feature = "fault_injection")]
             Vec::new(),
+            Vec::new(),
         )
         .expect("build_driver_options should succeed");
         let regions = opts.preferred_regions();
@@ -707,6 +716,7 @@ mod tests {
             RoutingStrategy::ProximityTo(Region::from("not-a-real-region")),
             #[cfg(feature = "fault_injection")]
             Vec::new(),
+            Vec::new(),
         )
         .expect("build_driver_options should succeed");
         assert!(
@@ -723,6 +733,7 @@ mod tests {
             test_account(),
             RoutingStrategy::PreferredRegions(input.clone()),
             #[cfg(feature = "fault_injection")]
+            Vec::new(),
             Vec::new(),
         )
         .expect("build_driver_options should succeed");
