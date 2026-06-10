@@ -205,6 +205,26 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD")]
     pub consecutive_hedge_win_threshold: Option<u32>,
 
+    /// Master switch that enables or disables cross-region read hedging.
+    ///
+    /// **Default**: `None`, which the driver treats as **enabled** — eligible
+    /// requests are hedged using the built-in default threshold of
+    /// `min(1000ms, request_timeout / 2)` (falling back to `1000ms`).
+    ///
+    /// **Environment variable**: `AZURE_COSMOS_HEDGING_ENABLED`. When set, it is
+    /// the **source of truth** and takes precedence over the programmatic
+    /// [`Self::availability_strategy`] in both directions:
+    /// - `Some(false)` turns hedging off even when an explicit
+    ///   [`AvailabilityStrategy::Hedging`] is configured.
+    /// - `Some(true)` turns hedging on even when an explicit
+    ///   [`AvailabilityStrategy::Disabled`] is configured; a programmatic
+    ///   `Hedging(..)` strategy still supplies its custom threshold, otherwise
+    ///   the default threshold above applies.
+    ///
+    /// Leaving it unset (`None`) defers to the programmatic strategy.
+    #[option(env = "AZURE_COSMOS_HEDGING_ENABLED")]
+    pub hedging_enabled: Option<bool>,
+
     /// Cross-region availability strategy controlling whether eligible
     /// requests are hedged to additional regions when the primary is slow.
     ///
@@ -212,6 +232,11 @@ pub struct OperationOptions {
     /// strategy. Setting
     /// `Some(AvailabilityStrategy::Disabled)` at any layer turns hedging
     /// off for that scope.
+    ///
+    /// **Note**: This strategy is overridden by [`Self::hedging_enabled`]
+    /// whenever the latter resolves to `Some(_)` (for example via
+    /// `AZURE_COSMOS_HEDGING_ENABLED`): `Some(false)` forces hedging off and
+    /// `Some(true)` forces it on, regardless of the strategy configured here.
     pub availability_strategy: Option<AvailabilityStrategy>,
 
     // Additional headers beyond those natively supported by the driver.
@@ -378,6 +403,7 @@ mod tests {
             "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE" => Ok("true".to_string()),
             "AZURE_COSMOS_MAX_FAILOVER_RETRY_COUNT" => Ok("7".to_string()),
             "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".to_string()),
+            "AZURE_COSMOS_HEDGING_ENABLED" => Ok("false".to_string()),
             _ => Err(std::env::VarError::NotPresent),
         });
 
@@ -391,6 +417,7 @@ mod tests {
         );
         assert_eq!(options.max_failover_retry_count, Some(7));
         assert_eq!(options.max_session_retry_count, Some(3));
+        assert_eq!(options.hedging_enabled, Some(false));
         // Fields without env annotation remain None
         assert!(options.excluded_regions.is_none());
         // Nested option groups are not populated by the parent's `from_env`;
@@ -422,6 +449,7 @@ mod tests {
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
         assert!(options.availability_strategy.is_none());
+        assert!(options.hedging_enabled.is_none());
     }
 
     #[test]
