@@ -762,8 +762,7 @@ impl RecoverableConnection {
                     ErrorRecoveryAction::RetryAction
                 } else if matches!(
                     described_error.condition,
-                    AmqpErrorCondition::UnauthorizedAccess
-                        | AmqpErrorCondition::ConnectionForced
+                    AmqpErrorCondition::ConnectionForced
                         | AmqpErrorCondition::ConnectionFramingError
                 ) {
                     debug!(
@@ -771,6 +770,23 @@ impl RecoverableConnection {
                         described_error
                     );
                     ErrorRecoveryAction::ReconnectConnection
+                } else if matches!(
+                    described_error.condition,
+                    AmqpErrorCondition::UnauthorizedAccess
+                ) {
+                    // Fail fast on auth failures, matching the .NET and Java Event Hubs
+                    // SDKs, which both classify `amqp:unauthorized-access` as non-transient
+                    // / non-retriable. A runtime unauthorized-access almost always means a
+                    // bad or revoked credential or missing RBAC, not a momentarily expired
+                    // token; keeping tokens fresh is the CBS refresher's job (proactive
+                    // pre-expiry renewal), not something to recover by reconnecting on a 401.
+                    // Routing this to ReconnectConnection would turn a fast failure into N
+                    // full reconnect + re-auth cycles before the error finally surfaces.
+                    debug!(
+                        "AMQP described error is an auth failure; not retrying: {:?}",
+                        described_error
+                    );
+                    ErrorRecoveryAction::ReturnError
                 } else if matches!(
                     described_error.condition,
                     AmqpErrorCondition::LinkStolen | AmqpErrorCondition::LinkDetachForced
@@ -812,16 +828,46 @@ impl RecoverableConnection {
     /// `LinkStolen` so a displaced receiver surfaces the steal instead of
     /// silently re-attaching. .NET parallel: `InvalidateConsumerWhenPartitionIsStolen`.
     pub(super) fn should_retry_receive_error(amqp_error: &AmqpError) -> ErrorRecoveryAction {
-        if let AmqpErrorKind::AmqpDescribedError(described_error) = amqp_error.kind() {
-            if matches!(described_error.condition, AmqpErrorCondition::LinkStolen) {
-                debug!(
-                    "Receive operation will not retry link-stolen: {:?}",
-                    described_error
-                );
-                return ErrorRecoveryAction::ReturnError;
-            }
+        // A `LinkStolen` means the partition was claimed by another consumer; reattaching
+        // would silently resurrect a displaced receiver, so surface it instead. The
+        // condition can arrive at the top level or wrapped through `azure_core::Error` (the
+        // same wrapping `classify_azure_core_chain` unwraps), and the chain walk would
+        // otherwise reclassify a wrapped `LinkStolen` to `ReconnectLink`, defeating this
+        // guard. So check the whole source chain, not just the top-level kind.
+        if Self::is_link_stolen(amqp_error) {
+            debug!("Receive operation will not retry link-stolen: {amqp_error}");
+            return ErrorRecoveryAction::ReturnError;
         }
         Self::should_retry_amqp_error(amqp_error)
+    }
+
+    /// Returns true if `amqp_error` is, or wraps via its [`std::error::Error::source`]
+    /// chain, an [`AmqpErrorKind::AmqpDescribedError`] whose condition is `LinkStolen`.
+    /// Mirrors the bounded walk in [`Self::classify_azure_core_chain`].
+    fn is_link_stolen(amqp_error: &AmqpError) -> bool {
+        use std::error::Error as _;
+        const MAX_DEPTH: usize = 16;
+        fn is_stolen(e: &AmqpError) -> bool {
+            matches!(
+                e.kind(),
+                AmqpErrorKind::AmqpDescribedError(d)
+                    if matches!(d.condition, AmqpErrorCondition::LinkStolen)
+            )
+        }
+        if is_stolen(amqp_error) {
+            return true;
+        }
+        let mut cause: Option<&(dyn std::error::Error + 'static)> = amqp_error.source();
+        for _ in 0..MAX_DEPTH {
+            let Some(c) = cause else { break };
+            if let Some(amqp) = c.downcast_ref::<AmqpError>() {
+                if is_stolen(amqp) {
+                    return true;
+                }
+            }
+            cause = c.source();
+        }
+        false
     }
 
     /// Walks the [`std::error::Error::source`] chain looking for a wrapped [`AmqpError`]
@@ -1026,7 +1072,9 @@ mod tests {
             ErrorRecoveryAction::ReconnectConnection
         );
 
-        // Test UnauthorizedAccess -> ReconnectConnection
+        // Test UnauthorizedAccess -> ReturnError. Auth failures are non-transient
+        // (matches the .NET / Java SDKs); reconnecting on a 401 would only burn the
+        // retry budget against a bad credential before the error surfaces.
         let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
             AmqpErrorCondition::UnauthorizedAccess,
             None,
@@ -1034,7 +1082,7 @@ mod tests {
         )));
         assert_eq!(
             RecoverableConnection::should_retry_amqp_error(&err),
-            ErrorRecoveryAction::ReconnectConnection
+            ErrorRecoveryAction::ReturnError
         );
 
         // Test EntityDisabledError -> RetryAction (matched by the first arm of the
@@ -1104,6 +1152,42 @@ mod tests {
         assert_eq!(
             RecoverableConnection::should_retry_amqp_error(&err),
             ErrorRecoveryAction::ReconnectLink
+        );
+    }
+
+    #[test]
+    fn receive_error_link_stolen_returns_error_top_level_and_wrapped() {
+        use azure_core::error::ErrorKind as AzureErrorKind;
+        use azure_core_amqp::AmqpDescribedError;
+
+        // Top-level LinkStolen must surface as ReturnError so the stolen partition is
+        // reported, not silently reattached (.NET: InvalidateConsumerWhenPartitionIsStolen).
+        let top = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::LinkStolen,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_receive_error(&top),
+            ErrorRecoveryAction::ReturnError
+        );
+
+        // LinkStolen wrapped through azure_core::Error (as the ensure_* wrappers produce)
+        // would slip past a top-level-only guard and be reclassified to ReconnectLink by
+        // the source-chain walk, resurrecting a stolen receiver. It must still ReturnError.
+        let inner = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::LinkStolen,
+            None,
+            Default::default(),
+        )));
+        let wrapped = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            inner,
+            "ensure_receiver failed",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_receive_error(&wrapped),
+            ErrorRecoveryAction::ReturnError
         );
     }
 
