@@ -21,12 +21,12 @@ Further discussion on or pull requests for these issues is highly valued, and we
 ## Using Copilot
 
 This repository is [configured](https://code.visualstudio.com/docs/copilot/copilot-customization) to facilitate Copilot.
-In addition to [general instructions](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md), you can find additional skills in [.github/skills] or use `/skill` in Copilot; and prompts in [.github/prompts] or type `#prompt` in Copilot.
+In addition to [general instructions](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md), you can find additional skills in [.github/skills](https://github.com/Azure/azure-sdk-for-rust/tree/main/.github/skills) or use `/{skill-name}` in Copilot; and prompts in [.github/prompts](https://github.com/Azure/azure-sdk-for-rust/tree/main/.github/prompts) or type `/{prompt-name}` in Copilot.
 
 To generate a new performance test, for example, you might prompt with:
 
 ```text
-Using #perf-test.prompt.md generate a perf test for SecretClient::get_secret.
+Using /perf-test generate a perf test for SecretClient::get_secret.
 ```
 
 For comprehensive guidance on how AI agents should interact with this repository, including workflows, automation boundaries, and safety guidelines, see [AGENTS.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md).
