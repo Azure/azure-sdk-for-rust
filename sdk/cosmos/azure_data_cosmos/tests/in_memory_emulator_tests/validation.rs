@@ -28,7 +28,7 @@ use azure_data_cosmos_driver::CosmosResponse;
 /// broader side: any header the vnext gateway omits on point-ops would
 /// otherwise fail the `Symmetric` presence check, so we add headers here as
 /// we discover them.
-const VNEXT_UNEMITTED_HEADERS: &[&str] = &[
+const VNEXT_OMITTED_HEADERS: &[&str] = &[
     "transport_request_id",
     "global_committed_lsn",
     "local_lsn",
@@ -315,7 +315,7 @@ pub fn compare_responses(
     let header_pairs = extract_header_pairs(&real.headers, &emulator.headers);
     for (name, real_val, emu_val) in &header_pairs {
         let mut rule = header_spec.rule_for(name);
-        if on_vnext && VNEXT_UNEMITTED_HEADERS.contains(name) {
+        if on_vnext && VNEXT_OMITTED_HEADERS.contains(name) {
             rule = HeaderMatch::Ignore;
         }
         validate_header_field(name, real_val, emu_val, rule);
