@@ -26,8 +26,33 @@
 
 ### Features Added
 
-- Exposed cross-regional read hedging. Enable it by attaching an `OperationOptions` built with `OperationOptionsBuilder::with_availability_strategy(AvailabilityStrategy::Hedging(HedgingStrategy::new(HedgeThreshold::new(threshold)?)))` to a request (e.g. `ItemReadOptions::with_operation_options`) or to the client defaults via `CosmosClientBuilder::with_operation_options`. The `AvailabilityStrategy`, `HedgingStrategy`, and `HedgeThreshold` types are now re-exported from `azure_data_cosmos`. When enabled, the driver speculatively dispatches the read to a second preferred region after the configured threshold elapses and returns whichever response classifies as final first, cancelling the losing leg structurally (no detached tasks); `AvailabilityStrategy::Disabled` turns hedging off for that scope, and when no strategy is configured the driver applies a built-in default for multi-region reads. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
-- Added configurable retry limits for throttled (HTTP 429, rate-limited) requests, mirroring the .NET and Java SDKs' `ThrottlingRetryOptions`. A new nested `ThrottlingRetryOptions` group on `OperationOptions` (field `throttling_retry_options`) carries `max_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables throttle retries) and `max_retry_wait_time` (default `30s`), settable per-request via `OperationOptions`/`OperationOptionsBuilder` and `ThrottlingRetryOptionsBuilder`. New client-wide setter `CosmosClientBuilder::with_throttling_retry_options(ThrottlingRetryOptions)` forwards the group as runtime-layer defaults. Both budgets apply *per transport-pipeline invocation*, not per logical operation — an operation that fans out across regions (failover, hedging) starts a fresh budget per leg; use `OperationOptions::end_to_end_latency_policy` to bound total per-operation wall-clock time. ([#4544](https://github.com/Azure/azure-sdk-for-rust/pull/4544))
+- Exposed the driver runtime as a first-class SDK concept via the new `CosmosRuntime` and `CosmosRuntimeBuilder` types. `CosmosRuntime::global()` returns a lazily-initialized, process-wide runtime suitable for the common case of "one or more clients sharing all runtime-level state"; bring-your-own runtime is opt-in through `CosmosRuntimeBuilder` and `CosmosClientBuilder::with_runtime`. The new builder delegates to the driver runtime builder and exposes:
+  - `with_connection_pool(ConnectionPoolOptions)` — runtime-wide transport/cert/proxy settings.
+  - `with_default_operation_options(OperationOptions)` — runtime-default `OperationOptions`.
+  - `with_user_agent_suffix(UserAgentSuffix)` — runtime-default User-Agent suffix.
+  - `with_cpu_refresh_interval(Duration)` — diagnostics sampler interval.
+  - `register_throughput_control_group(ThroughputControlGroupOptions)` — runtime-default throughput-control groups.
+  - `build()` — auto-applies an `azsdk-rust-cosmos/<crate-version>` wrapping SDK identifier so wire User-Agent strings always advertise the SDK alongside any custom suffix.
+- `ConnectionPoolOptions`, `ConnectionPoolOptionsBuilder`, and `EmulatorServerCertValidation` are now re-exported from `azure_data_cosmos::options` so users configuring a custom runtime don't have to take a direct dependency on the driver crate.
+- Cross-regional read hedging — unchanged from earlier in this release.
+
+### Breaking Changes
+
+- `CosmosClientBuilder` has been slimmed to a runtime-aware surface. Per-runtime concerns (transport, cert validation, proxy, retry/UA defaults) are now configured on `CosmosRuntime`; per-client concerns (operation defaults, FI rules, throughput-control groups) stay on the builder:
+  - **Added:**
+    - `with_runtime(CosmosRuntime)` — attach an explicit runtime; when not set, `build()` resolves `CosmosRuntime::global()` lazily.
+    - `with_default_operation_options(OperationOptions)` — sets the client-level default `OperationOptions` (overrides runtime defaults; overridden by per-call options).
+    - `with_fault_injection_rules(Vec<Arc<FaultInjectionRule>>) -> Result<Self>` — registers fault-injection rules on this specific client (gated on `fault_injection`).
+    - `register_throughput_control_group(ThroughputControlGroupOptions) -> Result<Self>` — additive on top of the runtime's groups; cross-layer name collisions surface as a build-time error.
+  - **Removed:**
+    - `with_proxy_allowed` — move to `CosmosRuntimeBuilder::with_connection_pool(ConnectionPoolOptionsBuilder::new().with_proxy_allowed(true).build())`.
+    - `with_allow_emulator_invalid_certificates` — controlled by the `allow_invalid_certificates` Cargo feature (when enabled, `CosmosRuntime::global()` defaults to `EmulatorServerCertValidation::DangerousDisabled`); custom runtimes override via `ConnectionPoolOptionsBuilder::with_emulator_server_cert_validation`.
+    - `with_throttling_retry_options` — use `with_default_operation_options(OperationOptionsBuilder::new().with_throttling_retry_options(...).build())` (the throttle settings live on `OperationOptions`).
+    - `with_fault_injection` — renamed to `with_fault_injection_rules` and now returns `Result<Self>` to surface duplicate-ID errors at registration time.
+    - `with_throughput_control_group` — renamed to `register_throughput_control_group` and now returns `Result<Self>`.
+    - `with_driver_runtime_builder` — replaced by `with_runtime(CosmosRuntime)`. The `__internal_in_memory_emulator` harness uses the new `CosmosRuntimeBuilder::from_driver_builder` escape hatch.
+- The `allow_invalid_certificates` Cargo feature now only affects `CosmosRuntime::global()`'s default `ConnectionPoolOptions::emulator_server_cert_validation`. Per-client opt-in via the removed `with_allow_emulator_invalid_certificates` setter is no longer available; configure a custom `CosmosRuntime` with the desired cert validation policy instead.
+- Per-account driver caching has been removed from the underlying runtime — each `CosmosClient::build(...)` now constructs a fresh `CosmosDriver`. Clients sharing the same `CosmosRuntime` continue to share transport pools, sampler, account cache, etc.; only the per-account `CosmosDriver` instance is no longer reused.
 
 ### Bugs Fixed
 
