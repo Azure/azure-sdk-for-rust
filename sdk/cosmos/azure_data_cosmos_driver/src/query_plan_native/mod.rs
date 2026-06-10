@@ -7,8 +7,42 @@
 //! (Windows) / `libqueryplaninterop.so` (Linux), which generates partitioned
 //! query execution plans for Cosmos DB SQL queries.
 //!
-//! The native library is loaded dynamically at runtime -- no compile-time
-//! dependency is required.
+//! Gated behind the `__internal_native_query_plan` feature flag. When disabled,
+//! the driver uses the Gateway for all query plans. The module itself always
+//! compiles so that tests can run independently of the feature flag.
+//!
+//! # Library loading
+//!
+//! The native library is loaded lazily on first query plan request.
+//! If the DLL/.so is not found, the result is cached and the driver
+//! falls back to the Gateway for all subsequent calls.
+//!
+//! Search order:
+//! 1. `AZURE_COSMOS_QUERYPLANINTEROP_DIR` environment variable (absolute path)
+//! 2. OS default (`PATH` on Windows, `LD_LIBRARY_PATH` on Linux)
+//!
+//! | Platform | Library name |
+//! |----------|-------------|
+//! | Windows  | `Cosmos.QueryPlanInterop.dll` |
+//! | Linux    | `libqueryplaninterop.so` |
+//! | macOS    | `libqueryplaninterop.dylib` |
+//!
+//! # Call chain
+//!
+//! ```text
+//! cosmos_driver::plan_operation()
+//!   -> NativeQueryPlanProvider::get_query_plan()
+//!      -> OnceLock: cached QueryPlanProvider (created once, reused)
+//!         -> QueryPlanProvider::new(config)
+//!            -> query_plan_native_lib()  [OnceLock: loaded once per process]
+//!               -> platform::load_library(LIB_NAME) -> LoadLibraryA / dlopen
+//!               -> GetProcAddress / dlsym for each export
+//!            -> calls CreateServiceProvider(config)
+//!         -> provider.get_partition_key_ranges(query, pk_paths, options)
+//!            -> calls GetPartitionKeyRangesFromQuery4(...)
+//!            -> deserialize JSON -> QueryPlan
+//!   -> if Err: fall through to gateway_query_plan()
+//! ```
 //!
 //! # Reusing the driver's `QueryPlan` model
 //!
@@ -28,6 +62,34 @@
 //! | `queryRanges[].min/max` | hex EPK strings (`"05C1..."`) | structured JSON values (arrays/objects) | `string_or_json` custom deserializer (converts non-strings to JSON text at deserialization time) |
 //! | `partitionedQueryExecutionInfoVersion` | always present | omitted by native DLL | Added `#[serde(default)]` on `QueryPlan` struct |
 //! | `aggregates` (non-VALUE queries) | populated | empty (info in `groupByAliasToAggregateType` instead) | Tests use `has_aggregates()` helper that checks both fields |
+//!
+//! # Running tests
+//!
+//! ```bash
+//! # Unit tests (no native DLL needed)
+//! cargo test -p azure_data_cosmos_driver --lib query_plan_native
+//!
+//! # Integration tests (requires native DLL)
+//! AZURE_COSMOS_QUERYPLANINTEROP_DIR=/path/to/lib \
+//! RUSTFLAGS='--cfg test_category="native_query_plan"' \
+//!     cargo test -p azure_data_cosmos_driver --lib query_plan_native \
+//!         --features __internal_native_query_plan
+//! ```
+//!
+//! # Regenerating bindgen bindings
+//!
+//! Requires `bindgen-cli` and `libclang`:
+//!
+//! ```bash
+//! cargo install bindgen-cli
+//! cd sdk/cosmos/azure_data_cosmos_driver/src/query_plan_native
+//! LIBCLANG_PATH=/path/to/libclang bindgen bindgen_wrapper.h \
+//!     --use-core --no-layout-tests \
+//!     --allowlist-type "QueryPlanInterop.*" \
+//!     --allowlist-function "CreateServiceProvider|UpdateServiceProvider|GetPartitionKeyRangesFromQuery4" \
+//!     --output generated/native_bindings.rs \
+//!     -- -x c++ -D_WIN32
+//! ```
 
 // ABI contract items (HRESULT constants, enum variants, free_library) are
 // defined for completeness but not all are consumed by the driver yet.

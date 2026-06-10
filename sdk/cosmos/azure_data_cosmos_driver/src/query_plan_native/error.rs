@@ -34,11 +34,13 @@ pub enum QueryPlanError {
         message: String,
     },
 
-    /// A supplied string argument contained an interior null character and
-    /// could not be converted to a C string.
-    InvalidArgument {
-        /// Which argument was invalid.
-        context: String,
+    /// A supplied configuration string contained an interior null character.
+    ConfigContainsNull,
+
+    /// The native library returned invalid UTF-8 in its output.
+    InvalidUtf8 {
+        /// The UTF-8 conversion error details.
+        message: String,
     },
 }
 
@@ -57,8 +59,11 @@ impl std::fmt::Display for QueryPlanError {
             Self::LibraryNotAvailable { message } => {
                 write!(f, "native query plan library not available: {message}")
             }
-            Self::InvalidArgument { context } => {
-                write!(f, "argument contains interior null: {context}")
+            Self::ConfigContainsNull => {
+                write!(f, "configuration string contains interior null character")
+            }
+            Self::InvalidUtf8 { message } => {
+                write!(f, "native library returned invalid UTF-8: {message}")
             }
         }
     }
@@ -122,10 +127,8 @@ mod tests {
     }
 
     #[test]
-    fn invalid_argument_error() {
-        let err = QueryPlanError::InvalidArgument {
-            context: "test".to_string(),
-        };
-        assert!(format!("{err}").contains("test"));
+    fn config_null_error() {
+        let err = QueryPlanError::ConfigContainsNull;
+        assert!(format!("{err}").contains("null"));
     }
 }

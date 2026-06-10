@@ -16,12 +16,12 @@
 //!
 //! ```powershell
 //! # Windows
-//! $env:QUERY_PLAN_INTEROP_LIB_DIR = "Q:\QueryPlanInterop"
+//! $env:AZURE_COSMOS_QUERYPLANINTEROP_DIR = "Q:\QueryPlanInterop"
 //! $env:RUSTFLAGS = '--cfg test_category="native_query_plan"'
 //! cargo test -p azure_data_cosmos_driver --lib query_plan_native
 //!
 //! # Linux
-//! QUERY_PLAN_INTEROP_LIB_DIR=/path/to/lib \
+//! AZURE_COSMOS_QUERYPLANINTEROP_DIR=/path/to/lib \
 //!     RUSTFLAGS='--cfg test_category="native_query_plan"' \
 //!     cargo test -p azure_data_cosmos_driver --lib query_plan_native
 //! ```

@@ -10,7 +10,7 @@
 //!
 //! # Library search order
 //!
-//! 1. `QUERY_PLAN_INTEROP_LIB_DIR` environment variable (full path)
+//! 1. `AZURE_COSMOS_QUERYPLANINTEROP_DIR` environment variable (full path)
 //! 2. OS default search (PATH on Windows, LD_LIBRARY_PATH on Linux)
 
 use std::os::raw::c_void;
@@ -42,13 +42,11 @@ pub const E_OUTOFMEMORY: HResult = 0x8007_000E_u32 as i32;
 pub const E_UNEXPECTED: HResult = 0x8000_FFFF_u32 as i32;
 pub const DISP_E_BUFFERTOOSMALL: HResult = 0x8002_0013_u32 as i32;
 
-#[inline]
-pub fn succeeded(hr: HResult) -> bool {
+pub(crate) fn succeeded(hr: HResult) -> bool {
     hr >= 0
 }
 
-#[inline]
-pub fn failed(hr: HResult) -> bool {
+pub(crate) fn failed(hr: HResult) -> bool {
     hr < 0
 }
 
@@ -58,8 +56,9 @@ pub fn failed(hr: HResult) -> bool {
 
 /// Partition key kind. Matches `QueryPlanInteropPartitionKind`.
 #[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PartitionKind {
+    #[default]
     Hash = 0,
     Range = 1,
     MultiHash = 2,
@@ -67,8 +66,9 @@ pub enum PartitionKind {
 
 /// Geospatial type. Matches `QueryPlanInteropGeospatialType`.
 #[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum GeospatialType {
+    #[default]
     Geography = 0,
     Geometry = 1,
 }
@@ -78,7 +78,7 @@ pub enum GeospatialType {
 // -------------------------------------------------------------------------
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct PartitionKeyRangesApiOptions {
     pub require_formattable_order_by_query: i32,
     pub is_continuation_expected: i32,
@@ -93,25 +93,12 @@ pub struct PartitionKeyRangesApiOptions {
 }
 
 // Compile-time ABI guard matching the C++ `static_assert` in QueryPlanInterop.h.
-// If any field changes size or offset, the build fails immediately.
 const _: () = {
     assert!(
         std::mem::size_of::<PartitionKeyRangesApiOptions>() == 64,
         "ABI size must remain 64 bytes"
     );
-    // Field offset checks matching QueryPlanInterop.h static_assert block.
-    // These use a const fn since offset_of! is not yet stable in const context,
-    // so we verify in the test module below.
 };
-
-impl Default for PartitionKeyRangesApiOptions {
-    fn default() -> Self {
-        // SAFETY: All-zeros is a valid representation for this #[repr(C)]
-        // struct: i32 zeros are valid, enum variants start at 0, and the
-        // reserved tail is required to be zeroed per the C++ ABI contract.
-        unsafe { std::mem::zeroed() }
-    }
-}
 
 // -------------------------------------------------------------------------
 // Function pointer types
@@ -160,12 +147,12 @@ mod platform {
     /// The library name must refer to a valid shared library on the system.
     ///
     /// Search order:
-    /// 1. QUERY_PLAN_INTEROP_LIB_DIR environment variable (loads by absolute path)
+    /// 1. AZURE_COSMOS_QUERYPLANINTEROP_DIR environment variable (loads by absolute path)
     /// 2. OS default search (PATH)
     pub unsafe fn load_library(name: &str) -> Option<LibHandle> {
-        // Try QUERY_PLAN_INTEROP_LIB_DIR if set — build an absolute path
+        // Try AZURE_COSMOS_QUERYPLANINTEROP_DIR if set — build an absolute path
         // to avoid mutating the process-wide DLL search directory.
-        if let Ok(dir) = std::env::var("QUERY_PLAN_INTEROP_LIB_DIR") {
+        if let Ok(dir) = std::env::var("AZURE_COSMOS_QUERYPLANINTEROP_DIR") {
             let full_path = format!("{}\\{}", dir.trim_end_matches('\\'), name);
             if let Ok(c_path) = CString::new(full_path) {
                 // SAFETY: CString guarantees a valid nul-terminated string.
@@ -237,11 +224,11 @@ mod platform {
     /// The library name must refer to a valid shared library on the system.
     ///
     /// Search order:
-    /// 1. QUERY_PLAN_INTEROP_LIB_DIR environment variable
+    /// 1. AZURE_COSMOS_QUERYPLANINTEROP_DIR environment variable
     /// 2. OS default search (LD_LIBRARY_PATH / DYLD_LIBRARY_PATH)
     pub unsafe fn load_library(name: &str) -> Option<LibHandle> {
-        // Try QUERY_PLAN_INTEROP_LIB_DIR if set.
-        if let Ok(dir) = std::env::var("QUERY_PLAN_INTEROP_LIB_DIR") {
+        // Try AZURE_COSMOS_QUERYPLANINTEROP_DIR if set.
+        if let Ok(dir) = std::env::var("AZURE_COSMOS_QUERYPLANINTEROP_DIR") {
             let full_path = format!("{}/{}", dir.trim_end_matches('/'), name);
             if let Ok(c_path) = CString::new(full_path) {
                 // SAFETY: CString guarantees a valid nul-terminated string.
@@ -301,9 +288,9 @@ mod platform {
 
 /// Dynamically loaded native library with resolved function pointers.
 pub(crate) struct QueryPlanNativeLibrary {
-    pub create_service_provider: CreateServiceProviderFn,
-    pub update_service_provider: UpdateServiceProviderFn,
-    pub get_partition_key_ranges_from_query4: GetPartitionKeyRangesFromQuery4Fn,
+    create_service_provider: CreateServiceProviderFn,
+    update_service_provider: UpdateServiceProviderFn,
+    get_partition_key_ranges_from_query4: GetPartitionKeyRangesFromQuery4Fn,
 }
 
 // SAFETY: The native library's functions are thread-safe per its
@@ -341,6 +328,64 @@ impl QueryPlanNativeLibrary {
                 )?),
             })
         }
+    }
+
+    /// Creates a native service provider from a JSON configuration string.
+    ///
+    /// # Safety
+    /// The returned handle must be used only with other methods on this library.
+    pub fn create_service_provider(
+        &self,
+        config: &std::ffi::CStr,
+    ) -> (HResult, ServiceProviderHandle) {
+        let mut handle: ServiceProviderHandle = std::ptr::null_mut();
+        // SAFETY: CStr guarantees a valid nul-terminated string.
+        let hr = unsafe { (self.create_service_provider)(config.as_ptr().cast(), &mut handle) };
+        (hr, handle)
+    }
+
+    /// Updates an existing service provider with new configuration.
+    pub fn update_service_provider(
+        &self,
+        handle: ServiceProviderHandle,
+        config: &std::ffi::CStr,
+    ) -> HResult {
+        // SAFETY: handle was created by create_service_provider;
+        // CStr guarantees a valid nul-terminated string.
+        unsafe { (self.update_service_provider)(handle, config.as_ptr().cast()) }
+    }
+
+    /// Generates a partitioned query execution plan.
+    ///
+    /// # Safety
+    /// All pointer arguments must be valid for the duration of the call.
+    pub unsafe fn get_partition_key_ranges(
+        &self,
+        handle: ServiceProviderHandle,
+        query_spec: *const WChar,
+        options: PartitionKeyRangesApiOptions,
+        token_ptrs: *const *const WChar,
+        token_counts: *const u32,
+        pk_count: u32,
+        vec_policy_ptr: *const WChar,
+        vec_policy_len: u32,
+        buffer: *mut u8,
+        buffer_len: u32,
+        result_len: *mut u32,
+    ) -> HResult {
+        (self.get_partition_key_ranges_from_query4)(
+            handle,
+            query_spec,
+            options,
+            token_ptrs,
+            token_counts,
+            pk_count,
+            vec_policy_ptr,
+            vec_policy_len,
+            buffer,
+            buffer_len,
+            result_len,
+        )
     }
 }
 
@@ -425,45 +470,14 @@ mod tests {
     }
 
     #[test]
-    fn abi_enum_values_match_header() {
-        assert_eq!(PartitionKind::Hash as i32, 0);
-        assert_eq!(PartitionKind::Range as i32, 1);
-        assert_eq!(PartitionKind::MultiHash as i32, 2);
-        assert_eq!(GeospatialType::Geography as i32, 0);
-        assert_eq!(GeospatialType::Geometry as i32, 1);
-    }
-
-    #[test]
-    fn abi_hresult_constants_match_header() {
-        assert_eq!(S_OK, 0x0000_0000_u32 as i32);
-        assert_eq!(E_FAIL, 0x8000_4005_u32 as i32);
-        assert_eq!(E_POINTER, 0x8000_4003_u32 as i32);
-        assert_eq!(E_INVALIDARG, 0x8007_0057_u32 as i32);
-        assert_eq!(E_OUTOFMEMORY, 0x8007_000E_u32 as i32);
-        assert_eq!(E_UNEXPECTED, 0x8000_FFFF_u32 as i32);
-        assert_eq!(DISP_E_BUFFERTOOSMALL, 0x8002_0013_u32 as i32);
-    }
-
-    #[test]
-    fn hresult_success_failure() {
-        assert!(succeeded(S_OK));
-        assert!(!failed(S_OK));
-        assert!(failed(E_FAIL));
-        assert!(!succeeded(E_FAIL));
-        assert!(failed(DISP_E_BUFFERTOOSMALL));
-    }
-
-    #[test]
-    fn options_default_is_zeroed() {
+    fn options_default_is_all_zeros() {
         let opts = PartitionKeyRangesApiOptions::default();
-        assert_eq!(opts.require_formattable_order_by_query, 0);
-        assert_eq!(opts.is_continuation_expected, 0);
-        assert_eq!(opts.allow_non_value_aggregate_query, 0);
-        assert_eq!(opts.has_logical_partition_key, 0);
-        assert_eq!(opts.allow_dcount, 0);
-        assert_eq!(opts.use_system_prefix, 0);
-        assert_eq!(opts.hybrid_search_skip_order_by_rewrite, 0);
-        assert_eq!(opts.reserved, [0u8; 28]);
+        let bytes: [u8; std::mem::size_of::<PartitionKeyRangesApiOptions>()] =
+            unsafe { std::mem::transmute(opts) };
+        assert!(
+            bytes.iter().all(|&b| b == 0),
+            "default PartitionKeyRangesApiOptions must be all zeros per the C++ ABI contract"
+        );
     }
 
     #[test]

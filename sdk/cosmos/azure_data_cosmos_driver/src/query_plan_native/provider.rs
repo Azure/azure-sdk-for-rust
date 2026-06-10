@@ -49,15 +49,10 @@ impl QueryPlanProvider {
     /// On the first call, this dynamically loads the native library.
     pub fn new(config_json: &str) -> Result<Self, QueryPlanError> {
         let lib = query_plan_native::query_plan_native_lib()?;
-        let c_config = CString::new(config_json).map_err(|_| QueryPlanError::InvalidArgument {
-            context: "config_json".to_string(),
-        })?;
+        let c_config =
+            CString::new(config_json).map_err(|_| QueryPlanError::ConfigContainsNull)?;
 
-        let mut handle: query_plan_native::ServiceProviderHandle = std::ptr::null_mut();
-        // SAFETY: c_config is a valid null-terminated UTF-8 string, and
-        // handle is a valid writable pointer. The function is resolved
-        // from the native library with a matching ABI signature.
-        let hr = unsafe { (lib.create_service_provider)(c_config.as_ptr().cast(), &mut handle) };
+        let (hr, handle) = lib.create_service_provider(&c_config);
 
         if query_plan_native::failed(hr) {
             return Err(QueryPlanError::from_hresult(hr));
@@ -69,11 +64,10 @@ impl QueryPlanProvider {
     /// Updates the service provider with new configuration.
     pub fn update(&self, config_json: &str) -> Result<(), QueryPlanError> {
         let lib = query_plan_native::query_plan_native_lib()?;
-        let c_config = CString::new(config_json).map_err(|_| QueryPlanError::InvalidArgument {
-            context: "config_json".to_string(),
-        })?;
+        let c_config =
+            CString::new(config_json).map_err(|_| QueryPlanError::ConfigContainsNull)?;
 
-        let hr = unsafe { (lib.update_service_provider)(self.handle, c_config.as_ptr().cast()) };
+        let hr = lib.update_service_provider(self.handle, &c_config);
 
         if query_plan_native::failed(hr) {
             return Err(QueryPlanError::from_hresult(hr));
@@ -111,28 +105,16 @@ impl QueryPlanProvider {
             None => (std::ptr::null(), 0),
         };
 
-        let native_options = PartitionKeyRangesApiOptions {
-            require_formattable_order_by_query: options.require_formattable_order_by_query as i32,
-            is_continuation_expected: options.is_continuation_expected as i32,
-            allow_non_value_aggregate_query: options.allow_non_value_aggregate_query as i32,
-            has_logical_partition_key: options.has_logical_partition_key as i32,
-            allow_dcount: options.allow_dcount as i32,
-            use_system_prefix: options.use_system_prefix as i32,
-            partition_kind: options.partition_kind,
-            geospatial_type: options.geospatial_type,
-            hybrid_search_skip_order_by_rewrite: options.hybrid_search_skip_order_by_rewrite as i32,
-            reserved: [0u8; 28],
-        };
+        let native_options = PartitionKeyRangesApiOptions::from(options);
 
         let mut buffer = vec![0u8; INITIAL_BUFFER_SIZE as usize];
         let mut result_length: u32 = 0;
         let pk_count = partition_key_paths.len() as u32;
 
-        // Closure to avoid duplicating the 11-argument FFI call.
+        // Closure to avoid duplicating the FFI call.
         // SAFETY: all pointers are valid for the duration of the closure call.
-        // The native ABI is documented in QueryPlanInterop.h.
         let call_native = |buf: &mut Vec<u8>, out_len: &mut u32| unsafe {
-            (lib.get_partition_key_ranges_from_query4)(
+            lib.get_partition_key_ranges(
                 self.handle,
                 query_spec_native.as_ptr(),
                 native_options,
@@ -155,8 +137,8 @@ impl QueryPlanProvider {
         }
 
         let payload = std::str::from_utf8(&buffer[..result_length as usize]).map_err(|e| {
-            QueryPlanError::InvalidArgument {
-                context: format!("native library returned invalid UTF-8: {e}"),
+            QueryPlanError::InvalidUtf8 {
+                message: e.to_string(),
             }
         })?;
 
@@ -206,6 +188,23 @@ impl Default for QueryPlanOptions {
             partition_kind: PartitionKind::Hash,
             geospatial_type: GeospatialType::Geography,
             hybrid_search_skip_order_by_rewrite: false,
+        }
+    }
+}
+
+impl From<&QueryPlanOptions> for PartitionKeyRangesApiOptions {
+    fn from(opts: &QueryPlanOptions) -> Self {
+        Self {
+            require_formattable_order_by_query: opts.require_formattable_order_by_query as i32,
+            is_continuation_expected: opts.is_continuation_expected as i32,
+            allow_non_value_aggregate_query: opts.allow_non_value_aggregate_query as i32,
+            has_logical_partition_key: opts.has_logical_partition_key as i32,
+            allow_dcount: opts.allow_dcount as i32,
+            use_system_prefix: opts.use_system_prefix as i32,
+            partition_kind: opts.partition_kind,
+            geospatial_type: opts.geospatial_type,
+            hybrid_search_skip_order_by_rewrite: opts.hybrid_search_skip_order_by_rewrite as i32,
+            reserved: [0u8; 28],
         }
     }
 }
