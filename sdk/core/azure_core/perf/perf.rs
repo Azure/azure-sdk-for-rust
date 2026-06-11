@@ -3,8 +3,6 @@
 
 mod mock;
 
-use std::fmt::Display;
-
 use azure_core_test::perf::{PerfRunner, PerfTestFactory};
 use clap::Subcommand;
 
