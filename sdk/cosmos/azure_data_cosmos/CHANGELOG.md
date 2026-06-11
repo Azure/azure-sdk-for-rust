@@ -34,6 +34,7 @@
   - `register_throughput_control_group(ThroughputControlGroupOptions)` — runtime-default throughput-control groups.
   - `build()` — auto-applies an `azsdk-rust-cosmos/<crate-version>` wrapping SDK identifier so wire User-Agent strings always advertise the SDK alongside any custom suffix.
 - `ConnectionPoolOptions`, `ConnectionPoolOptionsBuilder`, and `EmulatorServerCertValidation` are now re-exported from `azure_data_cosmos::options` so users configuring a custom runtime don't have to take a direct dependency on the driver crate.
+- Re-exported `PartitionFailoverOptions` and `PartitionFailoverOptionsBuilder` from `azure_data_cosmos::options`. `CosmosClientBuilder::with_partition_failover_options(PartitionFailoverOptions)` configures the driver's per-partition circuit-breaker / failover tuning for this client; when unset, the driver falls back to `PartitionFailoverOptions::default()`, which honors the `AZURE_COSMOS_PPCB_*` environment variables.
 - Cross-regional read hedging — unchanged from earlier in this release.
 
 ### Breaking Changes

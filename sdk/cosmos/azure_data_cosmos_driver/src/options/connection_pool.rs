@@ -256,7 +256,7 @@ impl ConnectionPoolOptions {
 /// - `AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES`: TCP keepalive retry count (default: none, min: `1`, max: `255`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED`: Whether HTTP/2 is allowed for gateway mode connections (default: `true`)
 /// - `AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED`: Whether Gateway 2.0 feature is allowed (default: `false`)
-/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is disabled for emulator; `true` maps to [`EmulatorServerCertValidation::DangerousDisabled`], `false` to [`EmulatorServerCertValidation::Enabled`] (default: `false`)
+/// - `AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED`: Whether server certificate validation is disabled for emulator; `true` maps to [`ServerCertificateValidation::RequiredUnlessEmulator`], `false` to [`ServerCertificateValidation::Required`] (default: `false`)
 /// - `AZURE_COSMOS_LOCAL_ADDRESS`: Local IP address to bind to (default: none)
 ///
 /// # Example

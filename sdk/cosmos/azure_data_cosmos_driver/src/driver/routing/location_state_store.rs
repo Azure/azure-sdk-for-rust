@@ -19,14 +19,13 @@ use crate::driver::transport::background_task_manager::BackgroundTaskManager;
 use crate::{
     driver::cache::{AccountMetadataCache, AccountProperties},
     models::AccountEndpoint,
-    options::Region,
+    options::{PartitionFailoverOptions, Region},
 };
 
 use super::{
     build_account_endpoint_state, expire_partition_overrides, expire_unavailable_endpoints,
     mark_endpoint_unavailable, mark_partition_unavailable,
-    partition_endpoint_state::{PartitionEndpointState, PartitionFailoverConfig},
-    partition_key_range_id::PartitionKeyRangeId,
+    partition_endpoint_state::PartitionEndpointState, partition_key_range_id::PartitionKeyRangeId,
     record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
     LocationEffect,
 };
@@ -151,11 +150,11 @@ impl LocationStateStore {
         account_refresh_fn: AccountRefreshFn,
         gateway20_enabled: bool,
         endpoint_unavailability_ttl: Duration,
-        partition_failover_config: PartitionFailoverConfig,
+        partition_failover_options: PartitionFailoverOptions,
         preferred_regions: Vec<Region>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
-        let partition_state = PartitionEndpointState::new(partition_failover_config);
+        let partition_state = PartitionEndpointState::new(partition_failover_options);
 
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
@@ -519,7 +518,7 @@ impl LocationStateStore {
             next.per_partition_automatic_failover_enabled =
                 per_partition_automatic_failover_enabled;
             next.per_partition_circuit_breaker_enabled = per_partition_automatic_failover_enabled
-                || current.config.circuit_breaker_option_enabled;
+                || current.config.circuit_breaker_enabled();
             next
         });
     }
@@ -578,7 +577,7 @@ impl LocationStateStore {
     ///
     /// Increments a per-`(partition, primary_region)` counter atomically
     /// via [`Self::apply_partition`]. When the counter reaches
-    /// [`PartitionFailoverConfig::consecutive_hedge_win_threshold`] the
+    /// [`PartitionFailoverOptions::consecutive_hedge_win_threshold`] the
     /// partition is tripped by installing an `Unhealthy` entry in
     /// `circuit_breaker_overrides` (the same shape PPCB uses for hard
     /// failures), so subsequent requests route away from the degraded
@@ -658,9 +657,9 @@ async fn account_refresh_loop(weak_store: Weak<LocationStateStore>, interval: Du
 ///
 /// Exits when the `LocationStateStore` is dropped (`Weak::upgrade()` returns `None`).
 #[cfg(feature = "tokio")]
-async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverConfig) {
+async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFailoverOptions) {
     loop {
-        tokio::time::sleep(config.failback_sweep_interval).await;
+        tokio::time::sleep(config.failback_sweep_interval()).await;
 
         let Some(store) = weak_store.upgrade() else {
             // LocationStateStore was dropped — exit the loop.
@@ -671,7 +670,7 @@ async fn failback_loop(weak_store: Weak<LocationStateStore>, config: PartitionFa
             expire_partition_overrides(
                 current_partitions,
                 Instant::now(),
-                config.partition_unavailability_duration,
+                config.partition_unavailability_duration(),
             )
         });
     }
@@ -737,7 +736,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -775,7 +774,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -831,7 +830,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -892,7 +891,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -944,7 +943,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 
@@ -1006,7 +1005,7 @@ mod tests {
             refresh,
             false,
             Duration::from_secs(60),
-            PartitionFailoverConfig::default(),
+            PartitionFailoverOptions::default(),
             Vec::new(),
         );
 

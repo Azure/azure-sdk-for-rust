@@ -25,7 +25,7 @@ use azure_data_cosmos_driver::{
         DatabaseReference,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, ServerCertificateValidation, OperationOptions,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, ServerCertificateValidation,
     },
     CosmosDriver,
 };
@@ -366,8 +366,9 @@ async fn resolve_real_account(
     let mut pool_builder = ConnectionPoolOptions::builder();
     // If connecting to the local emulator, disable cert validation
     if conn_str.account_endpoint().contains("localhost") {
-        pool_builder = pool_builder
-            .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator);
+        pool_builder = pool_builder.with_server_certificate_validation(
+            ServerCertificateValidation::RequiredUnlessEmulator,
+        );
     }
     let pool = pool_builder.build()?;
 

@@ -5047,10 +5047,11 @@ mod tests {
         // Build a partition state with PPAF enabled and a stale override
         // entry that points at the now-failing centralus region.
         use crate::driver::routing::partition_endpoint_state::{
-            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
         };
+        use crate::options::PartitionFailoverOptions;
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
-        let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
+        let mut partitions = PartitionEndpointState::new(PartitionFailoverOptions::default());
         partitions.per_partition_automatic_failover_enabled = true;
         partitions.failover_overrides.insert(
             pk_range_id.clone(),
@@ -5125,10 +5126,11 @@ mod tests {
         });
 
         use crate::driver::routing::partition_endpoint_state::{
-            HealthStatus, PartitionEndpointState, PartitionFailoverConfig, PartitionFailoverEntry,
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
         };
+        use crate::options::PartitionFailoverOptions;
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
-        let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
+        let mut partitions = PartitionEndpointState::new(PartitionFailoverOptions::default());
         partitions.per_partition_automatic_failover_enabled = true;
         partitions.failover_overrides.insert(
             pk_range_id.clone(),

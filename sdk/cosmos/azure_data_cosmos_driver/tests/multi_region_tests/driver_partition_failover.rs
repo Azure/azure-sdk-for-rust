@@ -20,7 +20,7 @@ use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
     FaultInjectionRuleBuilder, FaultOperationType,
 };
-use azure_data_cosmos_driver::options::{OperationOptionsBuilder, Region};
+use azure_data_cosmos_driver::options::{PartitionFailoverOptions, Region};
 use std::error::Error;
 use std::sync::Arc;
 
@@ -197,14 +197,15 @@ pub async fn ppcb_enabled_503_on_read_fails_over_after_threshold() -> Result<(),
     );
     let rules = vec![Arc::clone(&rule)];
 
-    // PPCB is disabled by default; explicitly enable it via operation options.
-    let operation_options = OperationOptionsBuilder::new()
-        .with_per_partition_circuit_breaker_enabled(true)
-        .build();
+    // PPCB is disabled by default; explicitly enable it via driver-level
+    // partition-failover options.
+    let partition_failover_options = PartitionFailoverOptions::builder()
+        .with_circuit_breaker_enabled(true)
+        .build()?;
 
-    DriverTestClient::run_with_unique_db_and_fault_injection_options(
+    DriverTestClient::run_with_unique_db_and_fault_injection_partition_failover_options(
         rules,
-        operation_options,
+        partition_failover_options,
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context
@@ -333,18 +334,20 @@ pub async fn ppcb_failback_to_hub_region_after_fault_clears() -> Result<(), Box<
     // Tighten the failback sweep interval so the test does not have to wait the
     // 300s production default. `partition_unavailability_duration` is left at
     // its 5s default (which is also the minimum permitted value).
-    const FAILBACK_SWEEP_SECS: u32 = 5;
-    const PARTITION_UNAVAILABILITY_SECS: u32 = 5;
+    const FAILBACK_SWEEP_SECS: u64 = 5;
+    const PARTITION_UNAVAILABILITY_SECS: u64 = 5;
 
-    let operation_options = OperationOptionsBuilder::new()
-        .with_per_partition_circuit_breaker_enabled(true)
-        .with_ppcb_stale_partition_unavailability_refresh_interval_in_seconds(FAILBACK_SWEEP_SECS)
-        .with_allowed_partition_unavailability_duration_in_seconds(PARTITION_UNAVAILABILITY_SECS)
-        .build();
+    let partition_failover_options = PartitionFailoverOptions::builder()
+        .with_circuit_breaker_enabled(true)
+        .with_failback_sweep_interval(std::time::Duration::from_secs(FAILBACK_SWEEP_SECS))
+        .with_partition_unavailability_duration(std::time::Duration::from_secs(
+            PARTITION_UNAVAILABILITY_SECS,
+        ))
+        .build()?;
 
-    DriverTestClient::run_with_unique_db_and_fault_injection_options(
+    DriverTestClient::run_with_unique_db_and_fault_injection_partition_failover_options(
         rules,
-        operation_options,
+        partition_failover_options,
         async |context, database| {
             let container_name = context.unique_container_name();
             let container = context

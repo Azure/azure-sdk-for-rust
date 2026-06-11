@@ -1,30 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Shared runtime for one or more [`CosmosClient`](crate::CosmosClient) instances.
-//!
-//! A [`CosmosRuntime`] owns the background resources used by every
-//! `CosmosClient` built on top of it — the HTTP client factory and
-//! connection pool, the background CPU/memory sampler, the default
-//! [`OperationOptions`], the User-Agent header, and any registered
-//! throughput-control groups.
-//!
-//! Most applications never need to construct a runtime explicitly: every
-//! [`CosmosClientBuilder::build`](crate::CosmosClientBuilder::build) call
-//! falls back to [`CosmosRuntime::global`] when no runtime was supplied,
-//! and the global runtime is sized appropriately for typical workloads.
-//!
-//! Construct a custom runtime via [`CosmosRuntime::builder`] when you need
-//! to:
-//!
-//! - share a single transport across a large number of `CosmosClient`s,
-//! - relax certificate validation against a local emulator,
-//! - tunnel through an HTTP proxy,
-//! - or configure runtime-wide throughput-control groups.
-//!
-//! Attach a custom runtime to a client with
-//! [`CosmosClientBuilder::with_runtime`](crate::CosmosClientBuilder::with_runtime).
-
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -36,16 +12,18 @@ use crate::options::{
     ConnectionPoolOptions, OperationOptions, ThroughputControlGroupOptions, UserAgentSuffix,
 };
 
-/// A handle to a shared runtime for one or more [`CosmosClient`](crate::CosmosClient)s.
+/// Shared runtime for one or more [`CosmosClient`](crate::CosmosClient) instances.
 ///
-/// `CosmosRuntime` owns the HTTP client factory, connection pool, default
-/// [`OperationOptions`], User-Agent header, and any registered
-/// throughput-control groups that the clients built on top of it share.
+/// All [`CosmosClient`](crate::CosmosClient) instances run in the context of a [`CosmosRuntime`].
+/// The runtime serves as a central hub for caches, state, and background monitoring/maintenance tasks.
+/// For most applications, the default runtime is sufficient, but there are a few cases where you
+/// might need to create your own runtime and pass it to a client using [`CosmosClientBuilder::with_runtime`](crate::CosmosClientBuilder::with_runtime).
 ///
-/// This type is a handle to the runtime itself, cloning it will duplicate the handle
-/// which will point to the same underlying runtime.
-/// Use [`CosmosRuntime::global`] to obtain a process-wide shared default
-/// runtime, or [`CosmosRuntime::builder`] to construct a customized one.
+/// * You are creating a lot of [`CosmosClient`](crate::CosmosClient) instances to connect
+///   to different accounts and wish to share some common [`OperationOptions`] between them ([`CosmosRuntimeBuilder::with_default_operation_options`])
+///   and/or use shared throughput control groups across them ([`CosmosRuntimeBuilder::register_throughput_control_group`]).
+/// * You need to modify connection pool options, such as connect timeouts, or allowing insecure TLS connections to the emulator
+///   ([`CosmosRuntimeBuilder::with_connection_pool`])
 #[derive(Clone, Debug)]
 pub struct CosmosRuntime(Arc<CosmosDriverRuntime>);
 
@@ -216,20 +194,6 @@ mod tests {
         assert!(
             ua.contains("azsdk-rust-cosmos/"),
             "user agent {ua:?} should contain the wrapping SDK identifier"
-        );
-    }
-
-    #[tokio::test]
-    async fn global_enables_per_partition_circuit_breaker_by_default() {
-        let runtime = CosmosRuntime::global().await.expect("global builds");
-        let ppcb = runtime
-            .0
-            .default_operation_options()
-            .per_partition_circuit_breaker_enabled;
-        assert_eq!(
-            ppcb,
-            Some(true),
-            "global runtime must default to PPCB enabled"
         );
     }
 }

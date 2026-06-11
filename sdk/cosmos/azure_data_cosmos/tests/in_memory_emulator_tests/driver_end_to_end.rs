@@ -1352,8 +1352,9 @@ async fn try_real_failover_comparison(
 
     let mut pool_builder = ConnectionPoolOptions::builder();
     if conn_str.account_endpoint().contains("localhost") {
-        pool_builder = pool_builder
-            .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator);
+        pool_builder = pool_builder.with_server_certificate_validation(
+            ServerCertificateValidation::RequiredUnlessEmulator,
+        );
     }
     let pool = pool_builder.build().ok()?;
 

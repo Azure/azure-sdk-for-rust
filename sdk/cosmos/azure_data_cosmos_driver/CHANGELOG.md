@@ -23,6 +23,7 @@
   - `with_user_agent_suffix(UserAgentSuffix)` — overrides the runtime's default User-Agent suffix for this driver. The runtime continues to precompute its own `Arc<UserAgent>`; drivers with no override clone that `Arc` (no per-request UA recomputation), drivers with an override compute their own `UserAgent` once at construction.
   - `with_fault_injection_rules(Vec<Arc<FaultInjectionRule>>) -> Result<Self>` — registers fault-injection rules at the driver level (gated on the `fault_injection` feature). Rejects duplicate rule IDs.
   - `register_throughput_control_group(ThroughputControlGroupOptions) -> Result<Self>` — registers a per-driver throughput-control group. The driver merges the runtime and driver registries at construction; cross-layer `(container, name)` collisions error before `create_driver` returns. Within-builder collisions still error at register time.
+- Promoted partition-failover / per-partition circuit-breaker tuning out of `OperationOptions` into a new client-level `PartitionFailoverOptions` (with `PartitionFailoverOptionsBuilder`) attached to `DriverOptions` via `DriverOptionsBuilder::with_partition_failover_options`, mirroring the `ConnectionPoolOptions` shape (private fields, public getters, env-var-aware `Default`). The driver now consumes these knobs once at construction (`CosmosDriver::new` no longer fabricates an `OperationOptionsView` outside any operation context). Every env-var-driven field uses the `AZURE_COSMOS_PPCB_*` prefix (and a `_MS` suffix on duration knobs), giving the PPCB family a single, discoverable namespace.
 
 ### Breaking Changes
 
@@ -33,6 +34,16 @@
 - `CosmosDriver::new(runtime, options)` now returns `Result<Self>` because the registry merge can fail. `CosmosDriverRuntime::create_driver` propagates the error using the existing `CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED` status.
 - Removed `CosmosDriver::resolve_container_by_rid` and the supporting `CosmosOperation::read_container_by_rid` factory and `ContainerCache::get_or_fetch_by_rid`. These RID-keyed entry points had no callers; container resolution now goes exclusively through `resolve_container` / `resolve_container_by_name`. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
 - Removed `PartitionKey::EMPTY`, the `Default` impl on `PartitionKey`, and `From<()> for PartitionKey`. The empty-key value remains an internal driver concept (`pub(crate) const EMPTY`) but is no longer part of the public API; cross-partition operations are expressed through the SDK's query/feed APIs.
+- Removed the seven per-partition circuit-breaker / partition-failover fields from `OperationOptions`: `circuit_breaker_failure_count_for_reads`, `circuit_breaker_failure_count_for_writes`, `circuit_breaker_timeout_counter_reset_window_in_minutes`, `allowed_partition_unavailability_duration_in_seconds`, `ppcb_stale_partition_unavailability_refresh_interval_in_seconds`, `per_partition_circuit_breaker_enabled`, and `consecutive_hedge_win_threshold`. These were never resolved per-operation; configure them via the new `DriverOptionsBuilder::with_partition_failover_options(PartitionFailoverOptions)` instead.
+- Renamed the partition-failover environment variables onto a single `AZURE_COSMOS_PPCB_*` prefix (with `_MS` suffix on duration knobs):
+  - `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` → `AZURE_COSMOS_PPCB_ENABLED`
+  - `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_READS` → `AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD`
+  - `AZURE_COSMOS_CIRCUIT_BREAKER_FAILURE_COUNT_FOR_WRITES` → `AZURE_COSMOS_PPCB_WRITE_FAILURE_THRESHOLD`
+  - `AZURE_COSMOS_CIRCUIT_BREAKER_TIMEOUT_COUNTER_RESET_WINDOW_IN_MINUTES` → `AZURE_COSMOS_PPCB_COUNTER_RESET_WINDOW_MS`
+  - `AZURE_COSMOS_ALLOWED_PARTITION_UNAVAILABILITY_DURATION_IN_SECONDS` → `AZURE_COSMOS_PPCB_PARTITION_UNAVAILABILITY_DURATION_MS`
+  - `AZURE_COSMOS_PPCB_STALE_PARTITION_UNAVAILABILITY_REFRESH_INTERVAL_IN_SECONDS` → `AZURE_COSMOS_PPCB_FAILBACK_SWEEP_INTERVAL_MS`
+  - `AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD` → `AZURE_COSMOS_PPCB_CONSECUTIVE_HEDGE_WIN_THRESHOLD`
+
 ### Bugs Fixed
 
 - Data-plane and non-account metadata operations now fall back to the hub/primary write region endpoint instead of the global account endpoint when all regional endpoints are excluded or unavailable. ([#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503))

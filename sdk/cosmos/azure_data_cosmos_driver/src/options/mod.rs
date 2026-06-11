@@ -22,6 +22,7 @@ mod driver_options;
 pub(crate) mod env_parsing;
 mod identity;
 mod operation_options;
+mod partition_failover;
 mod policies;
 mod priority;
 mod read_consistency;
@@ -40,6 +41,7 @@ pub use operation_options::{
     OperationOptions, OperationOptionsBuilder, OperationOptionsView, ThrottlingRetryOptions,
     ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView,
 };
+pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
 pub use policies::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
     ServerCertificateValidation,

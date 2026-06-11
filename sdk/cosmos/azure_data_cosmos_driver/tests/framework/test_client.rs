@@ -13,8 +13,8 @@ use azure_data_cosmos_driver::{
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, ServerCertificateValidation, OperationOptions,
-        Region,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, PartitionFailoverOptions, Region,
+        ServerCertificateValidation,
     },
 };
 use std::{error::Error, future::Future, sync::Arc};
@@ -43,6 +43,13 @@ pub struct DriverTestClient {
     /// each per-operation driver rather than on the shared runtime.
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<FaultInjectionRule>>,
+    /// Driver-level partition-failover / PPCB options applied to every driver
+    /// created by the per-operation helpers. `None` means the driver inherits
+    /// the [`PartitionFailoverOptions::default`] values; populated by the
+    /// `run_with_unique_db_and_fault_injection_partition_failover_options`
+    /// entry point so PPCB-tuning tests can configure thresholds and sweep
+    /// intervals at the driver layer (where these knobs now live).
+    partition_failover_options: Option<PartitionFailoverOptions>,
 }
 
 /// Resolved test environment containing account and connection pool configuration.
@@ -91,8 +98,9 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
 
     let mut connection_pool_builder = ConnectionPoolOptions::builder();
     if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
-        connection_pool_builder = connection_pool_builder
-            .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator);
+        connection_pool_builder = connection_pool_builder.with_server_certificate_validation(
+            ServerCertificateValidation::RequiredUnlessEmulator,
+        );
     }
     let connection_pool = connection_pool_builder.build()?;
 
@@ -128,6 +136,7 @@ impl DriverTestClient {
             preferred_regions: Vec::new(),
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
+            partition_failover_options: None,
         }))
     }
 
@@ -153,6 +162,7 @@ impl DriverTestClient {
             account: env.account,
             preferred_regions: Vec::new(),
             fault_injection_rules: rules,
+            partition_failover_options: None,
         }))
     }
 
@@ -247,6 +257,56 @@ impl DriverTestClient {
             account: env.account,
             preferred_regions: Vec::new(),
             fault_injection_rules: rules,
+            partition_failover_options: None,
+        };
+        let context = DriverTestRunContext::new(client);
+
+        let db_name = context.unique_database_name();
+        let db_ref = context.create_database(&db_name).await?;
+
+        let result = f(context.clone(), db_ref.clone()).await;
+
+        // Cleanup (best effort)
+        let _ = context.delete_database(&db_ref).await;
+
+        result
+    }
+
+    /// Like [`run_with_unique_db_and_fault_injection`](Self::run_with_unique_db_and_fault_injection)
+    /// but additionally applies the given [`PartitionFailoverOptions`] to
+    /// every driver created by the per-operation helpers.
+    ///
+    /// These are driver-level (not runtime-level) options: PPCB enable,
+    /// failure thresholds, partition-unavailability duration and failback
+    /// sweep interval, etc. Tests use this entry point to tune the PPCB
+    /// fast/loose so the harness does not have to wait the 300s production
+    /// failback default.
+    #[cfg(feature = "fault_injection")]
+    pub async fn run_with_unique_db_and_fault_injection_partition_failover_options<F, Fut>(
+        rules: Vec<Arc<FaultInjectionRule>>,
+        partition_failover_options: PartitionFailoverOptions,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(env) = resolve_test_env()? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .build()
+            .await?;
+
+        let client = Self {
+            runtime,
+            account: env.account,
+            preferred_regions: Vec::new(),
+            fault_injection_rules: rules,
+            partition_failover_options: Some(partition_failover_options),
         };
         let context = DriverTestRunContext::new(client);
 
@@ -298,6 +358,7 @@ impl DriverTestClient {
             account: env.account,
             preferred_regions,
             fault_injection_rules: rules,
+            partition_failover_options: None,
         };
         let context = DriverTestRunContext::new(client);
 
@@ -368,6 +429,9 @@ impl DriverTestRunContext {
         let mut builder = DriverOptions::builder(self.client.account.clone());
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
+        }
+        if let Some(pfo) = &self.client.partition_failover_options {
+            builder = builder.with_partition_failover_options(pfo.clone());
         }
         #[cfg(feature = "fault_injection")]
         if !self.client.fault_injection_rules.is_empty() {

@@ -14,9 +14,10 @@ pub use azure_data_cosmos_driver::models::{
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::{
     AvailabilityStrategy, ConnectionPoolOptions, ConnectionPoolOptionsBuilder,
-    ContentResponseOnWrite, ServerCertificateValidation, EndToEndOperationLatencyPolicy,
-    ExcludedRegions, HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder,
-    OperationOptionsView, PriorityLevel, ReadConsistencyStrategy, Region, ThrottlingRetryOptions,
+    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions, HedgeThreshold,
+    HedgingStrategy, OperationOptions, OperationOptionsBuilder, OperationOptionsView,
+    PartitionFailoverOptions, PartitionFailoverOptionsBuilder, PriorityLevel,
+    ReadConsistencyStrategy, Region, ServerCertificateValidation, ThrottlingRetryOptions,
     ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlGroupOptions,
     UserAgentSuffix,
 };

@@ -8,8 +8,8 @@ use std::sync::Arc;
 use crate::{
     models::AccountReference,
     options::{
-        OperationOptions, Region, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
-        UserAgentSuffix,
+        OperationOptions, PartitionFailoverOptions, Region, ThroughputControlGroupOptions,
+        ThroughputControlGroupRegistry, UserAgentSuffix,
     },
 };
 
@@ -87,6 +87,13 @@ pub struct DriverOptions {
     /// Cross-layer name collisions (or two `is_default=true` groups for the
     /// same container) error at driver creation.
     throughput_control_groups: ThroughputControlGroupRegistry,
+    /// Driver-level partition-failover / PPCB tuning.
+    ///
+    /// These knobs are read once at driver construction time and govern the
+    /// per-partition circuit breaker (PPCB) and partition-level failover
+    /// behaviour for the lifetime of the driver. They are independent of
+    /// per-operation [`OperationOptions`].
+    partition_failover_options: PartitionFailoverOptions,
 }
 
 impl DriverOptions {
@@ -134,6 +141,11 @@ impl DriverOptions {
     pub(crate) fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
         &self.throughput_control_groups
     }
+
+    /// Returns the driver-level partition-failover / PPCB tuning options.
+    pub fn partition_failover_options(&self) -> &PartitionFailoverOptions {
+        &self.partition_failover_options
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -150,6 +162,7 @@ pub struct DriverOptionsBuilder {
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
     throughput_control_groups: ThroughputControlGroupRegistry,
+    partition_failover_options: Option<PartitionFailoverOptions>,
 }
 
 impl DriverOptionsBuilder {
@@ -163,6 +176,7 @@ impl DriverOptionsBuilder {
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: None,
             throughput_control_groups: ThroughputControlGroupRegistry::new(),
+            partition_failover_options: None,
         }
     }
 
@@ -268,6 +282,17 @@ impl DriverOptionsBuilder {
         Ok(self)
     }
 
+    /// Sets the partition-failover / PPCB tuning options for this driver.
+    ///
+    /// These knobs are read once at driver construction time and control
+    /// the per-partition circuit breaker (PPCB) and partition-level failover
+    /// for the lifetime of the driver. See [`PartitionFailoverOptions`] for
+    /// the individual settings (and their environment-variable defaults).
+    pub fn with_partition_failover_options(mut self, options: PartitionFailoverOptions) -> Self {
+        self.partition_failover_options = Some(options);
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
@@ -278,6 +303,7 @@ impl DriverOptionsBuilder {
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
             throughput_control_groups: self.throughput_control_groups,
+            partition_failover_options: self.partition_failover_options.unwrap_or_default(),
         }
     }
 }
