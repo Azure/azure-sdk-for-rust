@@ -7,7 +7,9 @@
 
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::fault_injection::*;
-use azure_data_cosmos_driver::options::{OperationOptionsBuilder, ThrottlingRetryOptionsBuilder};
+use azure_data_cosmos_driver::options::{
+    OperationOptions, OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
+};
 use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
@@ -546,5 +548,219 @@ pub async fn pkrange_refresh_transient_failure_preserves_cached_routing_map(
 
         Ok(())
     })
+    .await
+}
+
+// =============================================================================
+// Live-account repros for topology-related Forbidden sub-status codes.
+//
+// These tests inject 403/1008 and 403/3 at the HTTP-client layer of the
+// driver running against a real Cosmos DB account (multi-write across
+// East US 2 + West US 3). They mirror the in-memory matrix in
+// `topology_refresh_on_substatus.rs` but against a real gateway so the
+// real topology-discovery / refresh paths are exercised end-to-end.
+//
+// Both tests are configured to fail pre-fix and pass post-fix.
+//
+// Run with the account's connection string:
+//
+//   AZURE_COSMOS_CONNECTION_STRING='AccountEndpoint=...;AccountKey=...;' \
+//     RUSTFLAGS='--cfg test_category="emulator_vnext"' \
+//     cargo test -p azure_data_cosmos_driver --features fault_injection \
+//       --test emulator emulator_tests::driver_fault_injection::live_
+// =============================================================================
+
+/// **403/1008 live-account repro.** Inject 403/1008 on the first
+/// CreateItem against East US 2 (the primary write region). A
+/// correctly-behaving SDK observes 1008, refreshes its account
+/// topology (which the real gateway answers with the unchanged
+/// [East US 2, West US 3] set), and retries against another region —
+/// succeeding on attempt 2.
+///
+/// Pre-fix expectation: **FAIL** — without a 1008 handler in
+/// `evaluate_http_outcome`, the 1008 bubbles up to the caller with
+/// `request_count = 1` and no topology refresh happens.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn live_403_1008_create_item_triggers_refresh_and_retry() -> Result<(), Box<dyn Error>> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::CreateItem)
+        .with_region(Region::EAST_US_2)
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::DatabaseAccountNotFound)
+        .with_probability(1.0)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("live-403-1008-create-east2", result)
+            .with_condition(condition)
+            .with_hit_limit(1)
+            .build(),
+    );
+    // Start disabled so the warmup phase can prime both regions without
+    // tripping the fault.
+    rule.disable();
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_hedging(
+        rules,
+        OperationOptions::default(),
+        vec![Region::EAST_US_2, Region::WEST_US_3],
+        async |context, database| {
+            let container_name = context.unique_container_name();
+            let container = context
+                .create_container(&database, &container_name, "/pk")
+                .await?;
+
+            // Warm up both regions: write a throwaway item, read it back,
+            // then sleep to let control-plane metadata + auth context
+            // replicate from East US 2 → West US 3. Without this, a
+            // failover triggered immediately after container creation can
+            // race replication and observe a 401 from the secondary
+            // region's endpoint.
+            let warmup_json = br#"{"id": "warmup", "pk": "pk1", "value": "warmup"}"#;
+            context
+                .create_item(&container, "warmup", "pk1", warmup_json)
+                .await?;
+            context.read_item(&container, "warmup", "pk1").await?;
+            tokio::time::sleep(Duration::from_secs(5)).await;
+
+            rule.enable();
+
+            let item_json = br#"{"id": "live-1008-item", "pk": "pk1", "value": "test"}"#;
+            let result = context
+                .create_item(&container, "live-1008-item", "pk1", item_json)
+                .await;
+
+            assert!(
+                rule.hit_count() >= 1,
+                "fault rule must have fired at least once against East US 2",
+            );
+
+            match result {
+                // Post-fix path: refresh + retry succeeded.
+                Ok(response) => {
+                    let diagnostics = response.diagnostics();
+                    let requests = diagnostics.requests();
+                    assert!(
+                        requests.len() >= 2,
+                        "post-fix: SDK must retry after 403/1008; observed request_count={}, \
+                         requests={:?}",
+                        requests.len(),
+                        requests,
+                    );
+                }
+                // Pre-fix path: 1008 bubbled up.
+                Err(err) => {
+                    panic!(
+                        "403/1008 repro confirmed against a real account: 403/1008 bubbled up \
+                         to the caller (no refresh + retry). Error: {err}"
+                    );
+                }
+            }
+
+            Ok(())
+        },
+    )
+    .await
+}
+
+/// **403/3 live-account repro (basic failover).** Inject a single
+/// 403/3 on CreateItem against East US 2. The existing
+/// `try_handle_write_forbidden` handler should fail over to West US 3
+/// and succeed on attempt 2 — this is the regression guard that any
+/// future fix must not break.
+///
+/// Pre-fix expectation: **PASS** (handler exists). Post-fix expectation:
+/// **PASS** (handler must continue to work). A future fix that
+/// consolidates the 1008 + 403/3 refresh paths must keep this passing.
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator", test_category = "emulator_vnext")),
+    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+)]
+pub async fn live_403_3_create_item_triggers_failover() -> Result<(), Box<dyn Error>> {
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::CreateItem)
+        .with_region(Region::EAST_US_2)
+        .build();
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::WriteForbidden)
+        .with_probability(1.0)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new("live-403-3-create-east2", result)
+            .with_condition(condition)
+            .with_hit_limit(1)
+            .build(),
+    );
+    // Start disabled so the warmup phase can prime both regions without
+    // tripping the fault.
+    rule.disable();
+    let rules = vec![Arc::clone(&rule)];
+
+    DriverTestClient::run_with_unique_db_and_hedging(
+        rules,
+        OperationOptions::default(),
+        vec![Region::EAST_US_2, Region::WEST_US_3],
+        async |context, database| {
+            let container_name = context.unique_container_name();
+            let container = context
+                .create_container(&database, &container_name, "/pk")
+                .await?;
+
+            // Warm up both regions before arming the fault — see the
+            // matching block in `live_403_1008_create_item_*` for the
+            // rationale. Without this, the 403/3 failover to West US 3
+            // races control-plane replication and returns a spurious 401.
+            let warmup_json = br#"{"id": "warmup", "pk": "pk1", "value": "warmup"}"#;
+            context
+                .create_item(&container, "warmup", "pk1", warmup_json)
+                .await?;
+            context.read_item(&container, "warmup", "pk1").await?;
+            tokio::time::sleep(Duration::from_secs(5)).await;
+
+            rule.enable();
+
+            let item_json = br#"{"id": "live-403-3-item", "pk": "pk1", "value": "test"}"#;
+            let response = context
+                .create_item(&container, "live-403-3-item", "pk1", item_json)
+                .await
+                .expect(
+                    "regression guard: with both regions warmed up, 403/3 on East US 2 must \
+                     fail over to West US 3 and succeed",
+                );
+
+            assert!(
+                rule.hit_count() >= 1,
+                "fault rule must have fired at least once against East US 2",
+            );
+
+            let diagnostics = response.diagnostics();
+            let requests = diagnostics.requests();
+            assert!(
+                requests.len() >= 2,
+                "SDK must retry CreateItem after 403/3; observed request_count={}, \
+                 requests={:?}",
+                requests.len(),
+                requests,
+            );
+
+            // The failover attempt must have actually targeted a different
+            // region than the faulted attempt.
+            let first_region = requests[0].region().cloned();
+            let last_region = requests.last().and_then(|r| r.region()).cloned();
+            assert_ne!(
+                first_region, last_region,
+                "post-403/3 retry must target a different region; first={:?}, last={:?}",
+                first_region, last_region,
+            );
+
+            Ok(())
+        },
+    )
     .await
 }

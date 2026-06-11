@@ -66,6 +66,17 @@ impl std::fmt::Display for RoutingDecision {
     }
 }
 
+/// Maximum retries for backend-driven topology signals (403/3
+/// WriteForbidden, 403/1008 DatabaseAccountNotFound).
+///
+/// These signals are emitted by the backend after a topology change,
+/// so they deserve a much larger budget than the general
+/// `max_failover_retries` (which is shared with 503 / 410 retries).
+/// 120 attempts at ~1s spacing gives ~2 minutes for the backend's
+/// failover to propagate without bubbling up a synthetic failure to
+/// the caller.
+pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 120;
+
 /// Operation-level retry state.
 ///
 /// Tracks failover retry count, session retry count, location index,
@@ -86,8 +97,26 @@ pub(crate) struct OperationRetryState {
     /// refactor adds another increment site, that trigger gate must be
     /// re-validated.
     pub session_token_retry_count: u32,
+    /// Per-operation retry counter for backend-driven topology signals
+    /// (403/3 WriteForbidden, 403/1008 DatabaseAccountNotFound) on
+    /// multi-write accounts.
+    ///
+    /// Incremented only by [`Self::advance_backend_failover`], which the
+    /// handlers in `retry_evaluation.rs` call for those two status codes
+    /// when `can_use_multiple_write_locations` is true. Single-write
+    /// accounts fall through to the generic `failover_retry_count`
+    /// because they only need to discover the one current write region
+    /// after a failover, not churn through many. Kept separate from
+    /// `failover_retry_count` so a long-running sequence of
+    /// backend-failover signals does not consume the smaller general
+    /// failover budget (and vice versa).
+    pub backend_failover_retry_count: u32,
     /// Maximum failover retries.
     pub max_failover_retries: u32,
+    /// Maximum retries for backend-driven topology signals (403/3,
+    /// 403/1008). Fixed at [`MAX_BACKEND_FAILOVER_RETRIES`]; not
+    /// customer-tunable.
+    pub max_backend_failover_retries: u32,
     /// Maximum session retries.
     pub max_session_retries: u32,
     /// Whether multiple write locations can be used.
@@ -176,6 +205,24 @@ pub(crate) struct OperationRetryState {
     /// counters drive threshold-based failover and need the failure signal
     /// immediately.
     pub pending_write_effects: Vec<LocationEffect>,
+    /// Per-operation history of regions that have been attempted and failed
+    /// in this operation.
+    ///
+    /// Pushed by `advance_to_next_attempt` on every retry transition
+    /// (FailoverRetry / SessionRetry / Hedge), regardless of the failure
+    /// status code or whether `MarkPartitionUnavailable`/`MarkEndpointUnavailable`
+    /// were deferred. Read by `resolve_endpoint` to build the skip set so
+    /// the next attempt does NOT land back on a just-failed region.
+    ///
+    /// Why this exists alongside `pending_write_effects`:
+    /// `pending_write_effects` is populated only by the *deferred* bucket of
+    /// `partition_effects_for_deferral`. For multi-write writes (and reads),
+    /// the deferred bucket is empty — every effect flushes immediately — so
+    /// `pending_write_effects` cannot drive the per-op skip set. Tracking
+    /// the attempted region directly closes that gap: the per-operation
+    /// rotation memory is separate from the global endpoint-unavailability
+    /// map.
+    pub attempted_failed_regions: Vec<Region>,
     /// Whether a cross-region hedge race has already been dispatched for
     /// this operation.
     ///
@@ -212,7 +259,9 @@ impl OperationRetryState {
             location: LocationIndex::initial(generation),
             failover_retry_count: 0,
             session_token_retry_count: 0,
+            backend_failover_retry_count: 0,
             max_failover_retries,
+            max_backend_failover_retries: MAX_BACKEND_FAILOVER_RETRIES,
             max_session_retries,
             can_use_multiple_write_locations,
             is_dataplane: false,
@@ -224,6 +273,7 @@ impl OperationRetryState {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            attempted_failed_regions: Vec::new(),
             hedge_already_fired: false,
         }
     }
@@ -231,6 +281,13 @@ impl OperationRetryState {
     /// Whether failover retry budget allows another attempt.
     pub fn can_retry_failover(&self) -> bool {
         self.failover_retry_count < self.max_failover_retries
+    }
+
+    /// Whether the backend-driven failover budget allows another
+    /// attempt. Consumed only by the 403/3 and 403/1008 handlers in
+    /// `retry_evaluation.rs` when the account is multi-write.
+    pub fn can_retry_backend_failover(&self) -> bool {
+        self.backend_failover_retry_count < self.max_backend_failover_retries
     }
 
     /// Attaches the cross-hedge shared hub-region-processing-only
@@ -260,6 +317,20 @@ impl OperationRetryState {
     pub fn advance_failover(self) -> Self {
         Self {
             failover_retry_count: self.failover_retry_count + 1,
+            session_retry_routing: SessionRetryRouting::PreferredEndpoints,
+            ..self
+        }
+    }
+
+    /// Returns a new state advanced for backend-driven failover retry
+    /// (403/3 WriteForbidden, 403/1008 DatabaseAccountNotFound) on
+    /// multi-write accounts. Increments the dedicated
+    /// `backend_failover_retry_count` budget without touching the
+    /// general `failover_retry_count`, so a long burst of backend
+    /// failover signals does not exhaust the smaller general budget.
+    pub fn advance_backend_failover(self) -> Self {
+        Self {
+            backend_failover_retry_count: self.backend_failover_retry_count + 1,
             session_retry_routing: SessionRetryRouting::PreferredEndpoints,
             ..self
         }

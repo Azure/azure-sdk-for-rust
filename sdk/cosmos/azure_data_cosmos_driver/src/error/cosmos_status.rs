@@ -1613,6 +1613,24 @@ impl CosmosStatus {
             && self.sub_status == Some(SubStatusCode::WRITE_FORBIDDEN)
     }
 
+    /// Returns `true` if this is a database-account-not-found error
+    /// (HTTP 403, sub-status 1008).
+    ///
+    /// Indicates that the targeted region no longer owns this database
+    /// account — typically because the customer removed the region from
+    /// the account's geo-replication topology (or the account was
+    /// migrated). The correct response is to refresh account properties
+    /// and retry against a region in the refreshed topology.
+    ///
+    /// **Caveat — sub-status overload:** code `1008` is also used on
+    /// HTTP 410 to indicate `COMPLETING_PARTITION_MIGRATION`. This helper
+    /// qualifies on both HTTP status AND sub-status so the 403 and 410
+    /// semantics never get conflated.
+    pub fn is_database_account_not_found(&self) -> bool {
+        u16::from(self.status_code) == 403
+            && self.sub_status == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)
+    }
+
     /// Returns `true` if this is a read-session-not-available error (HTTP 404, sub-status 1002).
     pub fn is_read_session_not_available(&self) -> bool {
         u16::from(self.status_code) == 404
@@ -1678,6 +1696,15 @@ impl CosmosStatus {
     ///   `403` *can* be retried (e.g., write-forbidden on single-master
     ///   PPAF), the dedicated retry path handles it via the normal retry
     ///   loop rather than via a parallel hedge race.
+    ///   * **Exception — `403 / 1008` (`DatabaseAccountNotFound`):** this
+    ///     sub-status means "this region no longer owns the account",
+    ///     which is a topology-ownership signal, not an authorization
+    ///     denial. Another region genuinely CAN change the outcome.
+    ///     Returning `false` here lets the hedge classifier treat the
+    ///     leg as transient so the result reaches the outer retry
+    ///     pipeline, where the dedicated `1008` handler refreshes the
+    ///     account topology and failover-retries against a current
+    ///     region.
     /// * `422`, `451`, `501`, `505` are payload/policy/protocol issues that
     ///   another region cannot resolve. Racing a hedge against them only
     ///   wastes RU and request budget.
@@ -1688,6 +1715,10 @@ impl CosmosStatus {
         }
 
         let sub = self.sub_status.map(|s| s.value()).unwrap_or(0);
+        if code == 403 && sub == 1008 {
+            // DatabaseAccountNotFound — see exception in the doc comment above.
+            return false;
+        }
         matches!(
             code,
             400 | 401 | 403 | 405 | 409 | 412 | 413 | 422 | 451 | 501 | 505
@@ -1831,6 +1862,16 @@ impl CosmosStatus {
     pub const WRITE_FORBIDDEN: CosmosStatus = CosmosStatus {
         status_code: StatusCode::Forbidden,
         sub_status: Some(SubStatusCode::WRITE_FORBIDDEN),
+    };
+
+    /// Database account not found (HTTP 403, sub-status 1008).
+    ///
+    /// The region no longer owns the account. Triggers an account-properties
+    /// refresh + cross-region failover retry. The sub-status code `1008` is
+    /// overloaded — see [`CosmosStatus::is_database_account_not_found`].
+    pub const DATABASE_ACCOUNT_NOT_FOUND: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::Forbidden,
+        sub_status: Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
     };
 
     // ----- 410: Gone -----

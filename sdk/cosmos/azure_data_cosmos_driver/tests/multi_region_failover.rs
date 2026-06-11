@@ -452,7 +452,106 @@ async fn session_not_available_retries_across_locations() -> Result<(), Box<dyn 
     .await
 }
 
-/// Common scaffolding for the two data-plane failover tests.
+/// Asserts the final request landed on `expected_region`. Mirrors
+/// `assert_final_request_left_faulted_region` but with positive intent.
+fn assert_final_request_landed_in_region(response: &CosmosResponse, expected_region: &Region) {
+    let diagnostics = response.diagnostics();
+    let requests = diagnostics.requests();
+    let final_request = requests
+        .last()
+        .expect("a successful response must have at least one request in its diagnostics");
+    let final_region = final_request
+        .region()
+        .expect("the final request should have a region label");
+    assert_eq!(
+        final_region,
+        expected_region,
+        "the final request should have landed in {expected_region:?}; instead it landed on \
+         {final_region:?} (endpoint: {endpoint}). Regions contacted across the operation: \
+         {contacted:?}.",
+        endpoint = final_request.endpoint(),
+        contacted = diagnostics.regions_contacted()
+    );
+}
+
+/// `excluded_regions` honored end-to-end against a live multi-write account.
+///
+/// No faults, no failover — just asserts that when the caller pins
+/// `excluded_regions = [HUB_REGION]` on a write, the SDK actually routes the
+/// request to the other region and the final response's region label
+/// confirms it. Complements the in-memory `regional_gateway_unreachable`
+/// suite by validating the same behavior against a real Cosmos backend
+/// (where the global FE actually serves traffic — the only place a silent
+/// global fallback would not be caught at the URL level).
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
+async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
+    let Some(env) = resolve_test_env()? else {
+        println!(
+            "Skipping excluded_regions_honored_end_to_end: Cosmos DB environment not configured"
+        );
+        return Ok(());
+    };
+    let account = env.account;
+
+    let runtime = CosmosDriverRuntime::builder().build().await?;
+    let (db_ref, container_ref) = create_unique_db_and_container(&runtime, &account).await?;
+
+    let all_regions = [HUB_REGION, SATELLITE_REGION];
+    let mut setup_err = None;
+    for r in &all_regions {
+        if let Err(e) =
+            warmup_region(&runtime, &account, &container_ref, r.clone(), &all_regions).await
+        {
+            setup_err = Some(format!("warmup of {r:?} failed: {e}"));
+            break;
+        }
+    }
+    if let Some(msg) = setup_err {
+        delete_database(&runtime, &account, &db_ref).await;
+        return Err(msg.into());
+    }
+
+    let driver = runtime.get_or_create_driver(account.clone(), None).await?;
+
+    // Write a few items with HUB_REGION excluded; assert every final request
+    // landed on SATELLITE_REGION. Iterating gives confidence the routing is
+    // sticky rather than a coincidence on a single attempt.
+    let excluded: ExcludedRegions = std::iter::once(HUB_REGION).collect();
+    let options = OperationOptionsBuilder::new()
+        .with_excluded_regions(excluded)
+        .build();
+
+    let mut result: Result<(), Box<dyn Error>> = Ok(());
+    for i in 0..3 {
+        let item_id = format!("excluded-regions-{i}-{}", Uuid::new_v4());
+        let body = format!(r#"{{"id":"{item_id}","pk":"p"}}"#).into_bytes();
+        let item_ref =
+            ItemReference::from_name(&container_ref, PartitionKey::from("p".to_string()), item_id);
+        let op = CosmosOperation::create_item(item_ref).with_body(body);
+        match driver
+            .execute_singleton_operation(op, options.clone())
+            .await
+        {
+            Ok(response) => assert_final_request_landed_in_region(&response, &SATELLITE_REGION),
+            Err(e) => {
+                result = Err(format!(
+                    "create_item with excluded_regions=[{HUB_REGION:?}] should have succeeded \
+                     against {SATELLITE_REGION:?}; instead failed with: {e:?}"
+                )
+                .into());
+                break;
+            }
+        }
+    }
+
+    delete_database(&runtime, &account, &db_ref).await;
+    result
+}
+
 /// Builds a region-scoped fault rule **disabled**, sets up a fresh DB+container
 /// on a separate clean runtime, warms up both write regions, then builds a
 /// runtime with the rule, enables it, and invokes the test closure.

@@ -450,9 +450,15 @@ mod tests {
         // or doubles a security-sensitive signal. Dedicated retry paths
         // (e.g., PPAF write-forbidden) handle the retriable sub-statuses
         // through the normal retry loop rather than via a hedge race.
+        //
+        // Exception: 403/1008 (DatabaseAccountNotFound) is a
+        // topology-ownership signal, not a denial; the dedicated 1008
+        // handler refreshes account properties and failover-retries
+        // against a current region. Treating it as transient here lets
+        // the hedge result reach the outer retry pipeline.
         assert!(status(403, None).is_final_result());
         assert!(status(403, Some(3)).is_final_result()); // WRITE_FORBIDDEN
-        assert!(status(403, Some(1008)).is_final_result()); // DATABASE_ACCOUNT_NOT_FOUND
+        assert!(!status(403, Some(1008)).is_final_result()); // DATABASE_ACCOUNT_NOT_FOUND
         assert!(status(403, Some(5)).is_final_result()); // arbitrary unknown sub-status
     }
 
