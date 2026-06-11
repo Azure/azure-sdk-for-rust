@@ -9,6 +9,8 @@
 //! 3. Add a CLI flag in `config.rs` to enable/disable it.
 
 mod create_item;
+mod feed_range_query;
+mod feed_range_refresher;
 mod query_items;
 mod read_item;
 mod upsert_item;
@@ -21,11 +23,13 @@ use azure_data_cosmos::options::{
 use azure_data_cosmos::regions::Region;
 use azure_data_cosmos::ResponseHeaders;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
 use crate::config::{Config, ExcludeRegionsScope};
 pub use crate::operations::create_item::CreateItemOperation;
+pub use crate::operations::feed_range_query::{FeedRangeCache, FeedRangeQueryOperation};
+pub use crate::operations::feed_range_refresher::{FeedRangeRefresher, READ_FEED_RANGES_STAT};
 pub use crate::operations::query_items::QueryItemsOperation;
 pub use crate::operations::read_item::ReadItemOperation;
 pub use crate::operations::upsert_item::UpsertItemOperation;
@@ -74,11 +78,25 @@ pub struct PerfItem {
     pub payload: String,
 }
 
+/// Bundle returned by [`create_operations`]: the per-worker operations plus
+/// (optionally) a background feed-range refresher.
+///
+/// `feed_range_refresher` is `None` when the feed-range query op is
+/// disabled (`--no-feed-range-queries`) or when the refresh interval is 0.
+pub struct OperationsBundle {
+    pub ops: Vec<Arc<dyn Operation>>,
+    pub feed_range_refresher: Option<FeedRangeRefresher>,
+}
+
 /// Creates the list of enabled operations based on CLI configuration.
-pub fn create_operations(
+///
+/// Asynchronous because the feed-range query op requires an initial
+/// `read_feed_ranges` to seed its shared cache.
+pub async fn create_operations(
     config: &Config,
+    container: &ContainerClient,
     seeded_items: Arc<SharedItems>,
-) -> Vec<Arc<dyn Operation>> {
+) -> azure_data_cosmos::Result<OperationsBundle> {
     let mut ops: Vec<Arc<dyn Operation>> = Vec::new();
 
     let (read_options, write_options) = build_item_options(config);
@@ -105,7 +123,35 @@ pub fn create_operations(
         )));
     }
 
-    ops
+    let feed_range_refresher = if config.no_feed_range_queries {
+        None
+    } else {
+        let initial = container.read_feed_ranges(None).await?;
+        if initial.is_empty() {
+            return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                .with_status(azure_data_cosmos::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("read_feed_ranges returned empty list during seed")
+                .build()
+                .into());
+        }
+        let cache: FeedRangeCache = Arc::new(RwLock::new(Arc::new(initial)));
+        ops.push(Arc::new(FeedRangeQueryOperation::new(cache.clone())));
+
+        if config.feed_range_refresh_secs > 0 {
+            Some(FeedRangeRefresher::new(
+                container.clone(),
+                cache,
+                Duration::from_secs(config.feed_range_refresh_secs),
+            ))
+        } else {
+            None
+        }
+    };
+
+    Ok(OperationsBundle {
+        ops,
+        feed_range_refresher,
+    })
 }
 
 /// Builds per-operation options for reads and writes based on excluded regions config.

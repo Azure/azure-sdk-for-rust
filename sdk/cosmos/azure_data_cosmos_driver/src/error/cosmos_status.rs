@@ -1658,6 +1658,63 @@ impl CosmosStatus {
             && self.sub_status == Some(SubStatusCode::TRANSPORT_GENERATED_503)
     }
 
+    /// Returns `true` when this status is a **final** (non-retriable) outcome
+    /// for the purposes of cross-region hedging.
+    ///
+    /// Final statuses are:
+    /// * any 1xx / 2xx / 3xx response,
+    /// * the explicitly non-retriable client errors `400`, `401`, `403`
+    ///   (regardless of sub-status), `405`, `409`, `412`, `413`, `422`,
+    ///   `451`,
+    /// * the explicitly non-retriable server errors `501` and `505`,
+    /// * `404` with no sub-status (or sub-status `0`),
+    /// * `429` with a sub-status describing throttling that a second region
+    ///   cannot relieve — `3200` (`RU_BUDGET_EXCEEDED`), `3210`
+    ///   (`RU_BUDGET_EXCEEDED_FOR_MASTER`), and `3214`
+    ///   (`HOT_PARTITION_KEY_THROTTLED`).
+    ///
+    /// Everything else — including `404/1002`, `408`, generic/`3092` `429`,
+    /// `410`, `500`, and `503` — is treated as retriable so the racing hedge
+    /// gets a chance to win.
+    ///
+    /// The `429` carve-out mirrors the *hedge-spawn* guard (§7.2.1): RU-budget
+    /// and hot-partition throttles are account-/partition-wide, so racing a
+    /// second region only doubles the load on an already-saturated resource.
+    /// A generic `429` (no sub-status) and the transient-capacity `3092`
+    /// (`SYSTEM_RESOURCE_UNAVAILABLE`) stay retriable, since another region
+    /// genuinely may have spare capacity.
+    ///
+    /// Protocol-level and policy errors (`403`, `422`, `451`, `501`, `505`)
+    /// are final because no alternate region can change the outcome:
+    /// * `403` is an authorization/ownership decision (RBAC, write-forbidden,
+    ///   account ownership) — racing another region either duplicates the
+    ///   denial or unnecessarily doubles a security-sensitive signal. When a
+    ///   `403` *can* be retried (e.g., write-forbidden on single-master
+    ///   PPAF), the dedicated retry path handles it via the normal retry
+    ///   loop rather than via a parallel hedge race.
+    /// * `422`, `451`, `501`, `505` are payload/policy/protocol issues that
+    ///   another region cannot resolve. Racing a hedge against them only
+    ///   wastes RU and request budget.
+    pub(crate) fn is_final_result(&self) -> bool {
+        let code: u16 = self.status_code.into();
+        if code < 400 {
+            return true;
+        }
+
+        let sub = self.sub_status.map(|s| s.value()).unwrap_or(0);
+        matches!(
+            code,
+            400 | 401 | 403 | 405 | 409 | 412 | 413 | 422 | 451 | 501 | 505
+        ) || (code == 404 && sub == 0)
+            || (code == 429
+                && matches!(
+                    sub,
+                    3200 // RU_BUDGET_EXCEEDED
+                        | 3210 // RU_BUDGET_EXCEEDED_FOR_MASTER
+                        | 3214 // HOT_PARTITION_KEY_THROTTLED
+                ))
+    }
+
     /// Returns the human-readable name of this status combination, if known.
     ///
     /// Unlike the raw sub-status code, this method always resolves ambiguous

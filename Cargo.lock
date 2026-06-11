@@ -516,7 +516,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.35.0"
+version = "0.36.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -553,7 +553,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "arc-swap",
  "async-lock",
@@ -741,7 +741,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",

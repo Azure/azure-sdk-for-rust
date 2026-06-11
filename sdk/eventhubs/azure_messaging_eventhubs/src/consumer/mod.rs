@@ -709,11 +709,13 @@ pub mod builders {
 #[cfg(test)]
 pub(crate) mod tests {
     use crate::{
-        common::tests::force_errors, ConsumerClient, Result, StartLocation, StartPosition,
+        common::tests::force_errors, models::EventData, ConsumerClient, EventDataBatchOptions,
+        ProducerClient, Result, StartLocation, StartPosition,
     };
-    use azure_core::time::Duration;
-    use azure_core_amqp::error::AmqpErrorKind;
+    use azure_core::{sleep::sleep, time::Duration};
+    use azure_core_amqp::{error::AmqpErrorKind, AmqpError};
     use azure_core_test::{recorded, TestContext};
+    use futures::stream::StreamExt;
     use std::{
         sync::Arc,
         time::{SystemTime, UNIX_EPOCH},
@@ -994,5 +996,151 @@ pub(crate) mod tests {
         .await?;
 
         Ok(())
+    }
+
+    // --- Receiver-side recovery tests (issue #4563) ------------------------
+    //
+    // These mirror the producer's `force_errors_send_batch_*` tests but drive
+    // the consumer receive path, which re-resolves the per-path receiver cache
+    // on every `receive_delivery`. A background producer feeds the partition so
+    // the receive loop keeps pulling deliveries; without traffic the loop would
+    // block in `receive_delivery` and never re-enter the recovery path the
+    // receiver-cache change touches. After the forced error the receiver
+    // re-attaches transparently and deliveries resume.
+
+    const RECEIVE_TEST_PARTITION: &str = "0";
+
+    async fn run_receive_recovery(
+        ctx: &TestContext,
+        test_name: &str,
+        make_error: fn() -> AmqpError,
+    ) -> Result<()> {
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+
+        // Feed the partition continuously from an independent producer
+        // connection so the consumer always has deliveries to pull. The forced
+        // error is injected only on the consumer, so this producer stays stable.
+        let producer = Arc::new(
+            ProducerClient::builder()
+                .with_application_id(format!("{test_name}-feed"))
+                .open(host.as_str(), eventhub.as_str(), credential.clone())
+                .await?,
+        );
+        let feed = tokio::spawn({
+            let producer = producer.clone();
+            async move {
+                loop {
+                    let batch = producer
+                        .create_batch(Some(EventDataBatchOptions {
+                            partition_id: Some(RECEIVE_TEST_PARTITION.to_string()),
+                            ..Default::default()
+                        }))
+                        .await
+                        .expect("feed: create_batch");
+                    batch
+                        .try_add_event_data(
+                            EventData::builder().with_body(b"heartbeat").build(),
+                            None,
+                        )
+                        .expect("feed: add heartbeat event");
+                    producer
+                        .send_batch(batch, None)
+                        .await
+                        .expect("feed: send_batch");
+                    sleep(Duration::milliseconds(250)).await;
+                }
+            }
+        });
+
+        let consumer = Arc::new(
+            ConsumerClient::builder()
+                .with_application_id(test_name.to_string())
+                .open(host.as_str(), eventhub, credential.clone())
+                .await?,
+        );
+
+        force_errors(
+            consumer.clone(),
+            |consumer: Arc<ConsumerClient>| {
+                let consumer = consumer.clone();
+                async move {
+                    // Default start position is "latest", so we receive the
+                    // heartbeat events the feed produces from now on.
+                    let receiver = consumer
+                        .open_receiver_on_partition(RECEIVE_TEST_PARTITION.to_string(), None)
+                        .await
+                        .unwrap();
+                    let mut stream = std::pin::pin!(receiver.stream_events());
+                    while let Some(event) = stream.next().await {
+                        // Recovery is transparent: after the forced error the
+                        // receiver re-attaches and deliveries resume, so the
+                        // stream keeps yielding Ok.
+                        event.unwrap();
+                    }
+                }
+            },
+            move |consumer: Arc<ConsumerClient>| {
+                info!("Forcing error on consumer receiver");
+                consumer.force_error(make_error()).unwrap();
+            },
+            Duration::seconds(10), // Seconds until forcing the error.
+            Duration::seconds(30), // Seconds until test timeout.
+        )
+        .await?;
+
+        // Stop the feed and observe its cancellation. A clean cancel is
+        // expected; a panic in the feed (e.g. one of its `expect`s firing) is
+        // re-raised here instead of being silently swallowed, which would
+        // otherwise surface only as the receive loop starving for deliveries.
+        feed.abort();
+        match feed.await {
+            Ok(()) => {}
+            Err(err) if err.is_cancelled() => {}
+            Err(err) => std::panic::resume_unwind(err.into_panic()),
+        }
+
+        // Close both clients explicitly so neither leaks its AMQP connection
+        // across live tests. The feed task has finished by now, so its producer
+        // clone is gone and the unwrap holds the sole reference.
+        if let Ok(producer) = Arc::try_unwrap(producer) {
+            producer.close().await?;
+        }
+        if let Ok(consumer) = Arc::try_unwrap(consumer) {
+            consumer.close().await?;
+        }
+        Ok(())
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_receive_link(ctx: TestContext) -> Result<()> {
+        run_receive_recovery(&ctx, "force_errors_receive_link", || {
+            AmqpError::from(AmqpErrorKind::LinkClosedByRemote(Box::new(
+                azure_core::error::Error::new(azure_core::error::ErrorKind::Other, "Forced error"),
+            )))
+        })
+        .await
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_receive_session(ctx: TestContext) -> Result<()> {
+        run_receive_recovery(&ctx, "force_errors_receive_session", || {
+            AmqpError::from(AmqpErrorKind::SessionClosedByRemote(Box::new(
+                azure_core::error::Error::new(azure_core::error::ErrorKind::Other, "Forced error"),
+            )))
+        })
+        .await
+    }
+
+    #[recorded::test(live)]
+    async fn force_errors_receive_connection(ctx: TestContext) -> Result<()> {
+        run_receive_recovery(&ctx, "force_errors_receive_connection", || {
+            AmqpError::from(AmqpErrorKind::ConnectionClosedByRemote(Box::new(
+                azure_core::error::Error::new(azure_core::error::ErrorKind::Other, "Forced error"),
+            )))
+        })
+        .await
     }
 }

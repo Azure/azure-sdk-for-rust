@@ -954,15 +954,13 @@ mod tests {
     use azure_core::http::StatusCode;
     use std::sync::Mutex;
 
-    /// Serializes tests in this module that mutate the process-global
-    /// backtrace capture throttle (`global_capture_throttle()`).
-    /// Without this, `cargo test`'s parallel runner can reset the
-    /// throttle between one test's `set_capacity(1000)` call and its
-    /// subsequent capture, causing flaky `inner_bt_id.is_some()`
-    /// failures. The lock is local to this module — the backtrace
-    /// module has its own equivalent for tests that touch the
-    /// resolution limiter.
-    static BACKTRACE_TEST_LOCK: Mutex<()> = Mutex::new(());
+    /// Re-export of `error::backtrace::tests::TEST_LOCK` for tests in
+    /// this module. It is **the same mutex** used by tests in
+    /// `error::backtrace::tests` — sharing one lock across both modules
+    /// is what serializes process-global throttle/limiter mutations and
+    /// keeps these tests deterministic. A separate per-module lock
+    /// would not serialize and would race.
+    static BACKTRACE_TEST_LOCK: &Mutex<()> = &crate::error::backtrace::tests::TEST_LOCK;
 
     // -----------------------------------------------------------------
     // Test fixtures
@@ -1606,9 +1604,19 @@ mod tests {
     /// test rather than (say) an empty / broken backtrace.
     #[test]
     fn backtrace_emission_paths_render_as_documented() {
-        // Snapshot + restore the process-global throttle / limiter so
-        // this test does not leak capture-on state into sibling tests
-        // that depend on the default-off behavior.
+        // Serialize against sibling tests that touch the process-global
+        // throttle/limiter, and snapshot+restore so this test does not
+        // leak capture-on state into tests that depend on the
+        // default-off behavior.
+        let _guard = BACKTRACE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        // Prime the OnceLock-gated env init BEFORE snapshotting / setting
+        // capacities so the first `Backtrace::capture()` inside
+        // `CosmosError::builder().build()` doesn't fire the lazy init
+        // and clobber our test-set values back to env defaults (0 when
+        // RUST_BACKTRACE is unset).
+        crate::error::backtrace::ensure_initialized();
         let throttle = crate::error::backtrace::global_capture_throttle();
         let resolution = crate::error::backtrace::global_resolution_limiter();
         let prev_capture = throttle.capacity();
