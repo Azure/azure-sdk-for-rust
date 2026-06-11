@@ -107,7 +107,7 @@ Consuming events is done using an `EventReceiver`, which can be opened from the 
     The Processor is useful when you want to have the partition assignment be dynamically chosen, and balanced with other Processor instances.
     -->
 
-More information about Event Hubs features and terminology can be found at the [Event Hubs features documentation]](<https://learn.microsoft.com/azure/event-hubs/event-hubs-features>)
+More information about Event Hubs features and terminology can be found in the [Event Hubs features documentation](https://learn.microsoft.com/azure/event-hubs/event-hubs-features).
 
 ## Examples
 

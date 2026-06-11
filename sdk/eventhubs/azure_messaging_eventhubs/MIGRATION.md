@@ -151,7 +151,9 @@ let credential = DeveloperToolsCredential::new(None)?;
 let consumer = ConsumerClient::builder()
     .with_consumer_group("$Default".to_string())
     .with_application_id("my-app".to_string())
-    .open("my-ns.servicebus.windows.net", "my-eventhub", credential.clone())
+    // Note: ConsumerClient::open takes the event hub name as an owned String,
+    // whereas ProducerClient::open takes &str.
+    .open("my-ns.servicebus.windows.net", "my-eventhub".to_string(), credential.clone())
     .await?;
 ```
 
@@ -289,7 +291,7 @@ use std::sync::Arc;
 async fn process() -> Result<(), Box<dyn std::error::Error>> {
     let credential = DeveloperToolsCredential::new(None)?;
     let consumer = ConsumerClient::builder()
-        .open("my-ns.servicebus.windows.net", "my-eventhub", credential.clone())
+        .open("my-ns.servicebus.windows.net", "my-eventhub".to_string(), credential.clone())
         .await?;
 
     let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
@@ -345,7 +347,7 @@ async fn process_with_blob_checkpoints() -> Result<(), Box<dyn std::error::Error
 
     let consumer = ConsumerClient::builder()
         .with_consumer_group("$Default".to_string())
-        .open("my-ns.servicebus.windows.net", "my-eventhub", credential.clone())
+        .open("my-ns.servicebus.windows.net", "my-eventhub".to_string(), credential.clone())
         .await?;
 
     let processor = EventProcessor::builder()
