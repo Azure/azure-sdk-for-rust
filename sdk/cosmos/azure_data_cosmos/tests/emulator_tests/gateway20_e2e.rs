@@ -125,37 +125,53 @@ async fn build_client(
     Ok(client)
 }
 
-/// Polls the container until its physical partitions are routable: keeps
-/// calling `read` and only returns once the gateway stops responding with
-/// `404 / 1013 CollectionCreateInProgress`. Multi-region accounts can take
-/// several seconds after a successful `create_container` to satellite the
-/// partitions out, and any data-plane request issued before then races into
-/// the 1013 substatus — which is what the gateway20 E2E tests were
-/// repeatedly hitting in CI on the `thin-client-multi-writer-ci-eastus2`
-/// account.
+/// Resolves a container client, retrying past the
+/// `404 / 1013 CollectionCreateInProgress` window that follows a fresh
+/// `create_container` on multi-region thin-client accounts. Both the
+/// metadata resolution in [`DatabaseClient::container_client`] and the
+/// subsequent first data-plane request can race the gateway's
+/// container-create completion; this helper keeps retrying the metadata
+/// resolution *and* a follow-up `read` until both succeed or until a
+/// non-1013 error surfaces. Without this, the gateway20 E2E tests
+/// intermittently failed in CI on the
+/// `thin-client-multi-writer-ci-eastus2` account with the same 1013
+/// substatus across 10 of 11 tests.
 async fn wait_for_container_ready(
-    container_client: &azure_data_cosmos::clients::ContainerClient,
-) -> Result<(), Box<dyn std::error::Error>> {
+    db_client: &azure_data_cosmos::clients::DatabaseClient,
+    container_name: &str,
+) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
     const MAX_ATTEMPTS: u32 = 60;
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
 
     for attempt in 0..MAX_ATTEMPTS {
-        match container_client.read(None).await {
-            Ok(_) => return Ok(()),
-            Err(e)
-                if e.status().sub_status()
-                    == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS) =>
-            {
-                if attempt + 1 == MAX_ATTEMPTS {
-                    return Err(format!(
-                        "container did not become ready after {MAX_ATTEMPTS} polls (last sub-status was COLLECTION_CREATE_IN_PROGRESS)"
-                    )
-                    .into());
+        let last_err: Box<dyn std::error::Error> =
+            match db_client.container_client(container_name).await {
+                Ok(container_client) => match container_client.read(None).await {
+                    Ok(_) => return Ok(container_client),
+                    Err(e)
+                        if e.status().sub_status()
+                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS) =>
+                    {
+                        Box::new(e)
+                    }
+                    Err(e) => return Err(Box::new(e)),
+                },
+                Err(e)
+                    if e.status().sub_status()
+                        == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS) =>
+                {
+                    Box::new(e)
                 }
-                tokio::time::sleep(POLL_INTERVAL).await;
-            }
-            Err(e) => return Err(e.into()),
+                Err(e) => return Err(Box::new(e)),
+            };
+
+        if attempt + 1 == MAX_ATTEMPTS {
+            return Err(format!(
+                "container '{container_name}' did not become ready after {MAX_ATTEMPTS} polls (last error: {last_err})"
+            )
+            .into());
         }
+        tokio::time::sleep(POLL_INTERVAL).await;
     }
     unreachable!("loop above always returns on the final iteration");
 }
@@ -176,8 +192,7 @@ async fn provision_database_and_container(
     let pk_def: PartitionKeyDefinition = "/pk".into();
     let properties = ContainerProperties::new(container_name.clone(), pk_def);
     db_client.create_container(properties, None).await?;
-    let container_client = db_client.container_client(&container_name).await?;
-    wait_for_container_ready(&container_client).await?;
+    let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
     Ok((db_name, container_client))
 }
@@ -576,8 +591,7 @@ async fn provision_database_and_hpk_container(
     let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
     let properties = ContainerProperties::new(container_name.clone(), pk_def);
     db_client.create_container(properties, None).await?;
-    let container_client = db_client.container_client(&container_name).await?;
-    wait_for_container_ready(&container_client).await?;
+    let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
     Ok((db_name, container_client))
 }
@@ -756,8 +770,7 @@ async fn provision_database_and_multi_partition_container(
     db_client
         .create_container(properties, Some(create_options))
         .await?;
-    let container_client = db_client.container_client(&container_name).await?;
-    wait_for_container_ready(&container_client).await?;
+    let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
     Ok((db_name, container_client))
 }
