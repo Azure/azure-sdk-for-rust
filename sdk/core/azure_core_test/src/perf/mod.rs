@@ -45,7 +45,7 @@ pub trait PerfTest: Send + Sync {
     async fn cleanup(&self, context: Arc<TestContext>) -> azure_core::Result<()>;
 }
 
-pub trait PerfTestFactory: Subcommand + Clone + Debug + Display {
+pub trait PerfTestFactory: Subcommand + Clone + Debug {
     fn name(&self) -> &'static str;
     fn create_test(&self) -> CreatePerfTestReturn;
 }

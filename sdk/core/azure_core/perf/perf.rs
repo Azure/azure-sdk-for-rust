@@ -43,9 +43,3 @@ impl PerfTestFactory for Tests {
         }
     }
 }
-
-impl Display for Tests {
-    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
-    }
-}

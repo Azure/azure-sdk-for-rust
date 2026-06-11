@@ -16,12 +16,6 @@ enum FrameworkTests {
     Fibonacci1(Fibonacci1Args),
 }
 
-impl Display for FrameworkTests {
-    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        unimplemented!()
-    }
-}
-
 impl PerfTestFactory for FrameworkTests {
     fn create_test(&self) -> CreatePerfTestReturn {
         match self {
