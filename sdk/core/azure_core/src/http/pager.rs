@@ -324,6 +324,7 @@ impl<'a> Default for PagerOptions<'a> {
 /// }
 /// # Ok(()) }
 /// ```
+#[must_use = "streams do nothing unless you `.await` or poll them"]
 #[pin_project(project = ItemIteratorProjection, project_replace = ItemIteratorProjectionOwned)]
 pub struct ItemIterator<P>
 where
@@ -620,7 +621,7 @@ where
 /// }
 /// # Ok(()) }
 /// ```
-#[must_use = "streams do nothing unless polled"]
+#[must_use = "streams do nothing unless you `.await` or poll them"]
 #[pin_project(project = PageIteratorProjection, project_replace = PageIteratorProjectionOwned)]
 pub struct PageIterator<P>
 where
@@ -957,7 +958,7 @@ mod tests {
         RawResponse, Response, StatusCode,
     };
     use async_trait::async_trait;
-    use futures::{StreamExt as _, TryStreamExt as _};
+    use futures::{StreamExt as _, TryStreamExt};
     use serde::Deserialize;
     use std::collections::HashMap;
 
@@ -1533,6 +1534,58 @@ mod tests {
         // Get remaining items.
         let items: Vec<i32> = second_pager.try_collect().await.unwrap();
         assert_eq!(items.as_slice(), vec![2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[tokio::test]
+    #[deny(unfulfilled_lint_expectations)]
+    async fn must_use_item_iterator() {
+        fn create() -> crate::Result<Pager<Page>> {
+            Ok(ItemIterator::new(make_three_page_callback(), None))
+        }
+
+        #[expect(unused_must_use)]
+        create();
+
+        #[expect(unused_must_use)]
+        create().unwrap();
+
+        // We cannot use #[must_use] to force a stream to be polled.
+        #[deny(unused_must_use)]
+        let _pager = create().unwrap();
+
+        #[deny(unused_must_use)]
+        let pager = create().unwrap();
+        let items: Vec<i32> = pager.try_collect().await.unwrap();
+        assert_eq!(items.as_slice(), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[tokio::test]
+    #[deny(unfulfilled_lint_expectations)]
+    async fn must_use_page_iterator() {
+        fn create() -> crate::Result<PageIterator<Response<Page>>> {
+            Ok(PageIterator::new(make_three_page_callback(), None))
+        }
+
+        #[expect(unused_must_use)]
+        create();
+
+        #[expect(unused_must_use)]
+        create().unwrap();
+
+        // We cannot use #[must_use] to force a stream to be polled.
+        #[deny(unused_must_use)]
+        let _pager = create().unwrap();
+
+        #[deny(unused_must_use)]
+        let mut pager = create().unwrap();
+        let i = pager
+            .try_next()
+            .await
+            .expect("expected successful response")
+            .expect("expected some page response")
+            .into_model()
+            .expect("expected page");
+        assert_eq!(i.items.as_slice(), vec![1, 2, 3]);
     }
 
     #[allow(clippy::type_complexity)]
