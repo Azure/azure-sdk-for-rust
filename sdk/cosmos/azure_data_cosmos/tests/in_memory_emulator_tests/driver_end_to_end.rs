@@ -1322,7 +1322,7 @@ async fn try_real_failover_comparison(
     use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
     use azure_data_cosmos_driver::models::{AccountReference, ConnectionString};
     use azure_data_cosmos_driver::options::{
-        ConnectionPoolOptions, DriverOptionsBuilder, EmulatorServerCertValidation,
+        ConnectionPoolOptions, DriverOptionsBuilder, ServerCertificateValidation,
     };
     use std::sync::Arc;
 
@@ -1353,7 +1353,7 @@ async fn try_real_failover_comparison(
     let mut pool_builder = ConnectionPoolOptions::builder();
     if conn_str.account_endpoint().contains("localhost") {
         pool_builder = pool_builder
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled);
+            .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator);
     }
     let pool = pool_builder.build().ok()?;
 

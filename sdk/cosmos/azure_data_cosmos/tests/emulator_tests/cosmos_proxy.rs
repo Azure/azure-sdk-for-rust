@@ -109,8 +109,8 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
 
     #[cfg(feature = "allow_invalid_certificates")]
     {
-        pool_builder = pool_builder.with_emulator_server_cert_validation(
-            azure_data_cosmos::EmulatorServerCertValidation::DangerousDisabled,
+        pool_builder = pool_builder.with_server_certificate_validation(
+            azure_data_cosmos::ServerCertificateValidation::RequiredUnlessEmulator,
         );
     }
 

@@ -21,7 +21,7 @@ use crate::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
             CosmosEndpoint, LocationStateStore,
         },
-        transport::{is_emulator_host, uses_dataplane_pipeline},
+        transport::uses_dataplane_pipeline,
     },
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
@@ -456,14 +456,15 @@ impl CosmosDriver {
         }
         #[cfg(not(feature = "fault_injection"))]
         let _ = fault_injection_enabled;
-        let transport_security =
-            if bool::from(runtime.connection_pool().emulator_server_cert_validation())
-                && is_emulator_host(endpoint)
-            {
-                TransportSecurity::EmulatorWithInsecureCertificates
-            } else {
-                TransportSecurity::Secure
-            };
+        let transport_security = if runtime
+            .connection_pool()
+            .server_certificate_validation()
+            .allows_insecure_connection(endpoint)
+        {
+            TransportSecurity::EmulatorWithInsecureCertificates
+        } else {
+            TransportSecurity::Secure
+        };
         (diagnostics, transport_security)
     }
 
@@ -2745,8 +2746,8 @@ mod tests {
     #[test]
     fn build_metadata_transport_for_version_uses_emulator_transport_selection() {
         let connection_pool = ConnectionPoolOptions::builder()
-            .with_emulator_server_cert_validation(
-                crate::options::EmulatorServerCertValidation::DangerousDisabled,
+            .with_server_certificate_validation(
+                crate::options::ServerCertificateValidation::RequiredUnlessEmulator,
             )
             .build()
             .unwrap();
@@ -2788,8 +2789,8 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new()
             .with_connection_pool(
                 ConnectionPoolOptions::builder()
-                    .with_emulator_server_cert_validation(
-                        crate::options::EmulatorServerCertValidation::DangerousDisabled,
+                    .with_server_certificate_validation(
+                        crate::options::ServerCertificateValidation::RequiredUnlessEmulator,
                     )
                     .build()
                     .unwrap(),

@@ -234,7 +234,7 @@ impl SdkDualBackend {
 
         let emulator_client = CosmosClientBuilder::new()
             .with_runtime(
-                CosmosRuntimeBuilder::from_driver_builder(emulator.runtime_builder())
+                CosmosRuntimeBuilder::from(emulator.runtime_builder())
                     .build()
                     .await?,
             )
@@ -967,7 +967,7 @@ async fn sdk_create_retries_after_429_throttling() {
     );
     let emulator_client = CosmosClientBuilder::new()
         .with_runtime(
-            CosmosRuntimeBuilder::from_driver_builder(emulator.runtime_builder())
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
                 .build()
                 .await
                 .unwrap(),
@@ -1076,7 +1076,7 @@ async fn sdk_throttling_retry_options_disables_retry() {
     // default operation options, disabling throttle retries (max_retry_count = 0).
     let emulator_client = CosmosClientBuilder::new()
         .with_runtime(
-            CosmosRuntimeBuilder::from_driver_builder(emulator.runtime_builder())
+            CosmosRuntimeBuilder::from(emulator.runtime_builder())
                 .build()
                 .await
                 .unwrap(),
@@ -1235,7 +1235,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     );
     let emu_client = CosmosClientBuilder::new()
         .with_runtime(
-            CosmosRuntimeBuilder::from_driver_builder(runtime_builder)
+            CosmosRuntimeBuilder::from(runtime_builder)
                 .build()
                 .await
                 .unwrap(),

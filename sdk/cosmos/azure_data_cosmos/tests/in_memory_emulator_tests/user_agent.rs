@@ -120,7 +120,7 @@ async fn build_client_with_provisioned_container(
     );
 
     let mut builder = CosmosClientBuilder::new().with_runtime(
-        CosmosRuntimeBuilder::from_driver_builder(emulator.runtime_builder())
+        CosmosRuntimeBuilder::from(emulator.runtime_builder())
             .build()
             .await
             .expect("runtime builds"),

@@ -13,7 +13,7 @@ use azure_data_cosmos_driver::{
         DatabaseReference, ItemReference, PartitionKey,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, EmulatorServerCertValidation, OperationOptions,
+        ConnectionPoolOptions, DriverOptions, ServerCertificateValidation, OperationOptions,
         Region,
     },
 };
@@ -92,7 +92,7 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let mut connection_pool_builder = ConnectionPoolOptions::builder();
     if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
         connection_pool_builder = connection_pool_builder
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled);
+            .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator);
     }
     let connection_pool = connection_pool_builder.build()?;
 

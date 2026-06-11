@@ -41,8 +41,8 @@ pub use operation_options::{
     ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView,
 };
 pub use policies::{
-    ContentResponseOnWrite, EmulatorServerCertValidation, EndToEndOperationLatencyPolicy,
-    ExcludedRegions,
+    ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
+    ServerCertificateValidation,
 };
 pub use priority::PriorityLevel;
 pub use read_consistency::ReadConsistencyStrategy;

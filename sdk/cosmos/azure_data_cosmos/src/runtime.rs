@@ -37,17 +37,18 @@ use crate::options::{
 };
 
 #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls"))]
-use crate::options::EmulatorServerCertValidation;
+use crate::options::ServerCertificateValidation;
 
 use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
 
-/// A shared runtime for one or more [`CosmosClient`](crate::CosmosClient)s.
+/// A handle to a shared runtime for one or more [`CosmosClient`](crate::CosmosClient)s.
 ///
 /// `CosmosRuntime` owns the HTTP client factory, connection pool, default
 /// [`OperationOptions`], User-Agent header, and any registered
 /// throughput-control groups that the clients built on top of it share.
-/// It is cheap to clone — internally it holds an [`Arc`] reference.
 ///
+/// This type is a handle to the runtime itself, cloning it will duplicate the handle
+/// which will point to the same underlying runtime.
 /// Use [`CosmosRuntime::global`] to obtain a process-wide shared default
 /// runtime, or [`CosmosRuntime::builder`] to construct a customized one.
 #[derive(Clone, Debug)]
@@ -93,7 +94,7 @@ impl CosmosRuntime {
             .cloned()
     }
 
-    /// Consumes the runtime, returning the underlying driver runtime.
+    /// Consumes the runtime handle, returning a reference to the internal driver runtime.
     ///
     /// Used by the SDK's `CosmosClientBuilder::build` to wire the resolved
     /// runtime into a `CosmosDriver`.
@@ -198,16 +199,16 @@ impl CosmosRuntimeBuilder {
         let runtime = inner.build().await.map_err(crate::CosmosError::from)?;
         Ok(CosmosRuntime(runtime))
     }
+}
 
+impl From<CosmosDriverRuntimeBuilder> for CosmosRuntimeBuilder {
     /// Constructs a `CosmosRuntimeBuilder` from a pre-configured
     /// [`CosmosDriverRuntimeBuilder`].
     ///
-    /// Internal-only escape hatch for the in-memory emulator harness; not
-    /// part of the public API.
-    #[doc(hidden)]
-    #[cfg(feature = "__internal_in_memory_emulator")]
-    pub fn from_driver_builder(builder: CosmosDriverRuntimeBuilder) -> Self {
-        Self(builder)
+    /// Because this depends on directly creating a [`CosmosDriverRuntimeBuilder`], it is
+    /// not an officially supported way to create a [`CosmosRuntime`]
+    fn from(value: CosmosDriverRuntimeBuilder) -> Self {
+        Self(value)
     }
 }
 
@@ -226,7 +227,7 @@ async fn build_global_runtime() -> crate::Result<CosmosRuntime> {
     #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls"))]
     {
         let pool = ConnectionPoolOptions::builder()
-            .with_emulator_server_cert_validation(EmulatorServerCertValidation::DangerousDisabled)
+            .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator)
             .build()
             .map_err(crate::CosmosError::from)?;
         builder = builder.with_connection_pool(pool);
