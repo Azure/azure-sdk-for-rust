@@ -61,24 +61,6 @@ pub struct OperationOptions {
     pub content_response_on_write: Option<ContentResponseOnWrite>,
 
     /// Throughput-control tuning for this request.
-    ///
-    /// Groups three independently-layered knobs that govern the server-side
-    /// throughput-control headers (`x-ms-cosmos-priority-level` and
-    /// `x-ms-cosmos-throughput-bucket`):
-    ///
-    /// - [`group_name`](ThroughputControlOptions::group_name) — references a
-    ///   driver-registered throughput-control group whose values are used
-    ///   when the direct overrides below are not set.
-    /// - [`throughput_bucket`](ThroughputControlOptions::throughput_bucket) —
-    ///   when `Some`, takes precedence over any value carried by the named
-    ///   group (or by any group registered for the operation's container).
-    /// - [`priority_level`](ThroughputControlOptions::priority_level) —
-    ///   same direct-override semantics as `throughput_bucket`.
-    ///
-    /// Each inner field resolves independently across the runtime → account
-    /// → operation layers. Final header values are produced by the driver
-    /// using the rule: direct option value wins → else look up the resolved
-    /// `group_name` in the driver's registry → else omit the header.
     #[option(nested)]
     pub throughput_control: Option<ThroughputControlOptions>,
 
@@ -228,8 +210,7 @@ pub struct ThrottlingRetryOptions {
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct ThroughputControlOptions {
-    /// Name of a throughput-control group registered on the driver via
-    /// [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group).
+    /// Name of a previously-registered throughput-control group.
     ///
     /// Used as the fallback source for
     /// [`throughput_bucket`](Self::throughput_bucket) and

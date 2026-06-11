@@ -155,7 +155,7 @@ pub(crate) async fn execute_operation_pipeline(
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
-    throughput_control: ResolvedThroughputControl,
+    throughput_control: Option<ResolvedThroughputControl>,
     pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
@@ -1230,7 +1230,7 @@ struct TransportRequestContext<'a> {
     execution_context: ExecutionContext,
     deadline: Option<Instant>,
     resolved_session_token: Option<SessionToken>,
-    throughput_control: ResolvedThroughputControl,
+    throughput_control: Option<ResolvedThroughputControl>,
 }
 
 /// Builds a `TransportRequest` from the operation and routing decision.
@@ -1364,17 +1364,19 @@ fn build_transport_request(
 
     // Add throughput control headers, if any layer (direct override or
     // resolved group) produced a value.
-    if let Some(priority) = ctx.throughput_control.priority_level {
-        headers.insert(
-            request_header_names::PRIORITY_LEVEL,
-            HeaderValue::from(priority.as_str().to_owned()),
-        );
-    }
-    if let Some(bucket) = ctx.throughput_control.throughput_bucket {
-        headers.insert(
-            request_header_names::THROUGHPUT_BUCKET,
-            HeaderValue::from(bucket.to_string()),
-        );
+    if let Some(throughput_control) = ctx.throughput_control {
+        if let Some(priority) = throughput_control.priority_level {
+            headers.insert(
+                request_header_names::PRIORITY_LEVEL,
+                HeaderValue::from(priority.as_str().to_owned()),
+            );
+        }
+        if let Some(bucket) = throughput_control.throughput_bucket {
+            headers.insert(
+                request_header_names::THROUGHPUT_BUCKET,
+                HeaderValue::from(bucket.to_string()),
+            );
+        }
     }
 
     Ok(TransportRequest {
@@ -1836,7 +1838,7 @@ struct AttemptContext<'a> {
     /// (drives session-token resolve/capture inside the attempt).
     session_consistency_active: bool,
     options: &'a OperationOptionsView<'a>,
-    throughput_control: ResolvedThroughputControl,
+    throughput_control: Option<ResolvedThroughputControl>,
     /// End-to-end deadline (operation timeout) — passed through to each
     /// per-attempt transport invocation.
     deadline: Option<Instant>,
@@ -3604,7 +3606,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -3626,7 +3628,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -3648,7 +3650,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -3675,7 +3677,7 @@ mod tests {
             execution_context: ExecutionContext::Retry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let overrides = OperationOverrides {
             partition_key: Some(PartitionKey::from("pk1")),
@@ -3712,7 +3714,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -3743,7 +3745,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -5434,7 +5436,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -5467,7 +5469,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -5502,7 +5504,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -5549,7 +5551,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let request =
             build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
@@ -5575,10 +5577,10 @@ mod tests {
         let routing = test_routing();
         let activity_id = ActivityId::new_uuid();
 
-        let throughput_control = ResolvedThroughputControl {
+        let throughput_control = Some(ResolvedThroughputControl {
             throughput_bucket: None,
             priority_level: Some(PriorityLevel::Low),
-        };
+        });
 
         let ctx = TransportRequestContext {
             routing: &routing,
@@ -5618,10 +5620,10 @@ mod tests {
         let routing = test_routing();
         let activity_id = ActivityId::new_uuid();
 
-        let throughput_control = ResolvedThroughputControl {
+        let throughput_control = Some(ResolvedThroughputControl {
             throughput_bucket: Some(42),
             priority_level: None,
-        };
+        });
 
         let ctx = TransportRequestContext {
             routing: &routing,
@@ -5661,10 +5663,10 @@ mod tests {
         let routing = test_routing();
         let activity_id = ActivityId::new_uuid();
 
-        let throughput_control = ResolvedThroughputControl {
+        let throughput_control = Some(ResolvedThroughputControl {
             throughput_bucket: Some(100),
             priority_level: Some(PriorityLevel::High),
-        };
+        });
 
         let ctx = TransportRequestContext {
             routing: &routing,
@@ -5726,7 +5728,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         let req = build_transport_request(op, &OperationOverrides::default(), None, &ctx)
             .expect("request should build");
@@ -5807,7 +5809,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")
@@ -5868,7 +5870,7 @@ mod tests {
             execution_context: ExecutionContext::Initial,
             deadline: None,
             resolved_session_token: None,
-            throughput_control: ResolvedThroughputControl::default(),
+            throughput_control: None,
         };
         build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")

@@ -1370,7 +1370,7 @@ impl CosmosDriver {
     pub(crate) fn effective_throughput_control(
         &self,
         effective_options: &OperationOptionsView<'_>,
-        container: Option<&ContainerReference>,
+        container: &ContainerReference,
     ) -> crate::error::Result<ResolvedThroughputControl> {
         let throughput_view = effective_options.throughput_control();
         let mut bucket = throughput_view.throughput_bucket().copied();
@@ -1384,17 +1384,6 @@ impl CosmosDriver {
         }
 
         if let Some(name) = throughput_view.group_name() {
-            let Some(container) = container else {
-                // An explicit group name on an operation that lacks a
-                // container context (account-level metadata, etc.) is a
-                // configuration error — the lookup key requires both halves.
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED)
-                    .with_message(format!(
-                        "throughput control group '{name}' cannot be resolved: this operation has no container context",
-                    ))
-                    .build());
-            };
             let group = self
                 .throughput_control_groups
                 .get_by_container_and_name(container, name)
@@ -1787,8 +1776,14 @@ impl CosmosDriver {
         let effective_options = self.operation_options_view(options);
 
         // Step 2: Resolve effective throughput control headers.
-        let effective_throughput_control =
-            self.effective_throughput_control(&effective_options, operation.container())?;
+        let effective_throughput_control = if let Some(container) = operation.container() {
+            Some(self.effective_throughput_control(&effective_options, container)?)
+        } else {
+            // Throughput control doesn't apply to operations that don't target a container.
+            // But it's not an error to specify the settings, they may have been inherited from
+            // a parent context. We just disregard them.
+            None
+        };
 
         // Step 3: Initialize operation activity id
         let activity_id = ActivityId::new_uuid();
