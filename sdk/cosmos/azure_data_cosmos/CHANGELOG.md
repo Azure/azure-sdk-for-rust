@@ -46,12 +46,11 @@
     - `register_throughput_control_group(ThroughputControlGroupOptions) -> Result<Self>` — additive on top of the runtime's groups; cross-layer name collisions surface as a build-time error.
   - **Removed:**
     - `with_proxy_allowed` — move to `CosmosRuntimeBuilder::with_connection_pool(ConnectionPoolOptionsBuilder::new().with_proxy_allowed(true).build())`.
-    - `with_allow_emulator_invalid_certificates` — controlled by the `allow_invalid_certificates` Cargo feature (when enabled, `CosmosRuntime::global()` defaults to `EmulatorServerCertValidation::DangerousDisabled`); custom runtimes override via `ConnectionPoolOptionsBuilder::with_emulator_server_cert_validation`.
+    - Removed the `allow_invalid_certificates` feature flag - This functionality is now available in the default feature set but requires explicit opt-in via the `CosmosRuntimeBuilder` API.
     - `with_throttling_retry_options` — use `with_default_operation_options(OperationOptionsBuilder::new().with_throttling_retry_options(...).build())` (the throttle settings live on `OperationOptions`).
     - `with_fault_injection` — renamed to `with_fault_injection_rules` and now returns `Result<Self>` to surface duplicate-ID errors at registration time.
     - `with_throughput_control_group` — renamed to `register_throughput_control_group` and now returns `Result<Self>`.
     - `with_driver_runtime_builder` — replaced by `with_runtime(CosmosRuntime)`. The `__internal_in_memory_emulator` harness uses the new `CosmosRuntimeBuilder::from_driver_builder` escape hatch.
-- The `allow_invalid_certificates` Cargo feature now only affects `CosmosRuntime::global()`'s default `ConnectionPoolOptions::emulator_server_cert_validation`. Per-client opt-in via the removed `with_allow_emulator_invalid_certificates` setter is no longer available; configure a custom `CosmosRuntime` with the desired cert validation policy instead.
 - Per-account driver caching has been removed from the underlying runtime — each `CosmosClient::build(...)` now constructs a fresh `CosmosDriver`. Clients sharing the same `CosmosRuntime` continue to share transport pools, sampler, account cache, etc.; only the per-account `CosmosDriver` instance is no longer reused.
 
 ### Bugs Fixed

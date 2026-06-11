@@ -23,11 +23,11 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     models::{ContainerProperties, DatabaseProperties, ItemResponse},
     options::{
-        ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions, OperationOptions, Region,
+        ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions, OperationOptions,
+        OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
     },
-    AccountEndpoint, AccountReference, ContentResponseOnWrite, CosmosClient, CosmosClientBuilder,
-    CosmosRuntimeBuilder, ItemReadOptions, ItemResponse, ItemWriteOptions, OperationOptions,
-    OperationOptionsBuilder, RoutingStrategy, ThrottlingRetryOptionsBuilder,
+    AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
+    CosmosRuntimeBuilder, RoutingStrategy,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,

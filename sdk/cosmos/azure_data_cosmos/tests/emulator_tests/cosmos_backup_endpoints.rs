@@ -37,10 +37,6 @@ async fn client_boots_via_backup_when_primary_unreachable() -> Result<(), Box<dy
 
     let builder = CosmosClient::builder().with_backup_endpoints(vec![real_endpoint]);
 
-    // When the `allow_invalid_certificates` feature is enabled, the SDK's
-    // global runtime defaults to `EmulatorServerCertValidation::DangerousDisabled`,
-    // so no per-client wiring is needed here.
-
     let client = builder
         .build(
             AccountReference::with_authentication_key(

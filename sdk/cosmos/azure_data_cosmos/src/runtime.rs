@@ -36,11 +36,6 @@ use crate::options::{
     ConnectionPoolOptions, OperationOptions, ThroughputControlGroupOptions, UserAgentSuffix,
 };
 
-#[cfg(all(feature = "allow_invalid_certificates", feature = "__tls"))]
-use crate::options::ServerCertificateValidation;
-
-use crate::constants::AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED;
-
 /// A handle to a shared runtime for one or more [`CosmosClient`](crate::CosmosClient)s.
 ///
 /// `CosmosRuntime` owns the HTTP client factory, connection pool, default
@@ -62,21 +57,6 @@ impl CosmosRuntime {
 
     /// Returns the process-wide global runtime, initializing it on first call.
     ///
-    /// The global runtime is initialized lazily with the SDK's defaults:
-    ///
-    /// - The per-partition circuit breaker is enabled unless the
-    ///   `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` environment
-    ///   variable is set to `false`.
-    /// - The wrapping-SDK identifier is set to `azsdk-rust-cosmos/<version>`
-    ///   so requests can be attributed to this crate in addition to the
-    ///   underlying driver.
-    /// - When the `allow_invalid_certificates` Cargo feature is enabled, the
-    ///   default emulator-server certificate-validation policy is
-    ///   [`EmulatorServerCertValidation::DangerousDisabled`].
-    ///
-    /// Subsequent calls return the same runtime. Initialization failures are
-    /// not cached — a retried call will attempt initialization again.
-    ///
     /// This is the runtime
     /// [`CosmosClientBuilder::build`](crate::CosmosClientBuilder::build) falls
     /// back to when no runtime was supplied via
@@ -86,10 +66,10 @@ impl CosmosRuntime {
     ///
     /// Returns an error if the runtime fails to build (for example, if
     /// the HTTP client factory cannot be constructed).
-    pub async fn global() -> crate::Result<Self> {
+    pub(crate) async fn global() -> crate::Result<Self> {
         static GLOBAL: OnceCell<CosmosRuntime> = OnceCell::new();
         GLOBAL
-            .get_or_try_init(|| async { build_global_runtime().await })
+            .get_or_try_init(|| async { CosmosRuntimeBuilder::new().build().await })
             .await
             .cloned()
     }
@@ -210,35 +190,6 @@ impl From<CosmosDriverRuntimeBuilder> for CosmosRuntimeBuilder {
     fn from(value: CosmosDriverRuntimeBuilder) -> Self {
         Self(value)
     }
-}
-
-/// Builds the global runtime: PPCB env-var honored, wrapping-SDK identifier
-/// applied, and (when the `allow_invalid_certificates` feature is enabled)
-/// emulator-server certificate validation defaulted to
-/// [`EmulatorServerCertValidation::DangerousDisabled`].
-async fn build_global_runtime() -> crate::Result<CosmosRuntime> {
-    let ppcb_enabled = std::env::var(AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED)
-        .ok()
-        .and_then(|v| v.parse::<bool>().ok())
-        .unwrap_or(true);
-
-    let mut builder = CosmosRuntimeBuilder::new();
-
-    #[cfg(all(feature = "allow_invalid_certificates", feature = "__tls"))]
-    {
-        let pool = ConnectionPoolOptions::builder()
-            .with_server_certificate_validation(ServerCertificateValidation::RequiredUnlessEmulator)
-            .build()
-            .map_err(crate::CosmosError::from)?;
-        builder = builder.with_connection_pool(pool);
-    }
-
-    let op_defaults = crate::options::OperationOptionsBuilder::new()
-        .with_per_partition_circuit_breaker_enabled(ppcb_enabled)
-        .build();
-    builder = builder.with_default_operation_options(op_defaults);
-
-    builder.build().await
 }
 
 #[cfg(test)]

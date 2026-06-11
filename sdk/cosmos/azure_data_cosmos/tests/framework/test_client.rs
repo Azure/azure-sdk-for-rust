@@ -4,16 +4,16 @@
 // cspell:ignore: TEAMPROJECTID
 
 use azure_core::{http::StatusCode, Uuid};
-use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::fault_injection::FaultInjectionRule;
-use azure_data_cosmos::feed::FeedScope;
-use azure_data_cosmos::models::ItemResponse;
-use azure_data_cosmos::models::ThroughputProperties;
-use azure_data_cosmos::options::CreateContainerOptions;
-use azure_data_cosmos::options::ItemReadOptions;
-use azure_data_cosmos::options::Region;
 use azure_data_cosmos::{
-    clients::DatabaseClient, CosmosClient, PartitionKey, Query, RoutingStrategy,
+    clients::{ContainerClient, DatabaseClient},
+    fault_injection::FaultInjectionRule,
+    feed::FeedScope,
+    models::{ItemResponse, ThroughputProperties},
+    options::{
+        ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, Region,
+        ServerCertificateValidation,
+    },
+    CosmosClient, CosmosRuntime, PartitionKey, Query, RoutingStrategy,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
@@ -321,10 +321,6 @@ impl TestClient {
         }
     }
 
-    #[cfg_attr(
-        feature = "allow_invalid_certificates",
-        allow(unused_variables, unused_assignments, unused_mut)
-    )]
     async fn from_connection_string(
         connection_string: &str,
         application_region: Option<Region>,
@@ -352,18 +348,18 @@ impl TestClient {
             .unwrap_or(HUB_REGION);
         let strategy = RoutingStrategy::ProximityTo(region);
 
-        // Configure invalid certificate acceptance (e.g., for emulator).
-        // When the `allow_invalid_certificates` Cargo feature is enabled,
-        // the SDK's global runtime defaults to
-        // `EmulatorServerCertValidation::DangerousDisabled`, so emulator
-        // connections succeed without any per-client wiring here.
-        #[cfg(not(feature = "allow_invalid_certificates"))]
         if allow_invalid_certificates {
-            return Err(
-                "The 'allow_invalid_certificates' feature must be enabled to accept invalid certificates. \
-                 Add `allow_invalid_certificates` to the features list."
-                    .into(),
-            );
+            let runtime = CosmosRuntime::builder()
+                .with_connection_pool(
+                    ConnectionPoolOptions::builder()
+                        .with_server_certificate_validation(
+                            ServerCertificateValidation::RequiredUnlessEmulator,
+                        )
+                        .build()?,
+                )
+                .build()
+                .await?;
+            builder = builder.with_runtime(runtime);
         }
 
         // Configure fault injection if rules provided
@@ -905,12 +901,18 @@ impl TestRunContext {
         let parsed: ConnectionString = connection_string.parse()?;
 
         let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
-        let builder = CosmosClient::builder();
-
-        // No per-client `allow_invalid_certificates` setting is needed: the
-        // SDK's global runtime defaults emulator-server cert validation to
-        // `DangerousDisabled` when the `allow_invalid_certificates` Cargo
-        // feature is enabled.
+        let builder = CosmosClient::builder().with_runtime(
+            CosmosRuntime::builder()
+                .with_connection_pool(
+                    ConnectionPoolOptions::builder()
+                        .with_server_certificate_validation(
+                            ServerCertificateValidation::RequiredUnlessEmulator,
+                        )
+                        .build()?,
+                )
+                .build()
+                .await?,
+        );
 
         builder
             .build(

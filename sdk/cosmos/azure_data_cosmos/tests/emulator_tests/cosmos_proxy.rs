@@ -104,15 +104,11 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
     };
     let parsed: azure_data_cosmos_driver::models::ConnectionString = conn_str.parse()?;
 
-    let mut pool_builder =
-        azure_data_cosmos::ConnectionPoolOptions::builder().with_proxy_allowed(true);
-
-    #[cfg(feature = "allow_invalid_certificates")]
-    {
-        pool_builder = pool_builder.with_server_certificate_validation(
-            azure_data_cosmos::ServerCertificateValidation::RequiredUnlessEmulator,
+    let pool_builder = azure_data_cosmos::options::ConnectionPoolOptions::builder()
+        .with_proxy_allowed(true)
+        .with_server_certificate_validation(
+            azure_data_cosmos::options::ServerCertificateValidation::RequiredUnlessEmulator,
         );
-    }
 
     let runtime = azure_data_cosmos::CosmosRuntime::builder()
         .with_connection_pool(pool_builder.build()?)

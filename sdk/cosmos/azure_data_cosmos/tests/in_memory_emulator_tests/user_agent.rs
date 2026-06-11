@@ -21,6 +21,10 @@
 use std::sync::{Arc, Mutex};
 
 use azure_core::http::{headers::USER_AGENT, Method, Request, Url};
+use azure_data_cosmos::{
+    options::{Region, UserAgentSuffix},
+    AccountEndpoint, AccountReference, CosmosClientBuilder, CosmosRuntimeBuilder, RoutingStrategy,
+};
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
     VirtualRegion,

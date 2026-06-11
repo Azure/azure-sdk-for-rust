@@ -209,12 +209,6 @@ impl CosmosClientBuilder {
     /// Groups registered here apply to this client only and merge on top
     /// of any groups registered at the runtime layer. Cross-layer name
     /// collisions error at `build()` time.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if a group with the same `(container, name)` key
-    /// or another default-for-the-same-container is already registered on
-    /// this builder. Cross-layer collisions surface at `build()` time.
     pub fn register_throughput_control_group(
         mut self,
         group: ThroughputControlGroupOptions,
@@ -383,7 +377,7 @@ mod tests {
     use azure_data_cosmos_driver::CosmosDriverRuntimeBuilder;
 
     use super::*;
-    use crate::options::{OperationOptionsBuilder, Region, UserAgentSuffix};
+    use crate::options::{Region, UserAgentSuffix};
 
     /// Reproduces the bug where `CosmosClientBuilder::with_user_agent_suffix`
     /// did not forward the suffix to the driver runtime, causing the
