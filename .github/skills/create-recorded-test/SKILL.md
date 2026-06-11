@@ -1,6 +1,8 @@
 ---
+name: create-recorded-test
+description: Generate a new recorded integration test
+disable-model-invocation: true
 agent: "agent"
-description: "Generate a new recorded integration test"
 ---
 
 # Generate a new recorded integration test

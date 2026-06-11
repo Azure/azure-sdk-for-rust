@@ -21,12 +21,12 @@ Further discussion on or pull requests for these issues is highly valued, and we
 ## Using Copilot
 
 This repository is [configured](https://code.visualstudio.com/docs/copilot/copilot-customization) to facilitate Copilot.
-In addition to [general instructions](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md), you can find additional skills in [.github/skills](https://github.com/Azure/azure-sdk-for-rust/tree/main/.github/skills) or use `/{skill-name}` in Copilot; and prompts in [.github/prompts](https://github.com/Azure/azure-sdk-for-rust/tree/main/.github/prompts) or type `/{prompt-name}` in Copilot.
+In addition to [general instructions](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md), you can find additional skills in [.github/skills](https://github.com/Azure/azure-sdk-for-rust/tree/main/.github/skills) or use `/{skill-name}` in Copilot.
 
 To generate a new performance test, for example, you might prompt with:
 
 ```text
-Using /perf-test generate a perf test for SecretClient::get_secret.
+/create-perf-test generate a perf test for SecretClient::get_secret.
 ```
 
 For comprehensive guidance on how AI agents should interact with this repository, including workflows, automation boundaries, and safety guidelines, see [AGENTS.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/AGENTS.md).
@@ -376,10 +376,32 @@ Once all of the above steps are met, the following process will be followed:
 
 ### Performance Testing
 
-Performance testing is supported via [criterion](https://bheisler.github.io/criterion.rs/book/criterion_rs.html)
-There are samples of performance tests under `sdk/core/azure_core/benches` folder.
-To execute the performance tests in `azure_core` folder you can run `cargo bench` in the `sdk/core/azure_core` folder.
-The output of the tests will be presented in the command line as well as saved under the `target/criterion` folder.
+See [sdk/storage/azure_storage_blob](sdk/storage/azure_storage_blob) for examples of both types of performance tests.
+
+#### Benchmarks
+
+For on-demand micro-benchmarks, use [criterion](https://bheisler.github.io/criterion.rs/book/criterion_rs.html). Benchmark files go under `benches/` in the crate directory. Add the following to `Cargo.toml`:
+
+```toml
+[[bench]]
+name = "{bench-name}"
+harness = false
+```
+
+criterion requires `harness = false` to supply its own test harness.
+
+#### Performance Tests
+
+For scheduled performance tests that are compared across languages and tracked for regressions, use `azure_core_test::perf::PerfRunner`. These files go under `perf/` in the crate directory. Add the following to `Cargo.toml`:
+
+```toml
+[[bench]]
+name = "perf"
+path = "perf/perf_tests.rs"
+harness = false
+```
+
+Use the `/create-perf-test` skill to generate a new performance test.
 
 ## Releases
 

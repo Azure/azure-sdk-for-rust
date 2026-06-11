@@ -1,6 +1,8 @@
 ---
+name: create-perf-test
+description: Generate a new performance test
+disable-model-invocation: true
 agent: "agent"
-description: "Generate a new performance test"
 ---
 
 # Generate a new performance test
