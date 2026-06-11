@@ -212,7 +212,15 @@ impl OperationHandle {
         }
     }
 
-    pub(crate) fn inner(p: *const OperationHandle) -> Option<&'static OperationInner> {
+    /// Borrows the shared inner operation state from a raw handle pointer.
+    ///
+    /// The returned reference's lifetime `'a` is tied to the call site (not
+    /// `'static`): it must not be held past the point where a concurrent
+    /// `cosmos_operation_handle_free` could drop the last `Arc`. Keeping the
+    /// borrow call-scoped lets the borrow checker prevent it from escaping
+    /// into a longer-lived binding, which a `'static` return would have
+    /// silently allowed (a potential use-after-free).
+    pub(crate) fn inner<'a>(p: *const OperationHandle) -> Option<&'a OperationInner> {
         Self::storage(p).map(|s| -> &OperationInner { &s.inner })
     }
 
