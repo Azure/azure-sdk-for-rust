@@ -800,10 +800,10 @@ mod tests {
         assert!(matches!(drain.snapshot_state(), PipelineNodeState::Drained));
     }
 
-    /// Hits the M1 hardening path: the poison sentinel emitted by
-    /// `snapshot_state` when a child lacks a `feed_range` (an invariant
-    /// violation) must be a min>max entry. That shape is rejected by the
-    /// planner's continuation-token validator on the next resume with
+    /// The poison sentinel emitted by `snapshot_state` when a child lacks
+    /// a `feed_range` (an invariant violation) must be a min>max entry.
+    /// That shape is rejected by the planner's continuation-token
+    /// validator on the next resume with
     /// `CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE`, preventing the
     /// missing range from being treated as already-drained scope.
     #[test]
