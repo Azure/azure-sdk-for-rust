@@ -97,49 +97,80 @@ impl Authorizer {
     ) -> azure_core_amqp::Result<AccessToken> {
         debug!("Authorizing path: {path}");
 
-        // Fast path: cached token under a brief lock.
-        if let Some(token) = self.authorization_scopes.read().await.get(path).cloned() {
-            debug!("Token already exists for path: {path}");
-            return Ok(token);
+        // AIDEV-NOTE: #4454 stale-token guard. The token cache is mutable (the
+        // refresh task rewrites entries), so unlike the connection caches it can't
+        // use an `OnceCell`; the generation check is applied here directly. We
+        // capture the connection's recovery generation before the lock-free CBS
+        // attach and re-check it after: if a recovery cleared this cache and bumped
+        // the generation mid-attach, the token we just authorized is bound to the
+        // torn-down connection's CBS link, so we discard it and re-authorize
+        // against the new connection instead of caching a stale entry (which the
+        // next operation would otherwise use and fail on, costing a second recovery
+        // cycle). Bounded so a storm of back-to-back recoveries surfaces an error
+        // rather than spinning forever.
+        const MAX_GENERATION_RETRIES: usize = 8;
+
+        for _ in 0..MAX_GENERATION_RETRIES {
+            // Fast path: cached token under a brief lock.
+            if let Some(token) = self.authorization_scopes.read().await.get(path).cloned() {
+                debug!("Token already exists for path: {path}");
+                return Ok(token);
+            }
+
+            let generation = connection.generation();
+
+            // Slow path: fetch the credential and perform the CBS attach *without*
+            // holding the scope cache lock. Holding it across `perform_authorization`
+            // would block `clear()` (called from `recover_from_error`) for as long as
+            // the CBS attach is in flight; if that CBS attach is itself the operation
+            // that triggers recovery, the result is a self-deadlock. Matches the
+            // pattern used by `ensure_sender` / `ensure_receiver` / `get_session` in
+            // `RecoverableConnection`.
+            debug!("Creating new authorization scope for path: {path}");
+
+            debug!("Get Token.");
+            let token = self
+                .credential
+                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
+                .await
+                .map_err(AmqpError::from)?;
+
+            debug!("Token for path {path} expires at {}", token.expires_on);
+
+            self.perform_authorization(connection, path, &token).await?;
+            debug!("Token verified.");
+
+            // If a recovery raced the attach above, the CBS link we authorized
+            // against is gone; discard this token and retry against the new
+            // generation rather than caching a stale entry. See #4454.
+            if connection.generation() != generation {
+                debug!(
+                    "Discarding token authorized during recovery (#4454) for path: {path}; re-authorizing."
+                );
+                continue;
+            }
+
+            // Insert; if another task won the race, return its cached token and drop
+            // ours. Both CBS auths succeeded against the same link, so either
+            // credential is acceptable to the broker.
+            let stored = {
+                let mut scopes = self.authorization_scopes.write().await;
+                scopes.entry(path.clone()).or_insert(token).clone()
+            };
+
+            self.authorization_refresher.get_or_init(|| {
+                debug!("Starting authorization refresh task.");
+                let self_clone = self.clone();
+                let async_runtime = get_async_runtime();
+                async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
+            });
+
+            return Ok(stored);
         }
 
-        // Slow path: fetch the credential and perform the CBS attach *without*
-        // holding the scope cache lock. Holding it across `perform_authorization`
-        // would block `clear()` (called from `recover_from_error`) for as long as
-        // the CBS attach is in flight; if that CBS attach is itself the operation
-        // that triggers recovery, the result is a self-deadlock. Matches the
-        // pattern used by `ensure_sender` / `ensure_receiver` / `get_session` in
-        // `RecoverableConnection`.
-        debug!("Creating new authorization scope for path: {path}");
-
-        debug!("Get Token.");
-        let token = self
-            .credential
-            .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-            .await
-            .map_err(AmqpError::from)?;
-
-        debug!("Token for path {path} expires at {}", token.expires_on);
-
-        self.perform_authorization(connection, path, &token).await?;
-        debug!("Token verified.");
-
-        // Insert; if another task won the race, return its cached token and drop
-        // ours. Both CBS auths succeeded against the same link, so either
-        // credential is acceptable to the broker.
-        let stored = {
-            let mut scopes = self.authorization_scopes.write().await;
-            scopes.entry(path.clone()).or_insert(token).clone()
-        };
-
-        self.authorization_refresher.get_or_init(|| {
-            debug!("Starting authorization refresh task.");
-            let self_clone = self.clone();
-            let async_runtime = get_async_runtime();
-            async_runtime.spawn(Box::pin(self_clone.refresh_tokens_task()))
-        });
-
-        Ok(stored)
+        Err(AmqpError::with_message(
+            "Exceeded retry budget authorizing path across recoveries",
+        ))
     }
 
     /// Actually perform an authorization against the Event Hubs service.
@@ -761,5 +792,140 @@ mod tests {
             .await
             .expect("authorize_path task panicked")
             .expect("authorize_path returned an error");
+    }
+
+    // #4454: when a recovery races an in-flight `authorize_path` slow path, the
+    // token authorized against the now-dead CBS link must be discarded and the
+    // path re-authorized against the new connection, rather than cached and handed
+    // out stale.
+    //
+    // The token cache is mutable (the refresh task rewrites it), so it cannot use
+    // an `OnceCell` like the connection caches; `authorize_path` guards itself with
+    // the connection's recovery generation instead. This test drives that guard
+    // deterministically: a gated credential blocks the first `get_token` so the
+    // test can fire a simulated reconnect (which bumps the generation) precisely
+    // during the lock-free authorization window. The first attempt's token must be
+    // thrown away and a second authorization performed; the cached token must be
+    // the second one, stamped at the post-recovery generation.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn authorize_path_discards_token_authorized_during_recovery() {
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+        #[derive(Debug)]
+        struct CountingGatedCredential {
+            calls: AtomicUsize,
+            first_call_entered: AtomicBool,
+            release_first_call: AtomicBool,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for CountingGatedCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                let call = self.calls.fetch_add(1, Ordering::SeqCst);
+                // Gate only the first call so the test can interleave a recovery
+                // while the slow path is mid-authorization. Later calls (the
+                // re-authorization) proceed immediately.
+                if call == 0 {
+                    self.first_call_entered.store(true, Ordering::SeqCst);
+                    while !self.release_first_call.load(Ordering::SeqCst) {
+                        tokio::task::yield_now().await;
+                    }
+                }
+                // Far-future expiry so the spawned refresh task sleeps on its first
+                // pass instead of immediately re-fetching (which would add a third,
+                // racy `get_token` call and make the exact-count assert flaky).
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("mock_token"),
+                    OffsetDateTime::now_utc() + Duration::hours(1),
+                ))
+            }
+        }
+
+        let credential = Arc::new(CountingGatedCredential {
+            calls: AtomicUsize::new(0),
+            first_call_entered: AtomicBool::new(false),
+            release_first_call: AtomicBool::new(false),
+        });
+
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url.clone(),
+            None,
+            None,
+            credential.clone(),
+            Default::default(),
+        );
+
+        let authorizer = Arc::new(Authorizer::new(
+            Arc::downgrade(&connection),
+            credential.clone(),
+        ));
+        // Skip the real CBS attach; we are exercising the generation guard, not the
+        // broker handshake.
+        authorizer.disable_authorization().unwrap();
+        connection.disable_connection().await.unwrap();
+
+        let path = Url::parse("amqps://example.com/test").unwrap();
+
+        let auth_task = {
+            let authorizer = authorizer.clone();
+            let connection = connection.clone();
+            let path = path.clone();
+            tokio::spawn(async move { authorizer.authorize_path(&connection, &path).await })
+        };
+
+        // Wait until the slow path is inside the first (gated) get_token: it has
+        // captured the pre-recovery generation and is mid-authorization.
+        while !credential.first_call_entered.load(Ordering::SeqCst) {
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(connection.generation(), 0);
+
+        // Fire a recovery now, in the lock-free window. This bumps the generation,
+        // exactly the race #4454 describes. We bump the generation directly rather
+        // than running the full `simulate_reconnect`, because clearing the caches is
+        // irrelevant to the token guard and keeps the test focused.
+        connection.bump_generation_for_test();
+        assert_eq!(connection.generation(), 1);
+
+        // Release the first authorization; its token is now stale and must be
+        // discarded, triggering a re-authorization against the new generation.
+        credential.release_first_call.store(true, Ordering::SeqCst);
+
+        let token = auth_task
+            .await
+            .expect("authorize_path task panicked")
+            .expect("authorize_path returned an error");
+
+        // Two get_token calls: the discarded first attempt and the clean retry.
+        assert_eq!(
+            credential.calls.load(Ordering::SeqCst),
+            2,
+            "expected exactly one discard-and-retry"
+        );
+
+        // The token returned is cached and stamped at the stable post-recovery
+        // generation; the next lookup is a clean fast-path hit, with no further
+        // recovery needed.
+        let cached = authorizer
+            .authorization_scopes
+            .read()
+            .await
+            .get(&path)
+            .cloned();
+        assert!(
+            cached.is_some(),
+            "a fresh token must be cached after the discard-and-retry"
+        );
+        assert_eq!(cached.unwrap().token.secret(), token.token.secret());
+        assert_eq!(
+            connection.generation(),
+            1,
+            "no second recovery cycle should have been needed"
+        );
     }
 }
