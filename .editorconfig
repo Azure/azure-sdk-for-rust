@@ -13,6 +13,9 @@ indent_size = 2
 [*.{json,markdownlintrc}]
 indent_size = 2
 
+[*.{md,markdown}]
+indent_size = 2
+
 [*.ps1]
 indent_size = 2
 

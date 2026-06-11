@@ -1,23 +1,29 @@
 # Release History
 
-## 0.35.0 (Unreleased)
+## 0.36.0 (Unreleased)
 
 ### Features Added
 
 - Added `CosmosClientBuilder::with_gateway20_disabled(bool)` to opt out of the new Gateway 2.0 transport, which is now enabled by default. Gateway 2.0 routes data-plane requests through a regional proxy that forwards RNTBD-over-HTTP/2 to the backend. Set this to `true` to keep traffic on the standard gateway (Gateway 1.0) — useful for A/B testing transport behavior, isolating a transport-specific issue, or staying on Gateway 1.0 during a controlled rollout. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - Driver retries HTTP 449 RetryWith responses transparently. The Cosmos backend uses 449 to signal transient concurrency conflicts that the client must retry in the same region; the driver now does so with exponential backoff (10ms initial delay + a small random salt, doubling up to 1s per retry) bounded by a ~30s cumulative-wait budget. SDK callers will no longer see spurious 449 errors from concurrent writes racing through the store. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - `ReadConsistencyStrategy` is now honored end-to-end across Gateway V1 and Gateway V2 read paths. Non-`Default` strategies (`Eventual`, `Session`, `LatestCommitted`, `GlobalStrong`) emit the dedicated wire signal — `x-ms-cosmos-read-consistency-strategy` on V1, the new RNTBD `ReadConsistencyStrategy` token on V2 — and the legacy consistency-level signal is dropped on the same request. The new `LatestCommitted` variant requests a quorum read independent of the account default. `GlobalStrong` is rejected up front with a `BadRequest` on accounts whose default consistency is not `Strong`. Per-request RCS continues to override client-level RCS. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
-- Exposed cross-regional read hedging. Enable it by attaching an `OperationOptions` built with `OperationOptionsBuilder::with_availability_strategy(AvailabilityStrategy::Hedging(HedgingStrategy::new(HedgeThreshold::new(threshold)?)))` to a request (e.g. `ItemReadOptions::with_operation_options`) or to the client defaults via `CosmosClientBuilder::with_operation_options`. The `AvailabilityStrategy`, `HedgingStrategy`, and `HedgeThreshold` types are now re-exported from `azure_data_cosmos`. When enabled, the driver speculatively dispatches the read to a second preferred region after the configured threshold elapses and returns whichever response classifies as final first, cancelling the losing leg structurally (no detached tasks); `AvailabilityStrategy::Disabled` turns hedging off for that scope, and when no strategy is configured the driver applies a built-in default for multi-region reads. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
-
-- Added configurable retry limits for throttled (HTTP 429, rate-limited) requests, mirroring the .NET and Java SDKs' `ThrottlingRetryOptions`. A new nested `ThrottlingRetryOptions` group on `OperationOptions` (field `throttling_retry_options`) carries `max_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables throttle retries) and `max_retry_wait_time` (default `30s`), settable per-request via `OperationOptions`/`OperationOptionsBuilder` and `ThrottlingRetryOptionsBuilder`. New client-wide setter `CosmosClientBuilder::with_throttling_retry_options(ThrottlingRetryOptions)` forwards the group as runtime-layer defaults. Both budgets apply *per transport-pipeline invocation*, not per logical operation — an operation that fans out across regions (failover, hedging) starts a fresh budget per leg; use `OperationOptions::end_to_end_latency_policy` to bound total per-operation wall-clock time. ([#4544](https://github.com/Azure/azure-sdk-for-rust/pull/4544))
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
-- Writes to multi-write Cosmos accounts now send the `x-ms-cosmos-allow-tentative-writes: true` request header. Without it, satellite write regions returned `403 / 3 (WriteForbidden)`, breaking write failover to non-primary regions. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
-
 ### Other Changes
+
+## 0.35.0 (2026-06-09)
+
+### Features Added
+
+- Exposed cross-regional read hedging. Enable it by attaching an `OperationOptions` built with `OperationOptionsBuilder::with_availability_strategy(AvailabilityStrategy::Hedging(HedgingStrategy::new(HedgeThreshold::new(threshold)?)))` to a request (e.g. `ItemReadOptions::with_operation_options`) or to the client defaults via `CosmosClientBuilder::with_operation_options`. The `AvailabilityStrategy`, `HedgingStrategy`, and `HedgeThreshold` types are now re-exported from `azure_data_cosmos`. When enabled, the driver speculatively dispatches the read to a second preferred region after the configured threshold elapses and returns whichever response classifies as final first, cancelling the losing leg structurally (no detached tasks); `AvailabilityStrategy::Disabled` turns hedging off for that scope, and when no strategy is configured the driver applies a built-in default for multi-region reads. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
+- Added configurable retry limits for throttled (HTTP 429, rate-limited) requests, mirroring the .NET and Java SDKs' `ThrottlingRetryOptions`. A new nested `ThrottlingRetryOptions` group on `OperationOptions` (field `throttling_retry_options`) carries `max_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables throttle retries) and `max_retry_wait_time` (default `30s`), settable per-request via `OperationOptions`/`OperationOptionsBuilder` and `ThrottlingRetryOptionsBuilder`. New client-wide setter `CosmosClientBuilder::with_throttling_retry_options(ThrottlingRetryOptions)` forwards the group as runtime-layer defaults. Both budgets apply *per transport-pipeline invocation*, not per logical operation — an operation that fans out across regions (failover, hedging) starts a fresh budget per leg; use `OperationOptions::end_to_end_latency_policy` to bound total per-operation wall-clock time. ([#4544](https://github.com/Azure/azure-sdk-for-rust/pull/4544))
+
+### Bugs Fixed
+
+- Writes to multi-write Cosmos accounts now send the `x-ms-cosmos-allow-tentative-writes: true` request header. Without it, satellite write regions returned `403 / 3 (WriteForbidden)`, breaking write failover to non-primary regions. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
 
 ## 0.34.0 (2026-05-29)
 

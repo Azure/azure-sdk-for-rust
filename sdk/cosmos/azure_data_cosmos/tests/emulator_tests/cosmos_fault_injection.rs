@@ -4,9 +4,6 @@
 //! Integration tests for fault injection framework.
 //! These tests run against the Cosmos DB emulator.
 
-#![cfg(feature = "key_auth")]
-#![cfg(feature = "fault_injection")]
-
 use super::framework;
 
 use azure_core::{http::StatusCode, Uuid};

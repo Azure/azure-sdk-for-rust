@@ -18,11 +18,8 @@ use crate::{
     producer::DEFAULT_EVENTHUBS_APPLICATION,
     RetryOptions,
 };
-use async_lock::Mutex as AsyncMutex;
-use azure_core::{
-    credentials::TokenCredential, error::ErrorKind as AzureErrorKind, http::Url, time::Duration,
-    Uuid,
-};
+use async_lock::{Mutex as AsyncMutex, OnceCell, RwLock};
+use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
@@ -79,9 +76,14 @@ pub(crate) struct RecoverableConnection {
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
     mgmt_client: AsyncMutex<Option<Arc<AmqpManagement>>>,
-    receiver_instances: AsyncMutex<HashMap<Url, Arc<AmqpReceiver>>>,
-    sender_instances: AsyncMutex<HashMap<Url, Arc<AmqpSender>>>,
-    session_instances: AsyncMutex<HashMap<Url, Arc<AmqpSession>>>,
+    // The sender, session, and receiver caches are keyed by path. Each entry is
+    // an independently-initialized `OnceCell`, so concurrent operations on
+    // *different* partitions never serialize on a shared lock, and the expensive
+    // attach (authorize + session begin + link attach) happens without holding
+    // the map-wide lock. See issues #2243 and #4563.
+    sender_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSender>>>>>,
+    session_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpSession>>>>>,
+    receiver_instances: RwLock<HashMap<Url, Arc<OnceCell<Arc<AmqpReceiver>>>>>,
     pub(super) authorizer: Arc<Authorizer>,
     connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
     connection_name: String,
@@ -93,6 +95,77 @@ pub(crate) struct RecoverableConnection {
 
 unsafe impl Send for RecoverableConnection {}
 unsafe impl Sync for RecoverableConnection {}
+
+/// Returns the per-path `OnceCell` for `key`, inserting an uninitialized one if
+/// absent. The read path is taken first so steady-state lookups share a read
+/// lock; only the first insert for a key takes the write lock. The attach then
+/// runs inside the returned `OnceCell`, so the map lock is never held across it
+/// and different paths set up concurrently. Shared by the sender, session, and
+/// receiver caches so all three keep identical concurrency semantics.
+async fn or_init_cell<T>(
+    map: &RwLock<HashMap<Url, Arc<OnceCell<Arc<T>>>>>,
+    key: &Url,
+) -> Arc<OnceCell<Arc<T>>> {
+    if let Some(cell) = map.read().await.get(key) {
+        return cell.clone();
+    }
+    map.write()
+        .await
+        .entry(key.clone())
+        .or_insert_with(|| Arc::new(OnceCell::new()))
+        .clone()
+}
+
+/// Describes which per-connection caches an [`ErrorRecoveryAction`] must invalidate.
+///
+/// Splitting "which caches" from "actually clearing them" lets the cache-clearing happen
+/// inside async lock acquisitions while the policy stays a pure value that's easy to
+/// unit-test for regressions (e.g. forgetting to drop the management client when the
+/// entire connection is being reset).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct RecoveryPlan {
+    drop_connection: bool,
+    clear_authorizer: bool,
+    clear_sessions: bool,
+    clear_senders: bool,
+    clear_receivers: bool,
+    drop_mgmt_client: bool,
+}
+
+impl RecoveryPlan {
+    /// Returns the recovery plan for an action, or `None` if the action does not
+    /// require any cache invalidation (i.e. `RetryAction` / `ReturnError`, which
+    /// should never reach `recover_from_error`).
+    fn for_action(action: &ErrorRecoveryAction) -> Option<Self> {
+        match action {
+            ErrorRecoveryAction::ReconnectConnection => Some(Self {
+                drop_connection: true,
+                clear_authorizer: true,
+                clear_sessions: true,
+                clear_senders: true,
+                clear_receivers: true,
+                drop_mgmt_client: true,
+            }),
+            ErrorRecoveryAction::ReconnectSession => Some(Self {
+                drop_connection: false,
+                clear_authorizer: false,
+                clear_sessions: true,
+                clear_senders: true,
+                clear_receivers: true,
+                drop_mgmt_client: false,
+            }),
+            ErrorRecoveryAction::ReconnectLink => Some(Self {
+                drop_connection: false,
+                clear_authorizer: false,
+                clear_sessions: true,
+                clear_senders: true,
+                clear_receivers: true,
+                drop_mgmt_client: true,
+            }),
+            ErrorRecoveryAction::RetryAction | ErrorRecoveryAction::ReturnError => None,
+        }
+    }
+}
 
 impl RecoverableConnection {
     pub fn new(
@@ -116,9 +189,9 @@ impl RecoverableConnection {
                 custom_endpoint,
                 retry_options,
                 connections: AsyncMutex::new(None),
-                session_instances: AsyncMutex::new(HashMap::new()),
-                sender_instances: AsyncMutex::new(HashMap::new()),
-                receiver_instances: AsyncMutex::new(HashMap::new()),
+                session_instances: RwLock::new(HashMap::new()),
+                sender_instances: RwLock::new(HashMap::new()),
+                receiver_instances: RwLock::new(HashMap::new()),
                 mgmt_client: AsyncMutex::new(None),
                 authorizer,
                 #[cfg(test)]
@@ -186,9 +259,16 @@ impl RecoverableConnection {
             }
         }
 
-        let mut sender_instances = self.sender_instances.lock().await;
-        for (path, sender) in sender_instances.drain() {
+        let mut sender_instances = self.sender_instances.write().await;
+        for (path, cell) in sender_instances.drain() {
             trace!("Detaching sender for path {}.", path);
+            let Some(sender) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
+                trace!(
+                    "Failed to detach sender for path {}, references exist.",
+                    path
+                );
+                continue;
+            };
             if let Ok(sender) = Arc::try_unwrap(sender) {
                 trace!("Detaching sender for path {}.", path);
                 sender.detach().await?;
@@ -200,9 +280,16 @@ impl RecoverableConnection {
             }
         }
 
-        let mut receiver_instances = self.receiver_instances.lock().await;
-        for (source_url, receiver) in receiver_instances.drain() {
+        let mut receiver_instances = self.receiver_instances.write().await;
+        for (source_url, cell) in receiver_instances.drain() {
             trace!("Detaching receiver for source URL {}.", source_url);
+            let Some(receiver) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
+                trace!(
+                    "Failed to detach receiver for source URL {}, references exist.",
+                    source_url
+                );
+                continue;
+            };
             if let Ok(receiver) = Arc::try_unwrap(receiver) {
                 trace!("Detaching receiver for source URL {}.", source_url);
                 receiver.detach().await?;
@@ -214,9 +301,16 @@ impl RecoverableConnection {
             }
         }
 
-        let mut session_instances = self.session_instances.lock().await;
-        for (session_id, session) in session_instances.drain() {
+        let mut session_instances = self.session_instances.write().await;
+        for (session_id, cell) in session_instances.drain() {
             trace!("Detaching session for ID {}.", session_id);
+            let Some(session) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
+                trace!(
+                    "Failed to detach session for ID {}, references exist.",
+                    session_id
+                );
+                continue;
+            };
             if let Ok(session) = Arc::try_unwrap(session) {
                 session.end().await?;
             } else {
@@ -316,24 +410,45 @@ impl RecoverableConnection {
     }
 
     pub(crate) async fn close_receiver(self: &Arc<Self>, source_url: &Url) -> Result<()> {
-        let mut receiver_instances = self.receiver_instances.lock().await;
-        if let Some(receiver) = receiver_instances.remove(source_url) {
-            let strong_count = Arc::strong_count(&receiver);
-            let r = Arc::try_unwrap(receiver);
-            if let Ok(receiver) = r {
-                trace!("Detaching receiver: {:?}", source_url);
-                receiver.detach().await?;
-            } else {
-                // In-flight `receive_delivery` holds a clone of the Arc.
-                // Map entry is already removed; `EventReceiver::closed`
-                // (set before this call by `request_close`) stops the
-                // stream from reattaching on its next poll.
-                warn!(
+        // Drop the map's write lock as soon as the cell is removed so the detach
+        // (network I/O) doesn't hold it.
+        let Some(cell) = self.receiver_instances.write().await.remove(source_url) else {
+            // No entry for this path; nothing to detach.
+            return Ok(());
+        };
+        let receiver = match Arc::try_unwrap(cell) {
+            Ok(cell) => cell.into_inner(),
+            Err(_) => {
+                // A concurrent `ensure_receiver` is mid-attach and still holds a
+                // clone of the cell. The map entry is already removed and
+                // `EventReceiver::closed` stops the stream from reattaching, so
+                // the in-flight receiver is dropped once its operation completes;
+                // we just can't detach it by value here.
+                trace!(
                     source = %source_url,
-                    strong_count,
-                    "close_receiver could not detach by-value"
+                    "close_receiver skipped detach; attach in flight"
                 );
+                return Ok(());
             }
+        };
+        let Some(receiver) = receiver else {
+            // Cell was removed before any attach completed; nothing to detach.
+            return Ok(());
+        };
+        let strong_count = Arc::strong_count(&receiver);
+        if let Ok(receiver) = Arc::try_unwrap(receiver) {
+            trace!("Detaching receiver: {:?}", source_url);
+            receiver.detach().await?;
+        } else {
+            // In-flight `receive_delivery` holds a clone of the Arc.
+            // Map entry is already removed; `EventReceiver::closed`
+            // (set before this call by `request_close`) stops the
+            // stream from reattaching on its next poll.
+            warn!(
+                source = %source_url,
+                strong_count,
+                "close_receiver could not detach by-value"
+            );
         }
         Ok(())
     }
@@ -342,35 +457,37 @@ impl RecoverableConnection {
         self: &Arc<Self>,
         source_url: &Url,
     ) -> azure_core_amqp::Result<Arc<AmqpSession>> {
-        let mut session_instances = self.session_instances.lock().await;
-        if !session_instances.contains_key(source_url) {
-            debug!("Creating session for partition: {:?}", source_url);
-            let connection = self.ensure_connection().await?;
+        // Resolve the per-path cell while holding the map lock only briefly, then
+        // initialize (which may begin a new AMQP session) without holding it, so
+        // that sessions for other partitions can be created concurrently.
+        let cell = self.session_cell(source_url).await;
+        let session = cell
+            .get_or_try_init(|| async {
+                debug!("Creating session for partition: {:?}", source_url);
+                let connection = self.ensure_connection().await?;
 
-            let session = AmqpSession::new();
-            session
-                .begin(
-                    connection.as_ref(),
-                    Some(AmqpSessionOptions {
-                        incoming_window: Some(u32::MAX),
-                        outgoing_window: Some(u32::MAX),
-                        ..Default::default()
-                    }),
-                )
-                .await?;
-            session_instances.insert(source_url.clone(), Arc::new(session));
-        }
-        let rv = session_instances
-            .get(source_url)
-            .ok_or_else(|| {
-                AmqpError::from(azure_core::Error::with_message(
-                    AzureErrorKind::Other,
-                    "Could not find session",
-                ))
-            })?
-            .clone();
+                let session = AmqpSession::new();
+                session
+                    .begin(
+                        connection.as_ref(),
+                        Some(AmqpSessionOptions {
+                            incoming_window: Some(u32::MAX),
+                            outgoing_window: Some(u32::MAX),
+                            ..Default::default()
+                        }),
+                    )
+                    .await?;
+                Ok::<_, AmqpError>(Arc::new(session))
+            })
+            .await?;
         debug!("Cloning session for partition {:?}", source_url);
-        Ok(rv)
+        Ok(session.clone())
+    }
+
+    /// Returns the `OnceCell` that owns the session for `source_url`, inserting an
+    /// uninitialized one if absent. See [`or_init_cell`] for the locking strategy.
+    async fn session_cell(&self, source_url: &Url) -> Arc<OnceCell<Arc<AmqpSession>>> {
+        or_init_cell(&self.session_instances, source_url).await
     }
 
     async fn create_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
@@ -449,76 +566,88 @@ impl RecoverableConnection {
         message_source: &AmqpSource,
         receiver_options: &AmqpReceiverOptions,
     ) -> azure_core_amqp::Result<Arc<AmqpReceiver>> {
-        let mut receiver_instances = self.receiver_instances.lock().await;
-        if !receiver_instances.contains_key(source_url) {
-            self.ensure_connection().await?;
-            self.authorizer.authorize_path(self, source_url).await?;
+        // Resolve the per-path cell while holding the map lock only briefly, then
+        // attach (ensure connection + authorize + session begin + link attach)
+        // without holding it, so receivers for other partitions can be created
+        // concurrently and steady-state receives never serialize on a shared
+        // lock. See issues #2243 and #4563.
+        let cell = self.receiver_cell(source_url).await;
+        let receiver = cell
+            .get_or_try_init(|| async {
+                self.ensure_connection().await?;
+                self.authorizer.authorize_path(self, source_url).await?;
 
-            let session = self.get_session(source_url).await?;
+                let session = self.get_session(source_url).await?;
 
-            debug!("Create receiver on partition {source_url}.");
-            let receiver = AmqpReceiver::new();
-            receiver
-                .attach(
-                    &session,
-                    message_source.clone(),
-                    Some(receiver_options.clone()),
-                )
-                .await?;
+                debug!("Create receiver on partition {source_url}.");
+                let receiver = AmqpReceiver::new();
+                receiver
+                    .attach(
+                        &session,
+                        message_source.clone(),
+                        Some(receiver_options.clone()),
+                    )
+                    .await?;
+                Ok::<_, AmqpError>(Arc::new(receiver))
+            })
+            .await?;
 
-            receiver_instances.insert(source_url.clone(), Arc::new(receiver));
-        }
+        Ok(receiver.clone())
+    }
 
-        Ok(receiver_instances
-            .get(source_url)
-            .ok_or_else(|| AmqpError::with_message("Missing message receiver"))?
-            .clone())
+    /// Returns the `OnceCell` that owns the receiver for `source_url`, inserting
+    /// an uninitialized one if absent. See [`or_init_cell`] for the locking strategy.
+    async fn receiver_cell(&self, source_url: &Url) -> Arc<OnceCell<Arc<AmqpReceiver>>> {
+        or_init_cell(&self.receiver_instances, source_url).await
     }
 
     pub(super) async fn ensure_sender(
         self: &Arc<Self>,
         path: &Url,
     ) -> azure_core_amqp::Result<Arc<AmqpSender>> {
-        let mut sender_instances = self.sender_instances.lock().await;
-        if !sender_instances.contains_key(path) {
-            // Ensure that we are authorized to access the senders path.
-            self.authorizer.authorize_path(self, path).await?;
+        // Resolve the per-path cell while holding the map lock only briefly, then
+        // attach (authorize + session begin + link attach) without holding it, so
+        // that senders for other partitions can be created concurrently and
+        // steady-state sends never serialize on a shared lock. See issue #2243.
+        let cell = self.sender_cell(path).await;
+        let sender = cell
+            .get_or_try_init(|| async {
+                // Ensure that we are authorized to access the senders path.
+                self.authorizer.authorize_path(self, path).await?;
 
-            // Retrieve a session for the sender from the session cache.
-            let session = self.get_session(path).await?;
-            let sender = AmqpSender::new();
-            sender
-                .attach(
-                    &session,
-                    format!(
-                        "{}-rust-sender",
-                        self.application_id
-                            .as_ref()
-                            .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
-                    ),
-                    path.to_string(),
-                    None,
-                )
-                .await?;
-            sender_instances.insert(path.clone(), Arc::new(sender));
-        }
+                // Retrieve a session for the sender from the session cache.
+                let session = self.get_session(path).await?;
+                let sender = AmqpSender::new();
+                sender
+                    .attach(
+                        &session,
+                        format!(
+                            "{}-rust-sender",
+                            self.application_id
+                                .as_ref()
+                                .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
+                        ),
+                        path.to_string(),
+                        None,
+                    )
+                    .await?;
+                Ok::<_, AmqpError>(Arc::new(sender))
+            })
+            .await?;
 
-        Ok(sender_instances
-            .get(path)
-            .ok_or_else(|| {
-                AmqpError::from(azure_core::Error::with_message(
-                    AzureErrorKind::Other,
-                    "Missing message sender",
-                ))
-            })?
-            .clone())
+        Ok(sender.clone())
+    }
+
+    /// Returns the `OnceCell` that owns the sender for `path`, inserting an
+    /// uninitialized one if absent. See [`or_init_cell`] for the locking strategy.
+    async fn sender_cell(&self, path: &Url) -> Arc<OnceCell<Arc<AmqpSender>>> {
+        or_init_cell(&self.sender_instances, path).await
     }
 
     pub(super) async fn recover_from_error(
         connection: Weak<RecoverableConnection>,
         reason: ErrorRecoveryAction,
     ) -> azure_core_amqp::error::Result<()> {
-        // If the connection is None, we cannot recover.
         let Some(connection) = connection.upgrade() else {
             warn!(
                 "Connection is None, cannot recover from error: {:?}",
@@ -527,44 +656,59 @@ impl RecoverableConnection {
             return Err(AmqpError::with_message("Missing Connection"));
         };
 
-        // Log the error and attempt to recover.
         warn!(err=?reason, "Recovering from error: {:?}", reason);
-        // Upgrade the weak reference to a strong reference.
-        match reason {
-            ErrorRecoveryAction::ReconnectConnection => {
-                debug!("Recovering from connection error: {:?}", reason);
-                connection.connections.lock().await.take();
-                connection.authorizer.clear().await;
-                connection.session_instances.lock().await.clear();
-                connection.sender_instances.lock().await.clear();
-                connection.receiver_instances.lock().await.clear();
-            }
-            ErrorRecoveryAction::ReconnectSession => {
-                debug!("Recovering from session error: {:?}", reason);
-                // Recreate the session and sender/receiver as needed.
-                connection.session_instances.lock().await.clear();
-                connection.sender_instances.lock().await.clear();
-                connection.receiver_instances.lock().await.clear();
-            }
-            ErrorRecoveryAction::ReconnectLink => {
-                debug!("Recovering from link error: {:?}", reason);
-                // Recreate the session and sender/receiver as needed.
-                connection.session_instances.lock().await.clear();
-                connection.sender_instances.lock().await.clear();
-                connection.receiver_instances.lock().await.clear();
-                connection.mgmt_client.lock().await.take();
-            }
-            _ => {
-                warn!("Recover action {reason:?} should already have been handled.");
-                return Err(AmqpError::with_message(format!(
-                    "Unknown error recovery action: {reason:?}"
-                )));
-            }
-        }
 
+        let Some(plan) = RecoveryPlan::for_action(&reason) else {
+            warn!("Recover action {reason:?} should already have been handled.");
+            return Err(AmqpError::with_message(format!(
+                "Unknown error recovery action: {reason:?}"
+            )));
+        };
+
+        debug!("Applying recovery plan {plan:?} for {reason:?}");
+        connection.apply_recovery_plan(plan).await;
         Ok(())
     }
 
+    /// Side-effecting half of `recover_from_error`: takes the locks and clears
+    /// whichever caches the [`RecoveryPlan`] flagged.
+    async fn apply_recovery_plan(&self, plan: RecoveryPlan) {
+        if plan.drop_connection {
+            self.connections.lock().await.take();
+        }
+        if plan.clear_authorizer {
+            self.authorizer.clear().await;
+        }
+        // Clearing a cache drops its per-path `OnceCell` entries, so the next
+        // `ensure_*` for a path re-inits a fresh cell against the new connection.
+        // A task already mid-`get_or_try_init` (or holding a value it just read)
+        // keeps using the old cell until it next re-enters `ensure_*`, so there's
+        // a brief window where stale, pre-recovery links can still be handed out.
+        // Closing that window (invalidating in-flight work immediately via a
+        // recovery generation counter) is tracked in #4454.
+        if plan.clear_sessions {
+            self.session_instances.write().await.clear();
+        }
+        if plan.clear_senders {
+            self.sender_instances.write().await.clear();
+        }
+        if plan.clear_receivers {
+            self.receiver_instances.write().await.clear();
+        }
+        if plan.drop_mgmt_client {
+            self.mgmt_client.lock().await.take();
+        }
+    }
+
+    /// Classifies an [`AmqpError`] into the recovery action the retry loop should take.
+    ///
+    /// Connection-level transport failures (dropped, framing, idle timeout) require a
+    /// full reconnect. Link/session-level failures only require reattach. Described
+    /// errors are bucketed by their `AmqpErrorCondition`. `TransportImplementationError`
+    /// is intentionally left to fall through to `ReturnError`: it covers errors local
+    /// to the AMQP backend with no defined recovery semantics, and blind retries risk
+    /// hammering a deterministic bug. Anything else not recognized likewise falls
+    /// through to `ReturnError`.
     pub(super) fn should_retry_amqp_error(amqp_error: &AmqpError) -> ErrorRecoveryAction {
         match amqp_error.kind() {
             AmqpErrorKind::ManagementStatusCode(code, _) => {
@@ -586,7 +730,10 @@ impl RecoverableConnection {
                 }
             }
             AmqpErrorKind::ConnectionClosedByRemote(_)
-            | AmqpErrorKind::ConnectionDetachedByRemote(_) => {
+            | AmqpErrorKind::ConnectionDetachedByRemote(_)
+            | AmqpErrorKind::ConnectionDropped(_)
+            | AmqpErrorKind::FramingError(_)
+            | AmqpErrorKind::IdleTimeoutElapsed(_) => {
                 debug!("Connection dropped error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectConnection
             }
@@ -596,7 +743,12 @@ impl RecoverableConnection {
             }
             AmqpErrorKind::LinkClosedByRemote(_)
             | AmqpErrorKind::LinkDetachedByRemote(_)
-            | AmqpErrorKind::LinkStateError(_) => {
+            | AmqpErrorKind::LinkStateError(_)
+            | AmqpErrorKind::DetachError(_)
+            | AmqpErrorKind::TransferLimitExceeded(_) => {
+                // TransferLimitExceeded means more transfers were sent than the
+                // link's credit allowed. Reattaching resets link credit; a full
+                // session/connection reconnect is unnecessary.
                 debug!("Link state error: {}", amqp_error);
                 ErrorRecoveryAction::ReconnectLink
             }
@@ -606,14 +758,54 @@ impl RecoverableConnection {
                 if matches!(
                     described_error.condition,
                     AmqpErrorCondition::ResourceLimitExceeded
-                        | AmqpErrorCondition::ConnectionFramingError
-                        | AmqpErrorCondition::LinkStolen
                         | AmqpErrorCondition::ServerBusyError
                         | AmqpErrorCondition::EntityUpdated
                         | AmqpErrorCondition::EntityDisabledError
+                        | AmqpErrorCondition::TimeoutError
+                        | AmqpErrorCondition::InternalError
+                        | AmqpErrorCondition::OperationCancelled
                 ) {
                     debug!("AMQP described error can be retried: {:?}", described_error);
                     ErrorRecoveryAction::RetryAction
+                } else if matches!(
+                    described_error.condition,
+                    AmqpErrorCondition::ConnectionForced
+                        | AmqpErrorCondition::ConnectionFramingError
+                ) {
+                    debug!(
+                        "AMQP described error requires reconnect: {:?}",
+                        described_error
+                    );
+                    ErrorRecoveryAction::ReconnectConnection
+                } else if matches!(
+                    described_error.condition,
+                    AmqpErrorCondition::UnauthorizedAccess
+                ) {
+                    // Fail fast on auth failures, matching the .NET and Java Event Hubs
+                    // SDKs, which both classify `amqp:unauthorized-access` as non-transient
+                    // / non-retryable. A runtime unauthorized-access almost always means a
+                    // bad or revoked credential or missing RBAC, not a momentarily expired
+                    // token; keeping tokens fresh is the CBS refresher's job (proactive
+                    // pre-expiry renewal), not something to recover by reconnecting on a 401.
+                    // Routing this to ReconnectConnection would turn a fast failure into N
+                    // full reconnect + re-auth cycles before the error finally surfaces.
+                    debug!(
+                        "AMQP described error is an auth failure; not retrying: {:?}",
+                        described_error
+                    );
+                    ErrorRecoveryAction::ReturnError
+                } else if matches!(
+                    described_error.condition,
+                    AmqpErrorCondition::LinkStolen | AmqpErrorCondition::LinkDetachForced
+                ) {
+                    // The link is gone; retrying the same operation against it will keep
+                    // failing. Reattach. (LinkStolen was previously classified as a retry,
+                    // which guaranteed N spins through the backoff before bailing.)
+                    debug!(
+                        "AMQP described error requires link reattach: {:?}",
+                        described_error
+                    );
+                    ErrorRecoveryAction::ReconnectLink
                 } else {
                     debug!(
                         "AMQP described error cannot be retried: {:?}",
@@ -621,6 +813,16 @@ impl RecoverableConnection {
                     );
                     ErrorRecoveryAction::ReturnError
                 }
+            }
+            AmqpErrorKind::AzureCore(_) => {
+                // The ensure_* callsites in the per-operation wrappers (sender, CBS,
+                // management) re-wrap inner AmqpError values through
+                // `azure_core::Error::with_error`, producing
+                // `AzureCore(azure_core::Error { source: original AmqpError })`.
+                // If we don't walk the source chain we'd classify those as
+                // ReturnError and lose the ability to recover transport-level failures
+                // that round-trip through this wrapping pattern.
+                Self::classify_azure_core_chain(amqp_error)
             }
             _ => {
                 debug!(err=?amqp_error, "Other AMQP error: {amqp_error}");
@@ -633,16 +835,75 @@ impl RecoverableConnection {
     /// `LinkStolen` so a displaced receiver surfaces the steal instead of
     /// silently re-attaching. .NET parallel: `InvalidateConsumerWhenPartitionIsStolen`.
     pub(super) fn should_retry_receive_error(amqp_error: &AmqpError) -> ErrorRecoveryAction {
-        if let AmqpErrorKind::AmqpDescribedError(described_error) = amqp_error.kind() {
-            if matches!(described_error.condition, AmqpErrorCondition::LinkStolen) {
-                debug!(
-                    "Receive operation will not retry link-stolen: {:?}",
-                    described_error
-                );
-                return ErrorRecoveryAction::ReturnError;
-            }
+        // A `LinkStolen` means the partition was claimed by another consumer; reattaching
+        // would silently resurrect a displaced receiver, so surface it instead. The
+        // condition can arrive at the top level or wrapped through `azure_core::Error` (the
+        // same wrapping `classify_azure_core_chain` unwraps), and the chain walk would
+        // otherwise reclassify a wrapped `LinkStolen` to `ReconnectLink`, defeating this
+        // guard. So check the whole source chain, not just the top-level kind.
+        if Self::is_link_stolen(amqp_error) {
+            debug!("Receive operation will not retry link-stolen: {amqp_error}");
+            return ErrorRecoveryAction::ReturnError;
         }
         Self::should_retry_amqp_error(amqp_error)
+    }
+
+    /// Returns true if `amqp_error` is, or wraps via its [`std::error::Error::source`]
+    /// chain, an [`AmqpErrorKind::AmqpDescribedError`] whose condition is `LinkStolen`.
+    /// Mirrors the bounded walk in [`Self::classify_azure_core_chain`].
+    fn is_link_stolen(amqp_error: &AmqpError) -> bool {
+        use std::error::Error as _;
+        const MAX_DEPTH: usize = 16;
+        fn is_stolen(e: &AmqpError) -> bool {
+            matches!(
+                e.kind(),
+                AmqpErrorKind::AmqpDescribedError(d)
+                    if matches!(d.condition, AmqpErrorCondition::LinkStolen)
+            )
+        }
+        if is_stolen(amqp_error) {
+            return true;
+        }
+        let mut cause: Option<&(dyn std::error::Error + 'static)> = amqp_error.source();
+        for _ in 0..MAX_DEPTH {
+            let Some(c) = cause else { break };
+            if let Some(amqp) = c.downcast_ref::<AmqpError>() {
+                if is_stolen(amqp) {
+                    return true;
+                }
+            }
+            cause = c.source();
+        }
+        false
+    }
+
+    /// Walks the [`std::error::Error::source`] chain looking for a wrapped [`AmqpError`]
+    /// whose kind is something other than [`AmqpErrorKind::AzureCore`], and classifies
+    /// that. Falls back to `ReturnError` if no recoverable inner kind is found.
+    ///
+    /// A bounded loop guards against pathological self-referential chains.
+    fn classify_azure_core_chain(amqp_error: &AmqpError) -> ErrorRecoveryAction {
+        use std::error::Error as _;
+        const MAX_DEPTH: usize = 16;
+        let mut cause: Option<&(dyn std::error::Error + 'static)> = amqp_error.source();
+        for _ in 0..MAX_DEPTH {
+            let Some(c) = cause else { break };
+            if let Some(amqp) = c.downcast_ref::<AmqpError>() {
+                if !matches!(amqp.kind(), AmqpErrorKind::AzureCore(_)) {
+                    debug!(
+                        err=?amqp_error,
+                        "Unwrapped AzureCore chain to inner AmqpError: {amqp}"
+                    );
+                    return Self::should_retry_amqp_error(amqp);
+                }
+            }
+            cause = c.source();
+        }
+        debug!(
+            err=?amqp_error,
+            "AzureCore-wrapped error with no recoverable inner kind: {amqp_error}"
+        );
+        ErrorRecoveryAction::ReturnError
     }
 }
 
@@ -717,6 +978,55 @@ mod tests {
         assert!(!connection_manager.connections.lock_blocking().is_some());
     }
 
+    // The per-path sender/session/receiver caches must hand out one shared
+    // `OnceCell` per path (so concurrent first-operations on a partition attach
+    // exactly once) and distinct cells for distinct paths (so operations on
+    // different partitions never share a cell and can initialize concurrently).
+    // See issues #2243 and #4563.
+    #[tokio::test]
+    async fn sender_session_and_receiver_cells_are_keyed_by_path() {
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url,
+            None,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+        );
+
+        let path_a = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+        let path_b = Url::parse("amqps://example.com/eh/Partitions/1").unwrap();
+
+        // Same path resolves to the same cell for senders, sessions, and receivers.
+        assert!(Arc::ptr_eq(
+            &connection.sender_cell(&path_a).await,
+            &connection.sender_cell(&path_a).await
+        ));
+        assert!(Arc::ptr_eq(
+            &connection.session_cell(&path_a).await,
+            &connection.session_cell(&path_a).await
+        ));
+        assert!(Arc::ptr_eq(
+            &connection.receiver_cell(&path_a).await,
+            &connection.receiver_cell(&path_a).await
+        ));
+
+        // Different paths resolve to different cells.
+        assert!(!Arc::ptr_eq(
+            &connection.sender_cell(&path_a).await,
+            &connection.sender_cell(&path_b).await
+        ));
+        assert!(!Arc::ptr_eq(
+            &connection.receiver_cell(&path_a).await,
+            &connection.receiver_cell(&path_b).await
+        ));
+
+        // Cells are uninitialized until an attach succeeds.
+        assert!(connection.sender_cell(&path_a).await.get().is_none());
+        assert!(connection.session_cell(&path_a).await.get().is_none());
+        assert!(connection.receiver_cell(&path_a).await.get().is_none());
+    }
+
     // The RecoverableConnection supports using a custom endpoint for connecting to Event Hubs proxies.
     // This test verifies that the custom endpoint is properly stored in the RecoverableConnection.
     #[test]
@@ -732,5 +1042,321 @@ mod tests {
         );
 
         assert_eq!(connection_manager.custom_endpoint, Some(custom_endpoint));
+    }
+
+    #[test]
+    fn test_should_retry_amqp_error() {
+        use azure_core_amqp::AmqpDescribedError;
+
+        // Test ConnectionDropped -> ReconnectConnection
+        let err = AmqpError::from(AmqpErrorKind::ConnectionDropped(Box::new(
+            std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "dropped"),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // Test TimeoutError -> RetryAction
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::TimeoutError,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::RetryAction
+        );
+
+        // Test ConnectionForced -> ReconnectConnection
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::ConnectionForced,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // Test UnauthorizedAccess -> ReturnError. Auth failures are non-transient
+        // (matches the .NET / Java SDKs); reconnecting on a 401 would only burn the
+        // retry budget against a bad credential before the error surfaces.
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::UnauthorizedAccess,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReturnError
+        );
+
+        // Test EntityDisabledError -> RetryAction (matched by the first arm of the
+        // described-error branch; a removed-but-unreachable elif previously also
+        // listed it).
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::EntityDisabledError,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::RetryAction
+        );
+
+        // Test IdleTimeoutElapsed -> ReconnectConnection. Idle-timeout means the peer
+        // hasn't sent a frame inside the negotiated heartbeat window, so the transport
+        // is effectively dead.
+        let err = AmqpError::from(AmqpErrorKind::IdleTimeoutElapsed(Box::new(
+            std::io::Error::new(std::io::ErrorKind::TimedOut, "idle timeout"),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // Test FramingError -> ReconnectConnection. The wire protocol is corrupted;
+        // there is no recovery short of a fresh connection.
+        let err = AmqpError::from(AmqpErrorKind::FramingError(Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "framing error",
+        ))));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // Test DetachError -> ReconnectLink. The link's detach handshake failed;
+        // reattach is required to make any further use of it.
+        let err = AmqpError::from(AmqpErrorKind::DetachError(Box::new(std::io::Error::other(
+            "detach error",
+        ))));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectLink
+        );
+
+        // Test LinkStolen -> ReconnectLink. Behavior change: previously classified as
+        // RetryAction, which burned the entire backoff against a link that is gone.
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::LinkStolen,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectLink
+        );
+
+        // Test LinkDetachForced -> ReconnectLink. The peer force-detached the link;
+        // reattach is required.
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::LinkDetachForced,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectLink
+        );
+    }
+
+    #[test]
+    fn receive_error_link_stolen_returns_error_top_level_and_wrapped() {
+        use azure_core::error::ErrorKind as AzureErrorKind;
+        use azure_core_amqp::AmqpDescribedError;
+
+        // Top-level LinkStolen must surface as ReturnError so the stolen partition is
+        // reported, not silently reattached (.NET: InvalidateConsumerWhenPartitionIsStolen).
+        let top = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::LinkStolen,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_receive_error(&top),
+            ErrorRecoveryAction::ReturnError
+        );
+
+        // LinkStolen wrapped through azure_core::Error (as the ensure_* wrappers produce)
+        // would slip past a top-level-only guard and be reclassified to ReconnectLink by
+        // the source-chain walk, resurrecting a stolen receiver. It must still ReturnError.
+        let inner = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::LinkStolen,
+            None,
+            Default::default(),
+        )));
+        let wrapped = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            inner,
+            "ensure_receiver failed",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_receive_error(&wrapped),
+            ErrorRecoveryAction::ReturnError
+        );
+    }
+
+    #[test]
+    fn azure_core_wrapped_errors_unwrap_to_inner_kind() {
+        // The per-operation wrappers in sender.rs / claims_based_security.rs /
+        // management.rs all wrap an inner AmqpError via
+        // `AmqpError::from(azure_core::Error::with_error(AzureErrorKind::Other, e, "..."))`.
+        // Before this test we'd classify the outer error as ReturnError via the
+        // catch-all, silently turning a recoverable transport failure into a
+        // non-retryable one. should_retry_amqp_error must walk the source chain
+        // and honor the inner kind's classification.
+        use azure_core::error::ErrorKind as AzureErrorKind;
+
+        // AzureCore(... ConnectionDropped ...) -> ReconnectConnection
+        let inner = AmqpError::from(AmqpErrorKind::ConnectionDropped(Box::new(
+            std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "dropped"),
+        )));
+        let wrapped = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            inner,
+            "ensure_sender failed",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&wrapped),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // AzureCore(... LinkClosedByRemote ...) -> ReconnectLink
+        let inner = AmqpError::from(AmqpErrorKind::LinkClosedByRemote(Box::new(
+            std::io::Error::other("link closed"),
+        )));
+        let wrapped = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            inner,
+            "ensure_amqp_cbs failed",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&wrapped),
+            ErrorRecoveryAction::ReconnectLink
+        );
+
+        // Nested wrapping: AzureCore(... AzureCore(... ConnectionDropped ...) ...).
+        // The recovery path can re-wrap (e.g. ensure_connection inside
+        // ensure_management_client). The chain walk must keep descending.
+        let innermost = AmqpError::from(AmqpErrorKind::ConnectionDropped(Box::new(
+            std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "dropped"),
+        )));
+        let mid = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            innermost,
+            "ensure_connection failed",
+        ));
+        let outer = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            mid,
+            "create_management_client failed",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&outer),
+            ErrorRecoveryAction::ReconnectConnection
+        );
+
+        // AzureCore wrapping something that isn't an AmqpError -> ReturnError.
+        // (No recoverable inner kind to honor; preserve the catch-all default.)
+        let wrapped = AmqpError::from(azure_core::Error::with_error(
+            AzureErrorKind::Other,
+            std::io::Error::other("non-AMQP failure"),
+            "unrelated error path",
+        ));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&wrapped),
+            ErrorRecoveryAction::ReturnError
+        );
+    }
+
+    #[test]
+    fn transfer_limit_exceeded_reattaches_link() {
+        // amqp:link:transfer-limit-exceeded: peer sent more transfers than the
+        // link's credit allowed. Reattaching resets link credit; ReturnError
+        // would have surfaced a recoverable condition to the caller.
+        let err = AmqpError::from(AmqpErrorKind::TransferLimitExceeded(Box::new(
+            std::io::Error::other("transfer limit exceeded"),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReconnectLink
+        );
+    }
+
+    #[test]
+    fn internal_error_and_operation_cancelled_are_retried() {
+        use azure_core_amqp::AmqpDescribedError;
+
+        // amqp:internal-error is conventionally transient (consistent with the
+        // .NET / Java Service Bus + Event Hubs SDKs). The link and connection
+        // are unaffected.
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::InternalError,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::RetryAction
+        );
+
+        // com.microsoft:operation-cancelled: service-side cancel of a single
+        // operation. The link is alive, the op can be retried.
+        let err = AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+            AmqpErrorCondition::OperationCancelled,
+            None,
+            Default::default(),
+        )));
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::RetryAction
+        );
+    }
+
+    #[test]
+    fn recovery_plan_reconnect_connection_clears_everything() {
+        let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection)
+            .expect("ReconnectConnection has a recovery plan");
+        // Regression guard: a full reconnect must drop the management client too,
+        // otherwise it would be left holding a session attached to the just-dropped
+        // connection and the next management call would fail and re-trigger recovery.
+        assert!(plan.drop_mgmt_client);
+        assert!(plan.drop_connection);
+        assert!(plan.clear_authorizer);
+        assert!(plan.clear_sessions);
+        assert!(plan.clear_senders);
+        assert!(plan.clear_receivers);
+    }
+
+    #[test]
+    fn recovery_plan_reconnect_link_drops_mgmt_client_but_keeps_connection() {
+        let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectLink)
+            .expect("ReconnectLink has a recovery plan");
+        assert!(!plan.drop_connection);
+        assert!(!plan.clear_authorizer);
+        assert!(plan.clear_sessions);
+        assert!(plan.clear_senders);
+        assert!(plan.clear_receivers);
+        assert!(plan.drop_mgmt_client);
+    }
+
+    #[test]
+    fn recovery_plan_reconnect_session_keeps_mgmt_client_and_connection() {
+        let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectSession)
+            .expect("ReconnectSession has a recovery plan");
+        assert!(!plan.drop_connection);
+        assert!(!plan.clear_authorizer);
+        assert!(plan.clear_sessions);
+        assert!(plan.clear_senders);
+        assert!(plan.clear_receivers);
+        assert!(!plan.drop_mgmt_client);
+    }
+
+    #[test]
+    fn recovery_plan_none_for_non_reconnect_actions() {
+        assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::RetryAction).is_none());
+        assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::ReturnError).is_none());
     }
 }

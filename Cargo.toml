@@ -172,3 +172,10 @@ unexpected_cfgs = { level = "warn", check-cfg = ['cfg(docsrs)'] }
 
 [workspace.lints.rustdoc]
 bare_urls = "allow"
+
+[workspace.metadata.cargo-semver-checks.lints]
+# Public model structs should stay constructible when fields are added.
+# Encourage downstream code to use `..Default::default()` and
+# `#[allow(clippy::needless_update)]` on that initializer when needed, so new optional
+# fields do not force call sites to spell out every field.
+constructible_struct_adds_field = "allow"
