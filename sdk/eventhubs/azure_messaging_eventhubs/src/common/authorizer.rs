@@ -50,6 +50,15 @@ impl Default for TokenRefreshTimes {
     }
 }
 
+/// What one [`Authorizer::refresh_due_tokens`] pass concluded.
+enum RefreshPass {
+    /// The pass ran to the end. `failed` is true when at least one path did not
+    /// refresh, so the caller must back off before the next pass.
+    Completed { failed: bool },
+    /// The recoverable connection is gone, so the refresh task must stop.
+    Stop,
+}
+
 pub(crate) struct Authorizer {
     authorization_scopes: RwLock<HashMap<Url, AccessToken>>,
     authorization_refresher: OnceLock<SpawnedTask>,
@@ -166,22 +175,34 @@ impl Authorizer {
             self.perform_authorization(connection, path, &token).await?;
             debug!("Token verified.");
 
-            // If a recovery raced the attach above, the CBS link we authorized
-            // against is gone; discard this token and retry against the new
-            // generation rather than caching a stale entry. See #4454.
-            if connection.generation() != generation {
+            // Insert under the write lock, but re-check the recovery generation
+            // *inside* that lock before inserting. `clear()` (from
+            // `recover_from_error`) takes this same lock and runs after the
+            // generation bump, so re-reading the generation here, rather than before
+            // acquiring the lock, closes the window where a recovery lands between
+            // the check and the insert: we either observe the bump and discard, or
+            // we hold the lock across the insert so no recovery can interleave. If a
+            // recovery raced the lock-free attach above, the CBS link we authorized
+            // against is gone, so we drop this token and retry against the new
+            // generation rather than repopulating the just-cleared cache with a
+            // stale entry (which the next operation would use and fail on, costing a
+            // second recovery cycle). See #4454.
+            let stored = {
+                let mut scopes = self.authorization_scopes.write().await;
+                if connection.generation() != generation {
+                    None
+                } else {
+                    // If another task won the race, return its cached token and drop
+                    // ours. Both CBS auths succeeded against the same link, so either
+                    // credential is acceptable to the broker.
+                    Some(scopes.entry(path.clone()).or_insert(token).clone())
+                }
+            };
+            let Some(stored) = stored else {
                 debug!(
                     "Discarding token authorized during recovery (#4454) for path: {path}; re-authorizing."
                 );
                 continue;
-            }
-
-            // Insert; if another task won the race, return its cached token and drop
-            // ours. Both CBS auths succeeded against the same link, so either
-            // credential is acceptable to the broker.
-            let stored = {
-                let mut scopes = self.authorization_scopes.write().await;
-                scopes.entry(path.clone()).or_insert(token).clone()
             };
 
             self.authorization_refresher.get_or_init(|| {
@@ -375,138 +396,199 @@ impl Authorizer {
                 debug!("Not sleeping because refresh time ({refresh_time}) is in the past (now = {now}).");
             }
 
-            // Refresh the tokens.
-            // First, collect the tokens that need refreshing while holding the lock briefly
-            let tokens_to_refresh = {
-                let scopes = self.authorization_scopes.read().await;
-                let mut to_refresh = Vec::new();
-                for (url, token) in scopes.iter() {
-                    if non_refreshable.contains(url) {
-                        continue;
-                    }
-                    if token.expires_on >= now + (token_refresh_bias) {
-                        debug!(
-                            "Token not expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
-                            token.expires_on
-                        );
-                        continue;
-                    }
-
-                    debug!(
-                        "Token about to be expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
-                        token.expires_on
-                    );
-                    // Carry the current expiry so a refresh that does not extend
-                    // it can be detected as non-refreshable below.
-                    to_refresh.push((url.clone(), token.expires_on));
-                }
-                to_refresh
-            };
-
-            // Now refresh tokens without holding the lock to avoid deadlocks.
-            //
-            // A failure to refresh a single path (transient get_token failure,
-            // authorization failure, etc.) must NOT tear down the refresh task:
-            // doing so would let every other cached token silently expire. We
-            // log the failure at warn! with the path and the failing condition
-            // and continue to the next path; the unrefreshed token will be
-            // retried on the next pass.
-            let mut updated_tokens = HashMap::new();
-            // Tracks whether any path failed to refresh this pass. A failure
-            // leaves that token's `expires_on` unchanged, so refresh_time stays
-            // in the past and the next pass would not sleep; we back off below to
-            // avoid a no-delay retry storm.
-            let mut refresh_failed = false;
-            for (url, previous_expiry) in tokens_to_refresh {
-                let new_token = match self
-                    .credential
-                    .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                    .await
-                {
-                    Ok(token) => token,
-                    Err(e) => {
-                        warn!(
-                            path = %url,
-                            operation = "get_token",
-                            err = ?e,
-                            "Failed to refresh token for path; will retry on next pass: {e}"
-                        );
-                        refresh_failed = true;
-                        continue;
-                    }
-                };
-
-                // A credential that cannot renew this token (e.g. a pre-formed
-                // SAS) hands back the same expiry. Re-presenting it would not
-                // extend the link, so mark the path non-refreshable and leave
-                // the broker to enforce the real `se` rather than spinning.
-                if new_token.expires_on <= previous_expiry {
+            // Refresh every token that is due as of `now`, then write the fresh
+            // tokens back, guarded against a racing recovery (#4454).
+            match self
+                .refresh_due_tokens(now, token_refresh_bias, &mut non_refreshable)
+                .await?
+            {
+                RefreshPass::Stop => return Ok(()),
+                RefreshPass::Completed { failed: false } => {}
+                RefreshPass::Completed { failed: true } => {
+                    // The failed path keeps its old `expires_on`, so its refresh
+                    // time is still in the past and the top-of-loop sleep would be
+                    // skipped. Back off for a bounded interval before the next pass
+                    // so a persistent failure does not busy-spin on get_token /
+                    // perform_authorization.
                     warn!(
-                        "Credential cannot refresh token for {url} (expiry did not advance past {previous_expiry}); \
-                         relying on broker-side expiry. This is expected for a pre-formed SAS token."
+                        backoff = ?TOKEN_REFRESH_RETRY_BACKOFF,
+                        "One or more token refreshes failed this pass; backing off before retrying."
                     );
-                    non_refreshable.insert(url.clone());
+                    azure_core::sleep::sleep(TOKEN_REFRESH_RETRY_BACKOFF).await;
+                }
+            }
+        }
+    }
+
+    /// One refresh pass: re-authorize every cached token that is within
+    /// `token_refresh_bias` of expiring as of `now`, then write the fresh tokens
+    /// back, guarded against a racing recovery.
+    ///
+    /// #4454: the refresh task is the token cache's second writer (alongside
+    /// `authorize_path`), so it needs the same generation guard. We capture the
+    /// recovery generation before the lock-free CBS re-authorizations below and
+    /// re-check it under the write lock before writing the refreshed tokens back.
+    /// If a recovery clears the token cache and bumps the generation mid-refresh,
+    /// these tokens are bound to the torn-down connection; writing them back would
+    /// repopulate the just-cleared cache with stale entries that the next operation
+    /// would use and fail on. On a mismatch we drop them and let the next
+    /// `authorize_path` re-establish fresh tokens against the new connection.
+    ///
+    /// `non_refreshable` is owned by the caller's loop and carries across passes:
+    /// a path that lands in it is skipped by every later pass.
+    ///
+    /// Extracted from the `refresh_tokens` loop (which owns the expiry scheduling
+    /// and sleeping) so the generation guard can be exercised deterministically in
+    /// tests.
+    async fn refresh_due_tokens(
+        self: &Arc<Self>,
+        now: OffsetDateTime,
+        token_refresh_bias: Duration,
+        non_refreshable: &mut HashSet<Url>,
+    ) -> Result<RefreshPass> {
+        // First, collect the tokens that need refreshing while holding the lock briefly
+        let tokens_to_refresh = {
+            let scopes = self.authorization_scopes.read().await;
+            let mut to_refresh = Vec::new();
+            for (url, token) in scopes.iter() {
+                if non_refreshable.contains(url) {
                     continue;
                 }
-
-                // Create an ephemeral connection to host the authentication.
-                //
-                // A failed upgrade is terminal, not retryable: once the last
-                // strong reference to the RecoverableConnection is dropped the
-                // Weak can never upgrade again, so continuing here would loop
-                // forever with nothing left to refresh against. Stop the task.
-                let connection = match self.recoverable_connection.upgrade() {
-                    Some(connection) => connection,
-                    None => {
-                        info!(
-                            operation = "upgrade_connection",
-                            "Recoverable connection has been dropped; stopping token refresher."
-                        );
-                        return Ok(());
-                    }
-                };
-                if let Err(e) = self
-                    .perform_authorization(&connection, &url, &new_token)
-                    .await
-                {
-                    warn!(
-                        path = %url,
-                        operation = "perform_authorization",
-                        err = ?e,
-                        "Failed to authorize refreshed token for path; will retry on next pass: {e}"
+                if token.expires_on >= now + (token_refresh_bias) {
+                    debug!(
+                        "Token not expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
+                        token.expires_on
                     );
-                    refresh_failed = true;
                     continue;
                 }
 
                 debug!(
-                    "Token refreshed for {url}, new expiration time: {}",
-                    new_token.expires_on
+                    "Token about to be expired for {url}: ExpiresOn: {}, Now: {now}, Bias: {token_refresh_bias:?}",
+                    token.expires_on
                 );
-                updated_tokens.insert(url.clone(), new_token);
+                // Carry the current expiry so a refresh that does not extend
+                // it can be detected as non-refreshable below.
+                to_refresh.push((url.clone(), token.expires_on));
+            }
+            to_refresh
+        };
+
+        // Upgrade the connection once, before the lock-free re-authorizations, and
+        // capture the recovery generation from it (#4454).
+        //
+        // A failed upgrade is terminal, not retryable: once the last strong
+        // reference to the RecoverableConnection is dropped the Weak can never
+        // upgrade again, so continuing would loop forever with nothing left to
+        // refresh against. Stop the task.
+        let refresh_connection = if tokens_to_refresh.is_empty() {
+            None
+        } else {
+            match self.recoverable_connection.upgrade() {
+                Some(connection) => Some(connection),
+                None => {
+                    info!(
+                        operation = "upgrade_connection",
+                        "Recoverable connection has been dropped; stopping token refresher."
+                    );
+                    return Ok(RefreshPass::Stop);
+                }
+            }
+        };
+        let refresh_generation = refresh_connection.as_ref().map(|c| c.generation());
+
+        // Now refresh tokens without holding the lock to avoid deadlocks.
+        //
+        // A failure to refresh a single path (transient get_token failure,
+        // authorization failure, etc.) must NOT tear down the refresh task:
+        // doing so would let every other cached token silently expire. We
+        // log the failure at warn! with the path and the failing condition
+        // and continue to the next path; the unrefreshed token will be
+        // retried on the next pass.
+        let mut updated_tokens = HashMap::new();
+        // Tracks whether any path failed to refresh this pass, so the caller can
+        // back off instead of retrying with no delay.
+        let mut refresh_failed = false;
+        for (url, previous_expiry) in tokens_to_refresh {
+            let new_token = match self
+                .credential
+                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
+                .await
+            {
+                Ok(token) => token,
+                Err(e) => {
+                    warn!(
+                        path = %url,
+                        operation = "get_token",
+                        err = ?e,
+                        "Failed to refresh token for path; will retry on next pass: {e}"
+                    );
+                    refresh_failed = true;
+                    continue;
+                }
+            };
+
+            // A credential that cannot renew this token (e.g. a pre-formed
+            // SAS) hands back the same expiry. Re-presenting it would not
+            // extend the link, so mark the path non-refreshable and leave
+            // the broker to enforce the real `se` rather than spinning.
+            if new_token.expires_on <= previous_expiry {
+                warn!(
+                    "Credential cannot refresh token for {url} (expiry did not advance past {previous_expiry}); \
+                     relying on broker-side expiry. This is expected for a pre-formed SAS token."
+                );
+                non_refreshable.insert(url.clone());
+                continue;
             }
 
-            // Finally, update the scopes map with the new tokens
-            if !updated_tokens.is_empty() {
-                let mut scopes = self.authorization_scopes.write().await;
+            let connection = refresh_connection
+                .as_ref()
+                .expect("refresh_connection is Some when there are tokens to refresh");
+            if let Err(e) = self
+                .perform_authorization(connection, &url, &new_token)
+                .await
+            {
+                warn!(
+                    path = %url,
+                    operation = "perform_authorization",
+                    err = ?e,
+                    "Failed to authorize refreshed token for path; will retry on next pass: {e}"
+                );
+                refresh_failed = true;
+                continue;
+            }
+
+            debug!(
+                "Token refreshed for {url}, new expiration time: {}",
+                new_token.expires_on
+            );
+            updated_tokens.insert(url.clone(), new_token);
+        }
+
+        // Finally, update the scopes map with the new tokens, unless a recovery
+        // raced us. Re-check the generation under the same write lock `clear()`
+        // takes (#4454) before writing anything back.
+        if !updated_tokens.is_empty() {
+            let connection = refresh_connection
+                .as_ref()
+                .expect("refresh_connection is Some when tokens were refreshed");
+            let captured =
+                refresh_generation.expect("refresh_generation is Some when tokens were refreshed");
+            let mut scopes = self.authorization_scopes.write().await;
+            if connection.generation() != captured {
+                debug!(
+                    "Discarding tokens refreshed during recovery (#4454); the cache was cleared mid-refresh."
+                );
+            } else {
                 for (url, token) in updated_tokens.into_iter() {
                     scopes.insert(url.clone(), token);
                 }
                 debug!("Updated tokens.");
             }
-
-            // If any path failed to refresh, its refresh_time is still in the
-            // past, so the top-of-loop sleep would be skipped. Back off for a
-            // bounded interval before retrying so a persistent failure does not
-            // busy-spin on get_token / perform_authorization.
-            if refresh_failed {
-                warn!(
-                    backoff = ?TOKEN_REFRESH_RETRY_BACKOFF,
-                    "One or more token refreshes failed this pass; backing off before retrying."
-                );
-                azure_core::sleep::sleep(TOKEN_REFRESH_RETRY_BACKOFF).await;
-            }
         }
+
+        Ok(RefreshPass::Completed {
+            failed: refresh_failed,
+        })
     }
 
     #[cfg(test)]
@@ -1158,6 +1240,141 @@ mod tests {
             connection.generation(),
             1,
             "no second recovery cycle should have been needed"
+        );
+    }
+
+    // #4454: the background refresh task is the token cache's *second* writer
+    // (alongside `authorize_path`), and it needs the same generation guard. When a
+    // recovery races a refresh, the token re-authorized against the now-dead CBS
+    // link must be discarded, not written back over the cache the recovery just
+    // cleared, otherwise the next operation serves a stale token and forces a
+    // second recovery cycle.
+    //
+    // This drives the guard deterministically by calling the extracted single-pass
+    // `refresh_due_tokens`: the cache is seeded with a token that is already due,
+    // a gated credential blocks the refresh's `get_token` inside the lock-free
+    // window, the test fires a simulated reconnect (bumping the generation) there,
+    // then releases. The refreshed token must be thrown away and the original left
+    // untouched.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn refresh_discards_tokens_refreshed_during_recovery() {
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
+        #[derive(Debug)]
+        struct GatedRefreshCredential {
+            calls: AtomicUsize,
+            entered: AtomicBool,
+            release: AtomicBool,
+        }
+
+        #[async_trait::async_trait]
+        impl TokenCredential for GatedRefreshCredential {
+            async fn get_token(
+                &self,
+                _scopes: &[&str],
+                _options: Option<TokenRequestOptions<'_>>,
+            ) -> azure_core::Result<AccessToken> {
+                self.calls.fetch_add(1, Ordering::SeqCst);
+                self.entered.store(true, Ordering::SeqCst);
+                // Block inside the lock-free refresh window so the test can fire a
+                // recovery before the refreshed token is written back.
+                while !self.release.load(Ordering::SeqCst) {
+                    tokio::task::yield_now().await;
+                }
+                Ok(AccessToken::new(
+                    azure_core::credentials::Secret::new("refreshed_token"),
+                    OffsetDateTime::now_utc() + Duration::hours(1),
+                ))
+            }
+        }
+
+        let credential = Arc::new(GatedRefreshCredential {
+            calls: AtomicUsize::new(0),
+            entered: AtomicBool::new(false),
+            release: AtomicBool::new(false),
+        });
+
+        let url = Url::parse("amqps://example.com").unwrap();
+        let connection = RecoverableConnection::new(
+            url.clone(),
+            None,
+            None,
+            credential.clone(),
+            Default::default(),
+            None,
+        );
+        let authorizer = Arc::new(Authorizer::new(
+            Arc::downgrade(&connection),
+            credential.clone(),
+            None,
+        ));
+        // Exercise the generation guard, not the broker handshake.
+        authorizer.disable_authorization().unwrap();
+        connection.disable_connection().await.unwrap();
+
+        // Seed the cache with an "original" token that is already due for refresh.
+        let path = Url::parse("amqps://example.com/test").unwrap();
+        let now = OffsetDateTime::now_utc();
+        let original = AccessToken::new(
+            azure_core::credentials::Secret::new("original_token"),
+            now + Duration::seconds(1),
+        );
+        authorizer
+            .authorization_scopes
+            .write()
+            .await
+            .insert(path.clone(), original);
+
+        // A 10s bias makes the 1s-from-now token due, so the pass refreshes it.
+        let bias = Duration::seconds(10);
+        let refresh_task = {
+            let authorizer = authorizer.clone();
+            tokio::spawn(async move {
+                let mut non_refreshable = HashSet::new();
+                authorizer
+                    .refresh_due_tokens(now, bias, &mut non_refreshable)
+                    .await
+                    .map(|_| ())
+            })
+        };
+
+        // Wait until the refresh is inside the gated `get_token`: it has captured
+        // the pre-recovery generation and is mid re-authorization.
+        while !credential.entered.load(Ordering::SeqCst) {
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(connection.generation(), 0);
+
+        // Fire a recovery in the lock-free window: the #4454 race, refresh edition.
+        connection.bump_generation_for_test();
+        assert_eq!(connection.generation(), 1);
+
+        // Release the gated refresh; its token is now stale and must be discarded.
+        credential.release.store(true, Ordering::SeqCst);
+        refresh_task
+            .await
+            .expect("refresh task panicked")
+            .expect("refresh_due_tokens returned an error");
+
+        // Exactly one refresh attempt was made, and the cache still holds the
+        // original token: the token refreshed against the torn-down connection was
+        // dropped at the guarded write-back rather than overwriting the cache.
+        assert_eq!(
+            credential.calls.load(Ordering::SeqCst),
+            1,
+            "exactly one refresh attempt"
+        );
+        let cached = authorizer
+            .authorization_scopes
+            .read()
+            .await
+            .get(&path)
+            .cloned()
+            .expect("the original token must remain cached");
+        assert_eq!(
+            cached.token.secret(),
+            "original_token",
+            "a token refreshed during recovery must be discarded, not written back"
         );
     }
 }
