@@ -526,12 +526,12 @@ typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
 typedef struct cosmos_completion_t cosmos_completion_t;
 
 /**
- * Opaque C ABI handle for [`AccountRefInner`].
+ * Opaque C ABI handle for `AccountRefInner`.
  *
  * Storage pun: see the matching pattern on `RuntimeContext` and
  * `RuntimeBuilderHandle`. The public `#[repr(C)]` struct only carries the
  * `_opaque` marker; the real `Arc` lives in the trailing
- * `AccountRefStorage` field allocated by [`AccountRefHandle::into_raw`].
+ * `AccountRefStorage` field allocated by `AccountRefHandle::into_raw`.
  */
 typedef struct cosmos_account_ref_t {
   uint8_t _opaque[0];
@@ -547,7 +547,7 @@ typedef struct cosmos_account_ref_t {
  * Storage pun: see the matching pattern on `CompletionQueue` /
  * `OperationHandle` in `completion.rs` — the public struct only carries the
  * `_opaque` marker; the real `Arc` lives in a trailing
- * `CosmosErrorHandleStorage` field allocated by [`Self::into_raw`].
+ * `CosmosErrorHandleStorage` field allocated by `Self::into_raw`.
  */
 typedef struct cosmos_error_t {
   uint8_t _opaque[0];
@@ -570,7 +570,7 @@ typedef struct cosmos_bytes_t {
  * Storage pun: see the comment on [`OperationHandle`] — the public
  * `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
  * state lives in a trailing `CompletionQueueStorage` field allocated by
- * [`CompletionQueue::new_raw`].
+ * `CompletionQueue::new_raw`.
  */
 typedef struct cosmos_cq_t {
   uint8_t _opaque[0];
@@ -582,8 +582,8 @@ typedef struct cosmos_cq_t {
  * The struct body is intentionally opaque to cbindgen — the real state
  * lives behind a `Box<RuntimeContextStorage>` whose first field is the same
  * `_opaque: [u8; 0]` marker. Construction always goes through
- * [`RuntimeContext::new_default`] (test path) or
- * [`RuntimeContext::new_with_builder`] (production path called from the
+ * `RuntimeContext::new_default` (test path) or
+ * `RuntimeContext::new_with_builder` (production path called from the
  * public `cosmos_runtime_builder_build`).
  */
 typedef struct cosmos_runtime_t {
@@ -613,7 +613,7 @@ typedef struct cosmos_cq_options_t {
  * Storage pun: see the comment on [`CompletionQueue`] — the public
  * `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
  * state lives in a trailing `OperationHandleStorage` field allocated by
- * [`OperationHandle::new_raw`].
+ * `OperationHandle::new_raw`.
  */
 typedef struct cosmos_operation_handle_t {
   uint8_t _opaque[0];
@@ -637,7 +637,7 @@ typedef struct cosmos_response_t {
 } cosmos_response_t;
 
 /**
- * Opaque C ABI handle for [`ContainerRefInner`].
+ * Opaque C ABI handle for `ContainerRefInner`.
  *
  * Storage pun: same shape as the other reference handles.
  */
@@ -655,7 +655,7 @@ typedef struct cosmos_driver_t {
 } cosmos_driver_t;
 
 /**
- * Opaque C ABI handle for [`DatabaseRefInner`].
+ * Opaque C ABI handle for `DatabaseRefInner`.
  *
  * Storage pun: see the matching pattern on `AccountRefHandle`.
  */
@@ -793,7 +793,7 @@ typedef struct cosmos_CosmosOperationOptions {
 } cosmos_CosmosOperationOptions;
 
 /**
- * Opaque C ABI handle for [`FeedRangeInner`].
+ * Opaque C ABI handle for `FeedRangeInner`.
  *
  * Storage pun: same shape as the other reference handles.
  */
@@ -827,7 +827,7 @@ typedef struct cosmos_partition_key_builder_t {
  * Storage pun: see the matching pattern on [`RuntimeContext`] in
  * [`crate::runtime`]. The public `#[repr(C)]` struct only carries the
  * `_opaque` marker; the real state lives in the trailing
- * [`RuntimeBuilderStorage`] field.
+ * `RuntimeBuilderStorage` field.
  */
 typedef struct cosmos_runtime_builder_t {
   uint8_t _opaque[0];

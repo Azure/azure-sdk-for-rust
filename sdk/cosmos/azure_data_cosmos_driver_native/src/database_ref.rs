@@ -40,7 +40,7 @@ pub(crate) struct DatabaseRefInner {
     pub(crate) inner: DriverDatabaseReference,
 }
 
-/// Opaque C ABI handle for [`DatabaseRefInner`].
+/// Opaque C ABI handle for `DatabaseRefInner`.
 ///
 /// Storage pun: see the matching pattern on `AccountRefHandle`.
 #[repr(C)]

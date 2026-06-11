@@ -324,7 +324,7 @@ impl CosmosErrorInner {
 /// Storage pun: see the matching pattern on `CompletionQueue` /
 /// `OperationHandle` in `completion.rs` — the public struct only carries the
 /// `_opaque` marker; the real `Arc` lives in a trailing
-/// `CosmosErrorHandleStorage` field allocated by [`Self::into_raw`].
+/// `CosmosErrorHandleStorage` field allocated by `Self::into_raw`.
 #[repr(C)]
 pub struct CosmosErrorHandle {
     _opaque: [u8; 0],

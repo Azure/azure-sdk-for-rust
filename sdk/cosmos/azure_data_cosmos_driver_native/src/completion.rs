@@ -155,7 +155,7 @@ impl OperationInner {
 /// Storage pun: see the comment on [`CompletionQueue`] — the public
 /// `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
 /// state lives in a trailing `OperationHandleStorage` field allocated by
-/// [`OperationHandle::new_raw`].
+/// `OperationHandle::new_raw`.
 #[repr(C)]
 pub struct OperationHandle {
     _opaque: [u8; 0],
@@ -439,7 +439,7 @@ impl CompletionQueueInner {
 /// Storage pun: see the comment on [`OperationHandle`] — the public
 /// `#[repr(C)]` struct only carries the `_opaque` marker; the real `Arc`
 /// state lives in a trailing `CompletionQueueStorage` field allocated by
-/// [`CompletionQueue::new_raw`].
+/// `CompletionQueue::new_raw`.
 #[repr(C)]
 pub struct CompletionQueue {
     _opaque: [u8; 0],

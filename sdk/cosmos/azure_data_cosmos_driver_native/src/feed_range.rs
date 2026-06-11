@@ -34,7 +34,7 @@ pub(crate) struct FeedRangeInner {
     pub(crate) inner: DriverFeedRange,
 }
 
-/// Opaque C ABI handle for [`FeedRangeInner`].
+/// Opaque C ABI handle for `FeedRangeInner`.
 ///
 /// Storage pun: same shape as the other reference handles.
 #[repr(C)]

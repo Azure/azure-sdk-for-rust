@@ -62,7 +62,7 @@ pub(crate) struct RuntimeBuilderInner {
 /// Storage pun: see the matching pattern on [`RuntimeContext`] in
 /// [`crate::runtime`]. The public `#[repr(C)]` struct only carries the
 /// `_opaque` marker; the real state lives in the trailing
-/// [`RuntimeBuilderStorage`] field.
+/// `RuntimeBuilderStorage` field.
 #[repr(C)]
 pub struct RuntimeBuilderHandle {
     _opaque: [u8; 0],

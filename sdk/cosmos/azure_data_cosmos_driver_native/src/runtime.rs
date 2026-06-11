@@ -56,8 +56,8 @@ pub(crate) struct RuntimeContextInner {
 /// The struct body is intentionally opaque to cbindgen — the real state
 /// lives behind a `Box<RuntimeContextStorage>` whose first field is the same
 /// `_opaque: [u8; 0]` marker. Construction always goes through
-/// [`RuntimeContext::new_default`] (test path) or
-/// [`RuntimeContext::new_with_builder`] (production path called from the
+/// `RuntimeContext::new_default` (test path) or
+/// `RuntimeContext::new_with_builder` (production path called from the
 /// public `cosmos_runtime_builder_build`).
 #[repr(C)]
 pub struct RuntimeContext {

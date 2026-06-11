@@ -41,12 +41,12 @@ pub(crate) struct AccountRefInner {
     pub(crate) inner: DriverAccountReference,
 }
 
-/// Opaque C ABI handle for [`AccountRefInner`].
+/// Opaque C ABI handle for `AccountRefInner`.
 ///
 /// Storage pun: see the matching pattern on `RuntimeContext` and
 /// `RuntimeBuilderHandle`. The public `#[repr(C)]` struct only carries the
 /// `_opaque` marker; the real `Arc` lives in the trailing
-/// `AccountRefStorage` field allocated by [`AccountRefHandle::into_raw`].
+/// `AccountRefStorage` field allocated by `AccountRefHandle::into_raw`.
 #[repr(C)]
 pub struct AccountRefHandle {
     _opaque: [u8; 0],

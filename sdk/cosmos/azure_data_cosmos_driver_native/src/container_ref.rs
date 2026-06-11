@@ -42,7 +42,7 @@ pub(crate) struct ContainerRefInner {
     pub(crate) inner: DriverContainerReference,
 }
 
-/// Opaque C ABI handle for [`ContainerRefInner`].
+/// Opaque C ABI handle for `ContainerRefInner`.
 ///
 /// Storage pun: same shape as the other reference handles.
 #[repr(C)]
