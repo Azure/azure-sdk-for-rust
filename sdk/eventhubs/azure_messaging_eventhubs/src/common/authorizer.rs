@@ -97,7 +97,7 @@ impl Authorizer {
     ) -> azure_core_amqp::Result<AccessToken> {
         debug!("Authorizing path: {path}");
 
-        // AIDEV-NOTE: #4454 stale-token guard. The token cache is mutable (the
+        // #4454 stale-token guard. The token cache is mutable (the
         // refresh task rewrites entries), so unlike the connection caches it can't
         // use an `OnceCell`; the generation check is applied here directly. We
         // capture the connection's recovery generation before the lock-free CBS

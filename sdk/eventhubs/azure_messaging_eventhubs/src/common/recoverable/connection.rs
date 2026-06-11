@@ -99,7 +99,7 @@ pub(crate) struct RecoverableConnection {
     connection_name: String,
     pub(super) retry_options: RetryOptions,
 
-    // AIDEV-NOTE: Recovery generation counter (#4454). Bumped by
+    // Recovery generation counter (#4454). Bumped by
     // `apply_recovery_plan` every time it clears the per-path caches (i.e. on every
     // ReconnectConnection / ReconnectSession / ReconnectLink). Invariant: a cached
     // resource is only valid if the generation it was created under still equals the
@@ -819,7 +819,7 @@ impl RecoverableConnection {
     /// Side-effecting half of `recover_from_error`: takes the locks and clears
     /// whichever caches the [`RecoveryPlan`] flagged.
     ///
-    /// AIDEV-NOTE: #4454 stale-resource window. Any plan that clears a per-path
+    /// #4454 stale-resource window. Any plan that clears a per-path
     /// cache bumps the recovery `generation` first. A slow path
     /// (authorize_path / get_session / ensure_sender / ensure_receiver) that is
     /// mid-attach captured the pre-bump generation; on completion it sees the
