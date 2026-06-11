@@ -26,7 +26,7 @@
 
 ### Features Added
 
-- Exposed the driver runtime as a first-class SDK concept via the new `CosmosRuntime` and `CosmosRuntimeBuilder` types. `CosmosRuntime::global()` returns a lazily-initialized, process-wide runtime suitable for the common case of "one or more clients sharing all runtime-level state"; bring-your-own runtime is opt-in through `CosmosRuntimeBuilder` and `CosmosClientBuilder::with_runtime`. The new builder delegates to the driver runtime builder and exposes:
+- Added `CosmosRuntime` and `CosmosRuntimeBuilder` types. A default process-wide runtime is provided, but users can configure their own runtime through `CosmosRuntimeBuilder` and `CosmosClientBuilder::with_runtime`. The new builder exposes:
   - `with_connection_pool(ConnectionPoolOptions)` — runtime-wide transport/cert/proxy settings.
   - `with_default_operation_options(OperationOptions)` — runtime-default `OperationOptions`.
   - `with_user_agent_suffix(UserAgentSuffix)` — runtime-default User-Agent suffix.
