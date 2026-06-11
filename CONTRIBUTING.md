@@ -376,7 +376,7 @@ Once all of the above steps are met, the following process will be followed:
 
 ### Performance Testing
 
-See [sdk/storage/azure_storage_blob](sdk/storage/azure_storage_blob) for examples of both types of performance tests.
+See [sdk/storage/azure_storage_blob](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage/azure_storage_blob) for examples of both types of performance tests.
 
 #### Benchmarks
 

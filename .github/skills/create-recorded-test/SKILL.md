@@ -2,7 +2,6 @@
 name: create-recorded-test
 description: Generate a new recorded integration test
 disable-model-invocation: true
-agent: "agent"
 ---
 
 # Generate a new recorded integration test
@@ -10,7 +9,7 @@ agent: "agent"
 You will generate one or more recorded integration tests under the `sdk/{service-directory}/{crate-name}/tests` directory in `${input:testFile:test_file}.rs` where:
 
 - `{repo-root}` is the root directory containing `Cargo.toml`.
-- `{service-directory}` is the directory name under [sdk](../../sdk) for the current ${file} e.g., `keyvault`.
+- `{service-directory}` is the directory name under [sdk](../../../sdk) for the current ${file} e.g., `keyvault`.
 - `{crate-name}` is the crate directory name under `sdk/{service-directory}` for the current ${file} e.g., `azure_security_keyvault_secrets`.
 
 ## Set up
@@ -26,7 +25,7 @@ These instructions only need to be done once. If changes described are already p
   ```
 
 - To run recorded tests, rely on the existing test infrastructure. Test Proxy is acquired automatically for test runs when needed, but not for `test-proxy push -a sdk/{service-directory}/assets.json`.
-- For manual Test Proxy usage or asset publishing, see [CONTRIBUTING.md](../../CONTRIBUTING.md) and the [Test Proxy documentation](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md).
+- For manual Test Proxy usage or asset publishing, see [CONTRIBUTING.md](../../../CONTRIBUTING.md) and the [Test Proxy documentation](https://github.com/Azure/azure-sdk-tools/blob/main/tools/test-proxy/Azure.Sdk.Tools.TestProxy/README.md).
 
 ## Adding a new recorded test
 
@@ -39,7 +38,7 @@ For each new recorded test:
   - `let mut options = {Client}Options::default();`
   - `recording.instrument(&mut options.client_options);`
 - Construct clients with `recording.var("{ENV_VAR}", None).as_str()`, `recording.credential()`, and `Some(options)`.
-- Use [sdk/keyvault/azure_security_keyvault_secrets/tests/secret_client.rs](../../sdk/keyvault/azure_security_keyvault_secrets/tests/secret_client.rs) as the example for function signatures, `TestContext`, and required `ClientOptions` instrumentation.
+- Use [sdk/keyvault/azure_security_keyvault_secrets/tests/secret_client.rs](../../../sdk/keyvault/azure_security_keyvault_secrets/tests/secret_client.rs) as the example for function signatures, `TestContext`, and required `ClientOptions` instrumentation.
 - Generate one test per client method or scenario the user wants to cover. If multiple methods share setup and belong together, keep them in the same integration test file as separate `#[recorded::test]` functions.
 - Prefer asserting on returned models or observable state instead of only checking success.
 - Reuse existing crate patterns for imports, helper types, resource naming, and environment variables.
