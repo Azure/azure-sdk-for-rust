@@ -618,6 +618,18 @@ impl DriverTestRunContext {
             .await)
     }
 
+    /// Returns a snapshot of the per-partition hub-region cache for the
+    /// driver bound to this test context's account.
+    #[cfg(feature = "__internal_testing")]
+    pub async fn hub_region_cache_snapshot(&self) -> Result<Vec<(String, String)>, Box<dyn Error>> {
+        let driver = self
+            .client
+            .runtime
+            .get_or_create_driver(self.client.account.clone(), None)
+            .await?;
+        Ok(driver.__test_only_hub_region_cache_snapshot())
+    }
+
     /// Validates diagnostics for a successful data plane operation.
     pub fn validate_data_plane_diagnostics(
         &self,
