@@ -831,15 +831,18 @@ impl RecoverableConnection {
         if plan.drop_connection {
             self.connections.lock().await.take();
         }
-        if plan.clear_authorizer {
-            self.authorizer.clear().await;
-        }
 
-        // Bump the generation before clearing the per-path caches so racing
-        // slow-path attaches detect the recovery and discard their stale results
-        // (see the struct field and `get_or_init_generational`). `authorize_path`
-        // reads this generation directly because its token cache is mutable and
-        // cannot use an `OnceCell`. The bump only matters when a cache is being
+        // Bump the generation before clearing *any* per-path cache, the
+        // authorizer's token cache included, so racing slow-path attaches detect
+        // the recovery and discard their stale results (see the struct field and
+        // `get_or_init_generational`). `authorize_path` and the refresh task read
+        // this generation directly because the token cache is mutable and cannot
+        // use an `OnceCell`; their guard re-reads the generation under the same
+        // `authorization_scopes` write lock that `clear()` takes. If we cleared the
+        // authorizer before the bump, an in-flight `authorize_path` could acquire
+        // that write lock after the clear, still observe the pre-bump generation,
+        // and insert a token bound to the torn-down connection. Bumping first
+        // closes that window (#4454). The bump only matters when a cache is being
         // cleared; plans that touch neither caches nor the authorizer leave it
         // untouched.
         if plan.clear_sessions
@@ -850,6 +853,9 @@ impl RecoverableConnection {
             self.generation.fetch_add(1, Ordering::AcqRel);
         }
 
+        if plan.clear_authorizer {
+            self.authorizer.clear().await;
+        }
         if plan.clear_sessions {
             self.session_instances.write().await.clear();
         }
