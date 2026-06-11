@@ -46,10 +46,10 @@ impl AmqpSessionOptions {
     /// Session options that disable session-level flow control by maxing both
     /// the incoming and outgoing windows.
     ///
-    /// Messaging crates (such as Event Hubs and Service Bus) defer backpressure
-    /// to per-link credit and therefore want unbounded session windows. The
-    /// generic [`Default`] implementation deliberately stays `None` for both
-    /// windows so non-messaging consumers are unaffected.
+    /// Messaging crates (such as Event Hubs and Service Bus) rely on per-link
+    /// credit for flow control and therefore want unbounded session windows.
+    /// The generic [`Default`] implementation deliberately stays `None` for
+    /// both windows so non-messaging consumers are unaffected.
     pub fn with_unbounded_windows() -> Self {
         Self {
             incoming_window: Some(u32::MAX),
