@@ -297,8 +297,8 @@ pub async fn partition_split_on_create_aborts_non_idempotent_write() -> Result<(
             .create_container(&database, &container_name, "/pk")
             .await?;
 
-        // CreateItem with a persistent 410 — the write is non-idempotent and the
-        // driver does not have PPAF enabled, so the operation should abort.
+        // CreateItem with a persistent 410 — the driver retries across
+        // available endpoints but eventually exhausts its retry budget.
         let item_json = br#"{"id": "split-create-1", "pk": "pk1", "value": "test"}"#;
         let create_result = context
             .create_item(&container, "split-create-1", "pk1", item_json)
@@ -306,7 +306,7 @@ pub async fn partition_split_on_create_aborts_non_idempotent_write() -> Result<(
 
         assert!(
             create_result.is_err(),
-            "CreateItem should fail when partition is permanently gone (non-idempotent, no PPAF)"
+            "CreateItem should fail when partition is permanently gone (retry budget exhausted)"
         );
 
         // Confirm the fault was hit.

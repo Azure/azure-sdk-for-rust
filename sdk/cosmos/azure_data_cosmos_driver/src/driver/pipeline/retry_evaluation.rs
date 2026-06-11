@@ -22,6 +22,8 @@ use crate::{
     models::{CosmosOperation, CosmosResponseHeaders, CosmosStatus, SubStatusCode},
 };
 
+use std::sync::atomic::Ordering;
+
 use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
 
 /// Whether the current request is handled by the PPCB threshold mechanism.
@@ -224,6 +226,105 @@ pub(crate) fn evaluate_transport_result(
     }
 }
 
+/// Side effects observed by a single hedge leg, returned by
+/// [`evaluate_hedge_leg_effects`] so the race coordinator can mirror the
+/// non-hedged [`evaluate_transport_result`] path without consuming the
+/// `TransportResult`.
+#[derive(Debug, Default)]
+pub(crate) struct HedgeLegEvaluation {
+    pub(crate) effects: Vec<LocationEffect>,
+    /// `true` when this leg observed a 404/1002 that would have triggered
+    /// [`build_session_retry_state`]'s `hub_region_processing_only` latch
+    /// on the non-hedged path.
+    pub(crate) observed_session_unavailable: bool,
+}
+
+/// Non-consuming counterpart of [`evaluate_transport_result`] for the
+/// hedge race loop. Returns the same `LocationEffect`s the consuming
+/// path would have emitted, plus an `observed_session_unavailable` bool
+/// in place of the 404/1002 `OperationRetryState` transition (the race
+/// coordinator applies the latch flip at the `BothTransient` boundary).
+/// The `OperationAction` is discarded since `classify_hedge_result`
+/// picks the next-step action.
+pub(crate) fn evaluate_hedge_leg_effects(
+    operation: &CosmosOperation,
+    endpoint: &CosmosEndpoint,
+    retry_state: &OperationRetryState,
+    result: &TransportResult,
+) -> HedgeLegEvaluation {
+    let mut eval = HedgeLegEvaluation::default();
+    match &result.outcome {
+        TransportOutcome::Success { .. } => {}
+
+        TransportOutcome::HttpError {
+            status,
+            request_sent,
+            ..
+        } => {
+            // Mirror `build_session_retry_state`'s four-condition latch
+            // trigger.
+            if status.is_read_session_not_available()
+                && retry_state.can_retry_session()
+                && retry_state.is_dataplane
+                && !retry_state.can_use_multiple_write_locations
+                && retry_state.session_token_retry_count == 0
+                && !retry_state.hub_region_processing_only
+            {
+                eval.observed_session_unavailable = true;
+            }
+
+            // Walk `evaluate_http_outcome`'s priority chain by-reference
+            // and take only the `LocationEffect`s. 404/1002 is handled
+            // above via `observed_session_unavailable` and emits no
+            // effects, so it is skipped here.
+            if let Some((_action, effects)) =
+                try_handle_write_forbidden(operation, endpoint, retry_state, status)
+            {
+                eval.effects = effects;
+            } else if let Some((_action, effects)) = try_handle_retry_trigger_group(
+                operation,
+                endpoint,
+                retry_state,
+                status,
+                *request_sent,
+            ) {
+                eval.effects = effects;
+            } else if let Some((_action, effects)) =
+                try_handle_server_error(operation, endpoint, retry_state, status)
+            {
+                eval.effects = effects;
+            }
+        }
+
+        TransportOutcome::TransportError { request_sent, .. } => {
+            // Mirrors `evaluate_transport_layer_outcome`: `definitely_not_sent`
+            // emits no effects; `sent` marks the partition unavailable and
+            // (when PPCB is not managing failover) the endpoint too.
+            if !request_sent.definitely_not_sent() {
+                eval.effects.push(LocationEffect::MarkPartitionUnavailable(
+                    make_partition_unavailable(
+                        operation,
+                        endpoint,
+                        retry_state,
+                        operation.is_read_only(),
+                    ),
+                ));
+                if !is_ppcb_managed(operation, retry_state) {
+                    eval.effects.push(LocationEffect::MarkEndpointUnavailable {
+                        endpoint: endpoint.clone(),
+                        reason: UnavailableReason::TransportError,
+                    });
+                }
+            }
+        }
+
+        TransportOutcome::DeadlineExceeded { .. } => {
+            // Client-side timeout — no routing-state effects.
+        }
+    }
+    eval
+}
+
 /// Classifies an HTTP error response by walking a chain of per-status-family
 /// handlers in priority order.
 ///
@@ -252,15 +353,9 @@ fn evaluate_http_outcome(
         return result;
     }
 
-    if let Some(result) = try_handle_retry_trigger_group(
-        operation,
-        endpoint,
-        retry_state,
-        &status,
-        &cosmos_headers,
-        &body,
-        request_sent,
-    ) {
+    if let Some(result) =
+        try_handle_retry_trigger_group(operation, endpoint, retry_state, &status, request_sent)
+    {
         return result;
     }
 
@@ -365,7 +460,7 @@ fn try_handle_read_session_not_available(
 /// 4. `!hub_region_processing_only` — defense-in-depth idempotency;
 ///    structurally already guaranteed by latch-once semantics.
 ///
-/// **Hedging coordination (future).** Per HEDGING_SPEC.md §9.5, when
+/// **Hedging coordination (future).** When
 /// `OperationRetryState` gains a `shared_hub_region_latch:
 /// Option<Arc<AtomicBool>>` (populated by `execute_with_hedging()`),
 /// this function MUST also CAS-set the shared latch with
@@ -382,6 +477,15 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
         && !retry_state.hub_region_processing_only
     {
         new_state.hub_region_processing_only = true;
+        // Cross-hedge propagation. When this
+        // operation is running inside `execute_hedged` the shared
+        // `Arc<AtomicBool>` lets sibling hedges discover the 1002 latch
+        // without re-running the 404/1002 cycle themselves. `Release`
+        // ordering pairs with the `Acquire` load in `apply_hub_region_header`
+        // — publishes the bool, which is the only datum being shared.
+        if let Some(shared) = new_state.shared_hub_region_latch.as_ref() {
+            shared.store(true, Ordering::Release);
+        }
     }
     new_state
 }
@@ -389,24 +493,18 @@ fn build_session_retry_state(retry_state: &OperationRetryState) -> OperationRetr
 /// Handles the retry-trigger group — 503 ServiceUnavailable, 410 Gone,
 /// 408 RequestTimeout, and 429/3092 SystemResourceUnavailable.
 ///
-/// Three sub-cases:
+/// Two sub-cases:
 ///
 /// 1. **Request not sent** — safe to retry against any region with no
 ///    location-state side effects (the failure is purely client-side).
-/// 2. **Sent + non-idempotent + no PPAF** — unsafe to retry. Aborts but
-///    still emits `MarkPartitionUnavailable` (and, when not PPCB-managed,
-///    `MarkEndpointUnavailable`) so future requests benefit from the
-///    updated routing state.
-/// 3. **Sent + (read || idempotent || PPAF write)** — failover retry with
-///    the same routing-state effects.
-#[allow(clippy::too_many_arguments)]
+/// 2. **Request sent** — failover retry with `MarkPartitionUnavailable`
+///    (and, when not PPCB-managed, `MarkEndpointUnavailable`) so future
+///    requests benefit from the updated routing state.
 fn try_handle_retry_trigger_group(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
     retry_state: &OperationRetryState,
     status: &CosmosStatus,
-    cosmos_headers: &CosmosResponseHeaders,
-    body: &[u8],
     request_sent: RequestSentStatus,
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     let is_system_resource_unavailable = status.is_throttled()
@@ -438,32 +536,6 @@ fn try_handle_retry_trigger_group(
     } else {
         UnavailableReason::ServiceUnavailable
     };
-
-    let safe_to_retry = operation.is_read_only()
-        || operation.is_idempotent()
-        || retry_state.ppaf_write_retry_allowed;
-
-    if !safe_to_retry {
-        // Non-idempotent write that was already sent and PPAF is not
-        // available — unsafe to retry. We still mark partition and endpoint
-        // unavailable so future requests benefit from the updated routing
-        // state.
-        let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
-            make_partition_unavailable(operation, endpoint, retry_state, false),
-        )];
-        if !is_ppcb_managed(operation, retry_state) {
-            effects.push(LocationEffect::MarkEndpointUnavailable {
-                endpoint: endpoint.clone(),
-                reason: unavailable_reason,
-            });
-        }
-        return Some((
-            OperationAction::Abort {
-                error: build_service_error(status, cosmos_headers, body),
-            },
-            effects,
-        ));
-    }
 
     let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
         make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
@@ -523,10 +595,22 @@ fn try_handle_server_error(
 /// Handles transport-layer errors (connection failures, TLS errors, etc.) —
 /// no HTTP response was produced.
 ///
-/// Three sub-cases mirror the retry-trigger-group helper:
-/// 1. Request definitely not sent → safe failover retry, no side effects.
-/// 2. Sent and read/idempotent/PPAF write → failover retry with marks.
-/// 3. Sent and non-idempotent without PPAF → abort with marks.
+/// Two sub-cases with **inverted** marking semantics:
+///
+/// 1. **Request definitely not sent** (connection refused, DNS failure, TLS
+///    error before any bytes left the client) → the endpoint itself is
+///    unreachable. Emit `MarkEndpointUnavailable` (affects all partitions
+///    on this endpoint) and `MarkPartitionUnavailable` (so PPCB also
+///    increments), then failover retry.
+///
+/// 2. **Request sent (or unknown)** → the endpoint accepted the connection
+///    but the operation failed for this partition. Emit only
+///    `MarkPartitionUnavailable` (PPCB tracks partition-level failures);
+///    do *not* mark the endpoint unavailable since it is clearly reachable.
+///
+/// This matches .NET (Gateway-mode `HttpRequestException` marks the full
+/// endpoint; Direct-mode 503 marks partition only) and Python
+/// (`ServiceRequestError` marks endpoint; `ServiceResponseError` does not).
 fn evaluate_transport_layer_outcome(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -535,30 +619,49 @@ fn evaluate_transport_layer_outcome(
     error: crate::error::CosmosError,
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
-    if request_sent.definitely_not_sent() && retry_state.can_retry_failover() {
-        return (
-            OperationAction::FailoverRetry {
-                new_state: retry_state.clone().advance_failover(),
-                delay: None,
+    if request_sent.definitely_not_sent() {
+        // Endpoint is unreachable — mark it unavailable regardless of PPCB
+        // state, since a connection failure affects all partitions on this
+        // endpoint. Also record a partition-level failure for PPCB tracking.
+        let effects = vec![
+            LocationEffect::MarkEndpointUnavailable {
+                endpoint: endpoint.clone(),
+                reason: UnavailableReason::TransportError,
             },
-            Vec::new(),
+            LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
+                operation,
+                endpoint,
+                retry_state,
+                operation.is_read_only(),
+            )),
+        ];
+
+        if retry_state.can_retry_failover() {
+            return (
+                OperationAction::FailoverRetry {
+                    new_state: retry_state.clone().advance_failover(),
+                    delay: None,
+                },
+                effects,
+            );
+        }
+
+        return (
+            OperationAction::Abort {
+                error: build_transport_error(&status, error),
+            },
+            effects,
         );
     }
 
-    let mut effects = vec![LocationEffect::MarkPartitionUnavailable(
+    // Request was sent (or unknown) — the endpoint is reachable, but this
+    // partition had an issue. Only mark the partition; do NOT mark the
+    // endpoint since other partitions on it are unaffected.
+    let effects = vec![LocationEffect::MarkPartitionUnavailable(
         make_partition_unavailable(operation, endpoint, retry_state, operation.is_read_only()),
     )];
-    if !is_ppcb_managed(operation, retry_state) {
-        effects.push(LocationEffect::MarkEndpointUnavailable {
-            endpoint: endpoint.clone(),
-            reason: UnavailableReason::TransportError,
-        });
-    }
 
-    let safe_to_retry = operation.is_read_only()
-        || operation.is_idempotent()
-        || retry_state.ppaf_write_retry_allowed;
-    if safe_to_retry && retry_state.can_retry_failover() {
+    if retry_state.can_retry_failover() {
         return (
             OperationAction::FailoverRetry {
                 new_state: retry_state.clone().advance_failover(),
@@ -568,9 +671,7 @@ fn evaluate_transport_layer_outcome(
         );
     }
 
-    // Non-idempotent write that was already sent and PPAF is not available —
-    // unsafe to retry. Marks are kept so future requests benefit from the
-    // updated routing state.
+    // Budget exhausted — no more failover attempts available.
     (
         OperationAction::Abort {
             error: build_transport_error(&status, error),
@@ -642,7 +743,7 @@ fn service_error_message(status: &CosmosStatus) -> String {
 /// `evaluate_transport_result` as a pure function over its inputs and
 /// avoids constructing a throw-away diagnostics value that would
 /// immediately be overwritten downstream.
-fn build_service_error(
+pub(crate) fn build_service_error(
     status: &CosmosStatus,
     cosmos_headers: &CosmosResponseHeaders,
     body: &[u8],
@@ -820,8 +921,15 @@ mod tests {
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
-        let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        // Not-sent → endpoint is unreachable, mark both endpoint and partition.
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
 
     #[test]
@@ -835,16 +943,17 @@ mod tests {
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        // Sent → endpoint is reachable, only mark partition (not endpoint).
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
     #[test]
-    fn transport_error_sent_non_idempotent_aborts() {
+    fn transport_error_sent_non_idempotent_retries() {
         let op = make_create_operation();
         let result = make_transport_error(RequestSentStatus::Sent);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -853,16 +962,12 @@ mod tests {
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
-        match action {
-            OperationAction::Abort { error } => {
-                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
-            }
-            other => panic!("expected abort, got {other:?}"),
-        }
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        // Sent → endpoint is reachable, only mark partition (not endpoint).
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
@@ -952,6 +1057,7 @@ mod tests {
             can_use_multiple_write_locations: false,
             is_dataplane: false,
             hub_region_processing_only: false,
+            shared_hub_region_latch: None,
             excluded_regions: Vec::new(),
             session_retry_routing:
                 crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
@@ -959,6 +1065,7 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
         };
 
         let endpoint = CosmosEndpoint::global(
@@ -1093,8 +1200,70 @@ mod tests {
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
 
+    /// Regression guard: a cross-region hedge
+    /// can only be spawned from a region-changing retry action, and for a
+    /// 429 that path is gated to sub-status `3092`
+    /// (`SystemResourceUnavailable`). Every other throttle sub-status —
+    /// `3200` (`RU_BUDGET_EXCEEDED`), `3210` (`RU_BUDGET_EXCEEDED_FOR_MASTER`),
+    /// and `3214` (`HOT_PARTITION_KEY_THROTTLED`) — must instead `Abort`:
+    /// failing them over to another region cannot conjure throughput or
+    /// cool a hot logical partition and only spreads the throttle. Pinning
+    /// this here ensures a future widening of the retry-trigger group
+    /// cannot silently begin hedging RU-exhaustion or hot-partition throttles.
     #[test]
-    fn service_unavailable_write_retries_and_marks_partition() {
+    fn throttle_substatus_gates_hedge_eligibility() {
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let throttle_result = |sub: SubStatusCode| TransportResult {
+            outcome: TransportOutcome::HttpError {
+                status: CosmosStatus::from_parts(StatusCode::TooManyRequests, Some(sub)),
+                cosmos_headers: CosmosResponseHeaders::default(),
+                body: vec![],
+                request_sent: RequestSentStatus::Sent,
+            },
+        };
+
+        // 429/3092 — transient backend pressure → failover-eligible, hence
+        // the only 429 the hedge upgrade in `maybe_upgrade_to_hedge` may act on.
+        let op = make_read_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let (action, _) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            throttle_result(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE),
+            &state,
+        );
+        assert!(
+            matches!(action, OperationAction::FailoverRetry { .. }),
+            "429/3092 SystemResourceUnavailable must be failover-eligible; got {action:?}",
+        );
+
+        // Every other throttle sub-status must NOT become a region-changing
+        // retry, so it can never be upgraded into a cross-region hedge.
+        for sub in [
+            SubStatusCode::RU_BUDGET_EXCEEDED,            // 3200
+            SubStatusCode::RU_BUDGET_EXCEEDED_FOR_MASTER, // 3210
+            SubStatusCode::HOT_PARTITION_KEY_THROTTLED,   // 3214
+        ] {
+            let op = make_read_operation();
+            let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+            let (action, _) =
+                evaluate_transport_result(&op, &endpoint, throttle_result(sub), &state);
+            assert!(
+                !matches!(
+                    action,
+                    OperationAction::FailoverRetry { .. } | OperationAction::SessionRetry { .. }
+                ),
+                "429/{sub:?} must not become a region-changing retry; \
+                 got {action:?}",
+            );
+        }
+    }
+
+    #[test]
+    fn service_unavailable_non_idempotent_write_retries() {
         let op = make_create_operation();
         let result = make_http_error(StatusCode::ServiceUnavailable);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1103,7 +1272,7 @@ mod tests {
         );
 
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
-        assert!(matches!(action, OperationAction::Abort { .. }));
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
@@ -1113,7 +1282,9 @@ mod tests {
     }
 
     #[test]
-    fn service_unavailable_non_idempotent_retries_when_ppaf_enabled() {
+    fn service_unavailable_non_idempotent_retries_with_ppaf() {
+        // With PPAF enabled, behavior is the same as without — non-idempotent
+        // writes always retry. This test validates PPAF doesn't interfere.
         let op = make_create_operation();
         let result = make_http_error(StatusCode::ServiceUnavailable);
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1133,7 +1304,9 @@ mod tests {
     }
 
     #[test]
-    fn transport_error_non_idempotent_retries_when_ppaf_enabled() {
+    fn transport_error_non_idempotent_retries_with_ppaf() {
+        // With PPAF enabled, behavior is the same as without — non-idempotent
+        // writes always retry. Sent → only partition mark (no endpoint mark).
         let op = make_create_operation();
         let result = make_transport_error(RequestSentStatus::Sent);
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1147,7 +1320,7 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
     }
@@ -1213,7 +1386,8 @@ mod tests {
     }
 
     #[test]
-    fn transport_error_not_sent_does_not_mark_partition_or_endpoint() {
+    fn transport_error_not_sent_marks_endpoint_and_partition() {
+        // Not-sent → endpoint is unreachable, mark both endpoint and partition.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1223,7 +1397,95 @@ mod tests {
 
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
-        assert!(effects.is_empty());
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    #[test]
+    fn transport_error_not_sent_with_ppcb_still_marks_endpoint() {
+        // Not-sent with PPCB active → endpoint is unreachable regardless of
+        // PPCB state. Connection failures are endpoint-wide, so the endpoint
+        // mark must not be suppressed by PPCB.
+        let op = make_read_operation();
+        let result = make_transport_error(RequestSentStatus::NotSent);
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        state.ppcb_active = true;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    #[test]
+    fn transport_error_unknown_sent_status_marks_partition_only() {
+        // Unknown sent status is treated as "possibly sent" → endpoint is
+        // potentially reachable, so only partition-level marking is applied.
+        let op = make_read_operation();
+        let result = make_transport_error(RequestSentStatus::Unknown);
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    #[test]
+    fn transport_error_not_sent_over_budget_aborts_with_marks() {
+        // Not-sent with budget exhausted → abort, but still emit endpoint +
+        // partition marks so routing state is updated for future requests.
+        let op = make_read_operation();
+        let result = make_transport_error(RequestSentStatus::NotSent);
+        let state = OperationRetryState {
+            location: crate::driver::routing::LocationIndex::initial(0),
+            failover_retry_count: 1,
+            session_token_retry_count: 0,
+            max_failover_retries: 1,
+            max_session_retries: 1,
+            can_use_multiple_write_locations: false,
+            is_dataplane: false,
+            hub_region_processing_only: false,
+            shared_hub_region_latch: None,
+            excluded_regions: Vec::new(),
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+            partition_key_range_id: None,
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
+        };
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
+        assert!(matches!(action, OperationAction::Abort { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
 
     #[test]
@@ -1734,5 +1996,277 @@ mod tests {
             }
             other => panic!("unexpected action for 503 after latch: {other:?}"),
         }
+    }
+
+    // ── Shared hub-region latch (Part 5) ──────────────────────────
+
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    };
+
+    /// T-S1 — When the per-state latch fires and a shared latch is
+    /// attached, the shared `Arc<AtomicBool>` is `Release`-stored as
+    /// `true`. Counterpart of .NET PR #5815's `CrossRegionAvailabilityContext`
+    /// propagation test.
+    #[test]
+    fn shared_hub_region_latch_propagates_first_1002_across_hedges() {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        let shared = Arc::new(AtomicBool::new(false));
+        state = state.with_shared_hub_region_latch(shared.clone());
+
+        let after = session_retry_state_for_1002(&state);
+
+        assert!(
+            after.hub_region_processing_only,
+            "per-state latch must still fire on the first 1002",
+        );
+        assert!(
+            shared.load(Ordering::Acquire),
+            "shared latch must be Release-stored when per-state latch fires",
+        );
+        // The new state must continue to carry the same shared latch
+        // (propagation through `..self` in `advance_session_retry`).
+        assert!(
+            after.shared_hub_region_latch.as_ref().map(Arc::as_ptr) == Some(Arc::as_ptr(&shared)),
+            "advance_session_retry must propagate the shared latch via ..self",
+        );
+    }
+
+    /// T-S2 — A non-triggering 1002 (multi-master) must NOT flip the
+    /// shared latch even if one is attached. Mirrors T-2 / AC-4 for the
+    /// shared path.
+    #[test]
+    fn shared_hub_region_latch_does_not_set_on_multi_master_1002() {
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 3); // multi-master
+        state.is_dataplane = true;
+        let shared = Arc::new(AtomicBool::new(false));
+        state = state.with_shared_hub_region_latch(shared.clone());
+
+        let after = session_retry_state_for_1002(&state);
+
+        assert!(
+            !after.hub_region_processing_only,
+            "multi-master never latches per-state",
+        );
+        assert!(
+            !shared.load(Ordering::Acquire),
+            "multi-master never flips the shared latch either",
+        );
+    }
+
+    /// T-S3 — A non-triggering 1002 on metadata pipeline must NOT flip
+    /// the shared latch. Mirrors T-AC-8 / AC-8 for the shared path.
+    #[test]
+    fn shared_hub_region_latch_does_not_set_on_metadata_pipeline_1002() {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = false; // metadata
+        let shared = Arc::new(AtomicBool::new(false));
+        state = state.with_shared_hub_region_latch(shared.clone());
+
+        let after = session_retry_state_for_1002(&state);
+
+        assert!(!after.hub_region_processing_only);
+        assert!(!shared.load(Ordering::Acquire));
+    }
+
+    /// T-S4 — A pre-set shared latch on a multi-master state must NOT
+    /// be cleared by the retry path. The latch is monotonic — once set,
+    /// stays set. Guards against an accidental store-of-false on a
+    /// non-triggering retry.
+    #[test]
+    fn shared_hub_region_latch_is_monotonic_once_set() {
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 3); // multi-master
+        state.is_dataplane = true;
+        let shared = Arc::new(AtomicBool::new(true)); // pre-set
+        state = state.with_shared_hub_region_latch(shared.clone());
+
+        let _ = session_retry_state_for_1002(&state);
+
+        assert!(
+            shared.load(Ordering::Acquire),
+            "shared latch must stay set across non-triggering retries",
+        );
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // `evaluate_hedge_leg_effects` — non-consuming hedge-leg evaluator
+    // ────────────────────────────────────────────────────────────────
+    //
+    // Mirrors the same `(operation, endpoint, retry_state, result)`
+    // tuple as `evaluate_transport_result` and emits the same
+    // `LocationEffect`s, minus the consumed `OperationAction`. These
+    // tests pin that mirror so a future refactor of either function
+    // can't silently diverge their side-effect surface.
+
+    /// Success transport result emits no effects and no session-retry
+    /// signal — same as `evaluate_transport_result`.
+    #[test]
+    fn hedge_leg_effects_success_is_empty() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_success_result();
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval.effects.is_empty());
+        assert!(!eval.observed_session_unavailable);
+    }
+
+    /// 503 ServiceUnavailable on a read emits `MarkPartitionUnavailable`
+    /// + `MarkEndpointUnavailable` — exactly what the non-hedged path
+    /// would have applied.
+    #[test]
+    fn hedge_leg_effects_503_emits_partition_and_endpoint_marks() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_http_error(StatusCode::ServiceUnavailable);
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval
+            .effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(eval
+            .effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!eval.observed_session_unavailable);
+    }
+
+    /// Transport error with `RequestSentStatus::Sent` on a read emits
+    /// the same `MarkPartitionUnavailable` + `MarkEndpointUnavailable`
+    /// pair the consuming path emits — see
+    /// `evaluate_transport_layer_outcome`.
+    #[test]
+    fn hedge_leg_effects_transport_sent_emits_marks() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_transport_error(RequestSentStatus::Sent);
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval
+            .effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+        assert!(eval
+            .effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+    }
+
+    /// Transport error with `RequestSentStatus::NotSent` emits NO
+    /// effects (the failure is purely client-side; failing over is safe
+    /// and incurs no routing-state consequences) — matches the
+    /// `definitely_not_sent` branch in `evaluate_transport_layer_outcome`.
+    #[test]
+    fn hedge_leg_effects_transport_not_sent_is_empty() {
+        let op = make_create_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_transport_error(RequestSentStatus::NotSent);
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(
+            eval.effects.is_empty(),
+            "not-sent transport error must not mark routing state",
+        );
+    }
+
+    /// 404/1002 on a single-master data-plane read with budget remaining
+    /// surfaces `observed_session_unavailable=true` AND emits no
+    /// effects (matches `try_handle_read_session_not_available`'s
+    /// empty-effects contract). The hedge race coordinator uses this
+    /// signal to flip the parent `hub_region_processing_only` latch at
+    /// the `BothTransient` upgrade boundary.
+    #[test]
+    fn hedge_leg_effects_1002_signals_session_unavailable() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        let result = make_read_session_not_available_result();
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval.effects.is_empty());
+        assert!(
+            eval.observed_session_unavailable,
+            "first 1002 on single-master dataplane should signal session-unavailable",
+        );
+    }
+
+    /// 404/1002 on a multi-master account does NOT signal
+    /// `observed_session_unavailable` — matches
+    /// `build_session_retry_state`'s 4-condition trigger (AC-4
+    /// per HUB_REGION_PROCESSING_HEADER_SPEC.md §7.1).
+    #[test]
+    fn hedge_leg_effects_1002_multi_master_no_signal() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 3); // multi-master
+        state.is_dataplane = true;
+        let result = make_read_session_not_available_result();
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(
+            !eval.observed_session_unavailable,
+            "multi-master 1002 must not flip the latch (AC-4)",
+        );
+    }
+
+    /// Already-latched state does not re-signal `observed_session_unavailable`
+    /// — idempotency boundary matching the non-hedged path.
+    #[test]
+    fn hedge_leg_effects_1002_no_signal_when_already_latched() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true;
+        let result = make_read_session_not_available_result();
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(
+            !eval.observed_session_unavailable,
+            "already-latched state should not re-signal",
+        );
+    }
+
+    /// DeadlineExceeded transport result emits no effects — matches
+    /// `evaluate_deadline_exceeded_outcome`.
+    #[test]
+    fn hedge_leg_effects_deadline_exceeded_is_empty() {
+        let op = make_read_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = TransportResult {
+            outcome: TransportOutcome::DeadlineExceeded {
+                request_sent: RequestSentStatus::Sent,
+            },
+        };
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(eval.effects.is_empty());
+        assert!(!eval.observed_session_unavailable);
+    }
+
+    /// Final HTTP errors that aren't classified by any per-status helper
+    /// (e.g. 409 Conflict) emit no effects from the hedge-leg
+    /// evaluator — same as the consuming path's `Abort` fallthrough.
+    #[test]
+    fn hedge_leg_effects_409_conflict_is_empty() {
+        let op = make_create_operation();
+        let endpoint = test_endpoint();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let result = make_http_error(StatusCode::Conflict);
+
+        let eval = evaluate_hedge_leg_effects(&op, &endpoint, &state, &result);
+        assert!(
+            eval.effects.is_empty(),
+            "409 Conflict has no per-status handler; emits no effects",
+        );
     }
 }

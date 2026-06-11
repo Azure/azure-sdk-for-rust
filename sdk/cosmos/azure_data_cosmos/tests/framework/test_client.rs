@@ -3,9 +3,6 @@
 
 // cspell:ignore: TEAMPROJECTID
 
-#![cfg_attr(not(feature = "key_auth"), allow(dead_code))]
-#![cfg(feature = "fault_injection")]
-
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionRule;

@@ -4,8 +4,6 @@
 //! Integration tests verifying proxy configuration behavior.
 //! These tests run against the Cosmos DB emulator.
 
-#![cfg(feature = "key_auth")]
-
 use super::framework;
 
 use framework::{TestClient, CONNECTION_STRING_ENV_VAR, EMULATOR_CONNECTION_STRING};

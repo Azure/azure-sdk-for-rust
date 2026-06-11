@@ -4,3 +4,4 @@
 //! Multi-region test modules.
 
 mod driver_partition_failover;
+mod hedging;

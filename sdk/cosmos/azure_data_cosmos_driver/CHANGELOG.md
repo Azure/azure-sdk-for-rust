@@ -1,8 +1,22 @@
 # Release History
 
-## 0.4.0 (Unreleased)
+## 0.5.0 (Unreleased)
 
 ### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
+## 0.4.0 (2026-06-09)
+
+### Features Added
+
+- Added cross regional hedging for reads on single and multi-master accounts. Using `AvailabilityStrategy::Hedging` the user now has the option to pass a threshold, and the driver speculatively dispatches the same request to a second preferred region after the threshold hits and returns whichever response classifies as final first. The losing leg is cancelled structurally (no detached tasks). ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
+- Added `OperationOptions::consecutive_hedge_win_threshold` (and the `AZURE_COSMOS_CONSECUTIVE_HEDGE_WIN_THRESHOLD` environment variable) to tune how aggressively cross-region hedging drives per-partition failover. This option does **not** enable hedging — hedging is turned on by setting `OperationOptions::availability_strategy` to `AvailabilityStrategy::Hedging(HedgingStrategy::new(threshold))` (at the operation, account, or runtime layer); when no strategy is configured the driver applies a built-in default, and `AvailabilityStrategy::Disabled` turns it off. Once hedging is active, the driver speculatively dispatches a read to an alternate preferred region after the threshold elapses, and a "hedge win" is recorded whenever that alternate returns the final response before the primary. `consecutive_hedge_win_threshold` sets how many *consecutive* hedge wins on the same `(partition, primary_region)` pair are tolerated before the per-partition circuit breaker (PPCB) trips the partition away from its primary region (default `5`, matching the .NET v3 SDK). Lower values trip the partition sooner when the primary is chronically slow but the alternate is healthy; higher values tolerate occasional latency spikes that the hedge happens to win, avoiding spurious failovers when both regions are healthy. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
+- Added configurable throttle (HTTP 429, rate-limited) retry limits to `OperationOptions` via the nested `ThrottlingRetryOptions` group (mirroring the .NET and Java SDKs' `ThrottlingRetryOptions`): `max_retry_count` (env `AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`, default `9`, `0` disables retries) caps the number of 429 retries, and `max_retry_wait_time` (default `30s`) caps the cumulative wait across them. Each field resolves independently through the standard operation → account → runtime → env layering and is threaded into the transport-level throttle retry loop via `ThrottleRetryState::with_limits`. The one-shot forced-final-retry safety net in `execute_transport_pipeline` is gated on `attempt_count < max_attempts`, so a configured `max_retry_count = N` produces at most `N + 1` total requests on the wire (1 initial + N retries) — matching the .NET-parity `MaxRetryAttemptsOnRateLimitedRequests` contract. The forced-final retry remains active when the cumulative-wait budget is the limiter rather than the count. Both budgets are scoped per `execute_transport_pipeline` invocation; an operation that fans out across regions (failover, hedging) starts a fresh throttle budget per leg, so per-operation total wall-clock time should be bounded via `OperationOptions::end_to_end_latency_policy`. ([#4544](https://github.com/Azure/azure-sdk-for-rust/pull/4544))
 
 ### Breaking Changes
 
@@ -10,8 +24,14 @@
 
 ### Bugs Fixed
 
+- Data-plane and non-account metadata operations now fall back to the hub/primary write region endpoint instead of the global account endpoint when all regional endpoints are excluded or unavailable. ([#4503](https://github.com/Azure/azure-sdk-for-rust/pull/4503))
+- Writes to multi-write Cosmos accounts now send the `x-ms-cosmos-allow-tentative-writes: true` request header (gated on `enableMultipleWriteLocations` from the account metadata). Without this header satellite write regions returned `403 / 3 (WriteForbidden)`, breaking write failover. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
+- Bootstrap account-metadata fetches now surface non-2xx responses as `CosmosError` with the wire status and body, instead of a `missing field _self` serde error. Diagnostics are populated on the same envelope used by the operation pipeline. ([#4500](https://github.com/Azure/azure-sdk-for-rust/pull/4500))
+- A transient failure while refreshing the partition key range cache no longer replaces a known-good cached routing map with an empty placeholder; the previous map is preserved until the next successful refresh. ([#4549](https://github.com/Azure/azure-sdk-for-rust/pull/4549))
+
 ### Other Changes
 
+- Downgraded the `cosmos.hedge.winner_selected` structured tracing event from `INFO` to `DEBUG`. Because the driver default enables hedging for every multi-region read, an `INFO`-level emission produced one log line per successful read in production. Win-rate metrics should be derived from the `HedgeDiagnostics` chain rather than from log scraping. ([#4432](https://github.com/Azure/azure-sdk-for-rust/pull/4432))
 - `CosmosDriver::resolve_container_by_name` no longer issues an extra `read_database` round-trip to discover the database RID. The database RID is now extracted in-process from the encoded byte layout of the container RID returned by the container read. ([#4506](https://github.com/Azure/azure-sdk-for-rust/pull/4506))
 
 ## 0.3.0 (2026-05-29)

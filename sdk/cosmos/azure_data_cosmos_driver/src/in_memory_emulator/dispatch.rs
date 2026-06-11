@@ -41,6 +41,7 @@ pub(crate) struct ParsedRequest {
     pub doc_id: Option<String>,
     pub partition_key_header: Option<String>,
     pub if_match: Option<String>,
+    pub if_none_match: Option<String>,
     pub session_token: Option<String>,
     pub activity_id: Option<String>,
     pub content_response_on_write: bool,
@@ -57,6 +58,7 @@ pub(crate) struct ParsedRequest {
 static IS_UPSERT: HeaderName = HeaderName::from_static("x-ms-documentdb-is-upsert");
 static PARTITION_KEY: HeaderName = HeaderName::from_static("x-ms-documentdb-partitionkey");
 static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
+static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 static CONTENT_RESPONSE: HeaderName =
@@ -75,6 +77,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .get_optional_str(&PARTITION_KEY)
         .map(|s| s.to_string());
     let if_match = headers.get_optional_str(&IF_MATCH).map(|s| s.to_string());
+    let if_none_match = headers
+        .get_optional_str(&IF_NONE_MATCH)
+        .map(|s| s.to_string());
     let session_token = headers
         .get_optional_str(&SESSION_TOKEN)
         .map(|s| s.to_string());
@@ -142,6 +147,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         doc_id,
         partition_key_header,
         if_match,
+        if_none_match,
         session_token,
         activity_id,
         content_response_on_write,

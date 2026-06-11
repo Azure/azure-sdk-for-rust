@@ -34,3 +34,6 @@ typespec_client_core = { workspace = true, features = [
 
 [package.metadata.docs.rs]
 features = []
+
+[lints]
+workspace = true
