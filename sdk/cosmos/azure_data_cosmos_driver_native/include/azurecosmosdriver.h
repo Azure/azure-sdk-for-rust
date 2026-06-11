@@ -1189,11 +1189,15 @@ const struct cosmos_error_t *cosmos_completion_error(const struct cosmos_complet
 void cosmos_completion_free(struct cosmos_completion_t *c);
 
 /**
- * Request cooperative cancellation. Idempotent and non-blocking. Phase 1
- * only flips the cancel-requested flag and (if the operation has not yet
- * reached a terminal state) transitions the state to `Cancelled` so the
- * state poller reflects it. Phase 6 wires the flag into the real
- * `tokio::select!` cancel branch.
+ * Request cooperative cancellation. Idempotent and non-blocking.
+ *
+ * Sets the cancel-requested flag and wakes the submit task's
+ * `tokio::select!` cancel branch (via a stored `Notify` permit, so a cancel
+ * that races ahead of the task is still observed). The task then drops the
+ * in-flight driver future and posts a `CANCELLED` completion. If the
+ * operation already produced a completion before the cancel was observed,
+ * the cancel is a no-op for the outcome but is still reflected in
+ * `cosmos_completion_was_cancel_requested`.
  */
 void cosmos_operation_handle_cancel(struct cosmos_operation_handle_t *op);
 

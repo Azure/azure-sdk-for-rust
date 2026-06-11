@@ -126,9 +126,16 @@ pub(crate) struct OperationInner {
     /// Lifecycle state — encoded as one of [`CosmosOperationHandleState`].
     state: AtomicU8,
     /// True once `cosmos_operation_handle_cancel` has been called on any
-    /// handle pointing at this inner. Phase 1 only flips the flag; Phase 6
-    /// wires it into the `tokio::select!` cancel branch.
+    /// handle pointing at this inner. The submit pipeline's
+    /// `enqueue_into_inner` reads it to set `was_cancel_requested` on the
+    /// published completion (so the receive loop can tell "cancel won" from
+    /// "cancel lost the race").
     cancel_requested: AtomicBool,
+    /// Wakes the submit task's `tokio::select!` cancel branch. A cancel
+    /// stores a permit via `notify_one`, so a cancel that races ahead of the
+    /// task starting to wait is still observed (the permit is consumed on the
+    /// first poll of `notified()`).
+    pub(crate) cancel_notify: tokio::sync::Notify,
 }
 
 impl OperationInner {
@@ -138,6 +145,7 @@ impl OperationInner {
                 CosmosOperationHandleState::CosmosOperationHandleStateInFlight as u8,
             ),
             cancel_requested: AtomicBool::new(false),
+            cancel_notify: tokio::sync::Notify::new(),
         }
     }
 }
@@ -403,6 +411,13 @@ impl CompletionQueueInner {
     /// Snapshots the current queue length under the mutex.
     pub(crate) fn current_len(&self) -> usize {
         self.inner.lock_recover().deque.len()
+    }
+
+    /// Snapshots the queue's current lifecycle state under the mutex.
+    /// Used by the submit pre-flight to reject submissions to a queue that
+    /// is already shutting down or drained before spawning a doomed task.
+    pub(crate) fn state(&self) -> CosmosCqState {
+        self.inner.lock_recover().state
     }
 
     /// Returns whether this queue captures rich error payloads.
@@ -967,17 +982,24 @@ pub extern "C" fn cosmos_completion_free(c: *mut Completion) {
 // FFI: cosmos_operation_handle_*
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Request cooperative cancellation. Idempotent and non-blocking. Phase 1
-/// only flips the cancel-requested flag and (if the operation has not yet
-/// reached a terminal state) transitions the state to `Cancelled` so the
-/// state poller reflects it. Phase 6 wires the flag into the real
-/// `tokio::select!` cancel branch.
+/// Request cooperative cancellation. Idempotent and non-blocking.
+///
+/// Sets the cancel-requested flag and wakes the submit task's
+/// `tokio::select!` cancel branch (via a stored `Notify` permit, so a cancel
+/// that races ahead of the task is still observed). The task then drops the
+/// in-flight driver future and posts a `CANCELLED` completion. If the
+/// operation already produced a completion before the cancel was observed,
+/// the cancel is a no-op for the outcome but is still reflected in
+/// `cosmos_completion_was_cancel_requested`.
 #[no_mangle]
 pub extern "C" fn cosmos_operation_handle_cancel(op: *mut OperationHandle) {
     let Some(inner) = OperationHandle::inner(op) else {
         return;
     };
     inner.cancel_requested.store(true, Ordering::Release);
+    // Store a permit so the submit task observes the cancel even if it has
+    // not yet reached its `notified()` await point.
+    inner.cancel_notify.notify_one();
 }
 
 /// Poll the operation's lifecycle state. Returns `InFlight` if `op` is NULL.

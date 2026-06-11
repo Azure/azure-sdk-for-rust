@@ -31,8 +31,8 @@ use azure_data_cosmos_driver::models::{AccountReference, CosmosResponse};
 
 use crate::account_ref::AccountRefHandle;
 use crate::completion::{
-    Completion, CompletionQueue, CompletionQueueInner, CosmosCompletionOutcome, OperationHandle,
-    OperationInner,
+    Completion, CompletionQueue, CompletionQueueInner, CosmosCompletionOutcome, CosmosCqState,
+    OperationHandle, OperationInner,
 };
 use crate::container_ref::ContainerRefInner;
 use crate::driver::{DriverHandle, DriverInner};
@@ -88,6 +88,15 @@ fn pre_flight_spawn(
     let Some(queue_inner) = CompletionQueue::inner_arc(queue) else {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
     };
+    // Reject submissions to a queue that is no longer running. Without this
+    // the task would still spawn, run the driver work, and then have its
+    // completion rejected by `enqueue_into_inner` — leaking the operation
+    // handle as `IN_FLIGHT` forever and never delivering a completion to the
+    // host. Bailing out here returns `QUEUE_SHUTDOWN` synchronously so the
+    // caller gets a NULL handle and a definitive coarse code.
+    if queue_inner.state() != CosmosCqState::CosmosCqStateRunning {
+        return Err(CosmosErrorCode::CosmosErrorCodeQueueShutdown);
+    }
     // Pre-flight queue state. The spawned task does a second check
     // inside the lock when it finally enqueues — this is just an early
     // bailout so we don't spend a spawn on a doomed submit.
@@ -145,10 +154,34 @@ fn spawn_oneshot<Fut, R>(
         // continuation hangs and leaks. Catching the panic here lets us still
         // publish exactly one completion, honoring the spec §3.6 invariant.
         let work = std::panic::AssertUnwindSafe(async move { fut.await.map(to_response) });
-        let outcome = work.catch_unwind().await;
+        let work = work.catch_unwind();
+        tokio::pin!(work);
+
+        // Race the driver work against a cancel signal. `notify_one` (in
+        // `cosmos_operation_handle_cancel`) stores a permit, so a cancel that
+        // arrives before this task starts waiting is still observed on the
+        // first poll of `notified()`. `biased` makes a pending cancel win
+        // deterministically over a simultaneously-ready result. On cancel we
+        // simply stop awaiting `work`; dropping it cancels the driver future
+        // (best-effort cooperative cancellation per spec §3.6.3).
+        let outcome = tokio::select! {
+            biased;
+            _ = ctx.op_inner.cancel_notify.notified() => None,
+            done = &mut work => Some(done),
+        };
 
         let completion = match outcome {
-            Ok(Ok(response)) => Completion::new_for_publish(
+            // Cancelled: drop the driver future and synthesize a CANCELLED
+            // completion so the host's continuation is released.
+            None => Completion::new_for_publish(
+                CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
+                CosmosErrorCode::CosmosErrorCodeOperationCancelled,
+                ctx.user_data.as_ptr(),
+                ctx.op_inner.clone(),
+                None,
+                None,
+            ),
+            Some(Ok(Ok(response))) => Completion::new_for_publish(
                 CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
                 CosmosErrorCode::CosmosErrorCodeSuccess,
                 ctx.user_data.as_ptr(),
@@ -156,7 +189,7 @@ fn spawn_oneshot<Fut, R>(
                 None,
                 Some(response),
             ),
-            Ok(Err(err)) => {
+            Some(Ok(Err(err))) => {
                 let coarse = CosmosErrorCode::from_driver_error(&err);
                 let stored_error = if ctx.include_error_details {
                     Some(Arc::new(CosmosErrorInner::new(err)))
@@ -172,7 +205,7 @@ fn spawn_oneshot<Fut, R>(
                     None,
                 )
             }
-            Err(_panic) => {
+            Some(Err(_panic)) => {
                 // The driver future (or response conversion) panicked. Surface
                 // it as a coarse client-side error so the host's continuation
                 // is released with a definitive failure instead of hanging.
@@ -647,5 +680,83 @@ mod tests {
         );
         assert!(h.is_null());
         assert_eq!(err, CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+    }
+
+    #[test]
+    fn pre_flight_spawn_rejects_shutdown_queue() {
+        use crate::completion::{
+            cosmos_cq_create, cosmos_cq_free, cosmos_cq_shutdown, CosmosCqOptions,
+        };
+        use crate::runtime::{__test_only_create_default_runtime, cosmos_runtime_free};
+
+        let rt = __test_only_create_default_runtime();
+        let opts = CosmosCqOptions {
+            capacity_hint: 0,
+            max_capacity: 0,
+            include_error_details: 1,
+        };
+        let queue = cosmos_cq_create(rt, &opts as *const _);
+        assert!(!queue.is_null());
+
+        // Shut the queue down, then attempt a submit pre-flight. It must be
+        // rejected synchronously with QUEUE_SHUTDOWN — no task is spawned.
+        cosmos_cq_shutdown(queue);
+        let result = pre_flight_spawn(queue, ptr::null_mut());
+        assert!(matches!(
+            result,
+            Err(CosmosErrorCode::CosmosErrorCodeQueueShutdown)
+        ));
+
+        cosmos_cq_free(queue);
+        cosmos_runtime_free(rt);
+    }
+
+    #[test]
+    fn spawn_oneshot_cancellation_yields_cancelled_completion() {
+        use crate::completion::{
+            cosmos_completion_free, cosmos_completion_outcome,
+            cosmos_completion_was_cancel_requested, cosmos_cq_create, cosmos_cq_free,
+            cosmos_cq_wait, cosmos_operation_handle_cancel, cosmos_operation_handle_free,
+            CosmosCompletionOutcome, CosmosCqOptions,
+        };
+        use crate::runtime::{__test_only_create_default_runtime, cosmos_runtime_free};
+
+        let rt = __test_only_create_default_runtime();
+        let opts = CosmosCqOptions {
+            capacity_hint: 0,
+            max_capacity: 0,
+            include_error_details: 1,
+        };
+        let queue = cosmos_cq_create(rt, &opts as *const _);
+        assert!(!queue.is_null());
+
+        let (ctx, op_handle) = pre_flight_spawn(queue, ptr::null_mut()).expect("pre-flight ok");
+        let runtime = Arc::clone(ctx.queue.runtime());
+
+        // A future that never resolves on its own — only cancellation can end
+        // this operation.
+        spawn_oneshot(
+            ctx,
+            runtime,
+            futures::future::pending::<azure_data_cosmos_driver::error::Result<CosmosResponse>>(),
+            |r: CosmosResponse| ResponseHandle::into_raw(r),
+        );
+
+        // Request cancellation; the spawned task's select must observe it and
+        // post a CANCELLED completion instead of hanging forever.
+        cosmos_operation_handle_cancel(op_handle);
+
+        let c = cosmos_cq_wait(queue, u32::MAX);
+        assert!(!c.is_null());
+        assert_eq!(
+            cosmos_completion_outcome(c),
+            CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
+        );
+        assert!(cosmos_completion_was_cancel_requested(c));
+
+        cosmos_completion_free(c);
+        cosmos_operation_handle_free(op_handle);
+        cosmos_cq_free(queue);
+        cosmos_runtime_free(rt);
     }
 }
