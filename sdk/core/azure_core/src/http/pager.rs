@@ -324,7 +324,7 @@ impl<'a> Default for PagerOptions<'a> {
 /// }
 /// # Ok(()) }
 /// ```
-#[must_use = "streams do nothing unless you `.await` or poll them"]
+#[must_use = "streams do nothing unless you poll them"]
 #[pin_project(project = ItemIteratorProjection, project_replace = ItemIteratorProjectionOwned)]
 pub struct ItemIterator<P>
 where
@@ -621,7 +621,7 @@ where
 /// }
 /// # Ok(()) }
 /// ```
-#[must_use = "streams do nothing unless you `.await` or poll them"]
+#[must_use = "streams do nothing unless you poll them"]
 #[pin_project(project = PageIteratorProjection, project_replace = PageIteratorProjectionOwned)]
 pub struct PageIterator<P>
 where
