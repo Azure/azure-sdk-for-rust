@@ -35,6 +35,11 @@ azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-featu
 azure_core = { workspace = true, default-features = false }
 url = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros"] }
+# `FutureExt::catch_unwind` is used by the submit pipeline to keep the
+# "every submission produces exactly one completion" invariant even when the
+# driver future panics (a panic would otherwise be isolated at the Tokio task
+# boundary, leaving the operation handle IN_FLIGHT forever).
+futures.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]

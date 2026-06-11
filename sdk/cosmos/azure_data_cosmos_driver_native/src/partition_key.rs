@@ -281,16 +281,20 @@ pub extern "C" fn cosmos_partition_key_builder_add_number(
 }
 
 /// Appends a boolean component to the partition key.
+///
+/// `value` is a C boolean (`0` = false, non-zero = true). It is taken as a
+/// `u8` rather than a Rust `bool` so an arbitrary host-supplied byte cannot
+/// produce an invalid `bool` (which would be undefined behavior).
 #[no_mangle]
 pub extern "C" fn cosmos_partition_key_builder_add_bool(
     builder: *mut PartitionKeyBuilderHandle,
-    value: bool,
+    value: u8,
 ) -> i32 {
     let inner = match push_pre_flight(builder) {
         Ok(i) => i,
         Err(code) => return code.as_i32(),
     };
-    inner.components.push(PartitionKeyValue::from(value));
+    inner.components.push(PartitionKeyValue::from(value != 0));
     CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
 }
 
@@ -523,7 +527,7 @@ mod tests {
             CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
         );
         assert_eq!(
-            cosmos_partition_key_builder_add_bool(b, true),
+            cosmos_partition_key_builder_add_bool(b, 1),
             CosmosErrorCode::CosmosErrorCodeSuccess.as_i32()
         );
         let mut out: *mut PartitionKeyHandle = ptr::null_mut();
@@ -562,7 +566,7 @@ mod tests {
             CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_i32()
         );
         assert_eq!(
-            cosmos_partition_key_builder_add_bool(b, false),
+            cosmos_partition_key_builder_add_bool(b, 0),
             CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_i32()
         );
         assert_eq!(
@@ -642,7 +646,7 @@ mod tests {
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
         );
         assert_eq!(
-            cosmos_partition_key_builder_add_bool(ptr::null_mut(), false),
+            cosmos_partition_key_builder_add_bool(ptr::null_mut(), 0),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_i32()
         );
         assert_eq!(

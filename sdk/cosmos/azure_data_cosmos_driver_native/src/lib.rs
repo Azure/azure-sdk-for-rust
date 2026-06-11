@@ -39,6 +39,7 @@ pub mod partition_key;
 pub mod response;
 pub mod runtime;
 pub mod runtime_builder;
+pub(crate) mod safety;
 pub mod submit;
 
 // We want this value to be present as a string in the compiled binary so that

@@ -123,6 +123,25 @@ pub enum CosmosReadConsistencyStrategy {
 }
 
 impl CosmosReadConsistencyStrategy {
+    /// Validates a host-supplied `i32` discriminant and returns the matching
+    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidOptionValue`] for
+    /// an unknown value.
+    ///
+    /// The flat options struct stores this field as a raw `i32` (not as this
+    /// enum directly): loading an out-of-range value as a fieldless
+    /// `#[repr(i32)]` enum would be instant undefined behavior, so the host's
+    /// bytes are validated here before any variant is materialized.
+    fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
+        Ok(match raw {
+            0 => Self::CosmosReadConsistencyStrategyUnset,
+            1 => Self::CosmosReadConsistencyStrategyDefault,
+            2 => Self::CosmosReadConsistencyStrategyEventual,
+            3 => Self::CosmosReadConsistencyStrategySession,
+            4 => Self::CosmosReadConsistencyStrategyGlobalStrong,
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
+        })
+    }
+
     fn to_driver(self) -> Result<Option<ReadConsistencyStrategy>, CosmosErrorCode> {
         Ok(match self {
             Self::CosmosReadConsistencyStrategyUnset => None,
@@ -153,6 +172,19 @@ pub enum CosmosContentResponseOnWriteOpt {
 }
 
 impl CosmosContentResponseOnWriteOpt {
+    /// Validates a host-supplied `i32` discriminant and returns the matching
+    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidOptionValue`] for
+    /// an unknown value. See [`CosmosReadConsistencyStrategy::from_i32`] for
+    /// why the field is read as a raw `i32`.
+    fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
+        Ok(match raw {
+            0 => Self::CosmosContentResponseOnWriteOptUnset,
+            1 => Self::CosmosContentResponseOnWriteOptDisabled,
+            2 => Self::CosmosContentResponseOnWriteOptEnabled,
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
+        })
+    }
+
     fn to_driver(self) -> Result<Option<ContentResponseOnWrite>, CosmosErrorCode> {
         Ok(match self {
             Self::CosmosContentResponseOnWriteOptUnset => None,
@@ -223,10 +255,14 @@ unsafe fn decode_headers(
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct CosmosOperationOptions {
-    /// Read consistency strategy. `Unset` inherits.
-    pub read_consistency_strategy: CosmosReadConsistencyStrategy,
-    /// Whether write responses include the resource body. `Unset` inherits.
-    pub content_response_on_write: CosmosContentResponseOnWriteOpt,
+    /// Read consistency strategy, encoded as a [`CosmosReadConsistencyStrategy`]
+    /// discriminant. `0` (`Unset`) inherits. Stored as a raw `i32` so an
+    /// out-of-range host value is validated (not UB) on conversion.
+    pub read_consistency_strategy: i32,
+    /// Whether write responses include the resource body, encoded as a
+    /// [`CosmosContentResponseOnWriteOpt`] discriminant. `0` (`Unset`)
+    /// inherits. Stored as a raw `i32` for the same reason as above.
+    pub content_response_on_write: i32,
     /// Disable automatic session token management. Tri-state bool.
     pub session_capturing_disabled: i8,
     /// Enable the per-partition circuit breaker. Tri-state bool.
@@ -274,8 +310,11 @@ impl CosmosOperationOptions {
     pub(crate) unsafe fn to_driver(&self) -> Result<OperationOptions, CosmosErrorCode> {
         let mut opts = OperationOptions::default();
 
-        opts.read_consistency_strategy = self.read_consistency_strategy.to_driver()?;
-        opts.content_response_on_write = self.content_response_on_write.to_driver()?;
+        opts.read_consistency_strategy =
+            CosmosReadConsistencyStrategy::from_i32(self.read_consistency_strategy)?.to_driver()?;
+        opts.content_response_on_write =
+            CosmosContentResponseOnWriteOpt::from_i32(self.content_response_on_write)?
+                .to_driver()?;
         opts.session_capturing_disabled = decode_tristate_bool(self.session_capturing_disabled)?;
         opts.per_partition_circuit_breaker_enabled =
             decode_tristate_bool(self.per_partition_circuit_breaker_enabled)?;
@@ -362,10 +401,10 @@ unsafe fn decode_regions(
 #[no_mangle]
 pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
     CosmosOperationOptions {
-        read_consistency_strategy:
-            CosmosReadConsistencyStrategy::CosmosReadConsistencyStrategyUnset,
+        read_consistency_strategy: CosmosReadConsistencyStrategy::CosmosReadConsistencyStrategyUnset
+            as i32,
         content_response_on_write:
-            CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset,
+            CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32,
         session_capturing_disabled: TRISTATE_UNSET,
         per_partition_circuit_breaker_enabled: TRISTATE_UNSET,
         max_failover_retry_count: -1,
@@ -455,6 +494,47 @@ pub enum CosmosOperationKind {
     CosmosOperationKindPatchItem = 24,
 }
 
+impl CosmosOperationKind {
+    /// Validates a host-supplied `i32` discriminant and returns the matching
+    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidArgument`] for an
+    /// unknown value.
+    ///
+    /// The request struct stores `kind` as a raw `i32` (not as this enum
+    /// directly): loading an out-of-range value as a fieldless `#[repr(i32)]`
+    /// enum would be instant undefined behavior, so the host's bytes are
+    /// validated here before any variant is materialized.
+    fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
+        Ok(match raw {
+            0 => Self::CosmosOperationKindInvalid,
+            1 => Self::CosmosOperationKindCreateDatabase,
+            2 => Self::CosmosOperationKindReadAllDatabases,
+            3 => Self::CosmosOperationKindQueryDatabases,
+            4 => Self::CosmosOperationKindQueryOffers,
+            5 => Self::CosmosOperationKindReadOffer,
+            6 => Self::CosmosOperationKindReplaceOffer,
+            7 => Self::CosmosOperationKindReadDatabase,
+            8 => Self::CosmosOperationKindDeleteDatabase,
+            9 => Self::CosmosOperationKindCreateContainer,
+            10 => Self::CosmosOperationKindReadAllContainers,
+            11 => Self::CosmosOperationKindQueryContainers,
+            12 => Self::CosmosOperationKindReadContainer,
+            13 => Self::CosmosOperationKindReplaceContainer,
+            14 => Self::CosmosOperationKindDeleteContainer,
+            15 => Self::CosmosOperationKindReadAllItems,
+            16 => Self::CosmosOperationKindReadAllItemsCrossPartition,
+            17 => Self::CosmosOperationKindQueryItems,
+            18 => Self::CosmosOperationKindBatch,
+            19 => Self::CosmosOperationKindCreateItem,
+            20 => Self::CosmosOperationKindReadItem,
+            21 => Self::CosmosOperationKindUpsertItem,
+            22 => Self::CosmosOperationKindReplaceItem,
+            23 => Self::CosmosOperationKindDeleteItem,
+            24 => Self::CosmosOperationKindPatchItem,
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument),
+        })
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // cosmos_precondition_kind_t
 // ─────────────────────────────────────────────────────────────────────────────
@@ -469,6 +549,21 @@ pub enum CosmosPreconditionKind {
     CosmosPreconditionKindIfMatch = 1,
     /// `If-None-Match: <etag>` — requires `precondition_etag`.
     CosmosPreconditionKindIfNoneMatch = 2,
+}
+
+impl CosmosPreconditionKind {
+    /// Validates a host-supplied `i32` discriminant and returns the matching
+    /// variant, or [`CosmosErrorCode::CosmosErrorCodeInvalidArgument`] for an
+    /// unknown value. See [`CosmosOperationKind::from_i32`] for why the field
+    /// is read as a raw `i32`.
+    fn from_i32(raw: i32) -> Result<Self, CosmosErrorCode> {
+        Ok(match raw {
+            0 => Self::CosmosPreconditionKindNone,
+            1 => Self::CosmosPreconditionKindIfMatch,
+            2 => Self::CosmosPreconditionKindIfNoneMatch,
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument),
+        })
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -499,8 +594,10 @@ pub struct CosmosBytesView {
 /// All pointers are borrowed for the duration of the submit call only.
 #[repr(C)]
 pub struct CosmosOperationRequest {
-    /// Which operation to build. See [`CosmosOperationKind`].
-    pub kind: CosmosOperationKind,
+    /// Which operation to build, encoded as a [`CosmosOperationKind`]
+    /// discriminant. Stored as a raw `i32` so an out-of-range host value is
+    /// validated (not UB) before dispatch.
+    pub kind: i32,
 
     /// Account reference. Required for account-scope kinds; otherwise NULL.
     pub account: *const AccountRefHandle,
@@ -543,8 +640,10 @@ pub struct CosmosOperationRequest {
     /// Populate query metrics. Tri-state bool (`0` unset / `1` false / `2` true).
     pub populate_query_metrics: i8,
 
-    /// Precondition selector. See [`CosmosPreconditionKind`].
-    pub precondition_kind: CosmosPreconditionKind,
+    /// Precondition selector, encoded as a [`CosmosPreconditionKind`]
+    /// discriminant. Stored as a raw `i32` so an out-of-range host value is
+    /// validated (not UB) before use.
+    pub precondition_kind: i32,
     /// ETag for the precondition (NUL-terminated UTF-8). Required iff
     /// `precondition_kind` is not `None`.
     pub precondition_etag: *const c_char,
@@ -618,11 +717,15 @@ unsafe fn build_operation(
 ) -> Result<CosmosOperation, CosmosErrorCode> {
     use CosmosOperationKind as K;
 
+    // Validate the host-supplied `kind` discriminant before materializing the
+    // enum (the field is a raw `i32` to avoid UB on an out-of-range value).
+    let kind = CosmosOperationKind::from_i32(req.kind)?;
+
     // Borrow the reference handles the kind needs. `require_*` enforces
     // strict scope checking — a kind that needs a container rejects a NULL
     // container, and (below) each factory ignores fields outside its scope
     // only after we've confirmed the in-scope ones are present.
-    let op = match req.kind {
+    let op = match kind {
         K::CosmosOperationKindInvalid => {
             return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
         }
@@ -764,8 +867,9 @@ unsafe fn apply_inline_mutators(
         op = op.with_max_item_count(hint);
     }
 
-    // Precondition.
-    match req.precondition_kind {
+    // Precondition. Validate the host-supplied discriminant before
+    // materializing the enum (the field is a raw `i32` to avoid UB).
+    match CosmosPreconditionKind::from_i32(req.precondition_kind)? {
         CosmosPreconditionKind::CosmosPreconditionKindNone => {}
         CosmosPreconditionKind::CosmosPreconditionKindIfMatch => {
             let etag = require_cstr(req.precondition_etag)?;
@@ -929,15 +1033,73 @@ mod tests {
     }
 
     #[test]
+    fn read_consistency_from_i32_validates_range() {
+        use CosmosReadConsistencyStrategy as S;
+        assert_eq!(S::from_i32(0), Ok(S::CosmosReadConsistencyStrategyUnset));
+        assert_eq!(
+            S::from_i32(4),
+            Ok(S::CosmosReadConsistencyStrategyGlobalStrong)
+        );
+        assert_eq!(
+            S::from_i32(5),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        );
+        assert_eq!(
+            S::from_i32(-1),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        );
+    }
+
+    #[test]
+    fn content_response_from_i32_validates_range() {
+        use CosmosContentResponseOnWriteOpt as C;
+        assert_eq!(C::from_i32(0), Ok(C::CosmosContentResponseOnWriteOptUnset));
+        assert_eq!(
+            C::from_i32(2),
+            Ok(C::CosmosContentResponseOnWriteOptEnabled)
+        );
+        assert_eq!(
+            C::from_i32(3),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        );
+    }
+
+    #[test]
+    fn operation_kind_from_i32_validates_range() {
+        use CosmosOperationKind as K;
+        assert_eq!(K::from_i32(0), Ok(K::CosmosOperationKindInvalid));
+        assert_eq!(K::from_i32(24), Ok(K::CosmosOperationKindPatchItem));
+        assert_eq!(
+            K::from_i32(25),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+        );
+        assert_eq!(
+            K::from_i32(-1),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+        );
+    }
+
+    #[test]
+    fn precondition_kind_from_i32_validates_range() {
+        use CosmosPreconditionKind as P;
+        assert_eq!(P::from_i32(0), Ok(P::CosmosPreconditionKindNone));
+        assert_eq!(P::from_i32(2), Ok(P::CosmosPreconditionKindIfNoneMatch));
+        assert_eq!(
+            P::from_i32(3),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
+        );
+    }
+
+    #[test]
     fn options_default_is_all_unset() {
         let o = cosmos_operation_options_default();
         assert_eq!(
             o.read_consistency_strategy,
-            CosmosReadConsistencyStrategy::CosmosReadConsistencyStrategyUnset
+            CosmosReadConsistencyStrategy::CosmosReadConsistencyStrategyUnset as i32
         );
         assert_eq!(
             o.content_response_on_write,
-            CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset
+            CosmosContentResponseOnWriteOpt::CosmosContentResponseOnWriteOptUnset as i32
         );
         assert_eq!(o.session_capturing_disabled, TRISTATE_UNSET);
         assert_eq!(o.per_partition_circuit_breaker_enabled, TRISTATE_UNSET);

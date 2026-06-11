@@ -163,6 +163,17 @@ fn generate_c_header() {
                 cbindgen::ItemType::OpaqueItems,
                 cbindgen::ItemType::Typedefs,
             ],
+            // Force-include the ABI input enums. Their discriminants are now
+            // read as raw `int32_t` struct fields (to avoid undefined behavior
+            // on an out-of-range host value), so cbindgen no longer sees them
+            // referenced by any exported item — but hosts still need the
+            // generated `COSMOS_*` named constants to populate those fields.
+            include: vec![
+                "CosmosOperationKind".into(),
+                "CosmosPreconditionKind".into(),
+                "CosmosReadConsistencyStrategy".into(),
+                "CosmosContentResponseOnWriteOpt".into(),
+            ],
             rename,
             ..Default::default()
         },

@@ -41,6 +41,7 @@ use azure_data_cosmos_driver::models::{CosmosResponse, ResponseBody};
 use crate::container_ref::ContainerRefHandle;
 use crate::driver::DriverHandle;
 use crate::error::CosmosErrorCode;
+use crate::safety::MutexExt;
 
 pub(crate) struct ResponseInner {
     /// `None` on degenerate responses (driver-creation and
@@ -420,7 +421,7 @@ pub extern "C" fn cosmos_response_take_driver(response: *mut ResponseHandle) -> 
     let Some(storage) = ResponseHandle::storage(response) else {
         return std::ptr::null_mut();
     };
-    let mut slot = storage.driver_payload.lock().unwrap();
+    let mut slot = storage.driver_payload.lock_recover();
     match slot.take() {
         Some(arc) => crate::driver::DriverHandle::from_arc_into_raw(arc),
         None => std::ptr::null_mut(),
@@ -438,7 +439,7 @@ pub extern "C" fn cosmos_response_take_container(
     let Some(storage) = ResponseHandle::storage(response) else {
         return std::ptr::null_mut();
     };
-    let mut slot = storage.container_payload.lock().unwrap();
+    let mut slot = storage.container_payload.lock_recover();
     match slot.take() {
         Some(arc) => crate::container_ref::ContainerRefHandle::from_arc_into_raw(arc),
         None => std::ptr::null_mut(),

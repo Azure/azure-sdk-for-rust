@@ -28,6 +28,7 @@ use std::time::{Duration, Instant};
 
 use crate::error::{CosmosErrorCode, CosmosErrorHandle, CosmosErrorInner};
 use crate::runtime::{RuntimeContext, RuntimeContextInner};
+use crate::safety::MutexExt;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Outcome enum (cosmos_completion_outcome_t)
@@ -264,17 +265,17 @@ unsafe impl Sync for Completion {}
 
 impl Drop for Completion {
     fn drop(&mut self) {
-        if let Some(handle) = self.cached_op_handle.lock().unwrap().take() {
+        if let Some(handle) = self.cached_op_handle.lock_recover().take() {
             OperationHandle::drop_raw(handle);
         }
-        if let Some(handle) = self.cached_error_handle.lock().unwrap().take() {
+        if let Some(handle) = self.cached_error_handle.lock_recover().take() {
             crate::error::CosmosErrorHandle::drop_raw(handle);
         }
         // Free the response if it was never taken via
         // `cosmos_completion_take_response`. The slot owns the raw
         // pointer; freeing here mirrors how `cached_error_handle` is
         // freed above.
-        if let Some(response) = self.response.lock().unwrap().take() {
+        if let Some(response) = self.response.lock_recover().take() {
             crate::response::cosmos_response_free(response);
         }
     }
@@ -355,7 +356,11 @@ impl Default for CqOptions {
 pub struct CosmosCqOptions {
     pub capacity_hint: u32,
     pub max_capacity: u32,
-    pub include_error_details: bool,
+    /// Whether to capture rich error payloads, as a C boolean (`0` = false,
+    /// non-zero = true). Read as a `u8` rather than a Rust `bool` so an
+    /// arbitrary host-written byte cannot produce an invalid `bool` (which
+    /// would be undefined behavior).
+    pub include_error_details: u8,
 }
 
 impl From<CosmosCqOptions> for CqOptions {
@@ -363,7 +368,7 @@ impl From<CosmosCqOptions> for CqOptions {
         Self {
             capacity_hint: c.capacity_hint,
             max_capacity: c.max_capacity,
-            include_error_details: c.include_error_details,
+            include_error_details: c.include_error_details != 0,
         }
     }
 }
@@ -397,7 +402,7 @@ impl CompletionQueueInner {
 
     /// Snapshots the current queue length under the mutex.
     pub(crate) fn current_len(&self) -> usize {
-        self.inner.lock().unwrap().deque.len()
+        self.inner.lock_recover().deque.len()
     }
 
     /// Returns whether this queue captures rich error payloads.
@@ -488,7 +493,7 @@ impl CompletionQueue {
         inner: &Arc<CompletionQueueInner>,
         mut c: Box<Completion>,
     ) -> CosmosErrorCode {
-        let mut guard = inner.inner.lock().unwrap();
+        let mut guard = inner.inner.lock_recover();
         if guard.state != CosmosCqState::CosmosCqStateRunning {
             return CosmosErrorCode::CosmosErrorCodeQueueShutdown;
         }
@@ -594,7 +599,7 @@ pub extern "C" fn cosmos_cq_wait(queue: *mut CompletionQueue, timeout_ms: u32) -
     };
 
     let inner = &q.inner;
-    let mut guard = inner.inner.lock().unwrap();
+    let mut guard = inner.inner.lock_recover();
 
     if timeout_ms == 0 {
         // Poll-only: return immediately whatever's there (possibly nothing).
@@ -629,13 +634,19 @@ pub extern "C" fn cosmos_cq_wait(queue: *mut CompletionQueue, timeout_ms: u32) -
         }
         // Wait for either a new completion or a shutdown signal.
         guard = match deadline {
-            None => inner.data_available.wait(guard).unwrap(),
+            None => inner
+                .data_available
+                .wait(guard)
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
             Some(d) => {
                 let remaining = d.saturating_duration_since(Instant::now());
                 if remaining.is_zero() {
                     return std::ptr::null_mut();
                 }
-                let (g, timed_out) = inner.data_available.wait_timeout(guard, remaining).unwrap();
+                let (g, timed_out) = inner
+                    .data_available
+                    .wait_timeout(guard, remaining)
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
                 if timed_out.timed_out() && g.deque.is_empty() {
                     return std::ptr::null_mut();
                 }
@@ -671,27 +682,32 @@ pub extern "C" fn cosmos_cq_wait_batch(
     max_count: u32,
     timeout_ms: u32,
 ) -> u32 {
-    if max_count == 0 || out_completions.is_null() {
-        return 0;
-    }
-    let first = cosmos_cq_wait(queue, timeout_ms);
-    if first.is_null() {
-        return 0;
-    }
-    // SAFETY: caller guarantees `out_completions` references at least
-    // `max_count` slots of `*mut Completion`.
-    unsafe { out_completions.write(first) };
-    let mut count = 1u32;
-    while count < max_count {
-        let next = cosmos_cq_try_wait(queue);
-        if next.is_null() {
-            break;
+    // Consumer entry point that runs on the host's thread and writes through
+    // a caller-supplied buffer. Guard it so a panic can never unwind across
+    // the FFI boundary into the host runtime.
+    crate::safety::ffi_guard(0, || {
+        if max_count == 0 || out_completions.is_null() {
+            return 0;
         }
-        // SAFETY: see above.
-        unsafe { out_completions.add(count as usize).write(next) };
-        count += 1;
-    }
-    count
+        let first = cosmos_cq_wait(queue, timeout_ms);
+        if first.is_null() {
+            return 0;
+        }
+        // SAFETY: caller guarantees `out_completions` references at least
+        // `max_count` slots of `*mut Completion`.
+        unsafe { out_completions.write(first) };
+        let mut count = 1u32;
+        while count < max_count {
+            let next = cosmos_cq_try_wait(queue);
+            if next.is_null() {
+                break;
+            }
+            // SAFETY: see above.
+            unsafe { out_completions.add(count as usize).write(next) };
+            count += 1;
+        }
+        count
+    })
 }
 
 /// Block until the queue has room for at least one more pending completion,
@@ -706,7 +722,7 @@ pub extern "C" fn cosmos_cq_wait_writable(queue: *mut CompletionQueue, timeout_m
         // Unbounded — always writable.
         return true;
     }
-    let mut guard = inner.inner.lock().unwrap();
+    let mut guard = inner.inner.lock_recover();
     if guard.state != CosmosCqState::CosmosCqStateRunning {
         return false;
     }
@@ -725,7 +741,10 @@ pub extern "C" fn cosmos_cq_wait_writable(queue: *mut CompletionQueue, timeout_m
 
     loop {
         guard = match deadline {
-            None => inner.space_available.wait(guard).unwrap(),
+            None => inner
+                .space_available
+                .wait(guard)
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
             Some(d) => {
                 let remaining = d.saturating_duration_since(Instant::now());
                 if remaining.is_zero() {
@@ -734,7 +753,7 @@ pub extern "C" fn cosmos_cq_wait_writable(queue: *mut CompletionQueue, timeout_m
                 let (g, timed_out) = inner
                     .space_available
                     .wait_timeout(guard, remaining)
-                    .unwrap();
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
                 if timed_out.timed_out() {
                     return (g.deque.len() as u32) < inner.options.max_capacity
                         && g.state == CosmosCqState::CosmosCqStateRunning;
@@ -759,7 +778,7 @@ pub extern "C" fn cosmos_cq_shutdown(queue: *mut CompletionQueue) {
     let Some(q) = CompletionQueue::storage(queue) else {
         return;
     };
-    let mut guard = q.inner.inner.lock().unwrap();
+    let mut guard = q.inner.inner.lock_recover();
     if guard.state == CosmosCqState::CosmosCqStateRunning {
         guard.state = CosmosCqState::CosmosCqStateShutdown;
         if guard.deque.is_empty() {
@@ -776,7 +795,7 @@ pub extern "C" fn cosmos_cq_state(queue: *const CompletionQueue) -> CosmosCqStat
     let Some(q) = CompletionQueue::storage(queue) else {
         return CosmosCqState::CosmosCqStateRunning;
     };
-    let guard = q.inner.inner.lock().unwrap();
+    let guard = q.inner.inner.lock_recover();
     CosmosCqState::from_u8(guard.state as u8)
 }
 
@@ -807,7 +826,7 @@ pub extern "C" fn cosmos_completion_op_handle(c: *const Completion) -> *const Op
     let Some(co) = Completion::from_ptr(c) else {
         return std::ptr::null();
     };
-    let mut slot = co.cached_op_handle.lock().unwrap();
+    let mut slot = co.cached_op_handle.lock_recover();
     if let Some(existing) = *slot {
         return existing;
     }
@@ -851,7 +870,7 @@ pub extern "C" fn cosmos_completion_take_response(
     if co.outcome != CosmosCompletionOutcome::CosmosCompletionOutcomeOk {
         return std::ptr::null_mut();
     }
-    let mut slot = co.response.lock().unwrap();
+    let mut slot = co.response.lock_recover();
     slot.take().unwrap_or(std::ptr::null_mut())
 }
 
@@ -871,7 +890,7 @@ pub extern "C" fn cosmos_completion_response(
     if co.outcome != CosmosCompletionOutcome::CosmosCompletionOutcomeOk {
         return std::ptr::null();
     }
-    let guard = co.response.lock().unwrap();
+    let guard = co.response.lock_recover();
     guard.map_or(std::ptr::null(), |p| p as *const _)
 }
 
@@ -886,7 +905,7 @@ pub extern "C" fn cosmos_completion_take_error(c: *mut Completion) -> *mut Cosmo
     if co.outcome != CosmosCompletionOutcome::CosmosCompletionOutcomeError {
         return std::ptr::null_mut();
     }
-    let mut slot = co.error.lock().unwrap();
+    let mut slot = co.error.lock_recover();
     match slot.take() {
         Some(arc) => CosmosErrorHandle::from_arc_into_raw(arc),
         None => std::ptr::null_mut(),
@@ -903,20 +922,20 @@ pub extern "C" fn cosmos_completion_error(c: *const Completion) -> *const Cosmos
     // First check whether we already produced a borrowed handle for this
     // completion. If so, return it so the pointer is stable across calls.
     {
-        let cached = co.cached_error_handle.lock().unwrap();
+        let cached = co.cached_error_handle.lock_recover();
         if let Some(existing) = *cached {
             return existing;
         }
     }
     // No cached handle yet — produce one if a rich error is present and
     // remember it.
-    let guard = co.error.lock().unwrap();
+    let guard = co.error.lock_recover();
     let Some(arc) = guard.as_ref() else {
         return std::ptr::null();
     };
     let raw = CosmosErrorHandle::from_arc_into_raw(Arc::clone(arc));
     drop(guard);
-    let mut cached = co.cached_error_handle.lock().unwrap();
+    let mut cached = co.cached_error_handle.lock_recover();
     // Another caller may have raced us; if so, drop our duplicate and use
     // theirs to keep the stable-pointer invariant.
     if let Some(existing) = *cached {
@@ -1051,7 +1070,7 @@ mod tests {
         let opts = CosmosCqOptions {
             capacity_hint: 0,
             max_capacity,
-            include_error_details,
+            include_error_details: include_error_details as u8,
         };
         let q = cosmos_cq_create(rt, &opts as *const _);
         // Runtime is held internally via Arc; we can free the producer-side

@@ -135,21 +135,28 @@ fn spawn_oneshot<Fut, R>(
     Fut: Future<Output = azure_data_cosmos_driver::error::Result<R>> + Send + 'static,
     R: Send + 'static,
 {
+    use futures::future::FutureExt;
+
     runtime.tokio.spawn(async move {
-        let outcome = fut.await;
+        // Run the driver work (and the success-path response conversion)
+        // behind a panic firewall. Tokio would otherwise isolate a panic at
+        // the task boundary, so `enqueue_into_inner` below would never run and
+        // the operation handle would stay `IN_FLIGHT` forever — the host
+        // continuation hangs and leaks. Catching the panic here lets us still
+        // publish exactly one completion, honoring the spec §3.6 invariant.
+        let work = std::panic::AssertUnwindSafe(async move { fut.await.map(to_response) });
+        let outcome = work.catch_unwind().await;
+
         let completion = match outcome {
-            Ok(value) => {
-                let response = to_response(value);
-                Completion::new_for_publish(
-                    CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-                    CosmosErrorCode::CosmosErrorCodeSuccess,
-                    ctx.user_data.as_ptr(),
-                    ctx.op_inner.clone(),
-                    None,
-                    Some(response),
-                )
-            }
-            Err(err) => {
+            Ok(Ok(response)) => Completion::new_for_publish(
+                CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+                CosmosErrorCode::CosmosErrorCodeSuccess,
+                ctx.user_data.as_ptr(),
+                ctx.op_inner.clone(),
+                None,
+                Some(response),
+            ),
+            Ok(Err(err)) => {
                 let coarse = CosmosErrorCode::from_driver_error(&err);
                 let stored_error = if ctx.include_error_details {
                     Some(Arc::new(CosmosErrorInner::new(err)))
@@ -162,6 +169,20 @@ fn spawn_oneshot<Fut, R>(
                     ctx.user_data.as_ptr(),
                     ctx.op_inner.clone(),
                     stored_error,
+                    None,
+                )
+            }
+            Err(_panic) => {
+                // The driver future (or response conversion) panicked. Surface
+                // it as a coarse client-side error so the host's continuation
+                // is released with a definitive failure instead of hanging.
+                tracing::error!("submit: driver future panicked; synthesizing ERROR completion",);
+                Completion::new_for_publish(
+                    CosmosCompletionOutcome::CosmosCompletionOutcomeError,
+                    CosmosErrorCode::CosmosErrorCodeClientError,
+                    ctx.user_data.as_ptr(),
+                    ctx.op_inner.clone(),
+                    None,
                     None,
                 )
             }

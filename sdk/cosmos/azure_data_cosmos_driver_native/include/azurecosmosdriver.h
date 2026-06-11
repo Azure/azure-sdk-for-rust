@@ -301,73 +301,6 @@ typedef int32_t cosmos_operation_handle_state_t;
 #endif // __cplusplus
 
 /**
- * Tri-state mirror of [`ReadConsistencyStrategy`] for the flat options
- * struct. `0` (`Unset`) means "inherit from a lower-priority layer".
- */
-enum cosmos_CosmosReadConsistencyStrategy
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : int32_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * Inherit from account / runtime / environment.
-   */
-  COSMOS_READ_CONSISTENCY_STRATEGY_UNSET = 0,
-  /**
-   * Use the default behavior for the chosen consistency level.
-   */
-  COSMOS_READ_CONSISTENCY_STRATEGY_DEFAULT = 1,
-  /**
-   * Eventual consistency.
-   */
-  COSMOS_READ_CONSISTENCY_STRATEGY_EVENTUAL = 2,
-  /**
-   * Session consistency (the driver's typical default).
-   */
-  COSMOS_READ_CONSISTENCY_STRATEGY_SESSION = 3,
-  /**
-   * Read the latest version across all regions (single-master / Strong).
-   */
-  COSMOS_READ_CONSISTENCY_STRATEGY_GLOBAL_STRONG = 4,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_CosmosReadConsistencyStrategy cosmos_CosmosReadConsistencyStrategy;
-#else
-typedef int32_t cosmos_CosmosReadConsistencyStrategy;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
- * Tri-state mirror of [`ContentResponseOnWrite`]. `0` (`Unset`) inherits.
- */
-enum cosmos_CosmosContentResponseOnWriteOpt
-#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
-  : int32_t
-#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
- {
-  /**
-   * Inherit from a lower-priority layer.
-   */
-  COSMOS_CONTENT_RESPONSE_ON_WRITE_OPT_UNSET = 0,
-  /**
-   * Server returns no body on write responses.
-   */
-  COSMOS_CONTENT_RESPONSE_ON_WRITE_OPT_DISABLED = 1,
-  /**
-   * Server returns the written resource in the response body.
-   */
-  COSMOS_CONTENT_RESPONSE_ON_WRITE_OPT_ENABLED = 2,
-};
-#ifndef __cplusplus
-#if __STDC_VERSION__ >= 202311L
-typedef enum cosmos_CosmosContentResponseOnWriteOpt cosmos_CosmosContentResponseOnWriteOpt;
-#else
-typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
-#endif // __STDC_VERSION__ >= 202311L
-#endif // __cplusplus
-
-/**
  * Discriminates which driver `CosmosOperation` factory a
  * [`CosmosOperationRequest`] maps to. Append-only: new kinds get new
  * trailing discriminants so the ABI stays stable.
@@ -516,6 +449,73 @@ typedef int32_t cosmos_CosmosPreconditionKind;
 #endif // __cplusplus
 
 /**
+ * Tri-state mirror of [`ReadConsistencyStrategy`] for the flat options
+ * struct. `0` (`Unset`) means "inherit from a lower-priority layer".
+ */
+enum cosmos_CosmosReadConsistencyStrategy
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Inherit from account / runtime / environment.
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_UNSET = 0,
+  /**
+   * Use the default behavior for the chosen consistency level.
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_DEFAULT = 1,
+  /**
+   * Eventual consistency.
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_EVENTUAL = 2,
+  /**
+   * Session consistency (the driver's typical default).
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_SESSION = 3,
+  /**
+   * Read the latest version across all regions (single-master / Strong).
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_GLOBAL_STRONG = 4,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_CosmosReadConsistencyStrategy cosmos_CosmosReadConsistencyStrategy;
+#else
+typedef int32_t cosmos_CosmosReadConsistencyStrategy;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Tri-state mirror of [`ContentResponseOnWrite`]. `0` (`Unset`) inherits.
+ */
+enum cosmos_CosmosContentResponseOnWriteOpt
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  /**
+   * Inherit from a lower-priority layer.
+   */
+  COSMOS_CONTENT_RESPONSE_ON_WRITE_OPT_UNSET = 0,
+  /**
+   * Server returns no body on write responses.
+   */
+  COSMOS_CONTENT_RESPONSE_ON_WRITE_OPT_DISABLED = 1,
+  /**
+   * Server returns the written resource in the response body.
+   */
+  COSMOS_CONTENT_RESPONSE_ON_WRITE_OPT_ENABLED = 2,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_CosmosContentResponseOnWriteOpt cosmos_CosmosContentResponseOnWriteOpt;
+#else
+typedef int32_t cosmos_CosmosContentResponseOnWriteOpt;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
  * Internal storage of a `cosmos_completion_t`.
  *
  * Phase 1 carried no response payload; Phase 6 adds the optional
@@ -598,7 +598,13 @@ typedef struct cosmos_runtime_t {
 typedef struct cosmos_cq_options_t {
   uint32_t capacity_hint;
   uint32_t max_capacity;
-  bool include_error_details;
+  /**
+   * Whether to capture rich error payloads, as a C boolean (`0` = false,
+   * non-zero = true). Read as a `u8` rather than a Rust `bool` so an
+   * arbitrary host-written byte cannot produce an invalid `bool` (which
+   * would be undefined behavior).
+   */
+  uint8_t include_error_details;
 } cosmos_cq_options_t;
 
 /**
@@ -707,13 +713,17 @@ typedef struct cosmos_CosmosHeaderKv {
  */
 typedef struct cosmos_CosmosOperationOptions {
   /**
-   * Read consistency strategy. `Unset` inherits.
+   * Read consistency strategy, encoded as a [`CosmosReadConsistencyStrategy`]
+   * discriminant. `0` (`Unset`) inherits. Stored as a raw `i32` so an
+   * out-of-range host value is validated (not UB) on conversion.
    */
-  cosmos_CosmosReadConsistencyStrategy read_consistency_strategy;
+  int32_t read_consistency_strategy;
   /**
-   * Whether write responses include the resource body. `Unset` inherits.
+   * Whether write responses include the resource body, encoded as a
+   * [`CosmosContentResponseOnWriteOpt`] discriminant. `0` (`Unset`)
+   * inherits. Stored as a raw `i32` for the same reason as above.
    */
-  cosmos_CosmosContentResponseOnWriteOpt content_response_on_write;
+  int32_t content_response_on_write;
   /**
    * Disable automatic session token management. Tri-state bool.
    */
@@ -849,9 +859,11 @@ typedef struct cosmos_CosmosBytesView {
  */
 typedef struct cosmos_CosmosOperationRequest {
   /**
-   * Which operation to build. See [`CosmosOperationKind`].
+   * Which operation to build, encoded as a [`CosmosOperationKind`]
+   * discriminant. Stored as a raw `i32` so an out-of-range host value is
+   * validated (not UB) before dispatch.
    */
-  cosmos_CosmosOperationKind kind;
+  int32_t kind;
   /**
    * Account reference. Required for account-scope kinds; otherwise NULL.
    */
@@ -918,9 +930,11 @@ typedef struct cosmos_CosmosOperationRequest {
    */
   int8_t populate_query_metrics;
   /**
-   * Precondition selector. See [`CosmosPreconditionKind`].
+   * Precondition selector, encoded as a [`CosmosPreconditionKind`]
+   * discriminant. Stored as a raw `i32` so an out-of-range host value is
+   * validated (not UB) before use.
    */
-  cosmos_CosmosPreconditionKind precondition_kind;
+  int32_t precondition_kind;
   /**
    * ETag for the precondition (NUL-terminated UTF-8). Required iff
    * `precondition_kind` is not `None`.
@@ -1559,9 +1573,13 @@ int32_t cosmos_partition_key_builder_add_number(struct cosmos_partition_key_buil
 
 /**
  * Appends a boolean component to the partition key.
+ *
+ * `value` is a C boolean (`0` = false, non-zero = true). It is taken as a
+ * `u8` rather than a Rust `bool` so an arbitrary host-supplied byte cannot
+ * produce an invalid `bool` (which would be undefined behavior).
  */
 int32_t cosmos_partition_key_builder_add_bool(struct cosmos_partition_key_builder_t *builder,
-                                              bool value);
+                                              uint8_t value);
 
 /**
  * Appends an explicit `null` component to the partition key.
