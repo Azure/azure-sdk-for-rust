@@ -2,12 +2,12 @@
 
 # Azure Cosmos DB Driver — Native C Bindings (`azure_data_cosmos_driver_native`)
 
-C ABI wrapper around [`azure_data_cosmos_driver`](../azure_data_cosmos_driver),
+C ABI wrapper around [`azure_data_cosmos_driver`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver),
 designed for cross-language SDK reuse (.NET, Java, Go, Python, native C/C++).
 The full design is in
-[NATIVE_WRAPPER_SPEC.md](../azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md);
+[NATIVE_WRAPPER_SPEC.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md);
 the picture-first overview is in
-[ASYNC_INVOCATION_ARCHITECTURE.md](../azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md);
+[ASYNC_INVOCATION_ARCHITECTURE.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md);
 this README is a short orientation and a quick-start for each supported
 binding language.
 
@@ -15,16 +15,16 @@ binding language.
 
 - A `cdylib` + `staticlib` named `azurecosmosdriver`
   (`libazurecosmosdriver.{so,dylib,dll}`).
-- A C header at [include/azurecosmosdriver.h](include/azurecosmosdriver.h),
+- A C header at [include/azurecosmosdriver.h](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h),
   regenerated on every build and **checked in** so language-binding consumers
   can vendor it without a Rust toolchain.
-- A small C test harness under [c_tests/](c_tests/) driven by CMake +
+- A small C test harness under [c_tests/](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver_native/c_tests) driven by CMake +
   [corrosion](https://github.com/corrosion-rs/corrosion).
 
 ## Rollout status
 
 This crate is being built up phase-by-phase per
-[§8 of the spec](../azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md).
+[§8 of the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md).
 
 | Phase | Status | Surface |
 |---|---|---|
@@ -130,7 +130,7 @@ below for the production-shape guidance.
 >
 > Both take `(driver, const cosmos_CosmosOperationRequest *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.
-> The checked-in [header](include/azurecosmosdriver.h) is the authoritative
+> The checked-in [header](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h) is the authoritative
 > source for the struct field layout and the 25 operation kinds. The C#
 > example below is written against this new API; the Java, Go, and Python
 > examples that follow are pending migration and currently show the **old**
@@ -726,7 +726,7 @@ if __name__ == "__main__":
 7. **Single-runtime caching.** Drivers are cached by endpoint URL on the
    `cosmos_runtime_t` that created them. Multiple `cosmos_runtime_t`
    instances do **not** share their caches — see
-   [§4.4.1 in the spec](../azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md)
+   [§4.4.1 in the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md)
    for the full contract.
 
 ## Repository archaeology — files removed by PR #4103
@@ -739,7 +739,7 @@ reintroduced in this crate; their content now lives elsewhere:
 | Old file | New location |
 |---|---|
 | `azurecosmos.pc.in` (pkg-config template) | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name. |
-| `docs/next_generation_sdks_design_principles.md` | Folded into [NATIVE_WRAPPER_SPEC.md §2](../azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md). |
+| `docs/next_generation_sdks_design_principles.md` | Folded into [NATIVE_WRAPPER_SPEC.md §2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md). |
 | `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land. |
 
 If you are spelunking the git history of the old crate looking for a behavior

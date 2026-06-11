@@ -31,8 +31,8 @@ schema-agnostic, completion-queue-style async FFI.
 
 **Authoritative design docs:**
 
-- [`sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md`](azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md) — full spec
-- [`sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md`](azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md) — picture-first overview (5 Mermaid diagrams)
+- [`sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md) — full spec
+- [`sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/ASYNC_INVOCATION_ARCHITECTURE.md) — picture-first overview (5 Mermaid diagrams)
 
 The spec calls for **11 phases** (Phase 0 scaffolding through Phase 10
 optional advanced surface). See §8 of the spec for the full plan.
@@ -232,7 +232,7 @@ Spec section 8 Phase 10. Opt-in via cargo features:
   `error::set_backtrace_options(BacktraceOptions)` as a **process-global**
   free function. There is no per-runtime or per-driver setter. Earlier
   drafts of the spec described per-runtime knobs; those have been removed.
-  See [`NATIVE_WRAPPER_SPEC.md` §6.4](azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md).
+  See [`NATIVE_WRAPPER_SPEC.md` §6.4](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md).
 - Phase 1 exposes this as `cosmos_set_backtrace_options(captures, resolutions)`.
 
 ### 4.7 cargo features
@@ -351,7 +351,7 @@ git status -- sdk/cosmos/azure_data_cosmos_driver_native/include/
 
 ## 7. Open questions tracked in the spec
 
-Phase 2+ work may touch these — re-read before deciding. From [`NATIVE_WRAPPER_SPEC.md` §9](azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md):
+Phase 2+ work may touch these — re-read before deciding. From [`NATIVE_WRAPPER_SPEC.md` §9](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md):
 
 - Q1: Single-runtime-per-process enforcement.
 - Q6: Driver-cache scoping vs. credential identity.
