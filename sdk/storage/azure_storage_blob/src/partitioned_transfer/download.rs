@@ -160,7 +160,7 @@ where
     Behavior: PartitionedDownloadBehavior + Send + Sync + 'static,
 {
     let insufficient_buffer_err =
-        || Error::with_message(ErrorKind::Other, "Insufficient buffer length.");
+        || Error::with_message(ErrorKind::Io, "Insufficient buffer length.");
 
     let missing_bytes_err = |expected: usize, actual: usize| {
         Error::with_message(
@@ -187,16 +187,13 @@ where
     let headers = initial_response.headers().clone();
     let etag_lock = headers.get_optional_str(&"etag".into()).map(Etag::from);
 
-    let mut response_analysis = match response_analysis {
-        Some(a) => a,
-        // if no response analysis, no subsequent gets, therefore just copy to buffer and return
-        None => {
-            return initial_response
-                .into_body()
-                .collect_into(buffer)
-                .await
-                .map(|read| (status, headers, read))
-        }
+    // if no response analysis, no subsequent gets, therefore just copy to buffer and return
+    let Some(mut response_analysis) = response_analysis else {
+        return initial_response
+            .into_body()
+            .collect_into(buffer)
+            .await
+            .map(|read| (status, headers, read));
     };
 
     // fail fast for buffer overflow
