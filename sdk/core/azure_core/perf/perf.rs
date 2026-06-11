@@ -9,6 +9,8 @@ use azure_core_test::perf::{PerfRunner, PerfTestFactory};
 use clap::Subcommand;
 
 use crate::mock::json::{self, MockJsonTestArgs};
+#[cfg(feature = "xml")]
+use crate::mock::xml::{self, MockXmlTestArgs};
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {

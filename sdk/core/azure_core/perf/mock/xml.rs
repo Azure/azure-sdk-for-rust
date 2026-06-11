@@ -7,10 +7,7 @@ use azure_core::{
     xml,
 };
 use azure_core_test::{
-    perf::{
-        CreatePerfTestReturn, PerfRunner, PerfTest, PerfTestMetadata, PerfTestOption,
-        PerfTestOptionKind,
-    },
+    perf::{CreatePerfTestReturn, PerfTest},
     TestContext,
 };
 use clap::Args;
@@ -28,7 +25,7 @@ pub struct MockXmlTestArgs {
     pub count: usize,
 }
 
-pub fn create_test(args: &MockJsonTestArgs) -> CreatePerfTestReturn {
+pub fn create_test(args: &MockXmlTestArgs) -> CreatePerfTestReturn {
     let count = args.count;
     async move {
         let pipeline = super::create_pipeline(count, xml::to_xml)?;
