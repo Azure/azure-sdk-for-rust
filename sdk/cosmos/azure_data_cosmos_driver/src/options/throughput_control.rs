@@ -241,6 +241,32 @@ impl From<&ThroughputControlGroupOptions> for ThroughputControlGroupSnapshot {
     }
 }
 
+/// Fully resolved throughput-control header inputs for a single request.
+///
+/// Produced once per request by the driver after layering
+/// [`ThroughputControlOptions`](super::ThroughputControlOptions) and (if
+/// needed) consulting the driver's
+/// [`ThroughputControlGroupRegistry`]. The resolution rules match the public
+/// specification:
+///
+/// 1. If the layered [`ThroughputControlOptions`](super::ThroughputControlOptions)
+///    set the field directly, use it.
+/// 2. Else, if the layered options set
+///    [`group_name`](super::ThroughputControlOptions::group_name), look the
+///    group up in the driver's registry and use the group's value for the
+///    field.
+/// 3. Else, the corresponding header is omitted.
+///
+/// Carries no group-identity metadata — by the time the transport pipeline
+/// sees this struct, all that matters is which wire-header values to emit.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) struct ResolvedThroughputControl {
+    /// Value for the `x-ms-cosmos-throughput-bucket` header, if any.
+    pub(crate) throughput_bucket: Option<u32>,
+    /// Value for the `x-ms-cosmos-priority-level` header, if any.
+    pub(crate) priority_level: Option<PriorityLevel>,
+}
+
 /// Error when registering a throughput control group.
 ///
 /// This error type is intentionally not boxed since registration errors are

@@ -8,9 +8,7 @@ use async_lock::OnceCell;
 
 use azure_data_cosmos_driver::driver::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 
-use crate::options::{
-    ConnectionPoolOptions, OperationOptions, ThroughputControlGroupOptions, UserAgentSuffix,
-};
+use crate::options::{ConnectionPoolOptions, OperationOptions, UserAgentSuffix};
 
 /// Shared runtime for one or more [`CosmosClient`](crate::CosmosClient) instances.
 ///
@@ -20,8 +18,7 @@ use crate::options::{
 /// might need to create your own runtime and pass it to a client using [`CosmosClientBuilder::with_runtime`](crate::CosmosClientBuilder::with_runtime).
 ///
 /// * You are creating a lot of [`CosmosClient`](crate::CosmosClient) instances to connect
-///   to different accounts and wish to share some common [`OperationOptions`] between them ([`CosmosRuntimeBuilder::with_default_operation_options`])
-///   and/or use shared throughput control groups across them ([`CosmosRuntimeBuilder::register_throughput_control_group`]).
+///   to different accounts and wish to share some common [`OperationOptions`] between them ([`CosmosRuntimeBuilder::with_default_operation_options`]).
 /// * You need to modify connection pool options, such as connect timeouts, or allowing insecure TLS connections to the emulator
 ///   ([`CosmosRuntimeBuilder::with_connection_pool`])
 #[derive(Clone, Debug)]
@@ -114,29 +111,6 @@ impl CosmosRuntimeBuilder {
     pub fn with_cpu_refresh_interval(mut self, interval: Duration) -> Self {
         self.0 = self.0.with_cpu_refresh_interval(interval);
         self
-    }
-
-    /// Registers a runtime-wide [`ThroughputControlGroupOptions`].
-    ///
-    /// Groups registered here are shared by every client built on top of
-    /// the runtime; per-client groups may be added via
-    /// [`CosmosClientBuilder::register_throughput_control_group`](crate::CosmosClientBuilder::register_throughput_control_group)
-    /// and are merged on top.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if a group with the same `(container, name)` key
-    /// is already registered on this builder, or if another group is
-    /// already marked as the default for the same container.
-    pub fn register_throughput_control_group(
-        mut self,
-        group: ThroughputControlGroupOptions,
-    ) -> crate::Result<Self> {
-        self.0 = self
-            .0
-            .register_throughput_control_group(group)
-            .map_err(crate::CosmosError::from)?;
-        Ok(self)
     }
 
     /// Builds the [`CosmosRuntime`].

@@ -13,7 +13,7 @@ use crate::{
     models::ThroughputControlGroupName,
     options::{
         AvailabilityStrategy, ContentResponseOnWrite, EndToEndOperationLatencyPolicy,
-        ExcludedRegions, ReadConsistencyStrategy,
+        ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
     },
 };
 
@@ -60,14 +60,27 @@ pub struct OperationOptions {
     #[option(env = "AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE")]
     pub content_response_on_write: Option<ContentResponseOnWrite>,
 
-    /// Throughput control group name for this request.
+    /// Throughput-control tuning for this request.
     ///
-    /// References a group registered at runtime via
-    /// [`CosmosDriverRuntimeBuilder::register_throughput_control_group()`](crate::driver::CosmosDriverRuntimeBuilder::register_throughput_control_group).
+    /// Groups three independently-layered knobs that govern the server-side
+    /// throughput-control headers (`x-ms-cosmos-priority-level` and
+    /// `x-ms-cosmos-throughput-bucket`):
     ///
-    /// `None` inherits from a lower-priority level or falls back to the
-    /// container's default group.
-    pub throughput_control_group: Option<ThroughputControlGroupName>,
+    /// - [`group_name`](ThroughputControlOptions::group_name) — references a
+    ///   driver-registered throughput-control group whose values are used
+    ///   when the direct overrides below are not set.
+    /// - [`throughput_bucket`](ThroughputControlOptions::throughput_bucket) —
+    ///   when `Some`, takes precedence over any value carried by the named
+    ///   group (or by any group registered for the operation's container).
+    /// - [`priority_level`](ThroughputControlOptions::priority_level) —
+    ///   same direct-override semantics as `throughput_bucket`.
+    ///
+    /// Each inner field resolves independently across the runtime → account
+    /// → operation layers. Final header values are produced by the driver
+    /// using the rule: direct option value wins → else look up the resolved
+    /// `group_name` in the driver's registry → else omit the header.
+    #[option(nested)]
+    pub throughput_control: Option<ThroughputControlOptions>,
 
     /// End-to-end timeout policy for this request.
     pub end_to_end_latency_policy: Option<EndToEndOperationLatencyPolicy>,
@@ -177,6 +190,69 @@ pub struct ThrottlingRetryOptions {
     pub max_retry_wait_time: Option<Duration>,
 }
 
+/// Throughput-control tuning for an individual request (or layer default).
+///
+/// Mirrors the [`ThrottlingRetryOptions`] pattern: three independently
+/// layered knobs grouped under a single nested option group on
+/// [`OperationOptions`]. None of these fields read from environment
+/// variables — throughput control is a per-application policy.
+///
+/// # Resolution
+///
+/// Each inner field participates independently in the standard runtime →
+/// account → operation layered resolution. Once resolved, the driver
+/// computes the wire headers (`x-ms-cosmos-priority-level`,
+/// `x-ms-cosmos-throughput-bucket`) using a two-step rule per field:
+///
+/// 1. If the layered value for the field is `Some`, use it directly.
+/// 2. Else, if [`group_name`](Self::group_name) resolves to a group
+///    registered on the driver via
+///    [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group),
+///    use the group's value for the field (if the group sets it).
+/// 3. Else, the header is omitted.
+///
+/// The two fields resolve independently, so a layered
+/// `throughput_bucket = Some(...)` does not suppress a
+/// `priority_level` carried by the registered group, and vice versa.
+///
+/// # Why direct overrides exist
+///
+/// The direct [`throughput_bucket`](Self::throughput_bucket) /
+/// [`priority_level`](Self::priority_level) overrides let callers set the
+/// per-operation headers without having to register a
+/// [`ThroughputControlGroupOptions`](super::ThroughputControlGroupOptions)
+/// on the driver. Use a registered group when you want shared, mutable
+/// values to apply to a family of operations; use the direct fields for
+/// one-off overrides.
+#[derive(CosmosOptions, Clone, Debug)]
+#[options(layers(runtime, account, operation))]
+#[non_exhaustive]
+pub struct ThroughputControlOptions {
+    /// Name of a throughput-control group registered on the driver via
+    /// [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group).
+    ///
+    /// Used as the fallback source for
+    /// [`throughput_bucket`](Self::throughput_bucket) and
+    /// [`priority_level`](Self::priority_level) when those fields are not
+    /// set at any layer. A name that does not resolve to a registered group
+    /// produces an error at request time.
+    pub group_name: Option<ThroughputControlGroupName>,
+
+    /// Direct override for the `x-ms-cosmos-throughput-bucket` header.
+    ///
+    /// Takes precedence over the bucket carried by the resolved
+    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
+    /// resolved group's bucket, then to no header.
+    pub throughput_bucket: Option<u32>,
+
+    /// Direct override for the `x-ms-cosmos-priority-level` header.
+    ///
+    /// Takes precedence over the priority carried by the resolved
+    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
+    /// resolved group's priority level, then to no header.
+    pub priority_level: Option<PriorityLevel>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,7 +263,7 @@ mod tests {
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
         assert!(options.content_response_on_write.is_none());
-        assert!(options.throughput_control_group.is_none());
+        assert!(options.throughput_control.is_none());
         assert!(options.max_failover_retry_count.is_none());
         assert!(options.max_session_retry_count.is_none());
     }
@@ -454,5 +530,65 @@ mod tests {
 
         assert!(throttling.max_retry_count().is_none());
         assert!(throttling.max_retry_wait_time().is_none());
+    }
+
+    /// Each inner field on the nested [`ThroughputControlOptions`] group must
+    /// participate independently in the standard runtime → account →
+    /// operation layered resolution. Mirrors the throttle equivalent so a
+    /// later macro change can't silently regress this layering.
+    #[test]
+    fn nested_throughput_control_resolves_across_layers() {
+        use std::sync::Arc;
+
+        let runtime = Arc::new(OperationOptions {
+            throughput_control: Some(ThroughputControlOptions {
+                group_name: Some(ThroughputControlGroupName::new("runtime-group")),
+                throughput_bucket: Some(7),
+                priority_level: Some(PriorityLevel::Low),
+            }),
+            ..Default::default()
+        });
+
+        let operation = OperationOptions {
+            throughput_control: Some(ThroughputControlOptions {
+                group_name: None,
+                throughput_bucket: Some(99),
+                priority_level: None,
+            }),
+            ..Default::default()
+        };
+
+        let view = OperationOptionsView::new(None, Some(runtime), None, Some(&operation));
+        let throughput = view.throughput_control();
+
+        assert_eq!(
+            throughput.group_name(),
+            Some(&ThroughputControlGroupName::new("runtime-group")),
+            "missing inner field on the operation layer must fall through to runtime",
+        );
+        assert_eq!(
+            throughput.throughput_bucket(),
+            Some(&99),
+            "operation-layer override must win over runtime for `throughput_bucket`",
+        );
+        assert_eq!(
+            throughput.priority_level(),
+            Some(&PriorityLevel::Low),
+            "missing inner field on the operation layer must fall through to runtime",
+        );
+    }
+
+    /// When no layer sets `throughput_control`, the view's inner-field
+    /// accessors must return `None` so the driver-side resolver knows to
+    /// omit the wire headers.
+    #[test]
+    fn nested_throughput_control_view_is_none_when_unset_at_every_layer() {
+        let op = OperationOptions::default();
+        let view = OperationOptionsView::new(None, None, None, Some(&op));
+        let throughput = view.throughput_control();
+
+        assert!(throughput.group_name().is_none());
+        assert!(throughput.throughput_bucket().is_none());
+        assert!(throughput.priority_level().is_none());
     }
 }

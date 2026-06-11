@@ -29,7 +29,7 @@ use crate::{
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
-        ThroughputControlGroupSnapshot,
+        ResolvedThroughputControl, ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse,
 };
@@ -159,14 +159,11 @@ pub struct CosmosDriver {
     /// flag without re-checking the option.
     #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
-    /// Merged throughput-control group registry (runtime ∪ driver options).
+    /// Driver-level throughput-control group registry.
     ///
-    /// Each driver gets its own merged registry consulted on every request.
-    /// The merge is computed once at construction; cross-layer collisions
-    /// error before the driver exists. Groups carried over from the runtime
-    /// share their inner mutable settings via `Arc<RwLock<...>>`, so changes
-    /// made on the runtime's group are visible to every driver that inherited
-    /// it.
+    /// Populated from `DriverOptions::throughput_control_groups()` once at
+    /// driver construction. The runtime no longer owns its own registry —
+    /// throughput-control groups are a driver-level concern.
     throughput_control_groups: crate::options::ThroughputControlGroupRegistry,
 }
 
@@ -1177,17 +1174,11 @@ impl CosmosDriver {
         #[cfg(feature = "tokio")]
         location_state_store.start_account_refresh_loop();
 
-        // Merged throughput-control registry (runtime ∪ driver options).
-        // Cross-layer collisions surface here, before the driver is returned.
-        let mut throughput_control_groups = runtime.throughput_control_groups().clone();
-        throughput_control_groups
-            .extend(options.throughput_control_groups())
-            .map_err(|e| {
-                crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
-                    .with_message(e.to_string())
-                    .build()
-            })?;
+        // Driver-level throughput-control registry.
+        //
+        // The runtime no longer owns one — TCGs are a driver-level concern.
+        // Clone the per-driver registry as-is for the request hot path.
+        let throughput_control_groups = options.throughput_control_groups().clone();
 
         Ok(Self {
             runtime,
@@ -1352,24 +1343,58 @@ impl CosmosDriver {
         )
     }
 
-    /// Computes the effective throughput control group for an operation.
+    /// Computes the effective throughput-control header values for an operation.
     ///
-    /// Resolution order:
-    /// 1. Explicit group name from the resolved options — looked up in the registry
-    ///    and snapshotted.
-    /// 2. Default group for the operation's container.
+    /// Resolves the per-request `x-ms-cosmos-throughput-bucket` and
+    /// `x-ms-cosmos-priority-level` headers using the public layering
+    /// contract:
     ///
-    /// Returns `Ok(None)` if no applicable control group is found.
+    /// 1. If the layered
+    ///    [`ThroughputControlOptions`](crate::options::ThroughputControlOptions)
+    ///    sets the field directly, use it.
+    /// 2. Else, if [`group_name`](crate::options::ThroughputControlOptions::group_name)
+    ///    resolves to a group registered on this driver via
+    ///    [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group),
+    ///    use the group's value for the field.
+    /// 3. Else, omit the header.
+    ///
+    /// The two fields resolve independently — a layered
+    /// `throughput_bucket = Some(...)` does not suppress a `priority_level`
+    /// carried by the registered group, and vice versa.
     ///
     /// # Errors
     ///
-    /// Returns an error if an explicitly named group is not found in the registry.
-    pub(crate) fn effective_throughput_control_group(
+    /// Returns an error if [`group_name`](crate::options::ThroughputControlOptions::group_name)
+    /// is set to a name that does not resolve to a registered group for the
+    /// operation's container.
+    pub(crate) fn effective_throughput_control(
         &self,
         effective_options: &OperationOptionsView<'_>,
-        container: &ContainerReference,
-    ) -> crate::error::Result<Option<ThroughputControlGroupSnapshot>> {
-        if let Some(name) = effective_options.throughput_control_group() {
+        container: Option<&ContainerReference>,
+    ) -> crate::error::Result<ResolvedThroughputControl> {
+        let throughput_view = effective_options.throughput_control();
+        let mut bucket = throughput_view.throughput_bucket().copied();
+        let mut priority = throughput_view.priority_level().copied();
+
+        if bucket.is_some() && priority.is_some() {
+            return Ok(ResolvedThroughputControl {
+                throughput_bucket: bucket,
+                priority_level: priority,
+            });
+        }
+
+        if let Some(name) = throughput_view.group_name() {
+            let Some(container) = container else {
+                // An explicit group name on an operation that lacks a
+                // container context (account-level metadata, etc.) is a
+                // configuration error — the lookup key requires both halves.
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED)
+                    .with_message(format!(
+                        "throughput control group '{name}' cannot be resolved: this operation has no container context",
+                    ))
+                    .build());
+            };
             let group = self
                 .throughput_control_groups
                 .get_by_container_and_name(container, name)
@@ -1382,14 +1407,19 @@ impl CosmosDriver {
                         ))
                         .build()
                 })?;
-            return Ok(Some(ThroughputControlGroupSnapshot::from(group.as_ref())));
+            let snapshot = ThroughputControlGroupSnapshot::from(group.as_ref());
+            if bucket.is_none() {
+                bucket = snapshot.throughput_bucket();
+            }
+            if priority.is_none() {
+                priority = snapshot.priority_level();
+            }
         }
 
-        // No explicit name — fall back to the default group for the container.
-        Ok(self
-            .throughput_control_groups
-            .get_default_for_container(container)
-            .map(|group| ThroughputControlGroupSnapshot::from(group.as_ref())))
+        Ok(ResolvedThroughputControl {
+            throughput_bucket: bucket,
+            priority_level: priority,
+        })
     }
 
     /// Fetches partition key ranges from the service for the given container.
@@ -1756,13 +1786,9 @@ impl CosmosDriver {
         // Step 1: Build the single OperationOptionsView for layered resolution.
         let effective_options = self.operation_options_view(options);
 
-        // Step 2: Resolve effective throughput control group (if any).
-        let effective_control_group = match operation.container() {
-            Some(container) => {
-                self.effective_throughput_control_group(&effective_options, container)?
-            }
-            None => None,
-        };
+        // Step 2: Resolve effective throughput control headers.
+        let effective_throughput_control =
+            self.effective_throughput_control(&effective_options, operation.container())?;
 
         // Step 3: Initialize operation activity id
         let activity_id = ActivityId::new_uuid();
@@ -1853,7 +1879,7 @@ impl CosmosDriver {
             account_properties
                 .user_consistency_policy
                 .default_consistency_level,
-            effective_control_group.as_ref(),
+            effective_throughput_control,
             pre_resolved_pk_range_id,
         )
         .await
@@ -2309,7 +2335,7 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         assert!(runtime
             .default_operation_options()
-            .throughput_control_group
+            .throughput_control
             .is_none());
         assert!(runtime
             .default_operation_options()

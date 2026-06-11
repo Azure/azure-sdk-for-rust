@@ -31,10 +31,10 @@
   - `with_default_operation_options(OperationOptions)` — runtime-default `OperationOptions`.
   - `with_user_agent_suffix(UserAgentSuffix)` — runtime-default User-Agent suffix.
   - `with_cpu_refresh_interval(Duration)` — diagnostics sampler interval.
-  - `register_throughput_control_group(ThroughputControlGroupOptions)` — runtime-default throughput-control groups.
   - `build()` — auto-applies an `azsdk-rust-cosmos/<crate-version>` wrapping SDK identifier so wire User-Agent strings always advertise the SDK alongside any custom suffix.
 - `ConnectionPoolOptions`, `ConnectionPoolOptionsBuilder`, and `EmulatorServerCertValidation` are now re-exported from `azure_data_cosmos::options` so users configuring a custom runtime don't have to take a direct dependency on the driver crate.
 - Re-exported `PartitionFailoverOptions` and `PartitionFailoverOptionsBuilder` from `azure_data_cosmos::options`. `CosmosClientBuilder::with_partition_failover_options(PartitionFailoverOptions)` configures the driver's per-partition circuit-breaker / failover tuning for this client; when unset, the driver falls back to `PartitionFailoverOptions::default()`, which honors the `AZURE_COSMOS_PPCB_*` environment variables.
+- Re-exported `ThroughputControlOptions`, `ThroughputControlOptionsBuilder`, and `ThroughputControlOptionsView` from `azure_data_cosmos::options`. The new `OperationOptions::throughput_control` nested group lets callers set `throughput_bucket` and `priority_level` per request without first registering a throughput-control group, and groups registered via `CosmosClientBuilder::register_throughput_control_group` are still consulted as fallbacks through `ThroughputControlOptions::group_name`.
 - Cross-regional read hedging — unchanged from earlier in this release.
 
 ### Breaking Changes
@@ -44,7 +44,7 @@
     - `with_runtime(CosmosRuntime)` — attach an explicit runtime; when not set, `build()` resolves `CosmosRuntime::global()` lazily.
     - `with_default_operation_options(OperationOptions)` — sets the client-level default `OperationOptions` (overrides runtime defaults; overridden by per-call options).
     - `with_fault_injection_rules(Vec<Arc<FaultInjectionRule>>) -> Result<Self>` — registers fault-injection rules on this specific client (gated on `fault_injection`).
-    - `register_throughput_control_group(ThroughputControlGroupOptions) -> Result<Self>` — additive on top of the runtime's groups; cross-layer name collisions surface as a build-time error.
+    - `register_throughput_control_group(ThroughputControlGroupOptions) -> Result<Self>` — registers a throughput-control group for this client's driver. Throughput-control groups are no longer a runtime-level concept; the corresponding `CosmosRuntimeBuilder::register_throughput_control_group` has been removed.
   - **Removed:**
     - `with_proxy_allowed` — move to `CosmosRuntimeBuilder::with_connection_pool(ConnectionPoolOptionsBuilder::new().with_proxy_allowed(true).build())`.
     - Removed the `allow_invalid_certificates` feature flag - This functionality is now available in the default feature set but requires explicit opt-in via the `CosmosRuntimeBuilder` API.
@@ -52,6 +52,7 @@
     - `with_fault_injection` — renamed to `with_fault_injection_rules` and now returns `Result<Self>` to surface duplicate-ID errors at registration time.
     - `with_throughput_control_group` — renamed to `register_throughput_control_group` and now returns `Result<Self>`.
     - `with_driver_runtime_builder` — replaced by `with_runtime(CosmosRuntime)`. The `__internal_in_memory_emulator` harness uses the new `CosmosRuntimeBuilder::from_driver_builder` escape hatch.
+- Removed `CosmosRuntimeBuilder::register_throughput_control_group`. Throughput-control groups are now a per-client (driver-level) concept only — register them via `CosmosClientBuilder::register_throughput_control_group`.
 - Per-account driver caching has been removed from the underlying runtime — each `CosmosClient::build(...)` now constructs a fresh `CosmosDriver`. Clients sharing the same `CosmosRuntime` continue to share transport pools, sampler, account cache, etc.; only the per-account `CosmosDriver` instance is no longer reused.
 
 ### Bugs Fixed

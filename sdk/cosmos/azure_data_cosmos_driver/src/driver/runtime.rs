@@ -17,8 +17,7 @@ use crate::{
     models::{normalize_wrapping_sdk_identifier, UserAgent},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
-        UserAgentSuffix, WorkloadId,
+        OperationOptions, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -147,12 +146,6 @@ pub struct CosmosDriverRuntime {
     /// `azsdk-rust-cosmos/0.34.0`. When unset, the User-Agent starts with the
     /// driver's own identifier.
     wrapping_sdk_identifier: Option<String>,
-
-    /// Registry of throughput control groups.
-    ///
-    /// Groups are registered during builder construction and are immutable after
-    /// runtime creation (except for mutable target values within each group).
-    throughput_control_groups: ThroughputControlGroupRegistry,
 
     /// Shared container metadata cache used by drivers in this runtime.
     container_cache: ContainerCache,
@@ -310,13 +303,6 @@ impl CosmosDriverRuntime {
             .or_else(|| self.user_agent_suffix.as_ref().map(|s| s.as_str()))
     }
 
-    /// Returns the runtime's throughput control group registry.
-    ///
-    /// Used by `CosmosDriver` to compute its merged registry at construction.
-    pub(crate) fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
-        &self.throughput_control_groups
-    }
-
     /// Creates a fresh driver bound to this runtime.
     ///
     /// Each call returns a new [`CosmosDriver`] — the runtime no longer caches
@@ -395,7 +381,6 @@ pub struct CosmosDriverRuntimeBuilder {
     correlation_id: Option<CorrelationId>,
     user_agent_suffix: Option<UserAgentSuffix>,
     wrapping_sdk_identifier: Option<String>,
-    throughput_control_groups: ThroughputControlGroupRegistry,
     cpu_refresh_interval: Option<Duration>,
     #[cfg(any(
         test,
@@ -521,68 +506,6 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    /// Registers a throughput control group.
-    ///
-    /// Groups are identified by the combination of container reference and group name.
-    /// At most one group per container can be marked as `is_default = true`.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if:
-    /// - A group with the same (container, name) key already exists
-    /// - Another group is already marked as default for the same container
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder;
-    /// use azure_data_cosmos_driver::options::{PriorityLevel, ThroughputControlGroupOptions};
-    /// use azure_data_cosmos_driver::models::AccountReference;
-    /// use url::Url;
-    ///
-    /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
-    /// let account = AccountReference::with_master_key(
-    ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
-    ///     "my-key",
-    /// );
-    ///
-    /// // Build the runtime first, then resolve the container via the driver.
-    /// let runtime = CosmosDriverRuntimeBuilder::new().build().await?;
-    /// let driver = runtime
-    ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
-    ///     .await?;
-    /// let container = driver.resolve_container("mydb", "mycollection").await?;
-    ///
-    /// // Register a throughput control group on a new runtime builder.
-    /// let runtime = CosmosDriverRuntimeBuilder::new()
-    ///     .register_throughput_control_group(
-    ///         ThroughputControlGroupOptions::new(
-    ///             "default-group",
-    ///             container.clone(),
-    ///             true, // is_default
-    ///         )
-    ///         .with_priority_level(PriorityLevel::High)
-    ///     )?
-    ///     .build()
-    ///     .await;
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub fn register_throughput_control_group(
-        mut self,
-        group: ThroughputControlGroupOptions,
-    ) -> crate::error::Result<Self> {
-        self.throughput_control_groups
-            .register(group)
-            .map_err(|e| {
-                crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
-                    .with_message(e.to_string())
-                    .build()
-            })?;
-        Ok(self)
-    }
-
     /// Builds the [`CosmosDriverRuntime`].
     ///
     /// The user agent is computed from (in priority order):
@@ -689,7 +612,6 @@ impl CosmosDriverRuntimeBuilder {
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,
             wrapping_sdk_identifier: self.wrapping_sdk_identifier,
-            throughput_control_groups: self.throughput_control_groups,
             container_cache: ContainerCache::new(),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
             cpu_monitor,
