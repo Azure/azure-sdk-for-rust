@@ -90,6 +90,68 @@ The native contract guarantees **exactly one terminal completion per submit**
 That guarantee is what makes lifetime management tractable; it is also the single
 assumption the whole design leans on (see §5.3).
 
+### 2.1 Architecture at a glance
+
+The component view below shows which Go pieces touch the FFI boundary and how
+they relate to the native side. Only the **cgo binding** and the **receive loop**
+ever cross the boundary; callers never do.
+
+```mermaid
+flowchart LR
+    subgraph Go["Go SDK layer (host)"]
+        Caller["Caller goroutine<br/>(ReadItem / submitAndAwait)"]
+        Reg["Correlation registry<br/>(cgo.Handle → result chan)"]
+        Loop["Receive-loop goroutine<br/>(single consumer)"]
+        FFI["cgo binding<br/>(cosmosffi)"]
+    end
+    subgraph Native["Native wrapper crate + driver core (Rust, C-ABI)"]
+        Wrap["C-ABI wrapper<br/>(owns Tokio runtime)"]
+        Queue["Completion queue<br/>(cosmos_cq_t, MPSC)"]
+        Core["Driver core + tokio"]
+    end
+    Caller -->|"1 register → handle"| Reg
+    Caller -->|"2 submit (user_data=handle)"| FFI
+    FFI -->|cosmos_*_submit| Wrap
+    Wrap --> Core
+    Core -->|completion record| Queue
+    Loop -->|"get_next_completion"| FFI
+    FFI -.->|dequeue| Queue
+    Loop -->|"resolve handle, copy-out, free"| Reg
+    Reg -->|result| Caller
+```
+
+The per-operation happy path (one `ReadItem`) makes the async, token-based flow
+explicit — submit returns a token immediately, and a later completion on the
+queue is what wakes the parked caller:
+
+```mermaid
+sequenceDiagram
+    participant C as Caller goroutine
+    participant R as Registry (cgo.Handle)
+    participant F as cgo binding
+    participant N as Native (wrapper + core)
+    participant Q as Completion queue
+    participant L as Receive-loop goroutine
+
+    C->>R: register pending → handle + result chan
+    C->>F: SubmitPoint(op, user_data=handle)
+    F->>N: cosmos_read_item(..., options)
+    N-->>F: operation handle (token)
+    F-->>C: returns immediately
+    C->>C: park on result chan
+    N->>N: run op on tokio
+    N->>Q: push terminal completion (carries user_data)
+    L->>F: cosmos_get_next_completion()
+    F-->>L: completion (user_data = handle)
+    L->>R: lookup handle → copy-out bytes
+    L->>N: free native completion memory
+    L-->>C: deliver result over chan
+    C->>R: release handle
+```
+
+These diagrams show the happy path only. Cancellation and deadline behavior
+(and their current limitations) are covered in §11.
+
 ---
 
 ## 3. The two independent axes
