@@ -6,7 +6,7 @@ cspell:ignore staticlib dlopen dlsym dylib corrosion ctypes downcallhandle
 
 # Async invocation architecture &mdash; `azure_data_cosmos_driver_native`
 
-This is a visual companion to [`NATIVE_WRAPPER_SPEC.md`](./NATIVE_WRAPPER_SPEC.md).
+This is a visual companion to [`NATIVE_WRAPPER_SPEC.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md).
 The spec is the source of truth; this doc is the picture-first overview that
 host-SDK authors (.NET, Java, Go, Python, native C/C++) can read in five
 minutes before diving into the C API surface.
@@ -23,7 +23,7 @@ code?* The short answer is that the **&laquo;C&raquo; refers to the ABI
 (Application Binary Interface) &mdash; the binary calling convention &mdash;
 not the implementation language.** The crate is written 100% in Rust. The
 only hand-written C in the repo lives under
-[`c_tests/`](../../azure_data_cosmos_driver_native/c_tests), and that is a
+[`c_tests/`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver_native/c_tests), and that is a
 **test harness** that *consumes* the library to prove the ABI is callable
 from real C; it is not part of the shipped artifact.
 
@@ -92,10 +92,10 @@ sequenceDiagram
 
 2. **cbindgen auto-generates the C header.** A C / C# / Go caller needs a
    *declaration* of each function and struct. Rather than hand-write that,
-   [`build.rs`](../../azure_data_cosmos_driver_native/build.rs) runs
+   [`build.rs`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/build.rs) runs
    **cbindgen** on every `cargo build`: it parses the `extern "C"` functions
    and `#[repr(C)]` types and writes
-   [`include/azurecosmosdriver.h`](../../azure_data_cosmos_driver_native/include/azurecosmosdriver.h).
+   [`include/azurecosmosdriver.h`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h).
    The `rename` map + `prefix = "cosmos_"` in `build.rs` is cosmetic &mdash;
    it turns the Rust type name `RuntimeContext` into the spec C name
    `cosmos_runtime_t`.
@@ -135,7 +135,7 @@ focuses on the *async* shape layered on top of these C-ABI symbols.
 ## 1. Where the wrapper sits
 
 The wrapper is a thin C ABI in front of the
-[`azure_data_cosmos_driver`](../) crate. It owns an internal Tokio runtime and
+[`azure_data_cosmos_driver`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver) crate. It owns an internal Tokio runtime and
 a multi-producer / single-consumer completion-queue abstraction; host SDKs
 get a non-blocking C API and reuse their own native async primitive
 (`Task`/`CompletableFuture`/`chan`/&hellip;) on top.
@@ -262,7 +262,7 @@ sequenceDiagram
    `NULL`) does NOT post a completion.** The host's exception path runs
    synchronously inside the submit wrapper.
 
-See [&sect;3.6.1](./NATIVE_WRAPPER_SPEC.md#361-cosmos_completion_t) of the
+See [&sect;3.6.1](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#361-cosmos_completion_t) of the
 spec for the C API surface of every box in this diagram.
 
 ---
@@ -311,7 +311,7 @@ flowchart LR
 
 Freeing the handle **never** cancels the op &mdash; it only drops the
 producer's reference. See
-[&sect;3.6.2](./NATIVE_WRAPPER_SPEC.md#362-cosmos_operation_handle_t) for the
+[&sect;3.6.2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#362-cosmos_operation_handle_t) for the
 exact contract.
 
 ---
@@ -350,7 +350,7 @@ sequenceDiagram
 ```
 
 **Caveats** &mdash; flagged here for visibility, fully documented in
-[&sect;3.6.3](./NATIVE_WRAPPER_SPEC.md#363-cancellation):
+[&sect;3.6.3](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#363-cancellation):
 
 - Granularity is &laquo;drop at the next await point&raquo;, not
   &laquo;check a token every operation&raquo;. A future parked inside a
@@ -428,7 +428,7 @@ flowchart LR
 | Python / Node | Same ticket-map pattern as Java/Go | `asyncio.Future` / `Promise` resolvers; the receive thread bridges back via `loop.call_soon_threadsafe` / `napi_async_work`. |
 
 Full code examples for all three are in
-[&sect;3.1 of the spec](./NATIVE_WRAPPER_SPEC.md#31-invocation-model--completion-queues).
+[&sect;3.1 of the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#31-invocation-model--completion-queues).
 
 ---
 
@@ -443,15 +443,15 @@ Full code examples for all three are in
 
 If you want work-stealing across multiple consumer threads, create
 **one queue per consumer**. The wrapper does not coordinate cross-thread
-fairness inside a single queue. See [&sect;9 Q12](./NATIVE_WRAPPER_SPEC.md#9-open-questions)
+fairness inside a single queue. See [&sect;9 Q12](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#9-open-questions)
 of the spec for whether MPMC will land in a future revision.
 
 ---
 
 ## 8. Where to look next
 
-- [`NATIVE_WRAPPER_SPEC.md` &sect;3.1](./NATIVE_WRAPPER_SPEC.md#31-invocation-model--completion-queues) &mdash; full invocation model + per-language call sites.
-- [`NATIVE_WRAPPER_SPEC.md` &sect;3.5](./NATIVE_WRAPPER_SPEC.md#35-error-model) &mdash; error model (`cosmos_error_code_t` + `cosmos_error_t`).
-- [`NATIVE_WRAPPER_SPEC.md` &sect;3.6](./NATIVE_WRAPPER_SPEC.md#36-completion-records--operation-handles) &mdash; completion record / operation handle accessors.
-- [`NATIVE_WRAPPER_SPEC.md` &sect;8](./NATIVE_WRAPPER_SPEC.md#8-phased-implementation-plan) &mdash; phased rollout (Phase 0 scaffolding through Phase 10 advanced surface).
-- [`NATIVE_WRAPPER_SPEC.md` &sect;6](./NATIVE_WRAPPER_SPEC.md#6-error-semantics) &mdash; how the merged driver's `CosmosError` maps onto the coarse `cosmos_error_code_t`.
+- [`NATIVE_WRAPPER_SPEC.md` &sect;3.1](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#31-invocation-model--completion-queues) &mdash; full invocation model + per-language call sites.
+- [`NATIVE_WRAPPER_SPEC.md` &sect;3.5](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#35-error-model) &mdash; error model (`cosmos_error_code_t` + `cosmos_error_t`).
+- [`NATIVE_WRAPPER_SPEC.md` &sect;3.6](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#36-completion-records--operation-handles) &mdash; completion record / operation handle accessors.
+- [`NATIVE_WRAPPER_SPEC.md` &sect;8](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#8-phased-implementation-plan) &mdash; phased rollout (Phase 0 scaffolding through Phase 10 advanced surface).
+- [`NATIVE_WRAPPER_SPEC.md` &sect;6](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver/docs/NATIVE_WRAPPER_SPEC.md#6-error-semantics) &mdash; how the merged driver's `CosmosError` maps onto the coarse `cosmos_error_code_t`.
