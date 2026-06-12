@@ -9,7 +9,10 @@ use azure_core::{
 };
 use time::OffsetDateTime;
 
-use crate::models::{AccessTier, EncryptionAlgorithmType, HttpRange, ImmutabilityPolicyMode};
+use crate::models::{
+    AccessTier, BlobClientDownloadInternalOptions, EncryptionAlgorithmType, HttpRange,
+    ImmutabilityPolicyMode,
+};
 
 /// Options to be passed to `BlobClient::download()`
 #[derive(Clone, Default, SafeDebug)]
@@ -76,6 +79,34 @@ pub struct BlobClientDownloadOptions<'a> {
 
     /// Specifies the version ID of the blob.
     pub version_id: Option<String>,
+}
+
+impl<'a> From<BlobClientDownloadOptions<'a>> for BlobClientDownloadInternalOptions<'_> {
+    fn from(value: BlobClientDownloadOptions) -> Self {
+        // Construct exhaustively to catch new options.
+        Self {
+            encryption_algorithm: value.encryption_algorithm,
+            encryption_key: value.encryption_key,
+            encryption_key_sha256: value.encryption_key_sha256,
+            if_match: value.if_match,
+            if_modified_since: value.if_modified_since,
+            if_none_match: value.if_none_match,
+            if_tags: value.if_tags,
+            if_unmodified_since: value.if_unmodified_since,
+            lease_id: value.lease_id,
+            // requires into_owned due to BlobClientDownloadBehavior w/ 'static Behavior
+            method_options: ClientMethodOptions {
+                context: value.method_options.context.into_owned(),
+            },
+            range: None,
+            range_get_content_crc64: value.range_get_content_crc64,
+            range_get_content_md5: value.range_get_content_md5,
+            snapshot: value.snapshot,
+            structured_body_type: None,
+            timeout: value.timeout,
+            version_id: value.version_id,
+        }
+    }
 }
 
 /// Options to be passed to `BlockBlobClient::upload()`

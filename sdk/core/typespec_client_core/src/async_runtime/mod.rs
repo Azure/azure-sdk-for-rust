@@ -111,6 +111,7 @@ pub trait AsyncRuntime: Send + Sync {
     /// method cannot directly return a future, instead they wrap the return value
     /// in a future, and we want the `spawn` method to directly return a future
     /// that can be awaited.
+    #[must_use = "futures do nothing unless you `.await` or poll them"]
     fn spawn(&self, f: TaskFuture) -> SpawnedTask;
 
     /// Sleep for the specified duration asynchronously.
@@ -119,9 +120,11 @@ pub trait AsyncRuntime: Send + Sync {
     /// * `duration` - The duration to sleep for.
     /// # Returns
     /// A future that resolves after the specified duration has elapsed.
+    #[must_use = "futures do nothing unless you `.await` or poll them"]
     fn sleep(&self, duration: Duration) -> TaskFuture;
 
     /// Yield the current task back to the runtime scheduler.
+    #[must_use = "futures do nothing unless you `.await` or poll them"]
     fn yield_now(&self) -> TaskFuture;
 }
 

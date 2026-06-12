@@ -13,8 +13,6 @@
 //! model the multi-endpoint topology backup-endpoint fallback is designed to
 //! exercise.
 
-#![cfg(feature = "key_auth")]
-
 use super::framework;
 
 use azure_data_cosmos::{AccountEndpoint, AccountReference, CosmosClient, RoutingStrategy};
