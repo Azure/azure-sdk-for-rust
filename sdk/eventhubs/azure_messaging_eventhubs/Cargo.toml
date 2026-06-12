@@ -40,6 +40,7 @@ azure_messaging_eventhubs = { path = ".", features = [
 ] }
 criterion.workspace = true
 fe2o3-amqp = { workspace = true, features = ["tracing"] }
+include-file.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 

@@ -1,4 +1,4 @@
-<!-- cspell:words azeventhubs minghuaw checkpointing checkpointstore georeplication prefetch reqwest Entra deserialize servicebus eventhubs eventhub fqdn rustls -->
+<!-- cspell:words azeventhubs checkpointing minghuaw -->
 
 # Migrating to azure_messaging_eventhubs from azeventhubs
 
@@ -85,7 +85,7 @@ futures = "0.3"
 
 The official crate exports its primary types from the crate root, with `models`, `error`, and `processor` submodules for supporting types:
 
-```rust ignore
+```rust ignore use_statements
 // Before: azeventhubs
 // use azeventhubs::producer::{EventHubProducerClient, EventHubProducerClientOptions, SendEventOptions};
 // use azeventhubs::consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
@@ -106,7 +106,7 @@ use futures::StreamExt;
 
 This is the most significant change. `azeventhubs` parses a connection string (which embeds a shared access key) and the host is part of that string. The official crate takes a fully qualified namespace host and an `azure_identity` credential, so authentication flows through Microsoft Entra ID.
 
-```rust ignore
+```rust ignore authentication
 // Before: azeventhubs - connection string carries both host and key
 // let producer = EventHubProducerClient::new_from_connection_string(
 //     "Endpoint=sb://my-ns.servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=...",
@@ -134,7 +134,7 @@ let producer = ProducerClient::builder()
 
 `azeventhubs` constructs clients with associated `new_from_connection_string` functions. The official crate uses a builder that ends in an `.open(...)` call, which establishes the AMQP connection. The builder is where you set options that `azeventhubs` passed through `*Options` structs.
 
-```rust ignore
+```rust ignore client_construction
 // Before: azeventhubs
 // let consumer = EventHubConsumerClient::new_from_connection_string(
 //     "$Default",                 // consumer group
@@ -167,7 +167,7 @@ The snippets below assume you are inside an `async` function and that errors pro
 
 In `azeventhubs` you build an `EventData` and call `send_event` with `SendEventOptions`. The official crate keeps the `send_event` name and a `SendEventOptions` struct, but accepts anything convertible into `EventData` (a string, a byte vector, or an `EventData` built with the builder), and partition targeting moves into `SendEventOptions.partition_id`.
 
-```rust ignore
+```rust ignore producing
 // Before: azeventhubs
 // let event = EventData::from("Hello, Event Hub!");
 // producer.send_event(event, SendEventOptions::default()).await?;
@@ -205,7 +205,7 @@ async fn produce(producer: &ProducerClient) -> Result<(), Box<dyn std::error::Er
 
 The official crate creates a batch from the producer, adds events to it with `try_add_event_data` (which returns `false` when the batch is full rather than erroring), then sends the whole batch in one call.
 
-```rust ignore
+```rust ignore batch
 // After: azure_messaging_eventhubs
 use azure_messaging_eventhubs::{EventDataBatchOptions, ProducerClient};
 
@@ -232,7 +232,7 @@ async fn produce_batch(producer: &ProducerClient) -> Result<(), Box<dyn std::err
 
 When you already know which partition to read, open a receiver on it and iterate the event stream. This maps directly to `azeventhubs`'s `read_events_from_partition`. The start position changes from `EventPosition` to a `StartPosition` whose `location` is a `StartLocation` (for example `StartLocation::Earliest`).
 
-```rust ignore
+```rust ignore consuming
 // Before: azeventhubs
 // let mut stream = consumer
 //     .read_events_from_partition("0", EventPosition::earliest(), ReadEventOptions::default())
@@ -279,7 +279,7 @@ async fn consume(consumer: &ConsumerClient) -> Result<(), Box<dyn std::error::Er
 
 This capability has no `azeventhubs` equivalent. `EventProcessor` balances partitions across multiple processor instances and records progress in a `CheckpointStore`, so you can run several consumers and let them divide the partitions among themselves. Build it from a `ConsumerClient` and a checkpoint store, run it (typically on a background task), then pull `PartitionClient`s as partitions are assigned to this instance.
 
-```rust ignore
+```rust ignore processor
 // After: azure_messaging_eventhubs (requires the "in_memory_checkpoint_store" feature for InMemoryCheckpointStore)
 use azure_messaging_eventhubs::{
     ConsumerClient, EventProcessor, InMemoryCheckpointStore,
@@ -366,27 +366,31 @@ The same Entra ID credential authenticates both Event Hubs and Blob Storage. Gra
 
 `azure_messaging_eventhubs` defines its own error type, `EventHubsError`, exposed through the crate's `Result<T>` alias (`azure_messaging_eventhubs::Result<T>`). Match on the public `ErrorKind` via the error's `kind` field. Note that `kind` is a field, not a method.
 
-```rust ignore
+```rust ignore error_handling
 use azure_messaging_eventhubs::error::ErrorKind;
+use azure_messaging_eventhubs::ConsumerClient;
 
-match consumer.open_receiver_on_partition("0".to_string(), None).await {
-    Ok(receiver) => { /* ... */ }
-    Err(err) => match err.kind {
-        // The broker disconnected this receiver because another consumer attached
-        // with the same or higher owner level (epoch). Re-acquire the partition.
-        ErrorKind::ConsumerDisconnected(_) => {
-            eprintln!("partition reassigned to another consumer");
-        }
-        // The service rejected a send (for example, a quota was exceeded).
-        ErrorKind::SendRejected(details) => {
-            eprintln!("send rejected: {details:?}");
-        }
-        // An error surfaced from azure_core (HTTP, credential, etc.).
-        ErrorKind::AzureCore(ref e) => eprintln!("core error: {e}"),
-        // An AMQP transport error.
-        ErrorKind::AmqpError(ref e) => eprintln!("amqp error: {e:?}"),
-        other => eprintln!("other error: {other:?}"),
-    },
+async fn handle_errors(consumer: &ConsumerClient) -> Result<(), Box<dyn std::error::Error>> {
+    match consumer.open_receiver_on_partition("0".to_string(), None).await {
+        Ok(_receiver) => { /* ... */ }
+        Err(err) => match err.kind {
+            // The broker disconnected this receiver because another consumer attached
+            // with the same or higher owner level (epoch). Re-acquire the partition.
+            ErrorKind::ConsumerDisconnected(_) => {
+                eprintln!("partition reassigned to another consumer");
+            }
+            // The service rejected a send (for example, a quota was exceeded).
+            ErrorKind::SendRejected(details) => {
+                eprintln!("send rejected: {details:?}");
+            }
+            // An error surfaced from azure_core (HTTP, credential, etc.).
+            ErrorKind::AzureCore(ref e) => eprintln!("core error: {e}"),
+            // An AMQP transport error.
+            ErrorKind::AmqpError(ref e) => eprintln!("amqp error: {e:?}"),
+            other => eprintln!("other error: {other:?}"),
+        },
+    }
+    Ok(())
 }
 ```
 
@@ -396,7 +400,7 @@ match consumer.open_receiver_on_partition("0".to_string(), None).await {
 
 Like `azeventhubs`, `azure_messaging_eventhubs` is fully async and runs on the [tokio](https://tokio.rs) runtime. All client operations are `async`.
 
-```rust ignore
+```rust ignore async_runtime
 // Cargo.toml:
 //
 // [dependencies]
