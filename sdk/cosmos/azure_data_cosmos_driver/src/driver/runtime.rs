@@ -20,9 +20,8 @@ use crate::{
         ThroughputControlGroupName, UserAgent,
     },
     options::{
-        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
-        UserAgentSuffix, WorkloadId,
+        resolve_duration_ms, ConnectionPoolOptions, CorrelationId, DriverOptions, OperationOptions,
+        ThroughputControlGroupOptions, ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -35,6 +34,18 @@ use super::{
     },
     CosmosDriver,
 };
+
+/// Internal env-var source for runtime-level scalar settings.
+///
+/// Part of the unified env-parsing model: env vars are read and parsed only by
+/// the `CosmosOptions`-generated `from_env()`. The runtime builder resolves the
+/// final value (`builder → env → default`) via `resolve_duration_ms`.
+#[derive(azure_data_cosmos_macros::CosmosOptions, Clone, Debug)]
+#[options(layers(runtime))]
+pub(crate) struct RuntimeEnvConfig {
+    #[option(env = "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS")]
+    pub(crate) cpu_refresh_interval_ms: Option<u64>,
+}
 
 /// The Cosmos DB driver runtime environment.
 ///
@@ -107,6 +118,12 @@ pub struct CosmosDriverRuntime {
 
     /// Environment-level operation options, populated once from env vars at build time.
     env_operation_options: Arc<OperationOptions>,
+
+    /// Highest-priority kill-switch operation options, populated once from the
+    /// `{ENV}_OVERRIDE` variants at build time. Only `overridable` fields are
+    /// populated; this layer wins over every other layer (including
+    /// per-operation values).
+    env_override_operation_options: Arc<OperationOptions>,
 
     /// User-provided default operation options, swappable via interior mutability.
     ///
@@ -249,6 +266,12 @@ impl CosmosDriverRuntime {
     /// Returns the environment-level operation options (populated from env vars at build time).
     pub fn env_operation_options(&self) -> &Arc<OperationOptions> {
         &self.env_operation_options
+    }
+
+    /// Returns the highest-priority kill-switch operation options (populated
+    /// from the `{ENV}_OVERRIDE` variants at build time).
+    pub fn env_override_operation_options(&self) -> &Arc<OperationOptions> {
+        &self.env_override_operation_options
     }
 
     /// Returns a snapshot of the default operation options.
@@ -785,8 +808,13 @@ impl CosmosDriverRuntimeBuilder {
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
         // VmMetadataService makes a single IMDS request (or falls back to a UUID).
-        let refresh_interval = parse_duration_millis_from_env(
+        // The env value is read once via the `CosmosOptions`-generated
+        // `from_env()` (the single env-reading mechanism); `resolve_duration_ms`
+        // applies the `builder → env → default` resolution + bounds validation.
+        let runtime_env = RuntimeEnvConfig::from_env();
+        let refresh_interval = resolve_duration_ms(
             self.cpu_refresh_interval,
+            runtime_env.cpu_refresh_interval_ms,
             "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS",
             5_000,
             1_000,
@@ -817,6 +845,11 @@ impl CosmosDriverRuntimeBuilder {
                 throttling_retry_options: Some(crate::options::ThrottlingRetryOptions::from_env()),
                 ..OperationOptions::from_env()
             }),
+            // Kill-switch layer: only `overridable` fields (read from their
+            // `{ENV}_OVERRIDE` variants) are populated. No nested groups carry
+            // overridable fields today, so no explicit nested call is needed
+            // here (unlike `env_operation_options` above).
+            env_override_operation_options: Arc::new(OperationOptions::from_env_override()),
             operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,

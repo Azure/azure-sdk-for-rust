@@ -989,9 +989,11 @@ impl CosmosDriver {
                     .unwrap_or(Duration::from_secs(60))
             });
 
-        // Build a layered view (env → runtime → account) to resolve init-time config.
-        // No per-operation overrides exist at construction time.
-        let init_view = OperationOptionsView::new(
+        // Build a layered view (env_override → env → runtime → account) to
+        // resolve init-time config. No per-operation overrides exist at
+        // construction time; the `env_override` kill-switch layer still applies.
+        let init_view = OperationOptionsView::new_with_override(
+            Some(Arc::clone(runtime.env_override_operation_options())),
             Some(Arc::clone(runtime.env_operation_options())),
             Some(runtime.operation_options()),
             Some(options.operation_options().clone()),
@@ -1119,15 +1121,17 @@ impl CosmosDriver {
     /// Constructs an [`OperationOptionsView`] for resolving options across all layers.
     ///
     /// The view resolves options in priority order (highest first):
-    /// 1. `OperationOptions` - operation-specific overrides
-    /// 2. `DriverOptions` - driver-level defaults
-    /// 3. `CosmosDriverRuntime` - global runtime defaults
-    /// 4. Environment - env vars read at startup
+    /// 1. Environment `{ENV}_OVERRIDE` kill switches - fleet-wide incident override
+    /// 2. `OperationOptions` - operation-specific overrides
+    /// 3. `DriverOptions` - driver-level defaults
+    /// 4. `CosmosDriverRuntime` - global runtime defaults
+    /// 5. Environment - env vars read at startup
     pub fn operation_options_view<'a>(
         &self,
         operation_options: &'a OperationOptions,
     ) -> OperationOptionsView<'a> {
-        OperationOptionsView::new(
+        OperationOptionsView::new_with_override(
+            Some(Arc::clone(self.runtime.env_override_operation_options())),
             Some(Arc::clone(self.runtime.env_operation_options())),
             Some(self.runtime.operation_options()),
             Some(self.options.operation_options().clone()),

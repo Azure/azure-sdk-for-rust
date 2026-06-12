@@ -85,6 +85,9 @@ pub struct OptionField {
     pub merge: Option<String>,
     /// Whether this field is a nested option group.
     pub nested: bool,
+    /// Whether this field also recognizes a `{ENV}_OVERRIDE` kill-switch
+    /// variable that takes precedence over every layer (including operation).
+    pub overridable: bool,
 }
 
 impl OptionsInput {
@@ -126,6 +129,11 @@ impl OptionsInput {
     /// Returns true if any field has an `#[option(env = "...")]` attribute.
     pub fn has_env_fields(&self) -> bool {
         self.fields.iter().any(|f| f.env_var.is_some())
+    }
+
+    /// Returns true if any field is marked `#[option(env = "...", overridable)]`.
+    pub fn has_overridable_fields(&self) -> bool {
+        self.fields.iter().any(|f| f.overridable)
     }
 }
 
@@ -178,6 +186,19 @@ fn parse_layers_attr(attrs: &[syn::Attribute]) -> Result<Vec<Layer>> {
     Ok(Vec::new())
 }
 
+impl OptionField {
+    /// Returns the `{ENV}_OVERRIDE` variable name for an overridable env field.
+    ///
+    /// Returns `None` for fields that are not `overridable` or have no `env`.
+    pub fn override_env_var(&self) -> Option<String> {
+        if self.overridable {
+            self.env_var.as_ref().map(|v| format!("{v}_OVERRIDE"))
+        } else {
+            None
+        }
+    }
+}
+
 fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
     let named_fields = match &data.fields {
         Fields::Named(fields) => &fields.named,
@@ -203,7 +224,7 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
             )
         })?;
 
-        let (env_var, merge, nested) = parse_option_attrs(&field.attrs)?;
+        let (env_var, merge, nested, overridable) = parse_option_attrs(&field.attrs)?;
 
         result.push(OptionField {
             ident,
@@ -212,16 +233,20 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
             env_var,
             merge,
             nested,
+            overridable,
         });
     }
 
     Ok(result)
 }
 
-fn parse_option_attrs(attrs: &[syn::Attribute]) -> Result<(Option<String>, Option<String>, bool)> {
+fn parse_option_attrs(
+    attrs: &[syn::Attribute],
+) -> Result<(Option<String>, Option<String>, bool, bool)> {
     let mut env_var = None;
     let mut merge = None;
     let mut nested = false;
+    let mut overridable = false;
 
     for attr in attrs {
         if !attr.path().is_ident("option") {
@@ -245,8 +270,13 @@ fn parse_option_attrs(attrs: &[syn::Attribute]) -> Result<(Option<String>, Optio
             } else if meta.path.is_ident("nested") {
                 nested = true;
                 Ok(())
+            } else if meta.path.is_ident("overridable") {
+                overridable = true;
+                Ok(())
             } else {
-                Err(meta.error("expected `env = \"...\"`, `merge = \"...\"`, or `nested`"))
+                Err(meta.error(
+                    "expected `env = \"...\"`, `merge = \"...\"`, `nested`, or `overridable`",
+                ))
             }
         })?;
     }
@@ -270,8 +300,14 @@ fn parse_option_attrs(attrs: &[syn::Attribute]) -> Result<(Option<String>, Optio
             "`merge` and `nested` cannot be combined on the same field",
         ));
     }
+    if overridable && env_var.is_none() {
+        return Err(Error::new(
+            Span::call_site(),
+            "`overridable` requires `env = \"...\"` on the same field",
+        ));
+    }
 
-    Ok((env_var, merge, nested))
+    Ok((env_var, merge, nested, overridable))
 }
 
 /// Extracts the inner type `T` from `Option<T>`.
@@ -467,6 +503,47 @@ mod tests {
         };
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         assert!(!parsed.has_env_fields());
+    }
+
+    #[test]
+    fn overridable_field_parsed_and_derives_override_var() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account, operation))]
+            struct TestOptions {
+                #[option(env = "MY_VAR", overridable)]
+                pub field_a: Option<bool>,
+                #[option(env = "OTHER_VAR")]
+                pub field_b: Option<u32>,
+            }
+        };
+        let parsed = OptionsInput::from_derive_input(&input).unwrap();
+        assert!(parsed.has_overridable_fields());
+        assert!(parsed.fields[0].overridable);
+        assert_eq!(
+            parsed.fields[0].override_env_var().as_deref(),
+            Some("MY_VAR_OVERRIDE")
+        );
+        // Non-overridable env field has no override var.
+        assert!(!parsed.fields[1].overridable);
+        assert!(parsed.fields[1].override_env_var().is_none());
+    }
+
+    #[test]
+    fn overridable_without_env_errors() {
+        let input: DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account))]
+            struct TestOptions {
+                #[option(overridable)]
+                pub field_a: Option<bool>,
+            }
+        };
+        match OptionsInput::from_derive_input(&input) {
+            Err(e) => assert_eq!(
+                "`overridable` requires `env = \"...\"` on the same field",
+                e.to_string()
+            ),
+            Ok(_) => panic!("expected error"),
+        }
     }
 
     #[test]
