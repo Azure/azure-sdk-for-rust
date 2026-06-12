@@ -662,6 +662,59 @@ mod tests {
         assert_eq!(strategy.threshold().get(), Duration::from_millis(200));
     }
 
+    #[test]
+    fn resolve_env_override_layer_disables_hedging_over_operation() {
+        // End-to-end: the top-priority `env_override` kill-switch layer
+        // (sourced from `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE`) must reach the
+        // live `resolve_availability_strategy` and beat a per-operation
+        // `hedging_enabled = Some(true)` *and* an explicit `Hedging(..)`.
+        let op_strategy =
+            HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
+        let env_override = OperationOptionsBuilder::new()
+            .with_hedging_enabled(false)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .with_availability_strategy(AvailabilityStrategy::Hedging(op_strategy))
+            .build();
+        let view = OperationOptionsView::new_with_override(
+            Some(std::sync::Arc::new(env_override)),
+            None,
+            None,
+            None,
+            Some(&op),
+        );
+
+        assert!(
+            resolve_availability_strategy(&view, None).is_none(),
+            "env_override hedging=false must disable hedging through the pipeline resolver",
+        );
+    }
+
+    #[test]
+    fn resolve_env_override_layer_enables_hedging_over_disabled_operation() {
+        // Parity in the other direction through the pipeline resolver: an
+        // override of `true` enables hedging even when the operation layer
+        // explicitly set `Disabled`.
+        let env_override = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .build();
+        let op = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+        let view = OperationOptionsView::new_with_override(
+            Some(std::sync::Arc::new(env_override)),
+            None,
+            None,
+            None,
+            Some(&op),
+        );
+
+        let strategy = resolve_availability_strategy(&view, None)
+            .expect("env_override hedging=true must enable hedging through the pipeline resolver");
+        assert_eq!(strategy.threshold().get(), Duration::from_millis(1000));
+    }
+
     // ───────────────────────── ExcludedRegions integration ─────────────────────────
 
     #[test]

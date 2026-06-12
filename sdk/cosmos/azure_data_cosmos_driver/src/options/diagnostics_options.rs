@@ -242,6 +242,32 @@ mod tests {
     }
 
     #[test]
+    fn env_config_from_env_vars_maps_names_to_fields() {
+        // Guards against env-var-name typos in `DiagnosticsEnvConfig`.
+        let cfg = DiagnosticsEnvConfig::from_env_vars(|key| match key {
+            "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES" => Ok("16384".to_string()),
+            "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY" => Ok("summary".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(cfg.max_summary_size_bytes, Some(16384));
+        assert_eq!(cfg.default_verbosity, Some(DiagnosticsVerbosity::Summary));
+    }
+
+    #[test]
+    fn env_config_from_env_vars_is_lenient_on_malformed_value() {
+        // Part B behavior: a malformed env value is ignored (None), so the
+        // builder falls back to the default instead of erroring.
+        let cfg = DiagnosticsEnvConfig::from_env_vars(|key| match key {
+            "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES" => Ok("huge".to_string()),
+            "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY" => Ok("nonsense".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+        assert!(cfg.max_summary_size_bytes.is_none());
+        assert!(cfg.default_verbosity.is_none());
+    }
+
+    #[test]
     fn custom_values() {
         let options = DiagnosticsOptionsBuilder::new()
             .with_max_summary_size_bytes(16 * 1024)

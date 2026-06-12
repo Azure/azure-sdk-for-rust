@@ -358,3 +358,61 @@ fn nested_with_none_nested_field() {
     assert_eq!(pool_view.max_connections(), None);
     assert_eq!(pool_view.idle_timeout(), None);
 }
+
+// --- Lenient boolean parsing for operator-facing kill switches ---
+
+#[derive(CosmosOptions, Clone)]
+#[options(layers(runtime, account, operation))]
+pub struct SwitchOptions {
+    #[option(env = "AZURE_COSMOS_TEST_SWITCH", overridable)]
+    pub enabled: Option<bool>,
+}
+
+#[test]
+fn bool_env_parsing_is_lenient_on_common_spellings() {
+    // A kill switch must not silently fail open when an operator types a
+    // common boolean spelling that `bool::from_str` would reject.
+    for (raw, expected) in [
+        ("true", true),
+        ("TRUE", true),
+        ("True", true),
+        ("1", true),
+        ("yes", true),
+        ("on", true),
+        (" On ", true),
+        ("false", false),
+        ("FALSE", false),
+        ("False", false),
+        ("0", false),
+        ("no", false),
+        ("off", false),
+        (" OFF ", false),
+    ] {
+        let opts = SwitchOptions::from_env_vars(|key| match key {
+            "AZURE_COSMOS_TEST_SWITCH" => Ok(raw.to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+        assert_eq!(opts.enabled, Some(expected), "raw value: {raw:?}");
+    }
+}
+
+#[test]
+fn bool_env_parsing_ignores_truly_unparseable_value() {
+    // Genuinely meaningless values are still ignored (None → falls back).
+    let opts = SwitchOptions::from_env_vars(|key| match key {
+        "AZURE_COSMOS_TEST_SWITCH" => Ok("maybe".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert!(opts.enabled.is_none());
+}
+
+#[test]
+fn bool_override_env_parsing_is_lenient() {
+    // The same leniency applies to the `_OVERRIDE` kill-switch variant so an
+    // operator flipping the switch mid-incident with `=FALSE`/`=0` is honored.
+    let opts = SwitchOptions::from_env_override_vars(|key| match key {
+        "AZURE_COSMOS_TEST_SWITCH_OVERRIDE" => Ok("FALSE".to_string()),
+        _ => Err(std::env::VarError::NotPresent),
+    });
+    assert_eq!(opts.enabled, Some(false));
+}

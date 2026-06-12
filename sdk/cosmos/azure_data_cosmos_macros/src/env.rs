@@ -19,6 +19,14 @@ fn is_vec_type(ty: &Type) -> bool {
     }
 }
 
+/// Returns true if `ty` is the primitive `bool` type.
+fn is_bool_type(ty: &Type) -> bool {
+    match ty {
+        Type::Path(type_path) if type_path.qself.is_none() => type_path.path.is_ident("bool"),
+        _ => false,
+    }
+}
+
 /// Generates the per-field initializer expression that reads `env_var_name`
 /// and parses it into the field's type (with comma-splitting for `Vec<T>`).
 ///
@@ -46,6 +54,28 @@ fn field_init(field_name: &syn::Ident, inner_type: &Type, env_var: &str) -> Toke
                         }
                     })
                     .collect())
+        }
+    } else if is_bool_type(inner_type) {
+        // Booleans frequently back operator-facing switches (including the
+        // `_OVERRIDE` incident kill switches), so parse them leniently instead
+        // of with `bool::from_str` (which accepts only exact lowercase
+        // `true`/`false`). Common spellings like `FALSE`, `0`, `off`, and `no`
+        // are honored so a kill switch does not silently fail open on a typo.
+        quote! {
+            #field_name: env_var(#env_var)
+                .ok()
+                .and_then(|v| match v.trim().to_ascii_lowercase().as_str() {
+                    "true" | "1" | "yes" | "on" => Some(true),
+                    "false" | "0" | "no" | "off" => Some(false),
+                    _ => {
+                        ::tracing::warn!(
+                            env_var = #env_var,
+                            value = %v,
+                            "failed to parse boolean environment variable; ignoring",
+                        );
+                        None
+                    }
+                })
         }
     } else {
         quote! {

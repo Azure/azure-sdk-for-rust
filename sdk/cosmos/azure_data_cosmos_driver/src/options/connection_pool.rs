@@ -892,6 +892,53 @@ mod tests {
     use super::*;
 
     #[test]
+    fn env_config_from_env_vars_maps_names_to_fields() {
+        // Guards against env-var-name typos in `ConnectionPoolEnvConfig`: each
+        // `#[option(env = "...")]` string must map to the right field. A
+        // representative field of every parsed kind is covered (bool, u64-ms,
+        // usize, u32, IpAddr).
+        let cfg = ConnectionPoolEnvConfig::from_env_vars(|key| match key {
+            "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED" => Ok("false".to_string()),
+            "AZURE_COSMOS_CONNECTION_POOL_MIN_CONNECT_TIMEOUT_MS" => Ok("250".to_string()),
+            "AZURE_COSMOS_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_PER_ENDPOINT" => {
+                Ok("4096".to_string())
+            }
+            "AZURE_COSMOS_CONNECTION_POOL_HTTP2_CONSECUTIVE_FAILURE_THRESHOLD" => {
+                Ok("7".to_string())
+            }
+            "AZURE_COSMOS_LOCAL_ADDRESS" => Ok("127.0.0.1".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(cfg.is_http2_allowed, Some(false));
+        assert_eq!(cfg.min_connect_timeout_ms, Some(250));
+        assert_eq!(cfg.max_idle_connections_per_endpoint, Some(4096));
+        assert_eq!(cfg.http2_consecutive_failure_threshold, Some(7));
+        assert_eq!(
+            cfg.local_address,
+            Some("127.0.0.1".parse().expect("valid IP")),
+        );
+        // Unset fields stay None.
+        assert!(cfg.max_connect_timeout_ms.is_none());
+        assert!(cfg.proxy_allowed.is_none());
+    }
+
+    #[test]
+    fn env_config_from_env_vars_is_lenient_on_malformed_value() {
+        // Part B behavior change: a malformed env value is logged and ignored
+        // by the macro (the field stays `None`), so resolution falls back to
+        // the default rather than failing runtime construction.
+        let cfg = ConnectionPoolEnvConfig::from_env_vars(|key| match key {
+            "AZURE_COSMOS_CONNECTION_POOL_MIN_CONNECT_TIMEOUT_MS" => Ok("not-a-number".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+        assert!(
+            cfg.min_connect_timeout_ms.is_none(),
+            "an unparseable env value must be ignored (None), not error",
+        );
+    }
+
+    #[test]
     fn connection_pool_options_builder_defaults() {
         let options = ConnectionPoolOptionsBuilder::new().build().unwrap();
 

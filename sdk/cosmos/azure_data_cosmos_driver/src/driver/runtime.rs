@@ -876,6 +876,20 @@ mod tests {
     use super::*;
     use url::Url;
 
+    #[test]
+    fn runtime_env_config_from_env_vars_maps_name_to_field() {
+        // Guards against an env-var-name typo in `RuntimeEnvConfig`.
+        let cfg = RuntimeEnvConfig::from_env_vars(|key| match key {
+            "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS" => Ok("2500".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+        assert_eq!(cfg.cpu_refresh_interval_ms, Some(2500));
+
+        // Unset → None (falls back to the default at resolution time).
+        let unset = RuntimeEnvConfig::from_env_vars(|_| Err(std::env::VarError::NotPresent));
+        assert!(unset.cpu_refresh_interval_ms.is_none());
+    }
+
     #[tokio::test]
     async fn get_or_create_driver_removes_failed_initialization_from_registry() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();

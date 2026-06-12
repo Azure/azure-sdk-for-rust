@@ -90,6 +90,24 @@ an override:
 | `AZURE_COSMOS_HEDGING_ENABLED` | `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` | Forces cross-region read hedging on/off regardless of any programmatic `AvailabilityStrategy` or per-request value. |
 | `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED_OVERRIDE` | Forces the per-partition circuit breaker (PPCB) on/off regardless of any per-request value. |
 
+> **Read once at startup.** Both the base variable and its `_OVERRIDE` variant
+> are read a single time when the driver runtime is built, not per request.
+> Flipping either value mid-incident therefore requires a process restart to
+> take effect.
+>
+> **Deliberate inversion of the .NET/Java model.** .NET and Java treat
+> environment variables / system properties as *defaults that programmatic code
+> overrides*. These kill switches intentionally invert that: when set, the
+> environment value wins over code — including an explicit
+> `AvailabilityStrategy::Disabled`. This is by design so an operator can
+> override an application's hard-coded configuration during a livesite incident
+> without a redeploy.
+>
+> **Lenient boolean parsing.** These boolean switches accept `true`/`false`,
+> `1`/`0`, `yes`/`no`, and `on`/`off` (case-insensitive). An unrecognized value
+> is logged and ignored (treated as unset) rather than silently flipping the
+> switch the wrong way.
+
 ---
 
 ## 2. Standalone Types
