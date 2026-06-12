@@ -6,13 +6,14 @@
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::fault_injection::FaultInjectionRule;
-use azure_data_cosmos::models::{ItemResponse, ThroughputProperties};
+use azure_data_cosmos::feed::FeedScope;
+use azure_data_cosmos::models::ItemResponse;
+use azure_data_cosmos::models::ThroughputProperties;
+use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::options::ItemReadOptions;
-use azure_data_cosmos::query::FeedScope;
-use azure_data_cosmos::Region;
+use azure_data_cosmos::options::Region;
 use azure_data_cosmos::{
-    clients::DatabaseClient, CosmosClient, CreateContainerOptions, PartitionKey, Query,
-    RoutingStrategy,
+    clients::DatabaseClient, CosmosClient, PartitionKey, Query, RoutingStrategy,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
@@ -48,7 +49,7 @@ pub const EMULATOR_HOST: &str = "127.0.0.1";
 /// successfully retry on the original. Used for failover scenarios where
 /// either landing is valid.
 pub fn assert_region_contacted_with_retry(
-    diagnostics: &azure_data_cosmos::DiagnosticsContext,
+    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
     expected_region: &Region,
 ) {
     assert!(
@@ -72,7 +73,7 @@ pub fn assert_region_contacted_with_retry(
 /// stay on `expected_region` (the driver may still fail over to an alternate
 /// region after exhausting its local retry budget).
 pub fn assert_local_retry_attempted_on_region(
-    diagnostics: &azure_data_cosmos::DiagnosticsContext,
+    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
     expected_region: &Region,
 ) {
     let requests = diagnostics.requests();
@@ -651,7 +652,11 @@ impl TestRunContext {
 
         let props = response.into_model()?;
 
-        let db_client = self.client().database_client(&props.id);
+        let id = props
+            .id
+            .as_deref()
+            .expect("Cosmos DB should always return a database id on create");
+        let db_client = self.client().database_client(id);
         Ok(db_client)
     }
 
@@ -755,7 +760,7 @@ impl TestRunContext {
         &self,
         db_client: &DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
-        options: Option<azure_data_cosmos::CreateContainerOptions>,
+        options: Option<azure_data_cosmos::options::CreateContainerOptions>,
     ) -> azure_data_cosmos::Result<ContainerClient> {
         let mut backoff = Duration::from_millis(100);
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
@@ -926,7 +931,9 @@ impl TestRunContext {
         let mut pager = self.client().query_databases(query, None).await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
-            ids.push(db.id);
+            if let Some(id) = db.id {
+                ids.push(id);
+            }
         }
 
         // Now that we have a list of databases created by this test, we delete them.

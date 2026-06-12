@@ -4,7 +4,7 @@
 // This file is auto-generated from the .NET SDK's RegionProximityUtil.cs.
 // Do not edit manually.
 
-use crate::regions::Region;
+use crate::options::Region;
 
 // cSpell:disable
 

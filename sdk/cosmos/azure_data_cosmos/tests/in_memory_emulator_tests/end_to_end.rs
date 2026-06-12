@@ -20,15 +20,16 @@
 //! individual scenarios can stay focused on the SDK operation under test.
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::models::ItemResponse;
 use azure_data_cosmos::models::{ContainerProperties, DatabaseProperties};
-use azure_data_cosmos::regions::Region;
+use azure_data_cosmos::options::Region;
+use azure_data_cosmos::options::{
+    ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions, OperationOptions,
+};
 use azure_data_cosmos::AccountEndpoint;
 use azure_data_cosmos::AccountReference;
-use azure_data_cosmos::{
-    ContentResponseOnWrite, CosmosClient, CosmosClientBuilder, ItemReadOptions, ItemResponse,
-    ItemWriteOptions, OperationOptions, RoutingStrategy, ThrottlingRetryOptionsBuilder,
-};
+use azure_data_cosmos::{clients::ContainerClient, options::ThrottlingRetryOptionsBuilder};
+use azure_data_cosmos::{CosmosClient, CosmosClientBuilder, RoutingStrategy};
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
     VirtualRegion,
@@ -390,11 +391,11 @@ async fn sdk_create_database_and_container_through_driver() {
         assert_eq!(real_create_db.status(), emu_create_db.status());
 
         let real_db: DatabaseProperties = real_create_db.into_model().unwrap();
-        assert_eq!(real_db.id, db_name);
+        assert_eq!(real_db.id.as_deref(), Some(db_name.as_str()));
     }
 
     let emu_db: DatabaseProperties = emu_create_db.into_model().unwrap();
-    assert_eq!(emu_db.id, db_name);
+    assert_eq!(emu_db.id.as_deref(), Some(db_name.as_str()));
 
     let props = ContainerProperties::new(container_name.to_string(), "/pk".into());
     let emu_db_client = backend.emulator_client.database_client(&db_name);

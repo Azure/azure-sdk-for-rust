@@ -17,11 +17,11 @@ mod upsert_item;
 
 use async_trait::async_trait;
 use azure_data_cosmos::clients::ContainerClient;
+use azure_data_cosmos::models::ResponseHeaders;
+use azure_data_cosmos::options::Region;
 use azure_data_cosmos::options::{
     ExcludedRegions, ItemReadOptions, ItemWriteOptions, OperationOptions,
 };
-use azure_data_cosmos::regions::Region;
-use azure_data_cosmos::ResponseHeaders;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;

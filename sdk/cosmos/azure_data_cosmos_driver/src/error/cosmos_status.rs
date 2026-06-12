@@ -1390,6 +1390,13 @@ impl SubStatusCode {
     /// follow-up replace without the offer id. Paired with HTTP 500.
     pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: SubStatusCode = SubStatusCode(20303);
 
+    /// The service returned a resource read response without the `_rid`
+    /// system property (20306). A broken server invariant — the SDK
+    /// relies on `_rid` to address downstream operations (e.g.
+    /// resolving a throughput offer for the resource). Paired with
+    /// HTTP 500.
+    pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: SubStatusCode = SubStatusCode(20306);
+
     /// The async throughput-replace poller's underlying stream ended
     /// without yielding any response (20304). Paired with HTTP 408
     /// because the throughput-replace operation has no service SLA on
@@ -2220,6 +2227,13 @@ impl CosmosStatus {
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::ServiceUnavailable,
         sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
+    };
+
+    /// 500 / 20306 — the service returned a resource read response
+    /// without the `_rid` system property, violating its own contract.
+    pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::InternalServerError,
+        sub_status: Some(SubStatusCode::SERVICE_RETURNED_OBJECT_WITHOUT_RID),
     };
 }
 
