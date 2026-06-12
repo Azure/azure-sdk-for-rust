@@ -210,10 +210,14 @@ express it.
 `Pinner` (Go 1.21+) does three things to one object when you `Pin` it:
 
 1. **Roots it** — the GC won't collect it while pinned.
-2. **Freezes it in place** — Go's GC can move objects; pinning guarantees the
-   address stays valid so you can hand out a raw pointer.
-3. **Makes it legal to pass to C** — cgo's pointer-passing rules normally forbid
-   handing Go pointers to C; pinned memory is exempt.
+2. **Freezes it in place** — Go's GC is non-moving today, but the language spec
+   permits a moving collector in the future; pinning guarantees the address stays
+   valid regardless, so you can safely hand out a raw pointer.
+3. **Lets you pass it to C** — cgo's pointer-passing rules forbid handing C a Go
+   pointer that may be moved or collected during the call; pinning lifts that
+   restriction for the pinned object. The other cgo rules still apply — notably you
+   still must not pass a pointer to Go memory that itself contains unpinned Go
+   pointers.
 
 You then hand Rust the raw address as `user_data`, and on completion cast it
 straight back — **no lookup**. `Pinner` is strong-only and binary: an object is
@@ -310,7 +314,7 @@ down? We cannot fully prevent this from Go; it's the Rust core's contract.
 - **map** → safe no-op. The bad token simply isn't found.
 - **`cgo.Handle`** → deterministic **panic** (`misuse of cgo.Handle`). Loud and
   reproducible, and it points at the bug — but it is **contained**: the receive
-  loop recovers per-completion panics (§11), so a bad token fails just that op
+  loop recovers per-completion panics, so a bad token fails just that op
   rather than crashing the process.
 - **`Pinner`** → **silent use-after-free**. It casts a raw address to memory that
   may have been reclaimed and reused. Non-deterministic corruption, worst blast
