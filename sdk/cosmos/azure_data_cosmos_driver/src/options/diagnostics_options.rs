@@ -3,7 +3,9 @@
 
 //! Configuration options for diagnostics and telemetry.
 
-use super::env_parsing::{parse_from_env, ValidationBounds};
+use azure_data_cosmos_macros::CosmosOptions;
+
+use super::env_parsing::{resolve_from_env, ValidationBounds};
 
 /// Default maximum size for diagnostic summary output (8 KB).
 const DEFAULT_MAX_SUMMARY_SIZE_BYTES: usize = 8 * 1024;
@@ -124,6 +126,23 @@ impl DiagnosticsOptions {
     }
 }
 
+/// Internal env-var source for [`DiagnosticsOptions`].
+///
+/// This is the single env-reading mechanism for diagnostics config: the
+/// `CosmosOptions` derive generates `from_env()`, which reads each field's
+/// `AZURE_COSMOS_*` variable (lenient — a malformed value is logged and
+/// ignored). [`DiagnosticsOptionsBuilder::build`] resolves
+/// `builder value → env value → default` and applies validation.
+#[derive(CosmosOptions, Clone, Debug)]
+#[options(layers(runtime))]
+pub(crate) struct DiagnosticsEnvConfig {
+    #[option(env = "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES")]
+    pub(crate) max_summary_size_bytes: Option<usize>,
+
+    #[option(env = "AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY")]
+    pub(crate) default_verbosity: Option<DiagnosticsVerbosity>,
+}
+
 /// Builder for [`DiagnosticsOptions`].
 ///
 /// Default values are read from environment variables when available,
@@ -185,31 +204,24 @@ impl DiagnosticsOptionsBuilder {
     ///
     /// Returns an error if:
     /// - `max_summary_size_bytes` is less than 4096
-    /// - Environment variable parsing fails
     pub fn build(self) -> crate::error::Result<DiagnosticsOptions> {
-        let max_summary_size_bytes = parse_from_env(
+        // Single env-reading mechanism: the `CosmosOptions`-generated
+        // `from_env()`. Resolution is `builder value → env value → default`,
+        // with bounds validation applied via the shared resolve helper.
+        let env = DiagnosticsEnvConfig::from_env();
+
+        let max_summary_size_bytes = resolve_from_env(
             self.max_summary_size_bytes,
+            env.max_summary_size_bytes,
             "AZURE_COSMOS_DIAGNOSTICS_MAX_SUMMARY_SIZE_BYTES",
             DEFAULT_MAX_SUMMARY_SIZE_BYTES,
             ValidationBounds::min(MIN_MAX_SUMMARY_SIZE_BYTES),
         )?;
 
-        let default_verbosity = match self.default_verbosity {
-            Some(v) => v,
-            None => match std::env::var("AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY") {
-                Ok(v) => v.parse().map_err(|e: String| {
-                    crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
-                        .with_message(format!(
-                            "Failed to parse AZURE_COSMOS_DIAGNOSTICS_DEFAULT_VERBOSITY: {e}"
-                        ))
-                        .build()
-                })?,
-                Err(_) => DiagnosticsVerbosity::Detailed,
-            },
-        };
+        let default_verbosity = self
+            .default_verbosity
+            .or(env.default_verbosity)
+            .unwrap_or(DiagnosticsVerbosity::Detailed);
 
         Ok(DiagnosticsOptions {
             max_summary_size_bytes,

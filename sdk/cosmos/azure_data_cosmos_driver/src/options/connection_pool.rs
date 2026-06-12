@@ -3,9 +3,11 @@
 
 use std::{net::IpAddr, time::Duration};
 
+use azure_data_cosmos_macros::CosmosOptions;
+
 use super::env_parsing::{
-    parse_duration_millis_from_env, parse_from_env, parse_optional_duration_millis_from_env,
-    parse_optional_from_env, ValidationBounds,
+    resolve_duration_ms, resolve_from_env, resolve_optional_duration_ms, resolve_optional_from_env,
+    ValidationBounds,
 };
 use crate::options::EmulatorServerCertValidation;
 
@@ -271,6 +273,94 @@ impl ConnectionPoolOptions {
 ///     .build()
 ///     .expect("valid options");
 /// ```
+/// Internal env-var source for [`ConnectionPoolOptions`].
+///
+/// This is the single env-reading mechanism for connection-pool config: the
+/// `CosmosOptions` derive generates `from_env()`, which reads each field's
+/// `AZURE_COSMOS_*` variable (lenient — a malformed value is logged and
+/// ignored). [`ConnectionPoolOptionsBuilder::build`] resolves
+/// `builder value → env value → default` and applies bounds / cross-field
+/// validation. Duration fields are stored as raw `u64` milliseconds (parsed by
+/// the macro) and converted to `Duration` during resolution.
+#[derive(CosmosOptions, Clone, Debug)]
+#[options(layers(runtime))]
+pub(crate) struct ConnectionPoolEnvConfig {
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED")]
+    pub(crate) is_http2_allowed: Option<bool>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED")]
+    pub(crate) is_gateway20_allowed: Option<bool>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_PROXY_ALLOWED")]
+    pub(crate) proxy_allowed: Option<bool>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MIN_CONNECT_TIMEOUT_MS")]
+    pub(crate) min_connect_timeout_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_CONNECT_TIMEOUT_MS")]
+    pub(crate) max_connect_timeout_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MIN_DATAPLANE_REQUEST_TIMEOUT_MS")]
+    pub(crate) min_dataplane_request_timeout_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_DATAPLANE_REQUEST_TIMEOUT_MS")]
+    pub(crate) max_dataplane_request_timeout_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MIN_METADATA_REQUEST_TIMEOUT_MS")]
+    pub(crate) min_metadata_request_timeout_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_METADATA_REQUEST_TIMEOUT_MS")]
+    pub(crate) max_metadata_request_timeout_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_PER_ENDPOINT")]
+    pub(crate) max_idle_connections_per_endpoint: Option<usize>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IDLE_CONNECTION_TIMEOUT_MS")]
+    pub(crate) idle_connection_timeout_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT")]
+    pub(crate) max_http2_streams_per_client: Option<u32>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT")]
+    pub(crate) max_http2_connections_per_endpoint: Option<usize>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT")]
+    pub(crate) min_http2_connections_per_endpoint: Option<usize>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS")]
+    pub(crate) idle_http2_client_timeout_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_HTTP2_HEALTH_CHECK_INTERVAL_MS")]
+    pub(crate) http2_health_check_interval_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_HTTP2_CONSECUTIVE_FAILURE_THRESHOLD")]
+    pub(crate) http2_consecutive_failure_threshold: Option<u32>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_HTTP2_EVICTION_GRACE_PERIOD_MS")]
+    pub(crate) http2_eviction_grace_period_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_INTERVAL_MS")]
+    pub(crate) http2_keep_alive_interval_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_TIMEOUT_MS")]
+    pub(crate) http2_keep_alive_timeout_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS")]
+    pub(crate) tcp_keepalive_time_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS")]
+    pub(crate) tcp_keepalive_interval_ms: Option<u64>,
+
+    #[option(env = "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES")]
+    pub(crate) tcp_keepalive_retries: Option<u32>,
+
+    #[option(env = "AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED")]
+    pub(crate) emulator_server_cert_validation_disabled: Option<bool>,
+
+    #[option(env = "AZURE_COSMOS_LOCAL_ADDRESS")]
+    pub(crate) local_address: Option<IpAddr>,
+}
+
 #[non_exhaustive]
 #[derive(Clone, Debug, Default)]
 pub struct ConnectionPoolOptionsBuilder {
@@ -523,30 +613,30 @@ impl ConnectionPoolOptionsBuilder {
     /// Returns an error if:
     /// - Any duration is less than 100 milliseconds
     /// - `max_idle_connections_per_endpoint` is zero
-    /// - Environment variable parsing fails
+    /// - A resolved value violates its documented bounds
     pub fn build(self) -> crate::error::Result<ConnectionPoolOptions> {
-        let effective_is_http2_allowed = parse_from_env(
+        // Single env-reading mechanism: the `CosmosOptions`-generated
+        // `from_env()`. Every field below resolves
+        // `builder value → env value → default` and validates bounds via the
+        // shared `resolve_*` helpers. Malformed env values are logged and
+        // ignored by the macro (lenient), so resolution falls back to the
+        // default; bounds violations on a present value still hard-error.
+        let env = ConnectionPoolEnvConfig::from_env();
+
+        let effective_is_http2_allowed = resolve_from_env(
             self.is_http2_allowed,
+            env.is_http2_allowed,
             "AZURE_COSMOS_CONNECTION_POOL_IS_HTTP2_ALLOWED",
             true,
             ValidationBounds::none(),
         )?;
 
-        let effective_is_gateway20_allowed = if let Some(gateway20) = self.is_gateway20_allowed {
-            gateway20 && effective_is_http2_allowed
-        } else {
-            match std::env::var("AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED") {
-                Ok(v) => {
-                    let gateway20: bool = v.parse().map_err(|e| {
-                        crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)).with_message(format!(
-                                "Failed to parse AZURE_COSMOS_CONNECTION_POOL_IS_GATEWAY20_ALLOWED as boolean: {v} ({e})"
-                            )).build()
-                    })?;
-                    gateway20 && effective_is_http2_allowed
-                }
-                Err(_) => false, // TODO: Change to true before GA
-            }
-        };
+        let effective_is_gateway20_allowed =
+            match self.is_gateway20_allowed.or(env.is_gateway20_allowed) {
+                // Gateway 2.0 also requires HTTP/2; gate on the resolved flag.
+                Some(gateway20) => gateway20 && effective_is_http2_allowed,
+                None => false, // TODO: Change to true before GA
+            };
 
         let max_connection_pool_size_default = if effective_is_http2_allowed {
             1_000
@@ -554,70 +644,79 @@ impl ConnectionPoolOptionsBuilder {
             10_000
         };
 
-        let min_connect_timeout = parse_duration_millis_from_env(
+        let min_connect_timeout = resolve_duration_ms(
             self.min_connect_timeout,
+            env.min_connect_timeout_ms,
             "AZURE_COSMOS_CONNECTION_POOL_MIN_CONNECT_TIMEOUT_MS",
             100,
             100,
             6_000,
         )?;
 
-        let max_connect_timeout = parse_duration_millis_from_env(
+        let max_connect_timeout = resolve_duration_ms(
             self.max_connect_timeout,
+            env.max_connect_timeout_ms,
             "AZURE_COSMOS_CONNECTION_POOL_MAX_CONNECT_TIMEOUT_MS",
             5_000,
             100,
             6_000,
         )?;
 
-        let min_dataplane_request_timeout = parse_duration_millis_from_env(
+        let min_dataplane_request_timeout = resolve_duration_ms(
             self.min_dataplane_request_timeout,
+            env.min_dataplane_request_timeout_ms,
             "AZURE_COSMOS_CONNECTION_POOL_MIN_DATAPLANE_REQUEST_TIMEOUT_MS",
             100,
             100,
             65_000,
         )?;
 
-        let max_dataplane_request_timeout = parse_duration_millis_from_env(
+        let max_dataplane_request_timeout = resolve_duration_ms(
             self.max_dataplane_request_timeout,
+            env.max_dataplane_request_timeout_ms,
             "AZURE_COSMOS_CONNECTION_POOL_MAX_DATAPLANE_REQUEST_TIMEOUT_MS",
             6_000,
             100,
             u64::MAX,
         )?;
 
-        let min_metadata_request_timeout = parse_duration_millis_from_env(
+        let min_metadata_request_timeout = resolve_duration_ms(
             self.min_metadata_request_timeout,
+            env.min_metadata_request_timeout_ms,
             "AZURE_COSMOS_CONNECTION_POOL_MIN_METADATA_REQUEST_TIMEOUT_MS",
             100,
             100,
             6_000,
         )?;
 
-        let max_metadata_request_timeout = parse_duration_millis_from_env(
+        let max_metadata_request_timeout = resolve_duration_ms(
             self.max_metadata_request_timeout,
+            env.max_metadata_request_timeout_ms,
             "AZURE_COSMOS_CONNECTION_POOL_MAX_METADATA_REQUEST_TIMEOUT_MS",
             65_000,
             100,
             65_000,
         )?;
 
-        let max_idle_connections_per_endpoint = parse_from_env(
+        let max_idle_connections_per_endpoint = resolve_from_env(
             self.max_idle_connections_per_endpoint,
+            env.max_idle_connections_per_endpoint,
             "AZURE_COSMOS_CONNECTION_POOL_MAX_IDLE_CONNECTIONS_PER_ENDPOINT",
             max_connection_pool_size_default,
             ValidationBounds::range(10, 64_000),
         )?;
 
-        let idle_connection_timeout = parse_optional_duration_millis_from_env(
+        let idle_connection_timeout = resolve_optional_duration_ms(
             self.idle_connection_timeout,
+            env.idle_connection_timeout_ms,
             "AZURE_COSMOS_CONNECTION_POOL_IDLE_CONNECTION_TIMEOUT_MS",
             300_000,
             u64::MAX,
         )?;
 
-        let max_http2_streams_per_client = parse_from_env(
+        let max_http2_streams_per_client = resolve_from_env(
             self.max_http2_streams_per_client,
+            env.max_http2_streams_per_client,
             "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_STREAMS_PER_CLIENT",
             16_u32,
             ValidationBounds::range(1, 20),
@@ -633,15 +732,17 @@ impl ConnectionPoolOptionsBuilder {
             .unwrap_or(32)
             .clamp(1, 256);
 
-        let max_http2_connections_per_endpoint = parse_from_env(
+        let max_http2_connections_per_endpoint = resolve_from_env(
             self.max_http2_connections_per_endpoint,
+            env.max_http2_connections_per_endpoint,
             "AZURE_COSMOS_CONNECTION_POOL_MAX_HTTP2_CONNECTIONS_PER_ENDPOINT",
             cpu_based_http2_max,
             ValidationBounds::range(1, 256),
         )?;
 
-        let min_http2_connections_per_endpoint = parse_from_env(
+        let min_http2_connections_per_endpoint = resolve_from_env(
             self.min_http2_connections_per_endpoint,
+            env.min_http2_connections_per_endpoint,
             "AZURE_COSMOS_CONNECTION_POOL_MIN_HTTP2_CONNECTIONS_PER_ENDPOINT",
             1_usize,
             ValidationBounds::range(1, 256),
@@ -655,55 +756,62 @@ impl ConnectionPoolOptionsBuilder {
                 )).build());
         }
 
-        let idle_http2_client_timeout = parse_duration_millis_from_env(
+        let idle_http2_client_timeout = resolve_duration_ms(
             self.idle_http2_client_timeout,
+            env.idle_http2_client_timeout_ms,
             "AZURE_COSMOS_CONNECTION_POOL_IDLE_HTTP2_CLIENT_TIMEOUT_MS",
             60_000,
             1_000,
             u64::MAX,
         )?;
 
-        let http2_health_check_interval = parse_duration_millis_from_env(
+        let http2_health_check_interval = resolve_duration_ms(
             self.http2_health_check_interval,
+            env.http2_health_check_interval_ms,
             "AZURE_COSMOS_CONNECTION_POOL_HTTP2_HEALTH_CHECK_INTERVAL_MS",
             10_000,
             100,
             u64::MAX,
         )?;
 
-        let http2_consecutive_failure_threshold = parse_from_env(
+        let http2_consecutive_failure_threshold = resolve_from_env(
             self.http2_consecutive_failure_threshold,
+            env.http2_consecutive_failure_threshold,
             "AZURE_COSMOS_CONNECTION_POOL_HTTP2_CONSECUTIVE_FAILURE_THRESHOLD",
             5_u32,
             ValidationBounds::range(1_u32, 255_u32),
         )?;
 
-        let http2_eviction_grace_period = parse_duration_millis_from_env(
+        let http2_eviction_grace_period = resolve_duration_ms(
             self.http2_eviction_grace_period,
+            env.http2_eviction_grace_period_ms,
             "AZURE_COSMOS_CONNECTION_POOL_HTTP2_EVICTION_GRACE_PERIOD_MS",
             2_000,
             100,
             u64::MAX,
         )?;
 
-        let http2_keep_alive_interval = parse_duration_millis_from_env(
+        let http2_keep_alive_interval = resolve_duration_ms(
             self.http2_keep_alive_interval,
+            env.http2_keep_alive_interval_ms,
             "AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_INTERVAL_MS",
             1_000,
             100,
             u64::MAX,
         )?;
 
-        let http2_keep_alive_timeout = parse_duration_millis_from_env(
+        let http2_keep_alive_timeout = resolve_duration_ms(
             self.http2_keep_alive_timeout,
+            env.http2_keep_alive_timeout_ms,
             "AZURE_COSMOS_CONNECTION_POOL_HTTP2_KEEP_ALIVE_TIMEOUT_MS",
             2_000,
             100,
             u64::MAX,
         )?;
 
-        let tcp_keepalive_time = parse_optional_duration_millis_from_env(
+        let tcp_keepalive_time = resolve_optional_duration_ms(
             self.tcp_keepalive_time,
+            env.tcp_keepalive_time_ms,
             "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS",
             1_000,
             u64::MAX,
@@ -715,8 +823,9 @@ impl ConnectionPoolOptionsBuilder {
         // AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_TIME_MS.
         .or(Some(Duration::from_secs(1)));
 
-        let tcp_keepalive_interval = parse_optional_duration_millis_from_env(
+        let tcp_keepalive_interval = resolve_optional_duration_ms(
             self.tcp_keepalive_interval,
+            env.tcp_keepalive_interval_ms,
             "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_INTERVAL_MS",
             1_000,
             u64::MAX,
@@ -724,15 +833,17 @@ impl ConnectionPoolOptionsBuilder {
         // Default to 1 s, matching the HTTP/2 keep-alive probe cadence.
         .or(Some(Duration::from_secs(1)));
 
-        let tcp_keepalive_retries = parse_optional_from_env(
+        let tcp_keepalive_retries = resolve_optional_from_env(
             self.tcp_keepalive_retries,
+            env.tcp_keepalive_retries,
             "AZURE_COSMOS_CONNECTION_POOL_TCP_KEEPALIVE_RETRIES",
             ValidationBounds::range(1_u32, 255_u32),
         )?;
 
         Ok(ConnectionPoolOptions {
-            proxy_allowed: parse_from_env(
+            proxy_allowed: resolve_from_env(
                 self.proxy_allowed,
+                env.proxy_allowed,
                 "AZURE_COSMOS_CONNECTION_POOL_IS_PROXY_ALLOWED",
                 false,
                 ValidationBounds::none(),
@@ -761,29 +872,17 @@ impl ConnectionPoolOptionsBuilder {
             is_gateway20_allowed: effective_is_gateway20_allowed,
             emulator_server_cert_validation: match self.emulator_server_cert_validation {
                 Some(v) => v,
-                None => EmulatorServerCertValidation::from(parse_from_env(
+                None => EmulatorServerCertValidation::from(resolve_from_env(
                     None::<bool>,
+                    env.emulator_server_cert_validation_disabled,
                     "AZURE_COSMOS_EMULATOR_SERVER_CERT_VALIDATION_DISABLED",
                     false,
                     ValidationBounds::none(),
                 )?),
             },
-            local_address: match self.local_address {
-                Some(addr) => Some(addr),
-                None => match std::env::var("AZURE_COSMOS_LOCAL_ADDRESS") {
-                    Ok(v) => Some(v.parse().map_err(|e| {
-                        crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::BadRequest,
-                            ))
-                            .with_message(format!(
-                            "Failed to parse AZURE_COSMOS_LOCAL_ADDRESS as IP address: {v} ({e})"
-                        ))
-                            .build()
-                    })?),
-                    Err(_) => None,
-                },
-            },
+            // Builder override wins; otherwise the macro-parsed env value (or
+            // `None` when unset / unparseable).
+            local_address: self.local_address.or(env.local_address),
         })
     }
 }

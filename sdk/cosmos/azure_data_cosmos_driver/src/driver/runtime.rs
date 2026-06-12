@@ -20,9 +20,8 @@ use crate::{
         ThroughputControlGroupName, UserAgent,
     },
     options::{
-        parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DriverOptions,
-        OperationOptions, ThroughputControlGroupOptions, ThroughputControlGroupRegistry,
-        UserAgentSuffix, WorkloadId,
+        resolve_duration_ms, ConnectionPoolOptions, CorrelationId, DriverOptions, OperationOptions,
+        ThroughputControlGroupOptions, ThroughputControlGroupRegistry, UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -35,6 +34,18 @@ use super::{
     },
     CosmosDriver,
 };
+
+/// Internal env-var source for runtime-level scalar settings.
+///
+/// Part of the unified env-parsing model: env vars are read and parsed only by
+/// the `CosmosOptions`-generated `from_env()`. The runtime builder resolves the
+/// final value (`builder → env → default`) via `resolve_duration_ms`.
+#[derive(azure_data_cosmos_macros::CosmosOptions, Clone, Debug)]
+#[options(layers(runtime))]
+pub(crate) struct RuntimeEnvConfig {
+    #[option(env = "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS")]
+    pub(crate) cpu_refresh_interval_ms: Option<u64>,
+}
 
 /// The Cosmos DB driver runtime environment.
 ///
@@ -797,8 +808,13 @@ impl CosmosDriverRuntimeBuilder {
         // Initialize system monitoring singletons.
         // CpuMemoryMonitor starts a background thread on first call;
         // VmMetadataService makes a single IMDS request (or falls back to a UUID).
-        let refresh_interval = parse_duration_millis_from_env(
+        // The env value is read once via the `CosmosOptions`-generated
+        // `from_env()` (the single env-reading mechanism); `resolve_duration_ms`
+        // applies the `builder → env → default` resolution + bounds validation.
+        let runtime_env = RuntimeEnvConfig::from_env();
+        let refresh_interval = resolve_duration_ms(
             self.cpu_refresh_interval,
+            runtime_env.cpu_refresh_interval_ms,
             "AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS",
             5_000,
             1_000,
