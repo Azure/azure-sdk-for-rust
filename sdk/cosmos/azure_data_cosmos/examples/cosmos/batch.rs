@@ -81,7 +81,7 @@ impl BatchCommand {
         for (i, result) in batch_response.results().iter().enumerate() {
             println!("\nOperation {}: Status {}", i + 1, result.status_code());
             if let Some(body) = result.resource_body() {
-                println!("  Body: {}", serde_json::to_string_pretty(body)?);
+                println!("  Body: {}", body.get());
             }
             if let Some(charge) = result.request_charge() {
                 println!("  Request charge: {}", charge);

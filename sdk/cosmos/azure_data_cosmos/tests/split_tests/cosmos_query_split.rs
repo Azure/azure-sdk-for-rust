@@ -10,12 +10,13 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use azure_data_cosmos::feed::ContinuationToken;
+use azure_data_cosmos::options::{CreateContainerOptions, ReadFeedRangesOptions};
 use azure_data_cosmos::{
     clients::ContainerClient,
+    feed::FeedScope,
     models::{ContainerProperties, ThroughputProperties},
     options::{MaxItemCountHint, QueryOptions},
-    query::FeedScope,
-    ContinuationToken, CreateContainerOptions, ReadFeedRangesOptions,
 };
 use framework::{MockItem, TestClient, TestOptions};
 use futures::{StreamExt, TryStreamExt};

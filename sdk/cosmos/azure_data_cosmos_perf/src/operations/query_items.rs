@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use azure_data_cosmos::Query;
-use azure_data_cosmos::{clients::ContainerClient, query::FeedScope};
+use azure_data_cosmos::{clients::ContainerClient, feed::FeedScope};
 use futures::StreamExt;
 
 use super::{extract_backend_duration, Operation};

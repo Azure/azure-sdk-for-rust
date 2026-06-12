@@ -5,9 +5,10 @@
 
 use std::sync::Arc;
 
-use crate::models::{
-    CosmosResponse, CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders,
-};
+use crate::diagnostics::DiagnosticsContext;
+use crate::models::CosmosStatus;
+use crate::models::{CosmosResponse, ResponseBody, ResponseHeaders};
+use azure_core::fmt::SafeDebug;
 use serde::de::DeserializeOwned;
 
 /// A response from a point item operation (create, read, replace, upsert, delete).
@@ -18,7 +19,8 @@ use serde::de::DeserializeOwned;
 /// `response.headers().etag()` to access the ETag for optimistic concurrency
 /// control. The item payload is consumed via [`into_body`](Self::into_body)
 /// or deserialized in one shot via [`into_model::<T>`](Self::into_model).
-#[derive(Debug)]
+#[derive(SafeDebug)]
+#[safe(true)]
 #[non_exhaustive]
 pub struct ItemResponse {
     response: CosmosResponse,

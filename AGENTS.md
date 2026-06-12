@@ -24,7 +24,6 @@ The Azure SDK for Rust provides Rust language bindings and client libraries for 
 ├── doc/                      # Additional documentation
 ├── .github/
 │   ├── instructions/         # Agent instruction files for specific tasks
-│   ├── prompts/              # Reusable Copilot prompts
 │   └── skills/               # Copilot skills (e.g., check-spelling, lint-markdown)
 ├── CONTRIBUTING.md           # Contribution guidelines (see for detailed workflows)
 └── README.md                 # Repository overview
@@ -265,10 +264,11 @@ Integration tests use the Azure SDK Test Proxy for recording/playback. See `CONT
 Additional specialized instructions for specific workflows can be found in:
 
 - [.github/instructions](.github/instructions) - Task-specific instructions (loaded when pattern-matched)
-- [.github/prompts](.github/prompts) - Reusable Copilot prompts (use `/{prompt-name}` in Copilot)
 - [.github/skills](.github/skills) - Copilot skills for common tasks (use `/{skill-name}` in Copilot):
   - `check-spelling` - Check and fix spelling in project source files using cSpell
   - `create-crate` - Create a new Azure SDK crate from a TypeSpec specification
+  - `create-perf-test` - Generate a new performance test
+  - `create-recorded-test` - Generate a new recorded integration test
   - `lint-markdown` - Check and fix formatting in markdown files using markdownlint-cli2
 
 ## Cross-References
