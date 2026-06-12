@@ -4,11 +4,13 @@
 pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 
 use crate::{
-    generated::clients::BlobClient as GeneratedBlobClient,
-    generated::models::BlobClientDownloadInternalOptions,
+    generated::{
+        clients::BlobClient as GeneratedBlobClient, models::BlobClientDownloadInternalOptions,
+    },
     models::{
-        BlobClientDownloadOptions, BlobClientDownloadResult, BlobClientUploadOptions,
-        BlobClientUploadResult, HttpRange, StorageErrorCode,
+        BlobClientDownloadIntoResult, BlobClientDownloadOptions, BlobClientDownloadResult,
+        BlobClientUploadOptions, BlobClientUploadResult, BlobDownloadProperties, HttpRange,
+        StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     AppendBlobClient, BlockBlobClient, PageBlobClient,
@@ -19,8 +21,7 @@ use azure_core::{
     error::ErrorKind,
     http::{
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncRawResponse, ClientMethodOptions, Etag, NoFormat, Pipeline, RequestContent,
-        StatusCode, Url, UrlExt,
+        AsyncRawResponse, Etag, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
@@ -167,6 +168,10 @@ impl BlobClient {
     /// [`BlobClientDownloadResult::properties`] and [`BlobClientDownloadResult::headers`]
     /// reflect only the initial response's metadata and properties.
     ///
+    /// If the streamed bytes of this blob are to be collected into contiguous memory,
+    /// consider instead calling [`BlobClient::download_into`] with a pre-allocated buffer
+    /// to avoid unnecessary copies and allocations.
+    ///
     /// # Arguments
     ///
     /// * `options` - Optional configuration for the request.
@@ -189,44 +194,71 @@ impl BlobClient {
         let partition_size = options
             .partition_size
             .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        // Construct exhaustively to catch new options.
-        let get_range_options = BlobClientDownloadInternalOptions {
-            encryption_algorithm: options.encryption_algorithm,
-            encryption_key: options.encryption_key,
-            encryption_key_sha256: options.encryption_key_sha256,
-            if_match: options.if_match,
-            if_modified_since: options.if_modified_since,
-            if_none_match: options.if_none_match,
-            if_tags: options.if_tags,
-            if_unmodified_since: options.if_unmodified_since,
-            lease_id: options.lease_id,
-            // requires into_owned due to BlobClientDownloadBehavior w/ 'static Behavior
-            method_options: ClientMethodOptions {
-                context: options.method_options.context.into_owned(),
-            },
-            range: None,
-            range_get_content_crc64: options.range_get_content_crc64,
-            range_get_content_md5: options.range_get_content_md5,
-            snapshot: options.snapshot,
-            structured_body_type: None,
-            timeout: options.timeout,
-            version_id: options.version_id,
-        };
+        let range = options.range.clone();
         let inner_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         };
-        let behavior = BlobClientDownloadBehavior::new(inner_client, get_range_options);
-        let response = partitioned_transfer::download(
-            options.range,
+        let behavior = BlobClientDownloadBehavior::new(inner_client, options.into());
+        let response =
+            partitioned_transfer::download(range, parallel, partition_size, Arc::new(behavior))
+                .await?;
+        BlobClientDownloadResult::from_headers(response)
+    }
+
+    /// Downloads a blob and its contents from the service.
+    ///
+    /// This operation performs a managed (multi-part) download, splitting the blob into
+    /// parallel range requests for better performance on large blobs. The downloaded bytes are
+    /// written directly into the provided `buffer`.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - Destination buffer to write the downloaded blob data into.
+    /// * `options` - Optional configuration for the request.
+    ///
+    /// # Notes
+    ///
+    /// By default, storage clients create their HTTP transport via
+    /// [`azure_core::http::new_http_client()`] with automatic decompression disabled.
+    /// If you set a custom transport in [`BlobClientOptions`] without also disabling
+    /// automatic decompression, partitioned downloads may not succeed.
+    #[tracing::function("Storage.Blob.Blob.download_into")]
+    pub async fn download_into(
+        &self,
+        buffer: &mut [u8],
+        options: Option<BlobClientDownloadOptions<'_>>,
+    ) -> Result<BlobClientDownloadIntoResult> {
+        let options = options.unwrap_or_default();
+        let parallel = options
+            .parallel
+            .unwrap_or_else(crate::partitioned_transfer::defaults::default_concurrency);
+        let partition_size = options
+            .partition_size
+            .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_DOWNLOAD_PARTITION_SIZE);
+        let range = options.range.clone();
+        let inner_client = GeneratedBlobClient {
+            endpoint: self.endpoint.clone(),
+            pipeline: self.pipeline.clone(),
+            version: self.version.clone(),
+            tracer: self.tracer.clone(),
+        };
+        let behavior = BlobClientDownloadBehavior::new(inner_client, options.into());
+        let (_, headers, len) = partitioned_transfer::download_into(
+            buffer,
+            range,
             parallel,
             partition_size,
             Arc::new(behavior),
         )
         .await?;
-        BlobClientDownloadResult::from_headers(response)
+        Ok(BlobClientDownloadIntoResult {
+            len,
+            properties: BlobDownloadProperties::from_headers(&headers)?,
+            headers,
+        })
     }
 
     /// Uploads content to a block blob, overwriting any existing blob by default.

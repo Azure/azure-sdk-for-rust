@@ -17,6 +17,7 @@ use framework::get_effective_hub_endpoint;
 use framework::TestClient;
 use framework::TestRunContext;
 use serde::{Deserialize, Serialize};
+use serde_bytes::ByteBuf;
 use std::{borrow::Cow, error::Error};
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -31,6 +32,20 @@ struct TestItem {
     value: usize,
     nested: NestedItem,
     bool_value: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct Utf8PartitionKeyItem {
+    id: Cow<'static, str>,
+    partition_key: Cow<'static, str>,
+    message: Cow<'static, str>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+struct InvalidUtf8BodyItem {
+    id: Cow<'static, str>,
+    partition_key: Cow<'static, str>,
+    raw_payload: ByteBuf,
 }
 
 /// Helper function to assert common response properties.
@@ -1201,6 +1216,115 @@ pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
 
             // Response body should be empty when ContentResponseOnWrite is not enabled.
             assert!(response.into_body().is_empty());
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn item_partition_key_non_ascii_utf8() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            // cspell:disable-next-line
+            let partition_key_value = format!("分区-κλειδί-مفتاح-🙂-{}", unique_id);
+            let item_id = format!("utf8-pk-{}", unique_id);
+            let item = Utf8PartitionKeyItem {
+                id: item_id.clone().into(),
+                partition_key: partition_key_value.clone().into(),
+                message: "こんにちは Cosmos - UTF-8 ✅".into(),
+            };
+
+            let create_response = container_client
+                .create_item(&partition_key_value, &item_id, &item, None)
+                .await?;
+            assert_response(
+                &create_response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            let read_response = run_context
+                .read_item(&container_client, &partition_key_value, &item_id, None)
+                .await?;
+            assert_response(
+                &read_response,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                true,
+            );
+            let read_item: Utf8PartitionKeyItem = read_response.into_model()?;
+            assert_eq!(item, read_item);
+
+            Ok(())
+        },
+        None,
+    )
+    .await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+pub async fn item_body_invalid_utf8_bytes_roundtrip() -> Result<(), Box<dyn Error>> {
+    TestClient::run_with_shared_db(
+        async |run_context, _db_client| {
+            let container_client = create_container(run_context).await?;
+            let unique_id = Uuid::new_v4().to_string();
+
+            let partition_key_value = format!("raw-bytes-{}", unique_id);
+            let item_id = format!("invalid-utf8-body-{}", unique_id);
+
+            // Include bytes that are not valid UTF-8 sequences.
+            let invalid_utf8_bytes = vec![0xed, 0xa0, 0x80, 0xf0, 0x28, 0x8c, 0x28];
+            assert!(
+                std::str::from_utf8(&invalid_utf8_bytes).is_err(),
+                "test fixture should contain invalid UTF-8"
+            );
+
+            let item = InvalidUtf8BodyItem {
+                id: item_id.clone().into(),
+                partition_key: partition_key_value.clone().into(),
+                raw_payload: ByteBuf::from(invalid_utf8_bytes.clone()),
+            };
+
+            let create_response = container_client
+                .create_item(&partition_key_value, &item_id, &item, None)
+                .await?;
+            assert_response(
+                &create_response,
+                StatusCode::Created,
+                &get_effective_hub_endpoint(),
+                false,
+            );
+
+            let read_response = run_context
+                .read_item(&container_client, &partition_key_value, &item_id, None)
+                .await?;
+            assert_response(
+                &read_response,
+                StatusCode::Ok,
+                &get_effective_hub_endpoint(),
+                true,
+            );
+            let read_item: InvalidUtf8BodyItem = read_response.into_model()?;
+            assert_eq!(
+                read_item.raw_payload,
+                ByteBuf::from(invalid_utf8_bytes),
+                "invalid UTF-8 bytes should round-trip in document body"
+            );
 
             Ok(())
         },
