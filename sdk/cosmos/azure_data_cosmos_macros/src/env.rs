@@ -19,7 +19,59 @@ fn is_vec_type(ty: &Type) -> bool {
     }
 }
 
+/// Generates the per-field initializer expression that reads `env_var_name`
+/// and parses it into the field's type (with comma-splitting for `Vec<T>`).
+///
+/// Shared by both the base `from_env_vars` and the `from_env_override_vars`
+/// constructors so the parse/warn semantics stay identical across the base
+/// and `_OVERRIDE` variants.
+fn field_init(field_name: &syn::Ident, inner_type: &Type, env_var: &str) -> TokenStream {
+    if is_vec_type(inner_type) {
+        quote! {
+            #field_name: env_var(#env_var)
+                .ok()
+                .map(|v| v.split(',')
+                    .filter_map(|s| {
+                        let trimmed = s.trim();
+                        match trimmed.parse() {
+                            Ok(parsed) => Some(parsed),
+                            Err(_) => {
+                                ::tracing::warn!(
+                                    env_var = #env_var,
+                                    value = trimmed,
+                                    "failed to parse element from environment variable; skipping",
+                                );
+                                None
+                            }
+                        }
+                    })
+                    .collect())
+        }
+    } else {
+        quote! {
+            #field_name: env_var(#env_var)
+                .ok()
+                .and_then(|v| match v.parse() {
+                    Ok(parsed) => Some(parsed),
+                    Err(_) => {
+                        ::tracing::warn!(
+                            env_var = #env_var,
+                            value = %v,
+                            "failed to parse environment variable; ignoring",
+                        );
+                        None
+                    }
+                })
+        }
+    }
+}
+
 /// Generates `from_env()` and `from_env_vars()` methods on the original struct.
+///
+/// When any field is marked `#[option(env = "...", overridable)]`, also
+/// generates `from_env_override()` / `from_env_override_vars()`, which read the
+/// `{ENV}_OVERRIDE` kill-switch variant for each overridable field (and leave
+/// every other field `None`).
 ///
 /// `from_env_vars` accepts a function `Fn(&str) -> Result<String, VarError>` used
 /// to read a single variable, making it testable without touching the real environment.
@@ -35,50 +87,13 @@ pub fn generate_from_env(input: &OptionsInput) -> Result<TokenStream> {
     let field_inits = input.fields.iter().map(|field| {
         let field_name = &field.ident;
         if let Some(ref env_var) = field.env_var {
-            // Check if inner type is Vec<T> to do comma splitting
-            let inner_type = &field.inner_type;
-            if is_vec_type(inner_type) {
-                quote! {
-                    #field_name: env_var(#env_var)
-                        .ok()
-                        .map(|v| v.split(',')
-                            .filter_map(|s| {
-                                let trimmed = s.trim();
-                                match trimmed.parse() {
-                                    Ok(parsed) => Some(parsed),
-                                    Err(_) => {
-                                        ::tracing::warn!(
-                                            env_var = #env_var,
-                                            value = trimmed,
-                                            "failed to parse element from environment variable; skipping",
-                                        );
-                                        None
-                                    }
-                                }
-                            })
-                            .collect())
-                }
-            } else {
-                quote! {
-                    #field_name: env_var(#env_var)
-                        .ok()
-                        .and_then(|v| match v.parse() {
-                            Ok(parsed) => Some(parsed),
-                            Err(_) => {
-                                ::tracing::warn!(
-                                    env_var = #env_var,
-                                    value = %v,
-                                    "failed to parse environment variable; ignoring",
-                                );
-                                None
-                            }
-                        })
-                }
-            }
+            field_init(field_name, &field.inner_type, env_var)
         } else {
             quote! { #field_name: None }
         }
     });
+
+    let override_tokens = generate_from_env_override(input);
 
     Ok(quote! {
         #[automatically_derived]
@@ -98,8 +113,52 @@ pub fn generate_from_env(input: &OptionsInput) -> Result<TokenStream> {
                     #(#field_inits),*
                 }
             }
+
+            #override_tokens
         }
     })
+}
+
+/// Generates `from_env_override()` / `from_env_override_vars()` when the option
+/// group has any `#[option(env = "...", overridable)]` field. Emits nothing
+/// otherwise.
+fn generate_from_env_override(input: &OptionsInput) -> TokenStream {
+    if !input.has_overridable_fields() {
+        return TokenStream::new();
+    }
+
+    let field_inits = input.fields.iter().map(|field| {
+        let field_name = &field.ident;
+        if let Some(override_var) = field.override_env_var() {
+            field_init(field_name, &field.inner_type, &override_var)
+        } else {
+            // Non-overridable fields are never sourced from an `_OVERRIDE`
+            // variable — the override layer only carries kill-switch values.
+            quote! { #field_name: None }
+        }
+    });
+
+    quote! {
+        /// Creates an instance by reading the `{ENV}_OVERRIDE` kill-switch
+        /// variables for each `overridable` field.
+        ///
+        /// Only fields marked `#[option(env = "...", overridable)]` are
+        /// populated (from `{ENV}_OVERRIDE`); all other fields are `None`.
+        /// The resulting value is intended to seed the highest-priority
+        /// override layer of the generated View.
+        pub fn from_env_override() -> Self {
+            Self::from_env_override_vars(|key| ::std::env::var(key))
+        }
+
+        /// Creates an override instance using the provided function to read
+        /// environment variables.
+        #[doc(hidden)]
+        pub fn from_env_override_vars(env_var: impl Fn(&str) -> ::std::result::Result<String, ::std::env::VarError>) -> Self {
+            Self {
+                #(#field_inits),*
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -169,5 +228,44 @@ mod tests {
         let parsed = OptionsInput::from_derive_input(&input).unwrap();
         let tokens = generate_from_env(&parsed).unwrap();
         assert!(tokens.is_empty());
+    }
+
+    #[test]
+    fn from_env_override_generated_for_overridable_fields() {
+        let input: syn::DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account, operation))]
+            pub struct TestOptions {
+                #[option(env = "MY_VAR_A", overridable)]
+                pub field_a: Option<bool>,
+                #[option(env = "MY_VAR_B")]
+                pub field_b: Option<u32>,
+            }
+        };
+        let parsed = OptionsInput::from_derive_input(&input).unwrap();
+        let tokens = generate_from_env(&parsed).unwrap().to_string();
+
+        // The override constructors are emitted...
+        assert!(tokens.contains("from_env_override"));
+        assert!(tokens.contains("from_env_override_vars"));
+        // ...and read the `_OVERRIDE` variant for the overridable field only.
+        assert!(tokens.contains("MY_VAR_A_OVERRIDE"));
+        // The non-overridable field's base var must NOT gain an override read.
+        assert!(!tokens.contains("MY_VAR_B_OVERRIDE"));
+    }
+
+    #[test]
+    fn no_from_env_override_without_overridable_fields() {
+        let input: syn::DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account))]
+            pub struct TestOptions {
+                #[option(env = "MY_VAR_A")]
+                pub field_a: Option<String>,
+            }
+        };
+        let parsed = OptionsInput::from_derive_input(&input).unwrap();
+        let tokens = generate_from_env(&parsed).unwrap().to_string();
+
+        assert!(tokens.contains("from_env_vars"));
+        assert!(!tokens.contains("from_env_override"));
     }
 }

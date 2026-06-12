@@ -30,6 +30,11 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 /// # Field-Level Attributes
 ///
 /// - `#[option(env = "AZURE_COSMOS_...")]` — enables environment variable loading.
+/// - `#[option(env = "AZURE_COSMOS_...", overridable)]` — additionally recognizes a
+///   `{ENV}_OVERRIDE` kill-switch variable that takes precedence over **every**
+///   layer (including operation). Generates `from_env_override()` and a
+///   top-priority `env_override` layer on the View (constructed via
+///   `new_with_override`). Requires `env`.
 /// - `#[option(merge = "extend")]` — uses additive merge instead of shadow semantics.
 /// - `#[option(nested)]` — delegates resolution to a child View.
 ///

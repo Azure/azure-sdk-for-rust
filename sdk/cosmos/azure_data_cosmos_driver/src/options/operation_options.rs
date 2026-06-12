@@ -185,7 +185,15 @@ pub struct OperationOptions {
     /// reads (any account) and writes (multi-master accounts). When disabled,
     /// the driver falls back to account-level endpoint marking, which is
     /// coarser-grained.
-    #[option(env = "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED")]
+    ///
+    /// **Kill switch**: `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED_OVERRIDE`
+    /// takes precedence over **every** layer (including a programmatic
+    /// per-request value). It is intended as a fleet-wide incident override
+    /// and should normally be left unset.
+    #[option(
+        env = "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED",
+        overridable
+    )]
     pub per_partition_circuit_breaker_enabled: Option<bool>,
 
     /// Consecutive alternate-region hedge wins on the same
@@ -222,7 +230,12 @@ pub struct OperationOptions {
     ///   the default threshold above applies.
     ///
     /// Leaving it unset (`None`) defers to the programmatic strategy.
-    #[option(env = "AZURE_COSMOS_HEDGING_ENABLED")]
+    ///
+    /// **Kill switch**: `AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE` takes
+    /// precedence over **every** layer (including a programmatic per-request
+    /// value and [`Self::availability_strategy`]). It is intended as a
+    /// fleet-wide incident override and should normally be left unset.
+    #[option(env = "AZURE_COSMOS_HEDGING_ENABLED", overridable)]
     pub hedging_enabled: Option<bool>,
 
     /// Cross-region availability strategy controlling whether eligible
@@ -581,5 +594,101 @@ mod tests {
 
         assert!(throttling.max_retry_count().is_none());
         assert!(throttling.max_retry_wait_time().is_none());
+    }
+
+    /// The `env_override` kill-switch layer must win over the operation layer
+    /// for an `overridable` field — this is the whole point of the
+    /// `{ENV}_OVERRIDE` variant: a fleet-wide incident override that beats a
+    /// hard-coded per-request value.
+    #[test]
+    fn env_override_layer_wins_over_operation_for_overridable_fields() {
+        use std::sync::Arc;
+
+        // Override layer disables both switches.
+        let env_override = Arc::new(OperationOptions {
+            hedging_enabled: Some(false),
+            per_partition_circuit_breaker_enabled: Some(false),
+            ..Default::default()
+        });
+
+        // Operation layer tries to enable both.
+        let operation = OperationOptions {
+            hedging_enabled: Some(true),
+            per_partition_circuit_breaker_enabled: Some(true),
+            ..Default::default()
+        };
+
+        let view = OperationOptionsView::new_with_override(
+            Some(env_override),
+            None,
+            None,
+            None,
+            Some(&operation),
+        );
+
+        assert_eq!(
+            view.hedging_enabled(),
+            Some(&false),
+            "env_override must beat the operation layer for hedging_enabled",
+        );
+        assert_eq!(
+            view.per_partition_circuit_breaker_enabled(),
+            Some(&false),
+            "env_override must beat the operation layer for PPCB enablement",
+        );
+    }
+
+    /// When the `env_override` layer leaves a field unset, resolution falls
+    /// through to the normal layer chain (operation → … → env), so the
+    /// kill switch is inert unless the `{ENV}_OVERRIDE` variant is set.
+    #[test]
+    fn env_override_unset_falls_through_to_operation() {
+        let operation = OperationOptions {
+            hedging_enabled: Some(true),
+            ..Default::default()
+        };
+
+        // Override layer present but the field is None — must not mask the
+        // operation value.
+        let env_override = std::sync::Arc::new(OperationOptions::default());
+
+        let view = OperationOptionsView::new_with_override(
+            Some(env_override),
+            None,
+            None,
+            None,
+            Some(&operation),
+        );
+
+        assert_eq!(view.hedging_enabled(), Some(&true));
+    }
+
+    /// `from_env_override_vars` populates only the `overridable` fields from
+    /// their `{ENV}_OVERRIDE` variants and leaves every other env field
+    /// `None` (the base `from_env_vars` path is unaffected).
+    #[test]
+    fn from_env_override_vars_reads_only_override_variants() {
+        let options = OperationOptions::from_env_override_vars(|key| match key {
+            "AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE" => Ok("false".to_string()),
+            "AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED_OVERRIDE" => Ok("true".to_string()),
+            // A non-override env var must be ignored by the override path.
+            "AZURE_COSMOS_HEDGING_ENABLED" => Ok("true".to_string()),
+            _ => Err(std::env::VarError::NotPresent),
+        });
+
+        assert_eq!(options.hedging_enabled, Some(false));
+        assert_eq!(options.per_partition_circuit_breaker_enabled, Some(true));
+        // A non-overridable env field must stay None on the override layer.
+        assert!(options.consecutive_hedge_win_threshold.is_none());
+    }
+
+    /// With nothing set, the override constructor produces an all-`None`
+    /// instance.
+    #[test]
+    fn from_env_override_vars_returns_none_when_unset() {
+        let options =
+            OperationOptions::from_env_override_vars(|_| Err(std::env::VarError::NotPresent));
+        assert!(options.hedging_enabled.is_none());
+        assert!(options.per_partition_circuit_breaker_enabled.is_none());
     }
 }

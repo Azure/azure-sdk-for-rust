@@ -108,6 +108,12 @@ pub struct CosmosDriverRuntime {
     /// Environment-level operation options, populated once from env vars at build time.
     env_operation_options: Arc<OperationOptions>,
 
+    /// Highest-priority kill-switch operation options, populated once from the
+    /// `{ENV}_OVERRIDE` variants at build time. Only `overridable` fields are
+    /// populated; this layer wins over every other layer (including
+    /// per-operation values).
+    env_override_operation_options: Arc<OperationOptions>,
+
     /// User-provided default operation options, swappable via interior mutability.
     ///
     /// Wrapped in `RwLock<Arc<...>>` so that shared references can atomically
@@ -249,6 +255,12 @@ impl CosmosDriverRuntime {
     /// Returns the environment-level operation options (populated from env vars at build time).
     pub fn env_operation_options(&self) -> &Arc<OperationOptions> {
         &self.env_operation_options
+    }
+
+    /// Returns the highest-priority kill-switch operation options (populated
+    /// from the `{ENV}_OVERRIDE` variants at build time).
+    pub fn env_override_operation_options(&self) -> &Arc<OperationOptions> {
+        &self.env_override_operation_options
     }
 
     /// Returns a snapshot of the default operation options.
@@ -817,6 +829,11 @@ impl CosmosDriverRuntimeBuilder {
                 throttling_retry_options: Some(crate::options::ThrottlingRetryOptions::from_env()),
                 ..OperationOptions::from_env()
             }),
+            // Kill-switch layer: only `overridable` fields (read from their
+            // `{ENV}_OVERRIDE` variants) are populated. No nested groups carry
+            // overridable fields today, so no explicit nested call is needed
+            // here (unlike `env_operation_options` above).
+            env_override_operation_options: Arc::new(OperationOptions::from_env_override()),
             operation_options: RwLock::new(Arc::new(self.operation_options.unwrap_or_default())),
             user_agent,
             workload_id: self.workload_id,
