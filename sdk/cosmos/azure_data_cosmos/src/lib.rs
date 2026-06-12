@@ -15,6 +15,8 @@ pub mod options;
 pub mod query;
 mod session_helpers;
 
+mod resource_identity;
+
 pub mod models;
 pub mod transactional_batch;
 
@@ -28,6 +30,7 @@ pub use account_reference::AccountReference;
 pub use clients::ThroughputPoller;
 pub use credential::CosmosCredential;
 pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
+pub use resource_identity::{ResourceId, ResourceIdentity};
 
 /// Internal alias for the driver's `CosmosError`. Used at error-construction
 /// sites inside this crate so they can call the driver's

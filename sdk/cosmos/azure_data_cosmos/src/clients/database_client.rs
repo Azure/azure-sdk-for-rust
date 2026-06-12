@@ -6,7 +6,7 @@ use crate::{
     models::{ContainerProperties, DatabaseProperties, ResourceResponse, ThroughputProperties},
     options::ReadDatabaseOptions,
     CreateContainerOptions, DeleteDatabaseOptions, Query, QueryContainersOptions,
-    QueryItemIterator, ThroughputOptions,
+    QueryItemIterator, ResourceId, ResourceIdentity, ThroughputOptions,
 };
 use azure_data_cosmos_driver::models::{CosmosOperation, DatabaseReference};
 
@@ -16,43 +16,77 @@ use super::ThroughputPoller;
 ///
 /// You can get a `DatabaseClient` by calling [`CosmosClient::database_client()`](crate::CosmosClient::database_client()).
 pub struct DatabaseClient {
-    database_id: String,
+    identity: ResourceIdentity,
     context: ClientContext,
     database_ref: DatabaseReference,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new(context: ClientContext, database_id: &str) -> Self {
-        let database_id = database_id.to_string();
-        let database_ref =
-            DatabaseReference::from_name(context.driver.account().clone(), database_id.clone());
+    pub(crate) fn new(context: ClientContext, identity: ResourceIdentity) -> Self {
+        let account = context.driver.account().clone();
+        let database_ref = match &identity {
+            ResourceIdentity::Name(name) => {
+                DatabaseReference::from_name(account, name.clone().into_owned())
+            }
+            ResourceIdentity::Rid(rid) => {
+                DatabaseReference::from_rid(account, rid.as_str().to_owned())
+            }
+        };
 
         Self {
-            database_id,
+            identity,
             context,
             database_ref,
         }
     }
 
-    /// Gets a [`ContainerClient`] that can be used to access the collection with the specified name.
+    /// Gets a [`ContainerClient`] that can be used to access the container with the
+    /// specified identity.
     ///
     /// This method eagerly resolves immutable container metadata (resource ID and partition key
     /// definition) from the service, so the returned client is ready for immediate use without
     /// per-operation cache lookups.
     ///
+    /// The container's addressing mode must match this database's: a name-addressed
+    /// database accepts only name-addressed containers, and a RID-addressed database
+    /// accepts only [`ResourceId`](crate::ResourceId)-addressed containers.
+    ///
     /// # Arguments
-    /// * `name` - The name of the container.
+    /// * `container` - The name or RID of the container.
     ///
     /// # Errors
     ///
-    /// Returns an error if the container does not exist or the metadata cannot be resolved.
-    pub async fn container_client(&self, name: &str) -> crate::Result<ContainerClient> {
-        ContainerClient::new(self.context.clone(), name, &self.database_id).await
+    /// Returns an error if the container does not exist, the metadata cannot be
+    /// resolved, or the addressing mode does not match this database's.
+    pub async fn container_client(
+        &self,
+        container: impl Into<ResourceIdentity>,
+    ) -> crate::Result<ContainerClient> {
+        ContainerClient::new(self.context.clone(), &self.identity, container.into()).await
     }
 
-    /// Returns the identifier of the Cosmos database.
+    /// Returns the identifier used to construct this client: the database name
+    /// when addressed by name, or the RID string when addressed by RID.
     pub fn id(&self) -> &str {
-        &self.database_id
+        match &self.identity {
+            ResourceIdentity::Name(name) => name,
+            ResourceIdentity::Rid(rid) => rid.as_str(),
+        }
+    }
+
+    /// Returns the identity (name or RID) used to construct this client.
+    pub fn identity(&self) -> &ResourceIdentity {
+        &self.identity
+    }
+
+    /// Returns the database name, or `None` if this client was addressed by RID.
+    pub fn name(&self) -> Option<&str> {
+        self.identity.as_name()
+    }
+
+    /// Returns the database RID, or `None` if this client was addressed by name.
+    pub fn rid(&self) -> Option<&ResourceId> {
+        self.identity.as_rid()
     }
 
     /// Reads the properties of the database.
@@ -202,6 +236,20 @@ impl DatabaseClient {
         ))
     }
 
+    /// Returns the database RID, using the client's identity directly when it is
+    /// already RID-addressed, or reading the database from the service to obtain
+    /// the `_rid` when addressed by name.
+    async fn resource_id(&self) -> crate::Result<String> {
+        if let Some(rid) = self.rid() {
+            return Ok(rid.as_str().to_owned());
+        }
+        let db = self.read(None).await?.into_model()?;
+        Ok(db
+            .system_properties
+            .resource_id
+            .expect("service should always return a '_rid' for a database"))
+    }
+
     /// Reads database throughput properties, if any.
     ///
     /// This will return `None` if the database does not have a throughput offer configured.
@@ -213,12 +261,7 @@ impl DatabaseClient {
         options: Option<ThroughputOptions>,
     ) -> crate::Result<Option<ThroughputProperties>> {
         let options = options.unwrap_or_default();
-        // We need to get the RID for the database.
-        let db = self.read(None).await?.into_model()?;
-        let resource_id = db
-            .system_properties
-            .resource_id
-            .expect("service should always return a '_rid' for a database");
+        let resource_id = self.resource_id().await?;
 
         offers_client::find_offer(
             &self.context.driver,
@@ -258,12 +301,7 @@ impl DatabaseClient {
         options: Option<ThroughputOptions>,
     ) -> crate::Result<ThroughputPoller> {
         let options = options.unwrap_or_default();
-        // We need to get the RID for the database.
-        let db = self.read(None).await?.into_model()?;
-        let resource_id = db
-            .system_properties
-            .resource_id
-            .expect("service should always return a '_rid' for a database");
+        let resource_id = self.resource_id().await?;
 
         offers_client::begin_replace(
             self.context.driver.clone(),
@@ -288,7 +326,7 @@ mod tests {
     fn _assert_futures_are_send() {
         fn assert_send<T: Send>(_: T) {}
         let client: &DatabaseClient = todo!();
-        assert_send(client.container_client(todo!()));
+        assert_send(client.container_client(todo!() as ResourceIdentity));
         assert_send(client.read(todo!()));
         assert_send(client.query_containers(Query::from("SELECT * FROM c"), todo!()));
         assert_send(client.create_container(todo!(), todo!()));

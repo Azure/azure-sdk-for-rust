@@ -396,8 +396,9 @@ impl CosmosResourceReference {
     /// `Cow::Owned` for the rare cases where no container reference is available.
     fn container_link(&self) -> Cow<'_, str> {
         if let Some(ref container) = self.container {
-            // Hot path: borrow the pre-computed Arc<str> — no allocation.
-            return Cow::Borrowed(container.name_based_path());
+            // Hot path: borrow the pre-computed Arc<str> path for the container's
+            // addressing mode (name-based when named, RID-based otherwise).
+            return Cow::Borrowed(container.base_path());
         }
         // If we have a database but no container, try using the leaf id.
         if let Some(ref id) = self.id {

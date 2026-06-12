@@ -444,6 +444,22 @@ impl CosmosOperation {
         Self::new(OperationType::Read, resource_ref, None)
     }
 
+    /// Reads a container's properties by database and container RID.
+    ///
+    /// Like [`read_container_by_name`](Self::read_container_by_name) but addresses
+    /// the container by RID. `database` must itself be a RID-based
+    /// [`DatabaseReference`] so the request path is fully RID-based
+    /// (`/dbs/{db_rid}/colls/{container_rid}`).
+    pub fn read_container_by_rid(
+        database: DatabaseReference,
+        container_rid: impl Into<std::borrow::Cow<'static, str>>,
+    ) -> Self {
+        let resource_ref: CosmosResourceReference = CosmosResourceReference::from(database)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .with_rid(container_rid.into());
+        Self::new(OperationType::Read, resource_ref, None)
+    }
+
     // ===== Data Plane Factory Methods =====
 
     /// Creates a new item (document) in a container.

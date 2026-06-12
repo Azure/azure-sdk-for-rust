@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- `CosmosClient::database_client` and `DatabaseClient::container_client` now accept anything convertible into the new `ResourceIdentity` type, so databases and containers can be addressed either by name (a `&str`/`String`, as before) or by resource ID (RID) via the new `ResourceId` newtype. Addressing modes cannot be mixed across the hierarchy: a RID-addressed database yields only RID-addressed containers, and a name-addressed database yields only name-addressed containers; mixing them fails fast with a client-side error. `DatabaseClient` gains `identity()`, `name()`, and `rid()` accessors, and skips the extra database read when resolving throughput for a RID-addressed database. ([#4513](https://github.com/Azure/azure-sdk-for-rust/issues/4513))
+
 ### Breaking Changes
 
 ### Bugs Fixed
