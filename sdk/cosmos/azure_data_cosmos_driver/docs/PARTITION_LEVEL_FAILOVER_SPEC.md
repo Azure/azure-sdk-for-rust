@@ -213,7 +213,7 @@ via the CAS loop when account properties are refreshed:
 //    init-time config. No per-operation overrides exist at construction time.
 let init_view = OperationOptionsView::new(
     Some(Arc::clone(runtime.env_operation_options())),
-    Some(runtime.operation_options()),
+    Some(runtime.default_operation_options()),
     Some(options.operation_options().clone()),
     None,
 );

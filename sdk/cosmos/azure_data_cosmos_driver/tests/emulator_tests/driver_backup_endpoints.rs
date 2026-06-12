@@ -13,6 +13,7 @@
 //! exercise.
 
 use crate::framework::resolve_test_env;
+use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntimeBuilder,
     models::{AccountReference, CosmosOperation, DatabaseReference},
@@ -44,7 +45,9 @@ async fn driver_initializes_via_backup_when_primary_unreachable() -> Result<(), 
         .build()
         .await?;
 
-    let driver = runtime.get_or_create_driver(account, None).await;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account).build())
+        .await;
 
     assert!(
         driver.is_ok(),
@@ -76,7 +79,9 @@ async fn driver_operations_work_after_backup_boot() -> Result<(), Box<dyn Error>
         .build()
         .await?;
 
-    let driver = runtime.get_or_create_driver(account.clone(), None).await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
 
     // Create a database to verify the driver is operational.
     let db_name = format!(

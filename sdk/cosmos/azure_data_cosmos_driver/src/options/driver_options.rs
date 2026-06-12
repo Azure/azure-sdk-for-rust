@@ -7,8 +7,14 @@ use std::sync::Arc;
 
 use crate::{
     models::AccountReference,
-    options::{OperationOptions, Region},
+    options::{
+        OperationOptions, PartitionFailoverOptions, Region, ThroughputControlGroupOptions,
+        ThroughputControlGroupRegistry, UserAgentSuffix,
+    },
 };
+
+#[cfg(feature = "fault_injection")]
+use crate::fault_injection::FaultInjectionRule;
 
 /// Configuration options for a Cosmos DB driver instance.
 ///
@@ -52,6 +58,42 @@ pub struct DriverOptions {
     /// endpoints matching these regions appear first. Regions that don't match
     /// any account endpoint are silently skipped.
     preferred_regions: Vec<Region>,
+    /// Optional driver-level override for the User-Agent suffix.
+    ///
+    /// When `Some`, this driver stamps requests with a User-Agent computed from
+    /// this suffix (combined with the runtime's wrapping-SDK identifier and
+    /// version metadata). When `None`, the driver inherits the runtime's
+    /// precomputed User-Agent string verbatim, including any suffix the runtime
+    /// itself was configured with.
+    user_agent_suffix: Option<UserAgentSuffix>,
+    /// Driver-level fault injection rules.
+    ///
+    /// When `Some(rules)` and `rules` is non-empty, the driver wraps the
+    /// runtime's HTTP client factory with a fault-injecting factory that
+    /// evaluates these rules on every data-plane request. The bootstrap
+    /// transport (used for the initial account-metadata fetch) is never
+    /// wrapped, so fault rules targeting `MetadataReadDatabaseAccount` only
+    /// fire on the post-bootstrap refresh path.
+    ///
+    /// All drivers built from the same runtime can carry independent fault
+    /// rules; they do not interact.
+    #[cfg(feature = "fault_injection")]
+    fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
+    /// Driver-level throughput control group registrations.
+    ///
+    /// At driver-creation time, the driver merges the runtime's registered
+    /// groups with these driver-level groups into a single registry. The
+    /// driver uses the merged registry to look up groups for every request.
+    /// Cross-layer name collisions (or two `is_default=true` groups for the
+    /// same container) error at driver creation.
+    throughput_control_groups: ThroughputControlGroupRegistry,
+    /// Driver-level partition-failover / PPCB tuning.
+    ///
+    /// These knobs are read once at driver construction time and govern the
+    /// per-partition circuit breaker (PPCB) and partition-level failover
+    /// behaviour for the lifetime of the driver. They are independent of
+    /// per-operation [`OperationOptions`].
+    partition_failover_options: PartitionFailoverOptions,
 }
 
 impl DriverOptions {
@@ -76,6 +118,34 @@ impl DriverOptions {
     pub fn preferred_regions(&self) -> &[Region] {
         &self.preferred_regions
     }
+
+    /// Returns the driver-level User-Agent suffix override, if any.
+    pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix> {
+        self.user_agent_suffix.as_ref()
+    }
+
+    /// Returns the driver-level fault injection rules, if any.
+    ///
+    /// `None` means no rules were configured on this driver; an empty `Some`
+    /// is normalized to `None` at builder time and never returned here.
+    #[cfg(feature = "fault_injection")]
+    pub fn fault_injection_rules(&self) -> Option<&[Arc<FaultInjectionRule>]> {
+        self.fault_injection_rules.as_deref()
+    }
+
+    /// Returns the driver-level throughput control group registry.
+    ///
+    /// This registry is merged with the runtime's registry at driver
+    /// creation; the merged registry is what gets consulted on the request
+    /// path.
+    pub(crate) fn throughput_control_groups(&self) -> &ThroughputControlGroupRegistry {
+        &self.throughput_control_groups
+    }
+
+    /// Returns the driver-level partition-failover / PPCB tuning options.
+    pub fn partition_failover_options(&self) -> &PartitionFailoverOptions {
+        &self.partition_failover_options
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -88,6 +158,11 @@ pub struct DriverOptionsBuilder {
     account: AccountReference,
     operation_options: Option<OperationOptions>,
     preferred_regions: Vec<Region>,
+    user_agent_suffix: Option<UserAgentSuffix>,
+    #[cfg(feature = "fault_injection")]
+    fault_injection_rules: Option<Vec<Arc<FaultInjectionRule>>>,
+    throughput_control_groups: ThroughputControlGroupRegistry,
+    partition_failover_options: Option<PartitionFailoverOptions>,
 }
 
 impl DriverOptionsBuilder {
@@ -97,6 +172,11 @@ impl DriverOptionsBuilder {
             account,
             operation_options: None,
             preferred_regions: Vec::new(),
+            user_agent_suffix: None,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: None,
+            throughput_control_groups: ThroughputControlGroupRegistry::new(),
+            partition_failover_options: None,
         }
     }
 
@@ -116,12 +196,114 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Overrides the User-Agent suffix for requests made through this driver.
+    ///
+    /// When set, the driver computes its own User-Agent string combining the
+    /// runtime's wrapping-SDK identifier and version metadata with this suffix.
+    /// When unset, the driver inherits the runtime's precomputed User-Agent
+    /// string verbatim (cloning the shared `Arc` — no per-driver allocation).
+    pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
+        self.user_agent_suffix = Some(suffix);
+        self
+    }
+
+    /// Installs fault injection rules for this driver.
+    ///
+    /// Rules are appended to any previously configured rules on the builder
+    /// (so multiple `with_fault_injection_rules` calls compose additively).
+    /// At driver-creation time, the driver wraps the runtime's HTTP client
+    /// factory with a fault-injecting factory that evaluates these rules
+    /// on every data-plane request. Bootstrap (the initial account-metadata
+    /// probe) is never wrapped, so rules targeting
+    /// `MetadataReadDatabaseAccount` only fire on post-bootstrap refreshes.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` when any rule's `id` collides with another rule already
+    /// configured on this builder, or with another rule in the same call.
+    /// Surfacing duplicates at builder time keeps the failure local to the
+    /// misconfiguration; otherwise a silent late drop would surface as "my
+    /// fault injection didn't fire" long after the duplicate was introduced.
+    #[cfg(feature = "fault_injection")]
+    pub fn with_fault_injection_rules(
+        mut self,
+        rules: Vec<Arc<FaultInjectionRule>>,
+    ) -> crate::error::Result<Self> {
+        if rules.is_empty() {
+            return Ok(self);
+        }
+
+        let mut seen: std::collections::HashSet<String> = self
+            .fault_injection_rules
+            .as_ref()
+            .map(|existing| existing.iter().map(|r| r.id().to_string()).collect())
+            .unwrap_or_default();
+
+        for rule in &rules {
+            if !seen.insert(rule.id().to_string()) {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
+                    )
+                    .with_message(format!("duplicate fault injection rule id: {}", rule.id()))
+                    .build());
+            }
+        }
+
+        match &mut self.fault_injection_rules {
+            Some(existing) => existing.extend(rules),
+            None => self.fault_injection_rules = Some(rules),
+        }
+        Ok(self)
+    }
+
+    /// Registers a throughput-control group on this driver.
+    ///
+    /// At driver-creation time, the driver merges the runtime's registry
+    /// with the per-driver registry into a single registry consulted on
+    /// every request. Cross-layer collisions (duplicate `(container, name)`
+    /// key, or two `is_default=true` groups for the same container) are
+    /// detected and surfaced at driver creation.
+    ///
+    /// Calling this multiple times appends groups; collisions within this
+    /// builder are surfaced as soon as the conflict is introduced.
+    pub fn register_throughput_control_group(
+        mut self,
+        group: ThroughputControlGroupOptions,
+    ) -> crate::error::Result<Self> {
+        self.throughput_control_groups
+            .register(group)
+            .map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED)
+                    .with_message(e.to_string())
+                    .build()
+            })?;
+        Ok(self)
+    }
+
+    /// Sets the partition-failover / PPCB tuning options for this driver.
+    ///
+    /// These knobs are read once at driver construction time and control
+    /// the per-partition circuit breaker (PPCB) and partition-level failover
+    /// for the lifetime of the driver. See [`PartitionFailoverOptions`] for
+    /// the individual settings (and their environment-variable defaults).
+    pub fn with_partition_failover_options(mut self, options: PartitionFailoverOptions) -> Self {
+        self.partition_failover_options = Some(options);
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
             account: self.account,
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
             preferred_regions: self.preferred_regions,
+            user_agent_suffix: self.user_agent_suffix,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: self.fault_injection_rules.filter(|r| !r.is_empty()),
+            throughput_control_groups: self.throughput_control_groups,
+            partition_failover_options: self.partition_failover_options.unwrap_or_default(),
         }
     }
 }

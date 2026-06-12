@@ -3,7 +3,7 @@
 
 //! Request policy types.
 
-use crate::options::Region;
+use crate::{driver::transport::is_emulator_host, models::AccountEndpoint, options::Region};
 use std::time::Duration;
 
 const MIN_END_TO_END_OPERATION_TIMEOUT: Duration = Duration::from_secs(1);
@@ -131,45 +131,28 @@ impl<T: Into<Region>> FromIterator<T> for ExcludedRegions {
     }
 }
 
-/// Controls whether TLS server certificate validation is performed for Cosmos DB emulator connections.
+/// Controls whether TLS server certificate validation is performed for Cosmos DB connections.
 ///
 /// By default, certificate validation is enabled. Disabling it is **dangerous** and should only be
 /// used when connecting to the local Cosmos DB emulator, which uses a self-signed certificate.
-///
-/// # Example
-///
-/// ```rust
-/// use azure_data_cosmos_driver::options::EmulatorServerCertValidation;
-///
-/// // Safe default: validation is enabled.
-/// let validation = EmulatorServerCertValidation::Enabled;
-///
-/// // Dangerous: disables certificate validation for emulator use.
-/// let validation = EmulatorServerCertValidation::DangerousDisabled;
-/// ```
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum EmulatorServerCertValidation {
-    /// Certificate validation is enabled (default, safe).
+pub enum ServerCertificateValidation {
+    /// Certificate validation is required
     #[default]
-    Enabled,
-    /// Certificate validation is disabled (**dangerous** — only for local emulator connections).
-    DangerousDisabled,
+    Required,
+    /// Certificate validation is required, unless connecting to the emulator.
+    ///
+    /// The Cosmos DB SDK will detect an emulator connection by comparing the hostname or IP address
+    /// to a known value. If you are connecting to an emulator on a different IP address, you can use
+    /// the `AZURE_COSMOS_EMULATOR_HOST` environment variable to allow insecure connections to an emulator
+    /// at a non-standard host name or IP address.
+    RequiredUnlessEmulator,
 }
 
-impl From<bool> for EmulatorServerCertValidation {
-    /// Converts a `bool` where `true` means validation is disabled (dangerous).
-    fn from(disabled: bool) -> Self {
-        if disabled {
-            Self::DangerousDisabled
-        } else {
-            Self::Enabled
-        }
-    }
-}
-
-impl From<EmulatorServerCertValidation> for bool {
-    fn from(value: EmulatorServerCertValidation) -> Self {
-        matches!(value, EmulatorServerCertValidation::DangerousDisabled)
+impl ServerCertificateValidation {
+    pub(crate) fn allows_insecure_connection(self, endpoint: &AccountEndpoint) -> bool {
+        self == ServerCertificateValidation::RequiredUnlessEmulator && is_emulator_host(endpoint)
     }
 }
 
