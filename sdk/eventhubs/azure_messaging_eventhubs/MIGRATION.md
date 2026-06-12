@@ -63,7 +63,7 @@ Remove `azeventhubs` and add the official crate plus `azure_identity` (for crede
  [dependencies]
 - azeventhubs = "0.20"
 + azure_messaging_eventhubs = "0.15"
-+ azure_identity = "1.0"
++ azure_identity = "1"
 + tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -72,7 +72,7 @@ If you want scalable consumption with durable checkpoints in Azure Blob Storage,
 ```diff
  [dependencies]
 + azure_messaging_eventhubs_checkpointstore_blob = "0.9"
-+ azure_storage_blob = "1.0"
++ azure_storage_blob = "1"
 ```
 
 You will also typically want `futures` for the `StreamExt` trait when iterating received events:
@@ -401,7 +401,7 @@ Like `azeventhubs`, `azure_messaging_eventhubs` is fully async and runs on the [
 //
 // [dependencies]
 // azure_messaging_eventhubs = "0.15"
-// azure_identity = "1.0"
+// azure_identity = "1"
 // tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 // futures = "0.3"
 
@@ -471,4 +471,3 @@ The official `EventData` is a distinct type from `azeventhubs`'s. Construct it w
 - [azure_identity documentation](https://aka.ms/azsdk/rust/identity/docs)
 - [Azure Event Hubs product documentation](https://learn.microsoft.com/azure/event-hubs/)
 - [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html)
-</content>
