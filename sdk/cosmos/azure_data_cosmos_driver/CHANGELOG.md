@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added support for using a native query planning library to generate query plans locally, avoiding a Gateway round-trip on cross-partition queries. Gated behind the `__internal_native_query_plan` feature flag. ([#4554](https://github.com/Azure/azure-sdk-for-rust/pull/4554))
+
 ### Breaking Changes
 
 ### Bugs Fixed
