@@ -90,11 +90,11 @@
 ###########
 # Eng Sys
 ###########
-/eng/                    @danieljurek @weshaggard @heaths @xirzec @RickWinter
+/eng/                    @danieljurek @heaths @xirzec @RickWinter
 /eng/common/             @Azure/azure-sdk-eng
 /.github/workflows/      @Azure/azure-sdk-eng
 /.github/CODEOWNERS      @xirzec @RickWinter @Azure/azure-sdk-eng
-/.config/1espt/          @benbp @weshaggard
+/.config/1espt/          @benbp
 /sdk/canary/             @danieljurek
 
 # Add owners for notifications for specific pipelines
