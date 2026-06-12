@@ -142,10 +142,10 @@ async fn create_container(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -264,10 +264,10 @@ pub async fn item_crud() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -330,10 +330,10 @@ pub async fn item_read_system_properties() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -387,10 +387,10 @@ pub async fn item_upsert_new() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -451,10 +451,10 @@ pub async fn item_upsert_existing() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -550,10 +550,10 @@ pub async fn item_null_partition_key() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -650,10 +650,10 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -750,10 +750,10 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -868,10 +868,10 @@ struct ExplicitPkItem {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -1024,10 +1024,10 @@ pub async fn item_undefined_partition_key() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -1083,10 +1083,10 @@ pub async fn create_item_duplicate_returns_conflict() -> Result<(), Box<dyn Erro
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {
@@ -1137,10 +1137,10 @@ pub async fn create_item_with_content_response() -> Result<(), Box<dyn Error>> {
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn create_item_response_metadata() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_shared_db(
         async |run_context, _db_client| {

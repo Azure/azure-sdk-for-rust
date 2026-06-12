@@ -258,10 +258,10 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {
@@ -324,10 +324,10 @@ pub async fn cross_partition_query_with_order_by_fails() -> Result<(), Box<dyn E
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |_, db_client| {

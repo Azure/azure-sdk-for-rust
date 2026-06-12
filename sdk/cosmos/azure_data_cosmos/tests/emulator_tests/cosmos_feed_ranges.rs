@@ -18,10 +18,10 @@ use framework::TestClient;
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
     ignore = "requires test_category 'emulator' or 'emulator_vnext'"
 )]
-#[cfg_attr(
-    test_category = "emulator_vnext",
-    ignore = "skipped on vnext emulator: behavioral divergence"
-)]
+// #[cfg_attr(
+//     test_category = "emulator_vnext",
+//     ignore = "skipped on vnext emulator: behavioral divergence"
+// )]
 pub async fn read_feed_ranges_returns_physical_partitions() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context, db_client| {
