@@ -9,6 +9,7 @@
 - `azure_data_cosmos_driver::models::ETag` has been removed. Use `azure_core::http::Etag` directly. The previous `ETag::new(...)` is gone; construct via `Etag::from(&str)` / `Etag::from(String)`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
 
 ### Bugs Fixed
+- PPAF now clears stale `failover_overrides` entries when the server-side `enablePerPartitionFailoverBehavior` flag transitions from enabled to disabled, so they cannot silently re-apply on re-enable. The in-memory emulator also now emits the flag and exposes runtime-toggle hooks so the dynamic-enablement contract is testable end-to-end. ([#4325](https://github.com/Azure/azure-sdk-for-rust/issues/4325))
 
 ### Other Changes
 
