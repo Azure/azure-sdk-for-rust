@@ -1026,15 +1026,15 @@ async fn sdk_create_retries_after_429_throttling() {
     assert_eq!(emu_read_doc.padding.len(), 8 * 1024);
 }
 
-/// Validates that the SDK-side `CosmosClientBuilder::with_throttling_retry_options`
-/// setter actually wires the grouped [`ThrottlingRetryOptions`] through to the
-/// driver's transport-level throttle-retry loop.
+/// Validates that disabling throttle retries via per-client default
+/// [`OperationOptions`] containing a [`ThrottlingRetryOptions`] with
+/// `max_retry_count = 0` is honored end-to-end.
 ///
 /// This is the negative counterpart to [`sdk_create_retries_after_429_throttling`]:
 /// the same throttling-enabled emulator setup is used, but the client is built
 /// with `max_retry_count = 0` (retries disabled). With retries disabled the
 /// driver must surface the first 429 to the caller instead of transparently
-/// retrying, proving the refactored grouped setter is honored end-to-end.
+/// retrying, proving the grouped setter is honored end-to-end.
 #[tokio::test]
 async fn sdk_throttling_retry_options_disables_retry() {
     let run_id = Uuid::new_v4().to_string()[..8].to_string();

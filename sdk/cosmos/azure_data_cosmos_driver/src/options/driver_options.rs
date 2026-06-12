@@ -91,7 +91,7 @@ pub struct DriverOptions {
     ///
     /// These knobs are read once at driver construction time and govern the
     /// per-partition circuit breaker (PPCB) and partition-level failover
-    /// behaviour for the lifetime of the driver. They are independent of
+    /// behavior for the lifetime of the driver. They are independent of
     /// per-operation [`OperationOptions`].
     partition_failover_options: PartitionFailoverOptions,
 }

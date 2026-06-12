@@ -238,7 +238,7 @@ impl PartitionFailoverOptionsBuilder {
     ///
     /// Unset values are populated from environment variables or fall back to
     /// sensible defaults. See the [`PartitionFailoverOptionsBuilder`] docs
-    /// for the full list of recognised environment variables and bounds.
+    /// for the full list of recognized environment variables and bounds.
     ///
     /// # Errors
     ///
