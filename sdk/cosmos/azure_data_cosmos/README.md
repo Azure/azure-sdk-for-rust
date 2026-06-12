@@ -89,7 +89,8 @@ For more information, see the [API reference documentation].
 
 ```rust
 use serde::{Serialize, Deserialize};
-use azure_data_cosmos::{CosmosClient, PatchInstructions, PatchOperation};
+use azure_data_cosmos::CosmosClient;
+use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 
 #[derive(Serialize, Deserialize)]
 struct Item {
@@ -145,11 +146,9 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 
 If you encounter bugs or have suggestions, [open an issue](https://github.com/Azure/azure-sdk-for-rust/issues).
 
-## Developer notes
+## Internal features
 
-This crate exposes feature flags prefixed with `__internal_` (currently `__internal_in_memory_emulator`). These are intended **only** for in-repo testing, are not part of the public API, are not subject to semver, and may change or be removed without notice. Do not enable them on builds shipped to crates.io or to other consumers.
-
-Note: enabling `__internal_in_memory_emulator` also implicitly enables the `key_auth` feature (the in-memory emulator authenticates with master keys), which will appear in your dependency graph (`cargo tree`) when the emulator feature is on.
+This crate exposes several feature flags prefixed with `__internal_`. Features behind these feature flags are internal APIs for testing within the Azure SDK for Rust and are not intended for public use. These APIs may change without warning, and using them may lead to broken code.
 
 ## Contributing
 

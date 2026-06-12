@@ -1,58 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! ETag types for optimistic concurrency control.
+//! Conditional request types built on top of [`Etag`].
 
-use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
-
-/// An ETag value used for optimistic concurrency control.
-///
-/// ETags are opaque identifiers representing a specific version of a resource.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct ETag(pub Cow<'static, str>);
-
-impl ETag {
-    /// Creates a new ETag with the given value.
-    pub fn new(value: impl Into<Cow<'static, str>>) -> Self {
-        Self(value.into())
-    }
-
-    /// Returns the ETag value as a string slice.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-impl From<&'static str> for ETag {
-    fn from(value: &'static str) -> Self {
-        Self::new(value)
-    }
-}
-
-impl From<String> for ETag {
-    fn from(value: String) -> Self {
-        Self::new(value)
-    }
-}
-
-impl From<Cow<'static, str>> for ETag {
-    fn from(value: Cow<'static, str>) -> Self {
-        Self::new(value)
-    }
-}
-
-impl AsRef<str> for ETag {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl std::fmt::Display for ETag {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
-    }
-}
+use azure_core::http::Etag;
 
 /// Conditional request options based on ETag values.
 ///
@@ -64,18 +15,19 @@ impl std::fmt::Display for ETag {
 /// - [`IfMatch`](Self::IfMatch): Operation succeeds only if the resource's current ETag matches.
 ///   Used for "update if unchanged" semantics (optimistic concurrency).
 /// - [`IfNoneMatch`](Self::IfNoneMatch): Operation succeeds only if the resource's current ETag
-///   does NOT match. Use `ETag::new("*")` for "create if not exists" semantics.
+///   does NOT match. Use `Etag::from("*")` for "create if not exists" semantics.
 ///
 /// # Example
 ///
 /// ```
-/// use azure_data_cosmos_driver::models::{ETag, Precondition};
+/// use azure_core::http::Etag;
+/// use azure_data_cosmos_driver::models::Precondition;
 ///
 /// // Update only if the resource hasn't changed (optimistic concurrency)
-/// let condition = Precondition::if_match("\"abc123\"");
+/// let condition = Precondition::if_match(Etag::from("\"abc123\""));
 ///
 /// // Create only if the resource doesn't exist
-/// let condition = Precondition::if_none_match("*");
+/// let condition = Precondition::if_none_match(Etag::from("*"));
 /// ```
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -83,12 +35,12 @@ pub enum Precondition {
     /// Operation succeeds only if the resource's current ETag matches.
     ///
     /// Used for "update if unchanged" semantics (optimistic concurrency).
-    IfMatch(ETag),
+    IfMatch(Etag),
 
     /// Operation succeeds only if the resource's current ETag does NOT match.
     ///
-    /// Use `ETag::new("*")` for "create if not exists" semantics.
-    IfNoneMatch(ETag),
+    /// Use `Etag::from("*")` for "create if not exists" semantics.
+    IfNoneMatch(Etag),
 }
 
 impl Precondition {
@@ -96,7 +48,7 @@ impl Precondition {
     ///
     /// The operation succeeds only if the resource's current ETag matches the given value.
     /// Used for "update if unchanged" semantics (optimistic concurrency).
-    pub fn if_match(etag: impl Into<ETag>) -> Self {
+    pub fn if_match(etag: impl Into<Etag>) -> Self {
         Self::IfMatch(etag.into())
     }
 
@@ -104,12 +56,12 @@ impl Precondition {
     ///
     /// The operation succeeds only if the resource's current ETag does NOT match the given value.
     /// Use `"*"` for "create if not exists" semantics.
-    pub fn if_none_match(etag: impl Into<ETag>) -> Self {
+    pub fn if_none_match(etag: impl Into<Etag>) -> Self {
         Self::IfNoneMatch(etag.into())
     }
 
     /// Returns the ETag if this is an If-Match condition.
-    pub fn as_if_match(&self) -> Option<&ETag> {
+    pub fn as_if_match(&self) -> Option<&Etag> {
         match self {
             Self::IfMatch(etag) => Some(etag),
             Self::IfNoneMatch(_) => None,
@@ -117,7 +69,7 @@ impl Precondition {
     }
 
     /// Returns the ETag if this is an If-None-Match condition.
-    pub fn as_if_none_match(&self) -> Option<&ETag> {
+    pub fn as_if_none_match(&self) -> Option<&Etag> {
         match self {
             Self::IfNoneMatch(etag) => Some(etag),
             Self::IfMatch(_) => None,
@@ -141,7 +93,7 @@ mod tests {
 
     #[test]
     fn if_match_accessors() {
-        let etag = ETag::new("abc123");
+        let etag = Etag::from("abc123");
         let condition = Precondition::if_match(etag.clone());
 
         assert!(condition.is_if_match());
@@ -152,7 +104,7 @@ mod tests {
 
     #[test]
     fn if_none_match_accessors() {
-        let etag = ETag::new("*");
+        let etag = Etag::from("*");
         let condition = Precondition::if_none_match(etag.clone());
 
         assert!(!condition.is_if_match());

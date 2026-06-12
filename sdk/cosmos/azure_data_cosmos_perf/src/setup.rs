@@ -8,7 +8,7 @@ use std::time::Duration;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::{clients::ContainerClient, clients::DatabaseClient, models::TimeToLive};
-use azure_data_cosmos::{CosmosClient, CreateContainerOptions};
+use azure_data_cosmos::{options::CreateContainerOptions, CosmosClient};
 
 const MAX_RETRIES: u32 = 10;
 const INITIAL_BACKOFF: Duration = Duration::from_secs(1);

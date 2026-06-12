@@ -40,9 +40,8 @@ extends:
     settings:
       skipBuildTagsForGitHubPullRequests: true
       # only enable autoBaseline for the internal build of rust-core on main branch
-      ${{ if parameters.AutoBaseline }}:
-        featureFlags:
-          autoBaseline: true
+      featureFlags:
+        autoBaseline: ${{ parameters.AutoBaseline }}
     sdl:
       ${{ if parameters.AutoBaseline }}:
         autobaseline:

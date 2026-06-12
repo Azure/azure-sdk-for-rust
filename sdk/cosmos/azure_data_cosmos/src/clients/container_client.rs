@@ -3,21 +3,19 @@
 
 use crate::{
     clients::{offers_client, ClientContext},
-    models::{
-        BatchResponse, ContainerProperties, ItemResponse, ResourceResponse, ThroughputProperties,
-    },
+    feed::{FeedRange, FeedScope, QueryItemIterator},
+    models::TransactionalBatch,
+    models::{BatchResponse, ItemResponse, ResourceResponse},
+    models::{ContainerProperties, PatchInstructions, ThroughputProperties},
     options::{
-        BatchOptions, PatchItemOptions, Precondition, QueryOptions, ReadContainerOptions,
-        ReadFeedRangesOptions, SessionToken,
+        BatchOptions, DeleteContainerOptions, ItemReadOptions, ItemWriteOptions, PatchItemOptions,
+        Precondition, QueryOptions, ReadContainerOptions, ReadFeedRangesOptions,
+        ReplaceContainerOptions, SessionToken, ThroughputOptions,
     },
-    query::FeedScope,
-    transactional_batch::TransactionalBatch,
-    DeleteContainerOptions, FeedRange, ItemReadOptions, ItemWriteOptions, PartitionKey, Query,
-    QueryItemIterator, ReplaceContainerOptions, ThroughputOptions,
+    PartitionKey, Query,
 };
 
 use super::ThroughputPoller;
-use crate::PatchInstructions;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
 };
@@ -95,6 +93,8 @@ impl ContainerClient {
     ///
     /// **NOTE**: The [`ContainerProperties::id`] and [`ContainerProperties::partition_key`] must be the same as the existing container, they cannot be changed.
     ///
+    #[doc = include_str!("../../docs/control-plane-always-returns-body.md")]
+    ///
     /// # Arguments
     ///
     /// * `properties` - The [`ContainerProperties`] to update the container with.
@@ -167,6 +167,8 @@ impl ContainerClient {
     /// The Cosmos DB service may process throughput changes asynchronously. The returned
     /// [`ThroughputPoller`] can be awaited directly for the final result, or polled as a
     /// stream to observe progress.
+    ///
+    #[doc = include_str!("../../docs/control-plane-always-returns-body.md")]
     ///
     /// # Arguments
     /// * `throughput` - The new throughput properties to set.
@@ -261,11 +263,11 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the newly created item is *not* returned in the HTTP response.
-    /// If you want the new item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::into_single`](crate::ResponseBody::into_single), like this:
+    /// If you want the new item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::options::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::options::OperationOptions) in your [`ItemWriteOptions`](crate::options::ItemWriteOptions).
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::models::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::into_single`](crate::models::ResponseBody::into_single), like this:
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
+    /// use azure_data_cosmos::options::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
     /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
@@ -360,11 +362,11 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the replaced item is *not* returned in the HTTP response.
-    /// If you want the replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::into_single`](crate::ResponseBody::into_single), like this:
+    /// If you want the replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::options::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::options::OperationOptions) in your [`ItemWriteOptions`](crate::options::ItemWriteOptions).
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::models::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::into_single`](crate::models::ResponseBody::into_single), like this:
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
+    /// use azure_data_cosmos::options::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
     /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
@@ -440,7 +442,7 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{PatchOperation, PatchInstructions};
+    /// use azure_data_cosmos::models::{PatchOperation, PatchInstructions};
     /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("non-running example");
@@ -568,11 +570,11 @@ impl ContainerClient {
     /// # Content Response on Write
     ///
     /// By default, the created/replaced item is *not* returned in the HTTP response.
-    /// If you want the created/replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::OperationOptions) in your [`ItemWriteOptions`](crate::ItemWriteOptions).
-    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::into_single`](crate::ResponseBody::into_single), like this:
+    /// If you want the created/replaced item to be returned, set `content_response_on_write` to [`ContentResponseOnWrite::Enabled`](crate::options::ContentResponseOnWrite::Enabled) on the [`OperationOptions`](crate::options::OperationOptions) in your [`ItemWriteOptions`](crate::options::ItemWriteOptions).
+    /// You can deserialize the returned item by retrieving the [`ResponseBody`](crate::models::ResponseBody) using [`ItemResponse::into_body`] and then calling [`ResponseBody::into_single`](crate::models::ResponseBody::into_single), like this:
     ///
     /// ```rust,no_run
-    /// use azure_data_cosmos::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
+    /// use azure_data_cosmos::options::{ItemWriteOptions, ContentResponseOnWrite, OperationOptions};
     /// use serde::{Deserialize, Serialize};
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
     /// #[derive(Debug, Deserialize, Serialize)]
@@ -771,7 +773,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// # use azure_data_cosmos::query::FeedScope;
+    /// # use azure_data_cosmos::feed::FeedScope;
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
@@ -790,7 +792,7 @@ impl ContainerClient {
     ///
     /// ```rust,no_run
     /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-    /// use azure_data_cosmos::{query::FeedScope, Query};
+    /// use azure_data_cosmos::{feed::FeedScope, Query};
     /// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
     /// #[derive(serde::Deserialize)]
     /// struct Customer {
@@ -935,7 +937,7 @@ impl ContainerClient {
                 // `SERIALIZATION_RESPONSE_BODY_INVALID` sub-status so
                 // callers can distinguish it from caller misuse.
                 crate::DriverCosmosError::builder()
-                    .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("failed to resolve routing map for container")
                     .build()
             })?;
@@ -950,7 +952,9 @@ impl ContainerClient {
                 .await
                 .ok_or_else(|| {
                     crate::DriverCosmosError::builder()
-                        .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                        .with_status(
+                            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+                        )
                         .with_message("failed to resolve routing map for container")
                         .build()
                 })?;
@@ -963,7 +967,7 @@ impl ContainerClient {
             // sub-status so the caller treats this as a service-side
             // availability issue (not their bug).
             return Err(crate::DriverCosmosError::builder()
-                .with_status(crate::CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                 .with_message(
                     "resolved routing map contains no partition key ranges; \
                      the container may not exist or the service may be unreachable",
@@ -996,14 +1000,14 @@ impl ContainerClient {
 
         if values.is_empty() {
             return Err(crate::DriverCosmosError::builder()
-                .with_status(crate::CosmosStatus::CLIENT_PARTITION_KEY_EMPTY)
+                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_EMPTY)
                 .with_message("partition key must have at least one component")
                 .build()
                 .into());
         }
         if values.len() > pk_def.paths().len() {
             return Err(crate::DriverCosmosError::builder()
-                .with_status(crate::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
                 .with_message(format!(
                     "partition key has {} components but container definition has {} paths",
                     values.len(),
@@ -1017,7 +1021,7 @@ impl ContainerClient {
             pk_def.kind() == PartitionKeyKind::MultiHash && values.len() < pk_def.paths().len();
         if !is_prefix && values.len() != pk_def.paths().len() {
             return Err(crate::DriverCosmosError::builder()
-                .with_status(crate::CosmosStatus::CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH)
+                .with_status(crate::error::CosmosStatus::CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH)
                 .with_message("prefix partition keys are only supported for MultiHash (hierarchical) containers")
                 .build().into());
         }
@@ -1033,7 +1037,7 @@ impl ContainerClient {
             .await
             .ok_or_else(|| {
                 crate::DriverCosmosError::builder()
-                    .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("failed to resolve routing map for container")
                     .build()
             })?;
@@ -1047,14 +1051,16 @@ impl ContainerClient {
                 .await
                 .ok_or_else(|| {
                     crate::DriverCosmosError::builder()
-                        .with_status(crate::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                        .with_status(
+                            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+                        )
                         .with_message("failed to resolve routing map for container")
                         .build()
                 })?;
 
             if ranges.is_empty() {
                 return Err(crate::DriverCosmosError::builder()
-                    .with_status(crate::CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_GENERATED_503)
                     .with_message(
                         "no partition key ranges found for the given partition key; \
                          the container may not exist or the service may be unreachable",
@@ -1100,7 +1106,9 @@ impl ContainerClient {
     /// # Examples
     ///
     /// ```rust,no_run
-    /// # use azure_data_cosmos::{clients::ContainerClient, FeedRange, SessionToken};
+    /// # use azure_data_cosmos::{clients::ContainerClient};
+    /// use azure_data_cosmos::feed::{FeedRange};
+    /// use azure_data_cosmos::options::{SessionToken};
     /// # async fn example(container: ContainerClient) -> azure_data_cosmos::Result<()> {
     /// let feed_range = FeedRange::full();
     /// let token_a: SessionToken = "0:1#100#3=50".into();

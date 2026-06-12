@@ -369,8 +369,8 @@ fn extract_header_pairs(
     vec![
         (
             "activity_id",
-            real.activity_id.as_ref().map(|v| v.as_str().to_owned()),
-            emulator.activity_id.as_ref().map(|v| v.as_str().to_owned()),
+            real.activity_id.as_ref().map(|v| v.to_string()),
+            emulator.activity_id.as_ref().map(|v| v.to_string()),
         ),
         (
             "request_charge",
@@ -382,16 +382,13 @@ fn extract_header_pairs(
         ),
         (
             "session_token",
-            real.session_token.as_ref().map(|v| v.as_str().to_owned()),
-            emulator
-                .session_token
-                .as_ref()
-                .map(|v| v.as_str().to_owned()),
+            real.session_token.as_ref().map(|v| v.to_string()),
+            emulator.session_token.as_ref().map(|v| v.to_string()),
         ),
         (
             "etag",
-            real.etag.as_ref().map(|v| v.as_str().to_owned()),
-            emulator.etag.as_ref().map(|v| v.as_str().to_owned()),
+            real.etag.as_ref().map(|v| v.to_string()),
+            emulator.etag.as_ref().map(|v| v.to_string()),
         ),
         (
             "continuation",

@@ -12,6 +12,10 @@
 
 ### Other Changes
 
+- Added `#[must_use]` to `AsyncRuntime` functions.
+- Added `#[must_use]` to `ItemIterator` (`Pager`) and `PageIterator` types.
+- Added `#[must_use]` to `Poller` type.
+
 ## 1.0.0 (2026-05-11)
 
 ### Features Added

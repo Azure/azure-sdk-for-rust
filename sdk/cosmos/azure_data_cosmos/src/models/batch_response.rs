@@ -5,10 +5,11 @@
 
 use std::sync::Arc;
 
-use crate::models::{
-    CosmosResponse, CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders,
-};
-use crate::transactional_batch::TransactionalBatchResponse;
+use crate::diagnostics::DiagnosticsContext;
+use crate::models::CosmosStatus;
+use crate::models::TransactionalBatchResponse;
+use crate::models::{CosmosResponse, ResponseBody, ResponseHeaders};
+use azure_core::fmt::SafeDebug;
 
 /// A response from a transactional batch operation.
 ///
@@ -17,9 +18,10 @@ use crate::transactional_batch::TransactionalBatchResponse;
 /// Note: The batch-level ETag (available via `headers().etag()`) differs from a
 /// single-item ETag. It represents the ETag for the entire batch operation, not
 /// an individual item's concurrency token. Use individual
-/// [`TransactionalBatchOperationResult`](crate::TransactionalBatchOperationResult)
+/// [`TransactionalBatchOperationResult`](crate::models::TransactionalBatchOperationResult)
 /// entries for per-item ETags.
-#[derive(Debug)]
+#[derive(SafeDebug)]
+#[safe(true)]
 #[non_exhaustive]
 pub struct BatchResponse {
     response: CosmosResponse,

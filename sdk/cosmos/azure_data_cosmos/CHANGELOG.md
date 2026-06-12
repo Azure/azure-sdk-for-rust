@@ -7,12 +7,23 @@
 - Added `CosmosClientBuilder::with_gateway20_disabled(bool)` to opt out of the new Gateway 2.0 transport, which is now enabled by default. Gateway 2.0 routes data-plane requests through a regional proxy that forwards RNTBD-over-HTTP/2 to the backend. Set this to `true` to keep traffic on the standard gateway (Gateway 1.0) — useful for A/B testing transport behavior, isolating a transport-specific issue, or staying on Gateway 1.0 during a controlled rollout. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - Driver retries HTTP 449 RetryWith responses transparently. The Cosmos backend uses 449 to signal transient concurrency conflicts that the client must retry in the same region; the driver now does so with exponential backoff (10ms initial delay + a small random salt, doubling up to 1s per retry) bounded by a ~30s cumulative-wait budget. SDK callers will no longer see spurious 449 errors from concurrent writes racing through the store. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
 - `ReadConsistencyStrategy` is now honored end-to-end across Gateway V1 and Gateway V2 read paths. Non-`Default` strategies (`Eventual`, `Session`, `LatestCommitted`, `GlobalStrong`) emit the dedicated wire signal — `x-ms-cosmos-read-consistency-strategy` on V1, the new RNTBD `ReadConsistencyStrategy` token on V2 — and the legacy consistency-level signal is dropped on the same request. The new `LatestCommitted` variant requests a quorum read independent of the account default. `GlobalStrong` is rejected up front with a `BadRequest` on accounts whose default consistency is not `Strong`. Per-request RCS continues to override client-level RCS. ([#4319](https://github.com/Azure/azure-sdk-for-rust/pull/4319))
+- Derived `SafeDebug` on `CosmosCredential`, `ItemResponse`, `ResourceResponse<T>`, and `BatchResponse`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- Added standard derives (`Clone`, `Copy`, `PartialEq`, `Eq`, `Hash`, `Serialize`, `Deserialize`) to `ConsistencyLevel` and `RoutingStrategy`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- `Query::with_text` now accepts `impl Into<String>`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
 
 ### Breaking Changes
+
+- Reorganized the public API: types are now grouped under `models`, `diagnostics`, `feed`, and `options`; the `query`, `regions`, and `routing_strategy` modules were removed; the previously `#[doc(hidden)]` feature-gated builder methods on `CosmosClientBuilder` are now visible (and remain feature-gated); `PartitionKey::EMPTY`, its `Default` impl, and `From<()> for PartitionKey` were removed (use the query/feed APIs for cross-partition operations); and `ETag` is no longer re-exported from `azure_data_cosmos::options` — use `azure_core::http::Etag` directly (construct via `Etag::from(&str)` / `Etag::from(String)`). See the PR for the full list of moves and import paths. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- `TransactionalBatch::{create_item, upsert_item, replace_item}` and `TransactionalBatchOperationResult::into_model` now return `azure_data_cosmos::Result<_>` instead of `Result<_, serde_json::Error>`. The underlying `resource_body` is now stored as `Option<Box<serde_json::value::RawValue>>` and exposed via a new `resource_body()` accessor. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- `DatabaseProperties::id` is now `Option<String>` (previously `String`) to match the wire schema. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
 
 ### Bugs Fixed
 
 ### Other Changes
+
+- `DatabaseClient::read_throughput` and `begin_replace_throughput` no longer panic in release builds if the service returns an offer without `_rid`; they now return a synthetic `CosmosError`. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- `azure_data_cosmos::error` is now a public module, and `ContainerClient` / `DatabaseClient` are re-exported at the crate root. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
+- Documented that control-plane create/replace methods (`CosmosClient::create_database`, `DatabaseClient::create_container`, `ContainerClient::replace`, and the throughput-replace methods) always return the resource body regardless of `ContentResponseOnWrite`, and pointed `CosmosClient`'s rustdoc at the `CosmosClient::builder()` factory. ([#4512](https://github.com/Azure/azure-sdk-for-rust/pull/4512))
 
 ## 0.35.0 (2026-06-09)
 

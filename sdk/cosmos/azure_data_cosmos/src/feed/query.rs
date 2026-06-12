@@ -149,8 +149,8 @@ impl Query {
     }
 
     /// Consumes this [`Query`] instance, replaces its text with the provided value, and returns it.
-    pub fn with_text(mut self, text: String) -> Self {
-        self.text = text;
+    pub fn with_text(mut self, text: impl Into<String>) -> Self {
+        self.text = text.into();
         self
     }
 

@@ -1,124 +1,48 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Types for working with transactional batch operations in Cosmos DB.
-//!
-//! Transactional batches allow you to group multiple operations (create, read, upsert, replace, delete)
-//! within the same partition key as a single atomic transaction.
-//!
-//! # Examples
-//!
-//! ```rust,no_run
-//! use azure_data_cosmos::TransactionalBatch;
-//! use serde::{Deserialize, Serialize};
-//!
-//! #[derive(Debug, Deserialize, Serialize)]
-//! struct Product {
-//!     id: String,
-//!     category: String,
-//!     name: String,
-//! }
-//!
-//! # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-//! # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
-//! let product1 = Product {
-//!     id: "product1".to_string(),
-//!     category: "category1".to_string(),
-//!     name: "Product #1".to_string(),
-//! };
-//!
-//! let batch = TransactionalBatch::new("category1")
-//!     .create_item(product1)?;
-//!
-//! let response = container_client.execute_transactional_batch(batch, None).await?;
-//! # Ok(())
-//! # }
-//! ```
+//! [`TransactionalBatch`] and the result types its execution returns.
 
-use crate::options::Precondition;
+use crate::options::{
+    BatchDeleteOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions, Precondition,
+};
 use crate::PartitionKey;
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
-/// Options for batch upsert operations.
-///
-/// Upsert supports both conditional options for optimistic concurrency control.
-#[derive(Clone, Debug, Default)]
-#[non_exhaustive]
-pub struct BatchUpsertOptions {
-    /// Conditional ETag check for optimistic concurrency control.
-    pub precondition: Option<Precondition>,
-}
-
-impl BatchUpsertOptions {
-    /// Sets the precondition for optimistic concurrency control.
-    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
-        self.precondition = Some(precondition);
-        self
-    }
-}
-
-/// Options for batch replace operations.
-///
-/// Replace only supports `if_match` for optimistic concurrency control,
-/// since the item must exist to be replaced.
-#[derive(Clone, Debug, Default)]
-#[non_exhaustive]
-pub struct BatchReplaceOptions {
-    /// Conditional ETag check for optimistic concurrency control.
-    pub precondition: Option<Precondition>,
-}
-
-impl BatchReplaceOptions {
-    /// Sets the precondition for optimistic concurrency control.
-    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
-        self.precondition = Some(precondition);
-        self
-    }
-}
-
-/// Options for batch read operations.
-///
-/// Read supports both conditional options, commonly used for cache validation.
-#[derive(Clone, Debug, Default)]
-#[non_exhaustive]
-pub struct BatchReadOptions {
-    /// Conditional ETag check, commonly used for cache validation.
-    pub precondition: Option<Precondition>,
-}
-
-impl BatchReadOptions {
-    /// Sets the precondition (useful for caching or concurrency control).
-    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
-        self.precondition = Some(precondition);
-        self
-    }
-}
-
-/// Options for batch delete operations.
-///
-/// Delete only supports `if_match` for optimistic concurrency control,
-/// since the item must exist to be deleted.
-#[derive(Clone, Debug, Default)]
-#[non_exhaustive]
-pub struct BatchDeleteOptions {
-    /// Conditional ETag check for optimistic concurrency control.
-    pub precondition: Option<Precondition>,
-}
-
-impl BatchDeleteOptions {
-    /// Sets the precondition for optimistic concurrency control.
-    pub fn with_precondition(mut self, precondition: Precondition) -> Self {
-        self.precondition = Some(precondition);
-        self
-    }
-}
-
 /// Represents a transactional batch of operations to be executed atomically.
 ///
 /// All operations in the batch must target the same partition key.
-/// See the [module documentation](self) for more information and examples.
+///
+/// # Examples
+///
+/// ```rust,no_run
+/// use azure_data_cosmos::TransactionalBatch;
+/// use serde::{Deserialize, Serialize};
+///
+/// #[derive(Debug, Deserialize, Serialize)]
+/// struct Product {
+///     id: String,
+///     category: String,
+///     name: String,
+/// }
+///
+/// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
+/// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+/// let product1 = Product {
+///     id: "product1".to_string(),
+///     category: "category1".to_string(),
+///     name: "Product #1".to_string(),
+/// };
+///
+/// let batch = TransactionalBatch::new("category1")
+///     .create_item(product1)?;
+///
+/// let response = container_client.execute_transactional_batch(batch, None).await?;
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Clone, SafeDebug)]
 #[safe(true)]
 pub struct TransactionalBatch {
@@ -184,7 +108,7 @@ impl TransactionalBatch {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create_item<T: Serialize>(mut self, item: T) -> Result<Self, serde_json::Error> {
+    pub fn create_item<T: Serialize>(mut self, item: T) -> crate::Result<Self> {
         let resource_body = serde_json::to_value(item)?;
         self.operations.push(TransactionalBatchOperation::Create {
             resource_body,
@@ -202,7 +126,7 @@ impl TransactionalBatch {
         mut self,
         item: T,
         options: Option<BatchUpsertOptions>,
-    ) -> Result<Self, serde_json::Error> {
+    ) -> crate::Result<Self> {
         let resource_body = serde_json::to_value(item)?;
         let (if_match, if_none_match) = match options.as_ref().and_then(|o| o.precondition.as_ref())
         {
@@ -230,7 +154,7 @@ impl TransactionalBatch {
         item_id: impl Into<Cow<'static, str>>,
         item: T,
         options: Option<BatchReplaceOptions>,
-    ) -> Result<Self, serde_json::Error> {
+    ) -> crate::Result<Self> {
         let resource_body = serde_json::to_value(item)?;
         let if_match = match options.as_ref().and_then(|o| o.precondition.as_ref()) {
             Some(Precondition::IfMatch(etag)) => Some(etag.to_string()),
@@ -395,11 +319,23 @@ impl<'de> Deserialize<'de> for TransactionalBatchResponse {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionalBatchOperationResult {
     /// HTTP status code for this operation.
+    ///
+    /// This is exposed as a raw `u16` because the per-operation status comes
+    /// directly from the JSON body of the batch response. We deliberately do
+    /// not deserialize into [`azure_core::http::StatusCode`]: that enum is
+    /// closed and would fail deserialization for any non-canonical status
+    /// code returned by the service. Failing the entire batch deserialization
+    /// because the service introduced a new status value would be a much
+    /// worse caller experience than surfacing the integer as-is.
     status_code: u16,
 
-    /// The resource body returned by the operation, if any.
+    /// The resource body returned by the operation, if any. Stored as
+    /// [`RawValue`](serde_json::value::RawValue) so the JSON bytes are kept
+    /// exactly as the service produced them — callers decide whether (and how)
+    /// to parse them via [`into_model::<T>`](Self::into_model) or
+    /// inspect the raw JSON via [`resource_body`](Self::resource_body).
     #[serde(default)]
-    resource_body: Option<serde_json::Value>,
+    resource_body: Option<Box<serde_json::value::RawValue>>,
 
     /// ETag of the resource after the operation.
     #[serde(rename = "eTag")]
@@ -426,8 +362,13 @@ impl TransactionalBatchOperationResult {
     }
 
     /// Returns the resource body returned by the operation, if any.
-    pub fn resource_body(&self) -> Option<&serde_json::Value> {
-        self.resource_body.as_ref()
+    ///
+    /// The body is returned as a still-serialized
+    /// [`RawValue`](serde_json::value::RawValue) — its `get()` method yields
+    /// the raw JSON text. To deserialize into a typed value, use
+    /// [`into_model`](Self::into_model) instead.
+    pub fn resource_body(&self) -> Option<&serde_json::value::RawValue> {
+        self.resource_body.as_deref()
     }
 
     /// Returns the ETag of the resource after the operation, if any.
@@ -456,12 +397,11 @@ impl TransactionalBatchOperationResult {
     ///
     /// # Errors
     ///
-    /// Returns an error if the resource body cannot be deserialized as the specified type.
-    pub fn deserialize_body<T: serde::de::DeserializeOwned>(
-        &self,
-    ) -> Result<Option<T>, serde_json::Error> {
+    /// Returns an error if the resource body cannot be deserialized as the
+    /// specified type.
+    pub fn into_model<T: serde::de::DeserializeOwned>(&self) -> crate::Result<Option<T>> {
         match &self.resource_body {
-            Some(value) => Ok(Some(serde_json::from_value(value.clone())?)),
+            Some(value) => Ok(Some(serde_json::from_str(value.get())?)),
             None => Ok(None),
         }
     }
@@ -475,7 +415,7 @@ impl TransactionalBatchOperationResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::options::ETag;
+    use azure_core::http::Etag;
     use serde::Serialize;
 
     #[derive(Serialize)]
@@ -499,7 +439,7 @@ mod tests {
         };
 
         let replace_options = BatchReplaceOptions::default()
-            .with_precondition(Precondition::IfMatch(ETag::from("some-etag")));
+            .with_precondition(Precondition::IfMatch(Etag::from("some-etag")));
 
         let batch = TransactionalBatch::new("test_partition")
             .create_item(&item)?
