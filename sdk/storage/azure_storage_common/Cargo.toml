@@ -1,0 +1,14 @@
+[package]
+name = "azure_storage_common"
+version = "0.1.0"
+description = "Common types shared across Azure Storage client libraries."
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+azure_core = { workspace = true }
+serde = { workspace = true }
+time = { workspace = true }

@@ -2,12 +2,13 @@
 // Licensed under the MIT License.
 
 use azure_core::http::{ClientOptions, RequestContent, Url, XmlFormat};
+use azure_core::time::OffsetDateTime;
 use azure_core_test::{recorded, TestContext};
 use azure_storage_blob::models::{
     AccountKind, BlobServiceClientGetAccountInfoResultHeaders,
     BlobServiceClientGetPropertiesOptions, BlobServiceClientListContainersOptions,
     BlobServiceProperties, BlockBlobClientUploadOptions, CorsRule, GeoReplicationStatusType,
-    ListContainersIncludeType, Metrics, RetentionPolicy,
+    KeyInfo, ListContainersIncludeType, Metrics, RetentionPolicy,
 };
 use azure_storage_blob::{format_filter_expression, BlobServiceClient, BlobServiceClientOptions};
 use azure_storage_blob_test::{
@@ -16,6 +17,7 @@ use azure_storage_blob_test::{
 };
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, error::Error};
+use time::Duration;
 
 #[recorded::test]
 async fn test_get_service_properties(ctx: TestContext) -> Result<(), Box<dyn Error>> {
@@ -477,5 +479,57 @@ async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dy
             .delete(None)
             .await?;
     }
+    Ok(())
+}
+
+#[recorded::test]
+async fn test_get_user_delegation_key(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    // Recording Setup
+    let recording = ctx.recording();
+    let service_client = get_blob_service_client(recording, StorageAccount::Standard, None)?;
+
+    let now = OffsetDateTime::now_utc();
+    let key_info = KeyInfo {
+        start: Some(now),
+        expiry: Some(now + Duration::hours(1)),
+        ..Default::default()
+    };
+    let request_content: RequestContent<KeyInfo, XmlFormat> = key_info.try_into()?;
+
+    // Act
+    let response = service_client
+        .get_user_delegation_key(request_content, None)
+        .await?;
+    let user_delegation_key = response.into_model()?;
+
+    // Assert
+    assert!(
+        user_delegation_key.signed_oid.is_some(),
+        "expected signed_oid to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_tid.is_some(),
+        "expected signed_tid to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_start.is_some(),
+        "expected signed_start to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_expiry.is_some(),
+        "expected signed_expiry to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_service.is_some(),
+        "expected signed_service to be populated"
+    );
+    assert!(
+        user_delegation_key.signed_version.is_some(),
+        "expected signed_version to be populated"
+    );
+    assert!(
+        user_delegation_key.value.is_some(),
+        "expected value to be populated"
+    );
     Ok(())
 }
