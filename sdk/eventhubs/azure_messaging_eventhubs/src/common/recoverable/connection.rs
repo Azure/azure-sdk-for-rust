@@ -470,11 +470,7 @@ impl RecoverableConnection {
                 session
                     .begin(
                         connection.as_ref(),
-                        Some(AmqpSessionOptions {
-                            incoming_window: Some(u32::MAX),
-                            outgoing_window: Some(u32::MAX),
-                            ..Default::default()
-                        }),
+                        Some(AmqpSessionOptions::with_unbounded_windows()),
                     )
                     .await?;
                 Ok::<_, AmqpError>(Arc::new(session))
