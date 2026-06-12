@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+// cspell:ignore sastoken
+
 use crate::{common::recoverable::RecoverableConnection, error::Result};
 use async_lock::RwLock;
 use azure_core::{
@@ -47,6 +49,9 @@ pub(crate) struct Authorizer {
     /// Bias to apply to token refresh time. This determines how much time we will refresh the token before it expires.
     token_refresh_bias: SyncMutex<TokenRefreshTimes>,
     credential: Arc<dyn TokenCredential>,
+    /// The CBS token type to present. `None` (the default) means a JWT/Entra
+    /// token; `Some("servicebus.windows.net:sastoken")` for a SAS credential.
+    cbs_token_type: Option<&'static str>,
     recoverable_connection: Weak<RecoverableConnection>,
     /// This is used to disable authorization for testing purposes.
     #[cfg(test)]
@@ -57,15 +62,20 @@ unsafe impl Send for Authorizer {}
 unsafe impl Sync for Authorizer {}
 
 impl Authorizer {
+    /// Creates an authorizer. `cbs_token_type` is `None` for JWT/Entra
+    /// credentials and `Some("servicebus.windows.net:sastoken")` for SAS
+    /// (connection-string) credentials.
     pub(crate) fn new(
         recoverable_connection: Weak<RecoverableConnection>,
         credential: Arc<dyn TokenCredential>,
+        cbs_token_type: Option<&'static str>,
     ) -> Self {
         Self {
             authorization_refresher: OnceLock::new(),
             authorization_scopes: RwLock::new(HashMap::new()),
             token_refresh_bias: SyncMutex::new(TokenRefreshTimes::default()),
             credential,
+            cbs_token_type,
             recoverable_connection,
             #[cfg(test)]
             disable_authorization: SyncMutex::new(false),
@@ -177,7 +187,7 @@ impl Authorizer {
             .get_cbs_client()
             .authorize_path(
                 url.to_string(),
-                None,
+                self.cbs_token_type.map(String::from),
                 &new_token.token,
                 new_token.expires_on,
             )
@@ -404,6 +414,19 @@ mod tests {
         }
     }
 
+    // The default authorizer presents a JWT (token type `None`); one built for
+    // a SAS credential presents the `servicebus.windows.net:sastoken` type.
+    #[test]
+    fn cbs_token_type_defaults_to_jwt_and_can_be_sas() {
+        let credential = MockTokenCredential::new(60);
+
+        let jwt = Authorizer::new(Weak::new(), credential.clone(), None);
+        assert_eq!(jwt.cbs_token_type, None);
+
+        let sas = Authorizer::new(Weak::new(), credential, Some(crate::common::SAS_TOKEN_TYPE));
+        assert_eq!(sas.cbs_token_type, Some("servicebus.windows.net:sastoken"));
+    }
+
     #[async_trait::async_trait]
     impl TokenCredential for MockTokenCredential {
         async fn get_token(
@@ -451,11 +474,13 @@ mod tests {
             None,
             mock_credential.clone(),
             Default::default(),
+            None,
         );
 
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&connection_manager),
             mock_credential.clone(),
+            None,
         ));
 
         // Disable actual authorization for testing
@@ -515,6 +540,7 @@ mod tests {
             None,
             mock_credential.clone(),
             Default::default(),
+            None,
         );
 
         connection_manager.disable_connection().await.unwrap();
@@ -526,6 +552,7 @@ mod tests {
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&connection_manager),
             mock_credential.clone(),
+            None,
         ));
 
         // Disable actual authorization for testing
@@ -583,10 +610,12 @@ mod tests {
             None,
             mock_credential.clone(),
             Default::default(),
+            None,
         ));
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&recoverable_connection),
             mock_credential.clone(),
+            None,
         ));
 
         // Get initial token get count
@@ -724,11 +753,13 @@ mod tests {
             None,
             credential.clone(),
             Default::default(),
+            None,
         );
 
         let authorizer = Arc::new(Authorizer::new(
             Arc::downgrade(&connection),
             credential.clone(),
+            None,
         ));
         authorizer.disable_authorization().unwrap();
         connection.disable_connection().await.unwrap();

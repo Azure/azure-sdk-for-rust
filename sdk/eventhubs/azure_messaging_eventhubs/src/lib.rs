@@ -38,6 +38,7 @@ pub mod builders {
     pub use crate::event_processor::processor::builders::EventProcessorBuilder;
     pub use crate::producer::builders::ProducerClientBuilder;
 }
+pub use common::connection_string::ConnectionString;
 pub use common::retry::RetryOptions;
 pub use error::{EventHubsError, Result};
 

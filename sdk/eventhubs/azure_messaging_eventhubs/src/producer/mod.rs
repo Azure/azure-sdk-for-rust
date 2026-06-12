@@ -99,6 +99,7 @@ impl ProducerClient {
         application_id: Option<String>,
         retry_options: RetryOptions,
         custom_endpoint: Option<Url>,
+        cbs_token_type: Option<&'static str>,
     ) -> Self {
         Self {
             connection: RecoverableConnection::new(
@@ -107,6 +108,7 @@ impl ProducerClient {
                 custom_endpoint,
                 credential,
                 retry_options,
+                cbs_token_type,
             ),
             eventhub,
             endpoint,
@@ -442,7 +444,14 @@ impl ProducerClient {
 
 pub mod builders {
     use super::ProducerClient;
-    use crate::{Result, RetryOptions};
+    use crate::{
+        common::{
+            connection_string::{resolve_eventhub, ConnectionString},
+            sas_credential::SasCredential,
+            SAS_TOKEN_TYPE,
+        },
+        Result, RetryOptions,
+    };
     use azure_core::{http::Url, Error};
     use std::sync::Arc;
 
@@ -559,9 +568,78 @@ pub mod builders {
                 self.application_id,
                 self.retry_options.unwrap_or_default(),
                 custom_endpoint,
+                None,
             );
 
             // Open a connection to the Event Hub to ensure that the client is ready to send messages.
+            client.ensure_connection().await?;
+            Ok(client)
+        }
+
+        /// Opens a connection to the Event Hub using a connection string.
+        ///
+        /// This is a convenience over [`open`](Self::open) for development and
+        /// test scenarios that authenticate with a Shared Access Signature
+        /// instead of Microsoft Entra ID. For production, prefer
+        /// [`open`](Self::open) with a `TokenCredential`.
+        ///
+        /// # Arguments
+        /// * `connection_string` - An Event Hubs connection string, e.g.
+        ///   `Endpoint=sb://<ns>.servicebus.windows.net/;SharedAccessKeyName=<policy>;SharedAccessKey=<key>`.
+        ///   It may include an `EntityPath` naming the Event Hub.
+        /// * `eventhub` - The Event Hub name. Required unless the connection
+        ///   string includes an `EntityPath`; if both are given they must agree.
+        ///
+        /// # Returns
+        /// A new instance of [`ProducerClient`].
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use azure_messaging_eventhubs::ProducerClient;
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+        ///     let connection_string = std::env::var("EVENTHUBS_CONNECTION_STRING")?;
+        ///     let producer = ProducerClient::builder()
+        ///         .open_with_connection_string(&connection_string, Some("my_eventhub"))
+        ///         .await?;
+        ///     Ok(())
+        /// }
+        /// ```
+        pub async fn open_with_connection_string(
+            self,
+            connection_string: &str,
+            eventhub: Option<&str>,
+        ) -> Result<ProducerClient> {
+            let connection_string: ConnectionString = connection_string.parse()?;
+            let eventhub = resolve_eventhub(&connection_string, eventhub)?;
+            let credential = Arc::new(SasCredential::from_connection_string(
+                &connection_string,
+                &eventhub,
+            ));
+
+            let url = format!(
+                "amqps://{}/{}",
+                connection_string.fully_qualified_namespace, eventhub
+            );
+            let url = Url::parse(&url).map_err(Error::from)?;
+
+            let custom_endpoint = match self.custom_endpoint {
+                Some(endpoint) => Some(Url::parse(&endpoint).map_err(Error::from)?),
+                None => None,
+            };
+
+            let client = ProducerClient::new(
+                url.clone(),
+                eventhub,
+                credential,
+                self.application_id,
+                self.retry_options.unwrap_or_default(),
+                custom_endpoint,
+                Some(SAS_TOKEN_TYPE),
+            );
+
             client.ensure_connection().await?;
             Ok(client)
         }
