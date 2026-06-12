@@ -773,6 +773,100 @@ mod tests {
         Ok(())
     }
 
+    // Send to a single partition in a tight loop; any error (including a
+    // post-reconnect unauthorized / detached error from a stale token) panics the
+    // loop and fails the test.
+    async fn send_to_partition(producer: Arc<ProducerClient>, partition: &str) {
+        loop {
+            let batch = producer
+                .create_batch(Some(EventDataBatchOptions {
+                    partition_id: Some(partition.to_string()),
+                    ..Default::default()
+                }))
+                .await
+                .unwrap();
+            assert!(batch
+                .try_add_event_data(
+                    EventData::builder().with_body(b"Hello, World!").build(),
+                    None,
+                )
+                .unwrap());
+            producer.send_batch(batch, None).await.unwrap();
+        }
+    }
+
+    // #4454: after a connection-level reconnect the per-path authorization tokens
+    // must be re-established cleanly on the new connection. Sending to several
+    // partitions concurrently keeps multiple `authorize_path` re-authorizations in
+    // flight across the forced `ConnectionClosedByRemote`, so a token cached against
+    // the torn-down connection (the stale-resource race this issue targets) would
+    // surface here as an unauthorized / detached error and panic a send loop's
+    // `unwrap`. A clean 30s run means every partition re-authorized against the new
+    // connection without a second recovery cycle.
+    #[recorded::test(live)]
+    async fn force_errors_concurrent_authorize_send_reconnect(ctx: TestContext) -> Result<()> {
+        const TEST_NAME: &str = "force_errors_concurrent_authorize_send_reconnect";
+        let recording = ctx.recording();
+        let host = recording.var("EVENTHUBS_HOST", None);
+        let eventhub = recording.var("EVENTHUB_NAME", None);
+        let credential = recording.credential();
+        let producer = Arc::new(
+            ProducerClient::builder()
+                .with_application_id(TEST_NAME.to_string())
+                .open(host.as_str(), eventhub.as_str(), credential.clone())
+                .await?,
+        );
+
+        // Derive the partition IDs from the Event Hub rather than hard-coding
+        // "0".."3", which would panic on a hub configured with fewer than four
+        // partitions. The race this test targets only needs several
+        // `authorize_path` re-authorizations in flight at once, so send to up to
+        // four of whatever partitions the hub actually exposes.
+        let partition_ids = producer.get_eventhub_properties().await?.partition_ids;
+        assert!(
+            partition_ids.len() >= 2,
+            "this test needs at least 2 partitions to keep concurrent authorizations \
+             in flight across the reconnect, but the configured Event Hub has {}",
+            partition_ids.len()
+        );
+        let partition_ids: Vec<String> = partition_ids.into_iter().take(4).collect();
+
+        force_errors(
+            producer.clone(),
+            move |producer: Arc<ProducerClient>| {
+                let partition_ids = partition_ids.clone();
+                async move {
+                    // Run the send loops via `join_all` (not `tokio::spawn`) so they
+                    // are cancelled with the test future when `force_errors`'s
+                    // timeout arm fires.
+                    futures::future::join_all(
+                        partition_ids
+                            .iter()
+                            .map(|partition| send_to_partition(producer.clone(), partition)),
+                    )
+                    .await;
+                }
+            },
+            |producer| {
+                producer
+                    .force_error(azure_core_amqp::AmqpError::from(
+                        AmqpErrorKind::ConnectionClosedByRemote(Box::new(
+                            azure_core::error::Error::new(
+                                azure_core::error::ErrorKind::Other,
+                                "Forced error",
+                            ),
+                        )),
+                    ))
+                    .unwrap();
+            },
+            Duration::seconds(10), // Seconds until forcing the error.
+            Duration::seconds(30), // Seconds until test timeout.
+        )
+        .await?;
+
+        Ok(())
+    }
+
     #[recorded::test(live)]
     async fn force_errors_producer_properties_connection(ctx: TestContext) -> Result<()> {
         const TEST_NAME: &str = "force_errors_producer_properties_connection";
