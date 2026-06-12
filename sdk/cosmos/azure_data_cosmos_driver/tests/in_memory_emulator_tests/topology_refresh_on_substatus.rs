@@ -92,6 +92,7 @@ use super::host_recorder::HostRecorder;
 
 const EAST_URL: &str = "https://eastus.emulator.local";
 const WEST_URL: &str = "https://westus.emulator.local";
+const EAST_HOST: &str = "eastus.emulator.local";
 const WEST_HOST: &str = "westus.emulator.local";
 
 const DB_NAME: &str = "testdb";
@@ -985,5 +986,102 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
         hosts.iter().all(|h| h != WEST_HOST),
         "no data-plane request may reach West US (the excluded region) \
          during 403/1008 retries; observed hosts={hosts:?}",
+    );
+}
+
+/// **GetDatabaseAccount metadata refresh is independent of
+/// `excluded_regions`.**
+///
+/// `excluded_regions` is a per-operation, data-plane-routing preference.
+/// It must NOT filter the SDK's account-topology probe (`GET /`):
+/// excluding a region from data traffic should not blind the client to
+/// topology changes happening at that region's endpoint, and on
+/// accounts whose current write region is in the caller's exclusion
+/// list, honoring the exclusion for metadata would leave the client
+/// unable to learn the new topology at all.
+///
+/// Setup: multi-write account [East US, West US] (East US is also the
+/// global bootstrap endpoint, so `GET /` naturally targets East).
+/// Caller sets `excluded_regions = [East US]` (the global!) and West
+/// returns 403/1008 persistently on `CreateItem`. The 1008 handler
+/// requests `RefreshAccountProperties` on every retry; the metadata
+/// probe must continue to hit East despite East being excluded.
+///
+/// Assertions:
+/// - At least one `GET /` request was observed against East after the
+///   recorder was cleared (proves the SDK reached the excluded region
+///   for metadata).
+/// - No `GET /` was sent to West — `GET /` is bound to the global
+///   endpoint, not the exclusion-filtered data-plane list.
+#[tokio::test]
+async fn metadata_refresh_ignores_excluded_regions() {
+    let recorder = HostRecorder::new();
+    let rule = region_fault_rule(
+        "403-1008-west-metadata-refresh-ignores-excluded",
+        FaultOperationType::CreateItem,
+        Region::WEST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        None,
+    );
+    let (driver, _account) =
+        build_driver_with_faults(WriteMode::Multi, recorder.clone(), vec![rule.clone()]).await;
+
+    // Drop bootstrap-time observations so the assertions below only
+    // reflect activity triggered by the post-clear operation.
+    recorder.clear();
+
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        "metadata-refresh-ignores-excluded-item".to_string(),
+    );
+    let body = serde_json::json!({
+        "id": "metadata-refresh-ignores-excluded-item",
+        "pk": PK_VALUE,
+        "value": 6,
+    });
+    let op = CosmosOperation::create_item(item_ref).with_body(serde_json::to_vec(&body).unwrap());
+
+    let mut opts = OperationOptions::default();
+    // Exclude East — the same region that hosts the global bootstrap
+    // endpoint. If excluded_regions incorrectly filtered metadata
+    // requests, the SDK would have nowhere to send `GET /`.
+    opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::EAST_US]));
+
+    // 120-attempt budget x 1000ms BACKEND_FAILOVER_RETRY_INTERVAL = up
+    // to ~120s wall time on bubble-up; 180s leaves CI headroom.
+    let result = tokio::time::timeout(
+        std::time::Duration::from_secs(180),
+        driver.execute_operation(op, opts),
+    )
+    .await
+    .expect("operation must not hang while the SDK retries on the only non-excluded region");
+
+    assert!(
+        result.is_err(),
+        "with East excluded and West persistently 403/1008, the operation must \
+         bubble up rather than cross into the excluded region; got {result:?}",
+    );
+    assert!(
+        rule.hit_count() >= 1,
+        "fault rule must fire on West US (the only non-excluded region)",
+    );
+
+    let topology_hosts = recorder.topology_hosts();
+    assert!(
+        topology_hosts.iter().any(|h| h == EAST_HOST),
+        "metadata refresh must hit East US (the global bootstrap endpoint) \
+         even though East is in the caller's excluded_regions list; \
+         observed topology_hosts={topology_hosts:?}",
+    );
+    assert!(
+        topology_hosts.iter().all(|h| h != WEST_HOST),
+        "`GET /` is always routed via the global endpoint, not the \
+         excluded-region-filtered data-plane list; observed \
+         topology_hosts={topology_hosts:?}",
     );
 }
