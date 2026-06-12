@@ -467,9 +467,9 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     let status = err.status();
     assert_eq!(
         status,
-        CosmosStatus::TRANSPORT_GENERATED_503,
-        "1008 exhausted-budget bubble-up must be wrapped as \
-         TRANSPORT_GENERATED_503; observed status={status:?}",
+        CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND,
+        "1008 exhausted-budget bubble-up must surface the original status unchanged; \
+         observed status={status:?}",
     );
 
     let diagnostics = err
@@ -654,9 +654,9 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     let status = err.status();
     assert_eq!(
         status,
-        CosmosStatus::TRANSPORT_GENERATED_503,
-        "403/3 exhausted-budget bubble-up must be wrapped as \
-         TRANSPORT_GENERATED_503; observed status={status:?}",
+        CosmosStatus::WRITE_FORBIDDEN,
+        "403/3 exhausted-budget bubble-up must surface the original status unchanged; \
+         observed status={status:?}",
     );
 
     let diagnostics = err

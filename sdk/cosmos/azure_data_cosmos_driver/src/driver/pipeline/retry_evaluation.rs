@@ -378,58 +378,12 @@ fn evaluate_http_outcome(
 
     // Backend-signal substatuses that the SDK retries (403/3 WriteForbidden,
     // 403/1008 DatabaseAccountNotFound) only reach this fall-through when
-    // the corresponding retry budget is exhausted. Wrap the bubble-up error
-    // as TRANSPORT_GENERATED_503 so callers get the transient classification
-    // that matches the SDK's exhausted-after-retries semantics, instead of
-    // the raw substatus (which a caller might mis-handle as a non-transient
-    // client error).
-    let error = if is_retried_backend_signal(&status) {
-        wrap_exhausted_retry_as_unavailable(&status, &cosmos_headers, &body)
-    } else {
-        build_service_error(&status, &cosmos_headers, &body)
-    };
+    // the corresponding retry budget is exhausted. Surface the original
+    // status unchanged so callers see exactly what the backend last returned
+    // — wrapping these as 503 would hide the fact that the topology never
+    // converged and obscure the original substatus from diagnostics.
+    let error = build_service_error(&status, &cosmos_headers, &body);
     (OperationAction::Abort { error }, Vec::new())
-}
-
-/// True for backend-signal substatus codes that the SDK retries (403/3
-/// WriteForbidden, 403/1008 DatabaseAccountNotFound) and only reach the
-/// bubble-up path after the retry budget is exhausted. 404/1002
-/// ReadSessionNotAvailable is intentionally not in this set: session
-/// retries failing genuinely mean "no replica caught up," which is a
-/// meaningful signal callers may want to surface as-is.
-fn is_retried_backend_signal(status: &CosmosStatus) -> bool {
-    status.is_write_forbidden() || status.is_database_account_not_found()
-}
-
-/// Wraps an exhausted-retry response as `TRANSPORT_GENERATED_503` while
-/// preserving the original substatus and response body on the error's
-/// payload so diagnostics keep the wire-level detail. Reuses the
-/// existing SDK-synthesized 503 substatus so callers don't need to
-/// learn a new code to detect "503 the SDK generated, not the backend."
-fn wrap_exhausted_retry_as_unavailable(
-    original: &CosmosStatus,
-    cosmos_headers: &CosmosResponseHeaders,
-    body: &[u8],
-) -> crate::error::CosmosError {
-    let original_name = original.name().unwrap_or("backend signal");
-    let original_substatus = original
-        .sub_status()
-        .map(|s| s.value().to_string())
-        .unwrap_or_else(|| "?".to_string());
-    let message = format!(
-        "{} ({}/{}) returned after retry budget exhausted; surfaced as 503 ServiceUnavailable",
-        original_name,
-        u16::from(original.status_code()),
-        original_substatus,
-    );
-    crate::error::CosmosError::builder()
-        .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
-        .with_message(message)
-        .with_response_parts(crate::models::CosmosResponsePayload::new(
-            body.to_vec(),
-            cosmos_headers.clone(),
-        ))
-        .build()
 }
 
 /// Handles 403/3 WriteForbidden — the gateway has identified that this region
@@ -1406,7 +1360,8 @@ mod tests {
         // After `max_backend_failover_retries` failover attempts the dedicated
         // 1008 handler must yield and let the outer pipeline fall through to
         // the bubble-up path; otherwise a backend stuck in 1008 would loop
-        // forever.
+        // forever. The original 403/1008 status is surfaced unchanged so
+        // callers see exactly what the backend last returned.
         let op = make_create_operation();
         // Multi-write account so the handler uses the dedicated
         // backend-failover budget rather than the generic one.
@@ -1429,8 +1384,8 @@ mod tests {
             OperationAction::Abort { error } => {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::TRANSPORT_GENERATED_503,
-                    "1008 exhausted-budget bubble-up must be wrapped as TRANSPORT_GENERATED_503"
+                    CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND,
+                    "1008 exhausted-budget bubble-up must surface the original status unchanged"
                 );
             }
             other => panic!(
@@ -1441,11 +1396,11 @@ mod tests {
     }
 
     #[test]
-    fn write_forbidden_aborts_when_backend_failover_budget_exhausted_wraps_503() {
+    fn write_forbidden_aborts_when_backend_failover_budget_exhausted() {
         // Mirror of the 1008 test for 403/3: once the dedicated multi-write
-        // backend-failover budget is exhausted, the bubble-up error must be
-        // wrapped as TRANSPORT_GENERATED_503 so callers see the transient
-        // classification matching the SDK's exhausted-after-retries semantics.
+        // backend-failover budget is exhausted, the bubble-up error must
+        // surface the original 403/3 status unchanged so callers see exactly
+        // what the backend last returned.
         let op = make_create_operation();
         let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
         state.backend_failover_retry_count = state.max_backend_failover_retries;
@@ -1464,8 +1419,8 @@ mod tests {
             OperationAction::Abort { error } => {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::TRANSPORT_GENERATED_503,
-                    "403/3 exhausted-budget bubble-up must be wrapped as TRANSPORT_GENERATED_503"
+                    CosmosStatus::WRITE_FORBIDDEN,
+                    "403/3 exhausted-budget bubble-up must surface the original status unchanged"
                 );
             }
             other => panic!("expected Abort, got {:?}", other),
