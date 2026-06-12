@@ -72,17 +72,16 @@ fn request_target_overrides(
         RequestTarget::EffectivePartitionKeyRange {
             partition_key_range_id,
             range,
-            partition_key_range,
+            ..
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
-            // For the thin-client (Gateway 2.0) proxy, every per-partition
-            // request must carry an EPK range so the proxy can derive
-            // `StartEpkHash`/`EndEpkHash` and route the request. The
-            // standard gateway ignores `x-ms-start-epk`/`x-ms-end-epk`
-            // when `x-ms-documentdb-partitionkeyrangeid` is also present,
-            // so falling back to the partition's full range here is safe
-            // for both transports.
-            feed_range: Some(range.unwrap_or(partition_key_range)),
+            // Only emit `x-ms-start-epk`/`x-ms-end-epk` when the request
+            // actually narrows the partition's range. The legacy gateway
+            // (emulator and service) returns 400 when sent sentinel EPK
+            // headers ([""..."FF"]) alongside `partitionkeyrangeid`; the
+            // thin-client (Gateway 2.0) proxy can route from the pkrange-id
+            // alone (it forwards as the RNTBD `PartitionKeyRangeId` token).
+            feed_range: range,
             // Propagate the operation's logical partition key (e.g. the
             // partial-HPK prefix from `FeedScope::partition(...)`) so the
             // `x-ms-documentdb-partitionkey` HTTP header is emitted on
@@ -2836,15 +2835,15 @@ mod tests {
     }
 
     #[test]
-    fn effective_partition_key_range_override_always_emits_feed_range() {
-        // Regression: for the Gateway 2.0 (thin-client) proxy, every
-        // per-partition request must carry an EPK range so the proxy can
-        // derive `StartEpkHash`/`EndEpkHash` and route the request. Pin
-        // that `feed_range` is always populated, even when the request
-        // target's range exactly equals the partition's full range — the
-        // standard gateway ignores `x-ms-start-epk`/`x-ms-end-epk` when
-        // `x-ms-documentdb-partitionkeyrangeid` is also present, so this
-        // is safe for both transports.
+    fn effective_partition_key_range_override_omits_feed_range_when_full_pkrange() {
+        // Regression: when the request covers the FULL pkrange (range ==
+        // partition_key_range), `feed_range` must collapse to `None` so we
+        // don't emit `x-ms-start-epk: ""` / `x-ms-end-epk: "FF"` alongside
+        // `partitionkeyrangeid`. The legacy gateway/emulator rejects that
+        // combination with HTTP 400. The thin-client (Gateway 2.0) proxy
+        // routes from the pkrange-id alone in this case (gateway20_dispatch
+        // forwards `partitionkeyrangeid` as the RNTBD `PartitionKeyRangeId`
+        // token).
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::from("10"),
             EffectivePartitionKey::from("20"),
@@ -2861,7 +2860,7 @@ mod tests {
         );
 
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
-        assert_eq!(overrides.feed_range, Some(range));
+        assert_eq!(overrides.feed_range, None);
     }
 
     #[test]
@@ -2891,7 +2890,7 @@ mod tests {
 
         assert_eq!(overrides.partition_key.as_ref(), Some(&pk));
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
-        assert_eq!(overrides.feed_range, Some(range));
+        assert_eq!(overrides.feed_range, None);
     }
 
     #[tokio::test]

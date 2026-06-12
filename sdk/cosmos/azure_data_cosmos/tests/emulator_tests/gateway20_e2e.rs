@@ -263,7 +263,7 @@ pub async fn gateway20_point_crud_round_trip() -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
-/// 
+///
 /// TODO: tighten the diagnostics check to assert `TransportKind::Gateway20`
 /// once the SDK surfaces the driver transport kind on batch diagnostics.
 #[tokio::test]
