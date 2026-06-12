@@ -664,6 +664,7 @@ dependencies = [
  "criterion",
  "fe2o3-amqp",
  "futures",
+ "include-file",
  "rand 0.10.1",
  "rand_chacha 0.10.0",
  "rustc_version",
