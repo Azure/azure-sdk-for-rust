@@ -183,7 +183,7 @@ async fn test_round_trip_connection_string(_ctx: TestContext) -> Result<(), Box<
 
     let consumer = ConsumerClient::builder()
         .with_application_id(TEST_NAME.to_string())
-        .open_with_connection_string(&connection_string, eventhub)
+        .open_with_connection_string(&connection_string, eventhub.as_deref())
         .await?;
     let receiver = consumer
         .open_receiver_on_partition(

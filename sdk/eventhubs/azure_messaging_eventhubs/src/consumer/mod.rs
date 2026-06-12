@@ -740,7 +740,7 @@ pub mod builders {
         /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ///     let connection_string = std::env::var("EVENTHUBS_CONNECTION_STRING")?;
         ///     let consumer = ConsumerClient::builder()
-        ///         .open_with_connection_string(&connection_string, Some("my_eventhub".to_string()))
+        ///         .open_with_connection_string(&connection_string, Some("my_eventhub"))
         ///         .await?;
         ///     Ok(())
         /// }
@@ -748,10 +748,10 @@ pub mod builders {
         pub async fn open_with_connection_string(
             self,
             connection_string: &str,
-            eventhub: Option<String>,
+            eventhub: Option<&str>,
         ) -> Result<super::ConsumerClient> {
             let connection_string: ConnectionString = connection_string.parse()?;
-            let eventhub = resolve_eventhub(&connection_string, eventhub.as_deref())?;
+            let eventhub = resolve_eventhub(&connection_string, eventhub)?;
             let credential = Arc::new(SasCredential::from_connection_string(
                 &connection_string,
                 &eventhub,

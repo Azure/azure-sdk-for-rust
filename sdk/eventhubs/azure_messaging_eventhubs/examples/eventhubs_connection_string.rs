@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Sent event with marker {marker} to partition {partition_id}.");
 
     let consumer = ConsumerClient::builder()
-        .open_with_connection_string(&connection_string, eventhub_name.clone())
+        .open_with_connection_string(&connection_string, eventhub_name.as_deref())
         .await?;
     println!("Opened consumer via connection string.");
 

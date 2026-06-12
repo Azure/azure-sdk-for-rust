@@ -137,7 +137,8 @@ fn sign_sas(audience: &str, key_name: &str, key: &Secret, expiry: i64) -> Result
         .map_err(|e| Error::with_error(ErrorKind::Other, e, "invalid SAS signing key"))?;
     mac.update(string_to_sign.as_bytes());
     let signature = BASE64_STANDARD.encode(mac.finalize().into_bytes());
-    // The signature hex is NOT lowercased (only the resource is).
+    // The signature (base64-encoded HMAC bytes, then percent-encoded) is NOT
+    // lowercased; only the resource is.
     let signature = utf8_percent_encode(&signature, SAS_ENCODE_SET).to_string();
 
     Ok(format!(
@@ -180,8 +181,9 @@ mod tests {
 
     // Golden vector generated independently (Python, replicating Go's
     // `azure-sdk-for-go` SAS signer). Pins the raw-key HMAC, the encoding, the
-    // field order, and the `sr` (lowercase hex) vs `sig` (uppercase hex)
-    // casing asymmetry. If any of those regress, this fails.
+    // field order, and the `sr` (lowercased percent-encoded resource) vs `sig`
+    // (base64-encoded HMAC, percent-encoded, NOT lowercased) casing asymmetry.
+    // If any of those regress, this fails.
     #[test]
     fn sign_sas_matches_reference_vector() {
         let token = sign_sas(

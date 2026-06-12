@@ -395,7 +395,7 @@ async fn consumer_open_with_connection_string(_ctx: TestContext) -> Result<(), B
 
     let client = ConsumerClient::builder()
         .with_application_id("consumer_open_with_connection_string".to_string())
-        .open_with_connection_string(&connection_string, eventhub)
+        .open_with_connection_string(&connection_string, eventhub.as_deref())
         .await?;
 
     // Authorizing the management link over SAS confirms the entity is reachable.
