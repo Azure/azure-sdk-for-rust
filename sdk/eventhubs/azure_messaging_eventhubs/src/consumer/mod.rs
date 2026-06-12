@@ -44,6 +44,7 @@ struct ConsumerClientOptions {
     instance_id: Option<String>,
     retry_options: Option<RetryOptions>,
     custom_endpoint: Option<Url>,
+    cbs_token_type: Option<&'static str>,
 }
 
 impl ConsumerClient {
@@ -99,6 +100,7 @@ impl ConsumerClient {
                 options.custom_endpoint,
                 credential,
                 retry_options,
+                options.cbs_token_type,
             ),
             eventhub: eventhub_name,
             endpoint: url,
@@ -542,7 +544,14 @@ impl StartPosition {
 
 pub mod builders {
     use super::*;
-    use crate::Result;
+    use crate::{
+        common::{
+            connection_string::{resolve_eventhub, ConnectionString},
+            sas_credential::SasCredential,
+            SAS_TOKEN_TYPE,
+        },
+        Result,
+    };
     use std::sync::Arc;
 
     /// A builder for creating a [`ConsumerClient`].
@@ -698,6 +707,72 @@ pub mod builders {
                     instance_id: self.instance_id,
                     retry_options: self.retry_options,
                     custom_endpoint,
+                    cbs_token_type: None,
+                },
+            )?;
+            consumer.ensure_connection().await?;
+            Ok(consumer)
+        }
+
+        /// Opens a connection to the Event Hub using a connection string.
+        ///
+        /// This is a convenience over [`open`](Self::open) for development and
+        /// test scenarios that authenticate with a Shared Access Signature
+        /// instead of Microsoft Entra ID. For production, prefer
+        /// [`open`](Self::open) with a `TokenCredential`.
+        ///
+        /// # Arguments
+        /// * `connection_string` - An Event Hubs connection string, e.g.
+        ///   `Endpoint=sb://<ns>.servicebus.windows.net/;SharedAccessKeyName=<policy>;SharedAccessKey=<key>`.
+        ///   It may include an `EntityPath` naming the Event Hub.
+        /// * `eventhub` - The Event Hub name. Required unless the connection
+        ///   string includes an `EntityPath`; if both are given they must agree.
+        ///
+        /// # Returns
+        /// A new instance of [`ConsumerClient`].
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use azure_messaging_eventhubs::ConsumerClient;
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+        ///     let connection_string = std::env::var("EVENTHUBS_CONNECTION_STRING")?;
+        ///     let consumer = ConsumerClient::builder()
+        ///         .open_with_connection_string(&connection_string, Some("my_eventhub".to_string()))
+        ///         .await?;
+        ///     Ok(())
+        /// }
+        /// ```
+        pub async fn open_with_connection_string(
+            self,
+            connection_string: &str,
+            eventhub: Option<String>,
+        ) -> Result<super::ConsumerClient> {
+            let connection_string: ConnectionString = connection_string.parse()?;
+            let eventhub = resolve_eventhub(&connection_string, eventhub.as_deref())?;
+            let credential = Arc::new(SasCredential::from_connection_string(
+                &connection_string,
+                &eventhub,
+            ));
+
+            let custom_endpoint = match self.custom_endpoint {
+                Some(endpoint) => Some(Url::parse(&endpoint).map_err(azure_core::Error::from)?),
+                None => None,
+            };
+
+            let consumer = super::ConsumerClient::new(
+                &connection_string.fully_qualified_namespace,
+                eventhub,
+                self.consumer_group,
+                credential,
+                ConsumerClientOptions {
+                    application_id: self.application_id,
+                    instance_id: self.instance_id,
+                    retry_options: self.retry_options,
+                    custom_endpoint,
+                    cbs_token_type: Some(SAS_TOKEN_TYPE),
                 },
             )?;
             consumer.ensure_connection().await?;
