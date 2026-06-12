@@ -8,7 +8,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
-use azure_data_cosmos::regions::Region;
+use azure_data_cosmos::options::Region;
 use azure_data_cosmos::{
     clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},

@@ -5,7 +5,9 @@
 
 use std::sync::Arc;
 
-use crate::models::{CosmosStatus, DiagnosticsContext, ResponseBody, ResponseHeaders};
+use crate::diagnostics::DiagnosticsContext;
+use crate::models::CosmosStatus;
+use crate::models::{ResponseBody, ResponseHeaders};
 use azure_data_cosmos_driver::models::CosmosResponse as DriverResponse;
 use serde::de::DeserializeOwned;
 

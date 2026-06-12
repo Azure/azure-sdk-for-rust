@@ -3,7 +3,7 @@
 
 use std::error::Error;
 
-use azure_data_cosmos::{query::FeedScope, CosmosClient};
+use azure_data_cosmos::{feed::FeedScope, CosmosClient};
 use clap::{Args, Subcommand};
 use futures::TryStreamExt;
 

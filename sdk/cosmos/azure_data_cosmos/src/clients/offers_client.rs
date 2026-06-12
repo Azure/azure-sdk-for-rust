@@ -6,11 +6,7 @@
 //! These functions are used by container and database clients to read and
 //! replace throughput offers. All operations go through the Cosmos driver.
 
-use crate::{
-    feed::FeedBody,
-    models::{CosmosResponse, ThroughputProperties},
-    Query,
-};
+use crate::{feed::FeedBody, models::CosmosResponse, models::ThroughputProperties, Query};
 use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation};
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::CosmosDriver;
@@ -81,7 +77,9 @@ pub(crate) async fn begin_replace(
                 // pointed at a resource that doesn't support throughput
                 // (e.g. a serverless or shared-throughput container).
                 crate::DriverCosmosError::builder()
-                    .with_status(crate::CosmosStatus::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE)
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE,
+                    )
                     .with_message("no throughput offer found for this resource")
                     .build()
             })?;
@@ -91,7 +89,7 @@ pub(crate) async fn begin_replace(
         // no id. Map to 500 with a dedicated sub-status so callers can
         // distinguish this from a transport-generated 503.
         return Err(crate::DriverCosmosError::builder()
-            .with_status(crate::CosmosStatus::SERVICE_RETURNED_OFFER_WITHOUT_ID)
+            .with_status(crate::error::CosmosStatus::SERVICE_RETURNED_OFFER_WITHOUT_ID)
             .with_message("throughput offer has an empty id")
             .build()
             .into());

@@ -9,10 +9,12 @@ use azure_core::{
     Uuid,
 };
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::{ContainerProperties, ItemResponse};
-use azure_data_cosmos::{
-    ContentResponseOnWrite, ETag, ItemWriteOptions, OperationOptions, PartitionKey, Precondition,
+use azure_data_cosmos::models::ContainerProperties;
+use azure_data_cosmos::models::ItemResponse;
+use azure_data_cosmos::options::{
+    ContentResponseOnWrite, ItemWriteOptions, OperationOptions, Precondition,
 };
+use azure_data_cosmos::PartitionKey;
 use framework::get_effective_hub_endpoint;
 use framework::TestClient;
 use framework::TestRunContext;
@@ -589,8 +591,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .headers()
                 .etag()
                 .expect("expected the etag to be returned")
-                .as_str()
-                .into();
+                .clone();
 
             //Replace item with correct Etag
             item.value = 24;
@@ -603,7 +604,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                            .with_precondition(Precondition::IfMatch(Etag::from(etag.to_string()))),
                     ),
                 )
                 .await?;
@@ -625,7 +626,7 @@ pub async fn item_replace_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                            .with_precondition(Precondition::IfMatch(Etag::from("incorrectEtag"))),
                     ),
                 )
                 .await;
@@ -689,8 +690,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .headers()
                 .etag()
                 .expect("expected the etag to be returned")
-                .as_str()
-                .into();
+                .clone();
 
             //Upsert item with correct Etag
             item.value = 24;
@@ -703,7 +703,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                            .with_precondition(Precondition::IfMatch(Etag::from(etag.to_string()))),
                     ),
                 )
                 .await?;
@@ -725,7 +725,7 @@ pub async fn item_upsert_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                            .with_precondition(Precondition::IfMatch(Etag::from("incorrectEtag"))),
                     ),
                 )
                 .await;
@@ -789,8 +789,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                 .headers()
                 .etag()
                 .expect("expected the etag to be returned")
-                .as_str()
-                .into();
+                .clone();
 
             //Delete item with correct Etag
             let delete_response = container_client
@@ -799,7 +798,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item_id,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from(etag.to_string()))),
+                            .with_precondition(Precondition::IfMatch(Etag::from(etag.to_string()))),
                     ),
                 )
                 .await?;
@@ -828,7 +827,7 @@ pub async fn item_delete_if_match_etag() -> Result<(), Box<dyn Error>> {
                     &item_id,
                     Some(
                         ItemWriteOptions::default()
-                            .with_precondition(Precondition::IfMatch(ETag::from("incorrectEtag"))),
+                            .with_precondition(Precondition::IfMatch(Etag::from("incorrectEtag"))),
                     ),
                 )
                 .await;

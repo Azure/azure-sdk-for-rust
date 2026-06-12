@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos::clients::ContainerClient;
-use azure_data_cosmos::models::DiagnosticsContext;
+use azure_data_cosmos::diagnostics::DiagnosticsContext;
 use azure_data_cosmos_driver::DiagnosticsVerbosity;
 use rand::RngExt;
 use serde::Serialize;
