@@ -309,6 +309,7 @@ dependencies = [
  "azure_core_macros 1.0.0",
  "azure_core_test 0.2.0",
  "bytes",
+ "clap",
  "criterion",
  "futures",
  "hmac",
