@@ -107,14 +107,14 @@ use futures::StreamExt;
 This is the most significant change. `azeventhubs` parses a connection string (which embeds a shared access key) and the host is part of that string. The official crate takes a fully qualified namespace host and an `azure_identity` credential, so authentication flows through Microsoft Entra ID.
 
 ```rust ignore authentication
-// Before: azeventhubs - connection string carries both host and key
+// Before (azeventhubs): connection string carries both host and key
 // let producer = EventHubProducerClient::new_from_connection_string(
 //     "Endpoint=sb://my-ns.servicebus.windows.net/;SharedAccessKeyName=...;SharedAccessKey=...",
 //     "my-eventhub".to_string(),
 //     EventHubProducerClientOptions::default(),
 // ).await?;
 
-// After: azure_messaging_eventhubs - host + Entra ID credential, no embedded secret
+// After (azure_messaging_eventhubs): host + Entra ID credential, no embedded secret
 use azure_identity::DeveloperToolsCredential;
 use azure_messaging_eventhubs::ProducerClient;
 
