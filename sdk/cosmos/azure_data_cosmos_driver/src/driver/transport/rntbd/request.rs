@@ -132,7 +132,13 @@ mod tests {
     }
 
     #[test]
-    fn query_plan_uses_sql_query_wire_id_until_metadata_rules_land() {
+    fn query_plan_uses_distinct_rntbd_operation_id() {
+        // Regression: the Gateway V2 thin-client proxy dispatches QueryPlan
+        // via a dedicated RNTBD op id (0x0042) — distinct from SqlQuery
+        // (0x0009). Pin the mapping so a future refactor cannot silently
+        // collapse the two back together (which would route QueryPlan
+        // requests as actual queries and break the SDK's plan negotiation
+        // step).
         let frame = RntbdRequestFrame {
             resource_type: ResourceType::Document,
             operation_type: OperationType::QueryPlan,
@@ -144,9 +150,8 @@ mod tests {
         let bytes = frame.serialize().unwrap();
         let operation_id = u16::from_le_bytes([bytes[6], bytes[7]]);
 
-        // QueryPlan has no distinct Java RNTBD operation ID. Slice 2 will add
-        // the metadata that disambiguates query-plan requests from SqlQuery.
-        assert_eq!(
+        assert_eq!(operation_id, 0x0042);
+        assert_ne!(
             operation_id,
             RntbdOperationType::from(OperationType::SqlQuery).value()
         );

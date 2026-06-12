@@ -28,8 +28,8 @@ use crate::{
     },
     models::{
         cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
-        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel,
-        EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
+        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel, OperationType,
+        SessionToken, SubStatusCode,
     },
     options::{
         resolve_effective_consistency, HedgeThreshold, OperationOptionsView,
@@ -88,18 +88,20 @@ impl OperationOverrides {
         headers: &mut azure_core::http::headers::Headers,
     ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
-            if feed_range.min_inclusive() != &EffectivePartitionKey::MIN {
-                headers.insert(
-                    HeaderName::from_static(request_header_names::START_EPK),
-                    HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
-                );
-            }
-            if feed_range.max_exclusive() != &EffectivePartitionKey::MAX {
-                headers.insert(
-                    HeaderName::from_static(request_header_names::END_EPK),
-                    HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
-                );
-            }
+            // The standard gateway treats omitted START_EPK/END_EPK as the
+            // min/max sentinels, but the thin-client (Gateway 2.0) proxy
+            // needs the per-partition boundaries even when they're the
+            // empty / "FF" sentinels (so it can derive `StartEpkHash` /
+            // `EndEpkHash` for routing). Always emit them when a
+            // `feed_range` is present.
+            headers.insert(
+                HeaderName::from_static(request_header_names::START_EPK),
+                HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::END_EPK),
+                HeaderValue::from(feed_range.max_exclusive().as_str().to_owned()),
+            );
             headers.insert(
                 HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
                 HeaderValue::from_static("EffectivePartitionKey"),
@@ -1427,6 +1429,26 @@ fn build_transport_request(
                 HeaderName::from_static(request_header_names::IS_QUERY_PLAN_REQUEST),
                 HeaderValue::from_static("True"),
             );
+            // Java's QueryPlanRetriever always sets these two headers on QueryPlan
+            // requests. The thin-client proxy reads them out of the RNTBD body
+            // (mirrored from these HTTP headers in gateway20_dispatch) and rejects
+            // requests where they're missing entirely. Default them here when the
+            // caller hasn't already set explicit values.
+            let supported_features_header =
+                HeaderName::from_static(request_header_names::SUPPORTED_QUERY_FEATURES);
+            if headers
+                .get_optional_str(&supported_features_header)
+                .is_none()
+            {
+                headers.insert(
+                    supported_features_header,
+                    HeaderValue::from_static(crate::query::SUPPORTED_QUERY_FEATURES),
+                );
+            }
+            let query_version_header = HeaderName::from_static(request_header_names::QUERY_VERSION);
+            if headers.get_optional_str(&query_version_header).is_none() {
+                headers.insert(query_version_header, HeaderValue::from_static("1.0"));
+            }
         }
         _ => {}
     }

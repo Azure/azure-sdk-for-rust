@@ -20,8 +20,12 @@ use crate::{
     constants::{GATEWAY20_RANGE_MAX, GATEWAY20_RANGE_MIN},
     models::{
         cosmos_headers::{request_header_names, response_header_names},
-        effective_partition_key::EffectivePartitionKey,
-        DefaultConsistencyLevel, OperationType, PartitionKey, PartitionKeyDefinition, ResourceType,
+        effective_partition_key::{
+            effective_partition_key_multi_hash_v2_binary, effective_partition_key_v1_binary,
+            effective_partition_key_v2_binary,
+        },
+        DefaultConsistencyLevel, OperationType, PartitionKey, PartitionKeyDefinition,
+        PartitionKeyKind, PartitionKeyVersion, ResourceType,
     },
     options::ReadConsistencyStrategy,
 };
@@ -50,6 +54,10 @@ const X_MS_VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 const CACHE_CONTROL: HeaderName = HeaderName::from_static("cache-control");
 const X_MS_COSMOS_USE_THINCLIENT: HeaderName =
     HeaderName::from_static("x-ms-cosmos-use-thinclient");
+
+// Env-gated wire-frame dump. Set G2_DUMP_DIR=/path to capture request/response
+// RNTBD frames during debugging. Zero overhead when the env var is unset.
+static G2_DUMP_SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// Inputs resolved by the operation pipeline before a Gateway 2.0 dispatch.
 pub(crate) struct WrapInputs<'a> {
@@ -88,8 +96,39 @@ pub(crate) fn wrap_request_for_gateway20(
     let epk_payload = effective_partition_key_payload(inputs)?;
 
     let mut metadata = Vec::with_capacity(16);
+    // Thin-client requires this exact leading ordering for the routing tokens
+    // (Java `RntbdConstants.thinClientHeadersInOrderList`):
+    //   EffectivePartitionKey, StartEpkHash, EndEpkHash, GlobalDatabaseAccountName,
+    //   DatabaseName, CollectionName, CollectionRid, ResourceId, PayloadPresent,
+    //   DocumentName, AuthorizationToken, Date.
+    // The proxy parses these positionally; any other order produces a bare 400.
+    let emitted_point_epk = matches!(epk_payload.as_ref(), Some(EpkPayload::Point(_)));
     if let Some(EpkPayload::Point(epk)) = epk_payload.as_ref() {
         metadata.push(Token::effective_partition_key(epk.clone()));
+    }
+    // Per-partition routing tokens for thin-client queries. Java's
+    // `ThinClientStoreModel` emits `StartEpkHash`/`EndEpkHash` (Bytes) when
+    // there is a resolved partition key range and NO partition key — the two
+    // forms are mutually exclusive (see Java's if/else in
+    // `ThinClientStoreModel.serializeRequest`). The Rust pipeline surfaces
+    // pkrange boundaries as the `x-ms-start-epk`/`x-ms-end-epk` HTTP headers
+    // (lower-hex strings), so decode and forward them here when we did NOT
+    // already emit an `EffectivePartitionKey` point token. Empty string is a
+    // valid value — it means the partition's min EPK boundary (`MinValue`
+    // sentinel), which serializes to a zero-byte token.
+    if !emitted_point_epk {
+        let start_epk_header = HeaderName::from_static(request_header_names::START_EPK);
+        if let Some(epk_hex) = request.headers.get_optional_str(&start_epk_header) {
+            if let Some(bytes) = decode_epk_hex(epk_hex) {
+                metadata.push(Token::start_epk_hash(bytes));
+            }
+        }
+        let end_epk_header = HeaderName::from_static(request_header_names::END_EPK);
+        if let Some(epk_hex) = request.headers.get_optional_str(&end_epk_header) {
+            if let Some(bytes) = decode_epk_hex(epk_hex) {
+                metadata.push(Token::end_epk_hash(bytes));
+            }
+        }
     }
     metadata.push(Token::global_database_account_name(account_name.to_owned()));
     metadata.push(Token::database_name(resource_names.database));
@@ -129,11 +168,67 @@ pub(crate) fn wrap_request_for_gateway20(
             metadata.push(Token::partition_key(pk_json.to_owned()));
         }
     }
-    // Java emits AllowTentativeWrites (0x0066) and ReturnPreference (0x0082) as
-    // constant `1` bytes on every Cosmos RNTBD request — both are required by
-    // the Gateway 2.0 proxy's header set.
-    metadata.push(Token::allow_tentative_writes(true));
-    metadata.push(Token::return_preference(true));
+    // PartitionKeyRangeId (0x002C) — Java fills this token from the
+    // `x-ms-documentdb-partitionkeyrangeid` HTTP header via
+    // `fillTokenFromHeader`. The thin-client proxy uses it alongside
+    // StartEpkHash/EndEpkHash to disambiguate the target physical partition
+    // when the EPK range straddles boundaries. Without it the proxy/backend
+    // interprets the empty StartEpkHash as a `[]` partition-key value and
+    // rejects with "PartitionKey supplied in x-ms-partitionkey header has
+    // fewer components than defined in the the collection."
+    let pkr_id_header = HeaderName::from_static(request_header_names::PARTITION_KEY_RANGE_ID);
+    if let Some(pkr_id) = request
+        .headers
+        .get_optional_str(&pkr_id_header)
+        .filter(|v| !v.is_empty())
+    {
+        metadata.push(Token::partition_key_range_id(pkr_id.to_owned()));
+    }
+    // AllowTentativeWrites (0x0066) and ReturnPreference (0x0082) must be CONDITIONAL,
+    // not unconditional. Java only emits them when the caller passes the corresponding
+    // HTTP headers (`x-ms-cosmos-allow-tentative-writes` and `Prefer: return=minimal`).
+    // Emitting `ReturnPreference=true` unconditionally tells the server "return minimal"
+    // (no body) -- which on a Create silently discards the document body server-side
+    // and returns an empty response, leading to phantom 0-byte documents and EOF
+    // parsing errors on subsequent reads.
+    let allow_tentative_header =
+        HeaderName::from_static(request_header_names::ALLOW_TENTATIVE_WRITES);
+    if request
+        .headers
+        .get_optional_str(&allow_tentative_header)
+        .is_some_and(|v| v.eq_ignore_ascii_case("true"))
+    {
+        metadata.push(Token::allow_tentative_writes(true));
+    }
+    let prefer_header = HeaderName::from_static(request_header_names::PREFER);
+    if request
+        .headers
+        .get_optional_str(&prefer_header)
+        .is_some_and(|v| v.to_ascii_lowercase().contains("return=minimal"))
+    {
+        metadata.push(Token::return_preference(true));
+    }
+    // QueryPlan token forwarding — when the SDK negotiates query features via
+    // the standard HTTP headers, mirror them into the RNTBD body so the proxy
+    // can resolve a compatible plan. Mirrors Java PR #47759
+    // (RntbdRequestHeaders lines 199-200, fillTokenFromHeader).
+    let supported_query_features_header =
+        HeaderName::from_static(request_header_names::SUPPORTED_QUERY_FEATURES);
+    if let Some(features) = request
+        .headers
+        .get_optional_str(&supported_query_features_header)
+        .filter(|v| !v.is_empty())
+    {
+        metadata.push(Token::supported_query_features(features.to_owned()));
+    }
+    let query_version_header = HeaderName::from_static(request_header_names::QUERY_VERSION);
+    if let Some(version) = request
+        .headers
+        .get_optional_str(&query_version_header)
+        .filter(|v| !v.is_empty())
+    {
+        metadata.push(Token::query_version(version.to_owned()));
+    }
     // Rule 1+5: when RCS is non-Default on a read, emit the RNTBD
     // ReadConsistencyStrategy token (0x00F0) and DROP the ConsistencyLevel token.
     // Otherwise, emit ConsistencyLevel as before (Default => transparent on wire
@@ -200,9 +295,19 @@ pub(crate) fn wrap_request_for_gateway20(
             HeaderValue::from(rid.to_owned()),
         );
     }
-    if let Some(EpkPayload::Range { min, max }) = epk_payload.as_ref() {
-        headers.insert(GATEWAY20_RANGE_MIN, HeaderValue::from(min.clone()));
-        headers.insert(GATEWAY20_RANGE_MAX, HeaderValue::from(max.clone()));
+    if inputs.operation_type == OperationType::Query
+        && !matches!(epk_payload.as_ref(), Some(EpkPayload::Point(_)))
+    {
+        // For cross-partition Query (no partition-key-scoped EPK), Java's
+        // `setThinclientHeaders` sets these headers to the literal `"true"`
+        // to signal the proxy that the EPK boundaries are carried in the
+        // RNTBD body as `StartEpkHash`/`EndEpkHash` tokens. For partition-
+        // scoped queries (point or prefix EPK on the body), the proxy uses
+        // the `EffectivePartitionKey` token directly and these flag headers
+        // must NOT be sent — otherwise the proxy looks for absent
+        // Start/End EPK hash tokens and rejects the request with a bare 400.
+        headers.insert(GATEWAY20_RANGE_MIN, HeaderValue::from("true"));
+        headers.insert(GATEWAY20_RANGE_MAX, HeaderValue::from("true"));
     }
     // The G2 wrap synthesizes a fresh HTTP header set carrying only what the
     // proxy needs (the RNTBD frame is in the body). The fault-injection
@@ -218,6 +323,17 @@ pub(crate) fn wrap_request_for_gateway20(
     }
 
     let url = request.url.clone();
+    if std::env::var_os("G2_DUMP_DIR").is_some() {
+        let dir = std::env::var("G2_DUMP_DIR").unwrap();
+        let n = G2_DUMP_SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let path = format!("{dir}/g2-{n:03}-send.bin");
+        if std::fs::write(&path, &frame).is_ok() {
+            eprintln!(
+                "[G2-DIAG-SEND] n={n} url={url} frame_len={} -> {path}",
+                frame.len()
+            );
+        }
+    }
     Ok(HttpRequest {
         url,
         method: Method::Post,
@@ -233,6 +349,26 @@ pub(crate) fn wrap_request_for_gateway20(
 pub(crate) fn unwrap_response_for_gateway20(
     response: HttpResponse,
 ) -> azure_core::Result<HttpResponse> {
+    if std::env::var_os("G2_DUMP_DIR").is_some() {
+        let dir = std::env::var("G2_DUMP_DIR").unwrap();
+        let n = G2_DUMP_SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let path = format!("{dir}/g2-{n:03}-recv.bin");
+        if std::fs::write(&path, &response.body).is_ok() {
+            eprintln!(
+                "[G2-DIAG-RECV] n={n} status={} frame_len={} -> {path}",
+                response.status,
+                response.body.len()
+            );
+        }
+        if response.status >= 400 {
+            eprintln!(
+                "[G2-DIAG-RECV-ERR] n={n} status={} headers={:?} body_utf8={:?}",
+                response.status,
+                response.headers,
+                String::from_utf8_lossy(&response.body)
+            );
+        }
+    }
     let response = RntbdResponse::deserialize(&response.body)?;
     let status = u16::from(response.status.status_code());
     if !(100..=599).contains(&status) {
@@ -352,12 +488,16 @@ fn proxy_resource_type_name(rt: ResourceType) -> &'static str {
 /// `x-ms-thinclient-range-min` / `-max` outer HTTP headers carrying the
 /// canonical, un-padded hex EPK string per `GATEWAY_20_SPEC §"Range header
 /// wire format"`.
+/// Encapsulates the EPK information for a Gateway 2.0 request.
 ///
-/// The two arms are mutually exclusive; the proxy must never see both an
-/// EPK token and EPK range headers on the same request.
+/// The proxy routes by `EffectivePartitionKey` (binary EPK token in the RNTBD
+/// body) when a partition key is present (point EPK for full keys, prefix EPK
+/// for partial-HPK keys). For cross-partition requests with no partition key,
+/// the dispatcher instead emits `StartEpkHash`/`EndEpkHash` body tokens
+/// (sourced from the request's `x-ms-start-epk`/`x-ms-end-epk` HTTP headers)
+/// — that path doesn't use this enum.
 enum EpkPayload {
     Point(Vec<u8>),
-    Range { min: String, max: String },
 }
 
 fn effective_partition_key_payload(
@@ -373,49 +513,40 @@ fn effective_partition_key_payload(
         return Ok(None);
     }
 
-    let range =
-        EffectivePartitionKey::compute_range(partition_key.values(), partition_key_definition)
-            .map_err(|err| {
-                data_conversion_error(format!("Gateway 2.0 EPK range computation failed: {err}"))
-            })?;
-
-    if range.start == range.end {
-        let bytes = hex_to_bytes(range.start.as_str())?;
-        Ok(Some(EpkPayload::Point(bytes)))
-    } else {
-        Ok(Some(EpkPayload::Range {
-            min: range.start.as_str().to_owned(),
-            max: range.end.as_str().to_owned(),
-        }))
-    }
-}
-
-fn hex_to_bytes(value: &str) -> azure_core::Result<Vec<u8>> {
-    if value.len() & 1 != 0 {
-        return Err(data_conversion_error(format!(
-            "effective partition key hex length {} is not even",
-            value.len()
-        )));
+    // Defensive check: supplying more components than the container's
+    // partition-key definition declares is a caller bug — the underlying
+    // hash routines would silently hash the extras and produce a broken EPK.
+    // Surfaced as `DataConversion` so the dispatcher returns BadRequest
+    // upstream. Matches the validation `EffectivePartitionKey::compute_range`
+    // performs.
+    if partition_key.values().len() > partition_key_definition.paths().len() {
+        return Err(data_conversion_error(
+            "Partition key supplies more components than the container's partition-key definition declares",
+        ));
     }
 
-    let mut bytes = Vec::with_capacity(value.len() / 2);
-    for chunk in value.as_bytes().chunks_exact(2) {
-        let hi = hex_digit(chunk[0])?;
-        let lo = hex_digit(chunk[1])?;
-        bytes.push((hi << 4) | lo);
-    }
-    Ok(bytes)
-}
-
-fn hex_digit(value: u8) -> azure_core::Result<u8> {
-    match value {
-        b'0'..=b'9' => Ok(value - b'0'),
-        b'a'..=b'f' => Ok(value - b'a' + 10),
-        b'A'..=b'F' => Ok(value - b'A' + 10),
-        _ => Err(data_conversion_error(format!(
-            "invalid effective partition key hex digit 0x{value:02X}"
-        ))),
-    }
+    // Match Java's `getEffectivePartitionKeyBytes`: pick the binary form
+    // matching the collection's partition-key kind/version. For partial-HPK
+    // keys this naturally yields a prefix EPK (16 * N bytes for N supplied
+    // components) which the proxy treats as a partition-key prefix scope —
+    // Java's `ThinClientStoreModel` emits this token whenever a partition key
+    // is present, point or prefix.
+    let bytes = match partition_key_definition.kind() {
+        PartitionKeyKind::Hash => match partition_key_definition.version() {
+            PartitionKeyVersion::V2 => effective_partition_key_v2_binary(partition_key.values()),
+            PartitionKeyVersion::V1 => effective_partition_key_v1_binary(partition_key.values()),
+        },
+        // MultiHash: per-component hash, concatenated (16 * N bytes — N is the
+        // number of supplied components, so partial keys produce a shorter
+        // prefix EPK).
+        PartitionKeyKind::MultiHash => {
+            effective_partition_key_multi_hash_v2_binary(partition_key.values())
+        }
+        // Range: V2 single-hash matches Java's hash-partitioning fallback for
+        // point ops.
+        PartitionKeyKind::Range => effective_partition_key_v2_binary(partition_key.values()),
+    };
+    Ok(Some(EpkPayload::Point(bytes)))
 }
 
 struct ResourceNames {
@@ -465,6 +596,33 @@ fn data_conversion_error(message: impl Into<String>) -> azure_core::Error {
     azure_core::Error::with_message(ErrorKind::DataConversion, message.into())
 }
 
+/// Decodes a lower- or upper-hex EPK string from `x-ms-start-epk` /
+/// `x-ms-end-epk` HTTP headers into the raw bytes Java's
+/// `ThinClientStoreModel` passes to `StartEpkHash` / `EndEpkHash`.
+/// Returns `None` on invalid input — the dispatcher then omits the token
+/// rather than failing the request.
+fn decode_epk_hex(hex: &str) -> Option<Vec<u8>> {
+    if hex.len() % 2 != 0 {
+        return None;
+    }
+    let mut out = Vec::with_capacity(hex.len() / 2);
+    for pair in hex.as_bytes().chunks_exact(2) {
+        let hi = hex_nibble(pair[0])?;
+        let lo = hex_nibble(pair[1])?;
+        out.push((hi << 4) | lo);
+    }
+    Some(out)
+}
+
+fn hex_nibble(c: u8) -> Option<u8> {
+    match c {
+        b'0'..=b'9' => Some(c - b'0'),
+        b'a'..=b'f' => Some(c - b'a' + 10),
+        b'A'..=b'F' => Some(c - b'A' + 10),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::{borrow::Cow, collections::HashMap};
@@ -472,7 +630,7 @@ mod tests {
     use azure_core::http::headers::{ACCEPT, CONTENT_TYPE};
 
     use super::*;
-    use crate::models::{PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion};
+    use crate::models::PartitionKeyValue;
 
     const ACTIVITY_ID: &str = "00112233-4455-6677-8899-aabbccddeeff";
 
@@ -811,12 +969,17 @@ mod tests {
     }
 
     #[test]
-    fn wrap_always_emits_allow_tentative_writes_and_return_preference_as_one() {
-        // Regression: Java's `RntbdRequest` emits `AllowTentativeWrites` (0x0066)
-        // and `ReturnPreference` (0x0082) as constant `1` bytes on every Cosmos
-        // RNTBD request. Without them the Gateway 2.0 proxy returns HTTP 400
-        // sub-status 13007 ("error routing the request"). Pin both tokens here
-        // so a future refactor cannot silently drop them.
+    fn wrap_omits_allow_tentative_writes_and_return_preference_by_default() {
+        // Regression: Java's `addReturnPreference` only sets `ReturnPreference=1`
+        // when the caller passes `Prefer: return=minimal`; otherwise the token
+        // is absent and the server returns the full body. Likewise
+        // `AllowTentativeWrites` is only set when the caller passes the
+        // `x-ms-cosmos-allow-tentative-writes` header.
+        //
+        // Pinning the conditional path here: emitting these tokens
+        // unconditionally tells the server to drop response bodies (and on
+        // Create silently discards the request body server-side, persisting
+        // a phantom 0-byte document).
         let request = signed_request(None);
         let auth_context = AuthorizationContext::new(
             Method::Get,
@@ -831,8 +994,71 @@ mod tests {
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
 
-        assert_eq!(parsed.tokens[&0x0066], ParsedTokenValue::Byte(1));
+        assert!(
+            !parsed.tokens.contains_key(&0x0066),
+            "AllowTentativeWrites (0x0066) must NOT be emitted by default"
+        );
+        assert!(
+            !parsed.tokens.contains_key(&0x0082),
+            "ReturnPreference (0x0082) must NOT be emitted by default"
+        );
+    }
+
+    #[test]
+    fn wrap_emits_return_preference_when_prefer_return_minimal_header_is_set() {
+        // Mirror of Java's `addReturnPreference`: emit `ReturnPreference=1`
+        // when the request carries `Prefer: return=minimal` and only then.
+        let mut request = signed_request(None);
+        request
+            .headers
+            .insert(HeaderName::from_static("prefer"), "return=minimal");
+        let auth_context = AuthorizationContext::new(
+            Method::Post,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Create, None, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
         assert_eq!(parsed.tokens[&0x0082], ParsedTokenValue::Byte(1));
+        assert!(
+            !parsed.tokens.contains_key(&0x0066),
+            "AllowTentativeWrites must remain absent when only Prefer is set"
+        );
+    }
+
+    #[test]
+    fn wrap_emits_allow_tentative_writes_when_header_is_set_to_true() {
+        // Mirror of Java's `fillTokenFromHeader(getAllowTentativeWrites, BackendHeaders.ALLOW_TENTATIVE_WRITES)`:
+        // emit `AllowTentativeWrites=1` only when the caller forwards the header.
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static("x-ms-cosmos-allow-tentative-writes"),
+            "true",
+        );
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert_eq!(parsed.tokens[&0x0066], ParsedTokenValue::Byte(1));
+        assert!(
+            !parsed.tokens.contains_key(&0x0082),
+            "ReturnPreference must remain absent when only allow-tentative-writes is set"
+        );
     }
 
     #[test]
@@ -891,6 +1117,64 @@ mod tests {
 
         assert!(!parsed.tokens.contains_key(&0x0035));
         assert!(!parsed.tokens.contains_key(&0x0000));
+    }
+
+    #[test]
+    fn wrap_emits_partition_key_range_id_token_when_http_header_present() {
+        // Regression: cross-partition Query routes via StartEpkHash/EndEpkHash
+        // bytes, but the thin-client proxy ALSO requires the
+        // PartitionKeyRangeId (0x002C, String) RNTBD token to disambiguate
+        // the target physical partition. Java fills this from the
+        // `x-ms-documentdb-partitionkeyrangeid` HTTP header via
+        // `RntbdRequestHeaders.fillTokenFromHeader`. Without it, the proxy
+        // misinterprets an empty StartEpkHash as a `[]` partition-key value
+        // and rejects with "PartitionKey supplied in x-ms-partitionkey header
+        // has fewer components than defined in the the collection."
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::PARTITION_KEY_RANGE_ID),
+            "0",
+        );
+        let auth_context = AuthorizationContext::new(
+            Method::Post,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Query, None, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert_eq!(
+            parsed.tokens[&0x002C],
+            ParsedTokenValue::String("0".into()),
+            "PartitionKeyRangeId (0x002C) must be emitted from the HTTP header"
+        );
+    }
+
+    #[test]
+    fn wrap_omits_partition_key_range_id_token_when_http_header_absent() {
+        // Pin the conditional emission path: no header => no token (rather
+        // than an empty-string token, which the proxy would treat as a real
+        // routing key for partition id "").
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(&auth_context, OperationType::Read, None, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+
+        assert!(!parsed.tokens.contains_key(&0x002C));
     }
 
     #[test]
@@ -1006,7 +1290,13 @@ mod tests {
     }
 
     #[test]
-    fn wrap_computes_effective_partition_key_bytes() {
+    fn wrap_emits_v2_binary_effective_partition_key_for_v2_collections() {
+        // For collections with PartitionKey version=V2 (the default), the RNTBD
+        // EffectivePartitionKey token (0x005A) must carry the V2 binary form:
+        // the raw 16-byte Murmur3_128 hash with the top 2 bits of byte 0
+        // cleared. Sending V1 binary against a V2 collection causes the proxy
+        // to mis-route (or silently drop the body), persisting a phantom 0-byte
+        // document.
         let request = signed_request(None);
         let auth_context = AuthorizationContext::new(
             Method::Get,
@@ -1015,15 +1305,12 @@ mod tests {
         );
         let partition_key = PartitionKey::from("tenant1");
         let partition_key_definition = PartitionKeyDefinition::new(vec![Cow::from("/tenantId")]);
-        let expected = hex_to_bytes(
-            EffectivePartitionKey::compute(
-                partition_key.values(),
-                PartitionKeyKind::Hash,
-                PartitionKeyVersion::V2,
-            )
-            .as_str(),
-        )
-        .unwrap();
+        assert_eq!(
+            partition_key_definition.version(),
+            PartitionKeyVersion::V2,
+            "sanity check: PartitionKeyDefinition::new defaults to V2"
+        );
+        let expected = effective_partition_key_v2_binary(partition_key.values());
 
         let wrapped = wrap_request_for_gateway20(
             &request,
@@ -1040,12 +1327,45 @@ mod tests {
         assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
     }
 
-    /// HPK partial-PK (prefix on a MultiHash container) is dispatched as an
-    /// EPK *range* via the outer `x-ms-thinclient-range-min`/`-max` HTTP
-    /// headers, not as an `EffectivePartitionKey` RNTBD token. The two
-    /// emission paths must be mutually exclusive.
     #[test]
-    fn wrap_emits_range_headers_for_hpk_prefix_partition_key() {
+    fn wrap_emits_v1_binary_effective_partition_key_for_v1_collections() {
+        // For legacy V1 collections, EPK must remain the V1 binary tuple
+        // (`Number(hash) + truncated_components`). Pin the version-aware
+        // dispatch so legacy accounts still route correctly.
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let partition_key = PartitionKey::from("tenant1");
+        let partition_key_definition = PartitionKeyDefinition::new(vec![Cow::from("/tenantId")])
+            .with_version(PartitionKeyVersion::V1);
+        let expected = effective_partition_key_v1_binary(partition_key.values());
+
+        let wrapped = wrap_request_for_gateway20(
+            &request,
+            &wrap_inputs(
+                &auth_context,
+                OperationType::Read,
+                Some(&partition_key),
+                Some(&partition_key_definition),
+            ),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 11);
+
+        assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
+    }
+
+    /// HPK partial-PK (prefix on a MultiHash container) emits an
+    /// `EffectivePartitionKey` RNTBD token containing the per-component
+    /// MultiHash V2 binary for the supplied prefix components (16 * N bytes
+    /// for N supplied components). Matches Java's `ThinClientStoreModel`,
+    /// which emits the same token for point AND prefix keys whenever a
+    /// partition key is present on the request.
+    #[test]
+    fn wrap_emits_prefix_epk_token_for_hpk_prefix_partition_key() {
         let request = signed_request(None);
         let auth_context =
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
@@ -1053,12 +1373,11 @@ mod tests {
             PartitionKey::from(vec![PartitionKeyValue::from("tenant1".to_string())]);
         let partition_key_definition =
             PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
-        let expected_range =
-            EffectivePartitionKey::compute_range(partition_key.values(), &partition_key_definition)
-                .unwrap();
-        assert_ne!(
-            expected_range.start, expected_range.end,
-            "HPK prefix must produce a non-point range — sanity check"
+        let expected = effective_partition_key_multi_hash_v2_binary(partition_key.values());
+        assert_eq!(
+            expected.len(),
+            16,
+            "1-of-3 component prefix must produce a single 16-byte MultiHash V2 chunk"
         );
 
         let wrapped = wrap_request_for_gateway20(
@@ -1072,24 +1391,25 @@ mod tests {
         )
         .unwrap();
 
-        // Range headers on the outer HTTP request, carrying canonical un-padded hex.
-        assert_eq!(
-            wrapped.headers.get_optional_str(&GATEWAY20_RANGE_MIN),
-            Some(expected_range.start.as_str())
-        );
-        assert_eq!(
-            wrapped.headers.get_optional_str(&GATEWAY20_RANGE_MAX),
-            Some(expected_range.end.as_str())
-        );
-
-        // No EPK token in the inner RNTBD frame for the range path.
-        // Token layout: 9 base tokens (account, db, coll, payload_present,
-        // auth, date, consistency, transport_request_id, capabilities) — no
-        // document_name (resource link omits /docs/...) and no EPK token.
-        let parsed = parse_wrapped_request(&wrapped, 9);
+        // Token layout for a partial-HPK Query: 9 base tokens + EPK = 10.
+        let parsed = parse_wrapped_request(&wrapped, 10);
+        assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
+        // Range headers must NOT be emitted in the EPK-token path — Java's
+        // emission is mutually exclusive: partition key present → EPK token,
+        // otherwise → StartEpkHash/EndEpkHash range tokens.
         assert!(
-            !parsed.tokens.contains_key(&0x005A),
-            "EffectivePartitionKey token must not be emitted alongside range headers"
+            wrapped
+                .headers
+                .get_optional_str(&GATEWAY20_RANGE_MIN)
+                .is_none(),
+            "range-min header must not be emitted alongside EPK token"
+        );
+        assert!(
+            wrapped
+                .headers
+                .get_optional_str(&GATEWAY20_RANGE_MAX)
+                .is_none(),
+            "range-max header must not be emitted alongside EPK token"
         );
     }
 
@@ -1132,11 +1452,17 @@ mod tests {
             .get_optional_str(&GATEWAY20_RANGE_MAX)
             .is_none());
 
-        // EPK token present in the inner RNTBD frame.
+        // EPK token present in the inner RNTBD frame, and bytes must be the
+        // per-component MultiHash V2 concatenation (16 * N bytes for N PK
+        // paths). Sending a single 16-byte V2 hash for a MultiHash container
+        // causes the proxy to silently drop the body.
         let parsed = parse_wrapped_request(&wrapped, 11);
-        assert!(
-            parsed.tokens.contains_key(&0x005A),
-            "EffectivePartitionKey token must be emitted for full HPK partition key"
+        let expected = effective_partition_key_multi_hash_v2_binary(partition_key.values());
+        assert_eq!(expected.len(), 16 * 3, "sanity check: 3 PK paths * 16B");
+        assert_eq!(
+            parsed.tokens[&0x005A],
+            ParsedTokenValue::Bytes(expected),
+            "EffectivePartitionKey token must be per-component MultiHash V2 bytes"
         );
     }
 

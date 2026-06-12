@@ -405,6 +405,57 @@ impl Token {
         )
     }
 
+    /// `SupportedQueryFeatures` (ID 0x00FF, String). Forwarded from the HTTP
+    /// header `x-ms-cosmos-supported-query-features` so the proxy can resolve a
+    /// QueryPlan compatible with what the client supports.
+    /// Matches Java RntbdConstants.java line 610.
+    pub(crate) fn supported_query_features(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::SupportedQueryFeatures.into(),
+            TokenValue::String(value),
+        )
+    }
+
+    /// `QueryVersion` (ID 0x0100, SmallString). Forwarded from the HTTP header
+    /// `x-ms-cosmos-query-version`. Matches Java RntbdConstants.java line 611.
+    pub(crate) fn query_version(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::QueryVersion.into(),
+            TokenValue::SmallString(value),
+        )
+    }
+
+    /// `StartEpkHash` (ID 0x00D2, Bytes). Per-partition routing key for
+    /// thin-client cross-partition queries. Java's `ThinClientStoreModel`
+    /// converts the partition's `minInclusive` hex string to bytes and emits
+    /// this token alongside `EndEpkHash`. See Java RntbdConstants.java line 598.
+    pub(crate) fn start_epk_hash(value: Vec<u8>) -> Self {
+        Self::new(
+            RntbdRequestToken::StartEpkHash.into(),
+            TokenValue::Bytes(value),
+        )
+    }
+
+    /// `EndEpkHash` (ID 0x00D3, Bytes). See [`start_epk_hash`](Self::start_epk_hash).
+    pub(crate) fn end_epk_hash(value: Vec<u8>) -> Self {
+        Self::new(
+            RntbdRequestToken::EndEpkHash.into(),
+            TokenValue::Bytes(value),
+        )
+    }
+
+    /// `PartitionKeyRangeId` (ID 0x002C, String). Java's `RntbdRequestHeaders`
+    /// fills this token from the `x-ms-documentdb-partitionkeyrangeid` HTTP
+    /// header via `fillTokenFromHeader`. The thin-client proxy expects this
+    /// token alongside StartEpkHash/EndEpkHash to identify the target physical
+    /// partition. See Java RntbdConstants.java line 543.
+    pub(crate) fn partition_key_range_id(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::PartitionKeyRangeId.into(),
+            TokenValue::String(value),
+        )
+    }
+
     /// Pagination cursor echoed back to the proxy on subsequent feed/query
     /// requests. Wire format matches Java's `RntbdRequestHeader.ContinuationToken`
     /// (ID 0x0006, string) — the SDK passes the value through unchanged so
@@ -455,12 +506,17 @@ pub(crate) enum RntbdRequestToken {
     DocumentName,
     TransportRequestId,
     PartitionKey,
+    PartitionKeyRangeId,
     EffectivePartitionKey,
     AllowTentativeWrites,
     ReturnPreference,
     SDKSupportedCapabilities,
     GlobalDatabaseAccountName,
     ReadConsistencyStrategy,
+    SupportedQueryFeatures,
+    QueryVersion,
+    StartEpkHash,
+    EndEpkHash,
 }
 
 impl TryFrom<u16> for RntbdRequestToken {
@@ -478,6 +534,7 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x0016 => Ok(Self::CollectionName),
             0x0017 => Ok(Self::DocumentName),
             0x002B => Ok(Self::PartitionKey),
+            0x002C => Ok(Self::PartitionKeyRangeId),
             0x0035 => Ok(Self::CollectionRid),
             0x004D => Ok(Self::TransportRequestId),
             0x005A => Ok(Self::EffectivePartitionKey),
@@ -486,6 +543,10 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
             0x00CE => Ok(Self::GlobalDatabaseAccountName),
             0x00F0 => Ok(Self::ReadConsistencyStrategy),
+            0x00FF => Ok(Self::SupportedQueryFeatures),
+            0x0100 => Ok(Self::QueryVersion),
+            0x00D2 => Ok(Self::StartEpkHash),
+            0x00D3 => Ok(Self::EndEpkHash),
             _ => Err(()),
         }
     }
@@ -504,6 +565,7 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::CollectionName => 0x0016,
             RntbdRequestToken::DocumentName => 0x0017,
             RntbdRequestToken::PartitionKey => 0x002B,
+            RntbdRequestToken::PartitionKeyRangeId => 0x002C,
             RntbdRequestToken::CollectionRid => 0x0035,
             RntbdRequestToken::TransportRequestId => 0x004D,
             RntbdRequestToken::EffectivePartitionKey => 0x005A,
@@ -512,6 +574,10 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
             RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
             RntbdRequestToken::ReadConsistencyStrategy => 0x00F0,
+            RntbdRequestToken::SupportedQueryFeatures => 0x00FF,
+            RntbdRequestToken::QueryVersion => 0x0100,
+            RntbdRequestToken::StartEpkHash => 0x00D2,
+            RntbdRequestToken::EndEpkHash => 0x00D3,
         }
     }
 }
@@ -653,9 +719,10 @@ impl From<OperationType> for RntbdOperationType {
             OperationType::Replace => 0x0006,
             OperationType::Execute => 0x0008,
             OperationType::SqlQuery => 0x0009,
-            // QueryPlan has no distinct Gateway 2.0 wire ID; Java encodes it as SqlQuery
-            // with additional metadata that lands in a later slice.
-            OperationType::QueryPlan => 0x0009,
+            // Java's RntbdConstants.OperationType.QueryPlan = 0x0042; the Gateway V2
+            // thin-client proxy dispatches QueryPlan via this distinct op id (not
+            // SqlQuery's 0x0009).
+            OperationType::QueryPlan => 0x0042,
             OperationType::Query => 0x000F,
             OperationType::Head => 0x0011,
             OperationType::HeadFeed => 0x0012,

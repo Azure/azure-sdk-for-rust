@@ -34,13 +34,20 @@ enum FeedRangeRepr {
     ///
     /// If the number of keys in [`FeedRangeRepr::LogicalPartition::partition_key`]
     /// is less than the number of levels in the container's partition key definition,
-    /// the feed range represents all logical partitions that share that prefix.
-    /// Otherwise, if the number of keys matches the number of levels, the feed range represents exactly one logical partition.
+    /// the feed range represents all logical partitions that share that prefix
+    /// (i.e. `min_inclusive < max_exclusive`).
+    /// Otherwise, if the number of keys matches the number of levels, the feed
+    /// range represents exactly one logical partition (i.e.
+    /// `min_inclusive == max_exclusive`).
     ///
-    /// This variant exists to preserve the logical partition key semantics for feed ranges that target a single logical partition or prefix, which is important for certain operations.
+    /// This variant exists to preserve the logical partition key semantics for
+    /// feed ranges that target a single logical partition or prefix, which is
+    /// important for certain operations (e.g. session-token merging treats both
+    /// shapes conservatively).
     LogicalPartition {
         partition_key: PartitionKey,
-        effective_partition_key: EffectivePartitionKey,
+        min_inclusive: EffectivePartitionKey,
+        max_exclusive: EffectivePartitionKey,
     },
 
     /// The range is defined by explicit EPK bounds.
@@ -109,15 +116,34 @@ impl FeedRange {
     ///
     /// Because the version of the partition hashing scheme must be known to compute the effective partition key,
     /// the caller must provide a reference to the partition key definition.
+    ///
+    /// For full keys (component count == path count) and non-MultiHash containers
+    /// this yields a point range (`min == max`); for partial HPK keys (component
+    /// count < path count on a MultiHash container) it yields a real prefix range
+    /// (`min < max`) so the thin-client proxy can scope the per-pkrange request
+    /// down to just the prefix subrange instead of returning every row in the
+    /// pkrange.
     pub fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self {
-        let effective_partition_key = EffectivePartitionKey::compute(
-            partition_key.values(),
-            definition.kind,
-            definition.version,
-        );
+        // `compute_range` returns the right shape for both full and partial keys.
+        // Fall back to a point range built from `compute` if the inputs are
+        // malformed (e.g. empty values) — preserves prior behavior for that
+        // edge case rather than panicking.
+        let (min_inclusive, max_exclusive) =
+            match EffectivePartitionKey::compute_range(partition_key.values(), definition) {
+                Ok(range) => (range.start, range.end),
+                Err(_) => {
+                    let epk = EffectivePartitionKey::compute(
+                        partition_key.values(),
+                        definition.kind,
+                        definition.version,
+                    );
+                    (epk.clone(), epk)
+                }
+            };
         Self(FeedRangeRepr::LogicalPartition {
             partition_key,
-            effective_partition_key,
+            min_inclusive,
+            max_exclusive,
         })
     }
 
@@ -147,10 +173,7 @@ impl FeedRange {
     /// Returns the inclusive lower bound of this range.
     pub fn min_inclusive(&self) -> &EffectivePartitionKey {
         match &self.0 {
-            FeedRangeRepr::LogicalPartition {
-                effective_partition_key,
-                ..
-            } => effective_partition_key,
+            FeedRangeRepr::LogicalPartition { min_inclusive, .. } => min_inclusive,
             FeedRangeRepr::Range { min_inclusive, .. } => min_inclusive,
         }
     }
@@ -161,10 +184,7 @@ impl FeedRange {
     /// `min_inclusive == max_exclusive` is valid and represents exactly one EPK value, not an empty range.
     pub fn max_exclusive(&self) -> &EffectivePartitionKey {
         match &self.0 {
-            FeedRangeRepr::LogicalPartition {
-                effective_partition_key,
-                ..
-            } => effective_partition_key,
+            FeedRangeRepr::LogicalPartition { max_exclusive, .. } => max_exclusive,
             FeedRangeRepr::Range { max_exclusive, .. } => max_exclusive,
         }
     }

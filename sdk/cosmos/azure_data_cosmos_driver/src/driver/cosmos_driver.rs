@@ -59,6 +59,7 @@ struct DriverRequestExecutor<'a> {
 }
 
 fn request_target_overrides(
+    operation_partition_key: Option<&PartitionKey>,
     target: RequestTarget,
     continuation: Option<String>,
 ) -> OperationOverrides {
@@ -71,12 +72,26 @@ fn request_target_overrides(
         RequestTarget::EffectivePartitionKeyRange {
             partition_key_range_id,
             range,
-            ..
+            partition_key_range,
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
-            feed_range: range,
+            // For the thin-client (Gateway 2.0) proxy, every per-partition
+            // request must carry an EPK range so the proxy can derive
+            // `StartEpkHash`/`EndEpkHash` and route the request. The
+            // standard gateway ignores `x-ms-start-epk`/`x-ms-end-epk`
+            // when `x-ms-documentdb-partitionkeyrangeid` is also present,
+            // so falling back to the partition's full range here is safe
+            // for both transports.
+            feed_range: Some(range.unwrap_or(partition_key_range)),
+            // Propagate the operation's logical partition key (e.g. the
+            // partial-HPK prefix from `FeedScope::partition(...)`) so the
+            // `x-ms-documentdb-partitionkey` HTTP header is emitted on
+            // per-pkrange query fan-out requests. The thin-client proxy
+            // (and Java's `ThinClientStoreModel`) use this to filter docs
+            // within a pkrange by the supplied prefix; without it, the
+            // backend returns every document in the physical partition.
+            partition_key: operation_partition_key.cloned(),
             continuation,
-            ..Default::default()
         },
         RequestTarget::NonPartitioned => OperationOverrides {
             continuation,
@@ -94,7 +109,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         let driver = self.driver;
-        let overrides = request_target_overrides(target, continuation);
+        let overrides = request_target_overrides(operation.partition_key(), target, continuation);
 
         Box::pin(async move {
             driver
@@ -1850,9 +1865,15 @@ impl CosmosDriver {
                 .build()
         })?;
 
-        // Currently, we don't support any extra query features (like ordering, etc.)
-        let query_plan_operation = CosmosOperation::query_plan(container.clone(), "".into())
-            .with_body(operation.body().unwrap_or_default().to_vec());
+        // Advertise the SDK's supported query-rewrite features. The default
+        // (`SUPPORTED_QUERY_FEATURES`) is `"None"` until the cross-partition
+        // pipeline gains rewrite support, but the value must be non-empty so
+        // the Gateway V2 thin-client proxy accepts the QueryPlan request.
+        let query_plan_operation = CosmosOperation::query_plan(
+            container.clone(),
+            std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
+        )
+        .with_body(operation.body().unwrap_or_default().to_vec());
 
         let response = self
             .execute_operation_direct(
@@ -2796,6 +2817,7 @@ mod tests {
         )
         .unwrap();
         let overrides = request_target_overrides(
+            None,
             RequestTarget::effective_partition_key_range(
                 range.clone(),
                 "merged".to_string(),
@@ -2814,23 +2836,62 @@ mod tests {
     }
 
     #[test]
-    fn effective_partition_key_range_override_omits_exact_feed_range() {
+    fn effective_partition_key_range_override_always_emits_feed_range() {
+        // Regression: for the Gateway 2.0 (thin-client) proxy, every
+        // per-partition request must carry an EPK range so the proxy can
+        // derive `StartEpkHash`/`EndEpkHash` and route the request. Pin
+        // that `feed_range` is always populated, even when the request
+        // target's range exactly equals the partition's full range — the
+        // standard gateway ignores `x-ms-start-epk`/`x-ms-end-epk` when
+        // `x-ms-documentdb-partitionkeyrangeid` is also present, so this
+        // is safe for both transports.
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::from("10"),
             EffectivePartitionKey::from("20"),
         )
         .unwrap();
         let overrides = request_target_overrides(
+            None,
             RequestTarget::effective_partition_key_range(
                 range.clone(),
                 "pkrange".to_string(),
-                range,
+                range.clone(),
             ),
             None,
         );
 
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
-        assert_eq!(overrides.feed_range, None);
+        assert_eq!(overrides.feed_range, Some(range));
+    }
+
+    #[test]
+    fn effective_partition_key_range_override_forwards_logical_partition_key() {
+        // Regression: partition-scoped queries (e.g. `FeedScope::partition(partial_hpk)`)
+        // decompose into per-pkrange `EffectivePartitionKeyRange` targets. The operation's
+        // logical partition key must be forwarded into the override so the
+        // `x-ms-documentdb-partitionkey` HTTP header (and the RNTBD `PartitionKey` 0x002B
+        // token on the thin-client proxy) is emitted on every per-pkrange fan-out request.
+        // Without this, the thin-client backend returns every document in the physical
+        // partition because it has no per-component prefix to filter by.
+        let range = crate::models::FeedRange::new(
+            EffectivePartitionKey::from("10"),
+            EffectivePartitionKey::from("20"),
+        )
+        .unwrap();
+        let pk = PartitionKey::from("tenant-prefix");
+        let overrides = request_target_overrides(
+            Some(&pk),
+            RequestTarget::effective_partition_key_range(
+                range.clone(),
+                "pkrange".to_string(),
+                range.clone(),
+            ),
+            None,
+        );
+
+        assert_eq!(overrides.partition_key.as_ref(), Some(&pk));
+        assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
+        assert_eq!(overrides.feed_range, Some(range));
     }
 
     #[tokio::test]

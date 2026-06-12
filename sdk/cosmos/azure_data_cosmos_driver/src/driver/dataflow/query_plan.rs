@@ -12,12 +12,112 @@ use std::collections::HashMap;
 
 use serde::Deserialize;
 
+/// Accepts either a JSON boolean or a JSON integer (0 / 1) and returns a
+/// `bool`. The Gateway V2 thin-client proxy serializes several `bool` fields
+/// (`hasSelectValue`, `hasNonStreamingOrderBy`, `isMinInclusive`,
+/// `isMaxInclusive`) as integers — matching Java's `JsonNode::asBoolean()`
+/// behavior — while the standard Gateway returns proper booleans.
+fn bool_from_int_or_bool<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{Error, Visitor};
+    struct BoolOrInt;
+    impl<'de> Visitor<'de> for BoolOrInt {
+        type Value = bool;
+        fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("bool or integer 0/1")
+        }
+        fn visit_bool<E: Error>(self, v: bool) -> Result<Self::Value, E> {
+            Ok(v)
+        }
+        fn visit_u64<E: Error>(self, v: u64) -> Result<Self::Value, E> {
+            Ok(v != 0)
+        }
+        fn visit_i64<E: Error>(self, v: i64) -> Result<Self::Value, E> {
+            Ok(v != 0)
+        }
+    }
+    deserializer.deserialize_any(BoolOrInt)
+}
+
+/// Accepts the proxy's `queryRanges[].min` / `queryRanges[].max` field shapes
+/// and returns the canonical EPK string the planner expects.
+///
+/// The standard Gateway returns hex EPK strings (`""`, `"FF"`, or a specific
+/// hash hex). The Gateway V2 thin-client proxy returns the raw
+/// `PartitionKeyInternal` JSON shape, which is one of:
+/// * empty JSON array `[]` — the minimum EPK sentinel (`MinValue`) → `""`.
+/// * JSON array containing the `Infinity` object `[{"type":"Infinity"}]` —
+///   the maximum EPK sentinel → `"FF"`.
+/// * a bare string `"Infinity"` — same as the `Infinity` sentinel → `"FF"`.
+/// * a string already in hex form — passed through unchanged.
+///
+/// Arrays containing concrete values (e.g. `["foo"]`) would require
+/// per-container EPK computation against the partition key definition.
+/// That path isn't wired here today: the current cross-partition Rust
+/// pipeline only consumes the keyspace boundaries returned for unconstrained
+/// `SELECT` queries. A non-sentinel value falls back to an empty EPK so the
+/// planner widens to the full topology rather than panicking.
+fn epk_string_from_proxy_or_gateway<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{Error, SeqAccess, Visitor};
+    struct EpkVisitor;
+    impl<'de> Visitor<'de> for EpkVisitor {
+        type Value = String;
+        fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            f.write_str("EPK hex string, the literal \"Infinity\", or a PartitionKeyInternal array")
+        }
+        fn visit_str<E: Error>(self, v: &str) -> Result<Self::Value, E> {
+            Ok(if v == "Infinity" {
+                "FF".to_owned()
+            } else {
+                v.to_owned()
+            })
+        }
+        fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
+            Ok(if v == "Infinity" { "FF".to_owned() } else { v })
+        }
+        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+            // Walk the PartitionKeyInternal array. Empty → MinValue ("").
+            // Contains the `Infinity` token → MaxValue ("FF"). Any concrete
+            // value or unknown sentinel collapses to "" so the planner
+            // widens to all partitions rather than failing.
+            let mut saw_infinity = false;
+            let mut saw_non_sentinel = false;
+            while let Some(elem) = seq.next_element::<serde_json::Value>()? {
+                match elem {
+                    serde_json::Value::Object(map) => {
+                        if let Some(serde_json::Value::String(t)) = map.get("type") {
+                            if t == "Infinity" {
+                                saw_infinity = true;
+                                continue;
+                            }
+                        }
+                        saw_non_sentinel = true;
+                    }
+                    _ => saw_non_sentinel = true,
+                }
+            }
+            Ok(if saw_infinity && !saw_non_sentinel {
+                "FF".to_owned()
+            } else {
+                String::new()
+            })
+        }
+    }
+    deserializer.deserialize_any(EpkVisitor)
+}
+
 /// The response returned by the Gateway for a query plan request.
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)] // Wire-format fields; not all are consumed today.
 pub(crate) struct QueryPlan {
     /// The version of the query plan format.
+    #[serde(default)]
     pub partitioned_query_execution_info_version: usize,
 
     /// Detailed query information (ordering, aggregates, rewrites, etc.).
@@ -27,6 +127,7 @@ pub(crate) struct QueryPlan {
     /// The EPK ranges that the query references.
     ///
     /// Used by the planner to limit which physical partitions get queried.
+    #[serde(default)]
     pub query_ranges: Vec<QueryRange>,
 
     /// Information about hybrid search queries, if applicable.
@@ -55,6 +156,7 @@ pub(crate) struct HybridSearchQueryInfo {
     pub take: Option<u64>,
 
     /// Whether global statistics are required.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub requires_global_statistics: bool,
 }
 
@@ -114,9 +216,11 @@ pub(crate) struct QueryInfo {
     pub rewritten_query: String,
 
     /// Whether the query contains a `SELECT VALUE` clause.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub has_select_value: bool,
 
     /// Whether the query contains a non-streaming `ORDER BY`.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub has_non_streaming_order_by: bool,
 }
 
@@ -133,15 +237,19 @@ pub(crate) enum SortOrder {
 #[allow(dead_code)] // Inclusivity flags are wire-format; planner treats ranges uniformly.
 pub(crate) struct QueryRange {
     /// The minimum EPK value.
+    #[serde(deserialize_with = "epk_string_from_proxy_or_gateway")]
     pub min: String,
 
     /// The maximum EPK value.
+    #[serde(deserialize_with = "epk_string_from_proxy_or_gateway")]
     pub max: String,
 
     /// Whether the minimum value is inclusive.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub is_min_inclusive: bool,
 
     /// Whether the maximum value is inclusive.
+    #[serde(deserialize_with = "bool_from_int_or_bool")]
     pub is_max_inclusive: bool,
 }
 
@@ -262,5 +370,65 @@ mod tests {
         assert_eq!(plan.query_ranges.len(), 2);
         assert_eq!(plan.query_ranges[0].max, "40");
         assert_eq!(plan.query_ranges[1].min, "80");
+    }
+
+    /// The Gateway V2 thin-client proxy returns the QueryPlan response with
+    /// `hasSelectValue` / `hasNonStreamingOrderBy` as integers (0/1) instead
+    /// of booleans, with `queryRanges[].min` as the empty `PartitionKeyInternal`
+    /// array (`[]`), and with `queryRanges[].max` as the literal string
+    /// `"Infinity"`. Pin that we deserialize this shape into the same
+    /// canonical EPK form (`""` / `"FF"`) the planner already handles.
+    #[test]
+    fn deserializes_thin_client_proxy_response_shape() {
+        let json = r#"{
+            "queryInfo": {
+                "distinctType": "None",
+                "groupByExpressions": [],
+                "groupByAliases": [],
+                "orderBy": [],
+                "orderByExpressions": [],
+                "aggregates": [],
+                "hasSelectValue": 0,
+                "rewrittenQuery": "",
+                "groupByAliasToAggregateType": {},
+                "hasNonStreamingOrderBy": 0
+            },
+            "queryRanges": [
+                {
+                    "min": [],
+                    "max": "Infinity",
+                    "isMinInclusive": true,
+                    "isMaxInclusive": false
+                }
+            ]
+        }"#;
+        let plan: QueryPlan = serde_json::from_str(json).unwrap();
+        let info = plan.query_info.expect("queryInfo present");
+        assert!(!info.has_select_value);
+        assert!(!info.has_non_streaming_order_by);
+        assert_eq!(plan.query_ranges.len(), 1);
+        assert_eq!(plan.query_ranges[0].min, "");
+        assert_eq!(plan.query_ranges[0].max, "FF");
+        assert!(plan.query_ranges[0].is_min_inclusive);
+        assert!(!plan.query_ranges[0].is_max_inclusive);
+    }
+
+    #[test]
+    fn deserializes_thin_client_infinity_sentinel_in_array() {
+        let json = r#"{
+            "queryRanges": [
+                {
+                    "min": [],
+                    "max": [{"type":"Infinity"}],
+                    "isMinInclusive": 1,
+                    "isMaxInclusive": 0
+                }
+            ]
+        }"#;
+        let plan: QueryPlan = serde_json::from_str(json).unwrap();
+        assert_eq!(plan.query_ranges[0].min, "");
+        assert_eq!(plan.query_ranges[0].max, "FF");
+        assert!(plan.query_ranges[0].is_min_inclusive);
+        assert!(!plan.query_ranges[0].is_max_inclusive);
     }
 }

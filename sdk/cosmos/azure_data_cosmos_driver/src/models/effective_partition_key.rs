@@ -256,15 +256,63 @@ fn effective_partition_key_multi_hash_v2(pk_values: &[PartitionKeyValue]) -> Str
 ///
 /// Returns a 32-character uppercase hexadecimal string.
 fn hash_v2_to_epk(data: &[u8]) -> String {
+    bytes_to_hex_upper(&hash_v2_raw_bytes(data))
+}
+
+/// V2 EPK raw bytes (16 bytes): MurmurHash3-128, reversed, top 2 bits of byte 0 cleared.
+///
+/// This is the binary form Java sends in the RNTBD `EffectivePartitionKey`
+/// token (0x005A) for V2 hash-partitioned collections (see
+/// `getEffectivePartitionKeyBytesForHashPartitioningV2` in the Java SDK).
+pub(crate) fn hash_v2_raw_bytes(data: &[u8]) -> [u8; 16] {
     let hash_128 = murmurhash3_128(data, 0);
     let mut hash_bytes = hash_128.to_le_bytes();
     hash_bytes.reverse();
     hash_bytes[0] &= 0x3F;
-    bytes_to_hex_upper(&hash_bytes)
+    hash_bytes
+}
+
+/// V2 EPK raw bytes for hash-partitioned collections.
+pub(crate) fn effective_partition_key_v2_binary(pk_values: &[PartitionKeyValue]) -> Vec<u8> {
+    let mut buf: Vec<u8> = Vec::new();
+    for v in pk_values {
+        v.write_for_hashing_v2(&mut buf);
+    }
+    hash_v2_raw_bytes(&buf).to_vec()
+}
+
+/// MultiHash V2 EPK raw bytes: per-component MurmurHash3-128, concatenated.
+///
+/// Mirrors Java's `getEffectivePartitionKeyBytesForMultiHashPartitioning` —
+/// each component is independently encoded and hashed, and the 16-byte hashes
+/// are concatenated to produce `16 * N` bytes for `N` components. This is the
+/// binary form the proxy expects for `MultiHash` containers in the RNTBD
+/// `EffectivePartitionKey` token (0x005A).
+pub(crate) fn effective_partition_key_multi_hash_v2_binary(
+    pk_values: &[PartitionKeyValue],
+) -> Vec<u8> {
+    let mut out: Vec<u8> = Vec::with_capacity(pk_values.len() * 16);
+    let mut buf: Vec<u8> = Vec::new();
+    for v in pk_values {
+        buf.clear();
+        v.write_for_hashing_v2(&mut buf);
+        out.extend_from_slice(&hash_v2_raw_bytes(&buf));
+    }
+    out
 }
 
 /// V1: MurmurHash3-32, cast to f64, then binary-encode [hash, ...truncated values].
 fn effective_partition_key_hash_v1(pk_values: &[PartitionKeyValue]) -> String {
+    bytes_to_hex_upper(&effective_partition_key_v1_binary(pk_values))
+}
+
+/// Builds the V1-binary-encoded effective partition key bytes for hash partitions.
+///
+/// This is the raw byte form Java sends in the RNTBD `EffectivePartitionKey`
+/// token (0x005A). It's the binary tuple `Number(hash) + truncated_components`,
+/// not the hex-encoded routing string. Empty-component and infinity cases are
+/// handled by the caller (see [`EffectivePartitionKey::compute`]).
+pub(crate) fn effective_partition_key_v1_binary(pk_values: &[PartitionKeyValue]) -> Vec<u8> {
     let mut hashing_bytes: Vec<u8> = Vec::new();
     for v in pk_values {
         v.write_for_hashing_v1(&mut hashing_bytes);
@@ -272,27 +320,17 @@ fn effective_partition_key_hash_v1(pk_values: &[PartitionKeyValue]) -> String {
 
     let hash32 = murmurhash3_32(&hashing_bytes, 0u32);
 
-    // Build the binary-encoded EPK: hash value as Number + truncated original components.
     let mut buffer: Vec<u8> = Vec::new();
+    write_number_v1_binary(hash32 as f64, &mut buffer);
 
-    // Write the hash as a Number component using V1 binary encoding.
-    // We need to encode f64(hash32) using the V1 number encoding.
-    let hash_f64 = hash32 as f64;
-    write_number_v1_binary(hash_f64, &mut buffer);
-
-    // Truncate string components to MAX_STRING_BYTES_TO_APPEND before binary encoding,
-    // matching the truncation applied during hashing.
-    let truncated: Vec<PartitionKeyValue> = pk_values
-        .iter()
-        .map(|v| v.truncated_for_v1_encoding())
-        .collect();
-
-    // Append the truncated original components.
-    for v in &truncated {
-        v.write_for_binary_encoding_v1(&mut buffer);
+    // Truncate string components to MAX_STRING_BYTES_TO_APPEND, matching the
+    // truncation applied during hashing.
+    for v in pk_values {
+        v.truncated_for_v1_encoding()
+            .write_for_binary_encoding_v1(&mut buffer);
     }
 
-    bytes_to_hex_upper(&buffer)
+    buffer
 }
 
 fn bytes_to_hex_upper(bytes: &[u8]) -> String {

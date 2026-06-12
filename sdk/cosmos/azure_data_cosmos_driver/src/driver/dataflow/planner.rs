@@ -193,10 +193,23 @@ pub(crate) async fn build_sequential_drain(
     // Convert query ranges to FeedRanges and resolve against topology.
     let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
     let mut resume = resume;
+    // For partition-scoped queries (e.g. `FeedScope::partition(partial_hpk)`) the
+    // operation carries a FeedRange that bounds the partition-key prefix. The
+    // server-supplied `query_ranges` always cover the full container, so we
+    // intersect each one with the operation scope to keep the fan-out (and the
+    // per-pkrange wire EPK bounds) scoped to that prefix.
+    let scope_range = operation.target();
     for query_range in &query_plan.query_ranges {
         let min = EffectivePartitionKey::from(query_range.min.as_str());
         let max = EffectivePartitionKey::from(query_range.max.as_str());
-        let feed_range = FeedRange::new(min, max)?;
+        let plan_range = FeedRange::new(min, max)?;
+        let feed_range = match scope_range {
+            Some(scope) => match intersect_feed_ranges(scope, &plan_range) {
+                Some(r) => r,
+                None => continue, // scope is disjoint from this plan range
+            },
+            None => plan_range,
+        };
         let resolved = topology_provider
             .resolve_ranges(&feed_range, PartitionRoutingRefresh::UseCached)
             .await?;

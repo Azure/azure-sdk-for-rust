@@ -585,11 +585,12 @@ fn finalize_http_attempt(
                 diagnostics.set_transport_shard(request_handle, shard_diagnostics);
             }
 
+            let envelope_status_u16 = u16::from(status_code);
             let (status_code, headers, body) = if should_unwrap_gateway20
-                && status_code == azure_core::http::StatusCode::Ok
+                && (200..300).contains(&envelope_status_u16)
             {
                 match unwrap_response_for_gateway20(super::cosmos_transport_client::HttpResponse {
-                    status: u16::from(status_code),
+                    status: envelope_status_u16,
                     headers,
                     body,
                 }) {
