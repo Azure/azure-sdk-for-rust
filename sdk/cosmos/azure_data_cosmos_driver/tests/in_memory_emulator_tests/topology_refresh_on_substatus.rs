@@ -1085,3 +1085,106 @@ async fn metadata_refresh_ignores_excluded_regions() {
          topology_hosts={topology_hosts:?}",
     );
 }
+
+/// **Regional-endpoint metadata-refresh fallback is independent of
+/// `excluded_regions`.**
+///
+/// Companion to [`metadata_refresh_ignores_excluded_regions`]. The
+/// previous test covers the primary `GET /` path
+/// ([`CosmosDriver::refresh_account_properties`] hitting
+/// `AccountEndpoint::from(account)` — the configured global URL). When
+/// the global probe itself fails, the SDK falls back to
+/// [`CosmosDriver::refresh_via_regional_endpoints`] which iterates the
+/// cached `readable_locations`. That iteration must ALSO ignore the
+/// caller's `excluded_regions` — otherwise a client that excludes the
+/// region the backend is currently announcing as healthy will never
+/// learn the new topology.
+///
+/// Setup: multi-write `[East, West]`.
+/// - East faulted with 403/1008 on `ReadItem` (persistent) → drives
+///   `RefreshAccountProperties` triggers from the data plane.
+/// - East faulted with 503 on `MetadataReadDatabaseAccount` (persistent)
+///   → forces the global probe to fail so the regional fallback runs.
+/// - `excluded_regions = [West US]` → data plane is pinned to East
+///   (which keeps failing), and West is the only region whose
+///   `GET /` could prove the regional-fallback loop ignored the
+///   exclusion.
+///
+/// Assertion: at least one `GET /` request landed on West despite West
+/// being in `excluded_regions`. If a future change wires
+/// `excluded_regions` into `refresh_via_regional_endpoints`, West would
+/// be filtered out, the regional fallback would have no remaining
+/// candidates, and this assertion would fail.
+#[tokio::test]
+async fn metadata_refresh_regional_fallback_ignores_excluded_regions() {
+    let recorder = HostRecorder::new();
+    let data_plane_rule = region_fault_rule(
+        "403-1008-east-drives-refresh",
+        FaultOperationType::ReadItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        None,
+    );
+    let metadata_rule = region_fault_rule(
+        "503-east-metadata-forces-regional-fallback",
+        FaultOperationType::MetadataReadDatabaseAccount,
+        Region::EAST_US,
+        FaultInjectionErrorType::ServiceUnavailable,
+        None,
+    );
+    // Suppress the metadata fault during bootstrap so driver
+    // initialization can probe the global endpoint successfully.
+    // Re-enabled after `recorder.clear()` below.
+    metadata_rule.disable();
+    let (driver, _account) = build_driver_with_faults(
+        WriteMode::Multi,
+        recorder.clone(),
+        vec![data_plane_rule.clone(), metadata_rule.clone()],
+    )
+    .await;
+
+    recorder.clear();
+    metadata_rule.enable();
+
+    let container = driver
+        .resolve_container_by_name(DB_NAME, COLL_NAME)
+        .await
+        .expect("container resolves");
+    let item_ref = ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        "regional-fallback-ignores-excluded-item".to_string(),
+    );
+    let op = CosmosOperation::read_item(item_ref);
+
+    let mut opts = OperationOptions::default();
+    // Exclude West — the only region that, if the regional-fallback
+    // loop honored excluded_regions, would be filtered out and leave
+    // the SDK unable to refresh.
+    opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
+
+    let _ = tokio::time::timeout(
+        std::time::Duration::from_secs(180),
+        driver.execute_operation(op, opts),
+    )
+    .await
+    .expect("operation must not hang while the SDK retries on the only non-excluded region");
+
+    assert!(
+        data_plane_rule.hit_count() >= 1,
+        "data-plane ReadItem must hit the East fault at least once to trigger \
+         RefreshAccountProperties",
+    );
+    assert!(
+        metadata_rule.hit_count() >= 1,
+        "global GET / probe at East must hit the metadata fault at least once \
+         to exercise the regional-endpoint fallback",
+    );
+
+    let topology_hosts = recorder.topology_hosts();
+    assert!(
+        topology_hosts.iter().any(|h| h == WEST_HOST),
+        "regional-endpoint metadata fallback must hit West US even though West \
+         is in the caller's excluded_regions list; observed topology_hosts={topology_hosts:?}",
+    );
+}
