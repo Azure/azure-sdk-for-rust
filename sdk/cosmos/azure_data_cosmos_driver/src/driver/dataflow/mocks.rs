@@ -42,7 +42,6 @@ impl MockLeaf {
     }
 
     /// Sets the feed range reported by [`PipelineNode::feed_range`].
-    #[allow(dead_code)]
     pub fn with_feed_range(mut self, range: FeedRange) -> Self {
         self.feed_range = Some(range);
         self
@@ -50,7 +49,6 @@ impl MockLeaf {
 
     /// Overrides the state returned by [`PipelineNode::snapshot_state`].
     /// Defaults to [`PipelineNodeState::Drained`] when unset.
-    #[allow(dead_code)]
     pub fn with_snapshot(mut self, state: PipelineNodeState) -> Self {
         self.snapshot = Some(state);
         self

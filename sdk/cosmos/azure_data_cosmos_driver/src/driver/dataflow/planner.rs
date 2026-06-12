@@ -247,9 +247,7 @@ async fn plan_fresh(
 /// documented behavior that a continuation token issued for a parent
 /// partition remains valid against each of that partition's post-split
 /// children — the server uses the EPK range carried alongside the request
-/// to scope which child the token applies to. Java's
-/// `DocumentProducer::createReplacingDocumentProducersOnSplit` relies on
-/// the same property.
+/// to scope which child the token applies to.
 async fn plan_resume_from_saved_snapshot(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,

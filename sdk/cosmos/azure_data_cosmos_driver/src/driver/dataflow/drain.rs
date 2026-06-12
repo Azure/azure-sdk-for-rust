@@ -111,16 +111,6 @@ impl PipelineNode for SequentialDrain {
     }
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
-        // Sparse encoding: record a cursor at the first non-drained child's
-        // `min_inclusive`, then list every range whose state is
-        // `Request { Some(token) }`. Children with `Request { None }` are
-        // implicitly fresh-start on resume and contribute nothing to the
-        // wire form; ditto `Drained` entries above the cursor (which by
-        // the left-to-right drain invariant don't occur — see the
-        // `debug_assert!` below). The result is O(S) where S is the number
-        // of partitions currently holding a server continuation, not O(P)
-        // where P is the total partition count.
-        //
         // A child without a `feed_range` is an invariant violation (every
         // `SequentialDrain` child owns a contiguous EPK sub-range); fail
         // loudly so the malformed snapshot never reaches the wire.
@@ -147,14 +137,23 @@ impl PipelineNode for SequentialDrain {
                 PipelineNodeState::Drained => {
                     // The drain pops fully-drained front children before
                     // returning a page, so an in-place `Drained` child at
-                    // snapshot time is an invariant violation; in release
-                    // builds, treat it as a fully-drained slot below the
-                    // cursor and skip.
-                    debug_assert!(
-                        cursor.is_none(),
-                        "SequentialDrain child {idx} is Drained after the cursor was already set; \
-                         drained children must be popped before non-drained ones",
-                    );
+                    // snapshot time after the cursor has advanced is an
+                    // invariant violation. Fail loudly rather than
+                    // silently drop the drained-slot, which would let
+                    // its range be re-queried as fresh-start on resume
+                    // and produce duplicate items.
+                    if cursor.is_some() {
+                        return Err(crate::error::CosmosError::builder()
+                            .with_status(
+                                crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+                            )
+                            .with_message(format!(
+                                "SequentialDrain child {idx} of {total} is Drained after the cursor was \
+                                 already set; drained children must be popped before non-drained ones",
+                                total = self.children.len(),
+                            ))
+                            .build());
+                    }
                 }
                 PipelineNodeState::Request {
                     server_continuation,
