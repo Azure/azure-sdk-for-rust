@@ -1,13 +1,14 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
+use azure_core::time::Duration;
 use azure_core_amqp::{message::AmqpMessageProperties, AmqpList};
 use azure_core_test::{recorded, TestContext};
 use azure_messaging_eventhubs::{
     models::{AmqpMessage, AmqpValue, EventData, MessageId},
     {
-        ConsumerClient, EventDataBatchOptions, OpenReceiverOptions, ProducerClient, StartLocation,
-        StartPosition,
+        ConsumerClient, EventDataBatchOptions, OpenReceiverOptions, ProducerClient,
+        SendEventOptions, StartLocation, StartPosition,
     },
 };
 use futures::stream::StreamExt;
@@ -146,6 +147,76 @@ async fn test_round_trip_batch(ctx: TestContext) -> Result<(), Box<dyn Error>> {
             futures::future::ready(())
         })
         .await;
+
+    Ok(())
+}
+
+#[recorded::test(live)]
+async fn test_round_trip_connection_string(_ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    const TEST_NAME: &str = "test_round_trip_connection_string";
+    // SAS credentials come from the connection string, not the recording.
+    let connection_string = env::var("EVENTHUBS_CONNECTION_STRING")?;
+    let eventhub = env::var("EVENTHUB_NAME").ok();
+
+    let producer = ProducerClient::builder()
+        .with_application_id(TEST_NAME.to_string())
+        .open_with_connection_string(&connection_string, eventhub.as_deref())
+        .await?;
+
+    // Pick a partition and capture its tail so we read only what we send next.
+    let properties = producer.get_eventhub_properties().await?;
+    let partition_id = properties.partition_ids[0].clone();
+    let start_sequence = producer
+        .get_partition_properties(&partition_id)
+        .await?
+        .last_enqueued_sequence_number;
+
+    let marker = format!("sas-round-trip-{start_sequence}");
+    producer
+        .send_event(
+            marker.clone(),
+            Some(SendEventOptions {
+                partition_id: Some(partition_id.clone()),
+            }),
+        )
+        .await?;
+
+    let consumer = ConsumerClient::builder()
+        .with_application_id(TEST_NAME.to_string())
+        .open_with_connection_string(&connection_string, eventhub)
+        .await?;
+    let receiver = consumer
+        .open_receiver_on_partition(
+            partition_id.clone(),
+            Some(OpenReceiverOptions {
+                start_position: Some(StartPosition {
+                    location: StartLocation::SequenceNumber(start_sequence),
+                    ..Default::default()
+                }),
+                receive_timeout: Some(Duration::seconds(30)),
+                ..Default::default()
+            }),
+        )
+        .await?;
+
+    // Find our uniquely tagged event among whatever arrives on the partition.
+    let mut found = false;
+    {
+        let mut stream = receiver.stream_events();
+        while let Some(event) = stream.next().await {
+            let event = event?;
+            if event.event_data().body() == Some(marker.as_bytes()) {
+                found = true;
+                break;
+            }
+        }
+    }
+    assert!(found, "did not receive the SAS round-trip marker event");
+
+    // Release the receiver and stream before closing the consumer connection.
+    receiver.close().await?;
+    consumer.close().await?;
+    producer.close().await?;
 
     Ok(())
 }

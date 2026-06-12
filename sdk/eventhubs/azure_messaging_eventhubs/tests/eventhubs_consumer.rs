@@ -387,3 +387,22 @@ async fn receive_lots_of_events(ctx: TestContext) -> Result<(), Box<dyn Error>> 
 
     Ok(())
 }
+
+#[recorded::test(live)]
+async fn consumer_open_with_connection_string(_ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let connection_string = env::var("EVENTHUBS_CONNECTION_STRING")?;
+    let eventhub = env::var("EVENTHUB_NAME").ok();
+
+    let client = ConsumerClient::builder()
+        .with_application_id("consumer_open_with_connection_string".to_string())
+        .open_with_connection_string(&connection_string, eventhub)
+        .await?;
+
+    // Authorizing the management link over SAS confirms the entity is reachable.
+    let properties = client.get_eventhub_properties().await?;
+    assert!(!properties.partition_ids.is_empty());
+
+    client.close().await?;
+
+    Ok(())
+}
