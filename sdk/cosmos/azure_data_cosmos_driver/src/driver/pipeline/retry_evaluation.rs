@@ -24,7 +24,10 @@ use crate::{
 
 use std::sync::atomic::Ordering;
 
-use super::components::{OperationAction, OperationRetryState, TransportOutcome, TransportResult};
+use super::components::{
+    OperationAction, OperationRetryState, TransportOutcome, TransportResult,
+    BACKEND_FAILOVER_RETRY_INTERVAL,
+};
 
 /// Whether the current request is handled by the PPCB threshold mechanism.
 ///
@@ -451,23 +454,23 @@ fn try_handle_write_forbidden(
     // get the dedicated 120-attempt backend-failover budget. Single-write
     // accounts only need to discover the one new write region after a
     // failover, so the generic 3-attempt budget is the right size.
-    let new_state = if retry_state.can_use_multiple_write_locations {
+    let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
         if !retry_state.can_retry_backend_failover() {
             return None;
         }
-        retry_state.clone().advance_backend_failover()
+        (
+            retry_state.clone().advance_backend_failover(),
+            Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+        )
     } else {
         if !retry_state.can_retry_failover() {
             return None;
         }
-        retry_state.clone().advance_failover()
+        (retry_state.clone().advance_failover(), None)
     };
 
     Some((
-        OperationAction::FailoverRetry {
-            new_state,
-            delay: None,
-        },
+        OperationAction::FailoverRetry { new_state, delay },
         vec![
             LocationEffect::RefreshAccountProperties,
             LocationEffect::MarkEndpointUnavailable {
@@ -513,23 +516,23 @@ fn try_handle_database_account_not_found(
     // multi-write accounts can churn through many regions while the backend
     // settles, single-write accounts just need to find the one current
     // owner of the account.
-    let new_state = if retry_state.can_use_multiple_write_locations {
+    let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
         if !retry_state.can_retry_backend_failover() {
             return None;
         }
-        retry_state.clone().advance_backend_failover()
+        (
+            retry_state.clone().advance_backend_failover(),
+            Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+        )
     } else {
         if !retry_state.can_retry_failover() {
             return None;
         }
-        retry_state.clone().advance_failover()
+        (retry_state.clone().advance_failover(), None)
     };
 
     Some((
-        OperationAction::FailoverRetry {
-            new_state,
-            delay: None,
-        },
+        OperationAction::FailoverRetry { new_state, delay },
         vec![
             LocationEffect::RefreshAccountProperties,
             LocationEffect::MarkEndpointUnavailable {
@@ -1489,9 +1492,14 @@ mod tests {
         );
 
         match action {
-            OperationAction::FailoverRetry { new_state, .. } => {
+            OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 0);
                 assert_eq!(new_state.backend_failover_retry_count, 1);
+                assert_eq!(
+                    delay,
+                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+                    "multi-write 1008 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
         }
@@ -1514,9 +1522,14 @@ mod tests {
         );
 
         match action {
-            OperationAction::FailoverRetry { new_state, .. } => {
+            OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 0);
                 assert_eq!(new_state.backend_failover_retry_count, 1);
+                assert_eq!(
+                    delay,
+                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+                    "multi-write 403/3 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
+                );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
         }
@@ -1542,9 +1555,13 @@ mod tests {
         );
 
         match action {
-            OperationAction::FailoverRetry { new_state, .. } => {
+            OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 1);
                 assert_eq!(new_state.backend_failover_retry_count, 0);
+                assert_eq!(
+                    delay, None,
+                    "single-write 403/3 uses the generic budget and must not pace retries"
+                );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
         }
@@ -1594,9 +1611,13 @@ mod tests {
         );
 
         match action {
-            OperationAction::FailoverRetry { new_state, .. } => {
+            OperationAction::FailoverRetry { new_state, delay } => {
                 assert_eq!(new_state.failover_retry_count, 1);
                 assert_eq!(new_state.backend_failover_retry_count, 0);
+                assert_eq!(
+                    delay, None,
+                    "single-write 1008 uses the generic budget and must not pace retries"
+                );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
         }

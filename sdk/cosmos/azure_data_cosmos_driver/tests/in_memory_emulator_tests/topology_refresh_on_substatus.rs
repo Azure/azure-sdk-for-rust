@@ -453,12 +453,15 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     seed_item_via_driver(&driver, "all-stale-item").await;
     recorder.clear();
 
+    // Bubble-up takes up to 120 attempts × 1s BACKEND_FAILOVER_RETRY_INTERVAL
+    // ≈ 120s on a multi-write account; the timeout is the runaway-loop guard,
+    // not the convergence SLO.
     let result = tokio::time::timeout(
-        Duration::from_secs(10),
+        Duration::from_secs(180),
         read_item(&driver, "all-stale-item"),
     )
     .await
-    .expect("post-fix retry budget must be bounded — operation hung past 10s");
+    .expect("post-fix retry budget must be bounded — operation hung past 180s");
 
     let err = result.expect_err("with both regions returning 1008, the read must fail");
     let status = err.status();
@@ -637,12 +640,15 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
 
     recorder.clear();
 
+    // Bubble-up takes up to 120 attempts × 1s BACKEND_FAILOVER_RETRY_INTERVAL
+    // ≈ 120s on a multi-write account; the timeout is the runaway-loop guard,
+    // not the convergence SLO.
     let result = tokio::time::timeout(
-        Duration::from_secs(10),
+        Duration::from_secs(180),
         create_item(&driver, "403-3-all-forbidden-item"),
     )
     .await
-    .expect("retry budget must be bounded — operation hung past 10s");
+    .expect("retry budget must be bounded — operation hung past 180s");
 
     let err = result.expect_err("with both regions returning 403/3, the create must fail");
     let status = err.status();
@@ -893,8 +899,11 @@ async fn write_403_3_retry_honors_excluded_region() {
     let mut opts = OperationOptions::default();
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
 
+    // West is excluded, East persistently 403/3 → SDK exhausts the 120-attempt
+    // backend-failover budget with 1s spacing before bubbling up; 180s leaves
+    // headroom for CI scheduling jitter on the ~120s nominal cost.
     let result = tokio::time::timeout(
-        std::time::Duration::from_secs(10),
+        std::time::Duration::from_secs(180),
         driver.execute_operation(op, opts),
     )
     .await
@@ -956,8 +965,9 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
     let mut opts = OperationOptions::default();
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
 
+    // 120-attempt budget x 1000ms BACKEND_FAILOVER_RETRY_INTERVAL = up to ~120s wall time.
     let result = tokio::time::timeout(
-        std::time::Duration::from_secs(10),
+        std::time::Duration::from_secs(180),
         driver.execute_operation(op, opts),
     )
     .await

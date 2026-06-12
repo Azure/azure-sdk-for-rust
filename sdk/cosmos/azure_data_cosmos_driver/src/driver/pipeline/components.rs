@@ -77,6 +77,16 @@ impl std::fmt::Display for RoutingDecision {
 /// the caller.
 pub const MAX_BACKEND_FAILOVER_RETRIES: u32 = 120;
 
+/// Delay between attempts on the dedicated backend-failover budget
+/// ([`MAX_BACKEND_FAILOVER_RETRIES`]). Applied between 403/3
+/// WriteForbidden and 403/1008 DatabaseAccountNotFound retries on
+/// multi-write accounts so the SDK does not hot-loop while the
+/// backend's topology change is still propagating. Matches the
+/// Java / Python SDK default (`endpointFailoverRetryIntervalInMs`
+/// / `Retry_after_in_milliseconds` = 1000 ms).
+pub const BACKEND_FAILOVER_RETRY_INTERVAL: std::time::Duration =
+    std::time::Duration::from_millis(1000);
+
 /// Operation-level retry state.
 ///
 /// Tracks failover retry count, session retry count, location index,
