@@ -290,13 +290,7 @@ impl LocationStateStore {
                     let pk_range_id = partition_key_range_id.clone();
                     let hub_endpoint = hub_endpoint.clone();
                     self.apply_partition(|current_partitions| {
-                        let account = self.account_snapshot();
-                        cache_hub_region(
-                            current_partitions,
-                            &account,
-                            &pk_range_id,
-                            &hub_endpoint,
-                        )
+                        cache_hub_region(current_partitions, &pk_range_id, &hub_endpoint)
                     });
                 }
                 LocationEffect::AdvanceHubRegionDiscovery {

@@ -1111,21 +1111,26 @@ fn resolve_endpoint(
         };
 
         // Hub-region cache (warm path): if the hub-region-processing-only
-        // latch is set on this attempt, the cache is populated for this
-        // partition, and the feature flag is on, route directly to the
-        // cached hub endpoint, skipping the 403/3 discovery chain.
+        // latch is set on this attempt, PPAF is enabled on the partition
+        // state, and the cache is populated for this partition, route
+        // directly to the cached hub endpoint, skipping the 403/3
+        // discovery chain.
         //
         // Reuses `failover_overrides` (the PPAF cache) — on a single-master
         // account the partition's hub region *is* its write region, so
         // entries serve both PPAF write routing and hub-region read
         // routing. PPAF's existing `is_eligible_for_ppaf` gate rejects
-        // reads, so we add this independent read-side gate.
+        // reads, so we add this independent read-side gate; the
+        // `per_partition_automatic_failover_enabled` check mirrors that
+        // gate so the hub cache is consulted only when PPAF is on.
         //
         // Skip on `override_region_already_failed`: if the cache currently
         // points at a region whose effect is already buffered as failed
         // in this operation, fall through to the default selection rather
         // than retrying the same failed region.
-        let hub_latch_active = is_read && retry_state.hub_region_processing_only;
+        let hub_latch_active = is_read
+            && retry_state.hub_region_processing_only
+            && partitions.per_partition_automatic_failover_enabled;
         if hub_latch_active {
             if let Some(entry) = partitions.failover_overrides.get(pk_range_id) {
                 if !override_region_already_failed(&entry.current_endpoint) {
@@ -4102,6 +4107,7 @@ mod tests {
         });
 
         let mut partitions = PartitionEndpointState::default();
+        partitions.per_partition_automatic_failover_enabled = true;
         partitions.failover_overrides.insert(
             pk_range_id.parse().unwrap(),
             PartitionFailoverEntry {
@@ -4239,6 +4245,77 @@ mod tests {
         assert_ne!(
             routing.endpoint, hub,
             "without partition_key_range_id we cannot key into the cache",
+        );
+    }
+
+    /// Hub-region warm-path routing is gated on
+    /// `per_partition_automatic_failover_enabled` — even when the latch is
+    /// set and the cache contains an entry, an account without PPAF must
+    /// not be silently routed by the hub cache. Mirrors the
+    /// `cache_hub_region_skips_when_ppaf_disabled` writer-side gate.
+    #[test]
+    fn resolve_endpoint_ignores_hub_cache_when_ppaf_disabled() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+
+        let pk_range = "0";
+        let eastus = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let westus = CosmosEndpoint::regional(
+            "westus".into(),
+            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![eastus.clone(), westus.clone()].into(),
+            preferred_write_endpoints: vec![eastus.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: eastus.clone(),
+        });
+
+        // PPAF is OFF on this partition state but the cache nevertheless
+        // contains a hub entry (e.g., a stale entry from a feature flip).
+        let mut partitions = PartitionEndpointState::default();
+        partitions.per_partition_automatic_failover_enabled = false;
+        partitions.failover_overrides.insert(
+            pk_range.parse().unwrap(),
+            PartitionFailoverEntry {
+                current_endpoint: westus.clone(),
+                first_failed_endpoint: westus.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+
+        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
+            test_account(),
+            "mydb",
+        ));
+        let retry_state = read_state_with_hub_latch(pk_range);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+
+        assert_ne!(
+            routing.endpoint, westus,
+            "warm-path hub cache must not route when PPAF is disabled on the partition state",
         );
     }
 

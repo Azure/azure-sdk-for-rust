@@ -507,7 +507,6 @@ fn try_move_next_endpoint(
 ///    wiped by a hub-region read confirmation.
 pub(crate) fn cache_hub_region(
     current_state: &PartitionEndpointState,
-    _account_state: &AccountEndpointState,
     pk_range_id: &PartitionKeyRangeId,
     hub_endpoint: &CosmosEndpoint,
 ) -> PartitionEndpointState {
@@ -565,6 +564,10 @@ pub(crate) fn advance_hub_region_discovery(
     pk_range_id: &PartitionKeyRangeId,
     failed_endpoint: &CosmosEndpoint,
 ) -> PartitionEndpointState {
+    if !current_state.per_partition_automatic_failover_enabled {
+        return current_state.clone();
+    }
+
     let mut new_state = current_state.clone();
     let now = Instant::now();
     let next_endpoints = &account_state.preferred_read_endpoints;
@@ -1818,17 +1821,14 @@ mod tests {
         PartitionEndpointState::default()
     }
 
-    /// Regression test for the .NET parity invariant: when
+    /// Regression test for the SetCurrent-only update invariant: when
     /// `cache_hub_region` updates an existing entry (e.g., one populated
     /// by a prior PPAF rotation or a prior 403/3 discovery), it must
     /// preserve the `failed_endpoints` set so that a subsequent 403/3
-    /// rotation does not re-try already-tried endpoints. Mirrors .NET
-    /// PR #5648's `SetCurrent`-only update in
-    /// `TryCacheHubRegionLocationForPartition`.
+    /// rotation does not re-try already-tried endpoints.
     #[test]
     fn cache_hub_region_updates_existing_entry_preserving_failed_set() {
         let mut ps = partition_state_ppaf_enabled();
-        let account = single_master_account();
         let old_hub = regional_endpoint("westus");
         let new_hub = regional_endpoint("eastus");
 
@@ -1851,11 +1851,11 @@ mod tests {
             },
         );
 
-        let result = cache_hub_region(&ps, &account, &pk("0"), &new_hub);
+        let result = cache_hub_region(&ps, &pk("0"), &new_hub);
         let entry = result.failover_overrides.get(&pk("0")).unwrap();
         // current_endpoint MUST flip to the new hub.
         assert_eq!(entry.current_endpoint, new_hub);
-        // Every other field MUST be preserved (.NET SetCurrent-only semantics).
+        // Every other field MUST be preserved (SetCurrent-only semantics).
         assert_eq!(
             entry.failed_endpoints, original_failed,
             "failed_endpoints must be preserved so 403/3 rotation does not re-try already-tried endpoints",
@@ -1876,14 +1876,11 @@ mod tests {
 
     /// Hub-region caching is a PPAF-only feature. On accounts without
     /// PPAF, `cache_hub_region` is a no-op so the unified cache does
-    /// not accumulate state. Mirrors the latest .NET PR's
-    /// `IsPartitionLevelAutomaticFailoverEnabled()` gate in
-    /// `TryCacheHubRegionLocationForPartition`.
+    /// not accumulate state.
     #[test]
     fn cache_hub_region_skips_when_ppaf_disabled() {
         let ps = partition_state_ppaf_disabled();
-        let account = single_master_account();
-        let result = cache_hub_region(&ps, &account, &pk("0"), &regional_endpoint("eastus"));
+        let result = cache_hub_region(&ps, &pk("0"), &regional_endpoint("eastus"));
         assert!(
             result.failover_overrides.is_empty(),
             "hub-region cache must not populate when PPAF is disabled on the account",
@@ -1930,11 +1927,10 @@ mod tests {
     #[test]
     fn cache_hub_region_skips_non_regional_endpoint() {
         let ps = partition_state_ppaf_enabled();
-        let account = single_master_account();
         let non_regional = default_endpoint();
         assert!(non_regional.region().is_none());
 
-        let result = cache_hub_region(&ps, &account, &pk("0"), &non_regional);
+        let result = cache_hub_region(&ps, &pk("0"), &non_regional);
         assert!(result.failover_overrides.is_empty());
     }
 
@@ -1994,6 +1990,24 @@ mod tests {
         // Both endpoints have failed — entry is removed so default selection
         // applies on the next attempt.
         assert!(result.failover_overrides.get(&pk("0")).is_none());
+    }
+
+    /// Hub-region caching is a PPAF-only feature. On accounts without PPAF,
+    /// `advance_hub_region_discovery` is a no-op so the unified cache does
+    /// not accumulate state. Mirrors `cache_hub_region_skips_when_ppaf_disabled`
+    /// for the rotation path — both writers into `failover_overrides` must
+    /// share the same gating.
+    #[test]
+    fn advance_hub_region_discovery_skips_when_ppaf_disabled() {
+        let ps = partition_state_ppaf_disabled();
+        let account = single_master_account();
+        let eastus = regional_endpoint("eastus");
+
+        let result = advance_hub_region_discovery(&ps, &account, &pk("0"), &eastus);
+        assert!(
+            result.failover_overrides.is_empty(),
+            "advance_hub_region_discovery must not populate the cache when PPAF is disabled on the account",
+        );
     }
 
     #[test]

@@ -422,6 +422,25 @@ fn try_handle_write_forbidden(
                 failed_endpoint: endpoint.clone(),
             }]
         } else {
+            // Invariant violation: a hub-region-mode read should always have
+            // its partition key range resolved before dispatch. Reaching this
+            // branch means the latch was armed without PK resolution, which
+            // is either a routing bug or a non-PK operation being misclassified
+            // as data-plane. Log loudly and assert in debug builds. We still
+            // return `FailoverRetry` rather than poisoning account state with
+            // the standard 403/3 effects (they would punish unrelated
+            // partitions for what is a partition-scoped signal).
+            debug_assert!(
+                false,
+                "hub_region_processing_only latched but partition_key_range_id is None; \
+                 PK resolution should precede data-plane dispatch",
+            );
+            tracing::error!(
+                endpoint = %endpoint.url(),
+                failover_retries = retry_state.failover_retry_count,
+                "hub-region 403/3 retry has no partition_key_range_id; \
+                 skipping AdvanceHubRegionDiscovery and falling back to plain failover retry",
+            );
             Vec::new()
         };
         return Some((
@@ -2153,17 +2172,16 @@ mod tests {
     }
 
     /// Hub-region branch on a read with the latch active but **no** partition
-    /// key range ID: never falls through to standard write-forbidden effects.
-    /// A 403/3 with the hub header carries a partition-scoped meaning, so
-    /// emitting `RefreshAccountProperties` / `MarkEndpointUnavailable` /
-    /// `MarkPartitionUnavailable` would poison unrelated routing state. The
-    /// handler retries failover with no location effects.
-    ///
-    /// In production this branch should be unreachable on dispatched
-    /// data-plane reads (PK range resolution precedes execution); the test
-    /// guards the defense-in-depth path.
+    /// key range ID. In production this is unreachable on dispatched data-plane
+    /// reads (PK range resolution precedes execution), so we hold a
+    /// `debug_assert!` against it to catch the contract violation loudly
+    /// during development. In release builds we still avoid poisoning
+    /// account-level state (the upstream 403/3 fall-through is the wrong
+    /// signal for a partition-scoped hub-region failure); the test guards the
+    /// debug-time panic contract.
     #[test]
-    fn read_403_3_with_hub_latch_emits_no_effects_without_pk_range_id() {
+    #[should_panic(expected = "hub_region_processing_only latched but partition_key_range_id is None")]
+    fn read_403_3_with_hub_latch_panics_in_debug_without_pk_range_id() {
         let op = make_read_operation();
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
         state.is_dataplane = true;
@@ -2171,17 +2189,11 @@ mod tests {
         // partition_key_range_id intentionally left as None.
 
         let endpoint = test_endpoint();
-        let (action, effects) = evaluate_transport_result(
+        let _ = evaluate_transport_result(
             &op,
             &endpoint,
             make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
             &state,
-        );
-
-        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
-        assert!(
-            effects.is_empty(),
-            "hub-latch read with no PK range must emit no effects; got {effects:?}",
         );
     }
 
