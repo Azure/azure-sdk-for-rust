@@ -6,7 +6,7 @@
 
 ### Breaking Changes
 
-- Cross-partition query continuation tokens minted by `0.4.0` cannot be resumed against `0.5.0`. The on-wire token shape was reshaped to record per-range sibling state so that pausing a fan-out query mid-flight no longer loses information about siblings that hadn't been touched yet. Callers holding a `0.4.0`-minted token will receive a continuation-token error on resume and must re-issue the query. (`0.4.0` tokens were already broken on the resume-after-split path that this release fixes, so this aligns behavior with documentation.) ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
+- Cross-partition query continuation tokens minted by `0.4.0` cannot be resumed against `0.5.0`. The on-wire token shape was reshaped to record per-range sibling state so that pausing a fan-out query mid-flight preserves information about siblings that hadn't been touched yet. Callers holding a `0.4.0`-minted token will receive a continuation-token error on resume and must re-issue the query. ([#4550](https://github.com/Azure/azure-sdk-for-rust/pull/4550))
 
 ### Bugs Fixed
 

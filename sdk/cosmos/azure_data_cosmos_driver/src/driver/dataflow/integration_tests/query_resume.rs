@@ -31,7 +31,7 @@ use super::super::{
     mocks::{MockRequestExecutor, MockTopologyProvider},
     planner::build_sequential_drain,
     query_plan::{QueryPlan, QueryRange},
-    Pipeline, PipelineContext, PipelineNodeState, RangedChildState, ResolvedRange,
+    Pipeline, PipelineContext, PipelineNodeState, RangedToken, ResolvedRange,
 };
 use crate::{
     diagnostics::DiagnosticsContextBuilder,
@@ -267,9 +267,9 @@ async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
     assert_eq!(pages1, vec![b"page-1-presplit".to_vec()]);
     assert_eq!(pages2, vec![b"page-left".to_vec(), b"page-right".to_vec()]);
 
-    // The regression bug: the second leaf used to be called with `None`
-    // (fresh start) instead of the saved continuation, which is what
-    // produced duplicate items on a real account.
+    // The second leaf must also resume with the saved continuation;
+    // calling it with `None` (fresh start) would re-emit items the
+    // caller already consumed on page 1.
     assert_eq!(
         executor2.continuation_calls,
         vec![
@@ -280,13 +280,12 @@ async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
     );
 }
 
-/// End-to-end guard for the snapshot's mid-fan-out fidelity — the
-/// canonical bug from the original user repro. A snapshot taken
-/// mid-fan-out (front sibling has progressed; later siblings still owe
-/// their pre-split continuation) must preserve EVERY pending child's
-/// state, not just the front. With the lossy snapshot, the later
-/// siblings' continuations were silently dropped and they fresh-started
-/// on resume, producing duplicates.
+/// End-to-end guard for the snapshot's mid-fan-out fidelity. A snapshot
+/// taken mid-fan-out (front sibling has progressed; later siblings
+/// still owe their pre-split continuation) must preserve every pending
+/// child's state, not just the front. Otherwise the later siblings'
+/// continuations would be lost and they would fresh-start on resume,
+/// re-emitting items the caller already consumed.
 #[tokio::test]
 async fn resume_mid_fanout_preserves_every_sibling_state() {
     let op = cross_partition_query_operation();
@@ -313,41 +312,33 @@ async fn resume_mid_fanout_preserves_every_sibling_state() {
     let state = pipeline1.snapshot_state().unwrap();
     drop(pipeline1);
 
-    // The snapshot must carry BOTH siblings, not just the front. Inspect
-    // before round-tripping so the failure mode is obvious.
+    // Sparse snapshot: cursor at the start (left sibling hasn't drained
+    // yet) and one `active_tokens` entry for the left sibling carrying
+    // "ct-left". The right sibling is implicitly fresh-start (no entry
+    // above the cursor that covers its range).
     match &state {
-        PipelineNodeState::SequentialDrain { children } => {
+        PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk,
+            active_tokens,
+        } => {
+            assert_eq!(left_most_undrained_epk, "");
             assert_eq!(
-                children.len(),
-                2,
-                "snapshot must preserve both siblings; got {:?}",
-                children,
+                active_tokens.len(),
+                1,
+                "snapshot must record exactly one active token (left sibling); got {active_tokens:?}",
             );
-            assert_eq!(children[0].min_epk, "");
-            assert_eq!(children[0].max_epk, "80");
-            assert!(matches!(
-                children[0].state,
-                PipelineNodeState::Request {
-                    server_continuation: Some(ref c),
-                } if c == "ct-left"
-            ));
-            assert_eq!(children[1].min_epk, "80");
-            assert_eq!(children[1].max_epk, "FF");
-            assert!(matches!(
-                children[1].state,
-                PipelineNodeState::Request {
-                    server_continuation: None,
-                }
-            ));
+            assert_eq!(active_tokens[0].min_epk, "");
+            assert_eq!(active_tokens[0].max_epk, "80");
+            assert_eq!(active_tokens[0].server_continuation, "ct-left");
         }
         other => panic!("expected SequentialDrain snapshot, got {other:?}"),
     }
 
     // Session 2: resume with the round-tripped token. Same topology
     // (no split between sessions). The left sibling must resume with
-    // "ct-left"; the right sibling must start fresh (None) — and crucially
-    // must NOT be skipped, which is exactly what the lossy snapshot used
-    // to do.
+    // "ct-left"; the right sibling must start fresh (None) — and
+    // crucially must NOT be skipped, since the snapshot recorded no
+    // drained range covering it.
     let resumed_state = round_trip_state(state, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
         resolved("", "80", "pk-left"),
@@ -472,25 +463,18 @@ async fn resume_does_not_requery_already_drained_sibling_scope() {
     let op = cross_partition_query_operation();
     let plan = full_range_plan();
 
-    // Construct a snapshot directly: left sibling is fully drained,
-    // right sibling still owes its work with continuation "ct-right".
-    // This is the shape the public path produces after the left
-    // sibling's last page emits no continuation.
+    // Construct a snapshot directly in the sparse shape: the cursor is
+    // at "80" (left sibling fully drained), and one `active_tokens`
+    // entry records the right sibling's outstanding "ct-right". This is
+    // the shape the public path produces after the left sibling's last
+    // page emits no continuation.
     let saved_state = PipelineNodeState::SequentialDrain {
-        children: vec![
-            RangedChildState {
-                min_epk: String::new(),
-                max_epk: "80".to_string(),
-                state: PipelineNodeState::Drained,
-            },
-            RangedChildState {
-                min_epk: "80".to_string(),
-                max_epk: "FF".to_string(),
-                state: PipelineNodeState::Request {
-                    server_continuation: Some("ct-right".to_owned()),
-                },
-            },
-        ],
+        left_most_undrained_epk: "80".to_string(),
+        active_tokens: vec![RangedToken {
+            min_epk: "80".to_string(),
+            max_epk: "FF".to_string(),
+            server_continuation: "ct-right".to_owned(),
+        }],
     };
 
     // Resume after a split that ALSO affected the drained left scope.
@@ -518,8 +502,8 @@ async fn resume_does_not_requery_already_drained_sibling_scope() {
 }
 
 /// A saved range that the current topology cannot fully cover must fail
-/// the resume rather than silently dropping work — that silent-drop
-/// behavior is exactly the class of bug this PR closes. This guards the
+/// the resume rather than silently dropping work, since dropping the
+/// uncovered range would lose user-visible items. This guards the
 /// `CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED` error path at the
 /// integration level.
 #[tokio::test]
@@ -528,12 +512,11 @@ async fn resume_fails_loudly_when_saved_range_cannot_be_covered() {
     let plan = full_range_plan();
 
     let saved_state = PipelineNodeState::SequentialDrain {
-        children: vec![RangedChildState {
+        left_most_undrained_epk: "55".to_string(),
+        active_tokens: vec![RangedToken {
             min_epk: "55".to_string(),
             max_epk: "AA".to_string(),
-            state: PipelineNodeState::Request {
-                server_continuation: Some("ct-orphan".to_owned()),
-            },
+            server_continuation: "ct-orphan".to_owned(),
         }],
     };
     let resumed_state = round_trip_state(saved_state, &op);
@@ -556,27 +539,27 @@ async fn resume_fails_loudly_when_saved_range_cannot_be_covered() {
 }
 
 /// End-to-end deterministic equivalent of the live multi-PK / single-item
-/// repro: three sessions, two serialize → resume round-trips, with the
-/// partition split landing between session 1 and session 2.
+/// scenario: three sessions, two serialize → resume round-trips, with
+/// the partition split landing between session 1 and session 2.
 ///
-/// This is the only test that drives the exact loop the live repro takes:
-/// a single-leaf pre-split snapshot is decoded against a post-split
-/// topology AND that fanned-out state is snapshotted AGAIN mid-fan-out.
-/// Both fixes must be in place for the back sibling to carry its
-/// pre-split token through to the round that actually queries it.
+/// This drives the full loop: a single-leaf pre-split snapshot is
+/// decoded against a post-split topology AND that fanned-out state is
+/// snapshotted again mid-fan-out. Two distinct guarantees have to hold
+/// together for the back sibling to carry its pre-split token through
+/// to the round that actually queries it:
 ///
-/// With only the planner scope-clone fixed, the back sibling enters the
-/// in-memory pipeline with `T1` at session 2 — but session 2's lossy
-/// snapshot drops it, so by session 3 it has fresh-started.
+/// - The planner's interval-join must clone the saved pre-split token
+///   onto every grand-child the saved range now resolves to, not just
+///   the front one. Otherwise the back sibling enters the in-memory
+///   pipeline with `None` at session 2.
+/// - The snapshot must record every in-progress sibling's continuation
+///   in `active_tokens`, not just the front sibling's. Otherwise
+///   whatever the back sibling was carrying in memory is lost when the
+///   session-2 token is serialized, and it fresh-starts at session 3.
 ///
-/// With only the per-range snapshot fixed, the snapshot preserves
-/// whatever was in memory — but without the planner scope-clone, what
-/// was in memory is `None`, so the back sibling still fresh-starts at
-/// session 3.
-///
-/// Only with both fixed does the back sibling reach the executor at
-/// session 3 carrying the original `T1` — which is what suppresses the
-/// duplicates against a real server.
+/// When both guarantees hold, the back sibling reaches the executor at
+/// session 3 carrying the original `T1`, so the server skips the
+/// already-emitted rows and no duplicates appear on the wire.
 #[tokio::test]
 async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     let op = cross_partition_query_operation();
@@ -599,20 +582,19 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     let state_s1 = pipeline1.snapshot_state().unwrap();
     drop(pipeline1);
 
-    // The session-1 snapshot must carry exactly one child entry covering
-    // [, FF) with Request{T1}. This is what the public wire token then
-    // encodes.
+    // Sparse session-1 snapshot: cursor at the start, one `active_tokens`
+    // entry covering [, FF) with T1. This is what the public wire token
+    // then encodes.
     match &state_s1 {
-        PipelineNodeState::SequentialDrain { children } => {
-            assert_eq!(children.len(), 1);
-            assert_eq!(children[0].min_epk, "");
-            assert_eq!(children[0].max_epk, "FF");
-            assert!(matches!(
-                children[0].state,
-                PipelineNodeState::Request {
-                    server_continuation: Some(ref c),
-                } if c == "T1"
-            ));
+        PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk,
+            active_tokens,
+        } => {
+            assert_eq!(left_most_undrained_epk, "");
+            assert_eq!(active_tokens.len(), 1);
+            assert_eq!(active_tokens[0].min_epk, "");
+            assert_eq!(active_tokens[0].max_epk, "FF");
+            assert_eq!(active_tokens[0].server_continuation, "T1");
         }
         other => panic!("expected SequentialDrain snapshot at session 1, got {other:?}"),
     }
@@ -650,36 +632,31 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     let state_s2 = pipeline2.snapshot_state().unwrap();
     drop(pipeline2);
 
-    // Session-2 snapshot inspection — the per-sibling fidelity surface.
-    // Front child progressed to T2_a; back child must STILL carry T1.
-    // Before the fix this entry was silently dropped and the back child
-    // fresh-started at session 3 producing duplicates.
+    // Sparse session-2 snapshot — the per-sibling fidelity surface.
+    // Front child progressed to T2_a; back child still owes T1. The
+    // sparse encoding records the cursor at "" (front child has not
+    // drained), and emits two `active_tokens` entries: one per child.
+    // The back-child T1 entry is exactly the signal that prevents
+    // duplicates on the next resume.
     match &state_s2 {
-        PipelineNodeState::SequentialDrain { children } => {
+        PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk,
+            active_tokens,
+        } => {
+            assert_eq!(left_most_undrained_epk, "");
             assert_eq!(
-                children.len(),
+                active_tokens.len(),
                 2,
-                "session 2 snapshot must preserve both post-split children, not just the front; got {children:?}",
+                "session 2 snapshot must preserve both post-split children, not just the front; got {active_tokens:?}",
             );
-            assert_eq!(children[0].min_epk, "");
-            assert_eq!(children[0].max_epk, "80");
-            assert!(matches!(
-                children[0].state,
-                PipelineNodeState::Request {
-                    server_continuation: Some(ref c),
-                } if c == "T2_a"
-            ));
-            assert_eq!(children[1].min_epk, "80");
-            assert_eq!(children[1].max_epk, "FF");
-            assert!(
-                matches!(
-                    children[1].state,
-                    PipelineNodeState::Request {
-                        server_continuation: Some(ref c),
-                    } if c == "T1"
-                ),
-                "back child must still owe pre-split T1, not None or T2_a; got {:?}",
-                children[1].state,
+            assert_eq!(active_tokens[0].min_epk, "");
+            assert_eq!(active_tokens[0].max_epk, "80");
+            assert_eq!(active_tokens[0].server_continuation, "T2_a");
+            assert_eq!(active_tokens[1].min_epk, "80");
+            assert_eq!(active_tokens[1].max_epk, "FF");
+            assert_eq!(
+                active_tokens[1].server_continuation, "T1",
+                "back child must still owe pre-split T1, not None or T2_a",
             );
         }
         other => panic!("expected SequentialDrain snapshot at session 2, got {other:?}"),
@@ -689,8 +666,8 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     // Resume from the session-2 token. Topology unchanged (no further
     // splits). The front child drains in one more page (no continuation
     // returned). Then the planner must visit the back child carrying
-    // T1 — NOT None — otherwise the server would re-return everything
-    // T1 was already past, which is exactly the duplicate-emission bug.
+    // T1 — not None — otherwise the server would re-return rows that
+    // T1 was already past, surfacing as duplicates to the caller.
     let resumed_s3 = round_trip_state(state_s2, &op);
     let mut topology3 = MockTopologyProvider::new(vec![Ok(vec![
         resolved("", "80", "pk-left"),
@@ -740,12 +717,10 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
 }
 
 /// Cascading splits — the back sibling from a first split itself
-/// splits again before the user gets back to it. The new planner's
-/// interval-join shape should clone the saved back-sibling token to each
-/// of the grand-child leaves the back range is now resolved to. This
-/// guards the "split-of-a-split" path that the basic post-split tests
-/// don't reach, and is the highest-likely-to-regress hole around the
-/// per-range list shape.
+/// splits again before the user gets back to it. The planner's
+/// interval-join must clone the saved back-sibling token to every
+/// grand-child leaf the back range is now resolved to. This guards the
+/// "split-of-a-split" path that the basic post-split tests don't reach.
 #[tokio::test]
 async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
     let op = cross_partition_query_operation();
@@ -784,18 +759,18 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
     drop(pipeline2);
 
     // Sanity-check: snapshot now has just the back child owing T1
-    // (front child drained; popped off the queue).
+    // (front child drained; cursor now at "80"; one active token for
+    // the back child still owing T1).
     match &state_s2 {
-        PipelineNodeState::SequentialDrain { children } => {
-            assert_eq!(children.len(), 1);
-            assert_eq!(children[0].min_epk, "80");
-            assert_eq!(children[0].max_epk, "FF");
-            assert!(matches!(
-                children[0].state,
-                PipelineNodeState::Request {
-                    server_continuation: Some(ref c),
-                } if c == "T1"
-            ));
+        PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk,
+            active_tokens,
+        } => {
+            assert_eq!(left_most_undrained_epk, "80");
+            assert_eq!(active_tokens.len(), 1);
+            assert_eq!(active_tokens[0].min_epk, "80");
+            assert_eq!(active_tokens[0].max_epk, "FF");
+            assert_eq!(active_tokens[0].server_continuation, "T1");
         }
         other => panic!("expected SequentialDrain snapshot at session 2, got {other:?}"),
     }
@@ -821,12 +796,11 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
         vec![b"page-1-back-left".to_vec(), b"page-1-back-right".to_vec()],
     );
 
-    // BOTH grand-children must have been queried with T1 — neither
-    // None. If the planner accidentally moved the token to the first
-    // grand-child only (the planner-fan-out bug, but at the
-    // resume-decode layer instead of the in-memory fan-out), the second
-    // grand-child would carry None and re-emit the full [C0, FF)
-    // post-split data that T1 was already past.
+    // Both grand-children must have been queried with T1 — neither
+    // None. If the planner forwarded the token to the first
+    // grand-child only, the second grand-child would carry None and
+    // re-emit the full [C0, FF) post-split data that T1 was already
+    // past.
     assert_eq!(
         executor3.continuation_calls,
         vec![Some("T1".to_owned()), Some("T1".to_owned())],

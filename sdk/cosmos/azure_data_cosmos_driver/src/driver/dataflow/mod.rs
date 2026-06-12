@@ -54,7 +54,7 @@ pub(crate) use node::{PageResult, PipelineNode};
 pub use pipeline::OperationPlan;
 pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};
-pub(crate) use snapshot::{PipelineNodeState, RangedChildState};
+pub(crate) use snapshot::{PipelineNodeState, RangedToken};
 pub(crate) use topology::CachedTopologyProvider;
 
 #[cfg(test)]

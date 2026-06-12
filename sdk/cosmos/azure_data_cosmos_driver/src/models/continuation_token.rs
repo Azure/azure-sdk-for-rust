@@ -256,7 +256,7 @@ impl<'de> Deserialize<'de> for ContinuationToken {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::driver::dataflow::RangedChildState;
+    use crate::driver::dataflow::RangedToken;
     use crate::models::{
         AccountReference, ContainerProperties, ContainerReference, FeedRange, ItemReference,
         PartitionKey, PartitionKeyDefinition, SystemProperties,
@@ -349,19 +349,38 @@ mod tests {
         let token = ContinuationToken::encode_v1(
             &query_op(),
             &PipelineNodeState::SequentialDrain {
-                children: vec![RangedChildState {
+                left_most_undrained_epk: "3F".to_string(),
+                active_tokens: vec![RangedToken {
                     min_epk: "3F".to_string(),
                     max_epk: "7F".to_string(),
-                    state: PipelineNodeState::Request {
-                        server_continuation: None,
-                    },
+                    server_continuation: "srv".to_string(),
                 }],
             },
         )
         .unwrap();
         assert_eq!(
             decode_v1_payload(&token),
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","children":[{"min_epk":"3F","max_epk":"7F","state":{"kind":"request"}}]}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"3F","active_tokens":[{"min_epk":"3F","max_epk":"7F","server_continuation":"srv"}]}}"#,
+        );
+    }
+
+    #[test]
+    fn encode_v1_sequential_drain_state_omits_empty_active_tokens() {
+        // Common fast-path: every range below the cursor is drained and
+        // no range above it owes a server continuation. The wire form
+        // must omit `active_tokens` entirely (sparse encoding) so the
+        // O(P) blow-up doesn't sneak back in.
+        let token = ContinuationToken::encode_v1(
+            &query_op(),
+            &PipelineNodeState::SequentialDrain {
+                left_most_undrained_epk: "80".to_string(),
+                active_tokens: vec![],
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            decode_v1_payload(&token),
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"80"}}"#,
         );
     }
 
@@ -445,7 +464,7 @@ mod tests {
     #[test]
     fn resolve_v1_sequential_drain_state() {
         let token = encode_v1_payload(
-            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","children":[{"min_epk":"3F","max_epk":"7F","state":{"kind":"request"}}]}}"#,
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"3F","active_tokens":[{"min_epk":"3F","max_epk":"7F","server_continuation":"srv"}]}}"#,
         );
         match token.resolve().unwrap() {
             ResolvedToken::ClientV1(state) => {
@@ -454,13 +473,34 @@ mod tests {
                 assert_eq!(
                     state.root,
                     PipelineNodeState::SequentialDrain {
-                        children: vec![RangedChildState {
+                        left_most_undrained_epk: "3F".to_string(),
+                        active_tokens: vec![RangedToken {
                             min_epk: "3F".to_string(),
                             max_epk: "7F".to_string(),
-                            state: PipelineNodeState::Request {
-                                server_continuation: None,
-                            },
+                            server_continuation: "srv".to_string(),
                         }],
+                    },
+                );
+            }
+            other => panic!("expected ClientV1, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn resolve_v1_sequential_drain_state_without_active_tokens() {
+        // Wire form may omit `active_tokens` entirely (common path: no
+        // range above the cursor owes a server continuation). The
+        // resolved state defaults to an empty `Vec`.
+        let token = encode_v1_payload(
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"sequential_drain","left_most_undrained_epk":"80"}}"#,
+        );
+        match token.resolve().unwrap() {
+            ResolvedToken::ClientV1(state) => {
+                assert_eq!(
+                    state.root,
+                    PipelineNodeState::SequentialDrain {
+                        left_most_undrained_epk: "80".to_string(),
+                        active_tokens: vec![],
                     },
                 );
             }

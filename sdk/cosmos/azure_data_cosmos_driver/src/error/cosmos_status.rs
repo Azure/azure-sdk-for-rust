@@ -1373,11 +1373,7 @@ impl SubStatusCode {
     pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode =
         SubStatusCode(20211);
 
-    // 20212 reserved — previously `CLIENT_CONTINUATION_TOKEN_INVALID_CHILDREN`;
-    // consolidated into 20205 (`CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE`)
-    // because its three failure modes (min>max, zero-width, unsorted/overlap)
-    // all describe EPK-range invalidity. Do not reuse 20212 for an unrelated
-    // condition.
+    // 20212 reserved — previously `CLIENT_CONTINUATION_TOKEN_INVALID_CHILDREN`; consolidated into 20205 (`CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE`).
 
     /// A continuation token's saved range could not be honored on resume
     /// because the topology no longer covers it (20213). Surfacing this as
