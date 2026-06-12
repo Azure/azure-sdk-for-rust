@@ -1080,6 +1080,17 @@ impl CosmosDriver {
             .collect()
     }
 
+    /// Test-only API. Forces `per_partition_automatic_failover_enabled = true`
+    /// on the driver's partition state.
+    #[cfg(any(test, feature = "__internal_testing"))]
+    pub fn __test_only_force_ppaf_enabled(&self) {
+        self.location_state_store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.per_partition_automatic_failover_enabled = true;
+            next
+        });
+    }
+
     /// Eagerly primes the account metadata cache and creates the per-account transport.
     ///
     /// Performs an HTTP/2 probe to detect protocol support, then creates the

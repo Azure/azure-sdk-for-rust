@@ -3528,7 +3528,6 @@ mod tests {
     use url::Url;
 
     use super::build_transport_request;
-    use super::hub_region_cache_populate_target;
     use super::OperationOverrides;
     use super::TransportRequestContext;
     use crate::{

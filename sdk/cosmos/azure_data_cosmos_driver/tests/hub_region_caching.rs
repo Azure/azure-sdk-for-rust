@@ -1,122 +1,21 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Integration test for per-partition **hub-region caching** on a
-//! PPAF-enabled single-master account.
+//! Integration coverage for per-partition hub-region caching via HTTP-transport
+//! fault injection.
 //!
-//! Mirrors the .NET coverage from PR #5648 (`CosmosItemIntegrationTests
-//! .ReadItemAsync_HubRegionCaching_DiscoveryThenCacheHit_LiveAccount`)
-//! within the constraints of the 2-region Rust live-test matrix (`East US 2`
-//! hub + `West US 3` read region; see `sdk/cosmos/test-resources.bicep`).
+//! Targets a real, multi-region, single-master Cosmos DB account. Gated by
+//! `test_category = "multi_region"` (set via RUSTFLAGS by the
+//! `Session SingleWrite MultiRegion PartitionFailover` live-test matrix entry
+//! — see `sdk/cosmos/live-platform-matrix.json` and
+//! `sdk/cosmos/test-resources.bicep`), so per-PR builds skip it entirely.
 //!
-//! # What this test proves
-//!
-//! Two sequential reads of the same item:
-//!
-//! * **R1 (cold cache)** — exercises the full hub-region discovery
-//!   pipeline. With `preferred_regions = [WUS3, EUS2]` and an injected
-//!   `404/1002` on WUS3 plus an injected `403/3` on EUS2, the operation
-//!   pipeline must (a) flip the hub-region-processing-only latch on the
-//!   `1002`, (b) attach the `x-ms-cosmos-hub-region-processing-only`
-//!   request header on every subsequent attempt, (c) consume the injected
-//!   `403/3` on the first hub probe, and (d) drive the per-partition
-//!   discovery rotation until it converges on the real hub (EUS2). On
-//!   success the routing system writes a single entry into
-//!   `PartitionEndpointState::failover_overrides` whose
-//!   `current_endpoint` points at the EUS2 hub.
-//!
-//! * **R2 (warm cache)** — re-reads the same item. The cache entry from
-//!   R1 persists, so once the second `1002` re-latches the hub gate, the
-//!   cache lookup at `operation_pipeline.rs:1128-1135` short-circuits the
-//!   discovery probe. The wire signature is just `WUS3 (1002) → EUS2`,
-//!   the cache snapshot is unchanged, and the `403/3` rule does NOT fire
-//!   a second time.
-//!
-//! # The 5-hop cold trace
-//!
-//! With `preferred_regions = [WUS3, EUS2]`, single-master account
-//! (`preferred_write_endpoints = [EUS2]`), `max_failover_retries = 3` and
-//! the two fault rules in this file:
-//!
-//! 1. `WUS3` — initial attempt, no hub header. Injected `404/1002` →
-//!    `SessionRetry`. `build_session_retry_state` flips the latch ON and
-//!    sets routing = `PreferredWriteEndpoints` (see
-//!    `retry_evaluation.rs:517`).
-//! 2. `EUS2` — routed via `PreferredWriteEndpoints[0]`; the hub-region
-//!    header is now attached (`apply_hub_region_header`,
-//!    `operation_pipeline.rs:1549`). Injected `403/3` →
-//!    `AdvanceHubRegionDiscovery{failed=EUS2}` + `FailoverRetry`. Buffered
-//!    effect creates the cache entry `{current=WUS3, failed={EUS2}}`.
-//! 3. `WUS3` — routed via cache HIT (entry.current). Hub header set.
-//!    Live backend rejects with **real** `403/3` because the request
-//!    targets a non-hub region with the hub-only header set. New effect
-//!    rotates the entry, but with `next_endpoints = [WUS3, EUS2]`,
-//!    `WUS3 == current` and `EUS2 ∈ failed`, so
-//!    `try_move_next_endpoint` returns `false` and the entry is
-//!    **removed** (see `routing_systems.rs:465-489`).
-//! 4. `WUS3` — cache MISS; falls back to default routing
-//!    `preferred_read[0] = WUS3` again. Hub header set. **Real** `403/3`
-//!    again. The buffered effect re-creates the entry via `or_insert_with`,
-//!    inserts `WUS3` into `failed_endpoints`, and the next-endpoint walk
-//!    now picks `EUS2` (the only non-failed candidate) — final state
-//!    `{current=EUS2, failed={WUS3}}`.
-//! 5. `EUS2` — cache HIT (entry.current). Hub header set. Live backend
-//!    returns **real** `200 OK`. The success path emits
-//!    `CacheHubRegion{endpoint=EUS2}` which is a no-op against the
-//!    already-EUS2 entry (`cache_hub_region` at
-//!    `routing_systems.rs:508-548` preserves `failed_endpoints`).
-//!
-//! Net cold flow: **5 wire attempts**, both fault rules each fired once,
-//! one cache entry pointing at EUS2.
-//!
-//! # The 2-hop warm trace
-//!
-//! 1. `WUS3` — fresh operation, latch starts OFF (cache gate skipped).
-//!    Routing default → `WUS3`. Injected `404/1002` (rule's 2nd hit) →
-//!    `SessionRetry` re-latches.
-//! 2. `EUS2` — latch ON, cache HIT against the entry from R1 routes
-//!    directly to `current=EUS2`. Real `200 OK`. The `403/3` rule does
-//!    not fire (cache short-circuited the discovery probe). Cache entry
-//!    is refreshed in place (no change).
-//!
-//! # How the test proves the hub-region header is attached
-//!
-//! Direct unit-level coverage of the header emission lives in
-//! `operation_pipeline.rs` (tests `T-S11`
-//! `apply_hub_region_header_emits_when_only_shared_latch_set` and `T-S12`
-//! `apply_hub_region_header_omits_when_shared_latch_present_but_false`).
-//! The integration test contributes **end-to-end evidence**: the cold
-//! trace can only converge on EUS2 in the cache if WUS3 returns a real
-//! `403/3` on attempts 3 and 4. Live Cosmos backends only reject a read
-//! with `403/3` on a non-hub region when the
-//! `x-ms-cosmos-hub-region-processing-only: True` header is present —
-//! without the header, those attempts would succeed with `200 OK` and the
-//! cache would converge on the wrong region (or fail to converge at all).
-//!
-//! Note: on 2 regions the `PreferredWriteEndpoints` fallback path
-//! naturally routes to EUS2 on R2 attempt 1 even without a cache hit
-//! (since `preferred_write_endpoints = [EUS2]`), so R2's wire signature
-//! alone is not unique evidence of cache utilization. The strong cache
-//! signal in this test is the **persisted cache snapshot** between R1 and
-//! R2 plus the cold-flow convergence on EUS2.
-//!
-//! # Gating
-//!
-//! - `#[cfg(feature = "fault_injection")]` — fault injection is opt-in.
-//! - `#[cfg_attr(not(test_category = "multi_region"), ignore = ...)]` — only
-//!   runs in the `Session SingleWrite MultiRegion PartitionFailover` live
-//!   matrix entry (per `sdk/cosmos/live-platform-matrix.json`).
-//! - `#[ignore = "Requires PPAF enabled account with active failover from
-//!   backend"]` — must be invoked explicitly with `--ignored` against a
-//!   PPAF-enabled account.
-//!
-//! Run with:
-//!
-//! ```text
-//! cargo test -p azure_data_cosmos_driver \
-//!   --features "fault_injection,__internal_testing" \
-//!   --test hub_region_caching -- --ignored --nocapture
-//! ```
+//! The test does not require the live account to advertise PPAF natively;
+//! `context.force_ppaf_enabled()` enables the in-memory partition flag so the
+//! hub-region latch arms regardless of account capability. Inside the live leg
+//! the framework reads `AZURE_COSMOS_CONNECTION_STRING` exported by the bicep
+//! template; if it is unset the test skips cleanly via
+//! `DriverTestClient::run_with_*`.
 
 #![cfg(feature = "fault_injection")]
 #![cfg(feature = "__internal_testing")]
@@ -125,7 +24,7 @@ use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
     FaultInjectionRuleBuilder, FaultOperationType,
 };
-use azure_data_cosmos_driver::options::{OperationOptions, Region};
+use azure_data_cosmos_driver::options::{AvailabilityStrategy, OperationOptions, Region};
 use std::error::Error;
 use std::sync::Arc;
 
@@ -136,68 +35,47 @@ mod framework;
 
 use framework::DriverTestClient;
 
-/// Account hub / write region for the 2-region live-test account
-/// (`East US 2`, failover priority 0 in `test-resources.bicep`).
+/// Hub / write region of the live-test account (failover priority 0 in
+/// `test-resources.bicep`).
 const HUB_REGION: Region = Region::EAST_US_2;
 
-/// Preferred read region for the 2-region live-test account (`West US 3`,
-/// failover priority 1).
+/// Preferred read region of the live-test account (failover priority 1).
 const PREFERRED_READ_REGION: Region = Region::WEST_US_3;
 
-/// Host fragment expected in the cached hub-region endpoint URL.
-///
-/// The SDK builds regional gateway URLs of the form
-/// `https://<account>-<region-slug>.documents.azure.com:443/` (see
-/// `account_metadata_cache.rs`), where the region slug is the lowercased
-/// `Region` short name. For [`Region::EAST_US_2`] that is `eastus2`.
+/// Host fragment expected in the cached hub-region endpoint URL. Regional
+/// gateway URLs are of the form `https://<account>-<region-slug>.documents...`
+/// where the slug is the lowercased short region name.
 const HUB_REGION_HOST_FRAGMENT: &str = "eastus2";
 
-/// End-to-end coverage of per-partition hub-region caching against a
-/// PPAF-enabled single-master account.
+/// Drives two sequential reads of the same item to exercise per-partition
+/// hub-region caching: the cold (R1) path completes the hub-region discovery
+/// rotation and writes a single cache entry pointing at the hub; the warm
+/// (R2) path short-circuits the discovery probe via that cache entry.
 ///
-/// Performs two sequential reads of the same item with
-/// `preferred_regions = [WEST_US_3, EAST_US_2]` and two fault rules:
+/// Cold-path assertions (R1) prove the discovery converged and the
+/// hub-region request header was attached on retries (without the header,
+/// the non-hub region would not return real `403/3` and the cache would not
+/// converge on the hub).
 ///
-/// * `wus3-1002` on `WEST_US_3` + `ReadItem` + `ReadSessionNotAvailable`
-///   (`404/1002`), `hit_limit = 2` — fires on both R1 and R2 to flip the
-///   hub-region-processing-only latch.
-/// * `eus2-403-3` on `EAST_US_2` + `ReadItem` + `WriteForbidden`
-///   (`403/3`), `hit_limit = 1` — fires only on R1 to drive the first
-///   hub-discovery rotation away from EUS2.
-///
-/// Asserts (cold path, R1):
-///   1. The `1002` rule fired exactly once.
-///   2. The `403/3` rule fired exactly once.
-///   3. The read issued at least 4 wire attempts (5 in the typical
-///      deterministic trace — see the module-level docs for the full
-///      hop-by-hop derivation).
-///   4. Both regions appear in the contacted set.
-///   5. After R1, `PartitionEndpointState::failover_overrides` contains
-///      exactly one entry whose endpoint URL points at EUS2.
-///
-/// Asserts (warm path, R2):
-///   6. The `1002` rule fired a second time (`hit_count == 2`).
-///   7. The `403/3` rule was NOT consumed again (`hit_count == 1`),
-///      proving the cache HIT short-circuited the discovery probe.
-///   8. The read issued exactly 2 wire attempts.
-///   9. The cache snapshot is byte-for-byte identical to R1's final
-///      snapshot.
+/// Warm-path assertions (R2) prove the cache hit: the hub-region 403 rule
+/// is NOT consumed again and the cache snapshot is byte-for-byte unchanged
+/// from R1.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_region"),
     ignore = "requires test_category 'multi_region'"
 )]
-#[cfg_attr(
-    test_category = "multi_region",
-    ignore = "Requires PPAF enabled account with active failover from backend"
-)]
 pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Error>> {
-    // 1002 on the preferred read region — fires twice: once on R1's
-    // initial attempt to set the latch and start discovery, once on R2's
-    // initial attempt to re-latch so the cache lookup gate is active.
-    let rule_1002 = Arc::new(
+    // Two 1002 rules on the preferred read region. The fault injection
+    // runtime does not filter on request headers, so a single rule with
+    // `hit_limit = 2` would also fire on R1's discovery rotation revisit
+    // to the read region and suppress the real backend `403/3` the test
+    // depends on. Splitting into r1 (always on, exhausted by R1) and r2
+    // (initially disabled, enabled before R2) keeps each read's initial
+    // attempt faulted while leaving the intermediate revisits live.
+    let rule_1002_r1 = Arc::new(
         FaultInjectionRuleBuilder::new(
-            "hub-cache-wus3-1002",
+            "hub-cache-read-region-1002-r1",
             FaultInjectionResultBuilder::new()
                 .with_error(FaultInjectionErrorType::ReadSessionNotAvailable)
                 .with_probability(1.0)
@@ -209,17 +87,36 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
                 .with_region(PREFERRED_READ_REGION)
                 .build(),
         )
-        .with_hit_limit(2)
+        .with_hit_limit(1)
         .build(),
     );
 
-    // 403/3 on the hub region — fires once on R1's first hub probe to
-    // force the discovery rotation. After R1 populates the cache, R2
-    // short-circuits via the cache hit and this rule never fires again,
-    // which is exactly the cache-utilization signal we assert below.
+    let rule_1002_r2 = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "hub-cache-read-region-1002-r2",
+            FaultInjectionResultBuilder::new()
+                .with_error(FaultInjectionErrorType::ReadSessionNotAvailable)
+                .with_probability(1.0)
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::ReadItem)
+                .with_region(PREFERRED_READ_REGION)
+                .build(),
+        )
+        .with_hit_limit(1)
+        .build(),
+    );
+    rule_1002_r2.disable();
+
+    // 403/3 on the hub region fires once on R1's first hub probe to force
+    // the discovery rotation. After R1 populates the cache, R2 short-circuits
+    // via the cache hit and this rule never fires again — that is the
+    // cache-utilization signal we assert on the warm path.
     let rule_403 = Arc::new(
         FaultInjectionRuleBuilder::new(
-            "hub-cache-eus2-403-3",
+            "hub-cache-hub-region-403-3",
             FaultInjectionResultBuilder::new()
                 .with_error(FaultInjectionErrorType::WriteForbidden)
                 .with_probability(1.0)
@@ -235,14 +132,25 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
         .build(),
     );
 
-    let rules = vec![Arc::clone(&rule_1002), Arc::clone(&rule_403)];
+    let rules = vec![
+        Arc::clone(&rule_1002_r1),
+        Arc::clone(&rule_1002_r2),
+        Arc::clone(&rule_403),
+    ];
+
+    // Suppress hedging so the discovery rotation drives the wire flow
+    // deterministically. With hedging enabled, the post-1002 hedge race
+    // can win in `terminal_state: AlternateWon` and preempt hub-region
+    // discovery before the cache is populated.
+    let mut op_options = OperationOptions::default();
+    op_options.availability_strategy = Some(AvailabilityStrategy::Disabled);
 
     DriverTestClient::run_with_unique_db_and_hedging(
         rules,
-        OperationOptions::default(),
-        // Explicit preferred-regions list — pre-warms the driver cache so
-        // initial reads target WEST_US_3 (where the 1002 injection lives)
-        // rather than EUS2 (the account default first preference).
+        op_options,
+        // Pre-warm the preferred-regions list so the initial read targets
+        // the satellite region (where the 1002 injection lives) rather
+        // than the account-default first preference.
         vec![PREFERRED_READ_REGION, HUB_REGION],
         async |context, database| {
             let container_name = context.unique_container_name();
@@ -250,52 +158,56 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
                 .create_container(&database, &container_name, "/pk")
                 .await?;
 
-            // Seed an item to read.
             let item_body = br#"{"id": "hub-cache-item", "pk": "pk1", "value": "seed"}"#;
             context
                 .create_item_with_pk(&container, "pk1", item_body)
                 .await
                 .expect("seed CreateItem should succeed");
 
-            // Cache must start empty.
+            // Force PPAF on the in-memory partition state. The bicep-
+            // provisioned test account does not advertise PPAF natively,
+            // which would leave the hub-region latch in
+            // `build_session_retry_state` permanently disarmed. Harmless
+            // no-op on accounts that already advertise PPAF.
+            context.force_ppaf_enabled().await?;
+
             let cache_before = context.hub_region_cache_snapshot().await?;
             assert!(
                 cache_before.is_empty(),
-                "Hub-region cache should be empty before any read, got {:?}",
+                "hub-region cache should be empty before any read, got {:?}",
                 cache_before
             );
 
-            // ── R1 (cold cache) ─────────────────────────────────────────
-            //
-            // The hub-region discovery pipeline drives the full rotation:
-            // WUS3 (1002) → EUS2 (injected 403/3) → WUS3 (real 403/3) →
-            // WUS3 (real 403/3) → EUS2 (real 200). See the module-level
-            // docs for the per-hop derivation.
+            // ── R1 (cold cache) ────────────────────────────────────────
             let r1 = context
                 .read_item(&container, "hub-cache-item", "pk1")
                 .await
                 .expect("R1 (cold) ReadItem should succeed via hub-region discovery");
+            let r1_diag = r1.diagnostics();
 
             assert_eq!(
-                rule_1002.hit_count(),
+                rule_1002_r1.hit_count(),
                 1,
-                "R1: WUS3 1002 rule should fire exactly once, got {}",
-                rule_1002.hit_count()
+                "R1: read-region 1002-r1 rule should fire exactly once, got {}",
+                rule_1002_r1.hit_count()
+            );
+            assert_eq!(
+                rule_1002_r2.hit_count(),
+                0,
+                "R1: read-region 1002-r2 rule should not fire on R1 (still disabled), got {}",
+                rule_1002_r2.hit_count()
             );
             assert_eq!(
                 rule_403.hit_count(),
                 1,
-                "R1: EUS2 403/3 rule should fire exactly once, got {}",
+                "R1: hub-region 403/3 rule should fire exactly once, got {}",
                 rule_403.hit_count()
             );
 
-            let r1_diag = r1.diagnostics();
             let r1_count = r1_diag.request_count();
             assert!(
                 r1_count >= 4,
-                "R1 cold path should issue at least 4 wire attempts \
-                 (deterministic trace is 5: WUS3 1002, EUS2 403/3-inject, \
-                 WUS3 real-403/3, WUS3 real-403/3, EUS2 200), got {}",
+                "R1 cold path should issue at least 4 wire attempts, got {}",
                 r1_count
             );
             let r1_regions = r1_diag.regions_contacted();
@@ -312,12 +224,10 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
                 r1_regions
             );
 
-            // Cache populated — exactly one partition entry pointing at
-            // the hub. This is the strongest single-test signal that
-            // (a) the discovery converged, AND (b) the hub-region header
-            // was attached on retries: without the header, WUS3 would
-            // have returned 200 OK on attempts 3/4 and the cache would
-            // have ended up pointing at WUS3 instead of EUS2.
+            // Cache must contain exactly one partition entry pointing at
+            // the hub. This is the strongest single-test signal that the
+            // hub-region header was attached on retries — without the
+            // header the cache would converge on the satellite region.
             let cache_after_r1 = context.hub_region_cache_snapshot().await?;
             assert_eq!(
                 cache_after_r1.len(),
@@ -332,41 +242,49 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
             );
             assert!(
                 endpoint_url.to_lowercase().contains(HUB_REGION_HOST_FRAGMENT),
-                "R1: cached endpoint URL {endpoint_url:?} should point at the \
-                 hub region (host fragment {HUB_REGION_HOST_FRAGMENT:?})"
+                "R1: cached endpoint URL {endpoint_url:?} should point at the hub region \
+                 (host fragment {HUB_REGION_HOST_FRAGMENT:?})"
             );
 
-            // ── R2 (warm cache) ─────────────────────────────────────────
-            //
-            // Same item, fresh operation. Latch starts OFF so the initial
-            // attempt targets WUS3 (which hits the 2nd 1002), re-latches,
-            // and then the cache lookup gate routes attempt 2 directly to
-            // the cached EUS2. The 403/3 rule never fires.
+            // ── R2 (warm cache) ────────────────────────────────────────
+            // Enable the second 1002 rule so the warm-path initial attempt
+            // re-arms the hub-region latch (latch starts OFF on each fresh
+            // operation; the cache lookup gate only consults the partition
+            // entry once the latch is back ON).
+            rule_1002_r2.enable();
+
             let r2 = context
                 .read_item(&container, "hub-cache-item", "pk1")
                 .await
                 .expect("R2 (warm) ReadItem should succeed via cache short-circuit");
+            let r2_diag = r2.diagnostics();
 
             assert_eq!(
-                rule_1002.hit_count(),
-                2,
-                "R2: WUS3 1002 rule should fire a second time, got {}",
-                rule_1002.hit_count()
+                rule_1002_r1.hit_count(),
+                1,
+                "R2: read-region 1002-r1 rule should still be at 1 (exhausted on R1), got {}",
+                rule_1002_r1.hit_count()
+            );
+            assert_eq!(
+                rule_1002_r2.hit_count(),
+                1,
+                "R2: read-region 1002-r2 rule should fire exactly once on the warm-path \
+                 initial attempt, got {}",
+                rule_1002_r2.hit_count()
             );
             assert_eq!(
                 rule_403.hit_count(),
                 1,
-                "R2: EUS2 403/3 rule should NOT have fired again \
+                "R2: hub-region 403/3 rule should NOT have fired again \
                  (cache HIT short-circuits the discovery probe), got {}",
                 rule_403.hit_count()
             );
 
-            let r2_diag = r2.diagnostics();
             let r2_count = r2_diag.request_count();
             assert_eq!(
                 r2_count, 2,
                 "R2 warm path should issue exactly 2 wire attempts \
-                 (WUS3 1002 → EUS2 cache-hit success), got {}",
+                 (read-region 1002 → hub-region cache-hit success), got {}",
                 r2_count
             );
             let r2_regions = r2_diag.regions_contacted();
@@ -383,10 +301,9 @@ pub async fn read_hub_region_caching_cold_then_warm() -> Result<(), Box<dyn Erro
                 r2_regions
             );
 
-            // Cache snapshot is byte-for-byte unchanged — the warm-path
-            // success only refreshed the entry's `current_endpoint` to
-            // the same EUS2 value (`cache_hub_region` is idempotent and
-            // preserves `failed_endpoints`).
+            // Cache snapshot must be byte-for-byte unchanged — the warm
+            // path's success only refreshed `current_endpoint` to the
+            // same hub value (cache_hub_region is idempotent).
             let cache_after_r2 = context.hub_region_cache_snapshot().await?;
             assert_eq!(
                 cache_after_r2, cache_after_r1,

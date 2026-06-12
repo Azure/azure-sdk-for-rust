@@ -477,10 +477,39 @@ impl DriverTestRunContext {
         let db_name = database
             .name()
             .ok_or_else(|| "database reference must be name-based".to_string())?;
-        let container = driver
-            .resolve_container_by_name(db_name, container_name)
-            .await?;
-        Ok(container)
+        // After a successful container CREATE the just-created collection
+        // can be briefly unreadable on individual regional gateways with
+        // 404/1013 (`CollectionCreateInProgress`) — the create returns
+        // 201 from the write region before all regional gateways finish
+        // propagating the new collection metadata. Retry with backoff
+        // while that race settles. This is a no-op on accounts where the
+        // resolve already succeeds on the first call (notably the
+        // emulator and most production single-region accounts).
+        let mut delay_ms = 500u64;
+        let mut last_err_msg: Option<String> = None;
+        for _ in 0..12 {
+            match driver
+                .resolve_container_by_name(db_name, container_name)
+                .await
+            {
+                Ok(c) => return Ok(c),
+                Err(e) => {
+                    let msg = format!("{e}");
+                    if msg.contains("1013") || msg.contains("CollectionCreateInProgress") {
+                        tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+                        delay_ms = (delay_ms * 2).min(5000);
+                        last_err_msg = Some(msg);
+                        continue;
+                    }
+                    return Err(e.into());
+                }
+            }
+        }
+        Err(format!(
+            "resolve_container_by_name failed after 12 retries: {}",
+            last_err_msg.unwrap_or_else(|| "<no error captured>".into())
+        )
+        .into())
     }
 
     /// Creates an item using the driver.
@@ -628,6 +657,24 @@ impl DriverTestRunContext {
             .get_or_create_driver(self.client.account.clone(), None)
             .await?;
         Ok(driver.__test_only_hub_region_cache_snapshot())
+    }
+
+    /// Forces `per_partition_automatic_failover_enabled = true` on the
+    /// cached driver's in-memory partition state. Required for live tests
+    /// that exercise the hub-region caching path when the test account
+    /// does not advertise the PPAF account property
+    /// (`enable_per_partition_failover_behavior`). Without this override,
+    /// the hub-region latch in `build_session_retry_state` never arms and
+    /// the cache stays empty regardless of the wire flow.
+    #[cfg(feature = "__internal_testing")]
+    pub async fn force_ppaf_enabled(&self) -> Result<(), Box<dyn Error>> {
+        let driver = self
+            .client
+            .runtime
+            .get_or_create_driver(self.client.account.clone(), None)
+            .await?;
+        driver.__test_only_force_ppaf_enabled();
+        Ok(())
     }
 
     /// Validates diagnostics for a successful data plane operation.
