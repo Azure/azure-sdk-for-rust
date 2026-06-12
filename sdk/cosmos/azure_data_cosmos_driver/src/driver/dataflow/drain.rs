@@ -133,8 +133,12 @@ impl PipelineNode for SequentialDrain {
                     .build());
             };
             let child_state = child.snapshot_state()?;
-            match child_state {
-                PipelineNodeState::Drained => {
+            match child_state.into_child_contribution(
+                "SequentialDrain",
+                idx,
+                self.children.len(),
+            )? {
+                crate::driver::dataflow::snapshot::ChildSnapshotContribution::Drained => {
                     // The drain pops fully-drained front children before
                     // returning a page, so an in-place `Drained` child at
                     // snapshot time after the cursor has advanced is an
@@ -155,7 +159,7 @@ impl PipelineNode for SequentialDrain {
                             .build());
                     }
                 }
-                PipelineNodeState::Request {
+                crate::driver::dataflow::snapshot::ChildSnapshotContribution::Pending {
                     server_continuation,
                 } => {
                     if cursor.is_none() {
@@ -168,22 +172,6 @@ impl PipelineNode for SequentialDrain {
                             server_continuation: token,
                         });
                     }
-                }
-                other => {
-                    return Err(crate::error::CosmosError::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
-                        )
-                        .with_message(format!(
-                            "SequentialDrain child {idx} of {total} produced an unsupported snapshot shape: {}",
-                            match &other {
-                                PipelineNodeState::Drained => "Drained",
-                                PipelineNodeState::Request { .. } => "Request",
-                                PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
-                            },
-                            total = self.children.len(),
-                        ))
-                        .build());
                 }
             }
         }

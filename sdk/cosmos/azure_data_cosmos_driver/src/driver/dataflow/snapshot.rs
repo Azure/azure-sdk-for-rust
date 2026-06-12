@@ -71,6 +71,62 @@ pub(crate) struct RangedToken {
     pub(crate) server_continuation: String,
 }
 
+/// A child's snapshot state as visible to its parent.
+///
+/// Parents (e.g., [`SequentialDrain`](super::drain::SequentialDrain))
+/// assemble their own state from each child's contribution without needing
+/// to pattern-match on the full [`PipelineNodeState`] enum. Variants the
+/// parent doesn't support are surfaced as an error in
+/// [`PipelineNodeState::into_child_contribution`] rather than reaching the
+/// parent at all.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum ChildSnapshotContribution {
+    /// The child has produced all of its pages and contributes no state.
+    Drained,
+
+    /// The child still has work to do, optionally with an in-flight server
+    /// continuation. `None` means the child hasn't issued its first request
+    /// yet (fresh-start on resume).
+    Pending { server_continuation: Option<String> },
+}
+
+impl PipelineNodeState {
+    /// Reduces a child's full snapshot state to the subset a parent needs.
+    ///
+    /// Returns an error for variants no parent currently supports nesting
+    /// (e.g., a nested [`PipelineNodeState::SequentialDrain`]). The
+    /// `parent`, `idx`, and `total` arguments are folded into the error
+    /// message so callers don't have to format their own.
+    pub(crate) fn into_child_contribution(
+        self,
+        parent: &str,
+        idx: usize,
+        total: usize,
+    ) -> crate::error::Result<ChildSnapshotContribution> {
+        match self {
+            PipelineNodeState::Drained => Ok(ChildSnapshotContribution::Drained),
+            PipelineNodeState::Request {
+                server_continuation,
+            } => Ok(ChildSnapshotContribution::Pending {
+                server_continuation,
+            }),
+            other => Err(crate::error::CosmosError::builder()
+                .with_status(
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+                )
+                .with_message(format!(
+                    "{parent} child {idx} of {total} produced an unsupported snapshot shape: {}",
+                    match &other {
+                        PipelineNodeState::Drained => "Drained",
+                        PipelineNodeState::Request { .. } => "Request",
+                        PipelineNodeState::SequentialDrain { .. } => "SequentialDrain",
+                    },
+                ))
+                .build()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -173,5 +229,62 @@ mod tests {
         let bogus = r#"{"kind":"something_new"}"#;
         let result: Result<PipelineNodeState, _> = serde_json::from_str(bogus);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn into_child_contribution_maps_drained() {
+        let contrib = PipelineNodeState::Drained
+            .into_child_contribution("Parent", 0, 1)
+            .expect("Drained must always reduce successfully");
+        assert_eq!(contrib, ChildSnapshotContribution::Drained);
+    }
+
+    #[test]
+    fn into_child_contribution_maps_request_with_token() {
+        let contrib = PipelineNodeState::Request {
+            server_continuation: Some("tok".to_owned()),
+        }
+        .into_child_contribution("Parent", 0, 1)
+        .expect("Request must always reduce successfully");
+        assert_eq!(
+            contrib,
+            ChildSnapshotContribution::Pending {
+                server_continuation: Some("tok".to_owned()),
+            }
+        );
+    }
+
+    #[test]
+    fn into_child_contribution_maps_request_without_token() {
+        let contrib = PipelineNodeState::Request {
+            server_continuation: None,
+        }
+        .into_child_contribution("Parent", 1, 4)
+        .expect("Request must always reduce successfully");
+        assert_eq!(
+            contrib,
+            ChildSnapshotContribution::Pending {
+                server_continuation: None,
+            }
+        );
+    }
+
+    #[test]
+    fn into_child_contribution_rejects_nested_sequential_drain() {
+        let err = PipelineNodeState::SequentialDrain {
+            left_most_undrained_epk: "80".to_owned(),
+            active_tokens: vec![],
+        }
+        .into_child_contribution("Parent", 2, 5)
+        .expect_err("nested SequentialDrain is not a supported child shape");
+        let msg = format!("{err:?}");
+        assert!(
+            msg.contains("Parent child 2 of 5"),
+            "error should carry parent/idx/total context: {msg}"
+        );
+        assert!(
+            msg.contains("SequentialDrain"),
+            "error should name the offending variant: {msg}"
+        );
     }
 }
