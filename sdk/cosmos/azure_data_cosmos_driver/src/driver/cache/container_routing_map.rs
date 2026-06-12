@@ -8,7 +8,7 @@
 
 use crate::models::effective_partition_key::EffectivePartitionKey;
 use crate::models::partition_key_range::{PartitionKeyRange, PartitionKeyRangeStatus};
-use crate::models::ETag;
+use azure_core::http::Etag;
 use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 
@@ -50,7 +50,7 @@ pub(crate) struct ContainerRoutingMap {
     /// Highest non-offline partition key range ID (used for split detection).
     highest_non_offline_pk_range_id: i32,
     /// ETag for incremental change feed refresh.
-    pub etag: Option<ETag>,
+    pub etag: Option<Etag>,
     /// Continuation token for incremental change feed fetches.
     pub change_feed_next_if_none_match: Option<String>,
 }
@@ -83,7 +83,7 @@ impl ContainerRoutingMap {
     /// or do not cover the full [`""`, `"FF"`) EPK space.
     pub fn try_create(
         ranges: Vec<PartitionKeyRange>,
-        etag: Option<ETag>,
+        etag: Option<Etag>,
         change_feed_next_if_none_match: Option<String>,
     ) -> Result<Option<Self>, RoutingMapError> {
         if ranges.is_empty() {

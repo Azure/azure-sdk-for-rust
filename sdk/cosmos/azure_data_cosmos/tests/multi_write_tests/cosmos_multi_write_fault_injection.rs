@@ -1,7 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
-#![cfg(feature = "fault_injection")]
 
 use super::framework;
 
@@ -11,7 +9,7 @@ use azure_data_cosmos::fault_injection::{
     FaultInjectionRuleBuilder, FaultOperationType,
 };
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::{ExcludedRegions, ItemReadOptions, OperationOptions};
+use azure_data_cosmos::options::{ExcludedRegions, ItemReadOptions, OperationOptions};
 use framework::{
     assert_local_retry_attempted_on_region, assert_region_contacted_with_retry, TestClient,
     TestOptions, HUB_REGION, SATELLITE_REGION,

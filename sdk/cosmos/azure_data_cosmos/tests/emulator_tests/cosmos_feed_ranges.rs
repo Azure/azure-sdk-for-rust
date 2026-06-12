@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
 
 use super::framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::{
-    models::{ContainerProperties, ThroughputProperties},
-    CreateContainerOptions,
-};
+use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
+use azure_data_cosmos::options::CreateContainerOptions;
 use base64::Engine;
 
 use framework::TestClient;

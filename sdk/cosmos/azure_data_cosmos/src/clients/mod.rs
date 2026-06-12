@@ -3,12 +3,30 @@
 
 //! Clients used to communicate with Azure Cosmos DB
 
+// =========================================================================
+// Public API
+// =========================================================================
+
+pub use container_client::ContainerClient;
+pub use cosmos_client::CosmosClient;
+pub use cosmos_client_builder::CosmosClientBuilder;
+pub use database_client::DatabaseClient;
+pub use throughput_poller::ThroughputPoller;
+
+// =========================================================================
+// Internal modules
+// =========================================================================
+
 mod container_client;
 mod cosmos_client;
 mod cosmos_client_builder;
 mod database_client;
 pub(crate) mod offers_client;
 mod throughput_poller;
+
+// =========================================================================
+// Crate-internal types
+// =========================================================================
 
 use std::sync::Arc;
 
@@ -24,9 +42,3 @@ use azure_data_cosmos_driver::CosmosDriver;
 pub(crate) struct ClientContext {
     pub(crate) driver: Arc<CosmosDriver>,
 }
-
-pub use container_client::ContainerClient;
-pub use cosmos_client::CosmosClient;
-pub use cosmos_client_builder::CosmosClientBuilder;
-pub use database_client::DatabaseClient;
-pub use throughput_poller::ThroughputPoller;

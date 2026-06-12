@@ -6,7 +6,10 @@ use std::borrow::Cow;
 use azure_core::fmt::SafeDebug;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::models::{IndexingPolicy, PartitionKeyDefinition, SystemProperties};
+use crate::{
+    models::PartitionKeyDefinition,
+    models::{IndexingPolicy, SystemProperties},
+};
 
 /// Represents the time-to-live configuration for a Cosmos DB container.
 ///

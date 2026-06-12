@@ -3,7 +3,7 @@
 
 //! Helpers for merging and managing session tokens across feed ranges.
 
-use crate::FeedRange;
+use crate::feed::FeedRange;
 use azure_data_cosmos_driver::models::{SessionToken, SessionTokenSegment};
 
 /// Returns `true` if `a` and `b` can be combined into a single bounding feed range.
@@ -328,7 +328,9 @@ fn merge_tokens_by_partition(tokens: Vec<String>) -> crate::Result<SessionToken>
 /// # Examples
 ///
 /// ```rust,no_run
-/// # use azure_data_cosmos::{clients::ContainerClient, FeedRange, SessionToken};
+/// # use azure_data_cosmos::{clients::ContainerClient};
+/// use azure_data_cosmos::feed::{FeedRange};
+/// use azure_data_cosmos::options::{SessionToken};
 /// # async fn example(container: ContainerClient) -> azure_data_cosmos::Result<()> {
 /// // After read/write operations, capture session tokens from response headers.
 /// // When using multiple clients against the same container, merge their tokens
@@ -364,7 +366,9 @@ pub(crate) fn get_latest_session_token(
         // service-style signal that the resource the caller is
         // referencing no longer exists in the requested shape.
         return Err(crate::DriverCosmosError::builder()
-            .with_status(crate::CosmosStatus::CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN)
+            .with_status(
+                crate::error::CosmosStatus::CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN,
+            )
             .with_message("no overlapping feed ranges with the target feed range")
             .build()
             .into());

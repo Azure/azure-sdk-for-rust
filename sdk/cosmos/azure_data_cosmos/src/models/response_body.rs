@@ -9,9 +9,9 @@ use serde::de::DeserializeOwned;
 
 /// The body of a Cosmos DB operation response.
 ///
-/// Returned by [`ItemResponse::into_body`](crate::ItemResponse::into_body),
-/// [`ResourceResponse::into_body`](crate::ResourceResponse::into_body), and
-/// [`BatchResponse::into_body`](crate::BatchResponse::into_body). Internally
+/// Returned by [`ItemResponse::into_body`](crate::models::ItemResponse::into_body),
+/// [`ResourceResponse::into_body`](crate::models::ResourceResponse::into_body), and
+/// [`BatchResponse::into_body`](crate::models::BatchResponse::into_body). Internally
 /// the body may be a single payload (point reads/writes, batches) or a list of
 /// per-document slices (feed responses); use the helpers below to consume it.
 #[derive(Clone, Default, SafeDebug)]

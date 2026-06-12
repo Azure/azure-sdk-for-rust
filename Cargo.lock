@@ -333,28 +333,6 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15daabffc2fcce01c54333137e40b216f5be8401b3a1bdafe1a633972f7346e9"
-dependencies = [
- "async-trait",
- "azure_core 1.0.0",
- "fe2o3-amqp",
- "fe2o3-amqp-cbs",
- "fe2o3-amqp-ext",
- "fe2o3-amqp-management",
- "fe2o3-amqp-types",
- "serde",
- "serde_amqp",
- "serde_bytes",
- "tokio",
- "tracing",
- "typespec 1.0.0",
- "typespec_macros 1.0.0",
-]
-
-[[package]]
-name = "azure_core_amqp"
 version = "1.1.0-beta.1"
 dependencies = [
  "async-trait",
@@ -516,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.35.0"
+version = "0.36.0"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -530,6 +508,7 @@ dependencies = [
  "pin-project",
  "reqwest",
  "serde",
+ "serde_bytes",
  "serde_json",
  "time",
  "tokio",
@@ -553,7 +532,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "arc-swap",
  "async-lock",
@@ -678,7 +657,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_amqp 1.0.0",
+ "azure_core_amqp",
  "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "azure_messaging_eventhubs",
@@ -725,7 +704,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.0.0",
- "azure_core_amqp 1.0.0",
+ "azure_core_amqp",
  "azure_core_test 0.1.0",
  "azure_identity 1.0.0",
  "futures",
@@ -741,7 +720,7 @@ dependencies = [
 
 [[package]]
 name = "azure_security_keyvault_certificates"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",

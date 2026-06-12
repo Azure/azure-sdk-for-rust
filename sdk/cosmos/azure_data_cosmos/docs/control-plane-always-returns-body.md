@@ -1,0 +1,2 @@
+The response always carries the created or updated resource body, regardless of any [`ContentResponseOnWrite`](crate::options::ContentResponseOnWrite) value configured on the request's [`OperationOptions`](crate::options::OperationOptions). Control-plane operations need the resource body so the caller can inspect the resulting properties (resource id, ETag, etc.), so the SDK always requests it and overrides any caller-provided value.
+

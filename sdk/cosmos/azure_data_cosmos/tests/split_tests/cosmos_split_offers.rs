@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-#![cfg(feature = "key_auth")]
 
 use super::framework;
 
@@ -11,7 +10,7 @@ use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use framework::{TestClient, TestOptions};
 use futures::TryStreamExt;
 
-use azure_data_cosmos::CreateContainerOptions;
+use azure_data_cosmos::options::CreateContainerOptions;
 
 #[tokio::test]
 #[cfg_attr(
