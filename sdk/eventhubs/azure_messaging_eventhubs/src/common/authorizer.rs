@@ -99,7 +99,7 @@ impl Authorizer {
 
         // #4454 stale-token guard. The token cache is mutable (the
         // refresh task rewrites entries), so unlike the connection caches it can't
-        // use an `OnceCell`; the generation check is applied here directly. We
+        // use a `OnceCell`; the generation check is applied here directly. We
         // capture the connection's recovery generation before the lock-free CBS
         // attach and re-check it after: if a recovery cleared this cache and bumped
         // the generation mid-attach, the token we just authorized is bound to the
@@ -180,9 +180,9 @@ impl Authorizer {
             return Ok(stored);
         }
 
-        Err(AmqpError::with_message(
-            "Exceeded retry budget authorizing path across recoveries",
-        ))
+        Err(AmqpError::with_message(format!(
+            "Exceeded retry budget ({MAX_GENERATION_RETRIES}) authorizing path '{path}' across recoveries"
+        )))
     }
 
     /// Actually perform an authorization against the Event Hubs service.
@@ -431,7 +431,7 @@ impl Authorizer {
             let mut scopes = self.authorization_scopes.write().await;
             if connection.generation() != captured {
                 debug!(
-                    "Discarding tokens refreshed during recovery (#4454); the cache was cleared mid-refresh."
+                    "Discarding tokens refreshed during recovery (#4454); the recovery generation advanced mid-refresh."
                 );
             } else {
                 for (url, token) in updated_tokens.into_iter() {

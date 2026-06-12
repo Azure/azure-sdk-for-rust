@@ -803,9 +803,6 @@ mod tests {
     // surface here as an unauthorized / detached error and panic a send loop's
     // `unwrap`. A clean 30s run means every partition re-authorized against the new
     // connection without a second recovery cycle.
-    //
-    // The send loops run via `tokio::join!` (not `tokio::spawn`) so they are
-    // cancelled with the test future when `force_errors`'s timeout arm fires.
     #[recorded::test(live)]
     async fn force_errors_concurrent_authorize_send_reconnect(ctx: TestContext) -> Result<()> {
         const TEST_NAME: &str = "force_errors_concurrent_authorize_send_reconnect";
@@ -820,17 +817,34 @@ mod tests {
                 .await?,
         );
 
+        // Derive the partition IDs from the Event Hub rather than hard-coding
+        // "0".."3", which would panic on a hub configured with fewer than four
+        // partitions. The race this test targets only needs several
+        // `authorize_path` re-authorizations in flight at once, so send to up to
+        // four of whatever partitions the hub actually exposes.
+        let partition_ids = producer.get_eventhub_properties().await?.partition_ids;
+        assert!(
+            partition_ids.len() >= 2,
+            "this test needs at least 2 partitions to keep concurrent authorizations \
+             in flight across the reconnect, but the configured Event Hub has {}",
+            partition_ids.len()
+        );
+        let partition_ids: Vec<String> = partition_ids.into_iter().take(4).collect();
+
         force_errors(
             producer.clone(),
-            |producer: Arc<ProducerClient>| {
-                let producer = producer.clone();
+            move |producer: Arc<ProducerClient>| {
+                let partition_ids = partition_ids.clone();
                 async move {
-                    tokio::join!(
-                        send_to_partition(producer.clone(), "0"),
-                        send_to_partition(producer.clone(), "1"),
-                        send_to_partition(producer.clone(), "2"),
-                        send_to_partition(producer.clone(), "3"),
-                    );
+                    // Run the send loops via `join_all` (not `tokio::spawn`) so they
+                    // are cancelled with the test future when `force_errors`'s
+                    // timeout arm fires.
+                    futures::future::join_all(
+                        partition_ids
+                            .iter()
+                            .map(|partition| send_to_partition(producer.clone(), partition)),
+                    )
+                    .await;
                 }
             },
             |producer| {

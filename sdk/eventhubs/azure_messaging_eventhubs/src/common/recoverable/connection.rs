@@ -575,9 +575,9 @@ impl RecoverableConnection {
             }
         }
 
-        Err(AmqpError::with_message(
-            "Exceeded retry budget re-initializing resource across recoveries",
-        ))
+        Err(AmqpError::with_message(format!(
+            "Exceeded retry budget ({MAX_GENERATION_RETRIES}) re-initializing resource '{key}' across recoveries"
+        )))
     }
 
     async fn get_session(
@@ -837,7 +837,7 @@ impl RecoverableConnection {
         // the recovery and discard their stale results (see the struct field and
         // `get_or_init_generational`). `authorize_path` and the refresh task read
         // this generation directly because the token cache is mutable and cannot
-        // use an `OnceCell`; their guard re-reads the generation under the same
+        // use a `OnceCell`; their guard re-reads the generation under the same
         // `authorization_scopes` write lock that `clear()` takes. If we cleared the
         // authorizer before the bump, an in-flight `authorize_path` could acquire
         // that write lock after the clear, still observe the pre-bump generation,
