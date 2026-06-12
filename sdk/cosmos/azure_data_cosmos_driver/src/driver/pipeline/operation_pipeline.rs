@@ -600,6 +600,22 @@ pub(crate) async fn execute_operation_pipeline(
                 // If a PPCB probe request succeeded, remove the ProbeCandidate entry.
                 try_cleanup_probe_candidate(&retry_state, location_state_store);
 
+                // Hub-region cache populate: when the hub-region-processing-only
+                // latch was active and we have a partition key range ID, the
+                // region that produced this 2xx is — by definition — the
+                // partition's current hub. Cache it so subsequent operations
+                // that latch the header skip the 403/3 discovery chain.
+                if let Some(pk_range_id) =
+                    hub_region_cache_populate_target(&retry_state, operation)
+                {
+                    location_state_store
+                        .apply(&[LocationEffect::CacheHubRegion {
+                            partition_key_range_id: pk_range_id,
+                            hub_endpoint: routing.endpoint.clone(),
+                        }])
+                        .await;
+                }
+
                 return build_cosmos_response(result, diagnostics);
             }
             OperationAction::FailoverRetry { new_state, delay } => {
@@ -921,6 +937,14 @@ fn is_effect_already_applied(effect: &LocationEffect, snapshot: &LocationSnapsho
         // RefreshAccountProperties is internally rate-limited by
         // `refresh_account_properties_if_due` — let the store decide.
         LocationEffect::RefreshAccountProperties => false,
+        // Hub-region cache mutations are emitted at most once per operation
+        // (CacheHubRegion at Complete, AdvanceHubRegionDiscovery per 403/3
+        // attempt). Never treat them as already-applied — letting them
+        // run is idempotent at the routing-systems level (cache_hub_region
+        // does an upsert, advance_hub_region_discovery rotates the entry).
+        LocationEffect::CacheHubRegion { .. } | LocationEffect::AdvanceHubRegionDiscovery { .. } => {
+            false
+        }
     }
 }
 
@@ -957,7 +981,9 @@ fn resolve_endpoint(
             .filter_map(|e| match e {
                 LocationEffect::MarkPartitionUnavailable(p) => p.region.as_ref(),
                 LocationEffect::MarkEndpointUnavailable { endpoint, .. } => endpoint.region(),
-                LocationEffect::RefreshAccountProperties => None,
+                LocationEffect::RefreshAccountProperties
+                | LocationEffect::CacheHubRegion { .. }
+                | LocationEffect::AdvanceHubRegionDiscovery { .. } => None,
             })
             .collect()
     } else {
@@ -1084,7 +1110,36 @@ fn resolve_endpoint(
             ep.region().is_some_and(|r| in_flight_failed.contains(&r))
         };
 
-        if is_eligible_for_ppcb(partitions, account, is_read, is_partitioned) {
+        // Hub-region cache (warm path): if the hub-region-processing-only
+        // latch is set on this attempt, PPAF is enabled on the partition
+        // state, and the cache is populated for this partition, route
+        // directly to the cached hub endpoint, skipping the 403/3
+        // discovery chain.
+        //
+        // Reuses `failover_overrides` (the PPAF cache) — on a single-master
+        // account the partition's hub region *is* its write region, so
+        // entries serve both PPAF write routing and hub-region read
+        // routing. PPAF's existing `is_eligible_for_ppaf` gate rejects
+        // reads, so we add this independent read-side gate; the
+        // `per_partition_automatic_failover_enabled` check mirrors that
+        // gate so the hub cache is consulted only when PPAF is on.
+        //
+        // Skip on `override_region_already_failed`: if the cache currently
+        // points at a region whose effect is already buffered as failed
+        // in this operation, fall through to the default selection rather
+        // than retrying the same failed region.
+        let hub_latch_active = is_read
+            && retry_state.hub_region_processing_only
+            && partitions.per_partition_automatic_failover_enabled;
+        if hub_latch_active {
+            if let Some(entry) = partitions.failover_overrides.get(pk_range_id) {
+                if !override_region_already_failed(&entry.current_endpoint) {
+                    return make_partition_routing(entry.current_endpoint.clone());
+                }
+            }
+        }
+
+        if !hub_latch_active && is_eligible_for_ppcb(partitions, account, is_read, is_partitioned) {
             if let Some(entry) = partitions.circuit_breaker_overrides.get(pk_range_id) {
                 if entry.health_status == HealthStatus::ProbeCandidate
                     && !override_region_already_failed(&entry.first_failed_endpoint)
@@ -1747,6 +1802,24 @@ fn try_cleanup_probe_candidate(
             current.clone()
         }
     });
+}
+
+/// Returns the partition key range ID to cache as the hub region if the
+/// completed operation satisfies the populate gate; otherwise `None`.
+///
+/// The gate requires all three: the hub-region-processing-only latch was
+/// active for this attempt, a partition key range ID is known, 
+/// and the operation is a read.
+
+fn hub_region_cache_populate_target(
+    retry_state: &OperationRetryState,
+    operation: &CosmosOperation,
+) -> Option<PartitionKeyRangeId> {
+    if retry_state.hub_region_processing_only && operation.is_read_only() {
+        retry_state.partition_key_range_id.clone()
+    } else {
+        None
+    }
 }
 
 // ── Hedging dispatch (Part 4b) ────────────────────────────────────────
@@ -4000,6 +4073,288 @@ mod tests {
             Duration::from_secs(60),
         );
         assert_eq!(second_routing.endpoint, endpoint_b);
+    }
+
+    // ── Hub region cache warm-path ─────────────────────────────────────
+
+    /// Builds a single-master `LocationSnapshot` with regional
+    /// endpoints and a populated hub-region cache pointing the supplied
+    /// partition key range at `hub_endpoint`.
+    fn hub_cache_location_snapshot(
+        pk_range_id: &str,
+        hub_endpoint: &CosmosEndpoint,
+    ) -> (LocationSnapshot, CosmosEndpoint, CosmosEndpoint) {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+
+        let eastus = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let westus = CosmosEndpoint::regional(
+            "westus".into(),
+            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![eastus.clone(), westus.clone()].into(),
+            preferred_write_endpoints: vec![eastus.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: eastus.clone(),
+        });
+
+        let mut partitions = PartitionEndpointState::default();
+        partitions.per_partition_automatic_failover_enabled = true;
+        partitions.failover_overrides.insert(
+            pk_range_id.parse().unwrap(),
+            PartitionFailoverEntry {
+                current_endpoint: hub_endpoint.clone(),
+                first_failed_endpoint: hub_endpoint.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        (
+            LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions)),
+            eastus,
+            westus,
+        )
+    }
+
+    /// Builds a retry state representing a single-master data-plane read
+    /// that has latched the hub-region header on the first 1002 and has
+    /// resolved a partition key range ID from the response.
+    fn read_state_with_hub_latch(pk_range_id: &str) -> super::OperationRetryState {
+        super::OperationRetryState {
+            location: LocationIndex::initial(0),
+            failover_retry_count: 0,
+            session_token_retry_count: 1,
+            max_failover_retries: 3,
+            max_session_retries: 3,
+            can_use_multiple_write_locations: false,
+            is_dataplane: true,
+            hub_region_processing_only: true,
+            shared_hub_region_latch: None,
+            excluded_regions: Vec::new(),
+            session_retry_routing:
+                crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
+            partition_key_range_id: Some(pk_range_id.parse().unwrap()),
+            ppaf_write_retry_allowed: false,
+            ppcb_active: false,
+            pending_write_effects: Vec::new(),
+            hedge_already_fired: false,
+        }
+    }
+
+    #[test]
+    fn resolve_endpoint_routes_to_cached_hub_when_latch_set() {
+        let pk_range = "0";
+        let hub = CosmosEndpoint::regional(
+            "westus".into(),
+            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let (location, _eastus, _westus) = hub_cache_location_snapshot(pk_range, &hub);
+
+        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
+            test_account(),
+            "mydb",
+        ));
+        let retry_state = read_state_with_hub_latch(pk_range);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(
+            routing.endpoint, hub,
+            "warm cache hit must route directly to the cached hub region",
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_ignores_hub_cache_when_latch_not_set() {
+        let pk_range = "0";
+        let hub = CosmosEndpoint::regional(
+            "westus".into(),
+            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let (location, eastus, _westus) = hub_cache_location_snapshot(pk_range, &hub);
+
+        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
+            test_account(),
+            "mydb",
+        ));
+        let mut retry_state = read_state_with_hub_latch(pk_range);
+        retry_state.hub_region_processing_only = false; // latch off
+        retry_state.session_retry_routing =
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints;
+        retry_state.session_token_retry_count = 0;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+
+        assert_eq!(
+            routing.endpoint, eastus,
+            "without the latch, normal selection picks the first preferred read endpoint",
+        );
+    }
+
+    #[test]
+    fn resolve_endpoint_ignores_hub_cache_when_pk_range_id_missing() {
+        let pk_range = "0";
+        let hub = CosmosEndpoint::regional(
+            "westus".into(),
+            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+        let (location, _eastus, _westus) = hub_cache_location_snapshot(pk_range, &hub);
+
+        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
+            test_account(),
+            "mydb",
+        ));
+        let mut retry_state = read_state_with_hub_latch(pk_range);
+        // PK range ID not yet captured from a response header.
+        retry_state.partition_key_range_id = None;
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+
+        assert_ne!(
+            routing.endpoint, hub,
+            "without partition_key_range_id we cannot key into the cache",
+        );
+    }
+
+    /// Hub-region warm-path routing is gated on
+    /// `per_partition_automatic_failover_enabled` — even when the latch is
+    /// set and the cache contains an entry, an account without PPAF must
+    /// not be silently routed by the hub cache. Mirrors the
+    /// `cache_hub_region_skips_when_ppaf_disabled` writer-side gate.
+    #[test]
+    fn resolve_endpoint_ignores_hub_cache_when_ppaf_disabled() {
+        use crate::driver::routing::partition_endpoint_state::{
+            HealthStatus, PartitionEndpointState, PartitionFailoverEntry,
+        };
+
+        let pk_range = "0";
+        let eastus = CosmosEndpoint::regional(
+            "eastus".into(),
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let westus = CosmosEndpoint::regional(
+            "westus".into(),
+            Url::parse("https://test-westus.documents.azure.com:443/").unwrap(),
+        );
+
+        let account = Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: vec![eastus.clone(), westus.clone()].into(),
+            preferred_write_endpoints: vec![eastus.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: eastus.clone(),
+        });
+
+        // PPAF is OFF on this partition state but the cache nevertheless
+        // contains a hub entry (e.g., a stale entry from a feature flip).
+        let mut partitions = PartitionEndpointState::default();
+        partitions.per_partition_automatic_failover_enabled = false;
+        partitions.failover_overrides.insert(
+            pk_range.parse().unwrap(),
+            PartitionFailoverEntry {
+                current_endpoint: westus.clone(),
+                first_failed_endpoint: westus.clone(),
+                failed_endpoints: Default::default(),
+                read_failure_count: 0,
+                write_failure_count: 0,
+                first_failure_time: std::time::Instant::now(),
+                last_failure_time: std::time::Instant::now(),
+                health_status: HealthStatus::Unhealthy,
+                failback_jitter: Duration::ZERO,
+            },
+        );
+
+        let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
+
+        let operation = CosmosOperation::read_database(DatabaseReference::from_name(
+            test_account(),
+            "mydb",
+        ));
+        let retry_state = read_state_with_hub_latch(pk_range);
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &retry_state,
+            &location,
+            false,
+            Duration::from_secs(60),
+        );
+
+        assert_ne!(
+            routing.endpoint, westus,
+            "warm-path hub cache must not route when PPAF is disabled on the partition state",
+        );
+    }
+
+    #[test]
+    fn hub_region_cache_populate_target_gates_emission() {
+        let pk = "0";
+        let write_op = CosmosOperation::create_database(test_account());
+        let read_op =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "mydb"));
+
+        // All three conditions met → returns Some(pk).
+        let all_met = read_state_with_hub_latch(pk);
+        assert_eq!(
+            super::hub_region_cache_populate_target(&all_met, &read_op),
+            Some(pk.parse().unwrap()),
+            "populate gate must fire when latch + pk_range_id + read are all present",
+        );
+
+        // Latch off → None.
+        let mut no_latch = read_state_with_hub_latch(pk);
+        no_latch.hub_region_processing_only = false;
+        assert!(
+            super::hub_region_cache_populate_target(&no_latch, &read_op).is_none(),
+            "populate gate must NOT fire when the hub-region latch is off",
+        );
+
+        // No partition key range → None.
+        let mut no_pk = read_state_with_hub_latch(pk);
+        no_pk.partition_key_range_id = None;
+        assert!(
+            super::hub_region_cache_populate_target(&no_pk, &read_op).is_none(),
+            "populate gate must NOT fire without a partition_key_range_id (cache cannot be keyed)",
+        );
+
+        // Write op → None (writes use PPAF write-side routing, not the hub cache).
+        assert!(
+            super::hub_region_cache_populate_target(&all_met, &write_op).is_none(),
+            "populate gate must NOT fire on write operations",
+        );
     }
 
     mod should_capture_session_token_from_status_tests {

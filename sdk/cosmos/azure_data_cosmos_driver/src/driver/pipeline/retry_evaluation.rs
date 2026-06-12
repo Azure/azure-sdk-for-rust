@@ -378,6 +378,17 @@ fn evaluate_http_outcome(
 /// effects to (a) refresh account properties so the new write region is
 /// learned, (b) mark this endpoint unavailable, and (c) mark this partition
 /// unavailable in the current (read) region for write traffic.
+///
+/// **Hub-region discovery branch.** When the
+/// `hub_region_processing_only` latch is active on a read with a known
+/// partition key range ID, the 403/3 instead means "this region is not the
+/// current hub for this partition". The handler emits an
+/// [`LocationEffect::AdvanceHubRegionDiscovery`] that rotates the cached
+/// hub endpoint to the next preferred-read endpoint and consumes a
+/// failover-budget attempt. It does NOT emit
+/// [`LocationEffect::MarkEndpointUnavailable`] or
+/// [`LocationEffect::RefreshAccountProperties`] — the endpoint is healthy
+/// for non-hub reads of other partitions, and the topology is unchanged.
 fn try_handle_write_forbidden(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -386,6 +397,59 @@ fn try_handle_write_forbidden(
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     if !(status.is_write_forbidden() && retry_state.can_retry_failover()) {
         return None;
+    }
+
+    // Hub-region discovery on the read path: rotate the per-partition cache
+    // entry to the next preferred-read endpoint and retry without polluting
+    // account-level state. The latch is only set on single-master data-plane
+    // reads.
+    //
+    // **No fall-through to standard write-forbidden effects.** A 403/3 on a
+    // read with the hub-region header carries a *partition-scoped* meaning
+    // ("this region is not the hub for this partition"), not a region- or
+    // endpoint-level health signal. Falling back to
+    // `RefreshAccountProperties` / `MarkEndpointUnavailable` /
+    // `MarkPartitionUnavailable` would poison routing state for unrelated
+    // partitions. When the partition key range ID is known, emit
+    // `AdvanceHubRegionDiscovery` to rotate the cache; when missing
+    // (defense in depth — should not happen for dispatched data-plane
+    // reads since PK range resolution precedes execution), retry failover
+    // with no location effects.
+    if retry_state.hub_region_processing_only && operation.is_read_only() {
+        let effects = if let Some(pk_range_id) = retry_state.partition_key_range_id.clone() {
+            vec![LocationEffect::AdvanceHubRegionDiscovery {
+                partition_key_range_id: pk_range_id,
+                failed_endpoint: endpoint.clone(),
+            }]
+        } else {
+            // Invariant violation: a hub-region-mode read should always have
+            // its partition key range resolved before dispatch. Reaching this
+            // branch means the latch was armed without PK resolution, which
+            // is either a routing bug or a non-PK operation being misclassified
+            // as data-plane. Log loudly and assert in debug builds. We still
+            // return `FailoverRetry` rather than poisoning account state with
+            // the standard 403/3 effects (they would punish unrelated
+            // partitions for what is a partition-scoped signal).
+            debug_assert!(
+                false,
+                "hub_region_processing_only latched but partition_key_range_id is None; \
+                 PK resolution should precede data-plane dispatch",
+            );
+            tracing::error!(
+                endpoint = %endpoint.url(),
+                failover_retries = retry_state.failover_retry_count,
+                "hub-region 403/3 retry has no partition_key_range_id; \
+                 skipping AdvanceHubRegionDiscovery and falling back to plain failover retry",
+            );
+            Vec::new()
+        };
+        return Some((
+            OperationAction::FailoverRetry {
+                new_state: retry_state.clone().advance_failover(),
+                delay: None,
+            },
+            effects,
+        ));
     }
 
     Some((
@@ -1996,6 +2060,141 @@ mod tests {
             }
             other => panic!("unexpected action for 503 after latch: {other:?}"),
         }
+    }
+
+    // ── Hub region caching ────────────────────────────────────────────
+
+    /// Helper: builds an OperationRetryState configured as if the
+    /// hub-region-processing-only latch is currently set for a single-master
+    /// data-plane read with a known partition key range ID.
+    fn state_with_hub_latch(pk_range_id: &str) -> OperationRetryState {
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true;
+        state.partition_key_range_id = Some(pk_range_id.parse().unwrap());
+        state
+    }
+
+    /// Hub-region branch in `try_handle_write_forbidden`: when the latch is
+    /// set, the request is read-only, and a partition key range ID is known,
+    /// the 403/3 emits an `AdvanceHubRegionDiscovery` effect (and only that
+    /// effect) — no `MarkEndpointUnavailable` or
+    /// `RefreshAccountProperties`, since the endpoint is healthy for non-hub
+    /// reads of other partitions and the topology is unchanged.
+    #[test]
+    fn read_403_3_with_hub_latch_emits_advance_effect() {
+        let op = make_read_operation();
+        let state = state_with_hub_latch("0");
+        let endpoint = test_endpoint();
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert_eq!(effects.len(), 1, "exactly one effect: advance discovery");
+        assert!(matches!(
+            effects[0],
+            LocationEffect::AdvanceHubRegionDiscovery { .. }
+        ));
+        // Defense-in-depth: confirm the standard 403/3 effects are NOT present.
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
+    }
+
+    /// Regression: 403/3 for a write operation must keep emitting the existing
+    /// write-forbidden effects (`RefreshAccountProperties`,
+    /// `MarkEndpointUnavailable`, `MarkPartitionUnavailable`), even if the
+    /// retry state happens to carry the hub-region latch (which it wouldn't
+    /// in production for a write — defense in depth).
+    #[test]
+    fn write_403_3_with_hub_latch_keeps_existing_behavior() {
+        let op = make_create_operation();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true; // defense in depth
+        state.partition_key_range_id = Some("0".parse().unwrap());
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::AdvanceHubRegionDiscovery { .. })));
+    }
+
+    /// Regression: 403/3 for a read without the hub latch must keep emitting
+    /// the existing effects unchanged.
+    #[test]
+    fn read_403_3_without_hub_latch_keeps_existing_behavior() {
+        let op = make_read_operation();
+        let state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        let endpoint = test_endpoint();
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        assert!(effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
+        assert!(!effects
+            .iter()
+            .any(|e| matches!(e, LocationEffect::AdvanceHubRegionDiscovery { .. })));
+    }
+
+    /// Hub-region branch on a read with the latch active but **no** partition
+    /// key range ID. In production this is unreachable on dispatched data-plane
+    /// reads (PK range resolution precedes execution), so we hold a
+    /// `debug_assert!` against it to catch the contract violation loudly
+    /// during development. In release builds we still avoid poisoning
+    /// account-level state (the upstream 403/3 fall-through is the wrong
+    /// signal for a partition-scoped hub-region failure); the test guards the
+    /// debug-time panic contract.
+    #[test]
+    #[should_panic(expected = "hub_region_processing_only latched but partition_key_range_id is None")]
+    fn read_403_3_with_hub_latch_panics_in_debug_without_pk_range_id() {
+        let op = make_read_operation();
+        let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 3);
+        state.is_dataplane = true;
+        state.hub_region_processing_only = true;
+        // partition_key_range_id intentionally left as None.
+
+        let endpoint = test_endpoint();
+        let _ = evaluate_transport_result(
+            &op,
+            &endpoint,
+            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
     }
 
     // ── Shared hub-region latch (Part 5) ──────────────────────────
