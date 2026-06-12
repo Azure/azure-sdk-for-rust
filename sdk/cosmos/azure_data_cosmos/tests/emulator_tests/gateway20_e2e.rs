@@ -52,11 +52,10 @@ use azure_core::credentials::Secret;
 use azure_data_cosmos::models::{
     ContainerProperties, PartitionKeyDefinition, ThroughputProperties,
 };
-use azure_data_cosmos::options::CreateContainerOptions;
-use azure_data_cosmos::query::FeedScope;
+use azure_data_cosmos::options::{CreateContainerOptions, Region};
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, Query, Region, RoutingStrategy, SubStatusCode,
-    TransactionalBatch,
+    AccountEndpoint, AccountReference, CosmosClient, FeedScope, Query, RoutingStrategy,
+    SubStatusCode, TransactionalBatch,
 };
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
@@ -486,7 +485,8 @@ struct Gw20HpkItem {
 )]
 pub async fn gateway20_hpk_full_and_partial_partition_key_round_trip(
 ) -> Result<(), Box<dyn std::error::Error>> {
-    use azure_data_cosmos::{PartitionKey, PartitionKeyValue};
+    use azure_data_cosmos::models::PartitionKeyValue;
+    use azure_data_cosmos::PartitionKey;
 
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
@@ -722,7 +722,7 @@ pub async fn gateway20_cross_partition_query_full_container(
 )]
 pub async fn gateway20_cross_partition_query_via_feed_range_full(
 ) -> Result<(), Box<dyn std::error::Error>> {
-    use azure_data_cosmos::FeedRange;
+    use azure_data_cosmos::feed::FeedRange;
     use std::collections::HashSet;
 
     let Some((endpoint, key)) = live_credentials() else {

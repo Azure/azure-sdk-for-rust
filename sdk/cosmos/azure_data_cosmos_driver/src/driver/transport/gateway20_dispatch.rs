@@ -602,7 +602,7 @@ fn data_conversion_error(message: impl Into<String>) -> azure_core::Error {
 /// Returns `None` on invalid input — the dispatcher then omits the token
 /// rather than failing the request.
 fn decode_epk_hex(hex: &str) -> Option<Vec<u8>> {
-    if hex.len() % 2 != 0 {
+    if !hex.len().is_multiple_of(2) {
         return None;
     }
     let mut out = Vec::with_capacity(hex.len() / 2);
