@@ -111,12 +111,31 @@ pub struct TestOptions {
     pub fault_client_application_region: Option<Region>,
     /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
     pub timeout: Option<Duration>,
+    /// When `true`, builds the underlying [`CosmosClient`]s with a
+    /// [`CosmosRuntime`] configured for
+    /// [`ServerCertificateValidation::RequiredUnlessEmulator`], so that
+    /// requests against the Cosmos DB emulator (which presents a
+    /// self-signed certificate) succeed without TLS validation errors.
+    ///
+    /// This is the signal that an emulator-only test should opt into the
+    /// relaxed runtime; tests targeting live accounts must leave it
+    /// `false` so that the default `ServerCertificateValidation::Required`
+    /// applies.
+    pub allow_invalid_certificates: bool,
 }
 
 impl TestOptions {
     /// Creates a new TestOptions with default values.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Creates a [`TestOptions`] preconfigured for the Cosmos DB emulator:
+    /// the underlying [`CosmosClient`] will be built on a [`CosmosRuntime`]
+    /// that accepts the emulator's self-signed certificate
+    /// (via [`ServerCertificateValidation::RequiredUnlessEmulator`]).
+    pub fn for_emulator() -> Self {
+        Self::default().with_allow_invalid_certificates(true)
     }
 
     /// Sets the application region for the normal (non-fault) client.
@@ -149,6 +168,17 @@ impl TestOptions {
     /// Sets the timeout for the test.
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
+        self
+    }
+
+    /// Opts the underlying [`CosmosClient`]s into a [`CosmosRuntime`] that
+    /// accepts the emulator's self-signed certificate
+    /// (via [`ServerCertificateValidation::RequiredUnlessEmulator`]).
+    ///
+    /// Set this to `true` for emulator-only integration tests; leave it
+    /// `false` (the default) for tests targeting a live Cosmos DB account.
+    pub fn with_allow_invalid_certificates(mut self, allow: bool) -> Self {
+        self.allow_invalid_certificates = allow;
         self
     }
 }
@@ -256,21 +286,42 @@ fn is_azure_pipelines() -> bool {
 impl TestClient {
     pub async fn from_env_with_fault_options(
         fault_client_application_region: Option<Region>,
+        allow_invalid_certificates: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, Vec::new(), fault_client_application_region).await
+        Self::from_env_inner(
+            None,
+            Vec::new(),
+            fault_client_application_region,
+            allow_invalid_certificates,
+        )
+        .await
     }
 
     pub async fn from_env(
         application_region: Option<Region>,
+        allow_invalid_certificates: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(application_region, Vec::new(), None).await
+        Self::from_env_inner(
+            application_region,
+            Vec::new(),
+            None,
+            allow_invalid_certificates,
+        )
+        .await
     }
 
     pub async fn from_env_with_fault_rules(
         fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         application_region: Option<Region>,
+        allow_invalid_certificates: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        Self::from_env_inner(None, fault_rules, application_region).await
+        Self::from_env_inner(
+            None,
+            fault_rules,
+            application_region,
+            allow_invalid_certificates,
+        )
+        .await
     }
 
     /// Creates a new [`TestClient`] from local environment variables.
@@ -282,6 +333,7 @@ impl TestClient {
         application_region: Option<Region>,
         fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         fault_client_application_region: Option<Region>,
+        allow_invalid_certificates: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
@@ -312,7 +364,7 @@ impl TestClient {
                 Self::from_connection_string(
                     &env_var,
                     application_region,
-                    false,
+                    allow_invalid_certificates,
                     fault_rules,
                     fault_client_application_region,
                 )
@@ -437,7 +489,11 @@ impl TestClient {
             )
             .try_init();
 
-        let test_client = Self::from_env(options.client_application_region.clone()).await?;
+        let test_client = Self::from_env(
+            options.client_application_region.clone(),
+            options.allow_invalid_certificates,
+        )
+        .await?;
 
         // Create fault injection client if rules or application region were provided.
         // Rules should be passed in for emulator tests to ensure the FaultClient
@@ -451,11 +507,18 @@ impl TestClient {
                 Self::from_env_with_fault_rules(
                     rules,
                     options.fault_client_application_region.clone(),
+                    options.allow_invalid_certificates,
                 )
                 .await?,
             )
         } else if options.fault_client_application_region.is_some() {
-            Some(Self::from_env_with_fault_options(options.fault_client_application_region).await?)
+            Some(
+                Self::from_env_with_fault_options(
+                    options.fault_client_application_region,
+                    options.allow_invalid_certificates,
+                )
+                .await?,
+            )
         } else {
             None
         };

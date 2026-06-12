@@ -128,8 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let runtime = CosmosDriverRuntime::builder().build().await?;
 
     // Get or create a driver for the account (singleton per endpoint)
--    let driver = runtime.get_or_create_driver(account, None).await?;
-+    let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
+    let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
 
     // Driver operations work with raw bytes
     // let response = driver.execute_operation(operation, options).await?;

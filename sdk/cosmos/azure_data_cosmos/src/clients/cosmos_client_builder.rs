@@ -9,7 +9,7 @@ use std::sync::Arc;
 use crate::{
     clients::ClientContext,
     options::{
-        CosmosClientOptions, OperationOptions, PartitionFailoverOptions, ThrottlingRetryOptions,
+        CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
         ThroughputControlGroupOptions, UserAgentSuffix,
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
@@ -166,41 +166,6 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Sets the maximum number of retries for requests that the service
-    /// throttles (HTTP 429, rate-limited), along with the maximum cumulative
-    /// wait time across those retries, as a single grouped
-    /// [`ThrottlingRetryOptions`](crate::options::ThrottlingRetryOptions) value.
-    ///
-    /// Mirrors the .NET SDK's `MaxRetryAttemptsOnRateLimitedRequests` /
-    /// `MaxRetryWaitTimeOnRateLimitedRequests` (grouped here as the Java SDK
-    /// does via `CosmosClientBuilder.throttlingRetryOptions`). Build the value
-    /// with [`ThrottlingRetryOptionsBuilder`](crate::options::ThrottlingRetryOptionsBuilder):
-    ///
-    /// - `max_retry_count` bounds the transport-level retry loop that honors
-    ///   the service `x-ms-retry-after-ms` header (**default** `9`; a value of
-    ///   `0` disables throttle retries, surfacing the first 429 to the caller).
-    /// - `max_retry_wait_time` caps the cumulative retry delay (**default**
-    ///   30 seconds); once the accumulated delay would exceed it, no further
-    ///   throttle retry is attempted.
-    ///
-    /// **Scope**: applies *per transport-pipeline invocation*, not per logical
-    /// operation. An operation that fans out across regions (failover,
-    /// hedging) enters the transport pipeline once per leg, each with a fresh
-    /// throttle-retry budget. To cap an operation's *total* wall-clock time,
-    /// configure
-    /// [`OperationOptions::end_to_end_latency_policy`](crate::options::OperationOptions::end_to_end_latency_policy).
-    ///
-    /// This client-wide value can be overridden per request via
-    /// [`OperationOptions`](crate::options::OperationOptions).
-    ///
-    /// # Arguments
-    ///
-    /// * `options` - The grouped throttle-retry configuration.
-    pub fn with_throttling_retry_options(mut self, options: ThrottlingRetryOptions) -> Self {
-        self.options.operation.throttling_retry_options = Some(options);
-        self
-    }
-
     /// Configures fault injection for testing.
     ///
     /// Accepts a vector of [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)
@@ -235,9 +200,10 @@ impl CosmosClientBuilder {
 
     /// Registers a per-client [`ThroughputControlGroupOptions`].
     ///
-    /// Groups registered here apply to this client only and merge on top
-    /// of any groups registered at the runtime layer. Cross-layer name
-    /// collisions error at `build()` time.
+    /// Throughput-control groups are scoped to this client's driver — the
+    /// per-runtime registry has been removed, so every client owns its own
+    /// set of groups. Duplicate group names supplied to the same builder are
+    /// surfaced as an error at `build()` time.
     pub fn register_throughput_control_group(
         mut self,
         group: ThroughputControlGroupOptions,
@@ -409,7 +375,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        options::{self, PartitionFailoverOptions, Region, UserAgentSuffix},
+        options::{PartitionFailoverOptions, Region, UserAgentSuffix},
         RoutingStrategy,
     };
 
@@ -455,72 +421,6 @@ mod tests {
             .await
             .expect("runtime builds");
         assert!(runtime.user_agent_suffix().is_none());
-    }
-
-    /// The client-wide throttle-retry setter must populate the operation
-    /// options that `build()` forwards to the driver's runtime layer.
-    #[test]
-    fn throttle_retry_setter_populates_operation_options() {
-        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
-            options::ThrottlingRetryOptionsBuilder::new()
-                .with_max_retry_count(4)
-                .with_max_retry_wait_time(std::time::Duration::from_secs(15))
-                .build(),
-        );
-        let throttling = builder
-            .options
-            .operation
-            .throttling_retry_options
-            .as_ref()
-            .expect("throttling group should be populated");
-        assert_eq!(throttling.max_retry_count, Some(4));
-        assert_eq!(
-            throttling.max_retry_wait_time,
-            Some(std::time::Duration::from_secs(15))
-        );
-    }
-
-    /// A throttle-retry count of `0` (disable retries) must round-trip through
-    /// the builder unchanged so the driver can surface the first 429.
-    #[test]
-    fn throttle_retry_count_zero_round_trips() {
-        let builder = CosmosClientBuilder::new().with_throttling_retry_options(
-            options::ThrottlingRetryOptionsBuilder::new()
-                .with_max_retry_count(0)
-                .build(),
-        );
-        assert_eq!(
-            builder
-                .options
-                .operation
-                .throttling_retry_options
-                .as_ref()
-                .and_then(|t| t.max_retry_count),
-            Some(0)
-        );
-    }
-
-    /// The grouped `with_throttling_retry_options` setter must replace the
-    /// whole group with the supplied value.
-    #[test]
-    fn grouped_throttling_retry_options_setter_replaces_group() {
-        let group = options::ThrottlingRetryOptionsBuilder::new()
-            .with_max_retry_count(2)
-            .with_max_retry_wait_time(std::time::Duration::from_secs(7))
-            .build();
-        let builder = CosmosClientBuilder::new().with_throttling_retry_options(group);
-
-        let throttling = builder
-            .options
-            .operation
-            .throttling_retry_options
-            .as_ref()
-            .expect("throttling group should be populated");
-        assert_eq!(throttling.max_retry_count, Some(2));
-        assert_eq!(
-            throttling.max_retry_wait_time,
-            Some(std::time::Duration::from_secs(7))
-        );
     }
 
     #[test]

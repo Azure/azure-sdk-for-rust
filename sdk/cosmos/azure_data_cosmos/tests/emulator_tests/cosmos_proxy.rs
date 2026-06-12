@@ -6,7 +6,7 @@
 
 use super::framework;
 
-use framework::{TestClient, CONNECTION_STRING_ENV_VAR, EMULATOR_CONNECTION_STRING};
+use framework::{TestClient, TestOptions, CONNECTION_STRING_ENV_VAR, EMULATOR_CONNECTION_STRING};
 use std::error::Error;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
@@ -33,11 +33,14 @@ pub async fn proxy_disabled_by_default_ignores_env() -> Result<(), Box<dyn Error
 
     // Run a real emulator test with proxy disabled (default).
     // TestClient::run uses the default CosmosClientBuilder which has no_proxy().
-    let result = TestClient::run(async |run_context| {
-        let client = run_context.client();
-        let _ = client.database_client("nonexistent").read(None).await;
-        Ok(())
-    })
+    let result = TestClient::run_with_options(
+        async |run_context| {
+            let client = run_context.client();
+            let _ = client.database_client("nonexistent").read(None).await;
+            Ok(())
+        },
+        TestOptions::for_emulator(),
+    )
     .await;
 
     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
