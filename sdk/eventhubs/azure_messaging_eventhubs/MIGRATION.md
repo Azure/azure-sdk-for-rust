@@ -368,29 +368,25 @@ The same Entra ID credential authenticates both Event Hubs and Blob Storage. Gra
 
 ```rust ignore error_handling
 use azure_messaging_eventhubs::error::ErrorKind;
-use azure_messaging_eventhubs::ConsumerClient;
 
-async fn handle_errors(consumer: &ConsumerClient) -> Result<(), Box<dyn std::error::Error>> {
-    match consumer.open_receiver_on_partition("0".to_string(), None).await {
-        Ok(_receiver) => { /* ... */ }
-        Err(err) => match err.kind {
-            // The broker disconnected this receiver because another consumer attached
-            // with the same or higher owner level (epoch). Re-acquire the partition.
-            ErrorKind::ConsumerDisconnected(_) => {
-                eprintln!("partition reassigned to another consumer");
-            }
-            // The service rejected a send (for example, a quota was exceeded).
-            ErrorKind::SendRejected(details) => {
-                eprintln!("send rejected: {details:?}");
-            }
-            // An error surfaced from azure_core (HTTP, credential, etc.).
-            ErrorKind::AzureCore(ref e) => eprintln!("core error: {e}"),
-            // An AMQP transport error.
-            ErrorKind::AmqpError(ref e) => eprintln!("amqp error: {e:?}"),
-            other => eprintln!("other error: {other:?}"),
-        },
-    }
-    Ok(())
+match consumer.open_receiver_on_partition("0".to_string(), None).await {
+    Ok(_receiver) => { /* ... */ }
+    Err(err) => match err.kind {
+        // The broker disconnected this receiver because another consumer attached
+        // with the same or higher owner level (epoch). Re-acquire the partition.
+        ErrorKind::ConsumerDisconnected(_) => {
+            eprintln!("partition reassigned to another consumer");
+        }
+        // The service rejected a send (for example, a quota was exceeded).
+        ErrorKind::SendRejected(details) => {
+            eprintln!("send rejected: {details:?}");
+        }
+        // An error surfaced from azure_core (HTTP, credential, etc.).
+        ErrorKind::AzureCore(ref e) => eprintln!("core error: {e}"),
+        // An AMQP transport error.
+        ErrorKind::AmqpError(ref e) => eprintln!("amqp error: {e:?}"),
+        other => eprintln!("other error: {other:?}"),
+    },
 }
 ```
 

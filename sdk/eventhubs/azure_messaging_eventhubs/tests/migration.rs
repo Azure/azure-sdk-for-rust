@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #![allow(dead_code)]
+use azure_messaging_eventhubs::ConsumerClient;
 use include_file::include_markdown;
 
 #[ignore = "only compile doc examples"]
@@ -14,7 +15,14 @@ async fn migration() -> Result<(), Box<dyn std::error::Error>> {
     include_markdown!("MIGRATION.md", "batch", scope);
     include_markdown!("MIGRATION.md", "consuming", scope);
     include_markdown!("MIGRATION.md", "processor", scope);
-    include_markdown!("MIGRATION.md", "error_handling", scope);
     include_markdown!("MIGRATION.md", "async_runtime", scope);
+    Ok(())
+}
+
+// The error-handling sample is written as a bare `match consumer...` for
+// readability, so define the surrounding function (and the `consumer`
+// binding it needs) here rather than in the guide.
+async fn error_handling(consumer: &ConsumerClient) -> Result<(), Box<dyn std::error::Error>> {
+    include_markdown!("MIGRATION.md", "error_handling", scope);
     Ok(())
 }
