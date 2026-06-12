@@ -60,12 +60,8 @@ version = "1.0.0"
 [workspace.dependencies.azure_core_macros]
 version = "1.0.0"
 
-# Path-coupled so eventhubs and servicebus can build against this unreleased
-# beta and call AmqpSessionOptions::with_unbounded_windows (issue #4570). The
-# path is stripped when the consumer crates are packed for release.
 [workspace.dependencies.azure_core_amqp]
-version = "1.1.0-beta.1"
-path = "sdk/core/azure_core_amqp"
+version = "1.0.0"
 
 [workspace.dependencies.azure_core_opentelemetry]
 # azure_core_opentelemetry should only ever be in dev-dependencies herein
