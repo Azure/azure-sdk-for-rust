@@ -8,7 +8,7 @@ The Azure Event Hubs client library allows you to send single events or batches 
 
 [Source code] | [Package (crates.io)] | [API reference documentation] | [Product documentation]
 
-> Migrating from the community `azeventhubs` crate? See the [migration guide](MIGRATION.md).
+> Migrating from the community `azeventhubs` crate? See the [migration guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/eventhubs/azure_messaging_eventhubs/MIGRATION.md).
 
 ## Getting started
 

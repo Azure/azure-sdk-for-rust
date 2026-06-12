@@ -463,11 +463,11 @@ The official `EventData` is a distinct type from `azeventhubs`'s. Construct it w
 
 ## Additional Resources
 
-- [azure_messaging_eventhubs README](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/README.md)
+- [azure_messaging_eventhubs README](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/eventhubs/azure_messaging_eventhubs/README.md)
 - [Examples directory](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/examples)
 - [Companion crate: azure_messaging_eventhubs_checkpointstore_blob](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs_checkpointstore_blob)
 - [API documentation on docs.rs](https://docs.rs/azure_messaging_eventhubs/latest/)
-- [CHANGELOG.md](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/eventhubs/azure_messaging_eventhubs/CHANGELOG.md)
+- [CHANGELOG.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/eventhubs/azure_messaging_eventhubs/CHANGELOG.md)
 - [azure_identity documentation](https://aka.ms/azsdk/rust/identity/docs)
 - [Azure Event Hubs product documentation](https://learn.microsoft.com/azure/event-hubs/)
 - [Azure SDK Design Guidelines for Rust](https://azure.github.io/azure-sdk/rust_introduction.html)
