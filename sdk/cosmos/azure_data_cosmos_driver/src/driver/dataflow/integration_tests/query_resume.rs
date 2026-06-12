@@ -9,7 +9,8 @@
 //! `MockTopologyProvider` from `dataflow::mocks`, and exercise the same
 //! serialize → resume round-trip the public iterator surfaces to callers.
 //!
-//! They guard end-to-end against two stacked defects:
+//! They guard end-to-end against two stacked regressions on the
+//! cross-partition query resume path after a split:
 //!
 //! 1. After a partition split, `build_sequential_drain` must forward the
 //!    saved continuation to every surviving leaf in the saved range's
@@ -26,7 +27,7 @@
 
 use std::sync::Arc;
 
-use super::{
+use super::super::{
     mocks::{MockRequestExecutor, MockTopologyProvider},
     planner::build_sequential_drain,
     query_plan::{QueryPlan, QueryRange},
@@ -128,7 +129,7 @@ fn page_response(body: &[u8], continuation: Option<&str>) -> CosmosResponse {
 /// continuation token issued for each subsequent request.
 async fn drain_all(pipeline: &mut Pipeline, executor: &mut MockRequestExecutor) -> Vec<Vec<u8>> {
     let mut pages = Vec::new();
-    let mut topology = super::mocks::NoopTopologyProvider;
+    let mut topology = super::super::mocks::NoopTopologyProvider;
     loop {
         let mut context = PipelineContext::new(executor, Some(&mut topology));
         match pipeline.next_page(&mut context).await.unwrap() {
@@ -147,7 +148,7 @@ async fn drain_pages(
     n: usize,
 ) -> Vec<Vec<u8>> {
     let mut pages = Vec::with_capacity(n);
-    let mut topology = super::mocks::NoopTopologyProvider;
+    let mut topology = super::super::mocks::NoopTopologyProvider;
     for _ in 0..n {
         let mut context = PipelineContext::new(executor, Some(&mut topology));
         let response = pipeline
@@ -198,7 +199,7 @@ async fn single_partition_resume_roundtrips_cleanly() {
     let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
     assert_eq!(pages1, vec![b"page-1".to_vec()]);
     assert_eq!(executor1.continuation_calls, vec![None]);
-    let state = pipeline1.snapshot_state();
+    let state = pipeline1.snapshot_state().unwrap();
     drop(pipeline1);
 
     // Session 2: resume, drain page 2 + drained, no further continuation.
@@ -218,7 +219,7 @@ async fn single_partition_resume_roundtrips_cleanly() {
     );
 }
 
-/// Defect A regression guard at the end-to-end level. Session 1 sees a
+/// End-to-end guard for the planner's split fan-out. Session 1 sees a
 /// single-leaf topology and returns a continuation. Between sessions the
 /// partition splits into two children. Session 2 must forward the saved
 /// continuation to BOTH children — otherwise the second child fresh-starts
@@ -240,7 +241,7 @@ async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
         .await
         .unwrap();
     let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
-    let state = pipeline1.snapshot_state();
+    let state = pipeline1.snapshot_state().unwrap();
     drop(pipeline1);
 
     // Session 2: the topology has split into [, 80) + [80, FF). The saved
@@ -279,13 +280,13 @@ async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
     );
 }
 
-/// Defect B regression guard at the end-to-end level — the canonical bug
-/// from the original user repro. A snapshot taken mid-fan-out (front
-/// sibling has progressed; later siblings still owe their pre-split
-/// continuation) must preserve EVERY pending child's state, not just the
-/// front. With the lossy snapshot, the later siblings' continuations were
-/// silently dropped and they fresh-started on resume, producing
-/// duplicates.
+/// End-to-end guard for the snapshot's mid-fan-out fidelity — the
+/// canonical bug from the original user repro. A snapshot taken
+/// mid-fan-out (front sibling has progressed; later siblings still owe
+/// their pre-split continuation) must preserve EVERY pending child's
+/// state, not just the front. With the lossy snapshot, the later
+/// siblings' continuations were silently dropped and they fresh-started
+/// on resume, producing duplicates.
 #[tokio::test]
 async fn resume_mid_fanout_preserves_every_sibling_state() {
     let op = cross_partition_query_operation();
@@ -309,7 +310,7 @@ async fn resume_mid_fanout_preserves_every_sibling_state() {
     let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
     assert_eq!(pages1, vec![b"left-page-1".to_vec()]);
     assert_eq!(executor1.continuation_calls, vec![None]);
-    let state = pipeline1.snapshot_state();
+    let state = pipeline1.snapshot_state().unwrap();
     drop(pipeline1);
 
     // The snapshot must carry BOTH siblings, not just the front. Inspect
@@ -387,11 +388,10 @@ async fn resume_mid_fanout_preserves_every_sibling_state() {
     assert_eq!(all_pages, expected);
 }
 
-/// Combined defect-A + defect-B scenario: snapshot mid-fan-out AND the
-/// front sibling splits between sessions. The right sibling's un-started
-/// state must survive the snapshot (Defect B), and the left sibling's
-/// saved continuation must fan out to BOTH of its post-split children
-/// (Defect A).
+/// Combined scenario: snapshot mid-fan-out AND the front sibling splits
+/// between sessions. The right sibling's un-started state must survive
+/// the snapshot, and the left sibling's saved continuation must fan out
+/// to BOTH of its post-split children.
 #[tokio::test]
 async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation() {
     let op = cross_partition_query_operation();
@@ -410,13 +410,13 @@ async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation(
         .await
         .unwrap();
     let pages1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
-    let state = pipeline1.snapshot_state();
+    let state = pipeline1.snapshot_state().unwrap();
     drop(pipeline1);
 
     // Session 2: the LEFT sibling has now split into [, 40) + [40, 80).
-    // The right sibling is unchanged. Defect A: BOTH halves of the
-    // post-split left sibling must inherit "ct-left". Defect B: right
-    // sibling must still be visited fresh.
+    // The right sibling is unchanged. BOTH halves of the post-split left
+    // sibling must inherit "ct-left", and the right sibling must still
+    // be visited fresh.
     let resumed_state = round_trip_state(state, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
         resolved("", "40", "pk-left-l"),
@@ -443,8 +443,8 @@ async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation(
         ],
     );
 
-    // Defect A: ct-left flows to both halves of the split left sibling.
-    // Defect B: right sibling's saved None state survives the round-trip.
+    // ct-left flows to both halves of the split left sibling; the right
+    // sibling's saved None state survives the round-trip.
     assert_eq!(
         executor2.continuation_calls,
         vec![Some("ct-left".to_owned()), Some("ct-left".to_owned()), None,],
@@ -562,16 +562,17 @@ async fn resume_fails_loudly_when_saved_range_cannot_be_covered() {
 /// This is the only test that drives the exact loop the live repro takes:
 /// a single-leaf pre-split snapshot is decoded against a post-split
 /// topology AND that fanned-out state is snapshotted AGAIN mid-fan-out.
-/// Both defects must be fixed for the back sibling to carry its
+/// Both fixes must be in place for the back sibling to carry its
 /// pre-split token through to the round that actually queries it.
 ///
-/// With Defect 1 alone fixed, the back sibling enters the in-memory
-/// pipeline with `T1` at session 2 — but session 2's snapshot drops it,
-/// so by session 3 it has fresh-started.
+/// With only the planner scope-clone fixed, the back sibling enters the
+/// in-memory pipeline with `T1` at session 2 — but session 2's lossy
+/// snapshot drops it, so by session 3 it has fresh-started.
 ///
-/// With Defect 2 alone fixed, the snapshot preserves whatever was in
-/// memory — but Defect 1 means what was in memory is `None`, so the
-/// back sibling still fresh-starts at session 3.
+/// With only the per-range snapshot fixed, the snapshot preserves
+/// whatever was in memory — but without the planner scope-clone, what
+/// was in memory is `None`, so the back sibling still fresh-starts at
+/// session 3.
 ///
 /// Only with both fixed does the back sibling reach the executor at
 /// session 3 carrying the original `T1` — which is what suppresses the
@@ -595,7 +596,7 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     assert_eq!(pages_s1, vec![b"page-1-pre".to_vec()]);
     assert_eq!(executor1.continuation_calls, vec![None]);
 
-    let state_s1 = pipeline1.snapshot_state();
+    let state_s1 = pipeline1.snapshot_state().unwrap();
     drop(pipeline1);
 
     // The session-1 snapshot must carry exactly one child entry covering
@@ -617,13 +618,12 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     }
 
     // ── Session 2 ──────────────────────────────────────────────────────
-    // Between sessions, the partition split into [, 80) + [80, FF).
-    // Defect 1 territory: the planner must fan T1 out to BOTH children
-    // when decoding the session-1 token. We drain ONE page (the front
-    // child progresses to T2_a; the back child is still untouched and
-    // must remain Request{T1} in memory). Then we snapshot AGAIN —
-    // Defect 2 territory: that snapshot must carry both children, with
-    // the back child still owing T1.
+    // Between sessions, the partition split into [, 80) + [80, FF). The
+    // planner must fan T1 out to BOTH children when decoding the
+    // session-1 token. We drain ONE page (the front child progresses to
+    // T2_a; the back child is still untouched and must remain
+    // Request{T1} in memory). Then we snapshot AGAIN — that snapshot
+    // must carry both children, with the back child still owing T1.
     let resumed_s2 = round_trip_state(state_s1, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
         resolved("", "80", "pk-left"),
@@ -639,17 +639,18 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     let pages_s2 = drain_pages(&mut pipeline2, &mut executor2, 1).await;
     assert_eq!(pages_s2, vec![b"page-1-postsplit-left".to_vec()]);
     // The single request issued in session 2 went to the LEFT child
-    // (front) carrying T1 — the visible Defect-1 evidence.
+    // (front) carrying T1 — the visible evidence that the saved
+    // continuation fanned out across the split.
     assert_eq!(
         executor2.continuation_calls,
         vec![Some("T1".to_owned())],
         "session 2's first executor call must be the front child carrying the pre-split token",
     );
 
-    let state_s2 = pipeline2.snapshot_state();
+    let state_s2 = pipeline2.snapshot_state().unwrap();
     drop(pipeline2);
 
-    // Session-2 snapshot inspection — the canonical Defect-2 surface.
+    // Session-2 snapshot inspection — the per-sibling fidelity surface.
     // Front child progressed to T2_a; back child must STILL carry T1.
     // Before the fix this entry was silently dropped and the back child
     // fresh-started at session 3 producing duplicates.
@@ -712,7 +713,7 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     );
 
     // The whole reason for this test: the back child's request at
-    // session 3 must carry T1. With either defect unfixed, this value
+    // session 3 must carry T1. With either fix missing, this value
     // is None and the live test sees 55/50.
     assert_eq!(
         executor3.continuation_calls,
@@ -738,7 +739,7 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     assert_eq!(all_pages, expected);
 }
 
-/// O10: cascading splits — the back sibling from a first split itself
+/// Cascading splits — the back sibling from a first split itself
 /// splits again before the user gets back to it. The new planner's
 /// interval-join shape should clone the saved back-sibling token to each
 /// of the grand-child leaves the back range is now resolved to. This
@@ -760,7 +761,7 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
     let pages_s1 = drain_pages(&mut pipeline1, &mut executor1, 1).await;
     assert_eq!(pages_s1, vec![b"page-1-pre".to_vec()]);
 
-    let state_s1 = pipeline1.snapshot_state();
+    let state_s1 = pipeline1.snapshot_state().unwrap();
     drop(pipeline1);
 
     // ── Session 2: first split → [, 80) + [80, FF). Drain the front
@@ -779,7 +780,7 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
     let pages_s2 = drain_pages(&mut pipeline2, &mut executor2, 1).await;
     assert_eq!(pages_s2, vec![b"page-1-postsplit-left".to_vec()]);
 
-    let state_s2 = pipeline2.snapshot_state();
+    let state_s2 = pipeline2.snapshot_state().unwrap();
     drop(pipeline2);
 
     // Sanity-check: snapshot now has just the back child owing T1
@@ -822,10 +823,10 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
 
     // BOTH grand-children must have been queried with T1 — neither
     // None. If the planner accidentally moved the token to the first
-    // grand-child only (the Defect-1 shape, but at the resume-decode
-    // layer instead of the in-memory fan-out), the second grand-child
-    // would carry None and re-emit the full [C0, FF) post-split data
-    // that T1 was already past.
+    // grand-child only (the planner-fan-out bug, but at the
+    // resume-decode layer instead of the in-memory fan-out), the second
+    // grand-child would carry None and re-emit the full [C0, FF)
+    // post-split data that T1 was already past.
     assert_eq!(
         executor3.continuation_calls,
         vec![Some("T1".to_owned()), Some("T1".to_owned())],

@@ -63,8 +63,8 @@ impl PipelineNode for MockLeaf {
         vec![]
     }
 
-    fn snapshot_state(&self) -> PipelineNodeState {
-        PipelineNodeState::Drained
+    fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        Ok(PipelineNodeState::Drained)
     }
 
     fn feed_range(&self) -> Option<&FeedRange> {

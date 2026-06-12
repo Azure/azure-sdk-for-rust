@@ -22,23 +22,6 @@ use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, Ranged
 /// loops if the topology provider keeps returning splits.
 const MAX_SPLIT_RETRIES: usize = 10;
 
-/// Sentinel `RangedChildState` emitted by `snapshot_state` when an
-/// invariant violation (a child without a `feed_range`) would otherwise
-/// silently drop the child's range from the snapshot. The min > max shape
-/// is rejected by the planner's continuation-token validator with
-/// `CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE`, surfacing the corrupt
-/// snapshot at the next resume instead of letting the planner treat the
-/// missing range as already-drained scope.
-fn poison_sentinel_child() -> RangedChildState {
-    RangedChildState {
-        min_epk: "FF".to_owned(),
-        max_epk: "00".to_owned(),
-        state: PipelineNodeState::Request {
-            server_continuation: None,
-        },
-    }
-}
-
 /// Drains child nodes sequentially in EPK order.
 ///
 /// Each call to `next_page` returns the next page from the left-most (lowest EPK)
@@ -127,48 +110,36 @@ impl PipelineNode for SequentialDrain {
         self.children.into_iter().collect()
     }
 
-    fn snapshot_state(&self) -> PipelineNodeState {
+    fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
         // Walk every still-pending child and record its range + state. The
         // resulting list is the authoritative remaining-work ledger: ranges
         // that are not present here have already been drained and must not
-        // be re-queried on resume. Gaps outside any saved range are treated
-        // as already-drained scope by the planner — so any missing-range
-        // child silently dropped here would re-emit as silent data loss on
-        // resume. Instead we APPEND a poison sentinel that the planner's
-        // continuation-token validator hard-fails on (min > max), keeping
-        // the surviving children's ranges in the wire payload so the error
-        // path retains diagnostic context.
-        let mut children = Vec::with_capacity(self.children.len() + 1);
-        let mut saw_missing_range = false;
+        // be re-queried on resume. A child without a `feed_range` is an
+        // invariant violation (every SequentialDrain child owns a
+        // contiguous EPK sub-range); fail loudly so the malformed snapshot
+        // never reaches the wire.
+        let mut children = Vec::with_capacity(self.children.len());
         for (idx, child) in self.children.iter().enumerate() {
             let Some(range) = child.feed_range() else {
-                debug_assert!(
-                    false,
-                    "SequentialDrain child {idx} has no feed_range; emitting poison sentinel",
-                );
-                tracing::warn!(
-                    child_index = idx,
-                    total_children = self.children.len(),
-                    children_collected_so_far = children.len(),
-                    "SequentialDrain child has no feed_range during snapshot_state; appending poison sentinel — next resume will hard-fail via the continuation-token validator",
-                );
-                saw_missing_range = true;
-                continue;
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE)
+                    .with_message(format!(
+                        "SequentialDrain child {idx} of {total} has no feed_range; \
+                         cannot snapshot continuation state safely",
+                        total = self.children.len(),
+                    ))
+                    .build());
             };
             children.push(RangedChildState {
                 min_epk: range.min_inclusive().as_str().to_string(),
                 max_epk: range.max_exclusive().as_str().to_string(),
-                state: child.snapshot_state(),
+                state: child.snapshot_state()?,
             });
         }
-        if saw_missing_range {
-            children.push(poison_sentinel_child());
-            return PipelineNodeState::SequentialDrain { children };
-        }
         if children.is_empty() {
-            return PipelineNodeState::Drained;
+            return Ok(PipelineNodeState::Drained);
         }
-        PipelineNodeState::SequentialDrain { children }
+        Ok(PipelineNodeState::SequentialDrain { children })
     }
 
     fn feed_range(&self) -> Option<&FeedRange> {
@@ -710,7 +681,7 @@ mod tests {
 
         // Snapshot must already reference only child2 (child1 was evicted on
         // its terminal page). The first entry's min_epk should be "80".
-        let snapshot = drain.snapshot_state();
+        let snapshot = drain.snapshot_state().unwrap();
         let PipelineNodeState::SequentialDrain { children } = snapshot else {
             panic!("expected SequentialDrain snapshot, got {snapshot:?}");
         };
@@ -723,8 +694,8 @@ mod tests {
     async fn snapshot_preserves_all_pending_children() {
         // Mid-fan-out: drain has not advanced past child1 yet, so the
         // snapshot must record ALL three children's ranges + states.
-        // This is the Defect-B regression guard: the old shape only
-        // captured `front`, silently dropping child2/child3.
+        // Without this fix, the old shape only captured `front`,
+        // silently dropping child2/child3.
         let child1 = MockLeaf::with_pages(vec![]).with_feed_range(
             FeedRange::new(
                 EffectivePartitionKey::from("00"),
@@ -749,7 +720,7 @@ mod tests {
         let drain =
             SequentialDrain::new(vec![Box::new(child1), Box::new(child2), Box::new(child3)]);
 
-        let snapshot = drain.snapshot_state();
+        let snapshot = drain.snapshot_state().unwrap();
         let PipelineNodeState::SequentialDrain { children } = snapshot else {
             panic!("expected SequentialDrain snapshot, got {snapshot:?}");
         };
@@ -765,7 +736,10 @@ mod tests {
     #[tokio::test]
     async fn snapshot_of_empty_children_is_drained() {
         let drain = SequentialDrain::new(vec![]);
-        assert!(matches!(drain.snapshot_state(), PipelineNodeState::Drained));
+        assert!(matches!(
+            drain.snapshot_state().unwrap(),
+            PipelineNodeState::Drained
+        ));
     }
 
     #[tokio::test]
@@ -797,23 +771,9 @@ mod tests {
             }
             other => panic!("expected Page, got {other:?}"),
         }
-        assert!(matches!(drain.snapshot_state(), PipelineNodeState::Drained));
-    }
-
-    /// The poison sentinel emitted by `snapshot_state` when a child lacks
-    /// a `feed_range` (an invariant violation) must be a min>max entry.
-    /// That shape is rejected by the planner's continuation-token
-    /// validator on the next resume with
-    /// `CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE`, preventing the
-    /// missing range from being treated as already-drained scope.
-    #[test]
-    fn poison_sentinel_child_has_min_greater_than_max() {
-        let sentinel = poison_sentinel_child();
-        assert!(
-            sentinel.min_epk > sentinel.max_epk,
-            "poison sentinel must have min>max so the validator rejects it; got min={} max={}",
-            sentinel.min_epk,
-            sentinel.max_epk,
-        );
+        assert!(matches!(
+            drain.snapshot_state().unwrap(),
+            PipelineNodeState::Drained
+        ));
     }
 }

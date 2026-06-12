@@ -185,8 +185,8 @@ impl PipelineNode for Request {
         Vec::new()
     }
 
-    fn snapshot_state(&self) -> PipelineNodeState {
-        match &self.state {
+    fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        Ok(match &self.state {
             RequestState::Initial => PipelineNodeState::Request {
                 server_continuation: None,
             },
@@ -194,7 +194,7 @@ impl PipelineNode for Request {
                 server_continuation: Some(continuation.clone()),
             },
             RequestState::Drained => PipelineNodeState::Drained,
-        }
+        })
     }
 
     fn feed_range(&self) -> Option<&FeedRange> {

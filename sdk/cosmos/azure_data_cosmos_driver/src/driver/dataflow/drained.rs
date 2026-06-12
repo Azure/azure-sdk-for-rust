@@ -29,8 +29,8 @@ impl PipelineNode for DrainedLeaf {
         Vec::new()
     }
 
-    fn snapshot_state(&self) -> PipelineNodeState {
-        PipelineNodeState::Drained
+    fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        Ok(PipelineNodeState::Drained)
     }
 
     fn topology_can_change(&self) -> bool {

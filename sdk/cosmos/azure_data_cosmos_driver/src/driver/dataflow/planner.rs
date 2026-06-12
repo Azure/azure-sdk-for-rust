@@ -222,6 +222,17 @@ async fn plan_fresh(
 /// state is `Drained`). The intersected union is tracked per saved child so
 /// any non-`Drained` saved range that can't be fully covered is reported as
 /// a continuation-token error.
+///
+/// # Cosmos server continuation semantics
+///
+/// When a saved child's range straddles multiple post-split resolved leaves,
+/// this function forwards the *same* server continuation token to every
+/// intersecting sub-leaf. This relies on the Cosmos backend's documented
+/// behavior that a continuation token issued for a parent partition remains
+/// valid against each of that partition's post-split children — the server
+/// uses the EPK range carried alongside the request to scope which child the
+/// token applies to. Java's `DocumentProducer::createReplacingDocumentProducersOnSplit`
+/// relies on the same property.
 async fn plan_resume_from_saved_children(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
@@ -251,14 +262,20 @@ async fn plan_resume_from_saved_children(
                 else {
                     continue;
                 };
-                coverage[idx].push(intersection.clone());
 
                 let token = match &saved_child.state {
-                    SavedChildState::Drained => continue,
+                    SavedChildState::Drained => {
+                        // Drained ranges have no remaining work; coverage
+                        // tracking would be dead since the post-loop check
+                        // skips drained entries.
+                        continue;
+                    }
                     SavedChildState::Request {
                         server_continuation,
                     } => server_continuation.clone(),
                 };
+
+                coverage[idx].push(intersection.clone());
 
                 let target = RequestTarget::effective_partition_key_range(
                     intersection,
@@ -431,7 +448,7 @@ fn validate_saved_children(
             if range.min_inclusive() < prev.range.max_exclusive() {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_CHILDREN,
+                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                     )
                     .with_message(format!(
                         "continuation token SequentialDrain children must be sorted and non-overlapping; \
@@ -746,7 +763,7 @@ mod tests {
             let expected_state = PipelineNodeState::Request {
                 server_continuation: continuation.map(ToOwned::to_owned),
             };
-            assert_eq!(request.snapshot_state(), expected_state);
+            assert_eq!(request.snapshot_state().unwrap(), expected_state);
         }
     }
 
@@ -1098,7 +1115,7 @@ mod tests {
         .unwrap();
 
         assert!(matches!(
-            pipeline.snapshot_state(),
+            pipeline.snapshot_state().unwrap(),
             PipelineNodeState::Drained
         ));
     }
@@ -1239,7 +1256,7 @@ mod tests {
             .await
             .unwrap();
         assert!(matches!(
-            pipeline.snapshot_state(),
+            pipeline.snapshot_state().unwrap(),
             PipelineNodeState::Drained
         ));
     }
@@ -1257,7 +1274,7 @@ mod tests {
             .await
             .unwrap();
         assert!(matches!(
-            pipeline.snapshot_state(),
+            pipeline.snapshot_state().unwrap(),
             PipelineNodeState::Drained
         ));
     }
@@ -1329,8 +1346,8 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_CHILDREN),
-            "expected invalid-children sub-status, got: {err}",
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
+            "expected invalid-epk-range sub-status, got: {err}",
         );
     }
 
@@ -1352,8 +1369,8 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_CHILDREN),
-            "expected invalid-children sub-status, got: {err}",
+            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
+            "expected invalid-epk-range sub-status, got: {err}",
         );
     }
 
@@ -1461,14 +1478,12 @@ mod tests {
         );
     }
 
-    /// 0.3.0 could mint a top-level bare `Request` continuation shape for
-    /// single-physical-partition queries — at the time the planner treated
-    /// that as a full-range cursor. The 0.4.0 planner rejects it. The
-    /// CHANGELOG documents both shapes as breaking. This test guards the
-    /// CHANGELOG promise: 0.3.0 bare-`Request` tokens MUST fail on resume
-    /// (with any error), not silently succeed.
+    /// An older serialized shape — a top-level bare `Request` continuation
+    /// for what is now a `SequentialDrain` — must be rejected on resume
+    /// rather than silently re-interpreted as a full-range cursor. Guards
+    /// the planner's existing rejection of that shape.
     #[tokio::test]
-    async fn legacy_0_3_0_top_level_request_shape_fails_to_resume() {
+    async fn legacy_top_level_bare_request_shape_fails_to_resume() {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
@@ -1479,7 +1494,7 @@ mod tests {
 
         let result =
             build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(legacy)).await;
-        let err = result.expect_err("0.3.0 bare-Request shape must be rejected on resume");
+        let err = result.expect_err("bare top-level Request shape must be rejected on resume");
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
@@ -1487,7 +1502,7 @@ mod tests {
         );
     }
 
-    /// L4: zero-width child entries are well-formed JSON but cannot carry
+    /// Zero-width child entries are well-formed JSON but cannot carry
     /// remaining work. They must be rejected with a message that points
     /// at the entry itself rather than at a downstream "could not be
     /// fully covered" error.
@@ -1521,16 +1536,14 @@ mod tests {
         );
     }
 
-    /// S2: end-to-end verification of the M1 poison-sentinel contract.
-    /// `SequentialDrain::snapshot_state` emits a `min="FF" / max="00"`
-    /// entry when an internal invariant violation would otherwise silently
-    /// drop a child's range. This test pins down the planner's reaction to
-    /// that exact wire shape so a future change to the validator's
+    /// The continuation-token validator must reject a `SequentialDrain`
+    /// child entry with `min >= max` regardless of how that wire payload
+    /// was produced (corrupted token, hand-rolled, future-version
+    /// rollback). Pins the validator behavior so a future change to the
     /// comparison semantics (e.g., `EffectivePartitionKey::Ord`) can't
-    /// silently downgrade the M1 fail-loud path to a silent
-    /// re-query.
+    /// silently downgrade this fail-loud path to a silent re-query.
     #[tokio::test]
-    async fn poison_sentinel_wire_shape_is_rejected_by_validator() {
+    async fn malformed_min_greater_than_max_child_is_rejected_by_validator() {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
@@ -1547,21 +1560,21 @@ mod tests {
 
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
-            .expect_err("poison sentinel must be rejected by the validator");
+            .expect_err("malformed min>max child must be rejected by the validator");
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
-            "poison sentinel must trip the min>max validator path",
+            "malformed min>max child must trip the EPK-range validator path",
         );
     }
 
-    /// S2 variant: when the poison sentinel is *appended* to legitimate
-    /// children (S3 — preserving diagnostic context), the validator must
-    /// still reject the whole payload. Guards against a future "skip
-    /// invalid entries, continue with the valid ones" relaxation that
-    /// would silently swallow the snapshot corruption.
+    /// Companion to the test above: when a malformed `min >= max` entry
+    /// is *appended* to legitimate children, the validator must still
+    /// reject the whole payload. Guards against a future "skip invalid
+    /// entries, continue with the valid ones" relaxation that would
+    /// silently swallow the snapshot corruption.
     #[tokio::test]
-    async fn poison_sentinel_appended_to_valid_children_still_rejects() {
+    async fn malformed_min_greater_than_max_appended_to_valid_children_still_rejects() {
         let plan = plan_with_ranges(vec![qr("", "FF")]);
         let op = cross_partition_query_operation();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pkrange-0")])]);
@@ -1587,14 +1600,14 @@ mod tests {
 
         let err = build_sequential_drain(&plan, &mut topology, &Arc::new(op), Some(resume))
             .await
-            .expect_err("appended poison sentinel must still be rejected");
+            .expect_err("appended malformed min>max child must still be rejected");
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
         );
     }
 
-    /// O5: symmetric variant of the cascading-split scenario — the FRONT
+    /// Symmetric variant of the cascading-split scenario — the FRONT
     /// sibling splits between snapshots instead of the back one. The
     /// planner's interval-join logic is symmetric in the two siblings,
     /// but an asymmetry-by-accident regression (e.g., assuming the
@@ -1638,7 +1651,7 @@ mod tests {
         // each carry T1; the back range must be a Drained leaf (no
         // re-query). The exact structure mirrors the back-split case in
         // `query_resume_integration_tests::cascading_split_..._grand_child`.
-        let snap = pipeline.snapshot_state();
+        let snap = pipeline.snapshot_state().unwrap();
         let children = match snap {
             PipelineNodeState::SequentialDrain { children } => children,
             other => panic!("expected SequentialDrain, got {other:?}"),

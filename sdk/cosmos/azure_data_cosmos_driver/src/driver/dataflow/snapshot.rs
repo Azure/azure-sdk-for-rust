@@ -145,15 +145,18 @@ mod tests {
     }
 
     #[test]
-    fn legacy_0_3_0_sequential_drain_shape_fails_to_deserialize() {
-        // 0.3.0 minted tokens with this shape. The new SDK rejects them so
-        // callers see a clear failure instead of silent data loss; the
-        // CHANGELOG documents this as a breaking change.
+    fn legacy_lossy_sequential_drain_shape_fails_to_deserialize() {
+        // 0.4.0 minted tokens with this lossy `{current_min_epk,
+        // current_max_epk, left_most}` shape — it only preserved the
+        // front child's state, dropping sibling state mid-fan-out. The
+        // new SDK rejects them so callers see a clear failure instead of
+        // silent data loss; the CHANGELOG documents this as a breaking
+        // change.
         let legacy = r#"{"kind":"sequential_drain","current_min_epk":"00","current_max_epk":"FF","left_most":{"kind":"request","server_continuation":"tok"}}"#;
         let result: Result<PipelineNodeState, _> = serde_json::from_str(legacy);
         assert!(
             result.is_err(),
-            "legacy 0.3.0 SequentialDrain shape must fail to deserialize under the new schema"
+            "legacy 0.4.0 SequentialDrain shape must fail to deserialize under the new schema"
         );
     }
 
