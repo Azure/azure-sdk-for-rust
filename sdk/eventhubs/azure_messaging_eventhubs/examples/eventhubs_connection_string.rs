@@ -66,17 +66,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .await?;
 
-    let mut stream = receiver.stream_events();
     let mut found = false;
-    while let Some(event) = stream.next().await {
-        let event = event?;
-        if event.event_data().body() == Some(marker.as_bytes()) {
-            found = true;
-            println!("Received the marker event back.");
-            break;
+    {
+        let mut stream = receiver.stream_events();
+        while let Some(event) = stream.next().await {
+            let event = event?;
+            if event.event_data().body() == Some(marker.as_bytes()) {
+                found = true;
+                println!("Received the marker event back.");
+                break;
+            }
         }
+        // `stream` borrows `receiver`; drop it (end of block) before closing.
     }
 
+    // Close in dependency order: the receiver and stream hold references to the
+    // consumer's connection, so they must be released first.
+    receiver.close().await?;
     consumer.close().await?;
     producer.close().await?;
 
