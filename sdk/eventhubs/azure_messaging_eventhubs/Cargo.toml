@@ -38,7 +38,9 @@ azure_identity.workspace = true
 azure_messaging_eventhubs = { path = ".", features = [
   "in_memory_checkpoint_store",
 ] }
+clap.workspace = true
 criterion.workspace = true
+dotenvy = "0.15.7"
 fe2o3-amqp = { workspace = true, features = ["tracing"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
@@ -49,6 +51,10 @@ default = ["azure_core_amqp/default"]
 
 [[bench]]
 name = "benchmarks"
+harness = false
+
+[[test]]
+name = "stress_tests"
 harness = false
 
 [lints]
