@@ -131,12 +131,24 @@ static int test_resolve_container_blocking_rejects_nulls(void)
 // Section 5 — submit pipeline preflight
 // ─────────────────────────────────────────────────────────────────────
 
-static int test_driver_submit_rejects_null_driver(void)
+static int test_execute_operation_submit_rejects_null_driver(void)
 {
     int result = TEST_PASS;
     cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
     cosmos_operation_handle_t *h =
-        cosmos_driver_submit(NULL, NULL, NULL, NULL, NULL, &err);
+        cosmos_driver_execute_operation_submit(NULL, NULL, NULL, 0, &err);
+    ASSERT(h == NULL, "submit returned NULL");
+    ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+           "submit set INVALID_ARGUMENT (err=%d)", err);
+    return result;
+}
+
+static int test_execute_singleton_operation_submit_rejects_null_driver(void)
+{
+    int result = TEST_PASS;
+    cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
+    cosmos_operation_handle_t *h =
+        cosmos_driver_execute_singleton_operation_submit(NULL, NULL, NULL, 0, &err);
     ASSERT(h == NULL, "submit returned NULL");
     ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
            "submit set INVALID_ARGUMENT (err=%d)", err);
@@ -148,7 +160,7 @@ static int test_get_or_create_submit_rejects_null_runtime(void)
     int result = TEST_PASS;
     cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
     cosmos_operation_handle_t *h =
-        cosmos_driver_get_or_create_submit(NULL, NULL, NULL, NULL, NULL, &err);
+        cosmos_driver_get_or_create_submit(NULL, NULL, NULL, NULL, 0, &err);
     ASSERT(h == NULL, "submit returned NULL");
     ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
            "set INVALID_ARGUMENT (err=%d)", err);
@@ -160,7 +172,7 @@ static int test_resolve_container_submit_rejects_null_driver(void)
     int result = TEST_PASS;
     cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
     cosmos_operation_handle_t *h =
-        cosmos_driver_resolve_container_submit(NULL, "db", "c", NULL, NULL, &err);
+        cosmos_driver_resolve_container_submit(NULL, "db", "c", NULL, 0, &err);
     ASSERT(h == NULL, "submit returned NULL");
     ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
            "set INVALID_ARGUMENT (err=%d)", err);
@@ -168,54 +180,23 @@ static int test_resolve_container_submit_rejects_null_driver(void)
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Section 6 — container/item factories preflight
+// Section 6 — singleton submit preflight with a populated request
 // ─────────────────────────────────────────────────────────────────────
 
-static int test_container_factories_reject_null_container(void)
+static int test_singleton_submit_with_request_rejects_null_driver(void)
 {
     int result = TEST_PASS;
-    cosmos_operation_t *op = NULL;
-    int32_t rc;
+    cosmos_operation_request_t req = {0};
+    req.kind = COSMOS_OPERATION_KIND_READ_ITEM;
+    req.item_id = "id-1";
+    req.max_item_count = -1;
 
-    rc = cosmos_operation_read_container(NULL, &op);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT, "read_container(NULL) (rc=%d)", rc);
-
-    rc = cosmos_operation_read_all_items_cross_partition(NULL, &op);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "read_all_items_cross_partition(NULL) (rc=%d)", rc);
-
-    rc = cosmos_operation_query_items(NULL, NULL, &op);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "query_items(NULL,NULL,&op) (rc=%d)", rc);
-
-    rc = cosmos_operation_read_all_items(NULL, NULL, &op);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "read_all_items(NULL,NULL,&op) (rc=%d)", rc);
-
-    rc = cosmos_operation_batch(NULL, NULL, &op);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT, "batch(NULL,NULL,&op) (rc=%d)", rc);
-
-    rc = cosmos_operation_create_item(NULL, "id", NULL, &op);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "create_item(NULL,...) (rc=%d)", rc);
-
-    rc = cosmos_operation_read_item(NULL, "id", NULL, &op);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "read_item(NULL,...) (rc=%d)", rc);
-
-    return result;
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// Section 7 — patch-max-attempts mutator
-// ─────────────────────────────────────────────────────────────────────
-
-static int test_patch_max_attempts_rejects_zero(void)
-{
-    int result = TEST_PASS;
-    int32_t rc = cosmos_operation_with_patch_max_attempts(NULL, 0);
-    ASSERT(rc == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
-           "with_patch_max_attempts(NULL, 0) rejected (rc=%d)", rc);
+    cosmos_error_code_t err = COSMOS_ERROR_CODE_SUCCESS;
+    cosmos_operation_handle_t *h =
+        cosmos_driver_execute_singleton_operation_submit(NULL, &req, NULL, 0, &err);
+    ASSERT(h == NULL, "submit returned NULL on NULL driver");
+    ASSERT(err == COSMOS_ERROR_CODE_INVALID_ARGUMENT,
+           "set INVALID_ARGUMENT (err=%d)", err);
     return result;
 }
 
@@ -227,9 +208,9 @@ TEST_REGISTER(feed_range_full_rejects_null_out)
 TEST_REGISTER(feed_range_for_pk_rejects_nulls)
 TEST_REGISTER(container_ref_clone_rejects_null)
 TEST_REGISTER(resolve_container_blocking_rejects_nulls)
-TEST_REGISTER(driver_submit_rejects_null_driver)
+TEST_REGISTER(execute_operation_submit_rejects_null_driver)
+TEST_REGISTER(execute_singleton_operation_submit_rejects_null_driver)
 TEST_REGISTER(get_or_create_submit_rejects_null_runtime)
 TEST_REGISTER(resolve_container_submit_rejects_null_driver)
-TEST_REGISTER(container_factories_reject_null_container)
-TEST_REGISTER(patch_max_attempts_rejects_zero)
+TEST_REGISTER(singleton_submit_with_request_rejects_null_driver)
 TEST_SUITE_END("Phase 6 — Submit + Response + Container + Feed Range")

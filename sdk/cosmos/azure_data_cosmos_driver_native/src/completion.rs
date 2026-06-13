@@ -248,7 +248,11 @@ impl OperationHandle {
 pub struct Completion {
     outcome: CosmosCompletionOutcome,
     status: CosmosErrorCode,
-    user_data: *mut c_void,
+    /// Opaque, host-owned cookie round-tripped verbatim from the submit
+    /// call to `cosmos_completion_user_data`. Stored (and exposed across
+    /// the ABI) as `isize`/`intptr_t` — a pointer-sized integer — because
+    /// the wrapper never dereferences it; it is data, not a pointer.
+    user_data: isize,
     /// Strong reference to the producing operation's inner state.
     /// `cosmos_completion_op_handle` synthesizes a fresh borrowed
     /// `cosmos_operation_handle_t *` on demand by cloning this `Arc`.
@@ -272,10 +276,11 @@ pub struct Completion {
     pub(crate) response: Mutex<Option<*mut crate::response::ResponseHandle>>,
 }
 
-// SAFETY: `user_data` is an opaque `void *` that the wrapper round-trips
-// verbatim — the host owns its threading semantics. `cached_op_handle`
-// stores a raw pointer that is only touched while the completion is
-// borrowed by an FFI call, and the underlying box is freed by `Drop`.
+// SAFETY: `user_data` is an opaque `intptr_t`-sized integer that the wrapper
+// round-trips verbatim — the host owns its meaning and threading semantics.
+// `cached_op_handle` stores a raw pointer that is only touched while the
+// completion is borrowed by an FFI call, and the underlying box is freed by
+// `Drop`.
 unsafe impl Send for Completion {}
 unsafe impl Sync for Completion {}
 
@@ -314,7 +319,7 @@ impl Completion {
     pub(crate) fn new_for_publish(
         outcome: CosmosCompletionOutcome,
         status: CosmosErrorCode,
-        user_data: *mut c_void,
+        user_data: isize,
         op_inner: Arc<OperationInner>,
         error: Option<Arc<CosmosErrorInner>>,
         response: Option<*mut crate::response::ResponseHandle>,
@@ -835,11 +840,15 @@ pub extern "C" fn cosmos_completion_outcome(c: *const Completion) -> CosmosCompl
     )
 }
 
-/// Returns the `user_data` the caller supplied at submit time. NULL is
-/// preserved verbatim.
+/// Returns the `user_data` cookie the caller supplied at submit time,
+/// preserved verbatim. Returns `0` when `c` is NULL.
+///
+/// The value is an opaque, pointer-sized integer (`intptr_t`); the library
+/// never dereferences it. Hosts use it for `GCHandle` integers (.NET), slab
+/// indices (Go), JNI global-ref handles, etc.
 #[no_mangle]
-pub extern "C" fn cosmos_completion_user_data(c: *const Completion) -> *mut c_void {
-    Completion::from_ptr(c).map_or(std::ptr::null_mut(), |co| co.user_data)
+pub extern "C" fn cosmos_completion_user_data(c: *const Completion) -> isize {
+    Completion::from_ptr(c).map_or(0, |co| co.user_data)
 }
 
 /// Returns a borrowed pointer to the operation handle that produced this
@@ -1061,6 +1070,9 @@ pub fn __test_only_enqueue_completion(
     op_handle: *mut OperationHandle,
     outcome: CosmosCompletionOutcome,
     status: CosmosErrorCode,
+    // Test ergonomics: callers pass a pointer-cast cookie; we store it as the
+    // `isize` the real submit path uses. This helper is `#[doc(hidden)]` and
+    // never crosses the (now `intptr_t`) C ABI.
     user_data: *mut c_void,
     error: Option<Arc<CosmosErrorInner>>,
 ) -> CosmosErrorCode {
@@ -1075,7 +1087,7 @@ pub fn __test_only_enqueue_completion(
     let completion = Box::new(Completion {
         outcome,
         status,
-        user_data,
+        user_data: user_data as isize,
         op_inner: Arc::clone(&op_storage.inner),
         cached_op_handle: Mutex::new(None),
         cached_error_handle: Mutex::new(None),
@@ -1176,7 +1188,7 @@ mod tests {
             cosmos_completion_outcome(c),
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk
         );
-        assert_eq!(cosmos_completion_user_data(c), token as *mut c_void);
+        assert_eq!(cosmos_completion_user_data(c), token as isize);
         assert_eq!(
             cosmos_completion_status(c),
             CosmosErrorCode::CosmosErrorCodeSuccess
@@ -1399,7 +1411,7 @@ mod tests {
         for i in 0..count as usize {
             assert!(!buf[i].is_null());
             // user_data preserved in order.
-            assert_eq!(cosmos_completion_user_data(buf[i]), i as *mut c_void);
+            assert_eq!(cosmos_completion_user_data(buf[i]), i as isize);
             cosmos_completion_free(buf[i]);
         }
         cosmos_operation_handle_free(op);

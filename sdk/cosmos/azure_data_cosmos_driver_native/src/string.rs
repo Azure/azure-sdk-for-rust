@@ -17,7 +17,7 @@
 //! Inputs flow the other direction: callers hand the library a borrowed
 //! `*const c_char` (UTF-8, NUL-terminated). The library never takes ownership
 //! of caller-supplied strings — it parses them into Rust `&str` slices via
-//! [`parse_cstr`] for the duration of the call.
+//! `parse_cstr` for the duration of the call.
 //!
 //! [`cosmos_version`]: crate::cosmos_version
 
@@ -69,6 +69,12 @@ macro_rules! c_str {
 ///
 /// # Safety
 ///
+/// `ptr` must either be null or reference a valid NUL-terminated byte
+/// sequence that stays valid for at least the lifetime `'a`. Because the
+/// returned slice borrows that memory with a caller-chosen `'a` that is not
+/// tied to any input, picking an `'a` that outlives the underlying buffer is
+/// undefined behavior — hence the `unsafe` contract.
+///
 /// Phase 0 ships this as a simple boolean-fail helper; later phases that
 /// thread the rich `cosmos_error_t` payload through builders / submits will
 /// add an error-aware variant. For now the convention is "null or invalid
@@ -77,12 +83,12 @@ macro_rules! c_str {
     dead_code,
     reason = "first callers arrive in Phase 1+ (builders / submits)"
 )]
-pub fn parse_cstr<'a>(ptr: *const c_char) -> Option<&'a str> {
+pub(crate) unsafe fn parse_cstr<'a>(ptr: *const c_char) -> Option<&'a str> {
     if ptr.is_null() {
         return None;
     }
     // SAFETY: caller guarantees `ptr` references a valid NUL-terminated byte
-    // sequence for at least the duration of the call.
+    // sequence valid for at least the lifetime `'a`.
     unsafe { CStr::from_ptr(ptr) }.to_str().ok()
 }
 

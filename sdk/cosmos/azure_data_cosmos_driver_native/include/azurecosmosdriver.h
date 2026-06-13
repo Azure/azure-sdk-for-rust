@@ -688,7 +688,7 @@ typedef struct cosmos_driver_options_builder_t {
  * NUL-terminated UTF-8 and borrowed for the duration of the submit call;
  * the wrapper copies them before returning.
  */
-typedef struct cosmos_CosmosHeaderKv {
+typedef struct cosmos_header_kv_t {
   /**
    * Header name (NUL-terminated UTF-8).
    */
@@ -697,7 +697,7 @@ typedef struct cosmos_CosmosHeaderKv {
    * Header value (NUL-terminated UTF-8).
    */
   const char *value;
-} cosmos_CosmosHeaderKv;
+} cosmos_header_kv_t;
 
 /**
  * Flat C ABI mirror of the driver's
@@ -711,7 +711,7 @@ typedef struct cosmos_CosmosHeaderKv {
  * Construct with [`cosmos_operation_options_default`] to obtain an
  * all-unset value, then set the fields you care about.
  */
-typedef struct cosmos_CosmosOperationOptions {
+typedef struct cosmos_operation_options_t {
   /**
    * Read consistency strategy, encoded as a [`CosmosReadConsistencyStrategy`]
    * discriminant. `0` (`Unset`) inherits. Stored as a raw `i32` so an
@@ -785,12 +785,12 @@ typedef struct cosmos_CosmosOperationOptions {
    * Custom headers added to every request for the operation.
    * NULL / `0` length = none.
    */
-  const struct cosmos_CosmosHeaderKv *custom_headers;
+  const struct cosmos_header_kv_t *custom_headers;
   /**
    * Number of entries in `custom_headers`.
    */
   uintptr_t custom_headers_len;
-} cosmos_CosmosOperationOptions;
+} cosmos_operation_options_t;
 
 /**
  * Opaque C ABI handle for `FeedRangeInner`.
@@ -838,7 +838,7 @@ typedef struct cosmos_runtime_builder_t {
  * The wrapper copies the bytes into a driver-owned `Vec<u8>` before
  * returning, so the host may free the buffer immediately after submit.
  */
-typedef struct cosmos_CosmosBytesView {
+typedef struct cosmos_bytes_view_t {
   /**
    * Pointer to the first byte, or NULL when `len == 0`.
    */
@@ -847,7 +847,7 @@ typedef struct cosmos_CosmosBytesView {
    * Number of bytes.
    */
   uintptr_t len;
-} cosmos_CosmosBytesView;
+} cosmos_bytes_view_t;
 
 /**
  * Self-describing request passed to the two submit entry points. The host
@@ -857,7 +857,7 @@ typedef struct cosmos_CosmosBytesView {
  *
  * All pointers are borrowed for the duration of the submit call only.
  */
-typedef struct cosmos_CosmosOperationRequest {
+typedef struct cosmos_operation_request_t {
   /**
    * Which operation to build, encoded as a [`CosmosOperationKind`]
    * discriminant. Stored as a raw `i32` so an out-of-range host value is
@@ -898,7 +898,7 @@ typedef struct cosmos_CosmosOperationRequest {
   /**
    * Request body. `data == NULL && len == 0` means "no body".
    */
-  struct cosmos_CosmosBytesView body;
+  struct cosmos_bytes_view_t body;
   /**
    * Session token override (NUL-terminated UTF-8). NULL = unset.
    */
@@ -943,8 +943,8 @@ typedef struct cosmos_CosmosOperationRequest {
   /**
    * Per-call options. NULL = use driver/runtime defaults.
    */
-  const struct cosmos_CosmosOperationOptions *options;
-} cosmos_CosmosOperationRequest;
+  const struct cosmos_operation_options_t *options;
+} cosmos_operation_request_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -1126,10 +1126,14 @@ cosmos_cq_state_t cosmos_cq_state(const struct cosmos_cq_t *queue);
 cosmos_completion_outcome_t cosmos_completion_outcome(const struct cosmos_completion_t *c);
 
 /**
- * Returns the `user_data` the caller supplied at submit time. NULL is
- * preserved verbatim.
+ * Returns the `user_data` cookie the caller supplied at submit time,
+ * preserved verbatim. Returns `0` when `c` is NULL.
+ *
+ * The value is an opaque, pointer-sized integer (`intptr_t`); the library
+ * never dereferences it. Hosts use it for `GCHandle` integers (.NET), slab
+ * indices (Go), JNI global-ref handles, etc.
  */
-void *cosmos_completion_user_data(const struct cosmos_completion_t *c);
+intptr_t cosmos_completion_user_data(const struct cosmos_completion_t *c);
 
 /**
  * Returns a borrowed pointer to the operation handle that produced this
@@ -1413,7 +1417,7 @@ int32_t cosmos_driver_options_builder_with_preferred_regions(struct cosmos_drive
  * An out-of-range option value is rejected with `INVALID_OPTION_VALUE`.
  */
 int32_t cosmos_driver_options_builder_with_operation_options(struct cosmos_driver_options_builder_t *builder,
-                                                             const struct cosmos_CosmosOperationOptions *options);
+                                                             const struct cosmos_operation_options_t *options);
 
 /**
  * Consumes the builder and returns a fresh `cosmos_driver_options_t *`.
@@ -1548,7 +1552,7 @@ void cosmos_feed_range_free(struct cosmos_feed_range_t *fr);
  * mutates the fields it cares about and leaves the rest at their inherit
  * sentinels.
  */
-struct cosmos_CosmosOperationOptions cosmos_operation_options_default(void);
+struct cosmos_operation_options_t cosmos_operation_options_default(void);
 
 /**
  * Allocates a new partition-key builder. Always succeeds; the returned
@@ -1901,7 +1905,8 @@ int32_t cosmos_runtime_builder_build(struct cosmos_runtime_builder_t *builder,
  *   operation. All borrowed pointers must remain valid for the duration of
  *   this call (the wrapper copies everything it needs before returning).
  * - `queue` — non-NULL completion queue.
- * - `user_data` — opaque pointer round-tripped onto the completion.
+ * - `user_data` — opaque, pointer-sized integer cookie (`intptr_t`)
+ *   round-tripped verbatim onto the completion; never dereferenced.
  * - `out_pre_error` — receives the coarse code on pre-flight failure
  *   (returns NULL). NULL is accepted.
  *
@@ -1914,9 +1919,9 @@ int32_t cosmos_runtime_builder_build(struct cosmos_runtime_builder_t *builder,
  * (`QUEUE_SHUTDOWN` / `QUEUE_FULL`).
  */
 struct cosmos_operation_handle_t *cosmos_driver_execute_operation_submit(const struct cosmos_driver_t *driver,
-                                                                         const struct cosmos_CosmosOperationRequest *request,
+                                                                         const struct cosmos_operation_request_t *request,
                                                                          struct cosmos_cq_t *queue,
-                                                                         void *user_data,
+                                                                         intptr_t user_data,
                                                                          cosmos_error_code_t *out_pre_error);
 
 /**
@@ -1941,9 +1946,9 @@ struct cosmos_operation_handle_t *cosmos_driver_execute_operation_submit(const s
  * (outcome `ERROR`).
  */
 struct cosmos_operation_handle_t *cosmos_driver_execute_singleton_operation_submit(const struct cosmos_driver_t *driver,
-                                                                                   const struct cosmos_CosmosOperationRequest *request,
+                                                                                   const struct cosmos_operation_request_t *request,
                                                                                    struct cosmos_cq_t *queue,
-                                                                                   void *user_data,
+                                                                                   intptr_t user_data,
                                                                                    cosmos_error_code_t *out_pre_error);
 
 /**
@@ -1961,7 +1966,7 @@ struct cosmos_operation_handle_t *cosmos_driver_get_or_create_submit(const struc
                                                                      const struct cosmos_account_ref_t *account,
                                                                      const struct cosmos_driver_options_t *options,
                                                                      struct cosmos_cq_t *queue,
-                                                                     void *user_data,
+                                                                     intptr_t user_data,
                                                                      cosmos_error_code_t *out_pre_error);
 
 /**
@@ -1977,7 +1982,7 @@ struct cosmos_operation_handle_t *cosmos_driver_resolve_container_submit(const s
                                                                          const char *database_id,
                                                                          const char *container_id,
                                                                          struct cosmos_cq_t *queue,
-                                                                         void *user_data,
+                                                                         intptr_t user_data,
                                                                          cosmos_error_code_t *out_pre_error);
 
 #ifdef __cplusplus

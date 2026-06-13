@@ -22,7 +22,6 @@
 //! the per-API entry points are thin wrappers that provide the
 //! driver-side future.
 
-use std::ffi::c_void;
 use std::future::Future;
 use std::sync::Arc;
 
@@ -42,20 +41,20 @@ use crate::op_request::{build_request, CosmosOperationRequest};
 use crate::response::ResponseHandle;
 use crate::runtime::RuntimeContext;
 
-/// Send-safe encoding of the opaque `user_data` pointer round-tripped
-/// to the completion. Storing as `usize` instead of `*mut c_void`
-/// avoids the async-block auto-trait analysis flagging the raw
-/// pointer as `!Send` — the wrapper does not dereference it, and the
-/// host owns its threading semantics.
+/// Send-safe encoding of the opaque `user_data` cookie round-tripped
+/// to the completion. It is a pointer-sized integer (`isize`/`intptr_t`),
+/// never a pointer the wrapper dereferences — the host owns its meaning
+/// and threading semantics, so storing it as an integer also keeps the
+/// async-block auto-trait analysis from flagging it as `!Send`.
 #[derive(Clone, Copy)]
-struct UserData(usize);
+struct UserData(isize);
 
 impl UserData {
-    fn new(p: *mut c_void) -> Self {
-        Self(p as usize)
+    fn new(v: isize) -> Self {
+        Self(v)
     }
-    fn as_ptr(self) -> *mut c_void {
-        self.0 as *mut c_void
+    fn as_isize(self) -> isize {
+        self.0
     }
 }
 
@@ -74,7 +73,7 @@ struct SpawnContext {
     include_error_details: bool,
 }
 
-// SAFETY: `UserData` is `usize`-backed, the other fields are `Arc`s.
+// SAFETY: `UserData` is `isize`-backed, the other fields are `Arc`s.
 unsafe impl Send for SpawnContext {}
 
 /// Pre-flight: builds a [`SpawnContext`] + a fresh producer-side
@@ -83,7 +82,7 @@ unsafe impl Send for SpawnContext {}
 /// `out_pre_error` and return NULL.
 fn pre_flight_spawn(
     queue: *mut CompletionQueue,
-    user_data: *mut c_void,
+    user_data: isize,
 ) -> Result<(SpawnContext, *mut OperationHandle), CosmosErrorCode> {
     let Some(queue_inner) = CompletionQueue::inner_arc(queue) else {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
@@ -176,7 +175,7 @@ fn spawn_oneshot<Fut, R>(
             None => Completion::new_for_publish(
                 CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
                 CosmosErrorCode::CosmosErrorCodeOperationCancelled,
-                ctx.user_data.as_ptr(),
+                ctx.user_data.as_isize(),
                 ctx.op_inner.clone(),
                 None,
                 None,
@@ -184,7 +183,7 @@ fn spawn_oneshot<Fut, R>(
             Some(Ok(Ok(response))) => Completion::new_for_publish(
                 CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
                 CosmosErrorCode::CosmosErrorCodeSuccess,
-                ctx.user_data.as_ptr(),
+                ctx.user_data.as_isize(),
                 ctx.op_inner.clone(),
                 None,
                 Some(response),
@@ -199,7 +198,7 @@ fn spawn_oneshot<Fut, R>(
                 Completion::new_for_publish(
                     CosmosCompletionOutcome::CosmosCompletionOutcomeError,
                     coarse,
-                    ctx.user_data.as_ptr(),
+                    ctx.user_data.as_isize(),
                     ctx.op_inner.clone(),
                     stored_error,
                     None,
@@ -213,7 +212,7 @@ fn spawn_oneshot<Fut, R>(
                 Completion::new_for_publish(
                     CosmosCompletionOutcome::CosmosCompletionOutcomeError,
                     CosmosErrorCode::CosmosErrorCodeClientError,
-                    ctx.user_data.as_ptr(),
+                    ctx.user_data.as_isize(),
                     ctx.op_inner.clone(),
                     None,
                     None,
@@ -275,7 +274,8 @@ fn spawn_oneshot<Fut, R>(
 ///   operation. All borrowed pointers must remain valid for the duration of
 ///   this call (the wrapper copies everything it needs before returning).
 /// - `queue` — non-NULL completion queue.
-/// - `user_data` — opaque pointer round-tripped onto the completion.
+/// - `user_data` — opaque, pointer-sized integer cookie (`intptr_t`)
+///   round-tripped verbatim onto the completion; never dereferenced.
 /// - `out_pre_error` — receives the coarse code on pre-flight failure
 ///   (returns NULL). NULL is accepted.
 ///
@@ -291,7 +291,7 @@ pub extern "C" fn cosmos_driver_execute_operation_submit(
     driver: *const DriverHandle,
     request: *const CosmosOperationRequest,
     queue: *mut CompletionQueue,
-    user_data: *mut c_void,
+    user_data: isize,
     out_pre_error: *mut CosmosErrorCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
@@ -395,7 +395,7 @@ pub extern "C" fn cosmos_driver_execute_singleton_operation_submit(
     driver: *const DriverHandle,
     request: *const CosmosOperationRequest,
     queue: *mut CompletionQueue,
-    user_data: *mut c_void,
+    user_data: isize,
     out_pre_error: *mut CosmosErrorCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
@@ -468,7 +468,7 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
     account: *const AccountRefHandle,
     options: *const DriverOptionsHandle,
     queue: *mut CompletionQueue,
-    user_data: *mut c_void,
+    user_data: isize,
     out_pre_error: *mut CosmosErrorCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
@@ -544,7 +544,7 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
     database_id: *const std::os::raw::c_char,
     container_id: *const std::os::raw::c_char,
     queue: *mut CompletionQueue,
-    user_data: *mut c_void,
+    user_data: isize,
     out_pre_error: *mut CosmosErrorCode,
 ) -> *mut OperationHandle {
     let write_err = |code: CosmosErrorCode| {
@@ -631,7 +631,7 @@ mod tests {
             ptr::null(),
             ptr::null(),
             ptr::null_mut(),
-            ptr::null_mut(),
+            0,
             &mut err,
         );
         assert!(h.is_null());
@@ -645,7 +645,7 @@ mod tests {
             ptr::null(),
             ptr::null(),
             ptr::null_mut(),
-            ptr::null_mut(),
+            0,
             &mut err,
         );
         assert!(h.is_null());
@@ -660,7 +660,7 @@ mod tests {
             ptr::null(),
             ptr::null(),
             ptr::null_mut(),
-            ptr::null_mut(),
+            0,
             &mut err,
         );
         assert!(h.is_null());
@@ -675,7 +675,7 @@ mod tests {
             ptr::null(),
             ptr::null(),
             ptr::null_mut(),
-            ptr::null_mut(),
+            0,
             &mut err,
         );
         assert!(h.is_null());
@@ -701,7 +701,7 @@ mod tests {
         // Shut the queue down, then attempt a submit pre-flight. It must be
         // rejected synchronously with QUEUE_SHUTDOWN — no task is spawned.
         cosmos_cq_shutdown(queue);
-        let result = pre_flight_spawn(queue, ptr::null_mut());
+        let result = pre_flight_spawn(queue, 0);
         assert!(matches!(
             result,
             Err(CosmosErrorCode::CosmosErrorCodeQueueShutdown)
@@ -730,7 +730,7 @@ mod tests {
         let queue = cosmos_cq_create(rt, &opts as *const _);
         assert!(!queue.is_null());
 
-        let (ctx, op_handle) = pre_flight_spawn(queue, ptr::null_mut()).expect("pre-flight ok");
+        let (ctx, op_handle) = pre_flight_spawn(queue, 0).expect("pre-flight ok");
         let runtime = Arc::clone(ctx.queue.runtime());
 
         // A future that never resolves on its own — only cancellation can end
