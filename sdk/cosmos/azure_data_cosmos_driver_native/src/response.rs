@@ -304,7 +304,7 @@ pub extern "C" fn cosmos_response_etag(response: *const ResponseHandle) -> *cons
             .headers()
             .etag
             .as_ref()
-            .and_then(|e| CString::new(e.as_str().to_owned()).ok())
+            .and_then(|e| CString::new(e.to_string()).ok())
     });
     cached.as_ref().map_or(std::ptr::null(), |c| c.as_ptr())
 }

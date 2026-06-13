@@ -39,8 +39,9 @@ use std::ffi::{c_char, CStr};
 use std::num::{NonZeroU32, NonZeroU8};
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
+use azure_core::http::Etag;
 use azure_data_cosmos_driver::models::{
-    ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ETag, ItemReference,
+    ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ItemReference,
     MaxItemCountHint, PartitionKey, Precondition, SessionToken, ThroughputControlGroupName,
 };
 use azure_data_cosmos_driver::options::{
@@ -873,11 +874,11 @@ unsafe fn apply_inline_mutators(
         CosmosPreconditionKind::CosmosPreconditionKindNone => {}
         CosmosPreconditionKind::CosmosPreconditionKindIfMatch => {
             let etag = require_cstr(req.precondition_etag)?;
-            op = op.with_precondition(Precondition::if_match(ETag::new(etag.to_owned())));
+            op = op.with_precondition(Precondition::if_match(Etag::from(etag.to_owned())));
         }
         CosmosPreconditionKind::CosmosPreconditionKindIfNoneMatch => {
             let etag = require_cstr(req.precondition_etag)?;
-            op = op.with_precondition(Precondition::if_none_match(ETag::new(etag.to_owned())));
+            op = op.with_precondition(Precondition::if_none_match(Etag::from(etag.to_owned())));
         }
     }
 

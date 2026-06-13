@@ -391,7 +391,7 @@ pub extern "C" fn cosmos_partition_key_builder_build(
 /// accidental misuse.
 #[no_mangle]
 pub extern "C" fn cosmos_partition_key_empty() -> *mut PartitionKeyHandle {
-    PartitionKeyHandle::into_raw(DriverPartitionKey::EMPTY)
+    PartitionKeyHandle::into_raw(DriverPartitionKey::from(Vec::<PartitionKeyValue>::new()))
 }
 
 /// Clones an existing partition-key handle. Cheap — an atomic refcount

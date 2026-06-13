@@ -309,7 +309,7 @@ impl CosmosErrorInner {
                 self.err
                     .response()
                     .and_then(|r| r.headers().etag.as_ref())
-                    .and_then(|e| CString::new(e.as_str().to_owned()).ok())
+                    .and_then(|e| CString::new(e.to_string()).ok())
             })
             .as_ref()
     }
