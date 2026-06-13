@@ -1,7 +1,10 @@
+azurecosmosdriver
 bindgen
+cbindgen
 cfg
 cfgs
 consts
+corrosion
 deque
 impls
 newtype

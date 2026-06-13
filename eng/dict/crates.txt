@@ -15,6 +15,7 @@ azure_core_test
 azure_core_test_macros
 azure_data_cosmos
 azure_data_cosmos_driver
+azure_data_cosmos_driver_native
 azure_identity
 azure_messaging_eventhubs
 azure_messaging_eventhubs_checkpointstore_blob
