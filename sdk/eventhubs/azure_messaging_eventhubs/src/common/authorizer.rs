@@ -463,7 +463,6 @@ mod tests {
     use azure_core::{credentials::TokenRequestOptions, http::Url, time::OffsetDateTime, Result};
     use azure_core_test::{recorded, TestContext};
     use std::sync::Arc;
-    use tracing::info;
 
     // Helper struct to mock token credential
     #[derive(Debug)]
@@ -665,7 +664,7 @@ mod tests {
         let current_count = mock_credential.get_token_get_count();
         assert_eq!(current_count, 1);
 
-        debug!("Sleeping for 15 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
+        trace!("Sleeping for 15 seconds to allow token to expire and be refreshed. Current token count: {current_count}");
 
         // Sleep a bit to ensure we will have refreshed the token - since the token expires in 20 seconds,
         // we will refresh it between 8 and 12 seconds before the expiration time. If we wait for 13 seconds,
@@ -674,13 +673,13 @@ mod tests {
 
         // Verify that the token get count has increased, indicating a refresh was attempted
         let final_count = mock_credential.get_token_get_count();
-        debug!("After sleeping, token count: {final_count}");
+        trace!("After sleeping, token count: {final_count}");
 
         assert!(
             final_count >= 2,
             "Expected token get count to be greater or equal to 2, but got {final_count}"
         );
-        info!("Final token get count: {final_count}");
+        trace!("Final token get count: {final_count}");
         Ok(())
     }
 
@@ -737,7 +736,7 @@ mod tests {
         // between 14 and 16 seconds from now.
 
         // The second token expires after the first token.
-        debug!("Sleeping for 10 seconds to establish separation between token_refresh_1 and token_refresh_2.");
+        trace!("Sleeping for 10 seconds to establish separation between token_refresh_1 and token_refresh_2.");
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
         // Authorize the second path, which will store the token
@@ -754,18 +753,18 @@ mod tests {
 
         // Token_refresh_1 will be refreshed between 4 and 6 seconds from now.
         // Token_refresh_2 will be refreshed between 14 and 16 from now.
-        debug!("Sleeping for 7 seconds to allow token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
+        trace!("Sleeping for 7 seconds to allow token_refresh_1 to expire and be refreshed. Current token count: {current_count}");
         tokio::time::sleep(std::time::Duration::from_secs(7)).await;
 
         // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_1 but not token_refresh_2.
         let final_count = mock_credential.get_token_get_count();
-        debug!("After sleeping the first time, token count: {final_count}");
+        trace!("After sleeping the first time, token count: {final_count}");
         assert!(
             final_count >= 2,
             "Expected first get token count to be at least 2, but got {final_count}"
         );
 
-        info!("First token expiration get count: {}", final_count);
+        trace!("First token expiration get count: {}", final_count);
         // Token_refresh_1 will be refreshed between 13 and 15 seconds from now.
         // Token_refresh_2 will be refreshed between 7 and 9 seconds from now.
 
@@ -774,12 +773,12 @@ mod tests {
 
         // Verify that the token get count has increased, indicating a single refresh was attempted - we refreshed token_refresh_2.
         let final_count = mock_credential.get_token_get_count();
-        debug!("Getting second token count: {final_count}");
+        trace!("Getting second token count: {final_count}");
         assert!(
             final_count >= 4,
             "Expected second get token count to be 4, but got {final_count}"
         );
-        info!("Second token expiration get count: {}", final_count);
+        trace!("Second token expiration get count: {}", final_count);
 
         Ok(())
     }

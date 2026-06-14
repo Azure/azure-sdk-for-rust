@@ -25,7 +25,7 @@ use std::{
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tracing::{info, trace};
+use tracing::{info, trace, warn};
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
@@ -146,16 +146,27 @@ impl ConsumerClient {
     /// }
     /// ```
     pub async fn close(self) -> Result<()> {
-        trace!("Closing consumer client for {}.", self.endpoint);
+        let connection_id = self.recoverable_connection.get_connection_id().to_string();
+        trace!(
+            connection_id = %connection_id,
+            source_url = %self.endpoint,
+            "Closing consumer client."
+        );
         let recoverable_connection =
             Arc::try_unwrap(self.recoverable_connection).map_err(|_| {
+                warn!(
+                    connection_id = %connection_id,
+                    source_url = %self.endpoint,
+                    "Could not close consumer recoverable connection, multiple references exist."
+                );
                 EventHubsError::with_message(
                     "Could not close consumer recoverable connection, multiple references exist",
                 )
             })?;
         trace!(
-            "No references to connection, closing connection for {}.",
-            self.endpoint
+            connection_id = %connection_id,
+            source_url = %self.endpoint,
+            "No references to connection, closing connection."
         );
         recoverable_connection.close_connection().await?;
         Ok(())

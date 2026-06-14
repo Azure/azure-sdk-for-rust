@@ -1005,10 +1005,10 @@ pub(crate) mod tests {
                     .load_balance(&all_partition_ids)
                     .await?;
 
-                info!("Too Few ownerships: {:?}", ownerships);
+                trace!("Too Few ownerships: {:?}", ownerships);
                 let mut owned_partitions = map_to_strings(&ownerships, |o| o.partition_id.clone());
                 owned_partitions.sort();
-                info!(
+                trace!(
                     "Claimed ownership of partitions: {}",
                     owned_partitions.join(", ")
                 );
@@ -1043,13 +1043,13 @@ pub(crate) mod tests {
                 ])
                 .await?;
 
-            info!(
+            trace!(
                 "Expiring ownership for partition {}",
                 middle_ownership.partition_id
             );
             relinquish_ownership(checkpoint_store.clone(), &middle_ownership).await?;
 
-            info!("Load balancing with strategy: {:?}", strategy);
+            trace!("Load balancing with strategy: {:?}", strategy);
             let load_balancer = LoadBalancer::new(
                 checkpoint_store.clone(),
                 new_test_consumer_client_details(CLIENT_B),
@@ -1070,12 +1070,12 @@ pub(crate) mod tests {
 
     #[recorded::test]
     async fn unit_test_load_balancer_balanced(_ctx: TestContext) -> Result<()> {
-        info!("Unit test for load balancer");
+        trace!("Unit test for load balancer");
 
         //cspell: ignore abbc abbcc aaaabbb
         for state in ["abc", "abbc", "abbcc"] {
             for owner in ["a", "b", "c"] {
-                info!("Layout {state} with owner {owner}");
+                trace!("Layout {state} with owner {owner}");
 
                 let (lb, parts) = create_load_balancer_for_unit_tests(state, owner).await?;
                 let load_balancer_info = lb
@@ -1089,7 +1089,7 @@ pub(crate) mod tests {
             }
         }
 
-        info!("Balanced with unequal ownership");
+        trace!("Balanced with unequal ownership");
         let (lb, parts) = create_load_balancer_for_unit_tests("aaaabbb", "a").await?;
         let load_balancer_info = lb
             .get_available_partitions(&parts.iter().map(String::as_str).collect::<Vec<&str>>())
@@ -1117,12 +1117,12 @@ pub(crate) mod tests {
 
     #[recorded::test]
     async fn unit_test_load_balancer_unbalanced(_ctx: TestContext) -> Result<()> {
-        info!("Unit test for load balancer (unbalanced)");
+        trace!("Unit test for load balancer (unbalanced)");
 
         //cspell: ignore aaaabb aaabbbcccd aaabbbccde aaaabbc
 
         {
-            info!("A new owner enters the field.");
+            trace!("A new owner enters the field.");
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("abb", "c").await?;
             let load_balancer_info = load_balancer
@@ -1138,7 +1138,7 @@ pub(crate) mod tests {
         }
 
         {
-            info!("deficit, single partition");
+            trace!("deficit, single partition");
             // Existing owner needs to steal a partition.
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("aaaabb", "b").await?;
@@ -1154,7 +1154,7 @@ pub(crate) mod tests {
             assert_eq!("..b.bb", load_balance_result);
         }
         {
-            info!("deficit, multiple partitions");
+            trace!("deficit, multiple partitions");
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("aaabbbcccd", "d").await?;
             let load_balancer_info = load_balancer
@@ -1170,7 +1170,7 @@ pub(crate) mod tests {
         }
 
         {
-            info!("deficit, multiple owners");
+            trace!("deficit, multiple owners");
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("aaabbbccde", "d").await?;
             let load_balancer_info = load_balancer
@@ -1186,7 +1186,7 @@ pub(crate) mod tests {
         }
 
         {
-            info!("can grab an extra partition");
+            trace!("can grab an extra partition");
             let (load_balancer, partitions) =
                 create_load_balancer_for_unit_tests("aaaabbc", "b").await?;
             let load_balancer_info = load_balancer
@@ -1232,7 +1232,7 @@ pub(crate) mod tests {
 
         let owned_as_string = ownerships_as_string(&ownerships, partition_count);
 
-        info!("Claimed ownership of partitions: {}", owned_as_string);
+        trace!("Claimed ownership of partitions: {}", owned_as_string);
 
         Ok(owned_as_string)
     }

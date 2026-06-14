@@ -87,8 +87,7 @@ impl AmqpSenderApis for RecoverableSender {
                                 warn!(
                                     path = %path,
                                     condition = ?described.condition,
-                                    "Send rejected by remote: {:?}",
-                                    described
+                                    "Send rejected by remote."
                                 );
                                 Err(AmqpError::from(AmqpErrorKind::AmqpDescribedError(
                                     described,

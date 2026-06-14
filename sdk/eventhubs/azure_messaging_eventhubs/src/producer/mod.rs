@@ -137,9 +137,19 @@ impl ProducerClient {
     ///
     /// Note that dropping the ProducerClient will also close the connection.
     pub async fn close(self) -> Result<()> {
-        trace!("Closing producer client for {}.", self.endpoint);
+        let connection_id = self.connection.get_connection_id().to_string();
+        trace!(
+            connection_id = %connection_id,
+            url = %self.endpoint,
+            "Closing producer client."
+        );
         Arc::try_unwrap(self.connection)
             .map_err(|_| {
+                warn!(
+                    connection_id = %connection_id,
+                    url = %self.endpoint,
+                    "Could not close producer recoverable connection, multiple references exist."
+                );
                 Error::with_message(
                     AzureErrorKind::Other,
                     "Could not close producer recoverable connection, multiple references exist",

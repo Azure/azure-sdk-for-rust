@@ -71,7 +71,7 @@ impl RecoverableClaimsBasedSecurity {
             operation = "claims_based_security",
             action = ?action,
             err = ?e,
-            "Claims-based-security AMQP operation failed: {e:?}"
+            "Claims-based-security AMQP operation failed."
         );
         action
     }

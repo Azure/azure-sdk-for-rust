@@ -909,8 +909,7 @@ impl RecoverableConnection {
                 ) {
                     debug!(
                         condition = ?described_error.condition,
-                        "AMQP described error can be retried: {:?}",
-                        described_error
+                        "AMQP described error can be retried."
                     );
                     ErrorRecoveryAction::RetryAction
                 } else if matches!(
@@ -957,8 +956,7 @@ impl RecoverableConnection {
                 } else {
                     debug!(
                         condition = ?described_error.condition,
-                        "AMQP described error cannot be retried: {:?}",
-                        described_error
+                        "AMQP described error cannot be retried."
                     );
                     ErrorRecoveryAction::ReturnError
                 }
