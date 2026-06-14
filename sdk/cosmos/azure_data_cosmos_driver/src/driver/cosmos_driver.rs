@@ -1501,7 +1501,7 @@ impl CosmosDriver {
         // We need to do some refactoring here to shrink the future size and avoid this heap allocation if possible.
         Box::pin(async {
             let container = operation.container().cloned();
-            let mut plan = self.plan_operation(operation, &options, None).await?;
+            let mut plan = Box::pin(self.plan_operation(operation, &options, None)).await?;
             self.execute_plan(&mut plan, container, options).await
         })
         .await
