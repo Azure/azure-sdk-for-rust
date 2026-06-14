@@ -1,71 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Integration tests that pin the desired SDK behavior for two
-//! topology-related Forbidden sub-status codes:
-//!
-//! * **403 / 1008 `DatabaseAccountNotFound`** — the gateway in a given
-//!   region no longer owns the account (typically because the customer
-//!   shrank the account's region list). The first 1008 must trigger an
-//!   account-topology refresh + retry against the refreshed endpoint
-//!   set; bubble up only when every healthy current region also fails.
-//!
-//! * **403 / 3 `WriteForbidden`** — write-only. The gateway tells the
-//!   client that its idea of "write region" is stale. The handler
-//!   ([`try_handle_write_forbidden`] in `retry_evaluation.rs`) emits
-//!   `RefreshAccountProperties` + `MarkEndpointUnavailable` +
-//!   `FailoverRetry`; these tests pin the desired end-to-end behavior
-//!   so future changes can be regression-tested.
-//!
-//! ## Test-harness model
-//!
-//! Each test follows the same shape, adapted from the patterns in
-//! [`super::excluded_regions_fallback`] and [`super::hedging`]:
-//!
-//! 1. Build a 2-region in-memory emulator (East US hub + West US
-//!    satellite) with `ReplicationConfig::immediate()` so a write that
-//!    succeeds against any region is immediately readable from the
-//!    other. `WriteMode::Multi` is used for the 1008 tests so reads can
-//!    succeed cross-region; `WriteMode::Multi` is also used for the
-//!    403/3 tests because the fault rule is what flips a region into
-//!    "not a write region", not the underlying account topology.
-//! 2. Wrap the emulator transport in [`HostRecorder`] (`RequestObserver`)
-//!    **and** [`runtime_builder_with_fault_rules`] so:
-//!    * the observer captures every request that actually reaches the
-//!      emulator (post-fault retries + the emulator's own `GET /`
-//!      account-topology fetches);
-//!    * the fault factory short-circuits faulted requests before the
-//!      emulator, so [`FaultInjectionRule::hit_count`] is the authority
-//!      for the faulted side and the observer is the authority for the
-//!      non-faulted side. See
-//!      [`super::hedging`] for the same composition.
-//! 3. Pre-seed an item via an unfaulted write so the post-fault read /
-//!    write has something to land on.
-//! 4. Clear the recorder, enable the fault rule, issue the operation
-//!    through `driver.execute_operation`, and inspect:
-//!    * the rule's [`hit_count`](FaultInjectionRule::hit_count),
-//!    * the recorder's data-plane hosts (filtering out `GET /` for
-//!      retry assertions, or counting `GET /` for refresh assertions),
-//!    * the response's diagnostics — [`request_count`] and
-//!      [`regions_contacted`] in particular.
-//!
-//! ## Test-harness limits
-//!
-//! * The in-memory emulator always returns its configured regions on
-//!   `GET /`. Tests cannot simulate "topology shrank from 2 regions to
-//!   1" via the emulator alone. The 1008 tests therefore assert
-//!   *refresh-was-triggered* (count of `GET /` goes up after the fault)
-//!   and *retry-targeted-a-different-region* (via the in-flight skip
-//!   set) rather than a full topology-shrink scenario.
-//! * Cross-partition query (`QueryItems`) and dedicated feed-range
-//!   query (`FeedRangeQuery`) paths are not covered here. They route
-//!   through the same operation-type-agnostic `evaluate_http_outcome`
-//!   classifier in `retry_evaluation.rs`, so coverage for `ReadItem` /
-//!   `CreateItem` / `UpsertItem` carries transitively.
-//! * The hedging-only path (`evaluate_hedge_leg_effects`) mirrors the
-//!   1008 handler from the main pipeline so a hedge race that observes
-//!   1008 also emits `RefreshAccountProperties` — covered structurally
-//!   by the existing `hedging` test module.
+//! Integration tests for topology-related 403/1008 and 403/3 retry behavior.
 
 #![cfg(feature = "fault_injection")]
 
@@ -99,10 +35,7 @@ const DB_NAME: &str = "testdb";
 const COLL_NAME: &str = "testcoll";
 const PK_VALUE: &str = "pk1";
 
-/// Builds a two-region in-memory emulator with the given write mode and
-/// observer, then wires it through `runtime_builder_with_fault_rules`
-/// to compose fault injection with the emulator transport. Returns a
-/// ready-to-use driver + the master-key account reference.
+/// Builds a two-region in-memory emulator wired through fault injection.
 async fn build_driver_with_faults(
     write_mode: WriteMode,
     observer: Arc<HostRecorder>,
@@ -153,9 +86,7 @@ async fn build_driver_with_faults(
     (driver, account)
 }
 
-/// Seeds a known item via the driver under default options. Done before
-/// the test-under-fault phase, then the recorder is cleared so only
-/// post-fault traffic counts.
+/// Seeds a known item via the driver under default options.
 async fn seed_item_via_driver(driver: &CosmosDriver, item_id: &str) {
     let container = driver
         .resolve_container_by_name(DB_NAME, COLL_NAME)
@@ -178,10 +109,7 @@ async fn seed_item_via_driver(driver: &CosmosDriver, item_id: &str) {
         .expect("seeding write succeeds before faults are installed");
 }
 
-/// Builds a fault rule that returns `error_type` for a single region's
-/// `op` requests. `hit_limit` of `None` means "always", `Some(n)` means
-/// "first n hits then heal" (the latter is for tests that want the
-/// retry to eventually succeed against the same region).
+/// Builds a fault rule that returns `error_type` for a single region's `op` requests.
 fn region_fault_rule(
     id: &'static str,
     op: FaultOperationType,
@@ -285,17 +213,9 @@ async fn upsert_item(
         .await
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // 1008 / DatabaseAccountNotFound
-// ─────────────────────────────────────────────────────────────────────
 
-/// **403/1008 — ReadItem.** With East US returning 403/1008 on `ReadItem`,
-/// the SDK must (post-fix) refresh the account topology and retry
-/// against West US, which has the item replicated and returns it.
-///
-/// Pre-fix expectation: FAIL — no 1008 handler, single attempt
-/// abort, `request_count == 1`, no West US data-plane request, no
-/// extra `GET /` refresh, final result is `Err(403/1008)`.
+/// **403/1008 — ReadItem.** Must refresh topology and retry against West US.
 #[tokio::test]
 async fn read_item_403_1008_triggers_refresh_and_cross_region_retry() {
     let recorder = HostRecorder::new();
@@ -340,9 +260,7 @@ async fn read_item_403_1008_triggers_refresh_and_cross_region_retry() {
     );
 }
 
-/// **403/1008 — CreateItem.** Same shape as the read test but for a
-/// write. Multi-master account means West US accepts the write
-/// natively, so the post-fix retry succeeds against West US.
+/// **403/1008 — CreateItem.** Same shape as the read test but for a write.
 #[tokio::test]
 async fn create_item_403_1008_triggers_refresh_and_cross_region_retry() {
     let recorder = HostRecorder::new();
@@ -380,10 +298,7 @@ async fn create_item_403_1008_triggers_refresh_and_cross_region_retry() {
     );
 }
 
-/// **403/1008 — UpsertItem.** Same shape; rounds out the write coverage so
-/// the test matrix mirrors the five operation types observed in production
-/// (ReadItem, CreateItem, UpsertItem, QueryItems, FeedRangeQuery).
-/// which observed `request_count=1` for all 5 op types.
+/// **403/1008 — UpsertItem.** Extends write coverage for the topology-refresh path.
 #[tokio::test]
 async fn upsert_item_403_1008_triggers_refresh_and_cross_region_retry() {
     let recorder = HostRecorder::new();
@@ -419,14 +334,7 @@ async fn upsert_item_403_1008_triggers_refresh_and_cross_region_retry() {
     );
 }
 
-/// **403/1008 — bounded bubble-up.** When *every* preferred region returns
-/// 1008, the SDK must still attempt at least one retry (after a
-/// refresh) before giving up, and must not loop forever. The test
-/// asserts a bounded request count and a final 403/1008 error.
-///
-/// Pre-fix expectation: FAIL — the single-attempt abort means the SDK
-/// reaches `request_count == 1` rather than the `>= 2` minimum the
-/// retry-after-refresh contract demands.
+/// **403/1008 — bounded bubble-up.** All-region 1008 retries must terminate.
 #[tokio::test]
 async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     let recorder = HostRecorder::new();
@@ -454,9 +362,7 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     seed_item_via_driver(&driver, "all-stale-item").await;
     recorder.clear();
 
-    // Bubble-up takes up to 120 attempts × 1s BACKEND_FAILOVER_RETRY_INTERVAL
-    // ≈ 120s on a multi-write account; the timeout is the runaway-loop guard,
-    // not the convergence SLO.
+    // Timeout is the runaway-loop guard for the 120-attempt backend-failover budget.
     let result = tokio::time::timeout(
         Duration::from_secs(180),
         read_item(&driver, "all-stale-item"),
@@ -482,11 +388,7 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
          before bubbling up 1008; observed request_count={}",
         diagnostics.request_count(),
     );
-    // Sanity guardrail against an unbounded retry loop. The exact cap
-    // is a fix-time decision; this number is intentionally generous so
-    // the test stays robust if the fix tunes the budget. A truly
-    // unbounded loop would have hit the 10s timeout above; this
-    // assertion just pins the order of magnitude.
+    // Sanity guardrail against an unbounded retry loop.
     assert!(
         diagnostics.request_count() <= 250,
         "retry budget for 1008 must be bounded; observed \
@@ -495,15 +397,7 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     );
 }
 
-/// **403/1008 — refresh is what changes.** This test isolates the
-/// refresh-was-triggered signal: it counts the emulator's `GET /`
-/// account-topology fetches before vs. after the faulted read. With
-/// the fix, the SDK calls `refresh_account_properties_if_due` on
-/// receipt of 1008, which translates into at least one extra `GET /`
-/// arriving at the emulator beyond the baseline driver-init traffic.
-///
-/// Pre-fix expectation: FAIL — no refresh is triggered, so the
-/// post-clear `account_read_count()` stays at zero.
+/// **403/1008 — refresh is what changes.** Pins the `GET /` topology refresh.
 #[tokio::test]
 async fn read_item_403_1008_triggers_topology_refresh() {
     let recorder = HostRecorder::new();
@@ -520,9 +414,7 @@ async fn read_item_403_1008_triggers_topology_refresh() {
     seed_item_via_driver(&driver, "refresh-signal-item").await;
     recorder.clear();
 
-    // Ignore the result; this test only cares about whether the
-    // emulator saw an additional account-topology fetch as a side
-    // effect of the 1008.
+    // Ignore the result; this test only cares about whether the emulator saw an additional account-topology fetch as a side effect of the 1008.
     let _ = read_item(&driver, "refresh-signal-item").await;
 
     assert!(rule.hit_count() >= 1);
@@ -534,19 +426,9 @@ async fn read_item_403_1008_triggers_topology_refresh() {
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // 403 / 3 — WriteForbidden
-// ─────────────────────────────────────────────────────────────────────
 
-/// **403/3 — stale write region.** A first attempt against East US
-/// returns 403/3; the SDK must refresh the account topology, then
-/// retry against West US (which the multi-write emulator accepts).
-/// Final result is success.
-///
-/// Pre-fix expectation: likely PASS for the basic retry, since
-/// `try_handle_write_forbidden` exists in the SDK and emits
-/// `FailoverRetry` + `RefreshAccountProperties`. This test is the
-/// regression guard.
+/// **403/3 — stale write region.** Must refresh topology and retry against West US.
 #[tokio::test]
 async fn write_403_3_triggers_refresh_and_cross_region_retry() {
     let recorder = HostRecorder::new();
@@ -581,10 +463,7 @@ async fn write_403_3_triggers_refresh_and_cross_region_retry() {
     );
 }
 
-/// **403/3 — refresh is what changes.** The 403/3 handler in
-/// `retry_evaluation.rs` already emits `RefreshAccountProperties`; this
-/// test pins that wire-up so a fix that consolidates the refresh path
-/// for 1008 + 403/3 cannot accidentally drop the 403/3 side.
+/// **403/3 — refresh is what changes.** Pins the `GET /` topology refresh.
 #[tokio::test]
 async fn write_403_3_triggers_topology_refresh() {
     let recorder = HostRecorder::new();
@@ -610,11 +489,7 @@ async fn write_403_3_triggers_topology_refresh() {
     );
 }
 
-/// **403/3 — bounded bubble-up.** Both regions return 403/3 on
-/// CreateItem: the SDK must retry within a bounded budget and then
-/// surface the original 403/3 to the caller. Guards against any
-/// future change that would turn `FailoverRetry` into an unbounded
-/// loop when no region is healthy.
+/// **403/3 — bounded bubble-up.** All-region 403/3 retries must terminate.
 #[tokio::test]
 async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     let recorder = HostRecorder::new();
@@ -641,9 +516,7 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
 
     recorder.clear();
 
-    // Bubble-up takes up to 120 attempts × 1s BACKEND_FAILOVER_RETRY_INTERVAL
-    // ≈ 120s on a multi-write account; the timeout is the runaway-loop guard,
-    // not the convergence SLO.
+    // Timeout is the runaway-loop guard for the 120-attempt backend-failover budget.
     let result = tokio::time::timeout(
         Duration::from_secs(180),
         create_item(&driver, "403-3-all-forbidden-item"),
@@ -671,24 +544,7 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     );
 }
 
-/// **403/3 — second attempt must land in a different region.** A
-/// production-observed pattern was 4× retries pinned to the same
-/// stale region. This in-memory test exercises only the basic
-/// single-failure failover path: a fault rule with `hit_limit=Some(1)`
-/// cannot drive the `write_failure_threshold` (5+) needed to populate
-/// the PPCB override cache, so this test does NOT reproduce the
-/// production pin — it only verifies that the existing
-/// `try_handle_write_forbidden` handler reroutes attempt 2 to a
-/// different region in the simple case.
-///
-/// **Pre-fix expectation: PASS** — the basic failover wiring already
-/// works. The actual production pin (override-cache pinning to a stale
-/// region) is covered by:
-/// * `resolve_endpoint_ppcb_override_pinned_to_unavailable_endpoint_reproduces_prod_403_3_loop`
-///   (unit test in `operation_pipeline::tests`, the production-shape
-///   repro);
-/// * PPCB-1 / PPCB-2 in `regional_gateway_unreachable.rs` (override
-///   skip-set coverage).
+/// **403/3 — second attempt must land in a different region.**
 #[tokio::test]
 async fn write_403_3_second_attempt_targets_different_region() {
     let recorder = HostRecorder::new();
@@ -720,10 +576,7 @@ async fn write_403_3_second_attempt_targets_different_region() {
         requests.len(),
     );
 
-    // The first attempt is the faulted one against East US (the
-    // fault factory still records the attempt in diagnostics even
-    // though the emulator never saw it). The second attempt is the
-    // retry, which MUST target a region different from the first.
+    // The fault factory records the East attempt in diagnostics even though the emulator never saw it.
     let first_region = requests[0].region().cloned();
     let second_region = requests[1].region().cloned();
     assert_ne!(
@@ -734,14 +587,7 @@ async fn write_403_3_second_attempt_targets_different_region() {
          full={requests:?}",
     );
 
-    // Pin the assertion stronger via the emulator's view: at least one
-    // post-fault data-plane request must reach West. We do NOT assert
-    // "East never appears" here — the emulator's request observer also
-    // sees per-partition metadata lookups (e.g. `/pkranges`) which the
-    // driver legitimately issues against East as part of routing
-    // preparation. Those metadata hops are not the retry under test;
-    // the `assert_ne!(first_region, second_region)` above is the
-    // behavioral contract.
+    // Pin the assertion stronger via the emulator's view: at least one post-fault data-plane request must reach West.
     let hosts = recorder.data_plane_hosts();
     assert!(
         hosts.iter().any(|h| h == WEST_HOST),
@@ -749,25 +595,7 @@ async fn write_403_3_second_attempt_targets_different_region() {
     );
 }
 
-/// **403/3 — does persistent 403/3 against one region pin retries
-/// to that region?** A production-observed trace had `request_count=4`
-/// against the same region with the retry never moving to a healthy
-/// region. This test asks the in-memory emulator the same question:
-///
-/// * Persistent fault (`hit_limit = None`) on CreateItem against East
-///   US, so the SDK cannot accidentally succeed on attempt 2 by way of
-///   the rule being exhausted; and
-/// * West US completely healthy.
-///
-/// **Empirical finding (pre-fix):** the in-memory emulator does **not**
-/// reproduce the production pin. With persistent 403/3 on East and a
-/// healthy West, the existing `try_handle_write_forbidden` handler
-/// successfully fails the second attempt over to West. This means the
-/// production pin is rooted somewhere the emulator does not currently
-/// exercise — most likely the PPCB/PPAF per-partition override cache
-/// in `operation_pipeline::resolve_endpoint`. The test is kept as a
-/// regression guard for the basic 403/3 failover path — it must
-/// continue to pass through any future fix.
+/// **403/3 — persistent one-region failures must not pin retries there.**
 #[tokio::test]
 async fn write_403_3_persistent_fault_pins_retries_to_same_region() {
     let recorder = HostRecorder::new();
@@ -821,10 +649,7 @@ async fn write_403_3_persistent_fault_pins_retries_to_same_region() {
                  the production retry-pin shape. attempts={requests:?}",
             );
         }
-        // Pre-fix failure path: persistent 403/3, all attempts pinned to
-        // East US, bubble-up after N attempts. This branch is what the
-        // assertion below will trip on against the unchanged SDK and is
-        // the precise production-pin shape.
+        // Pre-fix failure path: persistent 403/3, all attempts pinned to East US, bubble-up after N attempts.
         Err(err) => {
             let diagnostics = err
                 .diagnostics()
@@ -855,17 +680,7 @@ async fn write_403_3_persistent_fault_pins_retries_to_same_region() {
     }
 }
 
-/// **403/3 — backend-driven failover honors caller's `excluded_regions`.**
-///
-/// 403/3 (WriteForbidden) is the backend signaling write-region rotation,
-/// not an account-topology change. Customer-supplied `excluded_regions`
-/// remain meaningful, so the SDK must not cross into an excluded region
-/// when looking for a fallback.
-///
-/// Setup: multi-write account [East US, West US], caller sets
-/// `excluded_regions = [West US]` (pin to East), East returns 403/3
-/// persistently. With West excluded the SDK has no fallback target, so
-/// the operation must bubble up rather than silently routing into West.
+/// **403/3 — backend-driven failover honors caller `excluded_regions`.**
 #[tokio::test]
 async fn write_403_3_retry_honors_excluded_region() {
     let recorder = HostRecorder::new();
@@ -900,9 +715,7 @@ async fn write_403_3_retry_honors_excluded_region() {
     let mut opts = OperationOptions::default();
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
 
-    // West is excluded, East persistently 403/3 → SDK exhausts the 120-attempt
-    // backend-failover budget with 1s spacing before bubbling up; 180s leaves
-    // headroom for CI scheduling jitter on the ~120s nominal cost.
+    // Timeout leaves headroom for the 120-attempt backend-failover budget.
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(180),
         driver.execute_operation(op, opts),
@@ -925,13 +738,7 @@ async fn write_403_3_retry_honors_excluded_region() {
     );
 }
 
-/// **403/1008 — backend-driven failover honors caller's
-/// `excluded_regions`.** Same rationale as the 403/3 sibling test:
-/// the caller's regional exclusion is sacred. Even though 1008 means
-/// the cached topology is stale, the SDK must not unilaterally route
-/// into a region the customer explicitly opted out of. With the only
-/// fallback region excluded and the primary persistently returning
-/// 1008, the operation must bubble up rather than cross into West US.
+/// **403/1008 — backend-driven failover honors caller `excluded_regions`.**
 #[tokio::test]
 async fn create_item_403_1008_retry_honors_excluded_region() {
     let recorder = HostRecorder::new();
@@ -989,30 +796,7 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
     );
 }
 
-/// **GetDatabaseAccount metadata refresh is independent of
-/// `excluded_regions`.**
-///
-/// `excluded_regions` is a per-operation, data-plane-routing preference.
-/// It must NOT filter the SDK's account-topology probe (`GET /`):
-/// excluding a region from data traffic should not blind the client to
-/// topology changes happening at that region's endpoint, and on
-/// accounts whose current write region is in the caller's exclusion
-/// list, honoring the exclusion for metadata would leave the client
-/// unable to learn the new topology at all.
-///
-/// Setup: multi-write account [East US, West US] (East US is also the
-/// global bootstrap endpoint, so `GET /` naturally targets East).
-/// Caller sets `excluded_regions = [East US]` (the global!) and West
-/// returns 403/1008 persistently on `CreateItem`. The 1008 handler
-/// requests `RefreshAccountProperties` on every retry; the metadata
-/// probe must continue to hit East despite East being excluded.
-///
-/// Assertions:
-/// - At least one `GET /` request was observed against East after the
-///   recorder was cleared (proves the SDK reached the excluded region
-///   for metadata).
-/// - No `GET /` was sent to West — `GET /` is bound to the global
-///   endpoint, not the exclusion-filtered data-plane list.
+/// **GetDatabaseAccount metadata refresh is independent of `excluded_regions`.**
 #[tokio::test]
 async fn metadata_refresh_ignores_excluded_regions() {
     let recorder = HostRecorder::new();
@@ -1047,9 +831,7 @@ async fn metadata_refresh_ignores_excluded_regions() {
     let op = CosmosOperation::create_item(item_ref).with_body(serde_json::to_vec(&body).unwrap());
 
     let mut opts = OperationOptions::default();
-    // Exclude East — the same region that hosts the global bootstrap
-    // endpoint. If excluded_regions incorrectly filtered metadata
-    // requests, the SDK would have nowhere to send `GET /`.
+    // Exclude East — the same region that hosts the global bootstrap endpoint.
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::EAST_US]));
 
     // 120-attempt budget x 1000ms BACKEND_FAILOVER_RETRY_INTERVAL = up
@@ -1086,35 +868,7 @@ async fn metadata_refresh_ignores_excluded_regions() {
     );
 }
 
-/// **Regional-endpoint metadata-refresh fallback is independent of
-/// `excluded_regions`.**
-///
-/// Companion to [`metadata_refresh_ignores_excluded_regions`]. The
-/// previous test covers the primary `GET /` path
-/// ([`CosmosDriver::refresh_account_properties`] hitting
-/// `AccountEndpoint::from(account)` — the configured global URL). When
-/// the global probe itself fails, the SDK falls back to
-/// [`CosmosDriver::refresh_via_regional_endpoints`] which iterates the
-/// cached `readable_locations`. That iteration must ALSO ignore the
-/// caller's `excluded_regions` — otherwise a client that excludes the
-/// region the backend is currently announcing as healthy will never
-/// learn the new topology.
-///
-/// Setup: multi-write `[East, West]`.
-/// - East faulted with 403/1008 on `ReadItem` (persistent) → drives
-///   `RefreshAccountProperties` triggers from the data plane.
-/// - East faulted with 503 on `MetadataReadDatabaseAccount` (persistent)
-///   → forces the global probe to fail so the regional fallback runs.
-/// - `excluded_regions = [West US]` → data plane is pinned to East
-///   (which keeps failing), and West is the only region whose
-///   `GET /` could prove the regional-fallback loop ignored the
-///   exclusion.
-///
-/// Assertion: at least one `GET /` request landed on West despite West
-/// being in `excluded_regions`. If a future change wires
-/// `excluded_regions` into `refresh_via_regional_endpoints`, West would
-/// be filtered out, the regional fallback would have no remaining
-/// candidates, and this assertion would fail.
+/// **Regional-endpoint metadata-refresh fallback ignores `excluded_regions`.**
 #[tokio::test]
 async fn metadata_refresh_regional_fallback_ignores_excluded_regions() {
     let recorder = HostRecorder::new();
@@ -1132,9 +886,7 @@ async fn metadata_refresh_regional_fallback_ignores_excluded_regions() {
         FaultInjectionErrorType::ServiceUnavailable,
         None,
     );
-    // Suppress the metadata fault during bootstrap so driver
-    // initialization can probe the global endpoint successfully.
-    // Re-enabled after `recorder.clear()` below.
+    // Suppress the metadata fault during bootstrap so driver initialization can probe the global endpoint successfully.
     metadata_rule.disable();
     let (driver, _account) = build_driver_with_faults(
         WriteMode::Multi,
@@ -1158,9 +910,7 @@ async fn metadata_refresh_regional_fallback_ignores_excluded_regions() {
     let op = CosmosOperation::read_item(item_ref);
 
     let mut opts = OperationOptions::default();
-    // Exclude West — the only region that, if the regional-fallback
-    // loop honored excluded_regions, would be filtered out and leave
-    // the SDK unable to refresh.
+    // If regional fallback honored exclusions, West would be filtered out and refresh would fail.
     opts.excluded_regions = Some(ExcludedRegions::from_iter([Region::WEST_US]));
 
     let _ = tokio::time::timeout(

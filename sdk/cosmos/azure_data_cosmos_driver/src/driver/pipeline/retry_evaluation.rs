@@ -401,11 +401,7 @@ fn try_handle_write_forbidden(
         return None;
     }
 
-    // Multi-write accounts can see 403/3 fire many times in a row as the
-    // backend rotates writes through the current write-region set, so they
-    // get the dedicated 120-attempt backend-failover budget. Single-write
-    // accounts only need to discover the one new write region after a
-    // failover, so the generic 3-attempt budget is the right size.
+    // Multi-write 403/3 gets the larger backend-failover budget; single-write uses the generic budget.
     let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
         if !retry_state.can_retry_backend_failover() {
             return None;
@@ -431,12 +427,7 @@ fn try_handle_write_forbidden(
         )),
     ];
     if !is_ppcb_managed(operation, retry_state) {
-        // PPCB-managed multi-write partitions rely on the per-partition
-        // failure counter to drive failover. Marking the endpoint here
-        // would block writes from all partitions on this endpoint for
-        // the 60 s TTL, even though 403/3 is a per-(partition, region)
-        // signal — partitions other than the failing one are still
-        // legitimately served from this region.
+        // PPCB-managed 403/3 is per-partition; do not block the whole endpoint for 60s.
         effects.push(LocationEffect::MarkEndpointUnavailable {
             endpoint: endpoint.clone(),
             reason: UnavailableReason::WriteForbidden,
@@ -445,21 +436,9 @@ fn try_handle_write_forbidden(
     Some((OperationAction::FailoverRetry { new_state, delay }, effects))
 }
 
-/// Handles 403/1008 DatabaseAccountNotFound — the targeted region no longer
-/// owns this database account, typically because the customer removed the
-/// region from the account's geo-replication topology.
+/// Handles 403/1008 DatabaseAccountNotFound for all operation types.
 ///
-/// Unlike 403/3 (write-only), 1008 applies to **all** operation types
-/// (reads, writes, queries, feed-range queries, metadata): the region cannot
-/// answer about this account regardless of intent. The handler:
-///   1. Refreshes account properties so the SDK learns the new topology.
-///   2. Marks the failing endpoint unavailable so concurrent / subsequent
-///      operations dis-prefer it during the backoff TTL.
-///   3. Marks the partition unavailable in this region (defense-in-depth
-///      for PPCB partition-failure counters).
-///   4. Issues a `FailoverRetry` that consumes one slot of the failover
-///      budget, naturally bounding the retry loop via
-///      `can_retry_backend_failover`.
+/// The region no longer owns the account; refresh topology and fail over with bounded retries.
 fn try_handle_database_account_not_found(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -470,10 +449,7 @@ fn try_handle_database_account_not_found(
         return None;
     }
 
-    // Same multi-write vs single-write split as `try_handle_write_forbidden`:
-    // multi-write accounts can churn through many regions while the backend
-    // settles, single-write accounts just need to find the one current
-    // owner of the account.
+    // Same multi-write vs single-write budget split as `try_handle_write_forbidden`.
     let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
         if !retry_state.can_retry_backend_failover() {
             return None;
@@ -690,29 +666,9 @@ fn try_handle_server_error(
     ))
 }
 
-/// Handles transport-layer errors (connection failures, TLS errors, etc.) —
-/// no HTTP response was produced.
+/// Handles transport-layer errors where no HTTP response was produced.
 ///
-/// Two sub-cases with **inverted** marking semantics:
-///
-/// 1. **Request definitely not sent** (connection refused, DNS failure, TLS
-///    error before any bytes left the client) → the endpoint itself is
-///    unreachable. Emit only `MarkEndpointUnavailable` (affects all
-///    partitions on this endpoint), then failover retry. Do *not* bump the
-///    per-partition PPCB counter: in Gateway mode every partition shares the
-///    same hostname, so a connect failure is endpoint-wide, not
-///    partition-specific, and counting it per partition would inflate PPCB
-///    counters for whichever partitions happened to be active during the
-///    outage.
-///
-/// 2. **Request sent (or unknown)** → the endpoint accepted the connection
-///    but the operation failed for this partition. Emit only
-///    `MarkPartitionUnavailable` (PPCB tracks partition-level failures);
-///    do *not* mark the endpoint unavailable since it is clearly reachable.
-///
-/// This matches .NET (Gateway-mode `HttpRequestException` marks the full
-/// endpoint; Direct-mode 503 marks partition only) and Python
-/// (`ServiceRequestError` marks endpoint; `ServiceResponseError` does not).
+/// Not-sent marks the endpoint only; sent/unknown marks the partition only, matching .NET/Python.
 fn evaluate_transport_layer_outcome(
     operation: &CosmosOperation,
     endpoint: &CosmosEndpoint,
@@ -722,11 +678,7 @@ fn evaluate_transport_layer_outcome(
     request_sent: RequestSentStatus,
 ) -> (OperationAction, Vec<LocationEffect>) {
     if request_sent.definitely_not_sent() {
-        // Endpoint is unreachable — mark it unavailable regardless of PPCB
-        // state, since a connection failure affects all partitions on this
-        // endpoint. Do not also bump the per-partition PPCB counter: in
-        // Gateway mode every partition shares one hostname, so a connect
-        // failure is endpoint-wide, not partition-specific.
+        // Not-sent means endpoint-wide failure; do not inflate PPCB's partition counter.
         let effects = vec![LocationEffect::MarkEndpointUnavailable {
             endpoint: endpoint.clone(),
             reason: UnavailableReason::TransportError,
@@ -1043,10 +995,7 @@ mod tests {
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
-        // Not-sent → endpoint is unreachable, mark endpoint only.
-        // PPCB's per-partition counter is intentionally NOT bumped: in
-        // Gateway mode every partition shares one hostname, so a connect
-        // failure is endpoint-wide, not partition-specific.
+        // Not-sent marks the endpoint only; Gateway connect failures are not partition-specific.
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
@@ -1097,10 +1046,7 @@ mod tests {
 
     #[test]
     fn build_transport_error_forwards_inner_diagnostics() {
-        // The wrap performed by `build_transport_error` must not silently
-        // drop the inner error's diagnostics: callers reading
-        // `outer.diagnostics()` should see the same `Arc<DiagnosticsContext>`
-        // that was attached to the inner cosmos error, not `None`.
+        // Wrapping must preserve the inner diagnostics `Arc`.
         let diag: std::sync::Arc<crate::diagnostics::DiagnosticsContext> = std::sync::Arc::new(
             crate::diagnostics::DiagnosticsContextBuilder::new(
                 crate::models::ActivityId::new_uuid(),
@@ -1151,11 +1097,7 @@ mod tests {
 
         match action {
             OperationAction::Abort { error } => {
-                // `error` is the typed Cosmos error directly. The fact
-                // that `.status()` resolves at all is itself the proof:
-                // that accessor only exists on `crate::error::CosmosError`, so
-                // any regression that downgraded the abort site to a
-                // foreign error type would fail to compile.
+                // `.status()` compiling proves this stayed a typed `CosmosError`.
                 assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
                 let text = error.to_string();
                 assert!(text.contains("HTTP 503/20003"));
@@ -1304,10 +1246,7 @@ mod tests {
 
     #[test]
     fn write_forbidden_when_ppcb_managed_skips_endpoint_mark() {
-        // PPCB-managed multi-write partition: 403/3 must NOT mark the
-        // endpoint unavailable. Per-partition failure counter drives
-        // failover instead, so other partitions on this endpoint are
-        // unaffected.
+        // PPCB-managed 403/3 must not mark the whole endpoint unavailable.
         let op = make_create_item_operation();
         let mut state =
             OperationRetryState::initial(0, true /* multi-write */, Vec::new(), 3, 1);
@@ -1358,11 +1297,7 @@ mod tests {
 
     #[test]
     fn database_account_not_found_on_write_emits_refresh_mark_endpoint_and_failover() {
-        // 403/1008 on a write must (a) trigger account-properties refresh,
-        // (b) mark the endpoint as DatabaseAccountNotFound so the override
-        //     fast-path can route around it on the next attempt,
-        // (c) mark the partition unavailable for the failover, and
-        // (d) return FailoverRetry so the outer pipeline selects a new region.
+        // 403/1008 must refresh topology, mark endpoint/partition, and failover-retry.
         let op = make_create_operation();
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
@@ -1410,10 +1345,7 @@ mod tests {
 
     #[test]
     fn database_account_not_found_on_read_uses_op_read_only_for_partition_mark() {
-        // 1008 fires on reads too (unlike 403/3 which is write-only).
-        // The MarkPartitionUnavailable effect must reflect the actual op
-        // direction so PPCB's per-direction failure counters credit the
-        // right side.
+        // 1008 fires on reads too; partition marks must preserve operation direction.
         let op = make_read_operation();
         let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
@@ -1442,11 +1374,7 @@ mod tests {
 
     #[test]
     fn database_account_not_found_aborts_when_backend_failover_budget_exhausted() {
-        // After `max_backend_failover_retries` failover attempts the dedicated
-        // 1008 handler must yield and let the outer pipeline fall through to
-        // the bubble-up path; otherwise a backend stuck in 1008 would loop
-        // forever. The original 403/1008 status is surfaced unchanged so
-        // callers see exactly what the backend last returned.
+        // Exhausting the 1008 budget must bubble up the original backend status.
         let op = make_create_operation();
         // Multi-write account so the handler uses the dedicated
         // backend-failover budget rather than the generic one.
@@ -1482,10 +1410,7 @@ mod tests {
 
     #[test]
     fn write_forbidden_aborts_when_backend_failover_budget_exhausted() {
-        // Mirror of the 1008 test for 403/3: once the dedicated multi-write
-        // backend-failover budget is exhausted, the bubble-up error must
-        // surface the original 403/3 status unchanged so callers see exactly
-        // what the backend last returned.
+        // Exhausting the 403/3 backend-failover budget must bubble up the original status.
         let op = make_create_operation();
         let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
         state.backend_failover_retry_count = state.max_backend_failover_retries;
@@ -1514,10 +1439,7 @@ mod tests {
 
     #[test]
     fn database_account_not_found_does_not_consume_generic_failover_budget() {
-        // The dedicated backend-failover counter is independent of the general
-        // `failover_retry_count` on multi-write accounts. After a 1008 retry
-        // the generic counter must still be 0 so a subsequent 503 / 410 on
-        // the same operation can still consume its 3-attempt budget.
+        // Backend-failover retries must not consume the generic failover budget.
         let op = make_create_operation();
         let state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
@@ -1577,10 +1499,7 @@ mod tests {
 
     #[test]
     fn write_forbidden_on_single_write_uses_generic_failover_budget() {
-        // Single-write accounts only need to discover the one current write
-        // region after a failover, so the 403/3 handler must fall back to
-        // the generic 3-attempt budget rather than the dedicated 120-attempt
-        // backend-failover counter (which targets multi-write rotation).
+        // Single-write 403/3 uses the generic budget, not the multi-write rotation budget.
         let op = make_create_operation();
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
@@ -1609,9 +1528,7 @@ mod tests {
 
     #[test]
     fn write_forbidden_on_single_write_aborts_when_generic_budget_exhausted() {
-        // Once the generic 3-attempt budget is exhausted on a single-write
-        // account, the 403/3 handler must yield to the bubble-up path even
-        // though the 120-attempt backend budget is still untouched.
+        // Single-write 403/3 must bubble up once the generic budget is exhausted.
         let op = make_create_operation();
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         state.failover_retry_count = state.max_failover_retries;
@@ -1887,9 +1804,7 @@ mod tests {
 
     #[test]
     fn transport_error_not_sent_marks_endpoint_only() {
-        // Not-sent → endpoint is unreachable, mark endpoint only.
-        // Per-partition mark is intentionally skipped: Gateway-mode connect
-        // failures are endpoint-wide, not partition-specific.
+        // Not-sent marks the endpoint only; Gateway connect failures are endpoint-wide.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1954,9 +1869,7 @@ mod tests {
 
     #[test]
     fn transport_error_not_sent_over_budget_aborts_with_marks() {
-        // Not-sent with budget exhausted → abort, but still emit the
-        // endpoint mark so routing state is updated for future requests.
-        // Per-partition mark is intentionally skipped on this branch.
+        // Even over budget, not-sent updates endpoint routing state only.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let state = OperationRetryState {
@@ -2107,18 +2020,12 @@ mod tests {
             StatusCode::Forbidden,
             SubStatusCode::WRITE_FORBIDDEN
         )));
-        // 403/1008 DatabaseAccountNotFound — topology-ownership signal,
-        // must be treated like 403/3 so the dedicated 1008 handler can
-        // refresh + failover instead of confirming the stale region.
+        // 403/1008 is a topology signal; the dedicated handler refreshes and fails over.
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Forbidden,
             SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND
         )));
-        // Disambiguation guard: 410/1008 (COMPLETING_PARTITION_MIGRATION)
-        // is a different status. It is non-confirming via the 410 (Gone)
-        // branch above, NOT via the 1008 check. Pin both branches so a
-        // refactor that consolidates them can't accidentally make
-        // `is_database_account_not_found()` match 410/1008.
+        // 410/1008 is partition migration, not DatabaseAccountNotFound.
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Gone,
             SubStatusCode::COMPLETING_PARTITION_MIGRATION

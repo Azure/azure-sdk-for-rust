@@ -1,18 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Shared `RequestObserver` that records the host of every dispatched
-//! request along with whether the request was an account-topology fetch
-//! (`GET /`).
-//!
-//! Tests filter out the `GET /` requests when asserting where data-plane
-//! and metadata-CRUD traffic landed, because account-topology fetches
-//! bypass the routing path under test (they legitimately target the
-//! global endpoint during bootstrap and periodic refresh).
-//!
-//! Lifted from `excluded_regions_fallback.rs` so both that file and the
-//! `regional_gateway_unreachable.rs` tests (and any future
-//! observer-driven tests) share a single implementation.
+//! Shared `RequestObserver` for hosts, excluding account-topology `GET /` fetches from routing assertions.
 
 use std::sync::{Arc, Mutex};
 
@@ -35,10 +24,7 @@ impl HostRecorder {
         Arc::new(Self::default())
     }
 
-    /// Hosts of all requests EXCEPT account-topology reads (`GET /`).
-    /// Topology fetches legitimately target the global endpoint during
-    /// bootstrap; tests filter them out when asserting data-plane
-    /// landing sites.
+    /// Hosts of all non-topology requests; `GET /` may legitimately target the global endpoint.
     pub fn data_plane_hosts(&self) -> Vec<String> {
         self.requests
             .lock()
@@ -49,11 +35,7 @@ impl HostRecorder {
             .collect()
     }
 
-    /// Number of `GET /` account-topology fetches captured. Tests use
-    /// this as the signal that the SDK triggered an account refresh
-    /// (typically after a topology-changing failure like 403/1008 or
-    /// 403/3); call `clear()` first to scope the count to the
-    /// post-setup window.
+    /// Number of `GET /` account-topology fetches; call `clear()` to scope the count.
     pub fn account_read_count(&self) -> usize {
         self.requests
             .lock()

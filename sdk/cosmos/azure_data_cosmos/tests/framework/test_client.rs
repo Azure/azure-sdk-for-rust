@@ -89,10 +89,7 @@ pub fn assert_local_retry_attempted_on_region(
     );
 }
 
-/// Asserts that the operation never contacted `excluded_region`. Used to
-/// validate that customer-supplied `excluded_regions` is honored even when
-/// the only non-excluded region keeps failing — the driver must not
-/// silently fall back to a region the customer asked it to avoid.
+/// Asserts an operation never contacted `excluded_region`, even while other regions fail.
 pub fn assert_region_not_contacted(
     diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
     excluded_region: &Region,

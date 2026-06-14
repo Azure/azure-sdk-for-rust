@@ -551,35 +551,9 @@ pub async fn pkrange_refresh_transient_failure_preserves_cached_routing_map(
     .await
 }
 
-// =============================================================================
 // Live-account repros for topology-related Forbidden sub-status codes.
-//
-// These tests inject 403/1008 and 403/3 at the HTTP-client layer of the
-// driver running against a real Cosmos DB account (multi-write across
-// East US 2 + West US 3). They mirror the in-memory matrix in
-// `topology_refresh_on_substatus.rs` but against a real gateway so the
-// real topology-discovery / refresh paths are exercised end-to-end.
-//
-// Both tests are configured to fail pre-fix and pass post-fix.
-//
-// Run with the account's connection string:
-//
-//   AZURE_COSMOS_CONNECTION_STRING='AccountEndpoint=...;AccountKey=...;' \
-//     RUSTFLAGS='--cfg test_category="emulator_vnext"' \
-//     cargo test -p azure_data_cosmos_driver --features fault_injection \
-//       --test emulator emulator_tests::driver_fault_injection::live_
-// =============================================================================
 
-/// **403/1008 live-account repro.** Inject 403/1008 on the first
-/// CreateItem against East US 2 (the primary write region). A
-/// correctly-behaving SDK observes 1008, refreshes its account
-/// topology (which the real gateway answers with the unchanged
-/// [East US 2, West US 3] set), and retries against another region —
-/// succeeding on attempt 2.
-///
-/// Pre-fix expectation: **FAIL** — without a 1008 handler in
-/// `evaluate_http_outcome`, the 1008 bubbles up to the caller with
-/// `request_count = 1` and no topology refresh happens.
+/// Pins live 403/1008 handling: refresh topology and retry to another region.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -615,12 +589,7 @@ pub async fn live_403_1008_create_item_triggers_refresh_and_retry() -> Result<()
                 .create_container(&database, &container_name, "/pk")
                 .await?;
 
-            // Warm up both regions: write a throwaway item, read it back,
-            // then sleep to let control-plane metadata + auth context
-            // replicate from East US 2 → West US 3. Without this, a
-            // failover triggered immediately after container creation can
-            // race replication and observe a 401 from the secondary
-            // region's endpoint.
+            // Warm both regions to avoid a failover racing control-plane replication.
             let warmup_json = br#"{"id": "warmup", "pk": "pk1", "value": "warmup"}"#;
             context
                 .create_item(&container, "warmup", "pk1", warmup_json)
@@ -668,15 +637,7 @@ pub async fn live_403_1008_create_item_triggers_refresh_and_retry() -> Result<()
     .await
 }
 
-/// **403/3 live-account repro (basic failover).** Inject a single
-/// 403/3 on CreateItem against East US 2. The existing
-/// `try_handle_write_forbidden` handler should fail over to West US 3
-/// and succeed on attempt 2 — this is the regression guard that any
-/// future fix must not break.
-///
-/// Pre-fix expectation: **PASS** (handler exists). Post-fix expectation:
-/// **PASS** (handler must continue to work). A future fix that
-/// consolidates the 1008 + 403/3 refresh paths must keep this passing.
+/// Pins live 403/3 handling: existing failover to West US 3 must keep working.
 #[tokio::test]
 #[cfg_attr(
     not(any(test_category = "emulator", test_category = "emulator_vnext")),
@@ -712,10 +673,7 @@ pub async fn live_403_3_create_item_triggers_failover() -> Result<(), Box<dyn Er
                 .create_container(&database, &container_name, "/pk")
                 .await?;
 
-            // Warm up both regions before arming the fault — see the
-            // matching block in `live_403_1008_create_item_*` for the
-            // rationale. Without this, the 403/3 failover to West US 3
-            // races control-plane replication and returns a spurious 401.
+            // Warm both regions to avoid a failover racing control-plane replication.
             let warmup_json = br#"{"id": "warmup", "pk": "pk1", "value": "warmup"}"#;
             context
                 .create_item(&container, "warmup", "pk1", warmup_json)

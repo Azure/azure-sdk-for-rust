@@ -944,19 +944,8 @@ fn resolve_endpoint(
     //   * `MarkPartitionUnavailable` — partition-level failure with a region
     //   * `MarkEndpointUnavailable`  — endpoint-level failure (PPAF SM only)
     //
-    // Multi-write writes (and reads) have an empty deferred bucket — see
-    // `partition_effects_for_deferral` — so this skip set is empty. The
-    // next-region pick is driven instead by `LocationIndex` advancement in
-    // `try_select_endpoint`, which `advance_to_next_attempt` bumps after
-    // every failure (and `try_advance_after_both_transient` bumps after a
-    // hedge race where both legs returned transient errors).
-    //
-    // For PPAF writes on single-master accounts, `primary` is the full read
-    // endpoint list (all regions in preferred order) — see
-    // `preferred_endpoints_for_attempt`. That allows write region discovery:
-    // when the original write region fails, the next attempt naturally rolls
-    // over to the next region in the read list rather than retrying the same
-    // (potentially failed-over) write region.
+    // Multi-write retries rotate via `LocationIndex`; PPAF single-master writes
+    // use the read endpoint list to discover the current write region.
     let in_flight_failed: Vec<&Region> = if !read_only {
         retry_state
             .pending_write_effects
@@ -1044,12 +1033,8 @@ fn resolve_endpoint(
         })
     });
     if selected.is_global() {
-        // In release builds the `debug_assert!` below is compiled out, so
-        // mirror it as a `tracing::error!` to ensure production deployments
-        // still surface this invariant violation through normal observability
-        // pipelines. Landing a pipeline operation on the global endpoint
-        // would silently route writes through the global FE — the exact
-        // class of regression this module's tests guard against.
+        // Release builds need telemetry for this invariant: only topology
+        // fetches may target the global endpoint.
         tracing::error!(
             operation_type = ?operation.operation_type(),
             resource_type = ?operation.resource_type(),
@@ -1094,37 +1079,13 @@ fn resolve_endpoint(
             }
         };
 
-        // Override skip predicates. PPCB and PPAF have different semantics:
-        //
-        // PPCB skips on four reasons:
-        //   1. In-flight failure (region already failed in this op; PPAF
-        //      defers `MarkPartitionUnavailable` until success so the
-        //      override's `current_endpoint` can lag the real failure set).
-        //   2. Region dropped from current topology after a refresh (e.g.,
-        //      a 403/1008 handler triggered `RefreshAccountProperties` and
-        //      the customer removed the override's region).
-        //   3. Caller excluded the region via `OperationOptions::excluded_regions`.
-        //   4. Endpoint marked unavailable / WriteForbidden in
-        //      `account.unavailable_endpoints` and still within backoff TTL.
-        //
-        // PPAF skips on (1) only. PPAF is the single-master per-partition
-        // automatic-failover signal: the override is installed by the
-        // service in response to a write-region change and points at the
-        // single current write region. 403/1008 (account-level topology
-        // refresh) is not a PPAF signal, so the override is honored even
-        // when its region is absent from the current `preferred_*_endpoints`
-        // snapshot. Skipping on (3) or (4) would loop into the primary
-        // path and silently land on the hub fallback — better to route to
-        // the PPAF target and surface the failure.
+        // PPCB skips stale/excluded/unavailable overrides; PPAF skips only
+        // in-flight failures because it targets the single current write region.
         let now = Instant::now();
         let region_in_flight_failed =
             |ep: &CosmosEndpoint| ep.region().is_some_and(|r| in_flight_failed.contains(&r));
-        // After a topology refresh (e.g. driven by a 403/1008
-        // DatabaseAccountNotFound handler), a PPCB/PPAF override entry's
-        // `current_endpoint` may still point at a region that the refresh
-        // just dropped from the account's geo-replication topology. Skip
-        // the override in that case so we fall through to the primary
-        // selection path against the refreshed `preferred_*_endpoints`.
+        // Topology refresh does not prune partition overrides; stale PPCB
+        // targets must fall through to refreshed preferred endpoints.
         let region_not_in_topology = |ep: &CosmosEndpoint| -> bool {
             let Some(region) = ep.region() else {
                 return false; // global / hub endpoint stays valid
@@ -1171,12 +1132,8 @@ fn resolve_endpoint(
                 // PPAF overrides do not use probe-based failback (no ProbeCandidate
                 // handling). The override persists until the backend signals a change.
                 //
-                // Skip the override only when its `current_endpoint` is in the
-                // in-flight skip set: PPAF defers partition marks until success,
-                // so the persistent entry can lag the actual per-attempt failure
-                // history. Falling through to `selected` lets the next attempt
-                // cross-region retry rather than re-hitting the same failed
-                // override region.
+                // PPAF defers marks until success, so skip only override targets
+                // already failed by this operation.
                 if !ppaf_should_skip(&entry.current_endpoint) {
                     return make_partition_routing(entry.current_endpoint.clone());
                 }
@@ -1697,33 +1654,9 @@ async fn apply_failover_delay(delay: Option<Duration>) {
     }
 }
 
-/// Advances `retry_state` to a fresh attempt against an updated location
-/// snapshot, preserving any deferred write-path effects and bumping the
-/// region rotation index.
+/// Advances `retry_state`, preserving deferred write effects across the snapshot swap.
 ///
-/// `evaluate_transport_result` cloned `retry_state` BEFORE this attempt's
-/// deferred effects were appended, so `new_state.pending_write_effects` is
-/// the pre-extend snapshot. Without explicit transfer, every retry would
-/// start with an empty `pending_write_effects` — which means
-/// `in_flight_failed` (built from those effects in `resolve_endpoint`) would
-/// be empty for PPAF single-master writes, so the next attempt would not
-/// skip the region that just failed.
-///
-/// `advance_location` bumps `LocationIndex` via `next_for_generation`. This
-/// is the rotation mechanism for multi-write writes and reads, whose
-/// deferred bucket is empty by design: `try_select_endpoint` walks the
-/// preferred list starting from the bumped index, so the next attempt
-/// naturally lands on a different region without consulting
-/// `in_flight_failed`.
-///
-/// Edge case (accepted): when the snapshot generation changes between the
-/// failure and the retry (e.g., a topology refresh triggered by 403/1008
-/// fired between attempts), `next_for_generation` rebases the stale index
-/// to position 1 of the refreshed list. If the just-failed region happens
-/// to be at position 1 of the new ordering, the next attempt retries the
-/// same region exactly once. This is bounded by `max_failover_retries` /
-/// `max_backend_failover_retries` and is the documented tradeoff for not
-/// carrying per-op region identity across attempts.
+/// Footgun: a generation bump can rebase to position 1 and retry the just-failed region once.
 fn advance_to_next_attempt(
     retry_state: &mut OperationRetryState,
     new_state: OperationRetryState,
@@ -5009,11 +4942,7 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_honors_excluded_regions() {
-        // Regression guard: excluded_regions is a hard filter, so the
-        // resolver falls back to a non-excluded region rather than
-        // honoring an excluded one. This mirrors
-        // `resolve_endpoint_metadata_falls_back_to_hub_when_all_excluded`
-        // but exercises the dataplane write path.
+        // Pins `excluded_regions` as a hard dataplane write filter.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5327,10 +5256,7 @@ mod tests {
 
     // ── PPCB override skip-closure ────────────────────────────────────
 
-    /// Helper for the PPCB skip-closure tests: builds a partition state with
-    /// PPCB enabled and a `circuit_breaker_overrides[pk]` entry pointing at
-    /// `override_target` with enough write failures to make
-    /// `can_circuit_breaker_trigger_failover` return true for writes.
+    /// Builds a PPCB override that is already over the write-failover threshold.
     fn make_partition_state_with_ppcb_override(
         pk_range_id: &super::PartitionKeyRangeId,
         override_target: CosmosEndpoint,
@@ -5360,11 +5286,7 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_ppcb_override_skipped_when_in_excluded_regions() {
-        // PPCB tripped on `central`; the caller now pins traffic away from
-        // `central` via OperationOptions::excluded_regions. The override
-        // fast-path must NOT silently route to a caller-excluded region —
-        // the primary selection (which already honors `excluded_regions`)
-        // should be used instead.
+        // PPCB overrides must not route to caller-excluded regions.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5416,22 +5338,7 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_ppcb_override_skipped_when_current_endpoint_not_in_topology() {
-        // PPCB tripped on `central` (override entry: current=first_failed=central).
-        // Subsequently an account-topology refresh (e.g. driven by a 403/1008
-        // DatabaseAccountNotFound handler) drops `central` from the account's
-        // geo-replication topology — the customer removed the region. The
-        // override map is NOT pruned by topology refresh (PPCB overrides live
-        // in `PartitionEndpointState`, independent of `AccountEndpointState`),
-        // so without the `region_not_in_topology` skip the override would
-        // silently route to `central` and reproduce the same 1008 loop the
-        // refresh was supposed to break.
-        //
-        // None of the other three skip reasons cover this:
-        //   * `in_flight_failed` is empty on a fresh op after refresh.
-        //   * The caller did not pass `excluded_regions`.
-        //   * `central` is not in `account.unavailable_endpoints` (refresh
-        //     just rebuilt the endpoint set; nothing marked it unavailable).
-        // Only `region_not_in_topology` catches this.
+        // Topology refresh does not prune PPCB overrides; this pins the stale-region skip.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5444,9 +5351,7 @@ mod tests {
             Url::parse("https://test-centralus.documents.azure.com:443/").unwrap(),
         );
 
-        // Post-refresh topology: `central` has been dropped. Only `north`
-        // remains. The PPCB override entry below was installed *before* the
-        // refresh and still points at `central`.
+        // Post-refresh topology dropped `central`; the PPCB override still points there.
         let account = Arc::new(AccountEndpointState {
             generation: 1,
             preferred_read_endpoints: vec![north.clone()].into(),
@@ -5490,10 +5395,7 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_ppcb_override_skipped_when_endpoint_marked_unavailable() {
-        // PPCB tripped on `central`; concurrently a transport failure has
-        // marked `central` unavailable. The override must not resurrect a
-        // transport-dead endpoint — repeating the same connect failure
-        // burns retries to no effect.
+        // PPCB overrides must not resurrect transport-dead endpoints.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5553,9 +5455,7 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_ppcb_override_skipped_when_current_endpoint_failed_in_flight() {
-        // Symmetry with the existing PPAF in-flight-skip test:
-        // if the PPCB override target has already failed in this op,
-        // skip it so the primary path can rotate to a different region.
+        // PPCB skips override targets already failed by this operation.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5610,13 +5510,7 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_ppaf_override_honored_even_when_in_excluded_regions() {
-        // PPAF differs from PPCB: a PPAF override is installed by the
-        // service-side failover signal and points at the single current
-        // write region for a single-master account. If the caller excluded
-        // that region, there is no other write region to fail over to.
-        // The SDK must route to the PPAF target and surface the failure
-        // (if any) rather than silently fall through to the primary path
-        // which would land somewhere unintended.
+        // PPAF targets the single current write region, even if the caller excluded it.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5688,12 +5582,7 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_ppaf_override_honored_even_when_endpoint_marked_unavailable() {
-        // Companion to the excluded-regions test above. For the same reason
-        // (single write region under PPAF), an `unavailable_endpoints` mark
-        // on the PPAF target must NOT redirect routing — the SDK still
-        // tries the PPAF target so a retry attempts the only write region
-        // rather than silently landing on a non-write region via the
-        // primary path's fallback.
+        // PPAF must still try the only write region even when it is marked unavailable.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5772,14 +5661,7 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_ppcb_override_probe_skipped_when_first_failed_endpoint_failed_in_flight() {
-        // Companion to the test above for the ProbeCandidate branch of
-        // `circuit_breaker_overrides`. After the failback delay elapses
-        // the entry transitions to `ProbeCandidate` and the next request
-        // for the partition is tentatively routed back to the original
-        // (failed) region. If that probe also fails with 403/3 the deferred
-        // mark for the probed region is pushed into the in-flight skip set,
-        // and on retry the probe branch must skip rather than re-probe the
-        // same now-failing region.
+        // ProbeCandidate retries must skip the probe target after it fails in-flight.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5853,11 +5735,7 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_ppcb_override_honored_when_current_endpoint_not_failed() {
-        // PPCB counterpart to `resolve_endpoint_ppaf_override_honored_when_current_endpoint_not_failed`.
-        // When `pending_write_effects` does not yet contain the override's
-        // current region, the PPCB override MUST be honored — otherwise
-        // prior circuit-breaker decisions are silently ignored on first
-        // attempt.
+        // Fresh attempts must honor PPCB overrides until the target fails in-flight.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5927,29 +5805,8 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_ppcb_override_pinned_to_unavailable_endpoint_reproduces_prod_403_3_loop() {
-        // Production-shape repro for multi-write 403/3 retry pinning: an
-        // UpsertItem run observed 4 attempts all targeting the same regional
-        // endpoint. Reconstructing the state after enough operations have
-        // run for PPCB to have accumulated past its threshold for this partition:
-        //   * Prior operations on this pk_range_id drove `write_failure_count`
-        //     above the default threshold of 5; PPCB called `try_move_next_endpoint`,
-        //     which rotated `entry.current_endpoint` between regions in
-        //     `preferred_read_endpoints`. At the moment of this attempt the
-        //     override's `current_endpoint` is centralus (PPCB had moved back
-        //     to it after east was tried).
-        //   * `MarkEndpointUnavailable(centralus)` from a recent 403/3 has
-        //     already been applied immediately (multi-write path: see
-        //     `partition_effects_for_deferral` at retry_evaluation.rs:156).
-        //     So centralus is in `account.unavailable_endpoints`.
-        //   * For THIS specific operation, attempt 1's effects have already
-        //     been applied. `pending_write_effects` is EMPTY because for
-        //     multi-write the deferred bucket is empty by design.
-        // Now resolve_endpoint runs for attempt 2:
-        //   * `in_flight_failed` is built from `pending_write_effects` ->
-        //     empty.
-        //   * PPCB branch fires (count >= threshold, Unhealthy, not in skip set).
-        //   * Returns `entry.current_endpoint` = central. BUG: central is in
-        //     `unavailable_endpoints` and should never be selected here.
+        // Production-shape repro: PPCB override threshold met while central is unavailable.
+        // Multi-write leaves `pending_write_effects` empty, so availability is the only guard.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -5962,9 +5819,7 @@ mod tests {
             Url::parse("https://test-eastus2.documents.azure.com:443/").unwrap(),
         );
 
-        // central is in the unavailable_endpoints map (the result of
-        // MarkEndpointUnavailable being applied immediately on a multi-write
-        // 403/3). This is the state the next attempt sees.
+        // Multi-write 403/3 applied the endpoint mark before this retry.
         let mut unavailable = std::collections::HashMap::new();
         unavailable.insert(
             central.url().clone(),
@@ -5989,9 +5844,7 @@ mod tests {
         let pk_range_id: super::PartitionKeyRangeId = "0".parse().unwrap();
         let mut partitions = PartitionEndpointState::new(PartitionFailoverConfig::default());
         partitions.per_partition_circuit_breaker_enabled = true;
-        // Override entry shape AFTER attempt 1's mark applied: current_endpoint
-        // still points at central (no threshold breach yet so PPCB internals
-        // never called `try_move_next_endpoint`).
+        // PPCB override still points at the now-unavailable endpoint.
         partitions.circuit_breaker_overrides.insert(
             pk_range_id.clone(),
             PartitionFailoverEntry {
@@ -5999,10 +5852,7 @@ mod tests {
                 first_failed_endpoint: central.clone(),
                 failed_endpoints: Default::default(),
                 read_failure_count: 0,
-                // ABOVE the default write_failure_threshold of 5 so PPCB's
-                // `can_circuit_breaker_trigger_failover` returns true; this is
-                // the state after enough prior 403/3s on this partition under
-                // the same workload run.
+                // Above the default threshold so PPCB failover triggers.
                 write_failure_count: 10,
                 first_failure_time: std::time::Instant::now(),
                 last_failure_time: std::time::Instant::now(),
@@ -6012,9 +5862,7 @@ mod tests {
         );
         let location = LocationSnapshot::for_tests_with_partitions(account, Arc::new(partitions));
 
-        // Multi-write retry state. CRITICAL: pending_write_effects stays empty
-        // because partition_effects_for_deferral applied attempt 1's effects
-        // immediately for the multi-write code path.
+        // Multi-write applies attempt effects immediately, leaving no in-flight skip set.
         let mut retry_state = crate::driver::pipeline::components::OperationRetryState::initial(
             0,
             true,
@@ -6049,20 +5897,8 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_rotates_to_next_region_via_location_index_on_multi_write() {
-        // Regression guard for the LocationIndex-based rotation mechanism on
-        // multi-write writes after PPCB-managed statuses (503/408/410/429-3092)
-        // where `MarkEndpointUnavailable` is intentionally suppressed
-        // (`retry_evaluation.rs` `try_handle_retry_trigger_group` /
-        // `try_handle_server_error`) and the multi-write deferred bucket is
-        // empty by design (`partition_effects_for_deferral` returns no
-        // deferred effects when `can_use_multiple_write_locations` is true).
-        // With both `pending_write_effects` and `unavailable_endpoints`
-        // empty, the ONLY thing preventing a same-region pin is
-        // `advance_location` bumping `LocationIndex` before the next
-        // `resolve_endpoint` call. This test pins that contract end-to-end:
-        // bumping the index via `next_for_generation` (the same call
-        // `advance_to_next_attempt` makes in production) must cause
-        // `resolve_endpoint` to rotate to the other region.
+        // Pins LocationIndex rotation when multi-write PPCB-managed statuses
+        // suppress endpoint marks and leave the deferred bucket empty.
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -6075,9 +5911,7 @@ mod tests {
             Url::parse("https://test-eastus2.documents.azure.com:443/").unwrap(),
         );
 
-        // Multi-write account, EMPTY unavailable_endpoints (PPCB-managed
-        // statuses don't push the mark), no PPCB override entry. The only
-        // signal that central failed is the bumped LocationIndex.
+        // The bumped LocationIndex is the only signal that central failed.
         let account = Arc::new(AccountEndpointState {
             generation: 0,
             preferred_read_endpoints: vec![central.clone(), east.clone()].into(),
@@ -6095,10 +5929,7 @@ mod tests {
             3,
             2,
         );
-        // Simulate post-failover advancement: the index moves from 0 to 1
-        // via the same call `advance_location` makes inside
-        // `advance_to_next_attempt`. `pending_write_effects` stays empty —
-        // this is the multi-write PPCB-managed status invariant.
+        // Mirror production advancement while preserving the empty multi-write bucket.
         retry_state.location = retry_state.location.next_for_generation(2, 0);
         assert_eq!(
             retry_state.location.index(),

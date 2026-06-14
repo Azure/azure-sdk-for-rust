@@ -474,15 +474,9 @@ fn assert_final_request_landed_in_region(response: &CosmosResponse, expected_reg
     );
 }
 
-/// `excluded_regions` honored end-to-end against a live multi-write account.
+/// Pins `excluded_regions` end-to-end against a live multi-write account.
 ///
-/// No faults, no failover — just asserts that when the caller pins
-/// `excluded_regions = [HUB_REGION]` on a write, the SDK actually routes the
-/// request to the other region and the final response's region label
-/// confirms it. Complements the in-memory `regional_gateway_unreachable`
-/// suite by validating the same behavior against a real Cosmos backend
-/// (where the global FE actually serves traffic — the only place a silent
-/// global fallback would not be caught at the URL level).
+/// Live backend coverage catches silent global fallback that URL-level emulator checks cannot.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
@@ -517,9 +511,7 @@ async fn excluded_regions_honored_end_to_end() -> Result<(), Box<dyn Error>> {
 
     let driver = runtime.get_or_create_driver(account.clone(), None).await?;
 
-    // Write a few items with HUB_REGION excluded; assert every final request
-    // landed on SATELLITE_REGION. Iterating gives confidence the routing is
-    // sticky rather than a coincidence on a single attempt.
+    // Iterate to ensure excluded-region routing is sticky, not a one-attempt coincidence.
     let excluded: ExcludedRegions = std::iter::once(HUB_REGION).collect();
     let options = OperationOptionsBuilder::new()
         .with_excluded_regions(excluded)

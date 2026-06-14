@@ -1018,18 +1018,7 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
     .await
 }
 
-/// Test that the customer's `excluded_regions` is honored even when the
-/// only non-excluded region keeps failing. The hub region is faulted with
-/// a persistent `ConnectionError` and the satellite region is excluded by
-/// the caller. The driver must exhaust local retries on the hub and
-/// surface the failure rather than silently falling back to the satellite
-/// — i.e. `excluded_regions` is a hard constraint, not a preference.
-///
-/// Assertions:
-/// 1. The operation ultimately fails (no other region is reachable).
-/// 2. The hub was contacted (the local-retry path was exercised).
-/// 3. The satellite was **never** contacted, regardless of how many
-///    times the hub failed.
+/// Pins `excluded_regions` as a hard constraint when the only allowed region keeps failing.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
@@ -1041,9 +1030,7 @@ pub async fn fault_injection_excluded_region_not_used_when_hub_fails() -> Result
         .with_error(FaultInjectionErrorType::ConnectionError)
         .build();
 
-    // Persistent fault (no hit_limit): hub keeps failing for the entire
-    // operation lifetime. The driver must NOT fall back to the satellite
-    // because the caller explicitly excluded it.
+    // Persistent hub fault must not fall back to the explicitly excluded satellite.
     let condition = FaultInjectionConditionBuilder::new()
         .with_operation_type(FaultOperationType::ReadItem)
         .with_region(HUB_REGION)

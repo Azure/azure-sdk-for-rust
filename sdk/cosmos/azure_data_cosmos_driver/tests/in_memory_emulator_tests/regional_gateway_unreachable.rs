@@ -1,65 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Driver-level integration tests for the regional gateway unreachable
-//! scenario — the failure mode the production perf workload exposed when
-//! a regional Cosmos DB gateway becomes TCP-unreachable.
-//!
-//! # Behaviors under test
-//!
-//! ## B1 — Reads must failover
-//!
-//! When the regional gateway for the application's primary read region is
-//! unreachable at the TCP layer (connect refused, RST, packet drop — *not*
-//! a 5xx/449/1002 application-layer response), and another preferred
-//! read region exists, the next read attempt must land on that next
-//! region's regional endpoint and succeed.
-//!
-//! ## B2 — No silent global fallback for writes
-//!
-//! When the writable region's regional gateway is unreachable at the TCP
-//! layer, and `excluded_regions` blocks the only other write region, the
-//! operation must terminate as a failure on the regional endpoint. It
-//! must NOT silently shift to the account's global endpoint URL and
-//! succeed there — that hides the regional outage from monitoring.
-//!
-//! # Test matrix (13 tests; ★ = encodes the production-observed gap)
-//!
-//! - R1–R4: reads (Multi/Single, healthy/faulted SECONDARY, excluded sets).
-//! - W1–W6: writes (the same matrix, plus the W3/W4 ★ cases for B2).
-//! - PPCB-1..3 (★ on 1 and 2): exercise the PPCB override path —
-//!   Phase 1 trips PPCB into a `Failover`/`ProbeCandidate` state via a
-//!   503 storm; Phase 2 swaps the rule to `ConnectionError`; the
-//!   override must NOT bypass `excluded_regions` or resurrect a region
-//!   that is now transport-unreachable.
-//! - G1, G2: cold-start (topology fetched while healthy, then the
-//!   regional endpoint goes unreachable before the first data-plane op).
-//!
-//! # Assertion strategy
-//!
-//! The in-memory emulator wraps the fault injector around the emulator
-//! transport. A fault-injected request never reaches the emulator's
-//! `execute_request`, so the [`HostRecorder`] only observes requests
-//! that pass through to a healthy region. The assertion model is
-//! therefore:
-//!
-//! - **Positive**: `recorder.data_plane_hosts()` lists every request
-//!   that successfully reached a region. For tests that expect failover
-//!   to SECONDARY, the recorder must contain SECONDARY (and only
-//!   SECONDARY) data-plane hosts.
-//! - **Negative**: tests that expect terminal failure also assert
-//!   `recorder.data_plane_hosts()` contains no host outside the
-//!   allowed set — silent fallback to SECONDARY (despite exclusion)
-//!   would show up here.
-//! - **Global guard**: `debug_assert!(!selected.is_global())` at
-//!   `operation_pipeline.rs:1040` panics in debug builds (cargo test
-//!   runs debug) on any pipeline path that returns the global endpoint
-//!   — a hard guardrail every test inherits for free.
-//! - **Outcome guard**: every test asserts the operation outcome
-//!   (success on the expected region, or terminal transport error).
-//! - **Time guard**: every test sets a 5 s
-//!   [`EndToEndOperationLatencyPolicy`] so a buggy infinite-retry SDK
-//!   fails CI on timeout, not by hanging.
+//! Driver-level integration tests for regional gateway unreachable failover.
 
 #![cfg(feature = "fault_injection")]
 
@@ -87,9 +29,7 @@ use azure_data_cosmos_driver::options::{
 
 use super::host_recorder::HostRecorder;
 
-// ─────────────────────────────────────────────────────────────────────
 // Shared fixture constants
-// ─────────────────────────────────────────────────────────────────────
 
 /// Primary region URL — stand-in for the production "centralus" region.
 const PRIMARY_URL: &str = "https://eastus.emulator.local";
@@ -102,23 +42,14 @@ const SECONDARY_HOST: &str = "westus.emulator.local";
 const DB_NAME: &str = "testdb";
 const COLL_NAME: &str = "testcoll";
 
-/// End-to-end deadline used by every test. Long enough for a normal
-/// in-memory operation (which completes in low single-digit ms), short
-/// enough that a buggy infinite-retry SDK fails the test on timeout
-/// rather than hanging CI.
+/// End-to-end deadline used by every test.
 const E2E_DEADLINE: Duration = Duration::from_secs(5);
 
-// ─────────────────────────────────────────────────────────────────────
 // Fixture
-// ─────────────────────────────────────────────────────────────────────
 
-/// Owns the emulator, recorder, driver, and resolved container handle
-/// for a single test. The fields are all `Arc`/`Clone` so tests can hold
-/// them across `await` boundaries without lifetime gymnastics.
+/// Owns the emulator, recorder, driver, and resolved container handle for a single test.
 struct Fixture {
-    /// Captures every request that reaches the emulator (post fault
-    /// injection). Tests filter `GET /` topology fetches via
-    /// [`HostRecorder::data_plane_hosts`].
+    /// Captures every request that reaches the emulator (post fault injection).
     recorder: Arc<HostRecorder>,
     /// Driver under test, already bootstrapped against the two-region
     /// topology and wired through the fault-injecting transport stack.
@@ -128,15 +59,7 @@ struct Fixture {
     container: ContainerReference,
 }
 
-/// Builds the two-region in-memory emulator with the supplied fault
-/// rules and bootstraps a driver against it. The driver's preferred
-/// regions are `[PRIMARY, SECONDARY]` so PRIMARY is the application's
-/// primary read/write target.
-///
-/// `enable_ppcb` toggles per-partition circuit breaker and a 1-failure
-/// trip threshold via env vars; PPCB is read at driver init (not from
-/// per-op `OperationOptions`), so tests that exercise the override path
-/// must set this to `true` BEFORE the driver bootstraps.
+/// Builds the two-region in-memory emulator with the supplied fault rules and bootstraps a driver against it.
 async fn build_fixture(
     write_mode: WriteMode,
     rules: Vec<Arc<FaultInjectionRule>>,
@@ -213,13 +136,9 @@ async fn build_fixture(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // Fault rule helpers
-// ─────────────────────────────────────────────────────────────────────
 
-/// Builds a `ConnectionError` fault rule for `operation_type` scoped to
-/// `region`. The rule fires unconditionally (`probability = 1.0`) so the
-/// unreachable simulation is total.
+/// Builds a `ConnectionError` fault rule for `operation_type` scoped to `region`.
 fn connection_error_rule(
     id: &str,
     operation_type: FaultOperationType,
@@ -240,11 +159,7 @@ fn connection_error_rule(
     )
 }
 
-/// Builds a `ServiceUnavailable` (503) fault rule. Unlike
-/// `ConnectionError`, this synthesizes an HTTP 503 response — the
-/// pipeline classifies it as a service-side failure rather than a
-/// transport-layer failure. Used for the PPCB Phase-1 "503 storm" that
-/// trips the circuit breaker into the override state.
+/// Builds a `ServiceUnavailable` fault rule for PPCB storm tests.
 fn service_unavailable_rule(
     id: &str,
     operation_type: FaultOperationType,
@@ -265,13 +180,9 @@ fn service_unavailable_rule(
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // OperationOptions helpers
-// ─────────────────────────────────────────────────────────────────────
 
 /// Returns base `OperationOptions` with the standard E2E deadline.
-/// Every test uses this as the foundation; assertion-specific fields
-/// are layered on top.
 fn base_options() -> OperationOptions {
     let mut opts = OperationOptions::default();
     opts.end_to_end_latency_policy = Some(EndToEndOperationLatencyPolicy::new(E2E_DEADLINE));
@@ -285,10 +196,7 @@ fn options_with_excluded(regions: impl IntoIterator<Item = Region>) -> Operation
     opts
 }
 
-/// `base_options()` with PPCB enabled at the lowest possible failure
-/// thresholds (1 failure trips the circuit). Used by the PPCB tests so
-/// a single Phase-1 fault is sufficient to populate
-/// `circuit_breaker_overrides`.
+/// `base_options()` with PPCB thresholds set so one failure trips the circuit.
 fn ppcb_options(extra_excluded: Option<Vec<Region>>) -> OperationOptions {
     let mut opts = base_options();
     opts.per_partition_circuit_breaker_enabled = Some(true);
@@ -300,13 +208,9 @@ fn ppcb_options(extra_excluded: Option<Vec<Region>>) -> OperationOptions {
     opts
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // Operation helpers
-// ─────────────────────────────────────────────────────────────────────
 
-/// Seeds an item via the driver (no exclusions) so subsequent reads can
-/// observe it. With `ReplicationConfig::immediate()` both regions hold
-/// the item synchronously.
+/// Seeds an item via the driver (no exclusions) so subsequent reads can observe it.
 async fn seed_item(fixture: &Fixture, item_id: &str, pk: &str) {
     let body = serde_json::json!({"id": item_id, "pk": pk, "value": 1}).to_string();
     let item_ref = ItemReference::from_name(
@@ -387,13 +291,9 @@ async fn upsert_item(
         .await
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // Assertion helpers
-// ─────────────────────────────────────────────────────────────────────
 
-/// Asserts every data-plane host in `recorder` (i.e., excluding `GET /`
-/// topology fetches) belongs to `allowed`. Useful for tests that pin
-/// "every observed regional landing is one of these hosts".
+/// Asserts every data-plane host in `recorder` (i.e., excluding `GET /` topology fetches) belongs to `allowed`.
 fn assert_all_hosts_in(recorder: &HostRecorder, allowed: &[&str]) {
     let hosts = recorder.data_plane_hosts();
     for host in &hosts {
@@ -405,10 +305,7 @@ fn assert_all_hosts_in(recorder: &HostRecorder, allowed: &[&str]) {
     }
 }
 
-/// Asserts NO data-plane request landed on the supplied `forbidden`
-/// host. This is the primary B2 guard: silent fallback to a region the
-/// user excluded — or to the global endpoint — manifests as that host
-/// appearing in `data_plane_hosts()`.
+/// Asserts NO data-plane request landed on the supplied `forbidden` host.
 fn assert_no_data_plane_host(recorder: &HostRecorder, forbidden: &str) {
     let hosts = recorder.data_plane_hosts();
     assert!(
@@ -418,13 +315,7 @@ fn assert_no_data_plane_host(recorder: &HostRecorder, forbidden: &str) {
     );
 }
 
-/// Asserts `result` is a terminal error caused by the
-/// `ConnectionError` fault. The SDK wraps a transport-layer connection
-/// failure into a `TransportGenerated503(20003)` outer error whose
-/// `Details` carry the inner `20010 / "connection error"` cause — the
-/// assertion accepts that shape and rejects any other terminal error
-/// (most importantly, an HTTP-classified error from a host that should
-/// never have been reached).
+/// Asserts `result` is a terminal error caused by the `ConnectionError` fault.
 fn assert_terminal_transport_failure<T: std::fmt::Debug>(result: &Result<T, CosmosError>) {
     let err = result.as_ref().err().unwrap_or_else(|| {
         panic!(
@@ -440,9 +331,7 @@ fn assert_terminal_transport_failure<T: std::fmt::Debug>(result: &Result<T, Cosm
     );
 }
 
-/// Asserts the fault rule was hit at least `min_count` times. A rule
-/// that never fires is a silent test bug — either the rule conditions
-/// don't match, or the SDK skipped the region entirely.
+/// Asserts the fault rule was hit at least `min_count` times.
 fn assert_rule_fired(rule: &FaultInjectionRule, min_count: u32) {
     let hits = rule.hit_count();
     assert!(
@@ -452,9 +341,7 @@ fn assert_rule_fired(rule: &FaultInjectionRule, min_count: u32) {
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // R1–R4: reads
-// ─────────────────────────────────────────────────────────────────────
 
 /// **R1** — Multi-master read: PRIMARY unreachable, SECONDARY healthy, no
 /// exclusions → read failover lands on SECONDARY and succeeds.
@@ -509,10 +396,7 @@ async fn r2_read_single_primary_unreachable_failover_to_secondary() {
     assert_no_data_plane_host(&fixture.recorder, PRIMARY_HOST);
 }
 
-/// **R3** — Both regions unreachable, no exclusions → terminal transport
-/// error. The pipeline exhausts both preferred read regions and must
-/// surface the failure rather than silently routing elsewhere (e.g.,
-/// global).
+/// **R3** — Both regions unreachable, no exclusions → terminal transport error.
 #[tokio::test]
 async fn r3_read_multi_both_regions_unreachable_terminal_failure() {
     let east = connection_error_rule("r3-east", FaultOperationType::ReadItem, Region::EAST_US);
@@ -544,10 +428,7 @@ async fn r3_read_multi_both_regions_unreachable_terminal_failure() {
     );
 }
 
-/// **R4** — PRIMARY unreachable, SECONDARY healthy, but caller excludes
-/// SECONDARY. The pipeline has no eligible region and must surface a
-/// terminal transport error — it must NOT silently route the read to
-/// SECONDARY (despite exclusion) or to the global endpoint.
+/// **R4** — PRIMARY unreachable, SECONDARY healthy, but caller excludes SECONDARY.
 #[tokio::test]
 async fn r4_read_primary_unreachable_secondary_excluded_terminal_failure() {
     let fault = connection_error_rule("r4-east", FaultOperationType::ReadItem, Region::EAST_US);
@@ -569,9 +450,7 @@ async fn r4_read_primary_unreachable_secondary_excluded_terminal_failure() {
     assert_all_hosts_in(&fixture.recorder, &[/* nothing should pass through */]);
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // W1–W6: writes
-// ─────────────────────────────────────────────────────────────────────
 
 /// **W1** — Healthy baseline. Writes land on PRIMARY only.
 #[tokio::test]
@@ -604,11 +483,7 @@ async fn w2_write_multi_primary_unreachable_failover_to_secondary() {
     assert_no_data_plane_host(&fixture.recorder, PRIMARY_HOST);
 }
 
-/// **W3 ★** — Multi-master write: PRIMARY unreachable, SECONDARY healthy,
-/// caller excludes SECONDARY → MUST surface terminal transport error.
-/// The B2 scenario: write must NOT silently land on SECONDARY despite
-/// the user's exclusion, and must NOT silently shift to the global
-/// endpoint.
+/// **W3 ★** — Multi-master write: PRIMARY unreachable, SECONDARY healthy, caller excludes SECONDARY → MUST surface terminal transport error.
 #[tokio::test]
 async fn w3_write_multi_primary_unreachable_secondary_excluded_terminal_failure() {
     let fault = connection_error_rule("w3-east", FaultOperationType::CreateItem, Region::EAST_US);
@@ -633,9 +508,6 @@ async fn w3_write_multi_primary_unreachable_secondary_excluded_terminal_failure(
 }
 
 /// **W4 ★** — Same as W3 but `upsert_item` instead of `create_item`.
-/// The override-bypass gap is per partition-routing path, not per
-/// operation type — covering upsert pins that the fix isn't accidentally
-/// scoped to one verb.
 #[tokio::test]
 async fn w4_upsert_multi_primary_unreachable_secondary_excluded_terminal_failure() {
     let fault = connection_error_rule("w4-east", FaultOperationType::UpsertItem, Region::EAST_US);
@@ -682,10 +554,7 @@ async fn w5_write_multi_both_regions_unreachable_terminal_failure() {
     );
 }
 
-/// **W6** — Single-master write: PRIMARY unreachable, SECONDARY read-only,
-/// caller excludes SECONDARY. With `WriteMode::Single` SECONDARY can't
-/// accept writes anyway; the operation must terminate as transport
-/// failure on PRIMARY.
+/// **W6** — Single-master write: PRIMARY unreachable, SECONDARY read-only, caller excludes SECONDARY.
 #[tokio::test]
 async fn w6_write_single_primary_unreachable_secondary_excluded_terminal_failure() {
     let fault = connection_error_rule("w6-east", FaultOperationType::CreateItem, Region::EAST_US);
@@ -705,14 +574,9 @@ async fn w6_write_single_primary_unreachable_secondary_excluded_terminal_failure
     assert_no_data_plane_host(&fixture.recorder, SECONDARY_HOST);
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // PPCB-1..3: per-partition circuit breaker override path
-// ─────────────────────────────────────────────────────────────────────
 
-/// Drives `op` `repeat` times against a phase-1 503-storm rule so the
-/// PPCB circuit-breaker counters trip. Each invocation is expected to
-/// fail (the rule returns 503 for every attempt); the goal is to
-/// populate `circuit_breaker_overrides` for the operation's partition.
+/// Drives `op` `repeat` times against a phase-1 503-storm rule so the PPCB circuit-breaker counters trip.
 async fn trip_ppcb_reads(fixture: &Fixture, item_id: &str, pk: &str, repeat: usize) {
     for _ in 0..repeat {
         let _ = read_item(fixture, item_id, pk, ppcb_options(None)).await;
@@ -725,11 +589,7 @@ async fn trip_ppcb_writes(fixture: &Fixture, item_id: &str, pk: &str, repeat: us
     }
 }
 
-/// **PPCB-1 ★** — Read scenario. Phase-1 503 storm on PRIMARY trips
-/// PPCB; Phase-2 swaps PRIMARY to `ConnectionError` and excludes
-/// SECONDARY. The PPCB override entry must NOT resurrect SECONDARY
-/// (the user excluded it), and PRIMARY's transport failure must NOT
-/// silently fall through to global.
+/// **PPCB-1 ★** — read override must respect excluded regions.
 #[tokio::test]
 async fn ppcb1_read_override_must_respect_excluded_regions() {
     let storm = service_unavailable_rule(
@@ -779,10 +639,7 @@ async fn ppcb1_read_override_must_respect_excluded_regions() {
     assert_no_data_plane_host(&fixture.recorder, SECONDARY_HOST);
 }
 
-/// **PPCB-2 ★** — Write scenario. Same setup as PPCB-1 but for
-/// `create_item`. Multi-master + PPCB-eligible means the override path
-/// at `operation_pipeline.rs:1086-1115` is the most likely site for the
-/// silent-substitution bug.
+/// **PPCB-2 ★** — write override must respect excluded regions.
 #[tokio::test]
 async fn ppcb2_write_override_must_respect_excluded_regions() {
     let storm = service_unavailable_rule(
@@ -824,11 +681,7 @@ async fn ppcb2_write_override_must_respect_excluded_regions() {
     assert_no_data_plane_host(&fixture.recorder, SECONDARY_HOST);
 }
 
-/// **PPCB-3** — Same setup as PPCB-1 but no exclusion. The override
-/// SHOULD succeed via SECONDARY because SECONDARY is healthy and the
-/// user did not exclude it. Pins that the PPCB-respects-exclusions fix
-/// is scoped — it must not break the happy path where the override is
-/// the intended healing mechanism.
+/// **PPCB-3** — without exclusions, PPCB override should heal via secondary.
 #[tokio::test]
 async fn ppcb3_read_override_routes_to_healthy_secondary() {
     let storm = service_unavailable_rule(
@@ -869,15 +722,9 @@ async fn ppcb3_read_override_routes_to_healthy_secondary() {
     assert_no_data_plane_host(&fixture.recorder, PRIMARY_HOST);
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // G1, G2: cold-start (topology discovered healthy, then unreachable)
-// ─────────────────────────────────────────────────────────────────────
 
-/// **G1** — Cold-start read failover. Driver bootstrap succeeded
-/// (topology discovered while PRIMARY was healthy). Before the first
-/// data-plane op, PRIMARY goes unreachable. The first read must failover
-/// to SECONDARY rather than re-pinning to the just-discovered (now
-/// dead) PRIMARY.
+/// **G1** — cold-start read must fail over from newly unreachable primary.
 #[tokio::test]
 async fn g1_cold_start_read_failover_to_secondary() {
     let fault = connection_error_rule("g1-east", FaultOperationType::ReadItem, Region::EAST_US);
