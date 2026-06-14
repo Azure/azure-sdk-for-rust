@@ -10,6 +10,11 @@
 
 ### Bugs Fixed
 
+- `403/1008 (DatabaseAccountNotFound)` and `403/3 (WriteForbidden)` now drive an account-topology refresh and a retry against the refreshed endpoint set (paced at 1 s, bounded by the backend-failover retry budget — single-master and multi-master both) instead of bubbling up. When `is_ppcb_managed` is true, the per-partition mark and topology refresh fire but `MarkEndpointUnavailable` is suppressed so PPCB drives failover per partition. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- `evaluate_transport_layer_outcome`'s `definitely_not_sent` branch now emits only `MarkEndpointUnavailable` (the `MarkPartitionUnavailable` emit was dropped) so Gateway-mode connect failures stop inflating per-partition PPCB counters. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- `try_handle_write_forbidden` now suppresses `MarkEndpointUnavailable` when `is_ppcb_managed` is true (multi-write + partitioned + PPCB active); the per-partition mark and topology refresh still fire. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- `ppcb_should_skip` in `resolve_endpoint` now treats `OperationOptions::excluded_regions` as a hard filter on the PPCB override path; previously the override fast-path bypassed the exclusion check enforced in `try_select_endpoint`. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+
 ### Other Changes
 
 ## 0.4.0 (2026-06-09)
