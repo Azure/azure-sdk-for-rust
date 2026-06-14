@@ -215,6 +215,11 @@ impl Authorizer {
             return Ok(stored);
         }
 
+        // Intentionally a plain `AmqpError::with_message`: the connection's
+        // `should_retry_amqp_error` classifies this unrecognized kind as
+        // `ReturnError`, so exhausting the budget surfaces to the caller instead of
+        // looping. Do not "fix" this into a retryable kind, that would let a recovery
+        // storm spin here forever (#4454).
         Err(AmqpError::with_message(format!(
             "Exceeded retry budget ({MAX_GENERATION_RETRIES}) authorizing path '{path}' across recoveries"
         )))
@@ -473,116 +478,109 @@ impl Authorizer {
             to_refresh
         };
 
-        // Upgrade the connection once, before the lock-free re-authorizations, and
-        // capture the recovery generation from it (#4454).
+        // Nothing due: skip the connection upgrade and lock dance entirely. Scoping
+        // the work inside this branch keeps the connection and the recovery
+        // generation as plain values that exist only where they are valid, so they
+        // cannot drift out of sync (no hand-maintained `Option` invariant, no
+        // `expect()` that a future edit could turn into a panic in this background
+        // task and silently stop all token refresh).
         //
-        // A failed upgrade is terminal, not retryable: once the last strong
-        // reference to the RecoverableConnection is dropped the Weak can never
-        // upgrade again, so continuing would loop forever with nothing left to
-        // refresh against. Stop the task.
-        let refresh_connection = if tokens_to_refresh.is_empty() {
-            None
-        } else {
-            match self.recoverable_connection.upgrade() {
-                Some(connection) => Some(connection),
-                None => {
-                    info!(
-                        operation = "upgrade_connection",
-                        "Recoverable connection has been dropped; stopping token refresher."
-                    );
-                    return Ok(RefreshPass::Stop);
-                }
-            }
-        };
-        let refresh_generation = refresh_connection.as_ref().map(|c| c.generation());
-
-        // Now refresh tokens without holding the lock to avoid deadlocks.
-        //
-        // A failure to refresh a single path (transient get_token failure,
-        // authorization failure, etc.) must NOT tear down the refresh task:
-        // doing so would let every other cached token silently expire. We
-        // log the failure at warn! with the path and the failing condition
-        // and continue to the next path; the unrefreshed token will be
-        // retried on the next pass.
-        let mut updated_tokens = HashMap::new();
-        // Tracks whether any path failed to refresh this pass, so the caller can
-        // back off instead of retrying with no delay.
+        // `refresh_failed` records whether any path failed this pass, so the caller
+        // can back off instead of retrying with no delay.
         let mut refresh_failed = false;
-        for (url, previous_expiry) in tokens_to_refresh {
-            let new_token = match self
-                .credential
-                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                .await
-            {
-                Ok(token) => token,
-                Err(e) => {
+        if !tokens_to_refresh.is_empty() {
+            // A failed upgrade is terminal, not retryable: once the last strong
+            // reference to the RecoverableConnection is dropped the Weak can never
+            // upgrade again, so continuing would loop forever with nothing left to
+            // refresh against. Stop the task.
+            let Some(connection) = self.recoverable_connection.upgrade() else {
+                info!(
+                    operation = "upgrade_connection",
+                    "Recoverable connection has been dropped; stopping token refresher."
+                );
+                return Ok(RefreshPass::Stop);
+            };
+            // Capture the recovery generation before the lock-free re-authorizations
+            // below, so a recovery that races them is detected before write-back (#4454).
+            let captured = connection.generation();
+
+            // Refresh tokens without holding the scopes lock to avoid deadlocks.
+            //
+            // A failure to refresh a single path (transient get_token failure,
+            // authorization failure, etc.) must NOT tear down the refresh task:
+            // doing so would let every other cached token silently expire. We
+            // log the failure at warn! with the path and the failing condition
+            // and continue to the next path; the unrefreshed token will be
+            // retried on the next pass.
+            let mut updated_tokens = HashMap::new();
+            for (url, previous_expiry) in tokens_to_refresh {
+                let new_token = match self
+                    .credential
+                    .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
+                    .await
+                {
+                    Ok(token) => token,
+                    Err(e) => {
+                        warn!(
+                            path = %url,
+                            operation = "get_token",
+                            err = ?e,
+                            "Failed to refresh token for path; will retry on next pass: {e}"
+                        );
+                        refresh_failed = true;
+                        continue;
+                    }
+                };
+
+                // A credential that cannot renew this token (e.g. a pre-formed
+                // SAS) hands back the same expiry. Re-presenting it would not
+                // extend the link, so mark the path non-refreshable and leave
+                // the broker to enforce the real `se` rather than spinning.
+                if new_token.expires_on <= previous_expiry {
+                    warn!(
+                        "Credential cannot refresh token for {url} (expiry did not advance past {previous_expiry}); \
+                         relying on broker-side expiry. This is expected for a pre-formed SAS token."
+                    );
+                    non_refreshable.insert(url.clone());
+                    continue;
+                }
+
+                if let Err(e) = self
+                    .perform_authorization(&connection, &url, &new_token)
+                    .await
+                {
                     warn!(
                         path = %url,
-                        operation = "get_token",
+                        operation = "perform_authorization",
                         err = ?e,
-                        "Failed to refresh token for path; will retry on next pass: {e}"
+                        "Failed to authorize refreshed token for path; will retry on next pass: {e}"
                     );
                     refresh_failed = true;
                     continue;
                 }
-            };
 
-            // A credential that cannot renew this token (e.g. a pre-formed
-            // SAS) hands back the same expiry. Re-presenting it would not
-            // extend the link, so mark the path non-refreshable and leave
-            // the broker to enforce the real `se` rather than spinning.
-            if new_token.expires_on <= previous_expiry {
-                warn!(
-                    "Credential cannot refresh token for {url} (expiry did not advance past {previous_expiry}); \
-                     relying on broker-side expiry. This is expected for a pre-formed SAS token."
-                );
-                non_refreshable.insert(url.clone());
-                continue;
-            }
-
-            let connection = refresh_connection
-                .as_ref()
-                .expect("refresh_connection is Some when there are tokens to refresh");
-            if let Err(e) = self
-                .perform_authorization(connection, &url, &new_token)
-                .await
-            {
-                warn!(
-                    path = %url,
-                    operation = "perform_authorization",
-                    err = ?e,
-                    "Failed to authorize refreshed token for path; will retry on next pass: {e}"
-                );
-                refresh_failed = true;
-                continue;
-            }
-
-            debug!(
-                "Token refreshed for {url}, new expiration time: {}",
-                new_token.expires_on
-            );
-            updated_tokens.insert(url.clone(), new_token);
-        }
-
-        // Finally, update the scopes map with the new tokens, unless a recovery
-        // raced us. Re-check the generation under the same write lock `clear()`
-        // takes (#4454) before writing anything back.
-        if !updated_tokens.is_empty() {
-            let connection = refresh_connection
-                .as_ref()
-                .expect("refresh_connection is Some when tokens were refreshed");
-            let captured =
-                refresh_generation.expect("refresh_generation is Some when tokens were refreshed");
-            let mut scopes = self.authorization_scopes.write().await;
-            if connection.generation() != captured {
                 debug!(
-                    "Discarding tokens refreshed during recovery (#4454); the recovery generation advanced mid-refresh."
+                    "Token refreshed for {url}, new expiration time: {}",
+                    new_token.expires_on
                 );
-            } else {
-                for (url, token) in updated_tokens.into_iter() {
-                    scopes.insert(url.clone(), token);
+                updated_tokens.insert(url.clone(), new_token);
+            }
+
+            // Finally, update the scopes map with the new tokens, unless a recovery
+            // raced us. Re-check the generation under the same write lock `clear()`
+            // takes (#4454) before writing anything back.
+            if !updated_tokens.is_empty() {
+                let mut scopes = self.authorization_scopes.write().await;
+                if connection.generation() != captured {
+                    debug!(
+                        "Discarding tokens refreshed during recovery (#4454); the recovery generation advanced mid-refresh."
+                    );
+                } else {
+                    for (url, token) in updated_tokens.into_iter() {
+                        scopes.insert(url.clone(), token);
+                    }
+                    debug!("Updated tokens.");
                 }
-                debug!("Updated tokens.");
             }
         }
 
