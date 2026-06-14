@@ -215,24 +215,6 @@ pub(crate) struct OperationRetryState {
     /// counters drive threshold-based failover and need the failure signal
     /// immediately.
     pub pending_write_effects: Vec<LocationEffect>,
-    /// Per-operation history of regions that have been attempted and failed
-    /// in this operation.
-    ///
-    /// Pushed by `advance_to_next_attempt` on every retry transition
-    /// (FailoverRetry / SessionRetry / Hedge), regardless of the failure
-    /// status code or whether `MarkPartitionUnavailable`/`MarkEndpointUnavailable`
-    /// were deferred. Read by `resolve_endpoint` to build the skip set so
-    /// the next attempt does NOT land back on a just-failed region.
-    ///
-    /// Why this exists alongside `pending_write_effects`:
-    /// `pending_write_effects` is populated only by the *deferred* bucket of
-    /// `partition_effects_for_deferral`. For multi-write writes (and reads),
-    /// the deferred bucket is empty — every effect flushes immediately — so
-    /// `pending_write_effects` cannot drive the per-op skip set. Tracking
-    /// the attempted region directly closes that gap: the per-operation
-    /// rotation memory is separate from the global endpoint-unavailability
-    /// map.
-    pub attempted_failed_regions: Vec<Region>,
     /// Whether a cross-region hedge race has already been dispatched for
     /// this operation.
     ///
@@ -283,7 +265,6 @@ impl OperationRetryState {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
-            attempted_failed_regions: Vec::new(),
             hedge_already_fired: false,
         }
     }

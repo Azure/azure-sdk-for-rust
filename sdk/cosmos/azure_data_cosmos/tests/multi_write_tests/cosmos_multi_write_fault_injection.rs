@@ -11,8 +11,8 @@ use azure_data_cosmos::fault_injection::{
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
 use azure_data_cosmos::options::{ExcludedRegions, ItemReadOptions, OperationOptions};
 use framework::{
-    assert_local_retry_attempted_on_region, assert_region_contacted_with_retry, TestClient,
-    TestOptions, HUB_REGION, SATELLITE_REGION,
+    assert_local_retry_attempted_on_region, assert_region_contacted_with_retry,
+    assert_region_not_contacted, TestClient, TestOptions, HUB_REGION, SATELLITE_REGION,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -1006,6 +1006,112 @@ pub async fn fault_injection_connection_error_local_retry_succeeds() -> Result<(
             // exercised: at least one tracked request must have hit the hub
             // (proving the connection-error fault was triggered there).
             assert_local_retry_attempted_on_region(&_response.diagnostics(), &HUB_REGION);
+
+            Ok(())
+        },
+        Some(
+            TestOptions::new()
+                .with_fault_injection_rules(fault_builder)
+                .with_fault_client_application_region(HUB_REGION),
+        ),
+    )
+    .await
+}
+
+/// Test that the customer's `excluded_regions` is honored even when the
+/// only non-excluded region keeps failing. The hub region is faulted with
+/// a persistent `ConnectionError` and the satellite region is excluded by
+/// the caller. The driver must exhaust local retries on the hub and
+/// surface the failure rather than silently falling back to the satellite
+/// — i.e. `excluded_regions` is a hard constraint, not a preference.
+///
+/// Assertions:
+/// 1. The operation ultimately fails (no other region is reachable).
+/// 2. The hub was contacted (the local-retry path was exercised).
+/// 3. The satellite was **never** contacted, regardless of how many
+///    times the hub failed.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
+pub async fn fault_injection_excluded_region_not_used_when_hub_fails() -> Result<(), Box<dyn Error>>
+{
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::ConnectionError)
+        .build();
+
+    // Persistent fault (no hit_limit): hub keeps failing for the entire
+    // operation lifetime. The driver must NOT fall back to the satellite
+    // because the caller explicitly excluded it.
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(HUB_REGION)
+        .build();
+
+    let rule = FaultInjectionRuleBuilder::new("persistent-conn-error-hub", result)
+        .with_condition(condition)
+        .build();
+
+    let fault_builder = vec![Arc::new(rule)];
+
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container_id = format!("Container-{}", Uuid::new_v4());
+            let container_client = run_context
+                .create_container_with_throughput(
+                    db_client,
+                    ContainerProperties::new(container_id.clone(), "/partition_key".into()),
+                    ThroughputProperties::manual(400),
+                )
+                .await?;
+
+            let unique_id = Uuid::new_v4().to_string();
+            let item = TestItem {
+                id: format!("Item-{}", unique_id).into(),
+                partition_key: Some(format!("Partition-{}", unique_id).into()),
+                value: 42,
+                nested: NestedItem {
+                    nested_value: "Nested".into(),
+                },
+                bool_value: true,
+            };
+            let pk = format!("Partition-{}", unique_id);
+            let item_id = format!("Item-{}", unique_id);
+
+            // Create the item with the normal (non-fault) client so the
+            // read target actually exists if the satellite were tried.
+            container_client
+                .create_item(&pk, &item_id, &item, None)
+                .await?;
+
+            let fault_client = run_context
+                .fault_client()
+                .expect("fault client should be available");
+            let fault_db_client = fault_client.database_client(db_client.id());
+            let fault_container_client = fault_db_client.container_client(&container_id).await?;
+
+            // Caller-supplied exclusion: the satellite is off-limits for
+            // this operation even if the hub is unhealthy.
+            let mut operation = OperationOptions::default();
+            operation.excluded_regions = Some(ExcludedRegions::from_iter([SATELLITE_REGION]));
+            let options = ItemReadOptions::default().with_operation_options(operation);
+
+            let result = run_context
+                .read_item(&fault_container_client, &pk, &item_id, Some(options))
+                .await;
+
+            let err = result.expect_err(
+                "read must fail: hub is faulted and satellite is excluded — no region is reachable",
+            );
+            let diagnostics = err
+                .diagnostics()
+                .expect("CosmosError must carry diagnostics on the fault-injected error path");
+
+            // Hub must have been hit at least once (the fault fired) and
+            // the satellite must NEVER appear in the request trail.
+            assert_local_retry_attempted_on_region(&diagnostics, &HUB_REGION);
+            assert_region_not_contacted(&diagnostics, &SATELLITE_REGION);
 
             Ok(())
         },

@@ -376,14 +376,12 @@ fn evaluate_http_outcome(
         return result;
     }
 
-    // Backend-signal substatuses that the SDK retries (403/3 WriteForbidden,
-    // 403/1008 DatabaseAccountNotFound) only reach this fall-through when
-    // the corresponding retry budget is exhausted. Surface the original
-    // status unchanged so callers see exactly what the backend last returned
-    // — wrapping these as 503 would hide the fact that the topology never
-    // converged and obscure the original substatus from diagnostics.
-    let error = build_service_error(&status, &cosmos_headers, &body);
-    (OperationAction::Abort { error }, Vec::new())
+    (
+        OperationAction::Abort {
+            error: build_service_error(&status, &cosmos_headers, &body),
+        },
+        Vec::new(),
+    )
 }
 
 /// Handles 403/3 WriteForbidden — the gateway has identified that this region
@@ -423,22 +421,28 @@ fn try_handle_write_forbidden(
         (retry_state.clone().advance_failover(), None)
     };
 
-    Some((
-        OperationAction::FailoverRetry { new_state, delay },
-        vec![
-            LocationEffect::RefreshAccountProperties,
-            LocationEffect::MarkEndpointUnavailable {
-                endpoint: endpoint.clone(),
-                reason: UnavailableReason::WriteForbidden,
-            },
-            LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
-                operation,
-                endpoint,
-                retry_state,
-                false,
-            )),
-        ],
-    ))
+    let mut effects = vec![
+        LocationEffect::RefreshAccountProperties,
+        LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
+            operation,
+            endpoint,
+            retry_state,
+            false,
+        )),
+    ];
+    if !is_ppcb_managed(operation, retry_state) {
+        // PPCB-managed multi-write partitions rely on the per-partition
+        // failure counter to drive failover. Marking the endpoint here
+        // would block writes from all partitions on this endpoint for
+        // the 60 s TTL, even though 403/3 is a per-(partition, region)
+        // signal — partitions other than the failing one are still
+        // legitimately served from this region.
+        effects.push(LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason: UnavailableReason::WriteForbidden,
+        });
+    }
+    Some((OperationAction::FailoverRetry { new_state, delay }, effects))
 }
 
 /// Handles 403/1008 DatabaseAccountNotFound — the targeted region no longer
@@ -693,9 +697,13 @@ fn try_handle_server_error(
 ///
 /// 1. **Request definitely not sent** (connection refused, DNS failure, TLS
 ///    error before any bytes left the client) → the endpoint itself is
-///    unreachable. Emit `MarkEndpointUnavailable` (affects all partitions
-///    on this endpoint) and `MarkPartitionUnavailable` (so PPCB also
-///    increments), then failover retry.
+///    unreachable. Emit only `MarkEndpointUnavailable` (affects all
+///    partitions on this endpoint), then failover retry. Do *not* bump the
+///    per-partition PPCB counter: in Gateway mode every partition shares the
+///    same hostname, so a connect failure is endpoint-wide, not
+///    partition-specific, and counting it per partition would inflate PPCB
+///    counters for whichever partitions happened to be active during the
+///    outage.
 ///
 /// 2. **Request sent (or unknown)** → the endpoint accepted the connection
 ///    but the operation failed for this partition. Emit only
@@ -716,19 +724,13 @@ fn evaluate_transport_layer_outcome(
     if request_sent.definitely_not_sent() {
         // Endpoint is unreachable — mark it unavailable regardless of PPCB
         // state, since a connection failure affects all partitions on this
-        // endpoint. Also record a partition-level failure for PPCB tracking.
-        let effects = vec![
-            LocationEffect::MarkEndpointUnavailable {
-                endpoint: endpoint.clone(),
-                reason: UnavailableReason::TransportError,
-            },
-            LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
-                operation,
-                endpoint,
-                retry_state,
-                operation.is_read_only(),
-            )),
-        ];
+        // endpoint. Do not also bump the per-partition PPCB counter: in
+        // Gateway mode every partition shares one hostname, so a connect
+        // failure is endpoint-wide, not partition-specific.
+        let effects = vec![LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason: UnavailableReason::TransportError,
+        }];
 
         if retry_state.can_retry_failover() {
             return (
@@ -923,11 +925,35 @@ mod tests {
     use crate::{
         diagnostics::RequestSentStatus,
         models::{
-            AccountReference, CosmosOperation, CosmosResponseHeaders, CosmosStatus,
-            DatabaseReference,
+            AccountReference, ContainerProperties, ContainerReference, CosmosOperation,
+            CosmosResponseHeaders, CosmosStatus, DatabaseReference, ItemReference, PartitionKey,
+            PartitionKeyDefinition, SystemProperties,
         },
     };
     use azure_core::http::StatusCode;
+
+    fn make_create_item_operation() -> CosmosOperation {
+        let account = AccountReference::with_master_key(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
+        let props = ContainerProperties {
+            id: "testcontainer".into(),
+            partition_key: pk_def,
+            system_properties: SystemProperties::default(),
+        };
+        let container = ContainerReference::new(
+            account,
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &props,
+        );
+        let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
+        CosmosOperation::create_item(item).with_body(b"{}".to_vec())
+    }
 
     fn make_read_operation() -> CosmosOperation {
         let account = AccountReference::with_master_key(
@@ -1017,11 +1043,14 @@ mod tests {
         );
         let (action, effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         assert!(matches!(action, OperationAction::FailoverRetry { .. }));
-        // Not-sent → endpoint is unreachable, mark both endpoint and partition.
+        // Not-sent → endpoint is unreachable, mark endpoint only.
+        // PPCB's per-partition counter is intentionally NOT bumped: in
+        // Gateway mode every partition shares one hostname, so a connect
+        // failure is endpoint-wide, not partition-specific.
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
@@ -1161,7 +1190,6 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
-            attempted_failed_regions: Vec::new(),
             hedge_already_fired: false,
         };
 
@@ -1258,6 +1286,63 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)));
+        // PPCB disabled (default) → endpoint mark is emitted so non-PPCB
+        // accounts still get region-wide failover for the 60 s TTL.
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "non-PPCB 403/3 must mark the endpoint unavailable"
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+            "403/3 must always mark the partition unavailable"
+        );
+    }
+
+    #[test]
+    fn write_forbidden_when_ppcb_managed_skips_endpoint_mark() {
+        // PPCB-managed multi-write partition: 403/3 must NOT mark the
+        // endpoint unavailable. Per-partition failure counter drives
+        // failover instead, so other partitions on this endpoint are
+        // unaffected.
+        let op = make_create_item_operation();
+        let mut state =
+            OperationRetryState::initial(0, true /* multi-write */, Vec::new(), 3, 1);
+        state.ppcb_active = true;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)),
+            "403/3 must still refresh account properties"
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+            "PPCB-managed 403/3 must still mark the partition unavailable"
+        );
+        assert!(
+            !effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "PPCB-managed 403/3 must NOT mark the endpoint unavailable; \
+             per-partition counter drives failover"
+        );
     }
 
     fn http_error_status(status: CosmosStatus) -> TransportResult {
@@ -1801,8 +1886,10 @@ mod tests {
     }
 
     #[test]
-    fn transport_error_not_sent_marks_endpoint_and_partition() {
-        // Not-sent → endpoint is unreachable, mark both endpoint and partition.
+    fn transport_error_not_sent_marks_endpoint_only() {
+        // Not-sent → endpoint is unreachable, mark endpoint only.
+        // Per-partition mark is intentionally skipped: Gateway-mode connect
+        // failures are endpoint-wide, not partition-specific.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1815,7 +1902,7 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
@@ -1824,7 +1911,8 @@ mod tests {
     fn transport_error_not_sent_with_ppcb_still_marks_endpoint() {
         // Not-sent with PPCB active → endpoint is unreachable regardless of
         // PPCB state. Connection failures are endpoint-wide, so the endpoint
-        // mark must not be suppressed by PPCB.
+        // mark must not be suppressed by PPCB. The per-partition mark is
+        // intentionally not emitted in either case for this branch.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let mut state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -1838,7 +1926,7 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }
@@ -1866,8 +1954,9 @@ mod tests {
 
     #[test]
     fn transport_error_not_sent_over_budget_aborts_with_marks() {
-        // Not-sent with budget exhausted → abort, but still emit endpoint +
-        // partition marks so routing state is updated for future requests.
+        // Not-sent with budget exhausted → abort, but still emit the
+        // endpoint mark so routing state is updated for future requests.
+        // Per-partition mark is intentionally skipped on this branch.
         let op = make_read_operation();
         let result = make_transport_error(RequestSentStatus::NotSent);
         let state = OperationRetryState {
@@ -1889,7 +1978,6 @@ mod tests {
             ppaf_write_retry_allowed: false,
             ppcb_active: false,
             pending_write_effects: Vec::new(),
-            attempted_failed_regions: Vec::new(),
             hedge_already_fired: false,
         };
         let endpoint = CosmosEndpoint::global(
@@ -1901,7 +1989,7 @@ mod tests {
         assert!(effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })));
-        assert!(effects
+        assert!(!effects
             .iter()
             .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))));
     }

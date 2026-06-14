@@ -89,6 +89,29 @@ pub fn assert_local_retry_attempted_on_region(
     );
 }
 
+/// Asserts that the operation never contacted `excluded_region`. Used to
+/// validate that customer-supplied `excluded_regions` is honored even when
+/// the only non-excluded region keeps failing — the driver must not
+/// silently fall back to a region the customer asked it to avoid.
+pub fn assert_region_not_contacted(
+    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
+    excluded_region: &Region,
+) {
+    let requests = diagnostics.requests();
+    let on_region = requests
+        .iter()
+        .filter(|r| r.region() == Some(excluded_region))
+        .count();
+    assert_eq!(
+        on_region, 0,
+        "expected zero tracked requests on excluded region {:?}, but {} of {} requests landed there (regions contacted: {:?})",
+        excluded_region,
+        on_region,
+        diagnostics.request_count(),
+        diagnostics.regions_contacted()
+    );
+}
+
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 

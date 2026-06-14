@@ -49,18 +49,11 @@ impl HostRecorder {
             .collect()
     }
 
-    /// Total number of observations, including `GET /` topology fetches.
-    #[allow(dead_code)]
-    pub fn total_count(&self) -> usize {
-        self.requests.lock().unwrap().len()
-    }
-
     /// Number of `GET /` account-topology fetches captured. Tests use
     /// this as the signal that the SDK triggered an account refresh
     /// (typically after a topology-changing failure like 403/1008 or
     /// 403/3); call `clear()` first to scope the count to the
     /// post-setup window.
-    #[allow(dead_code)]
     pub fn account_read_count(&self) -> usize {
         self.requests
             .lock()
@@ -71,7 +64,6 @@ impl HostRecorder {
     }
 
     /// Hosts of `GET /` topology fetches only.
-    #[allow(dead_code)]
     pub fn topology_hosts(&self) -> Vec<String> {
         self.requests
             .lock()
