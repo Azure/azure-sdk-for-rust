@@ -1032,18 +1032,6 @@ fn resolve_endpoint(
                 .clone()
         })
     });
-    if selected.is_global() {
-        // Release builds need telemetry for this invariant: only topology
-        // fetches may target the global endpoint.
-        tracing::error!(
-            operation_type = ?operation.operation_type(),
-            resource_type = ?operation.resource_type(),
-            selected_url = %selected.url(),
-            "pipeline operation resolved to global endpoint; \
-             this should never happen — only account-topology fetches \
-             (which bypass this routing path) may use the global endpoint"
-        );
-    }
     debug_assert!(
         !selected.is_global(),
         "pipeline operation resolved to global endpoint; \
