@@ -11,7 +11,7 @@ use crate::{
     driver::{
         cache::{PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
-            planner, query_plan::QueryPlan, CachedTopologyProvider, OperationPlan,
+            planner, query_plan::RawQueryPlan, CachedTopologyProvider, OperationPlan,
             PartitionRoutingRefresh, PipelineContext, PipelineNodeState, RequestExecutor,
             RequestTarget, TopologyProvider,
         },
@@ -44,11 +44,9 @@ use url::Url;
 use super::{
     cache::{parse_pk_ranges_response, AccountRegion},
     transport::{
-        connectivity_probe::{ConnectivityProbe, Http2ConnectivityProbe},
-        cosmos_headers,
-        cosmos_transport_client::HttpRequest,
-        http_client_factory::HttpClientConfig,
-        request_signing, AuthorizationContext, CosmosTransport,
+        connectivity_probe::ConnectivityProbe, cosmos_headers,
+        cosmos_transport_client::HttpRequest, request_signing, AuthorizationContext,
+        CosmosTransport,
     },
     CosmosDriverRuntime,
 };
@@ -72,16 +70,21 @@ fn request_target_overrides(
         RequestTarget::EffectivePartitionKeyRange {
             partition_key_range_id,
             range,
-            ..
+            partition_key_range,
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
-            // Only emit `x-ms-start-epk`/`x-ms-end-epk` when the request
-            // actually narrows the partition's range. The legacy gateway
-            // (emulator and service) returns 400 when sent sentinel EPK
-            // headers ([""..."FF"]) alongside `partitionkeyrangeid`; the
-            // thin-client (Gateway 2.0) proxy can route from the pkrange-id
-            // alone (it forwards as the RNTBD `PartitionKeyRangeId` token).
-            feed_range: range,
+            // Always emit `x-ms-start-epk`/`x-ms-end-epk`. The thin-client
+            // (Gateway 2.0) proxy mirrors these into the RNTBD
+            // `StartEpkHash`/`EndEpkHash` body tokens and rejects Query
+            // frames without them (HTTP 400, no body). When the request
+            // covers the full physical partition we fall back to the
+            // partition's own bounds, matching Java's
+            // `ThinClientStoreModel`, which emits StartEpkHash/EndEpkHash
+            // from `pkRange.getMinInclusive()/getMaxExclusive()` whenever
+            // there is no logical partition key. The legacy gateway
+            // tolerates the partition's full bounds (it rejected only the
+            // global `[""..."FF"]` sentinels paired with `partitionkeyrangeid`).
+            feed_range: Some(range.unwrap_or(partition_key_range)),
             // Propagate the operation's logical partition key (e.g. the
             // partial-HPK prefix from `FeedScope::partition(...)`) so the
             // `x-ms-documentdb-partitionkey` HTTP header is emitted on
@@ -1044,35 +1047,17 @@ impl CosmosDriver {
 
         let partition_failover_config = PartitionFailoverConfig::from_options(&init_view);
 
-        // Construct the Gateway 2.0 connectivity probe ahead of the
-        // LocationStateStore so it can be wired in as a constructor arg.
-        // Skipped when the operator has disabled Gateway 2.0 entirely or
-        // when the probe transport cannot be built — in either case the
-        // store falls back to today's behavior (no probe gating).
-        let connectivity_probe: Option<Arc<dyn ConnectivityProbe>> = if runtime
-            .connection_pool()
-            .gateway20_disabled()
-        {
-            None
-        } else {
-            let probe_config = HttpClientConfig::dataplane_gateway20(runtime.connection_pool());
-            match runtime
-                .http_client_factory()
-                .build(runtime.connection_pool(), probe_config)
-            {
-                Ok(transport) => {
-                    Some(Arc::new(Http2ConnectivityProbe::new(transport))
-                        as Arc<dyn ConnectivityProbe>)
-                }
-                Err(err) => {
-                    tracing::warn!(
-                        error = %err,
-                        "Failed to construct Gateway 2.0 connectivity probe; gateway20 routing will not be gated by probe",
-                    );
-                    None
-                }
-            }
-        };
+        // NOTE: Gateway 2.0 connectivity probe is disabled in production for
+        // now. The wire contract (POST /connectivity-probe -> 200) is correct
+        // per the cross-SDK design (see docs/GATEWAY_20_SPEC.md "Connectivity
+        // probe"), but every Cosmos federation we route through today still
+        // returns 503 because the `enableConnectivityProbe` flag has not been
+        // turned on yet. With strict, all-or-nothing gating that 503 would
+        // permanently force the data plane onto Gateway V1 and silently break
+        // every Gateway 2.0 code path. Re-enable this by constructing the
+        // probe via `Http2ConnectivityProbe::new(...)` once the federations
+        // have opted in. Tracked as a follow-up — see GATEWAY_20_SPEC.md.
+        let connectivity_probe: Option<Arc<dyn ConnectivityProbe>> = None;
 
         let location_state_store = Arc::new(LocationStateStore::new(
             runtime.account_metadata_cache().clone(),
@@ -1892,13 +1877,18 @@ impl CosmosDriver {
                     .build());
             }
         };
-        let query_plan: QueryPlan = serde_json::from_slice(&query_plan_body).map_err(|e| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                .with_message("failed to parse query plan response")
-                .with_source(e)
-                .build()
-        })?;
+        let raw_query_plan: RawQueryPlan =
+            serde_json::from_slice(&query_plan_body).map_err(|e| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_message("failed to parse query plan response")
+                    .with_source(e)
+                    .build()
+            })?;
+        // Resolve proxy-format `queryRanges` (PartitionKeyInternal arrays)
+        // into canonical EPK hex strings using the container's PK definition.
+        // Mirrors Java PR #47759 (PartitionKeyInternalHelper).
+        let query_plan = raw_query_plan.resolve(container.partition_key_definition())?;
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();

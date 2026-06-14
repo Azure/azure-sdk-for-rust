@@ -472,6 +472,8 @@ Gateway 2.0 read locations pair **only** with read regions; Gateway 2.0 write lo
 
 #### Connectivity probe (HTTP/2 reachability gate)
 
+> **Status (follow-up):** the probe module (`Http2ConnectivityProbe`) and its tests are committed, but production wiring is **disabled** — `CosmosDriver::new` constructs `LocationStateStore` with `connectivity_probe = None`. Every Cosmos federation the SDK routes through today returns `503` from `POST /connectivity-probe` (the `enableConnectivityProbe` federation flag is still off), which under the strict, all-or-nothing gating below would permanently force the data plane onto Gateway V1 and silently break every Gateway 2.0 code path. Re-enable the wiring once the federations have opted in.
+
 After endpoint discovery resolves `thinClient{Writable,Readable}Locations` into `CosmosEndpoint::gateway20_url`, the driver runs a lightweight HTTP/2 **connectivity probe** against every discovered proxy endpoint before any data-plane RNTBD traffic is allowed to flow. The probe proves TCP + TLS + HTTP/2 reachability to the proxy port — without it, firewall / NSG / Private Endpoint misconfigurations surface later as opaque RNTBD timeouts that customers struggle to attribute.
 
 **Wire contract** (matches the proxy-side `Nghttp2ProxyProtocolHandler` definition and the cross-SDK contract in `Product/Cosmos/CLUB/Docs/Photon/Router/ProxyConnectivityProbeDesign.md`, ADO PR 2107592):
@@ -489,14 +491,26 @@ After endpoint discovery resolves `thinClient{Writable,Readable}Locations` into 
 **Gating policy** (mirrors the cross-SDK guidance):
 
 1. **Strict** — only `200` counts as success. A `503` (feature disabled) fails the probe; the federation has not opted in to Gateway 2.0 yet, so the data plane stays on Gateway V1.
-2. **All-or-nothing** — if any probed region returns non-200, drop Gateway 2.0 for *all* regions and use Gateway V1 everywhere until a subsequent probe pass succeeds on every region.
+2. **All-or-nothing, gateway-wide** — when the probe fails, Gateway 2.0 is suppressed for **every operation, every region, every routing decision** (point reads, single-PK queries, full-container scans, HPK queries, plan fetches, the lot). It is **not** an op-by-op filter that downgrades only the operations Gateway V1 can't serve. The fact that V1 happens to satisfy most operations is incidental — they are silently downgraded along with the operations V1 would reject. The all-or-nothing gate stays in effect until a subsequent probe pass succeeds on every region.
 3. **No SDK-side opt-out** — the probe runs whenever `thinClient*Locations` are advertised. The federation flag is the operator-facing kill switch; the only customer-facing knob is `options.gateway20_disabled = true`, which short-circuits the entire G2 code path (probe included).
 
-**Lifecycle and timing.** The probe runs (a) on the first `getDatabaseAccount` response that advertises thin-client locations, and (b) every time endpoint discovery refreshes those advertisements. Probes execute in parallel across regions with a per-endpoint deadline of `DEFAULT_PROBE_TIMEOUT` (5s) — short enough to keep the gating loop responsive but long enough to absorb cold-TCP / TLS-handshake latency.
+**Lifecycle and timing.** The probe must run **on bootstrap, before any data-plane request is dispatched**, so the very first operation routes against a probe-verified snapshot — never against the optimistic "GW20 on" snapshot that `build_account_endpoint_state` produces from `thinClient*Locations` alone. Concretely, the bootstrap sequence is:
+
+1. Fetch `getDatabaseAccount`.
+2. Run the probe against every advertised thin-client endpoint and resolve the `effective_gateway20_enabled` gate.
+3. Build the first routing snapshot from the probe-aware gate (so the gate is correct on the *first* `sync_account_properties`, not only on the next background refresh).
+4. Re-probe and rebuild every time endpoint discovery refreshes the advertisements (account-metadata refresh loop, region-failure-triggered refresh, etc.).
+
+Probes execute in parallel across regions with a per-endpoint deadline of `DEFAULT_PROBE_TIMEOUT` (5s) — short enough to keep the gating loop responsive but long enough to absorb cold-TCP / TLS-handshake latency.
 
 **Diagnostics.** Each probe call records `(region, role, url, outcome)` into the same diagnostics surface as data-plane requests, so a customer support case can show the exact probe verdict per region. `ProbeFailure::Network(message)` preserves the underlying transport error text verbatim (DNS failure, TLS handshake, connection refused, timeout, etc.) so operators can correlate against their firewall logs.
 
 **Module entry point.** `driver::transport::connectivity_probe::ConnectivityProbe` (trait) + `Http2ConnectivityProbe` (production impl). The trait isolates the probe surface so test code can substitute deterministic outcomes without standing up a real proxy.
+
+> **Follow-up checklist (when re-enabling production wiring):**
+> - Run the probe on bootstrap, before the first `sync_account_properties` (today's `refresh_account_properties_inner` only runs it on background refreshes — a partial implementation that would still let the first batch of operations route against an unverified GW20 snapshot).
+> - Confirm `enableConnectivityProbe` is on for every target federation.
+> - Re-flip `connectivity_probe = None` in `CosmosDriver::new` to `Http2ConnectivityProbe::new(...)`.
 
 #### Endpoint Discovery Flow (Existing)
 

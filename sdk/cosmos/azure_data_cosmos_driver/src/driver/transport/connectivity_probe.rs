@@ -40,6 +40,14 @@
 //!    advertised. There is no SDK-side opt-out — the federation flag is the
 //!    operator-facing kill switch.
 
+// The probe is committed but currently NOT wired into production
+// (`CosmosDriver::new` passes `connectivity_probe = None`) — every Cosmos
+// federation still returns 503 because `enableConnectivityProbe` is off, and
+// the strict gating below would otherwise permanently force GW V1. The
+// allow(dead_code) keeps the module + its unit tests in tree as a drop-in
+// for the follow-up that re-enables wiring once the federations opt in.
+#![allow(dead_code)]
+
 use std::{
     collections::HashMap,
     sync::Arc,
