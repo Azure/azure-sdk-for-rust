@@ -1644,7 +1644,7 @@ async fn apply_failover_delay(delay: Option<Duration>) {
 
 /// Advances `retry_state`, preserving deferred write effects across the snapshot swap.
 ///
-/// Footgun: a generation bump can rebase to position 1 and retry the just-failed region once.
+/// Note: a generation bump can rebase to position 1 and retry the just-failed region once.
 fn advance_to_next_attempt(
     retry_state: &mut OperationRetryState,
     new_state: OperationRetryState,

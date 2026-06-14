@@ -551,13 +551,13 @@ pub async fn pkrange_refresh_transient_failure_preserves_cached_routing_map(
     .await
 }
 
-// Live-account repros for topology-related Forbidden sub-status codes.
+// Live-account reproductions for topology-related Forbidden sub-status codes.
 
 /// Pins live 403/1008 handling: refresh topology and retry to another region.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(test_category = "multi_region"),
+    ignore = "requires test_category 'multi_region'"
 )]
 pub async fn live_403_1008_create_item_triggers_refresh_and_retry() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
@@ -640,8 +640,8 @@ pub async fn live_403_1008_create_item_triggers_refresh_and_retry() -> Result<()
 /// Pins live 403/3 handling: existing failover to West US 3 must keep working.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "emulator", test_category = "emulator_vnext")),
-    ignore = "requires test_category 'emulator' or 'emulator_vnext'"
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
 )]
 pub async fn live_403_3_create_item_triggers_failover() -> Result<(), Box<dyn Error>> {
     let condition = FaultInjectionConditionBuilder::new()
