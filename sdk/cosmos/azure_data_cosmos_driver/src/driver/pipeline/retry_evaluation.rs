@@ -449,38 +449,29 @@ fn try_handle_database_account_not_found(
         return None;
     }
 
-    // Same multi-write vs single-write budget split as `try_handle_write_forbidden`.
-    let (new_state, delay) = if retry_state.can_use_multiple_write_locations {
-        if !retry_state.can_retry_backend_failover() {
-            return None;
-        }
-        (
-            retry_state.clone().advance_backend_failover(),
-            Some(BACKEND_FAILOVER_RETRY_INTERVAL),
-        )
-    } else {
-        if !retry_state.can_retry_failover() {
-            return None;
-        }
-        (retry_state.clone().advance_failover(), None)
-    };
+    if !retry_state.can_retry_backend_failover() {
+        return None;
+    }
+    let new_state = retry_state.clone().advance_backend_failover();
+    let delay = Some(BACKEND_FAILOVER_RETRY_INTERVAL);
 
-    Some((
-        OperationAction::FailoverRetry { new_state, delay },
-        vec![
-            LocationEffect::RefreshAccountProperties,
-            LocationEffect::MarkEndpointUnavailable {
-                endpoint: endpoint.clone(),
-                reason: UnavailableReason::DatabaseAccountNotFound,
-            },
-            LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
-                operation,
-                endpoint,
-                retry_state,
-                operation.is_read_only(),
-            )),
-        ],
-    ))
+    let mut effects = vec![
+        LocationEffect::RefreshAccountProperties,
+        LocationEffect::MarkPartitionUnavailable(make_partition_unavailable(
+            operation,
+            endpoint,
+            retry_state,
+            operation.is_read_only(),
+        )),
+    ];
+    if !is_ppcb_managed(operation, retry_state) {
+        // PPCB-managed 1008 is per-partition; do not block the whole endpoint for 60s.
+        effects.push(LocationEffect::MarkEndpointUnavailable {
+            endpoint: endpoint.clone(),
+            reason: UnavailableReason::DatabaseAccountNotFound,
+        });
+    }
+    Some((OperationAction::FailoverRetry { new_state, delay }, effects))
 }
 
 /// Handles 404/1002 ReadSessionNotAvailable — session token is ahead of the
@@ -1312,8 +1303,11 @@ mod tests {
         );
 
         assert!(
-            matches!(action, OperationAction::FailoverRetry { delay: None, .. }),
-            "expected FailoverRetry with no delay, got {:?}",
+            matches!(
+                action,
+                OperationAction::FailoverRetry { delay: Some(_), .. }
+            ),
+            "expected FailoverRetry with backend-failover delay, got {:?}",
             action
         );
         assert!(
@@ -1551,9 +1545,9 @@ mod tests {
     }
 
     #[test]
-    fn database_account_not_found_on_single_write_uses_generic_failover_budget() {
-        // Same single-write fallback as 403/3 but for 1008: only the budget
-        // choice differs.
+    fn database_account_not_found_on_single_write_uses_backend_failover_budget() {
+        // Single-write 1008 also uses backend-failover budget + delay; the topology-not-found
+        // signal is identical to multi-write and needs the same convergence window.
         let op = make_create_operation();
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
@@ -1569,15 +1563,56 @@ mod tests {
 
         match action {
             OperationAction::FailoverRetry { new_state, delay } => {
-                assert_eq!(new_state.failover_retry_count, 1);
-                assert_eq!(new_state.backend_failover_retry_count, 0);
+                assert_eq!(new_state.failover_retry_count, 0);
+                assert_eq!(new_state.backend_failover_retry_count, 1);
                 assert_eq!(
-                    delay, None,
-                    "single-write 1008 uses the generic budget and must not pace retries"
+                    delay,
+                    Some(BACKEND_FAILOVER_RETRY_INTERVAL),
+                    "single-write 1008 must pace retries with BACKEND_FAILOVER_RETRY_INTERVAL"
                 );
             }
             other => panic!("expected FailoverRetry, got {:?}", other),
         }
+    }
+
+    #[test]
+    fn database_account_not_found_when_ppcb_managed_skips_endpoint_mark() {
+        // PPCB-managed 1008 must not mark the whole endpoint unavailable;
+        // the per-partition counter drives failover.
+        let op = make_create_item_operation();
+        let mut state = OperationRetryState::initial(0, true, Vec::new(), 3, 1);
+        state.ppcb_active = true;
+        let endpoint = CosmosEndpoint::global(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+        );
+
+        let (action, effects) = evaluate_transport_result(
+            &op,
+            &endpoint,
+            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            &state,
+        );
+
+        assert!(matches!(action, OperationAction::FailoverRetry { .. }));
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::RefreshAccountProperties)),
+            "1008 must still refresh account properties"
+        );
+        assert!(
+            effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkPartitionUnavailable(_))),
+            "PPCB-managed 1008 must still mark the partition unavailable"
+        );
+        assert!(
+            !effects
+                .iter()
+                .any(|e| matches!(e, LocationEffect::MarkEndpointUnavailable { .. })),
+            "PPCB-managed 1008 must NOT mark the endpoint unavailable; \
+             per-partition counter drives failover"
+        );
     }
 
     #[test]

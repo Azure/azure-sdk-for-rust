@@ -36,6 +36,7 @@ impl HostRecorder {
     }
 
     /// Number of `GET /` account-topology fetches; call `clear()` to scope the count.
+    #[cfg_attr(not(feature = "fault_injection"), allow(dead_code))]
     pub fn account_read_count(&self) -> usize {
         self.requests
             .lock()
@@ -46,6 +47,7 @@ impl HostRecorder {
     }
 
     /// Hosts of `GET /` topology fetches only.
+    #[cfg_attr(not(feature = "fault_injection"), allow(dead_code))]
     pub fn topology_hosts(&self) -> Vec<String> {
         self.requests
             .lock()

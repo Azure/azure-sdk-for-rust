@@ -16,10 +16,10 @@
 
 ### Bugs Fixed
 
-- `403/1008 (DatabaseAccountNotFound)` and `403/3 (WriteForbidden)` now trigger an account-topology refresh and retry against the refreshed endpoints instead of bubbling up. ([#XXXX](https://github.com/Azure/azure-sdk-for-rust/pull/XXXX))
-- Gateway-mode transport connect failures no longer bump the per-partition circuit breaker counter; only the endpoint-unavailable mark is emitted. ([#XXXX](https://github.com/Azure/azure-sdk-for-rust/pull/XXXX))
-- `403/3 (WriteForbidden)` on a PPCB-managed multi-write partition no longer marks the endpoint unavailable; the per-partition counter drives failover so other partitions on the same endpoint keep writing normally. ([#XXXX](https://github.com/Azure/azure-sdk-for-rust/pull/XXXX))
-- The per-partition circuit breaker override now respects `OperationOptions::excluded_regions`; previously a tripped override could silently route to a region the caller had excluded. ([#XXXX](https://github.com/Azure/azure-sdk-for-rust/pull/XXXX))
+- `403/1008 (DatabaseAccountNotFound)` and `403/3 (WriteForbidden)` now trigger an account-topology refresh and retry against the refreshed endpoints instead of bubbling up. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- Gateway-mode transport connect failures no longer bump the per-partition circuit breaker counter; only the endpoint-unavailable mark is emitted. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- `403/3 (WriteForbidden)` and `403/1008 (DatabaseAccountNotFound)` on a PPCB-managed multi-write partition no longer mark the endpoint unavailable; the per-partition counter drives failover so other partitions on the same endpoint keep writing normally. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
+- The per-partition circuit breaker override now respects `OperationOptions::excluded_regions`; previously a tripped override could silently route to a region the caller had excluded. ([#4590](https://github.com/Azure/azure-sdk-for-rust/pull/4590))
 
 ### Other Changes
 
