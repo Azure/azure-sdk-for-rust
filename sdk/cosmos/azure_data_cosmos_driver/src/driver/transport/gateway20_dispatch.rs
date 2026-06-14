@@ -117,14 +117,32 @@ pub(crate) fn wrap_request_for_gateway20(
     // valid value — it means the partition's min EPK boundary (`MinValue`
     // sentinel), which serializes to a zero-byte token.
     if !emitted_point_epk {
+        // Try the public `x-ms-start-epk`/`x-ms-end-epk` headers first
+        // (narrowed-range XPK / scoped reads via `FeedRange`). If absent,
+        // fall back to the internal `x-ms-thinclient-pkrange-min`/`-max`
+        // headers that carry the full physical pkrange bounds (set by
+        // `OperationOverrides::apply_headers` for the full-pkrange XPK
+        // fan-out path, where the public EPK headers must NOT be emitted —
+        // the legacy gateway rejects an empty-string min paired with
+        // `partitionkeyrangeid` with bare HTTP 400/500).
         let start_epk_header = HeaderName::from_static(request_header_names::START_EPK);
-        if let Some(epk_hex) = request.headers.get_optional_str(&start_epk_header) {
+        let start_fallback = HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MIN);
+        if let Some(epk_hex) = request
+            .headers
+            .get_optional_str(&start_epk_header)
+            .or_else(|| request.headers.get_optional_str(&start_fallback))
+        {
             if let Some(bytes) = decode_epk_hex(epk_hex) {
                 metadata.push(Token::start_epk_hash(bytes));
             }
         }
         let end_epk_header = HeaderName::from_static(request_header_names::END_EPK);
-        if let Some(epk_hex) = request.headers.get_optional_str(&end_epk_header) {
+        let end_fallback = HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MAX);
+        if let Some(epk_hex) = request
+            .headers
+            .get_optional_str(&end_epk_header)
+            .or_else(|| request.headers.get_optional_str(&end_fallback))
+        {
             if let Some(bytes) = decode_epk_hex(epk_hex) {
                 metadata.push(Token::end_epk_hash(bytes));
             }

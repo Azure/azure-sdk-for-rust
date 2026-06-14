@@ -73,18 +73,20 @@ fn request_target_overrides(
             partition_key_range,
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
-            // Always emit `x-ms-start-epk`/`x-ms-end-epk`. The thin-client
-            // (Gateway 2.0) proxy mirrors these into the RNTBD
-            // `StartEpkHash`/`EndEpkHash` body tokens and rejects Query
-            // frames without them (HTTP 400, no body). When the request
-            // covers the full physical partition we fall back to the
-            // partition's own bounds, matching Java's
-            // `ThinClientStoreModel`, which emits StartEpkHash/EndEpkHash
-            // from `pkRange.getMinInclusive()/getMaxExclusive()` whenever
-            // there is no logical partition key. The legacy gateway
-            // tolerates the partition's full bounds (it rejected only the
-            // global `[""..."FF"]` sentinels paired with `partitionkeyrangeid`).
-            feed_range: Some(range.unwrap_or(partition_key_range)),
+            // Only emit `x-ms-start-epk`/`x-ms-end-epk` for the narrowed case
+            // (range < partition_key_range). The legacy gateway rejects an
+            // empty-string min paired with `partitionkeyrangeid` with bare
+            // HTTP 400/500, so we never want the public EPK headers on the
+            // full-pkrange XPK fan-out path. The GW20 dispatcher derives its
+            // RNTBD `StartEpkHash`/`EndEpkHash` tokens from `pkrange_bounds`
+            // (below) when the public headers are absent.
+            feed_range: range,
+            // Always carry the physical pkrange bounds so the GW20 dispatcher
+            // can synthesize StartEpkHash/EndEpkHash tokens (which the
+            // thin-client proxy requires on every Query frame). Surfaced via
+            // internal `x-ms-thinclient-pkrange-min`/`-max` headers in
+            // `apply_headers`; legacy gateway ignores unknown headers.
+            pkrange_bounds: Some(partition_key_range),
             // Propagate the operation's logical partition key (e.g. the
             // partial-HPK prefix from `FeedScope::partition(...)`) so the
             // `x-ms-documentdb-partitionkey` HTTP header is emitted on
@@ -2805,16 +2807,17 @@ mod tests {
             EffectivePartitionKey::from("20"),
         )
         .unwrap();
+        let pkrange = crate::models::FeedRange::new(
+            EffectivePartitionKey::from("00"),
+            EffectivePartitionKey::from("40"),
+        )
+        .unwrap();
         let overrides = request_target_overrides(
             None,
             RequestTarget::effective_partition_key_range(
                 range.clone(),
                 "merged".to_string(),
-                crate::models::FeedRange::new(
-                    EffectivePartitionKey::from("00"),
-                    EffectivePartitionKey::from("40"),
-                )
-                .unwrap(),
+                pkrange.clone(),
             ),
             Some("ct".to_string()),
         );
@@ -2822,19 +2825,19 @@ mod tests {
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("merged"));
         assert_eq!(overrides.continuation.as_deref(), Some("ct"));
         assert_eq!(overrides.feed_range, Some(range));
+        assert_eq!(overrides.pkrange_bounds, Some(pkrange));
     }
 
     #[test]
-    fn effective_partition_key_range_override_emits_partition_bounds_when_full_pkrange() {
+    fn effective_partition_key_range_override_omits_feed_range_when_full_pkrange() {
         // When the request covers the FULL pkrange (range == partition_key_range),
-        // `feed_range` falls back to the partition's own bounds. The thin-client
-        // (Gateway 2.0) proxy requires StartEpkHash/EndEpkHash on every Query
-        // frame (it rejects requests routed by pkrange-id alone with HTTP 400,
-        // no body). The dispatcher mirrors x-ms-start-epk/x-ms-end-epk into the
-        // RNTBD StartEpkHash/EndEpkHash tokens. Matches Java
-        // `ThinClientStoreModel`, which fills the EPK hashes from
-        // `pkRange.getMinInclusive()/getMaxExclusive()` whenever no logical
-        // partition key is set.
+        // `feed_range` collapses to None — we do NOT emit the public
+        // `x-ms-start-epk`/`x-ms-end-epk` headers on the legacy gateway path
+        // (it rejects them paired with `partitionkeyrangeid` when min is the
+        // empty-string sentinel). The pkrange bounds are still carried in
+        // `pkrange_bounds` for the GW20 dispatcher to derive its
+        // `StartEpkHash`/`EndEpkHash` RNTBD tokens (mirroring Java
+        // `ThinClientStoreModel`).
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::from("10"),
             EffectivePartitionKey::from("20"),
@@ -2851,7 +2854,8 @@ mod tests {
         );
 
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
-        assert_eq!(overrides.feed_range, Some(range));
+        assert_eq!(overrides.feed_range, None);
+        assert_eq!(overrides.pkrange_bounds, Some(range));
     }
 
     #[test]
@@ -2881,7 +2885,8 @@ mod tests {
 
         assert_eq!(overrides.partition_key.as_ref(), Some(&pk));
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
-        assert_eq!(overrides.feed_range, Some(range));
+        assert_eq!(overrides.feed_range, None);
+        assert_eq!(overrides.pkrange_bounds, Some(range));
     }
 
     #[tokio::test]

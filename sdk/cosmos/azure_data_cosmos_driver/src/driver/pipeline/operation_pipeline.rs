@@ -68,6 +68,13 @@ pub(crate) struct OperationOverrides {
     /// Feed range to constrain the request to (emits `x-ms-start-epk` / `x-ms-end-epk`).
     pub feed_range: Option<crate::models::FeedRange>,
 
+    /// Physical pkrange bounds (full EPK span of the resolved partition). Carried
+    /// to the GW20 dispatcher via internal `x-ms-thinclient-pkrange-min`/`-max`
+    /// headers so it can derive `StartEpkHash`/`EndEpkHash` RNTBD tokens for the
+    /// full-pkrange XPK case without emitting the public EPK headers (which the
+    /// legacy gateway rejects when paired with `partitionkeyrangeid`).
+    pub pkrange_bounds: Option<crate::models::FeedRange>,
+
     /// Physical partition key range ID (emits `x-ms-documentdb-partitionkeyrangeid`).
     pub partition_key_range_id: Option<String>,
 
@@ -88,12 +95,12 @@ impl OperationOverrides {
         headers: &mut azure_core::http::headers::Headers,
     ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
-            // The standard gateway treats omitted START_EPK/END_EPK as the
-            // min/max sentinels, but the thin-client (Gateway 2.0) proxy
-            // needs the per-partition boundaries even when they're the
-            // empty / "FF" sentinels (so it can derive `StartEpkHash` /
-            // `EndEpkHash` for routing). Always emit them when a
-            // `feed_range` is present.
+            // Narrowed-range XPK case (range < pkrange) AND scoped reads via
+            // `FeedRange`. Both gateways accept these headers when the bounds
+            // are non-empty hex. The full-pkrange XPK fan-out path uses
+            // `pkrange_bounds` (below) instead so the public EPK headers stay
+            // absent (legacy gateway rejects an empty-string min paired with
+            // partitionkeyrangeid).
             headers.insert(
                 HeaderName::from_static(request_header_names::START_EPK),
                 HeaderValue::from(feed_range.min_inclusive().as_str().to_owned()),
@@ -105,6 +112,20 @@ impl OperationOverrides {
             headers.insert(
                 HeaderName::from_static(request_header_names::READ_FEED_KEY_TYPE),
                 HeaderValue::from_static("EffectivePartitionKey"),
+            );
+        }
+
+        if let Some(bounds) = &self.pkrange_bounds {
+            // Internal-only headers consumed by the GW20 dispatcher to
+            // synthesize `StartEpkHash`/`EndEpkHash` RNTBD tokens for the
+            // full-pkrange XPK case. Legacy gateway ignores unknown headers.
+            headers.insert(
+                HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MIN),
+                HeaderValue::from(bounds.min_inclusive().as_str().to_owned()),
+            );
+            headers.insert(
+                HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MAX),
+                HeaderValue::from(bounds.max_exclusive().as_str().to_owned()),
             );
         }
 

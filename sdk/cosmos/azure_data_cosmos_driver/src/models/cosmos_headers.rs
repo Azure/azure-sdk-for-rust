@@ -62,6 +62,16 @@ pub(crate) mod request_header_names {
     pub const START_EPK: &str = "x-ms-start-epk";
     pub const END_EPK: &str = "x-ms-end-epk";
     pub const READ_FEED_KEY_TYPE: &str = "x-ms-read-key-type";
+    /// Internal-only headers carrying the physical pkrange's full EPK bounds
+    /// to the GW20 dispatcher. The thin-client (Gateway 2.0) proxy requires
+    /// `StartEpkHash`/`EndEpkHash` RNTBD body tokens on every Query frame; in
+    /// the full-pkrange XPK case we don't emit the public `x-ms-start-epk`/
+    /// `x-ms-end-epk` headers (the legacy gateway rejects an empty-string min
+    /// paired with `partitionkeyrangeid` with HTTP 400/500). These internal
+    /// headers carry the pkrange bounds so the dispatcher can derive the
+    /// tokens. Legacy gateway ignores unknown headers, so they're inert there.
+    pub const THINCLIENT_PKRANGE_MIN: &str = "x-ms-thinclient-pkrange-min";
+    pub const THINCLIENT_PKRANGE_MAX: &str = "x-ms-thinclient-pkrange-max";
     #[allow(dead_code)] // Reserved for future direct partition-key header writes.
     pub const PARTITION_KEY: &str = "x-ms-documentdb-partitionkey";
     pub const PARTITION_KEY_RANGE_ID: &str = "x-ms-documentdb-partitionkeyrangeid";
