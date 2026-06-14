@@ -134,13 +134,10 @@ impl QueryPlanProvider {
             hr = call_native(&mut buffer, &mut result_length);
         }
 
-        let payload = std::str::from_utf8(&buffer[..result_length as usize]).map_err(|e| {
-            QueryPlanError::InvalidUtf8 {
-                message: e.to_string(),
-            }
-        })?;
-
+        // Check for failure before attempting UTF-8 validation so the true
+        // HRESULT error is not masked by a misleading UTF-8 error.
         if query_plan_native::failed(hr) {
+            let payload = std::str::from_utf8(&buffer[..result_length as usize]).unwrap_or("");
             return if payload.is_empty() {
                 Err(QueryPlanError::from_hresult(hr))
             } else {
@@ -150,6 +147,12 @@ impl QueryPlanProvider {
                 ))
             };
         }
+
+        let payload = std::str::from_utf8(&buffer[..result_length as usize]).map_err(|e| {
+            QueryPlanError::InvalidUtf8 {
+                message: e.to_string(),
+            }
+        })?;
 
         let info: QueryPlan = serde_json::from_str(payload)?;
         Ok(info)
