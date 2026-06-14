@@ -20,6 +20,7 @@
 //! raw bytes (`&[u8]`) and return buffered responses (`Vec<u8>`). Serialization is handled by
 //! the consuming SDK in its native language.
 
+pub mod constants;
 pub mod diagnostics;
 pub mod driver;
 pub mod error;

@@ -45,6 +45,7 @@ pub use policies::{
     ExcludedRegions,
 };
 pub use priority::PriorityLevel;
+pub(crate) use read_consistency::resolve_effective_consistency;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
 pub use throughput_control::ThroughputControlGroupOptions;

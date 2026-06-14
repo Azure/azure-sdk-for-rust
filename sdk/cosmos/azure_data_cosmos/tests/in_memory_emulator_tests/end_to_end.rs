@@ -1139,7 +1139,6 @@ async fn sdk_throttling_retry_options_disables_retry() {
 /// compared via [`compare_item_responses`].
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
-#[ignore = "TODO(@FabianMeiswinkel): re-enable — tracked by https://github.com/Azure/azure-sdk-for-rust/issues/4365"]
 async fn sdk_read_failover_on_503_via_fault_injection() {
     use azure_data_cosmos_driver::fault_injection::{
         FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
@@ -1293,6 +1292,12 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     assert_eq!(emu_doc.value, 42);
 
     // ── Real account comparison (if available) ───────────────────
+    //
+    // Runs the same 503-on-East scenario against the ARM-provisioned account
+    // (when one is configured) and asserts the real service's response
+    // matches the emulator's. Returns `Ok(None)` when no real account is
+    // available (local dev, emulator-only CI legs) so the emulator portion
+    // remains the single source of truth in those modes.
     if let Ok(Some(real_client)) =
         resolve_real_client_with_fault_injection(fault_condition, fault_result).await
     {
@@ -1337,22 +1342,19 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 }
 
 /// Builds a real-account `CosmosClient` with fault injection rules matching the
-/// emulator test. Returns `None` when no real account is configured.
+/// emulator test. Returns `Ok(None)` when no real account is configured (so
+/// the test reduces to its emulator-only leg).
 ///
 /// Fault injection is applied at the driver runtime level via
 /// `with_fault_injection_rules` on the runtime builder, then passed into the
 /// SDK via `CosmosClientBuilder::with_driver_runtime_builder`.
 #[cfg(feature = "fault_injection")]
 async fn resolve_real_client_with_fault_injection(
-    _condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
-    _result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
+    condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
+    result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
 ) -> Result<Option<CosmosClient>, Box<dyn Error>> {
     use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-    use azure_data_cosmos_driver::fault_injection::{
-        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
-        FaultInjectionRuleBuilder, FaultOperationType,
-    };
-    use azure_data_cosmos_driver::options::Region as DriverRegion;
+    use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
     use std::sync::Arc;
 
     let mode = std::env::var(TEST_MODE_ENV_VAR)
@@ -1382,17 +1384,12 @@ async fn resolve_real_client_with_fault_injection(
         azure_core::credentials::Secret::new(key),
     );
 
-    // Build a driver-level fault injection rule.
-    let fi_result = FaultInjectionResultBuilder::new()
-        .with_error(FaultInjectionErrorType::ServiceUnavailable)
-        .build();
-    let fi_condition = FaultInjectionConditionBuilder::new()
-        .with_operation_type(FaultOperationType::ReadItem)
-        .with_region(DriverRegion::EAST_US)
-        .build();
+    // Mirror the emulator-side rule against the real account, using the same
+    // condition/result the caller built so both legs of the test share a
+    // single source of truth.
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("sdk-read-503-east-real", fi_result)
-            .with_condition(fi_condition)
+        FaultInjectionRuleBuilder::new("sdk-read-503-east-real", result)
+            .with_condition(condition)
             .build(),
     );
 

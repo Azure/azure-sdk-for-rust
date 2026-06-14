@@ -17,13 +17,19 @@ pub(crate) mod adaptive_transport;
 mod authorization_policy;
 #[cfg(feature = "tokio")]
 pub(crate) mod background_task_manager;
+pub(crate) mod connectivity_probe;
 pub(crate) mod cosmos_headers;
 pub(crate) mod cosmos_transport_client;
 mod emulator;
+mod gateway20_dispatch;
+/// Gateway 2.0 operation eligibility filter.
+pub(crate) mod gateway20_eligibility;
+pub(crate) use gateway20_eligibility::is_operation_supported_by_gateway20;
 pub(crate) mod http_client_factory;
 pub(crate) mod request_signing;
 #[cfg(feature = "reqwest")]
 pub(crate) mod reqwest_transport_client;
+pub(crate) mod rntbd;
 mod sharded_transport;
 pub(crate) use sharded_transport::EndpointKey;
 mod tracked_transport;
@@ -48,6 +54,9 @@ use self::http_client_factory::DefaultHttpClientFactory;
 pub(crate) use authorization_policy::generate_authorization;
 pub(crate) use authorization_policy::AuthorizationContext;
 pub(crate) use emulator::is_emulator_host;
+pub(crate) use gateway20_dispatch::{
+    unwrap_response_for_gateway20, wrap_request_for_gateway20, WrapInputs,
+};
 pub(crate) use tracked_transport::infer_request_sent_status;
 
 /// Cosmos DB REST API version.
@@ -283,7 +292,7 @@ impl CosmosTransport {
         }
 
         match transport_mode {
-            TransportMode::Gateway20 if self.connection_pool.is_gateway20_allowed() => {
+            TransportMode::Gateway20 if !self.connection_pool.gateway20_disabled() => {
                 let transport = match self.dataplane_gateway20_transport.get() {
                     Some(t) => t.clone(),
                     None => {
@@ -390,7 +399,7 @@ pub(crate) mod tests {
     #[test]
     fn dataplane_transport_uses_gateway20_when_selected() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_gateway20_allowed(true)
+            .with_gateway20_disabled(false)
             .build()
             .unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
@@ -406,7 +415,7 @@ pub(crate) mod tests {
     #[test]
     fn dataplane_transport_falls_back_to_sharded_gateway_when_endpoint_is_standard() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_gateway20_allowed(true)
+            .with_gateway20_disabled(false)
             .build()
             .unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();
@@ -422,7 +431,7 @@ pub(crate) mod tests {
     #[test]
     fn dataplane_transport_ignores_gateway20_when_gateway20_disabled() {
         let pool = ConnectionPoolOptionsBuilder::new()
-            .with_is_gateway20_allowed(false)
+            .with_gateway20_disabled(true)
             .build()
             .unwrap();
         let transport = CosmosTransport::for_tests(pool, TransportHttpVersion::Http2).unwrap();

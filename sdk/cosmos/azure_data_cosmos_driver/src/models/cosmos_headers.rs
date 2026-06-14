@@ -42,6 +42,7 @@ pub(crate) mod request_header_names {
     pub const IS_QUERY: &str = "x-ms-documentdb-isquery";
     pub const IS_QUERY_PLAN_REQUEST: &str = "x-ms-cosmos-is-query-plan-request";
     pub const SUPPORTED_QUERY_FEATURES: &str = "x-ms-cosmos-supported-query-features";
+    pub const QUERY_VERSION: &str = "x-ms-cosmos-query-version";
     pub const IS_UPSERT: &str = "x-ms-documentdb-is-upsert";
     pub const MAX_ITEM_COUNT: &str = "x-ms-max-item-count";
     /// Change-feed indicator ("Incremental feed"). HTTP standard name `a-im`.

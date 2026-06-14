@@ -159,7 +159,7 @@ pub enum TransportSecurity {
 
 /// The concrete transport kind used for a request.
 ///
-/// This distinguishes the standard gateway path from Gateway 2.0 thin-client
+/// This distinguishes the standard gateway path from Gateway 2.0
 /// routing while keeping TLS/emulator concerns in [`TransportSecurity`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -169,7 +169,7 @@ pub enum TransportKind {
     #[default]
     Gateway,
 
-    /// Gateway 2.0 thin-client transport.
+    /// Gateway 2.0 transport.
     Gateway20,
 }
 

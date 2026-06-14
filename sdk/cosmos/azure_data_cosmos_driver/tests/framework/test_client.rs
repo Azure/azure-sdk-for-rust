@@ -23,7 +23,8 @@ use uuid::Uuid;
 
 use super::env::{
     get_test_mode, is_azure_pipelines, CosmosTestMode, CONNECTION_STRING_ENV_VAR,
-    EMULATOR_CONNECTION_STRING,
+    EMULATOR_CONNECTION_STRING, GATEWAY20_ENDPOINT_ENV_VAR, GATEWAY20_KEY_ENV_VAR,
+    GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY20_MULTI_REGION_KEY_ENV_VAR,
 };
 
 /// A test client that provides access to a Cosmos DB driver for testing.
@@ -57,6 +58,22 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         return Ok(None);
     }
 
+    // For `test_category = "gateway20"` and `"gateway20_multi_region"` builds,
+    // the ARM-provisioned `AZURE_COSMOS_CONNECTION_STRING` account does NOT
+    // advertise a Gateway 2.0 endpoint. Fault-injection rules scoped to
+    // `TransportKind::Gateway20` will therefore never fire against it. Use the
+    // pre-provisioned Gateway 2.0 account whose credentials are surfaced in
+    // `AZURE_COSMOS_GW20_ENDPOINT` / `AZURE_COSMOS_GW20_KEY` by
+    // `sdk/cosmos/ci.yml`. We deliberately do NOT fall back to the standard
+    // connection string here — running gateway20 tests against a non-Gateway-2.0
+    // account would silently produce confusing failures (transport-kind-gated
+    // fault rules would never match).
+    #[cfg(any(test_category = "gateway20", test_category = "gateway20_multi_region"))]
+    {
+        return resolve_gateway20_env(test_mode);
+    }
+
+    #[allow(unreachable_code)]
     let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
         Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
         Ok(val) => val,
@@ -87,6 +104,124 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         account,
         connection_pool,
     }))
+}
+
+/// Builds a [`TestEnv`] from the pre-provisioned Gateway 2.0 account
+/// credentials.
+///
+/// Picks the endpoint/key pair based on the active `test_category`:
+///
+/// * `test_category = "gateway20_multi_region"` →
+///   `AZURE_COSMOS_GW20_MULTI_REGION_ENDPOINT` /
+///   `AZURE_COSMOS_GW20_MULTI_REGION_KEY` (a multi-region GW20 account).
+/// * `test_category = "gateway20"` →
+///   `AZURE_COSMOS_GW20_ENDPOINT` / `AZURE_COSMOS_GW20_KEY` (a single-region
+///   GW20 account).
+///
+/// Returns `Ok(None)` when both env vars are missing or empty in local-dev
+/// mode (the caller's `cfg` block returns `Ok(None)` directly). Panics on
+/// Azure Pipelines or `Required` test mode when only one of the two vars is
+/// set — that's a misconfigured pipeline rather than an intentional skip.
+#[cfg(any(test_category = "gateway20", test_category = "gateway20_multi_region"))]
+fn resolve_gateway20_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, Box<dyn Error>> {
+    fn read(name: &str) -> Option<String> {
+        std::env::var(name).ok().filter(|v| !v.trim().is_empty())
+    }
+
+    // Multi-region tests need a multi-region GW20 account; single-region
+    // tests use the single-region account. Both fall back to "no GW20
+    // env vars set" rather than crossing wires between pools.
+    #[cfg(test_category = "gateway20_multi_region")]
+    let (endpoint_var, key_var) = (
+        GATEWAY20_MULTI_REGION_ENDPOINT_ENV_VAR,
+        GATEWAY20_MULTI_REGION_KEY_ENV_VAR,
+    );
+    #[cfg(all(
+        test_category = "gateway20",
+        not(test_category = "gateway20_multi_region")
+    ))]
+    let (endpoint_var, key_var) = (GATEWAY20_ENDPOINT_ENV_VAR, GATEWAY20_KEY_ENV_VAR);
+
+    let endpoint = read(endpoint_var);
+    let key = read(key_var);
+
+    match (endpoint, key) {
+        (Some(endpoint), Some(key)) => {
+            // Pre-provisioned Gateway 2.0 secret variables in the
+            // `azure-sdk-tests-cosmos` service connection are stored as bare
+            // hostnames (e.g. `gw20-test.documents.azure.com`) — they lack
+            // both the `https://` scheme and a trailing slash that `Url::parse`
+            // requires. Normalize defensively so the parse can't fail with
+            // `RelativeUrlWithoutBase` here while the SDK-side path
+            // (`gateway20_e2e.rs`) silently does the same trick via its own
+            // `build_client` helper.
+            let normalized = normalize_gateway20_endpoint(&endpoint);
+            let endpoint = normalized
+                .parse()
+                .map_err(|e: url::ParseError| -> Box<dyn Error> {
+                    format!(
+                        "{} value {:?} (normalized to {:?}) is not a valid URL: {}",
+                        endpoint_var, endpoint, normalized, e,
+                    )
+                    .into()
+                })?;
+            let account = AccountReference::with_master_key(endpoint, key);
+            let connection_pool = ConnectionPoolOptions::builder().build()?;
+            Ok(Some(TestEnv {
+                account,
+                connection_pool,
+            }))
+        }
+        (None, None) => {
+            if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                panic!(
+                    "{} / {} are not set but test_category=\"gateway20\" requires a \
+                     pre-provisioned Gateway 2.0 account",
+                    endpoint_var, key_var,
+                );
+            }
+            Ok(None)
+        }
+        (endpoint, key) => panic!(
+            "exactly one of {} / {} is set ({}={}, {}={}); both must be present \
+             for test_category=\"gateway20\"",
+            endpoint_var,
+            key_var,
+            endpoint_var,
+            if endpoint.is_some() { "set" } else { "unset" },
+            key_var,
+            if key.is_some() { "set" } else { "unset" },
+        ),
+    }
+}
+
+/// Normalizes a Gateway 2.0 endpoint string so it can be parsed by `Url::parse`.
+///
+/// The pre-provisioned Gateway 2.0 secret variables in the `azure-sdk-tests-cosmos`
+/// service connection are stored without scheme or trailing slash (e.g.
+/// `gw20-test.documents.azure.com`). `Url::parse` requires an absolute URL with
+/// a scheme, so this helper:
+///
+/// * trims surrounding whitespace,
+/// * prepends `https://` when no scheme is present, and
+/// * appends a trailing `/` so the result matches Cosmos's canonical
+///   `https://<host>/` endpoint form.
+///
+/// Values that already include a scheme (e.g. `https://...`) are passed through
+/// after the whitespace trim and trailing-slash normalization.
+#[cfg(any(test_category = "gateway20", test_category = "gateway20_multi_region"))]
+fn normalize_gateway20_endpoint(raw: &str) -> String {
+    let trimmed = raw.trim();
+    let with_scheme = if trimmed.contains("://") {
+        trimmed.to_owned()
+    } else {
+        format!("https://{trimmed}")
+    };
+    if with_scheme.ends_with('/') {
+        with_scheme
+    } else {
+        format!("{with_scheme}/")
+    }
 }
 
 impl DriverTestClient {

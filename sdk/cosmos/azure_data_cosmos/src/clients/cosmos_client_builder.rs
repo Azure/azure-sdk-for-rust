@@ -85,6 +85,15 @@ pub struct CosmosClientBuilder {
         Vec<std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
     /// Fallback endpoints tried when the primary endpoint is unavailable.
     backup_endpoints: Vec<azure_core::http::Url>,
+    /// Operator override for the Gateway 2.0 transport.
+    ///
+    /// `None` (the default) leaves the underlying driver in charge of
+    /// routing — Gateway 2.0 is selected automatically whenever the
+    /// account advertises a Gateway 2.0 endpoint and HTTP/2 is allowed.
+    /// `Some(true)` forces every request through the standard gateway
+    /// transport via [`with_gateway20_disabled`](Self::with_gateway20_disabled);
+    /// `Some(false)` explicitly opts in (matching the default behavior).
+    gateway20_disabled: Option<bool>,
     /// Custom driver runtime builder for testing (e.g., in-memory emulator transport).
     #[cfg(feature = "__internal_in_memory_emulator")]
     driver_runtime_builder: Option<CosmosDriverRuntimeBuilder>,
@@ -210,6 +219,42 @@ impl CosmosClientBuilder {
     /// * `allow` - Whether to allow proxy usage.
     pub fn with_proxy_allowed(mut self, allow: bool) -> Self {
         self.allow_proxy = allow;
+        self
+    }
+
+    /// Disables the Gateway 2.0 transport for this client.
+    ///
+    /// Gateway 2.0 is the next-generation Cosmos DB dataplane transport:
+    /// SDK connections terminate at a regional Gateway 2.0 proxy that
+    /// forwards RNTBD-over-HTTP/2 to the backend. **Gateway 2.0 is enabled
+    /// by default** — whenever the account advertises a Gateway 2.0 endpoint
+    /// the SDK routes eligible dataplane operations through it and falls
+    /// back to the standard gateway only for operations Gateway 2.0 cannot
+    /// serve (e.g. metadata requests or accounts that do not advertise a
+    /// Gateway 2.0 endpoint).
+    ///
+    /// Pass `true` to opt out and force every request through the standard
+    /// gateway transport. The standard gateway path remains supported and
+    /// stable — disabling Gateway 2.0 is the recommended workaround if you
+    /// hit a regression on the new transport.
+    ///
+    /// # Latency caveat
+    ///
+    /// Gateway 2.0 traffic flows through a regional thin-client proxy.
+    /// Note that the standard gateway (Gateway 1.0) does not provide
+    /// any per-request latency guarantees, so neither transport offers
+    /// a latency SLA today. If you need to opt out of Gateway 2.0 — for
+    /// example to A/B test transport behavior, isolate a
+    /// transport-specific issue, or stay on the standard gateway during
+    /// a controlled rollout — set `with_gateway20_disabled(true)`.
+    ///
+    /// # Arguments
+    ///
+    /// * `disabled` - `true` to suppress Gateway 2.0 and force the standard
+    ///   gateway transport; `false` (or leaving the builder untouched) keeps
+    ///   the default Gateway 2.0 behavior.
+    pub fn with_gateway20_disabled(mut self, disabled: bool) -> Self {
+        self.gateway20_disabled = Some(disabled);
         self
     }
 
@@ -365,6 +410,9 @@ impl CosmosClientBuilder {
             pool_builder = pool_builder.with_emulator_server_cert_validation(
                 EmulatorServerCertValidation::DangerousDisabled,
             );
+        }
+        if let Some(disabled) = self.gateway20_disabled {
+            pool_builder = pool_builder.with_gateway20_disabled(disabled);
         }
         driver_runtime_builder = driver_runtime_builder.with_connection_pool(pool_builder.build()?);
 

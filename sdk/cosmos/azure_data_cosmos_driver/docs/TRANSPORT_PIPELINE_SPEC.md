@@ -2196,11 +2196,11 @@ HTTP/2 just uses a single `Arc<dyn HttpClient>` like HTTP/1.1.
 endpoints are detected and used. No sharding yet — stream limit may be hit under high load.
 
 > **Note on ALPN probing (§6.0):** The initial Step 5 implementation uses configuration flags
-> (`is_http2_allowed`, `is_gateway20_allowed`) and `AccountProperties` metadata
+> (`is_http2_allowed`, `gateway20_disabled`) and `AccountProperties` metadata
 > (`thinClient*Locations`) to determine the transport strategy, rather than runtime ALPN
 > negotiation against the gateway. This is sufficient because:
 > (1) reqwest with `http2` feature already performs ALPN automatically for `Http2Preferred`,
-> (2) Gateway 2.0 is definitively identified by the presence of thin-client locations in
+> (2) Gateway 2.0 is definitively identified by the presence of Gateway 2.0 locations in
 > account metadata, and (3) `http2_prior_knowledge()` for `Http2Only` skips ALPN entirely
 > (h2 is guaranteed). Runtime probing may be revisited if a use case arises where the
 > configuration-based approach is insufficient.
@@ -2271,7 +2271,7 @@ Cut over all remaining operations and remove the old pipeline code.
 | 10.7     | Move fault injection tests to driver-level APIs                                                       | `tests/`                             |
 | 10.8     | Full integration test pass                                                                            | `tests/`                             |
 
-**What works after Step 10**: `azure_data_cosmos` is a thin client layer that builds
+**What works after Step 10**: `azure_data_cosmos` is a thin SDK wrapper layer that builds
 `CosmosOperation` values and delegates all execution to the driver. Duplicate pipeline,
 retry, and routing code is removed.
 

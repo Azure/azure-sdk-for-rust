@@ -43,6 +43,44 @@ extends:
     CloudConfig:
       Public:
         ServiceConnection: azure-sdk-tests-cosmos
+    # Endpoint + master key for the pre-provisioned Gateway 2.0 (a.k.a.
+    # "thin client") account, surfaced from the `azure-sdk-tests-cosmos`
+    # service connection's secret variable group
+    # (`Test Secrets for Cosmos Live Tests - user administered`).
+    #
+    # The variable group was created before this repo's Gateway 2.0
+    # renaming pass and therefore still uses the pre-rename `thinclient-*`
+    # variable names; the env-var names we expose to the test framework
+    # use the post-rename `GW20` convention.
+    #
+    # Both `LiveTestMatrixConfigs` matrix entries see these env vars at
+    # job time. The standard Cosmos live tests ignore them, while the
+    # Gateway 2.0 matrix entries (`Session SingleRegion Gateway20` and
+    # `Session MultiRegion Gateway20`) consume them via the
+    # `gateway20` / `gateway20_multi_region` test-category scaffolding
+    # (see `azure_data_cosmos/tests/emulator_tests/gateway20_e2e.rs`
+    # and `azure_data_cosmos_driver/tests/framework/test_client.rs`).
+    #
+    # This mirrors the Java Cosmos SDK's Gateway 2.0 live-test setup
+    # (`sdk/cosmos/tests.yml` in `Azure/azure-sdk-for-java`), which adds
+    # a second matrix entry pointing at a pre-provisioned Gateway 2.0
+    # account rather than spinning up a dedicated pipeline.
+    EnvVars:
+      AZURE_COSMOS_GW20_ENDPOINT: $(thinclient-test-endpoint)
+      AZURE_COSMOS_GW20_KEY: $(thinclient-test-key)
+      AZURE_COSMOS_GW20_MULTI_REGION_ENDPOINT: $(thin-client-canary-multi-region-session-endpoint)
+      AZURE_COSMOS_GW20_MULTI_REGION_KEY: $(thin-client-canary-multi-region-session-key)
+    # Link the cosmos live-test variable group so the `$(thinclient-test-*)`
+    # / `$(thin-client-canary-*)` secret references above actually resolve.
+    # Without this, those `$()` expressions would be passed verbatim into
+    # the test process's environment as literal strings.
+    #
+    # NOTE: the first pipeline run after adding a new variable group is
+    # blocked until an admin grants permission via the pipeline UI
+    # ("This pipeline needs permission to access a resource"). Approve
+    # access in the Permissions tab of the variable group.
+    VariableGroups:
+    - 'Test Secrets for Cosmos Live Tests - user administered'
     MatrixConfigs:
       - Name: Cosmos_release
         Path: sdk/cosmos/release-platform-matrix.json
