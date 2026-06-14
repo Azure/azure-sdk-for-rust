@@ -31,7 +31,12 @@ use std::str::FromStr;
 /// assert_eq!(cs.fully_qualified_namespace, "example.servicebus.windows.net");
 /// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
+///
+/// The type is `#[non_exhaustive]`: it is only ever constructed by parsing, so
+/// fields can be read but not built with a struct literal outside this crate,
+/// which lets new fields be added without a breaking change.
 #[derive(Clone, PartialEq, Eq, SafeDebug)]
+#[non_exhaustive]
 pub struct ConnectionString {
     /// The raw `Endpoint` value, e.g. `sb://example.servicebus.windows.net/`.
     pub endpoint: String,
@@ -67,7 +72,7 @@ impl FromStr for ConnectionString {
     fn from_str(connection_string: &str) -> Result<Self, Self::Err> {
         if connection_string.is_empty() {
             return Err(Error::new(
-                ErrorKind::Other,
+                ErrorKind::DataConversion,
                 "connection string cannot be empty",
             ));
         }
@@ -86,9 +91,9 @@ impl FromStr for ConnectionString {
 
             // Split on the *first* '=' only: base64 keys end in '='/'==', and a
             // `SharedAccessSignature` value contains several '=' of its own.
-            let (key, value) = part
-                .split_once('=')
-                .ok_or_else(|| Error::new(ErrorKind::Other, "invalid connection string"))?;
+            let (key, value) = part.split_once('=').ok_or_else(|| {
+                Error::new(ErrorKind::DataConversion, "invalid connection string")
+            })?;
 
             // Keys are matched case-insensitively to mirror the other Azure SDKs.
             if key.eq_ignore_ascii_case("Endpoint") {
@@ -107,7 +112,7 @@ impl FromStr for ConnectionString {
 
         let Some(endpoint) = endpoint else {
             return Err(Error::new(
-                ErrorKind::Other,
+                ErrorKind::DataConversion,
                 "invalid connection string, missing 'Endpoint'",
             ));
         };
@@ -116,7 +121,7 @@ impl FromStr for ConnectionString {
         let has_key = shared_access_key_name.is_some() && shared_access_key.is_some();
         if !has_key && shared_access_signature.is_none() {
             return Err(Error::new(
-                ErrorKind::Other,
+                ErrorKind::DataConversion,
                 "invalid connection string, missing shared access key or signature",
             ));
         }
@@ -125,7 +130,7 @@ impl FromStr for ConnectionString {
         // is `sb://`, but we accept any scheme and simply take the host.
         let parsed = Url::parse(&endpoint).map_err(|e| {
             Error::with_error(
-                ErrorKind::Other,
+                ErrorKind::DataConversion,
                 e,
                 "invalid connection string, 'Endpoint' is not a valid URL",
             )
@@ -134,7 +139,7 @@ impl FromStr for ConnectionString {
             .host_str()
             .ok_or_else(|| {
                 Error::new(
-                    ErrorKind::Other,
+                    ErrorKind::DataConversion,
                     "invalid connection string, 'Endpoint' has no host",
                 )
             })?
@@ -181,7 +186,7 @@ pub(crate) fn resolve_eventhub(
 
 #[cfg(test)]
 mod tests {
-    // cspell:ignore fexample sharedaccesskeyname sharedaccesskey
+    // cspell:ignore fexample sharedaccesskeyname sharedaccesskey fhub supersecretkey topsecretsig
     use super::{resolve_eventhub, ConnectionString};
     use azure_core::credentials::Secret;
 
@@ -308,6 +313,35 @@ mod tests {
         assert!(resolve_eventhub(&with_entity, Some("other")).is_err());
         // neither -> error
         assert!(resolve_eventhub(&without_entity, None).is_err());
+    }
+
+    #[test]
+    fn debug_does_not_leak_secrets() {
+        // `SafeDebug` must redact the key (and every other field). This guards
+        // against a future `#[derive(Debug)]` or `#[safe(true)]` regression on a
+        // security-sensitive type.
+        let cs: ConnectionString = "Endpoint=sb://example.servicebus.windows.net/;SharedAccessKeyName=policy;SharedAccessKey=supersecretkey;EntityPath=hub"
+            .parse()
+            .unwrap();
+        let debug = format!("{cs:?}");
+        assert!(
+            !debug.contains("supersecretkey"),
+            "Debug output leaked the shared access key: {debug}"
+        );
+    }
+
+    #[test]
+    fn debug_does_not_leak_preformed_signature() {
+        let sig = "SharedAccessSignature sr=amqps%3a%2f%2fns%2fhub&sig=topsecretsig&se=1700000000&skn=policy";
+        let cs: ConnectionString =
+            format!("Endpoint=sb://example.servicebus.windows.net/;SharedAccessSignature={sig}")
+                .parse()
+                .unwrap();
+        let debug = format!("{cs:?}");
+        assert!(
+            !debug.contains("topsecretsig"),
+            "Debug output leaked the pre-formed signature: {debug}"
+        );
     }
 
     fn assert_bad(connection_string: &str, expected: &str) {

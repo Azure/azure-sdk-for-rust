@@ -578,10 +578,16 @@ pub mod builders {
 
         /// Opens a connection to the Event Hub using a connection string.
         ///
-        /// This is a convenience over [`open`](Self::open) for development and
+        /// This is an alternative to [`open`](Self::open) for development and
         /// test scenarios that authenticate with a Shared Access Signature
         /// instead of Microsoft Entra ID. For production, prefer
         /// [`open`](Self::open) with a `TokenCredential`.
+        ///
+        /// When the connection string carries a `SharedAccessKeyName` /
+        /// `SharedAccessKey`, the client signs and refreshes SAS tokens itself.
+        /// When it carries a pre-formed `SharedAccessSignature`, that token is
+        /// used as-is and *cannot* be refreshed (there is no key to re-sign
+        /// with); the broker drops the link once the token's own expiry elapses.
         ///
         /// # Arguments
         /// * `connection_string` - An Event Hubs connection string, e.g.

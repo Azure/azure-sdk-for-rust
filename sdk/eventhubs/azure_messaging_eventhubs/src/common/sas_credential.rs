@@ -16,11 +16,19 @@
 //! where the string-to-sign is `url_encode(resource) + "\n" + expiry` and the
 //! HMAC-SHA256 is computed over the **raw** key bytes (the `SharedAccessKey` is
 //! not base64-decoded first).
+//!
+//! Note that the percent-encoded resource is fully lowercased, including the
+//! escape hex digits (`%3a`/`%2f`, not `%3A`/`%2F`), to match Go's
+//! `strings.ToLower(url.QueryEscape(...))`. A reader comparing against the C#
+//! samples (which emit uppercase hex) should expect this difference; the broker
+//! recomputes the HMAC over whatever `sr` it receives, so case only has to be
+//! self-consistent between the string-to-sign and the emitted `sr`.
 
 use super::connection_string::ConnectionString;
 use azure_core::{
     credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions},
     error::ErrorKind,
+    fmt::SafeDebug,
     time::{Duration, OffsetDateTime},
     Error, Result,
 };
@@ -44,7 +52,10 @@ const SAS_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'.')
     .remove(b'~');
 
-#[derive(Debug)]
+// `SafeDebug` (not the std `Debug` derive) so the `audience` resource URI and
+// the `key_name` authorization policy are redacted, matching the rest of this
+// crate's secret hygiene. `key`/`token` are already `Secret` and self-redact.
+#[derive(SafeDebug)]
 enum Kind {
     /// Sign on demand with a shared access key.
     SharedKey {
@@ -63,7 +74,7 @@ enum Kind {
 }
 
 /// A SAS [`TokenCredential`] for Event Hubs connection-string authentication.
-#[derive(Debug)]
+#[derive(SafeDebug)]
 pub(crate) struct SasCredential {
     kind: Kind,
 }
@@ -106,17 +117,20 @@ impl SasCredential {
         if let Some(signature) = &connection_string.shared_access_signature {
             return Self::from_signature(signature.clone());
         }
+        // The parser guarantees that when no signature is present, both the key
+        // name and key are `Some` (see the `has_key` check in `from_str`). Assert
+        // that invariant rather than silently signing with empty values, which
+        // would produce a token the broker rejects with an opaque 401.
         Self::from_shared_access_key(
             &connection_string.fully_qualified_namespace,
             eventhub,
-            connection_string
-                .shared_access_key_name
-                .clone()
-                .unwrap_or_default(),
+            connection_string.shared_access_key_name.clone().expect(
+                "parser guarantees SharedAccessKeyName is present when no signature is set",
+            ),
             connection_string
                 .shared_access_key
                 .clone()
-                .unwrap_or_else(|| Secret::new(String::new())),
+                .expect("parser guarantees SharedAccessKey is present when no signature is set"),
         )
     }
 }
@@ -176,7 +190,7 @@ impl TokenCredential for SasCredential {
 
 #[cfg(test)]
 mod tests {
-    // cspell:ignore fexample fmyhub myhub mykey fhub WDCF Bfsxrm Lsorq
+    // cspell:ignore fexample fmyhub myhub mykey fhub WDCF Bfsxrm Lsorq supersecretkey
     use super::*;
 
     // Golden vector generated independently (Python, replicating Go's
@@ -228,6 +242,22 @@ mod tests {
             .secret()
             .starts_with("SharedAccessSignature sr="));
         assert!(token.expires_on > before);
+    }
+
+    // `SafeDebug` must redact the audience and key name (and the `Secret` key).
+    // Guards against a regression to the std `Debug` derive on this
+    // security-sensitive type.
+    #[test]
+    fn debug_does_not_leak_key_name_or_audience() {
+        let cred = SasCredential::from_shared_access_key(
+            "example.servicebus.windows.net",
+            "myhub",
+            "RootManageSharedAccessKey".to_string(),
+            Secret::new("supersecretkey"),
+        );
+        let debug = format!("{cred:?}");
+        assert!(!debug.contains("RootManageSharedAccessKey"), "{debug}");
+        assert!(!debug.contains("supersecretkey"), "{debug}");
     }
 
     #[tokio::test]
