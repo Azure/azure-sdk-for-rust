@@ -2825,15 +2825,16 @@ mod tests {
     }
 
     #[test]
-    fn effective_partition_key_range_override_omits_feed_range_when_full_pkrange() {
-        // Regression: when the request covers the FULL pkrange (range ==
-        // partition_key_range), `feed_range` must collapse to `None` so we
-        // don't emit `x-ms-start-epk: ""` / `x-ms-end-epk: "FF"` alongside
-        // `partitionkeyrangeid`. The legacy gateway/emulator rejects that
-        // combination with HTTP 400. The thin-client (Gateway 2.0) proxy
-        // routes from the pkrange-id alone in this case (gateway20_dispatch
-        // forwards `partitionkeyrangeid` as the RNTBD `PartitionKeyRangeId`
-        // token).
+    fn effective_partition_key_range_override_emits_partition_bounds_when_full_pkrange() {
+        // When the request covers the FULL pkrange (range == partition_key_range),
+        // `feed_range` falls back to the partition's own bounds. The thin-client
+        // (Gateway 2.0) proxy requires StartEpkHash/EndEpkHash on every Query
+        // frame (it rejects requests routed by pkrange-id alone with HTTP 400,
+        // no body). The dispatcher mirrors x-ms-start-epk/x-ms-end-epk into the
+        // RNTBD StartEpkHash/EndEpkHash tokens. Matches Java
+        // `ThinClientStoreModel`, which fills the EPK hashes from
+        // `pkRange.getMinInclusive()/getMaxExclusive()` whenever no logical
+        // partition key is set.
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::from("10"),
             EffectivePartitionKey::from("20"),
@@ -2850,7 +2851,7 @@ mod tests {
         );
 
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
-        assert_eq!(overrides.feed_range, None);
+        assert_eq!(overrides.feed_range, Some(range));
     }
 
     #[test]
@@ -2880,7 +2881,7 @@ mod tests {
 
         assert_eq!(overrides.partition_key.as_ref(), Some(&pk));
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
-        assert_eq!(overrides.feed_range, None);
+        assert_eq!(overrides.feed_range, Some(range));
     }
 
     #[tokio::test]
