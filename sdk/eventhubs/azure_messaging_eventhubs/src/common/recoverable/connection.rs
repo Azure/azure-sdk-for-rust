@@ -1525,6 +1525,20 @@ mod tests {
             RecoverableConnection::should_retry_amqp_error(&err),
             ErrorRecoveryAction::ReconnectLink
         );
+
+        // Test SimpleMessage (the kind `AmqpError::with_message` produces) ->
+        // ReturnError. The retry-budget-exhausted errors in `get_or_init_generational`
+        // and `authorize_path` are `with_message` errors that intentionally rely on
+        // this classification to surface instead of spinning across a recovery storm
+        // (#4454). This pins that contract: adding an explicit `SimpleMessage` arm, or
+        // flipping the `_` default to a retryable action, must fail here and force a
+        // deliberate decision rather than silently turning those backstops into an
+        // infinite retry loop.
+        let err = AmqpError::with_message("retry budget exhausted");
+        assert_eq!(
+            RecoverableConnection::should_retry_amqp_error(&err),
+            ErrorRecoveryAction::ReturnError
+        );
     }
 
     #[test]
