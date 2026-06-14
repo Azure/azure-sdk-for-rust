@@ -17,7 +17,7 @@ use std::{
     collections::{HashMap, HashSet},
     sync::{Arc, Mutex as SyncMutex, OnceLock, Weak},
 };
-use tracing::{debug, trace, warn};
+use tracing::{debug, error, trace, warn};
 
 // The number of seconds before token expiration that we wake up to refresh the token.
 const TOKEN_REFRESH_BIAS: Duration = Duration::minutes(6); // By default, we refresh tokens 6 minutes before they expire.
@@ -100,6 +100,15 @@ impl Authorizer {
         Ok(())
     }
 
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %connection.get_connection_id(),
+            path = %path,
+        ),
+        err,
+    )]
     pub(crate) async fn authorize_path(
         self: &Arc<Self>,
         connection: &Arc<RecoverableConnection>,
@@ -194,12 +203,24 @@ impl Authorizer {
             .await
     }
 
+    #[tracing::instrument(level = "debug", skip_all)]
     async fn refresh_tokens_task(self: Arc<Self>) {
+        // The refresh loop is the only thing keeping cached tokens alive; if it
+        // ever returns, every cached token will silently expire. Per-path
+        // get_token/authorization failures are handled (logged + retried) inside
+        // refresh_tokens(), so reaching here means the loop hit a terminal
+        // condition (e.g. the recoverable connection was dropped, or a poisoned
+        // lock). Surface that at error! rather than warn! since it tears the
+        // refresher down.
         let result = self.refresh_tokens().await;
-        if let Err(e) = result {
-            warn!(err=?e, "Error refreshing tokens: {e}");
+        match result {
+            Err(e) => {
+                error!(err = ?e, "Token refresher task exited with error; cached tokens will no longer be refreshed: {e}");
+            }
+            Ok(()) => {
+                error!("Token refresher task exited; cached tokens will no longer be refreshed.");
+            }
         }
-        debug!("Token refresher task completed.");
     }
 
     /// Refresh the authorization tokens associated with this connection manager.
@@ -343,13 +364,32 @@ impl Authorizer {
                 to_refresh
             };
 
-            // Now refresh tokens without holding the lock to avoid deadlocks
+            // Now refresh tokens without holding the lock to avoid deadlocks.
+            //
+            // A failure to refresh a single path (transient get_token failure,
+            // authorization failure, etc.) must NOT tear down the refresh task:
+            // doing so would let every other cached token silently expire. We
+            // log the failure at warn! with the path and the failing condition
+            // and continue to the next path; the unrefreshed token will be
+            // retried on the next pass.
             let mut updated_tokens = HashMap::new();
             for (url, previous_expiry) in tokens_to_refresh {
-                let new_token = self
+                let new_token = match self
                     .credential
                     .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                    .await?;
+                    .await
+                {
+                    Ok(token) => token,
+                    Err(e) => {
+                        warn!(
+                            path = %url,
+                            operation = "get_token",
+                            err = ?e,
+                            "Failed to refresh token for path; will retry on next pass: {e}"
+                        );
+                        continue;
+                    }
+                };
 
                 // A credential that cannot renew this token (e.g. a pre-formed
                 // SAS) hands back the same expiry. Re-presenting it would not
@@ -365,11 +405,29 @@ impl Authorizer {
                 }
 
                 // Create an ephemeral connection to host the authentication.
-                let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
-                    AmqpError::with_message("Recoverable connection has been dropped")
-                })?;
-                self.perform_authorization(&connection, &url, &new_token)
-                    .await?;
+                let connection = match self.recoverable_connection.upgrade() {
+                    Some(connection) => connection,
+                    None => {
+                        warn!(
+                            path = %url,
+                            operation = "upgrade_connection",
+                            "Recoverable connection has been dropped; skipping token refresh for path, will retry on next pass."
+                        );
+                        continue;
+                    }
+                };
+                if let Err(e) = self
+                    .perform_authorization(&connection, &url, &new_token)
+                    .await
+                {
+                    warn!(
+                        path = %url,
+                        operation = "perform_authorization",
+                        err = ?e,
+                        "Failed to authorize refreshed token for path; will retry on next pass: {e}"
+                    );
+                    continue;
+                }
 
                 debug!(
                     "Token refreshed for {url}, new expiration time: {}",

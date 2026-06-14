@@ -20,7 +20,7 @@ use azure_core_amqp::{
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::{fmt::Debug, sync::Arc};
-use tracing::trace;
+use tracing::{trace, warn};
 
 /// Types used to collect messages into a "batch" before submitting them to an Event Hub.
 pub(crate) mod batch;
@@ -192,6 +192,19 @@ impl ProducerClient {
     /// Note:
     /// - The message is sent to the service unmodified.
     ///
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.connection.get_connection_id(),
+            eventhub = %self.eventhub,
+            partition_id = options
+                .as_ref()
+                .and_then(|o| o.partition_id.as_deref())
+                .unwrap_or("<auto>"),
+        ),
+        err,
+    )]
     pub async fn send_message<M>(
         &self,
         message: M,
@@ -206,7 +219,7 @@ impl ProducerClient {
             let target_url = format!("{}/Partitions/{}", self.base_url(), partition_id);
             target = Url::parse(&target_url).map_err(azure_core::Error::from)?;
         }
-        let sender = self.connection.get_sender(target).await?;
+        let sender = self.connection.get_sender(target.clone()).await?;
 
         let outcome = sender
             .send(
@@ -220,19 +233,42 @@ impl ProducerClient {
         match outcome {
             AmqpSendOutcome::Accepted => Ok(()),
             AmqpSendOutcome::Rejected(reason) => {
-                trace!("Send was rejected: {:?}", reason);
                 if let Some(reason) = reason {
+                    warn!(
+                        path = %target,
+                        condition = ?reason.condition,
+                        description = reason.description.as_deref().unwrap_or_default(),
+                        "Send was rejected by the Event Hub."
+                    );
                     return Err(AmqpError::from(AmqpErrorKind::AmqpDescribedError(reason)).into());
                 }
+                warn!(
+                    path = %target,
+                    "Send was rejected by the Event Hub with no described error."
+                );
                 Err(EventHubsError::with_message(
                     "Send was rejected by the Event Hub.",
                 ))
             }
             AmqpSendOutcome::Modified(reason) => {
-                trace!("Send was modified: {:?}", reason);
+                // Modified is treated as success (the return type is unchanged), but the
+                // message was not durably accepted as sent, so surface it for diagnosis.
+                warn!(
+                    path = %target,
+                    modification = ?reason,
+                    "Send was modified by the Event Hub; not durably accepted."
+                );
                 Ok(())
             }
-            AmqpSendOutcome::Released => Ok(()),
+            AmqpSendOutcome::Released => {
+                // Released is treated as success (the return type is unchanged), but the
+                // message was released without being durably accepted; surface it.
+                warn!(
+                    path = %target,
+                    "Send was released by the Event Hub; not durably accepted."
+                );
+                Ok(())
+            }
         }
     }
 
@@ -313,12 +349,22 @@ impl ProducerClient {
     /// }
     /// ```
     ///
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.connection.get_connection_id(),
+            eventhub = %self.eventhub,
+        ),
+        err,
+    )]
     pub async fn send_batch(
         &self,
         batch: EventDataBatch<'_>,
         #[allow(unused_variables)] options: Option<SendBatchOptions>,
     ) -> Result<()> {
-        let sender = self.connection.get_sender(batch.get_batch_path()?).await?;
+        let path = batch.get_batch_path()?;
+        let sender = self.connection.get_sender(path.clone()).await?;
 
         let messages = batch.get_messages();
         let outcome = sender
@@ -333,21 +379,44 @@ impl ProducerClient {
         match outcome {
             AmqpSendOutcome::Accepted => Ok(()),
             AmqpSendOutcome::Rejected(reason) => {
-                trace!("Batch was rejected: {:?}", reason);
                 if let Some(reason) = reason {
+                    warn!(
+                        path = %path,
+                        condition = ?reason.condition,
+                        description = reason.description.as_deref().unwrap_or_default(),
+                        "Batch was rejected by the Event Hub."
+                    );
                     return Err(EventHubsError::from(AmqpError::from(
                         AmqpErrorKind::AmqpDescribedError(reason),
                     )));
                 }
+                warn!(
+                    path = %path,
+                    "Batch was rejected by the Event Hub with no described error."
+                );
                 Err(EventHubsError::with_message(
                     "Batch was rejected by the Event Hub.",
                 ))
             }
             AmqpSendOutcome::Modified(reason) => {
-                trace!("Batch was modified: {:?}", reason);
+                // Modified is treated as success (the return type is unchanged), but the
+                // batch was not durably accepted as sent, so surface it for diagnosis.
+                warn!(
+                    path = %path,
+                    modification = ?reason,
+                    "Batch was modified by the Event Hub; not durably accepted."
+                );
                 Ok(())
             }
-            AmqpSendOutcome::Released => Ok(()),
+            AmqpSendOutcome::Released => {
+                // Released is treated as success (the return type is unchanged), but the
+                // batch was released without being durably accepted; surface it.
+                warn!(
+                    path = %path,
+                    "Batch was released by the Event Hub; not durably accepted."
+                );
+                Ok(())
+            }
         }
     }
 

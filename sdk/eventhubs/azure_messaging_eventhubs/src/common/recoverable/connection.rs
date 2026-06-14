@@ -33,7 +33,7 @@ use std::{
     collections::HashMap,
     sync::{Arc, Weak},
 };
-use tracing::{debug, span, trace, warn};
+use tracing::{debug, info, instrument, trace, warn};
 
 /// The AMQP capability string used to negotiate geographic replication features
 /// between client and server. This capability is advertised during AMQP connection setup to indicate
@@ -246,8 +246,21 @@ impl RecoverableConnection {
     /// This method will close the underlying AMQP connection, if it exists. It will also cause all outstanding sends and receives
     /// to complete with an error.
     ///
+    #[instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.get_connection_id(),
+            url = %self.url,
+        ),
+        err,
+    )]
     pub(crate) async fn close_connection(self) -> Result<()> {
-        trace!("Closing recoverable connection for {}.", self.url);
+        debug!(
+            connection_id = %self.get_connection_id(),
+            url = %self.url,
+            "Closing recoverable connection."
+        );
 
         let mut management_client = self.mgmt_client.lock().await;
         if let Some(management_client) = management_client.take() {
@@ -340,6 +353,11 @@ impl RecoverableConnection {
                 );
             }
         }
+        info!(
+            connection_id = %self.get_connection_id(),
+            url = %self.url,
+            "Closed recoverable connection."
+        );
         Ok(())
     }
 
@@ -457,6 +475,15 @@ impl RecoverableConnection {
         Ok(())
     }
 
+    #[instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.get_connection_id(),
+            source_url = %source_url,
+        ),
+        err,
+    )]
     async fn get_session(
         self: &Arc<Self>,
         source_url: &Url,
@@ -467,7 +494,7 @@ impl RecoverableConnection {
         let cell = self.session_cell(source_url).await;
         let session = cell
             .get_or_try_init(|| async {
-                debug!("Creating session for partition: {:?}", source_url);
+                debug!(source_url = %source_url, "Creating session for partition.");
                 let connection = self.ensure_connection().await?;
 
                 let session = AmqpSession::new();
@@ -480,7 +507,7 @@ impl RecoverableConnection {
                 Ok::<_, AmqpError>(Arc::new(session))
             })
             .await?;
-        debug!("Cloning session for partition {:?}", source_url);
+        debug!(source_url = %source_url, "Cloning session for partition.");
         Ok(session.clone())
     }
 
@@ -490,8 +517,21 @@ impl RecoverableConnection {
         or_init_cell(&self.session_instances, source_url).await
     }
 
+    #[instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.get_connection_id(),
+            url = %self.url,
+        ),
+        err,
+    )]
     async fn create_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
-        trace!("Creating connection for {}.", self.url);
+        debug!(
+            connection_id = %self.connection_name,
+            url = %self.url,
+            "Opening AMQP connection."
+        );
         let connection = Arc::new(AmqpConnection::new());
 
         connection
@@ -516,9 +556,20 @@ impl RecoverableConnection {
                 }),
             )
             .await?;
+        info!(
+            connection_id = %self.connection_name,
+            url = %self.url,
+            "Opened AMQP connection."
+        );
         Ok(connection)
     }
 
+    #[instrument(
+        level = "debug",
+        skip_all,
+        fields(connection_id = %self.get_connection_id()),
+        err,
+    )]
     pub(super) async fn ensure_amqp_management(
         self: &Arc<Self>,
     ) -> azure_core_amqp::Result<Arc<AmqpManagement>> {
@@ -541,16 +592,15 @@ impl RecoverableConnection {
     }
 
     /// Ensures that the AMQP Claims-Based Security (CBS) client is created and attached.
+    #[instrument(
+        level = "debug",
+        skip_all,
+        fields(connection_id = %self.get_connection_id()),
+        err,
+    )]
     pub(super) async fn ensure_amqp_cbs(
         self: &Arc<Self>,
     ) -> azure_core_amqp::Result<Arc<AmqpClaimsBasedSecurity>> {
-        let span = span!(
-            tracing::Level::DEBUG,
-            "ensure_amqp_cbs",
-            connection_id = self.get_connection_id()
-        );
-        let _enter = span.enter();
-
         let connection = self.ensure_connection().await?;
         let cbs_client = RecoverableClaimsBasedSecurity::create_claims_based_security(
             connection.clone(),
@@ -560,6 +610,15 @@ impl RecoverableConnection {
         Ok(cbs_client)
     }
 
+    #[instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.get_connection_id(),
+            source_url = %source_url,
+        ),
+        err,
+    )]
     pub(super) async fn ensure_receiver(
         self: &Arc<Self>,
         source_url: &Url,
@@ -579,15 +638,29 @@ impl RecoverableConnection {
 
                 let session = self.get_session(source_url).await?;
 
-                debug!("Create receiver on partition {source_url}.");
+                debug!(source_url = %source_url, "Creating receiver on partition.");
                 let receiver = AmqpReceiver::new();
-                receiver
+                if let Err(e) = receiver
                     .attach(
                         &session,
                         message_source.clone(),
                         Some(receiver_options.clone()),
                     )
-                    .await?;
+                    .await
+                {
+                    warn!(
+                        connection_id = %self.get_connection_id(),
+                        source_url = %source_url,
+                        err = %e,
+                        "Failed to attach receiver on partition."
+                    );
+                    return Err(e);
+                }
+                info!(
+                    connection_id = %self.get_connection_id(),
+                    source_url = %source_url,
+                    "Attached receiver on partition."
+                );
                 Ok::<_, AmqpError>(Arc::new(receiver))
             })
             .await?;
@@ -601,6 +674,15 @@ impl RecoverableConnection {
         or_init_cell(&self.receiver_instances, source_url).await
     }
 
+    #[instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.get_connection_id(),
+            path = %path,
+        ),
+        err,
+    )]
     pub(super) async fn ensure_sender(
         self: &Arc<Self>,
         path: &Url,
@@ -617,8 +699,9 @@ impl RecoverableConnection {
 
                 // Retrieve a session for the sender from the session cache.
                 let session = self.get_session(path).await?;
+                debug!(path = %path, "Creating sender on path.");
                 let sender = AmqpSender::new();
-                sender
+                if let Err(e) = sender
                     .attach(
                         &session,
                         format!(
@@ -630,7 +713,21 @@ impl RecoverableConnection {
                         path.to_string(),
                         None,
                     )
-                    .await?;
+                    .await
+                {
+                    warn!(
+                        connection_id = %self.get_connection_id(),
+                        path = %path,
+                        err = %e,
+                        "Failed to attach sender on path."
+                    );
+                    return Err(e);
+                }
+                info!(
+                    connection_id = %self.get_connection_id(),
+                    path = %path,
+                    "Attached sender on path."
+                );
                 Ok::<_, AmqpError>(Arc::new(sender))
             })
             .await?;
@@ -644,40 +741,69 @@ impl RecoverableConnection {
         or_init_cell(&self.sender_instances, path).await
     }
 
+    #[instrument(
+        level = "debug",
+        skip_all,
+        fields(reason = ?reason),
+        err,
+    )]
     pub(super) async fn recover_from_error(
         connection: Weak<RecoverableConnection>,
         reason: ErrorRecoveryAction,
     ) -> azure_core_amqp::error::Result<()> {
         let Some(connection) = connection.upgrade() else {
             warn!(
-                "Connection is None, cannot recover from error: {:?}",
-                reason
+                reason = ?reason,
+                "Connection is None, cannot recover from error."
             );
             return Err(AmqpError::with_message("Missing Connection"));
         };
 
-        warn!(err=?reason, "Recovering from error: {:?}", reason);
+        let connection_id = connection.get_connection_id();
+
+        // Log the error and attempt to recover.
+        warn!(
+            connection_id = %connection_id,
+            reason = ?reason,
+            "Recovering from error."
+        );
 
         let Some(plan) = RecoveryPlan::for_action(&reason) else {
-            warn!("Recover action {reason:?} should already have been handled.");
+            warn!(
+                connection_id = %connection_id,
+                reason = ?reason,
+                "Recover action should already have been handled."
+            );
             return Err(AmqpError::with_message(format!(
                 "Unknown error recovery action: {reason:?}"
             )));
         };
 
-        debug!("Applying recovery plan {plan:?} for {reason:?}");
+        debug!(
+            connection_id = %connection_id,
+            reason = ?reason,
+            "Applying recovery plan {plan:?}."
+        );
         connection.apply_recovery_plan(plan).await;
+        info!(
+            connection_id = %connection_id,
+            reason = ?reason,
+            "Recovery complete."
+        );
         Ok(())
     }
 
     /// Side-effecting half of `recover_from_error`: takes the locks and clears
     /// whichever caches the [`RecoveryPlan`] flagged.
     async fn apply_recovery_plan(&self, plan: RecoveryPlan) {
+        let connection_id = self.get_connection_id();
         if plan.drop_connection {
             self.connections.lock().await.take();
+            debug!(connection_id = %connection_id, "Recovery: dropped AMQP connection.");
         }
         if plan.clear_authorizer {
             self.authorizer.clear().await;
+            debug!(connection_id = %connection_id, "Recovery: cleared authorizer tokens.");
         }
         // Clearing a cache drops its per-path `OnceCell` entries, so the next
         // `ensure_*` for a path re-inits a fresh cell against the new connection.
@@ -687,16 +813,26 @@ impl RecoverableConnection {
         // Closing that window (invalidating in-flight work immediately via a
         // recovery generation counter) is tracked in #4454.
         if plan.clear_sessions {
-            self.session_instances.write().await.clear();
+            let mut sessions = self.session_instances.write().await;
+            let count = sessions.len();
+            sessions.clear();
+            debug!(connection_id = %connection_id, count, "Recovery: cleared cached sessions.");
         }
         if plan.clear_senders {
-            self.sender_instances.write().await.clear();
+            let mut senders = self.sender_instances.write().await;
+            let count = senders.len();
+            senders.clear();
+            debug!(connection_id = %connection_id, count, "Recovery: cleared cached senders.");
         }
         if plan.clear_receivers {
-            self.receiver_instances.write().await.clear();
+            let mut receivers = self.receiver_instances.write().await;
+            let count = receivers.len();
+            receivers.clear();
+            debug!(connection_id = %connection_id, count, "Recovery: cleared cached receivers.");
         }
         if plan.drop_mgmt_client {
             self.mgmt_client.lock().await.take();
+            debug!(connection_id = %connection_id, "Recovery: dropped management client.");
         }
     }
 
@@ -734,11 +870,14 @@ impl RecoverableConnection {
             | AmqpErrorKind::ConnectionDropped(_)
             | AmqpErrorKind::FramingError(_)
             | AmqpErrorKind::IdleTimeoutElapsed(_) => {
-                debug!("Connection dropped error: {}", amqp_error);
+                debug!(err = %amqp_error, "Connection dropped error, will reconnect connection.");
                 ErrorRecoveryAction::ReconnectConnection
             }
             AmqpErrorKind::SessionClosedByRemote(_) | AmqpErrorKind::SessionDetachedByRemote(_) => {
-                debug!("Session dropped error: {}", amqp_error);
+                debug!(
+                    "Session dropped error, will reconnect session: {}",
+                    amqp_error
+                );
                 ErrorRecoveryAction::ReconnectSession
             }
             AmqpErrorKind::LinkClosedByRemote(_)
@@ -749,12 +888,15 @@ impl RecoverableConnection {
                 // TransferLimitExceeded means more transfers were sent than the
                 // link's credit allowed. Reattaching resets link credit; a full
                 // session/connection reconnect is unnecessary.
-                debug!("Link state error: {}", amqp_error);
+                debug!(err = %amqp_error, "Link state error, will reconnect link.");
                 ErrorRecoveryAction::ReconnectLink
             }
             AmqpErrorKind::SendRejected => ErrorRecoveryAction::ReturnError,
             AmqpErrorKind::AmqpDescribedError(described_error) => {
-                debug!("AMQP described error: {:?}", described_error);
+                debug!(
+                    condition = ?described_error.condition,
+                    "AMQP described error."
+                );
                 if matches!(
                     described_error.condition,
                     AmqpErrorCondition::ResourceLimitExceeded
@@ -765,7 +907,11 @@ impl RecoverableConnection {
                         | AmqpErrorCondition::InternalError
                         | AmqpErrorCondition::OperationCancelled
                 ) {
-                    debug!("AMQP described error can be retried: {:?}", described_error);
+                    debug!(
+                        condition = ?described_error.condition,
+                        "AMQP described error can be retried: {:?}",
+                        described_error
+                    );
                     ErrorRecoveryAction::RetryAction
                 } else if matches!(
                     described_error.condition,
@@ -773,8 +919,8 @@ impl RecoverableConnection {
                         | AmqpErrorCondition::ConnectionFramingError
                 ) {
                     debug!(
-                        "AMQP described error requires reconnect: {:?}",
-                        described_error
+                        condition = ?described_error.condition,
+                        "AMQP described error requires reconnect."
                     );
                     ErrorRecoveryAction::ReconnectConnection
                 } else if matches!(
@@ -789,9 +935,11 @@ impl RecoverableConnection {
                     // pre-expiry renewal), not something to recover by reconnecting on a 401.
                     // Routing this to ReconnectConnection would turn a fast failure into N
                     // full reconnect + re-auth cycles before the error finally surfaces.
-                    debug!(
-                        "AMQP described error is an auth failure; not retrying: {:?}",
-                        described_error
+                    // Authorization failures are terminal fast-fails the caller cannot
+                    // recover from; surface them at warn! with the condition.
+                    warn!(
+                        condition = ?described_error.condition,
+                        "AMQP unauthorized-access error, will not retry."
                     );
                     ErrorRecoveryAction::ReturnError
                 } else if matches!(
@@ -802,12 +950,13 @@ impl RecoverableConnection {
                     // failing. Reattach. (LinkStolen was previously classified as a retry,
                     // which guaranteed N spins through the backoff before bailing.)
                     debug!(
-                        "AMQP described error requires link reattach: {:?}",
-                        described_error
+                        condition = ?described_error.condition,
+                        "AMQP described error requires link reattach."
                     );
                     ErrorRecoveryAction::ReconnectLink
                 } else {
                     debug!(
+                        condition = ?described_error.condition,
                         "AMQP described error cannot be retried: {:?}",
                         described_error
                     );

@@ -16,7 +16,7 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
     time::SystemTime,
 };
-use tracing::{debug, trace};
+use tracing::{debug, info, trace};
 
 /// LoadBalancerInfo contains information about the current ownership of partitions
 /// and the partitions that are unowned or expired.
@@ -283,9 +283,11 @@ impl LoadBalancer {
         ours.append(&mut random_ownerships);
 
         if ours.len() < load_balancer_info.max_allowed {
-            debug!("Not enough expired or unowned partitions, will need to steal from other processors. Stealing up to {} partitions.",
-                load_balancer_info.max_allowed - ours.len());
-            debug!("Stealing from {:?}", load_balancer_info.above_max);
+            info!(
+                count = load_balancer_info.max_allowed - ours.len(),
+                "Not enough expired or unowned partitions, will need to steal from other processors."
+            );
+            debug!(above_max = ?load_balancer_info.above_max, "Stealing from above-max owners.");
             random_ownerships = self.get_random_ownerships(
                 &load_balancer_info.above_max,
                 load_balancer_info.max_allowed - ours.len(),
@@ -326,8 +328,19 @@ impl LoadBalancer {
     ///
     /// # Errors
     /// Returns an error if the load balancing process fails.
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            eventhub = %self.consumer_client_details.eventhub_name,
+            consumer_group = %self.consumer_client_details.consumer_group,
+            fully_qualified_namespace = %self.consumer_client_details.fully_qualified_namespace,
+            owner_id = %self.consumer_client_details.client_id,
+        ),
+        err,
+    )]
     pub async fn load_balance(&self, partition_ids: &[&str]) -> Result<Vec<Ownership>> {
-        debug!("Load balance for partitions: {}", partition_ids.join(", "));
+        debug!(partitions = %partition_ids.join(", "), "Load balance for partitions.");
         let load_balancer_info = self.get_available_partitions(partition_ids).await?;
         trace!(
             "[{}] Load balancer info: {:?}",
@@ -346,9 +359,10 @@ impl LoadBalancer {
                     );
                     let ownership = self.balanced_load_balancer(&load_balancer_info)?;
                     if let Some(ownership) = ownership {
-                        debug!(
-                            "[{}] Claiming ownership of partition: {}",
-                            self.consumer_client_details.client_id, ownership.partition_id
+                        info!(
+                            owner_id = %self.consumer_client_details.client_id,
+                            partition_id = %ownership.partition_id,
+                            "Claiming ownership of partition."
                         );
                         ownerships.push(ownership);
                     }
@@ -359,11 +373,11 @@ impl LoadBalancer {
                         self.consumer_client_details.client_id
                     );
                     ownerships = self.greedy_load_balancer(&load_balancer_info)?;
-                    debug!(
-                        "[{}] Claiming ownership of {} partitions: {}",
-                        self.consumer_client_details.client_id,
-                        ownerships.len(),
-                        Self::partitions_for_ownership(&ownerships)
+                    info!(
+                        owner_id = %self.consumer_client_details.client_id,
+                        count = ownerships.len(),
+                        partitions = %Self::partitions_for_ownership(&ownerships),
+                        "Claiming ownership of partitions."
                     );
                 }
             }

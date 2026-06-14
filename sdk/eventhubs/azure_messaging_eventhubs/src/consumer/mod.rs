@@ -25,7 +25,7 @@ use std::{
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tracing::{debug, trace};
+use tracing::{info, trace};
 
 /// A client that can be used to receive events from an Event Hub.
 pub struct ConsumerClient {
@@ -235,6 +235,17 @@ impl ConsumerClient {
     ///     Ok(())
     /// }
     /// ```
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(
+            connection_id = %self.recoverable_connection.get_connection_id(),
+            partition_id = %partition_id,
+            consumer_group = %self.consumer_group,
+            eventhub = %self.eventhub,
+        ),
+        err,
+    )]
     pub async fn open_receiver_on_partition(
         &self,
         partition_id: String,
@@ -249,8 +260,9 @@ impl ConsumerClient {
         let start_expression = StartPosition::start_expression(&options.start_position);
 
         trace!(
-            "Opening receiver on url {} partition {partition_id}.",
-            self.endpoint
+            partition_id = %partition_id,
+            source_url = %self.endpoint,
+            "Opening receiver on partition."
         );
 
         let source_url = format!("{}/Partitions/{}", self.endpoint, partition_id);
@@ -284,7 +296,13 @@ impl ConsumerClient {
             ..Default::default()
         };
 
-        debug!("Receiver attached on partition {partition_id}.");
+        info!(
+            partition_id = %partition_id,
+            consumer_group = %self.consumer_group,
+            eventhub = %self.eventhub,
+            source_url = %source_url,
+            "Receiver attached on partition."
+        );
         Ok(EventReceiver::new(
             self.recoverable_connection.clone(),
             receiver_options,
