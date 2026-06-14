@@ -147,20 +147,28 @@ unsafe impl Sync for RecoverableConnection {}
 /// A cached cell whose generation predates `generation` is stale: a recovery
 /// cleared and re-stamped the connection after it was created. Such a cell is
 /// replaced with a fresh one so the caller re-attaches against the live
-/// connection. See #4454.
+/// connection. A cell at a *newer* generation than `generation` is returned
+/// as-is rather than overwritten: a recovery already advanced past the
+/// generation the caller captured, and a peer task may have attached a valid
+/// resource into that newer cell. Clobbering it with a fresh cell stamped at the
+/// older `generation` would discard that peer's work and force a redundant
+/// re-attach, the exact wasted recovery cycle #4454 set out to remove. The
+/// caller's post-`init` generation check sorts out the captured-then-superseded
+/// case instead (see [`RecoverableConnection::get_or_init_generational`]). Only
+/// a strictly-older or absent entry is replaced. See #4454.
 async fn or_init_cell<T>(
     map: &RwLock<HashMap<Url, GenerationalCell<T>>>,
     key: &Url,
     generation: u64,
 ) -> GenerationalCell<T> {
     if let Some(entry) = map.read().await.get(key) {
-        if entry.generation == generation {
+        if entry.generation >= generation {
             return entry.clone();
         }
     }
     let mut guard = map.write().await;
     match guard.get(key) {
-        Some(entry) if entry.generation == generation => entry.clone(),
+        Some(entry) if entry.generation >= generation => entry.clone(),
         _ => {
             let fresh = GenerationalCell {
                 generation,
@@ -555,7 +563,13 @@ impl RecoverableConnection {
             let value = entry.cell.get_or_try_init(&mut init).await?;
 
             // If no recovery raced the attach above, the cell is valid; return it.
-            if self.current_generation() == generation {
+            // Compare against the cell's *own* generation, not the value captured at
+            // the top of the loop: `or_init_cell` may have handed back a newer cell
+            // that a racing task installed, and such a cell is valid as long as its
+            // generation is still current. Using the captured `generation` here
+            // would wrongly discard (and evict) that peer's freshly-attached
+            // resource. See #4454.
+            if self.current_generation() == entry.generation {
                 return Ok(value.clone());
             }
 
@@ -575,6 +589,10 @@ impl RecoverableConnection {
             }
         }
 
+        // Intentionally a plain `AmqpError::with_message`: `should_retry_amqp_error`
+        // classifies this unrecognized kind as `ReturnError`, so exhausting the
+        // budget surfaces to the caller instead of looping. Do not "fix" this into a
+        // retryable kind, that would let a recovery storm spin here forever (#4454).
         Err(AmqpError::with_message(format!(
             "Exceeded retry budget ({MAX_GENERATION_RETRIES}) re-initializing resource '{key}' across recoveries"
         )))
@@ -1331,6 +1349,47 @@ mod tests {
         let cached = map.read().await.get(&path).cloned().unwrap();
         assert_eq!(cached.generation, connection.generation());
         assert_eq!(**cached.cell.get().unwrap(), 1);
+    }
+
+    // #4454 regression: `or_init_cell` must never overwrite a cell at a *newer*
+    // generation than the one the caller captured. A slow task that captured
+    // generation N can reach the lookup only after a recovery advanced to N+1 and a
+    // peer task already cached a valid resource there; clobbering it with a fresh
+    // gen-N cell would discard the peer's freshly-attached resource and force a
+    // redundant re-attach, the exact wasted recovery cycle the fix removes. A
+    // strictly-older cached cell must still be replaced so the caller re-attaches
+    // against the live connection.
+    #[tokio::test]
+    async fn or_init_cell_reuses_newer_cell_and_replaces_older() {
+        let path = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+        let map: RwLock<HashMap<Url, GenerationalCell<u64>>> = RwLock::new(HashMap::new());
+
+        // A peer task at generation 1 attached a resource and cached it.
+        let newer = or_init_cell(&map, &path, 1).await;
+        newer.cell.set(Arc::new(42)).await.unwrap();
+        assert_eq!(newer.generation, 1);
+
+        // A slow task that captured the stale generation 0 resolves the same key. It
+        // must get the gen-1 cell back, value intact, not a fresh gen-0 cell that
+        // throws the peer's work away.
+        let stale = or_init_cell(&map, &path, 0).await;
+        assert!(
+            Arc::ptr_eq(&stale.cell, &newer.cell),
+            "a cell newer than the captured generation must be reused, not clobbered"
+        );
+        assert_eq!(stale.generation, 1);
+        assert_eq!(**stale.cell.get().unwrap(), 42);
+
+        // Resolving at a generation strictly newer than the cached cell replaces it
+        // with a fresh, empty cell so the caller re-attaches against the live
+        // connection.
+        let replaced = or_init_cell(&map, &path, 2).await;
+        assert!(
+            !Arc::ptr_eq(&replaced.cell, &newer.cell),
+            "a cell older than the captured generation must be replaced"
+        );
+        assert_eq!(replaced.generation, 2);
+        assert!(replaced.cell.get().is_none());
     }
 
     // The RecoverableConnection supports using a custom endpoint for connecting to Event Hubs proxies.

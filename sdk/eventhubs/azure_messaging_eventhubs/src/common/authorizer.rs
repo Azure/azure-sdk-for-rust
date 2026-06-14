@@ -180,6 +180,11 @@ impl Authorizer {
             return Ok(stored);
         }
 
+        // Intentionally a plain `AmqpError::with_message`: the connection's
+        // `should_retry_amqp_error` classifies this unrecognized kind as
+        // `ReturnError`, so exhausting the budget surfaces to the caller instead of
+        // looping. Do not "fix" this into a retryable kind, that would let a recovery
+        // storm spin here forever (#4454).
         Err(AmqpError::with_message(format!(
             "Exceeded retry budget ({MAX_GENERATION_RETRIES}) authorizing path '{path}' across recoveries"
         )))
@@ -389,55 +394,53 @@ impl Authorizer {
             to_refresh
         };
 
-        // Now refresh tokens without holding the lock to avoid deadlocks. Capture
-        // the recovery generation before the lock-free re-authorizations (#4454).
-        let mut updated_tokens = HashMap::new();
-        let refresh_connection = if tokens_to_refresh.is_empty() {
-            None
-        } else {
-            Some(self.recoverable_connection.upgrade().ok_or_else(|| {
+        // Nothing due: skip the connection upgrade and lock dance entirely. Scoping
+        // the work inside this branch keeps the connection and the recovery
+        // generation as plain values that exist only where they are valid, so they
+        // cannot drift out of sync (no hand-maintained `Option` invariant, no
+        // `expect()` that a future edit could turn into a panic in this background
+        // task and silently stop all token refresh).
+        if !tokens_to_refresh.is_empty() {
+            let connection = self.recoverable_connection.upgrade().ok_or_else(|| {
                 AmqpError::with_message("Recoverable connection has been dropped")
-            })?)
-        };
-        let refresh_generation = refresh_connection.as_ref().map(|c| c.generation());
-        for url in tokens_to_refresh {
-            let new_token = self
-                .credential
-                .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
-                .await?;
+            })?;
+            // Capture the recovery generation before the lock-free re-authorizations
+            // below, so a recovery that races them is detected before write-back (#4454).
+            let captured = connection.generation();
 
-            let connection = refresh_connection
-                .as_ref()
-                .expect("refresh_connection is Some when there are tokens to refresh");
-            self.perform_authorization(connection, &url, &new_token)
-                .await?;
+            // Refresh tokens without holding the scopes lock to avoid deadlocks.
+            let mut updated_tokens = HashMap::new();
+            for url in tokens_to_refresh {
+                let new_token = self
+                    .credential
+                    .get_token(&[EVENTHUBS_AUTHORIZATION_SCOPE], None)
+                    .await?;
 
-            debug!(
-                "Token refreshed for {url}, new expiration time: {}",
-                new_token.expires_on
-            );
-            updated_tokens.insert(url.clone(), new_token);
-        }
+                self.perform_authorization(&connection, &url, &new_token)
+                    .await?;
 
-        // Finally, update the scopes map with the new tokens, unless a recovery
-        // raced us. Re-check the generation under the same write lock `clear()`
-        // takes (#4454) before writing anything back.
-        if !updated_tokens.is_empty() {
-            let connection = refresh_connection
-                .as_ref()
-                .expect("refresh_connection is Some when tokens were refreshed");
-            let captured =
-                refresh_generation.expect("refresh_generation is Some when tokens were refreshed");
-            let mut scopes = self.authorization_scopes.write().await;
-            if connection.generation() != captured {
                 debug!(
-                    "Discarding tokens refreshed during recovery (#4454); the recovery generation advanced mid-refresh."
+                    "Token refreshed for {url}, new expiration time: {}",
+                    new_token.expires_on
                 );
-            } else {
-                for (url, token) in updated_tokens.into_iter() {
-                    scopes.insert(url.clone(), token);
+                updated_tokens.insert(url.clone(), new_token);
+            }
+
+            // Finally, update the scopes map with the new tokens, unless a recovery
+            // raced us. Re-check the generation under the same write lock `clear()`
+            // takes (#4454) before writing anything back.
+            if !updated_tokens.is_empty() {
+                let mut scopes = self.authorization_scopes.write().await;
+                if connection.generation() != captured {
+                    debug!(
+                        "Discarding tokens refreshed during recovery (#4454); the recovery generation advanced mid-refresh."
+                    );
+                } else {
+                    for (url, token) in updated_tokens.into_iter() {
+                        scopes.insert(url.clone(), token);
+                    }
+                    debug!("Updated tokens.");
                 }
-                debug!("Updated tokens.");
             }
         }
 
