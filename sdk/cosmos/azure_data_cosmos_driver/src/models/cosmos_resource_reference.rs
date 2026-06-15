@@ -419,6 +419,44 @@ impl CosmosResourceReference {
     }
 }
 
+/// Returns `true` for bytes that are RFC 3986 *unreserved* characters and may
+/// appear literally in a URL path segment without percent-encoding.
+fn is_unreserved(b: u8) -> bool {
+    b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~')
+}
+
+/// Percent-encodes the reserved characters in each segment of a resource path so
+/// it can be used as a URL path, while leaving `/` separators intact.
+///
+/// Cosmos resource IDs (RIDs) are emitted by the service as URL-safe base64 and
+/// routinely contain `=` padding (and, in principle, other reserved characters).
+/// When such a RID is placed *raw* into the request URL path the gateway
+/// canonicalizes the path, derives a resource id that differs from the one we
+/// signed, and rejects the request with `401 Unauthorized`. Percent-encoding the
+/// reserved characters in the URL — while the authorization signature continues
+/// to use the *raw* resource link — keeps the two in agreement.
+///
+/// Resource ids (names) cannot contain `/`, and Cosmos RIDs use a URL-safe base64
+/// alphabet (no `/`), so splitting on `/` to preserve separators is always safe.
+/// The returned value borrows the input when no character needs encoding.
+pub(crate) fn encode_path_segments(path: &str) -> Cow<'_, str> {
+    if path.bytes().all(|b| b == b'/' || is_unreserved(b)) {
+        return Cow::Borrowed(path);
+    }
+    let mut out = String::with_capacity(path.len() + 8);
+    for &b in path.as_bytes() {
+        if b == b'/' || is_unreserved(b) {
+            out.push(b as char);
+        } else {
+            const HEX: &[u8; 16] = b"0123456789ABCDEF";
+            out.push('%');
+            out.push(HEX[(b >> 4) as usize] as char);
+            out.push(HEX[(b & 0x0f) as usize] as char);
+        }
+    }
+    Cow::Owned(out)
+}
+
 // =============================================================================
 // From Implementations
 // =============================================================================
@@ -853,5 +891,36 @@ mod tests {
         // Offers: signing link is the lowercase RID (not a sub-slice of buf).
         assert_eq!(paths.signing_link(), "abc123xyz");
         assert!(paths.signing_override.is_some());
+    }
+
+    #[test]
+    fn encode_path_segments_borrows_when_safe() {
+        let p = "/dbs/mydb/colls/mycoll/docs/item1";
+        assert!(matches!(encode_path_segments(p), Cow::Borrowed(_)));
+        assert_eq!(encode_path_segments(p), p);
+    }
+
+    #[test]
+    fn encode_path_segments_encodes_rid_padding() {
+        // Base64 RID padding (`=`) must be percent-encoded in the URL path.
+        let p = "/dbs/qjQBAA==/colls/qjQBAOWXnF4=";
+        assert_eq!(
+            encode_path_segments(p),
+            "/dbs/qjQBAA%3D%3D/colls/qjQBAOWXnF4%3D"
+        );
+    }
+
+    #[test]
+    fn encode_path_segments_preserves_separators_and_unreserved() {
+        // `/` separators stay literal; unreserved chars (`-` `_` `.` `~`) are kept.
+        let p = "/dbs/Adt-AA==/colls/a_b.c~d";
+        assert_eq!(encode_path_segments(p), "/dbs/Adt-AA%3D%3D/colls/a_b.c~d");
+    }
+
+    #[test]
+    fn encode_path_segments_encodes_other_reserved() {
+        // Reserved characters that could appear in a name are encoded too.
+        let p = "/dbs/a+b c";
+        assert_eq!(encode_path_segments(p), "/dbs/a%2Bb%20c");
     }
 }

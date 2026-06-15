@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- RID-addressed requests now percent-encode the resource id segments in the request URL path (for example the `=` padding in base64 RIDs) while the authorization signature continues to use the raw resource link. Without this, cold-cache lookups by RID (e.g. resolving a container by RID) sent the raw RID in the path and the gateway rejected them with `401 Unauthorized`.
+
 ### Other Changes
 
 ## 0.4.0 (2026-06-09)

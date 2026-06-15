@@ -27,9 +27,9 @@ use crate::{
         transport::CosmosTransport,
     },
     models::{
-        cosmos_headers::QUERY_CONTENT_TYPE, request_header_names, AccountEndpoint, ActivityId,
-        CosmosOperation, CosmosResponse, Credential, DefaultConsistencyLevel,
-        EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
+        cosmos_headers::QUERY_CONTENT_TYPE, encode_path_segments, request_header_names,
+        AccountEndpoint, ActivityId, CosmosOperation, CosmosResponse, Credential,
+        DefaultConsistencyLevel, EffectivePartitionKey, OperationType, SessionToken, SubStatusCode,
     },
     options::{
         HedgeThreshold, OperationOptionsView, ReadConsistencyStrategy, Region,
@@ -1255,7 +1255,11 @@ fn build_transport_request(
         } else {
             format!("/{}", request_path)
         };
-        base.set_path(&normalized);
+        // Percent-encode reserved characters in the path segments (e.g. the `=`
+        // padding in base64 RIDs) so the gateway reconstructs the same resource
+        // link we signed. The authorization signature still uses the raw link via
+        // `paths` below.
+        base.set_path(&encode_path_segments(&normalized));
         base
     };
 
