@@ -16,7 +16,7 @@ use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 use azure_core_amqp::AmqpError;
 use azure_core_amqp::{
     message::AmqpSourceFilter, AmqpDescribed, AmqpOrderedMap, AmqpReceiverOptions, AmqpSource,
-    AmqpSymbol, AmqpValue, ReceiverCreditMode,
+    AmqpSymbol, AmqpTransport, AmqpValue, ReceiverCreditMode,
 };
 pub use event_receiver::EventReceiver;
 use std::{
@@ -45,6 +45,7 @@ struct ConsumerClientOptions {
     retry_options: Option<RetryOptions>,
     custom_endpoint: Option<Url>,
     cbs_token_type: Option<&'static str>,
+    transport: AmqpTransport,
 }
 
 impl ConsumerClient {
@@ -98,6 +99,7 @@ impl ConsumerClient {
                 url.clone(),
                 options.application_id,
                 options.custom_endpoint,
+                options.transport,
                 credential,
                 retry_options,
                 options.cbs_token_type,
@@ -608,6 +610,7 @@ pub mod builders {
             sas_credential::SasCredential,
             SAS_TOKEN_TYPE,
         },
+        models::TransportType,
         Result,
     };
     use std::sync::Arc;
@@ -637,6 +640,7 @@ pub mod builders {
         instance_id: Option<String>,
         retry_options: Option<RetryOptions>,
         custom_endpoint: Option<String>,
+        transport_type: Option<TransportType>,
     }
 
     impl ConsumerClientBuilder {
@@ -709,6 +713,21 @@ pub mod builders {
             self
         }
 
+        /// Sets the transport used to communicate with the Event Hub.
+        ///
+        /// # Arguments
+        /// * `transport_type` - The transport to use. Defaults to
+        ///   [`TransportType::AmqpTcp`]. Use [`TransportType::AmqpWebSocket`]
+        ///   to tunnel AMQP over WebSockets (port 443) when the native AMQP
+        ///   ports are blocked.
+        ///
+        /// # Returns
+        /// The updated [`ConsumerClientBuilder`].
+        pub fn with_transport_type(mut self, transport_type: TransportType) -> Self {
+            self.transport_type = Some(transport_type);
+            self
+        }
+
         /// Opens a connection to the Event Hub.
         ///
         /// This method establishes a connection to the Event Hubs instance associated
@@ -766,6 +785,7 @@ pub mod builders {
                     retry_options: self.retry_options,
                     custom_endpoint,
                     cbs_token_type: None,
+                    transport: self.transport_type.unwrap_or_default().into(),
                 },
             )?;
             consumer.ensure_connection().await?;
@@ -837,6 +857,7 @@ pub mod builders {
                     retry_options: self.retry_options,
                     custom_endpoint,
                     cbs_token_type: Some(SAS_TOKEN_TYPE),
+                    transport: self.transport_type.unwrap_or_default().into(),
                 },
             )?;
             consumer.ensure_connection().await?;
