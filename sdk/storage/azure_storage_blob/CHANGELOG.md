@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added support for `get_user_delegation_key` to `BlobServiceClient`.
+
 ### Breaking Changes
 
 ### Bugs Fixed

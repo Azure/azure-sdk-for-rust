@@ -862,18 +862,20 @@ pub struct KeyInfo {
     /// The date-time the key expires.
     #[serde(
         default,
+        deserialize_with = "models_serde::option_offset_date_time_rfc3339::deserialize",
         rename = "Expiry",
-        skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
+        serialize_with = "crate::models::rfc3339_seconds_only::option::serialize",
+        skip_serializing_if = "Option::is_none"
     )]
     pub expiry: Option<OffsetDateTime>,
 
     /// The date-time the key is active.
     #[serde(
         default,
+        deserialize_with = "models_serde::option_offset_date_time_rfc3339::deserialize",
         rename = "Start",
-        skip_serializing_if = "Option::is_none",
-        with = "models_serde::option_offset_date_time_rfc3339_fixed_width"
+        serialize_with = "crate::models::rfc3339_seconds_only::option::serialize",
+        skip_serializing_if = "Option::is_none"
     )]
     pub start: Option<OffsetDateTime>,
 }

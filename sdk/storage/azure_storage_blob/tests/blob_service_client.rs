@@ -482,7 +482,7 @@ async fn test_list_containers_max_results(ctx: TestContext) -> Result<(), Box<dy
     Ok(())
 }
 
-#[recorded::test]
+#[recorded::test(live)]
 async fn test_get_user_delegation_key(ctx: TestContext) -> Result<(), Box<dyn Error>> {
     // Recording Setup
     let recording = ctx.recording();
