@@ -134,6 +134,10 @@ pub struct CosmosDriver {
     /// initialization. In normal usage `get_or_create_driver` awaits `initialize()`
     /// before returning, so this guard only catches misuse.
     initialized: AtomicBool,
+    /// Shared, bounded pool of reusable buffers for the opt-in diagnostics **capture**
+    /// prototype ([`crate::diagnostics::capture`]). Cheap to clone; only touched at
+    /// operation boundaries when the capture policy is enabled.
+    capture_pool: crate::diagnostics::capture::LogPool,
     /// Native FFI query plan provider. Lazily loads the native library on
     /// first use; returns errors if unavailable.
     #[cfg(feature = "__internal_native_query_plan")]
@@ -1035,6 +1039,7 @@ impl CosmosDriver {
             pk_range_cache: PartitionKeyRangeCache::new(),
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
+            capture_pool: crate::diagnostics::capture::LogPool::new(),
             #[cfg(feature = "__internal_native_query_plan")]
             native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider::new(),
         }
@@ -1607,8 +1612,24 @@ impl CosmosDriver {
             self.runtime.user_agent().as_str().to_owned(),
         );
 
+        // Opt-in diagnostics capture (prototype): operation-layer-owned, lock-free recorder.
+        // Created only when the capture policy is enabled, so the default path is unchanged.
+        // Per-attempt detail inside the pipeline (hedging, multi-region retries) is captured by
+        // the shipping `DiagnosticsContext`; here the parallel capture records the operation-level
+        // outcome and is attached separately as `CosmosResponse::capture_diagnostics()`.
+        let capture_policy = self.options.capture_diagnostics_policy();
+        let mut capture_recorder = (capture_policy.mode != crate::diagnostics::capture::Mode::Off)
+            .then(|| {
+                crate::diagnostics::capture::DiagnosticsRecorder::start(
+                    &self.capture_pool,
+                    &format!("{operation_type:?} {resource_type:?}"),
+                    &endpoint.to_string(),
+                    activity_id.as_str(),
+                )
+            });
+
         // Step 8: Execute via the new operation pipeline
-        super::pipeline::operation_pipeline::execute_operation_pipeline(
+        let result = super::pipeline::operation_pipeline::execute_operation_pipeline(
             operation,
             overrides,
             &effective_options,
@@ -1629,7 +1650,49 @@ impl CosmosDriver {
             effective_control_group.as_ref(),
             pre_resolved_pk_range_id,
         )
-        .await
+        .await;
+
+        match result {
+            Ok(response) => {
+                let rendered = capture_recorder.take().map(|mut rec| {
+                    let headers = response.headers();
+                    let status_u16 = u16::from(response.status().status_code());
+                    rec.record_attempt_ext(
+                        0,
+                        status_u16,
+                        headers.activity_id.as_ref().map(|a| a.as_str()),
+                        headers.request_charge.map(|r| r.value()),
+                        headers.substatus.map(|s| s.value()),
+                        None,
+                        0,
+                        rec.elapsed_ns(),
+                    );
+                    let outcome = if response.status().is_success() {
+                        crate::diagnostics::capture::Outcome::Success
+                    } else {
+                        crate::diagnostics::capture::Outcome::Error
+                    };
+                    rec.record_end(outcome, 1, None);
+                    std::sync::Arc::new(crate::diagnostics::capture::finish(rec, &capture_policy))
+                });
+                Ok(response.with_capture_diagnostics(rendered))
+            }
+            Err(e) => {
+                if let Some(mut rec) = capture_recorder.take() {
+                    rec.record_end(crate::diagnostics::capture::Outcome::Error, 1, None);
+                    if let Some(summary) =
+                        crate::diagnostics::capture::finish(rec, &capture_policy).summary()
+                    {
+                        tracing::debug!(
+                            target: "azure_data_cosmos_driver::diagnostics::capture",
+                            diagnostics = %String::from_utf8_lossy(&summary.to_json()),
+                            "operation failed (capture prototype)",
+                        );
+                    }
+                }
+                Err(e)
+            }
+        }
     }
 
     /// Resolves a container by database and container name.

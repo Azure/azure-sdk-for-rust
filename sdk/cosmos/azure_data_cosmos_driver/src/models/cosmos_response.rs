@@ -84,6 +84,13 @@ pub struct CosmosResponse {
 
     /// Full diagnostics context for this operation.
     diagnostics: Arc<DiagnosticsContext>,
+
+    /// Optional, opt-in capture-diagnostics built by the parallel
+    /// [`crate::diagnostics::capture`] prototype. `None` unless the capture policy is enabled
+    /// and the gate decided to build (a slow or errored operation). This is intentionally
+    /// separate from `diagnostics` (the shipping [`DiagnosticsContext`]) while capture is a
+    /// prototype; merging the two is the deferred next step.
+    capture: Option<Arc<crate::diagnostics::capture::Rendered>>,
 }
 
 impl CosmosResponse {
@@ -102,7 +109,26 @@ impl CosmosResponse {
             payload: CosmosResponsePayload::new(body, headers),
             status,
             diagnostics,
+            capture: None,
         }
+    }
+
+    /// Attaches opt-in capture-diagnostics to this response (builder-style).
+    pub(crate) fn with_capture_diagnostics(
+        mut self,
+        capture: Option<Arc<crate::diagnostics::capture::Rendered>>,
+    ) -> Self {
+        self.capture = capture;
+        self
+    }
+
+    /// Returns the opt-in capture-diagnostics built by the [`crate::diagnostics::capture`]
+    /// prototype, if the policy was enabled and the gate decided to build for this operation.
+    ///
+    /// `None` when capture is off (the default) or when the operation was a fast success the
+    /// gate dropped. This is distinct from [`CosmosResponse::diagnostics`].
+    pub fn capture_diagnostics(&self) -> Option<&crate::diagnostics::capture::Rendered> {
+        self.capture.as_deref()
     }
 
     /// Returns a reference to the wire-level payload (body + headers).

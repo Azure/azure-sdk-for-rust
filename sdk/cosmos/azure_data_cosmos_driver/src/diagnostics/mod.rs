@@ -21,6 +21,15 @@
 mod diagnostics_context;
 mod proxy_configuration;
 
+/// Deferred, threshold-gated diagnostics capture (opt-in prototype).
+///
+/// A standalone, parallel diagnostics subsystem that captures a compact, append-only log on the
+/// hot path and builds an aggregatable summary (and opt-in `AZD1` binary detail) only when a
+/// configurable op-end gate decides it is worth it. It is independent of [`DiagnosticsContext`]
+/// for now; feeding/extending `DiagnosticsContext` instead of building a parallel model is the
+/// intended next step (see `DIAGNOSTICS-CAPTURE.md`).
+pub mod capture;
+
 pub(crate) use diagnostics_context::DiagnosticsContextBuilder;
 pub use diagnostics_context::{
     DiagnosticsContext, ExecutionContext, FailedTransportShardDiagnostics, PipelineType,

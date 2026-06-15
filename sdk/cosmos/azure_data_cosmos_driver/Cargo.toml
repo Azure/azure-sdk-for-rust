@@ -26,6 +26,7 @@ backtrace.workspace = true
 base64.workspace = true
 bytes.workspace = true
 crossbeam-epoch = { workspace = true, features = ["std"] }
+flate2.workspace = true
 futures.workspace = true
 h2 = { workspace = true, optional = true }
 percent-encoding = { workspace = true, optional = true }
@@ -41,6 +42,7 @@ uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
 [dev-dependencies]
 azure_identity.workspace = true
+criterion.workspace = true
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = [
@@ -135,3 +137,7 @@ required-features = ["__internal_testing"]
 name = "in_memory_emulator"
 path = "tests/in_memory_emulator.rs"
 required-features = ["__internal_in_memory_emulator"]
+
+[[bench]]
+name = "diagnostics_capture"
+harness = false

@@ -52,6 +52,10 @@ pub struct DriverOptions {
     /// endpoints matching these regions appear first. Regions that don't match
     /// any account endpoint are silently skipped.
     preferred_regions: Vec<Region>,
+    /// Opt-in policy for the deferred, threshold-gated diagnostics **capture** prototype
+    /// ([`crate::diagnostics::capture`]). Defaults to
+    /// [`Mode::Off`](crate::diagnostics::capture::Mode::Off) — no cost, no behavior change.
+    capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy,
 }
 
 impl DriverOptions {
@@ -76,6 +80,11 @@ impl DriverOptions {
     pub fn preferred_regions(&self) -> &[Region] {
         &self.preferred_regions
     }
+
+    /// Returns the opt-in diagnostics **capture** policy ([`crate::diagnostics::capture`]).
+    pub fn capture_diagnostics_policy(&self) -> crate::diagnostics::capture::DiagnosticsPolicy {
+        self.capture_diagnostics_policy
+    }
 }
 
 /// Builder for creating [`DriverOptions`].
@@ -88,6 +97,7 @@ pub struct DriverOptionsBuilder {
     account: AccountReference,
     operation_options: Option<OperationOptions>,
     preferred_regions: Vec<Region>,
+    capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy,
 }
 
 impl DriverOptionsBuilder {
@@ -97,6 +107,7 @@ impl DriverOptionsBuilder {
             account,
             operation_options: None,
             preferred_regions: Vec::new(),
+            capture_diagnostics_policy: crate::diagnostics::capture::DiagnosticsPolicy::default(),
         }
     }
 
@@ -116,12 +127,27 @@ impl DriverOptionsBuilder {
         self
     }
 
+    /// Sets the opt-in diagnostics **capture** policy ([`crate::diagnostics::capture`]).
+    ///
+    /// Defaults to [`Mode::Off`](crate::diagnostics::capture::Mode::Off) (no cost, no behavior
+    /// change). This is a prototype subsystem distinct from [`DiagnosticsContext`].
+    ///
+    /// [`DiagnosticsContext`]: crate::diagnostics::DiagnosticsContext
+    pub fn with_capture_diagnostics_policy(
+        mut self,
+        policy: crate::diagnostics::capture::DiagnosticsPolicy,
+    ) -> Self {
+        self.capture_diagnostics_policy = policy;
+        self
+    }
+
     /// Builds the [`DriverOptions`].
     pub fn build(self) -> DriverOptions {
         DriverOptions {
             account: self.account,
             operation_options: Arc::new(self.operation_options.unwrap_or_default()),
             preferred_regions: self.preferred_regions,
+            capture_diagnostics_policy: self.capture_diagnostics_policy,
         }
     }
 }
@@ -209,5 +235,26 @@ mod tests {
             .build();
 
         assert_eq!(options.preferred_regions(), &regions);
+    }
+
+    #[test]
+    fn capture_diagnostics_policy_defaults_off_and_is_configurable() {
+        use crate::diagnostics::capture::{DiagnosticsPolicy, Mode};
+        use std::time::Duration;
+
+        let default_options = DriverOptionsBuilder::new(test_account()).build();
+        assert_eq!(default_options.capture_diagnostics_policy().mode, Mode::Off);
+
+        let configured = DriverOptionsBuilder::new(test_account())
+            .with_capture_diagnostics_policy(DiagnosticsPolicy::threshold(Duration::from_millis(5)))
+            .build();
+        assert_eq!(
+            configured.capture_diagnostics_policy().mode,
+            Mode::Threshold
+        );
+        assert_eq!(
+            configured.capture_diagnostics_policy().latency_threshold,
+            Some(Duration::from_millis(5))
+        );
     }
 }
