@@ -78,6 +78,28 @@ impl Authorizer {
         scopes.clear();
     }
 
+    /// Aborts the background token-refresh task, if one was ever started.
+    ///
+    /// The refresh task (spawned lazily by [`authorize_path`](Self::authorize_path))
+    /// owns an `Arc<Self>` and parks in a long `sleep` until shortly before the
+    /// next token expiry — typically tens of minutes. While it is alive it keeps
+    /// the `Authorizer`, its cached `AccessToken`s, and its credential from being
+    /// reclaimed, even after the owning [`RecoverableConnection`] has been torn
+    /// down. That orphaned-task-plus-token retention is a multi-KB leak per
+    /// open/close cycle (it grows with every producer/consumer that is rebuilt).
+    ///
+    /// Aborting the task lets it drop its `Arc<Self>` so the `Authorizer` is
+    /// reclaimed as soon as the connection's strong reference goes away. Callers
+    /// invoke this during connection teardown ([`RecoverableConnection::close_connection`]
+    /// and its `Drop`). It is deliberately *not* called on the recovery path,
+    /// where the same task is reused against the rebuilt connection.
+    pub(crate) fn stop_refresh_task(&self) {
+        if let Some(task) = self.authorization_refresher.get() {
+            debug!("Aborting authorization refresh task.");
+            task.abort();
+        }
+    }
+
     #[cfg(test)]
     fn disable_authorization(&self) -> Result<()> {
         use crate::EventHubsError;
