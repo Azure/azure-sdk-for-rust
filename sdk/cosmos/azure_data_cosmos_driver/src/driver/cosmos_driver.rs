@@ -1612,18 +1612,20 @@ impl CosmosDriver {
             self.runtime.user_agent().as_str().to_owned(),
         );
 
-        // Opt-in diagnostics capture (prototype): operation-layer-owned, lock-free recorder.
-        // Created only when the capture policy is enabled, so the default path is unchanged.
-        // Per-attempt detail inside the pipeline (hedging, multi-region retries) is captured by
-        // the shipping `DiagnosticsContext`; here the parallel capture records the operation-level
-        // outcome and is attached separately as `CosmosResponse::capture_diagnostics()`.
+        // Opt-in diagnostics capture: operation-layer-owned, lock-free recorder. Created only
+        // when the capture policy is enabled, so the default path is unchanged. Past the gate it
+        // materializes the canonical `DiagnosticsContext` (the same type the pipeline builds) and
+        // attaches it via `CosmosResponse::capture_diagnostics()`. Per-attempt detail inside the
+        // pipeline (hedging, multi-region retries) is also captured by the pipeline's own
+        // `DiagnosticsContext`; here capture records the operation-level outcome.
         let capture_policy = self.options.capture_diagnostics_policy();
+        let endpoint_str = endpoint.to_string();
         let mut capture_recorder = (capture_policy.mode != crate::diagnostics::capture::Mode::Off)
             .then(|| {
                 crate::diagnostics::capture::DiagnosticsRecorder::start(
                     &self.capture_pool,
                     &format!("{operation_type:?} {resource_type:?}"),
-                    &endpoint.to_string(),
+                    &endpoint_str,
                     activity_id.as_str(),
                 )
             });
@@ -1654,39 +1656,62 @@ impl CosmosDriver {
 
         match result {
             Ok(response) => {
-                let rendered = capture_recorder.take().map(|mut rec| {
+                let captured = capture_recorder.take().and_then(|mut rec| {
+                    use crate::diagnostics::capture::{AttemptRecord, Outcome};
+                    use crate::diagnostics::ExecutionContext;
                     let headers = response.headers();
                     let status_u16 = u16::from(response.status().status_code());
-                    rec.record_attempt_ext(
-                        0,
+                    let mut attempt = AttemptRecord::new(
+                        ExecutionContext::Initial,
+                        "",
+                        &endpoint_str,
                         status_u16,
-                        headers.activity_id.as_ref().map(|a| a.as_str()),
-                        headers.request_charge.map(|r| r.value()),
-                        headers.substatus.map(|s| s.value()),
-                        None,
-                        0,
-                        rec.elapsed_ns(),
-                    );
+                    )
+                    .with_duration_ns(rec.elapsed_ns());
+                    if let Some(activity) = headers.activity_id.as_ref() {
+                        attempt = attempt.with_service_request_id(activity.as_str());
+                    }
+                    if let Some(charge) = headers.request_charge {
+                        attempt = attempt.with_request_charge(charge.value());
+                    }
+                    if let Some(sub) = headers.substatus {
+                        attempt = attempt.with_sub_status(sub.value());
+                    }
+                    rec.record_attempt(attempt);
                     let outcome = if response.status().is_success() {
-                        crate::diagnostics::capture::Outcome::Success
+                        Outcome::Success
                     } else {
-                        crate::diagnostics::capture::Outcome::Error
+                        Outcome::Error
                     };
-                    rec.record_end(outcome, 1, None);
-                    std::sync::Arc::new(crate::diagnostics::capture::finish(rec, &capture_policy))
+                    rec.record_end(
+                        outcome,
+                        1,
+                        status_u16,
+                        response.status().sub_status().map(|s| s.value()),
+                        None,
+                    );
+                    crate::diagnostics::capture::finish(
+                        rec,
+                        &capture_policy,
+                        std::sync::Arc::new(crate::options::DiagnosticsOptions::default()),
+                    )
+                    .map(std::sync::Arc::new)
                 });
-                Ok(response.with_capture_diagnostics(rendered))
+                Ok(response.with_capture_diagnostics(captured))
             }
             Err(e) => {
                 if let Some(mut rec) = capture_recorder.take() {
-                    rec.record_end(crate::diagnostics::capture::Outcome::Error, 1, None);
-                    if let Some(summary) =
-                        crate::diagnostics::capture::finish(rec, &capture_policy).summary()
-                    {
+                    use crate::diagnostics::capture::Outcome;
+                    rec.record_end(Outcome::Error, 1, 0, None, None);
+                    if let Some(context) = crate::diagnostics::capture::finish(
+                        rec,
+                        &capture_policy,
+                        std::sync::Arc::new(crate::options::DiagnosticsOptions::default()),
+                    ) {
                         tracing::debug!(
                             target: "azure_data_cosmos_driver::diagnostics::capture",
-                            diagnostics = %String::from_utf8_lossy(&summary.to_json()),
-                            "operation failed (capture prototype)",
+                            diagnostics = %context.to_json_string(None),
+                            "operation failed (capture)",
                         );
                     }
                 }

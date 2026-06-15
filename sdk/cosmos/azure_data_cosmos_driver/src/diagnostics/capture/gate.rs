@@ -3,18 +3,17 @@
 
 //! The op-end **gate** and its policy.
 //!
-//! After an operation completes, [`DiagnosticsPolicy`] decides whether the diagnostics are worth
-//! building. On a fast success the recorder's buffer is returned to the pool for ~free; on a slow
-//! or errored operation the log is parsed once and reduced to a summary (and, opt-in, an `AZD1`
-//! blob).
-//!
-//! The latency threshold is a plain [`Duration`]. Wiring it to the driver's broader diagnostics
-//! configuration (verbosity / per-operation-kind thresholds) is intentionally left as a follow-up
-//! while this capture subsystem is a standalone, opt-in prototype.
+//! After an operation completes, [`DiagnosticsPolicy`] decides whether the captured log is worth
+//! materializing. On a fast success the recorder's buffer is returned to the pool for ~free; on a
+//! slow or errored operation (or under [`Mode::Always`]) the log is built into the canonical
+//! [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext) via [`super::context`].
 
+use super::context::build_context;
 use super::recorder::{parse, DiagnosticsRecorder};
-use super::summary::{build_detailed_blob, summarize, Summary};
 use super::Outcome;
+use crate::diagnostics::DiagnosticsContext;
+use crate::options::DiagnosticsOptions;
+use std::sync::Arc;
 use std::time::Duration;
 
 /// How aggressively diagnostics are built at the gate.
@@ -31,8 +30,7 @@ pub enum Mode {
 
 /// The policy evaluated at the end of an operation to decide whether to build diagnostics.
 ///
-/// The default is [`Mode::Off`] (no cost, no behavior change) — diagnostics are opt-in. Use
-/// the simple [`DiagnosticsPolicy::threshold`] / [`DiagnosticsPolicy::always`] constructors.
+/// The default is [`Mode::Off`] (no cost, no behavior change) — diagnostics capture is opt-in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct DiagnosticsPolicy {
     /// Build aggressiveness.
@@ -41,8 +39,6 @@ pub struct DiagnosticsPolicy {
     pub latency_threshold: Option<Duration>,
     /// Build when the operation failed.
     pub capture_on_error: bool,
-    /// When building, also emit the `AZD1` binary detail blob (opt-in compaction).
-    pub binary: bool,
 }
 
 impl Default for DiagnosticsPolicy {
@@ -52,74 +48,35 @@ impl Default for DiagnosticsPolicy {
             mode: Mode::Off,
             latency_threshold: None,
             capture_on_error: true,
-            binary: false,
         }
     }
 }
 
 impl DiagnosticsPolicy {
-    /// A threshold policy that builds on error or when an operation exceeds `latency_threshold`.
+    /// A policy that never builds diagnostics ([`Mode::Off`]) — the opt-in default.
     ///
-    /// Summary-only (binary off); flip [`DiagnosticsPolicy::binary`] to also emit the `AZD1` blob.
+    /// Equivalent to [`DiagnosticsPolicy::default`]; provided for symmetry with
+    /// [`threshold`](Self::threshold) and [`always`](Self::always).
+    pub fn off() -> Self {
+        Self::default()
+    }
+
+    /// A threshold policy that builds on error or when an operation exceeds `latency_threshold`.
     pub fn threshold(latency_threshold: Duration) -> Self {
         Self {
             mode: Mode::Threshold,
             latency_threshold: Some(latency_threshold),
             capture_on_error: true,
-            binary: false,
         }
     }
 
-    /// Always build (summary-only by default).
+    /// Always build a [`DiagnosticsContext`].
     pub fn always() -> Self {
         Self {
             mode: Mode::Always,
             latency_threshold: None,
             capture_on_error: true,
-            binary: false,
         }
-    }
-}
-
-/// The rendered diagnostics for one operation.
-#[derive(Clone, Debug)]
-pub enum Rendered {
-    /// The gate decided the diagnostics were not worth building (fast success). Nothing emitted.
-    Dropped,
-    /// Summary-only tier.
-    Summary {
-        /// The aggregatable summary.
-        summary: Box<Summary>,
-    },
-    /// Summary + detailed binary tier.
-    Detailed {
-        /// The aggregatable summary.
-        summary: Box<Summary>,
-        /// Full span tree as an `AZD1` binary blob.
-        blob: Vec<u8>,
-    },
-}
-
-impl Rendered {
-    /// The summary, when one was built.
-    pub fn summary(&self) -> Option<&Summary> {
-        match self {
-            Rendered::Dropped => None,
-            Rendered::Summary { summary } | Rendered::Detailed { summary, .. } => Some(summary),
-        }
-    }
-
-    /// The detailed `AZD1` binary blob, when one was built.
-    pub fn detailed_blob(&self) -> Option<&[u8]> {
-        match self {
-            Rendered::Detailed { blob, .. } => Some(blob),
-            _ => None,
-        }
-    }
-
-    /// Whether the gate dropped the diagnostics.
-    pub fn is_dropped(&self) -> bool {
-        matches!(self, Rendered::Dropped)
     }
 }
 
@@ -137,27 +94,24 @@ pub fn should_build(outcome: Outcome, total_ns: u64, policy: &DiagnosticsPolicy)
     }
 }
 
-/// Applies the gate to a finished recorder: drop cheaply, or build the summary (and opt-in blob).
+/// Applies the gate to a finished recorder: drop cheaply, or build the canonical
+/// [`DiagnosticsContext`].
 ///
-/// Either way the recorder's buffer is returned to the pool. Call after
-/// [`DiagnosticsRecorder::record_end`].
-pub fn finish(recorder: DiagnosticsRecorder, policy: &DiagnosticsPolicy) -> Rendered {
+/// Returns `None` when the gate dropped the diagnostics (fast success). Either way the recorder's
+/// buffer is returned to the pool. Call after [`DiagnosticsRecorder::record_end`].
+pub fn finish(
+    recorder: DiagnosticsRecorder,
+    policy: &DiagnosticsPolicy,
+    options: Arc<DiagnosticsOptions>,
+) -> Option<DiagnosticsContext> {
     if !should_build(recorder.outcome(), recorder.total_ns(), policy) {
         recorder.return_buffer();
-        return Rendered::Dropped;
+        return None;
     }
     let parsed = parse(recorder.bytes());
-    let summary = Box::new(summarize(&parsed));
-    let rendered = if policy.binary {
-        Rendered::Detailed {
-            summary,
-            blob: build_detailed_blob(&parsed),
-        }
-    } else {
-        Rendered::Summary { summary }
-    };
+    let context = build_context(&parsed, options);
     recorder.return_buffer();
-    rendered
+    Some(context)
 }
 
 #[cfg(test)]
@@ -182,11 +136,8 @@ mod tests {
     #[test]
     fn threshold_builds_on_slow_or_error() {
         let p = DiagnosticsPolicy::threshold(Duration::from_millis(5));
-        // fast success -> drop
         assert!(!should_build(Outcome::Success, 1_000_000, &p));
-        // slow success -> build
         assert!(should_build(Outcome::Success, 6_000_000, &p));
-        // fast error -> build (capture_on_error)
         assert!(should_build(Outcome::Error, 1_000_000, &p));
     }
 

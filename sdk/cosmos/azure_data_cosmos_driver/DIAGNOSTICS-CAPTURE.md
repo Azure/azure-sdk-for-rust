@@ -1,10 +1,11 @@
 # Deferred, Threshold-Gated Diagnostics Capture (prototype)
 
-> **Status: prototype / for discussion.** This document describes an opt-in, parallel diagnostics
-> subsystem under `azure_data_cosmos_driver::diagnostics::capture`. It is independent of the
-> shipping [`DiagnosticsContext`] and is **off by default**. The intended next step — feeding or
-> extending `DiagnosticsContext` rather than building a separate model — is the open question
-> tracked in [§ Open question / deferred](#open-question--deferred).
+> **Status: prototype / for discussion.** This document describes an opt-in diagnostics
+> acquisition front-end under `azure_data_cosmos_driver::diagnostics::capture`. It is a cheap,
+> append-only, lock-free hot-path recorder with an operation-end gate that — when it decides
+> diagnostics are worth keeping — materializes the **canonical**
+> [`DiagnosticsContext`]: the same diagnostics type the rest of the driver produces and returns.
+> There is one diagnostics model, not a parallel one. Capture is **off by default**.
 
 ## 1. Problem & goals
 
@@ -26,11 +27,9 @@ Goals:
 - **G2** — Collection/materialization is deferred off the hot path.
 - **G3** — A configurable gate evaluated at operation end decides whether to build at all:
   latency threshold + on-error, plus Off/Always modes. If not wanted, drop cheaply.
-- **G4** — Binary compaction is opt-in (a compact `AZD1` wire format + version header), with a
-  shared decode path.
-- **G5** — Compact SDK/driver version + User-Agent provenance recorded as a tiny interned
-  preamble, rehydrated only when built.
-- **G6** — The default summary is aggregatable and close to today's request-style diagnostics.
+- **G4** — When the gate fires, the captured log materializes the **canonical**
+  [`DiagnosticsContext`] (one model), including hedging structure for multi-region operations.
+- **G5** — Opt-in and default-`Off`: an unconfigured client pays nothing and behaves unchanged.
 
 ## 2. Design exploration & benchmarks
 
@@ -42,77 +41,81 @@ retry-then-success, error, and fan-out with N children):
 | **Eager JSON** | A nested JSON object, built on every call | Most familiar, best OpenTelemetry fit, but the most expensive and the largest output. |
 | **Binary Span Tree** | A small binary blob (decode to JSON with a tool) | Full call tree cheaply; dropped for free on success; smallest full-fidelity format. |
 | **Tiered Hybrid** | A tiny summary by default; full binary on error/on demand | Looks like today's request diagnostics; cheap happy path; never loses detail. |
-| **Deferred Gated Capture** ⭐ | Nothing on a fast success; a summary (+opt-in binary) only when slow or errored | Append-only capture, then *decide at the end* whether to build. Cheapest happy path. |
+| **Deferred Gated Capture** ⭐ | Nothing on a fast success; build only when slow or errored | Append-only capture, then *decide at the end* whether to build. Cheapest happy path. |
 
-**Headline (release):** on a fast success the Deferred Gated design pays only the append +
-return-to-pool cost and builds nothing — roughly an order of magnitude cheaper than building a
-summary every time, and ~100x cheaper than the eager baseline. Output collapses cleanly: a wide
-fan-out keeps a flat summary while the eager JSON balloons.
+**Headline:** on a fast success the Deferred Gated design pays only the append + return-to-pool
+cost and builds nothing — roughly an order of magnitude cheaper than building a diagnostics object
+every time. Output collapses cleanly: a dropped fast success produces **0 B**.
 
-This PR implements the **Deferred Gated Capture** design. Measured numbers from this crate:
+This PR implements the **Deferred Gated Capture** design and wires it to build the **canonical
+`DiagnosticsContext`** when the gate fires. Measured numbers from this crate (criterion, dev
+profile; see [§7](#7-test--bench-results)):
 
-| Path | Cost (criterion, release) |
+| Path | Cost (criterion) |
 |---|---|
-| Fast success, gate drops it | **~140 ns** (append + return-to-pool; allocation-free after warm-up) |
-| Slow/errored, build summary | **~1.6 µs** (parse + reduce, only past the gate) |
-| Slow/errored, build summary + `AZD1` | **~54 µs** (+ binary encode, off the hot path) |
+| Opt-in, gate drops fast success | **~0.4 µs** (start + append + gate + return-to-pool) |
+| `Mode::Off` (even if a stream was appended) | **~0.37 µs** (gate drops without building) |
+| Gate fires, build `DiagnosticsContext` | **~5 µs** (parse + replay onto the builder, only past the gate) |
 
-Output size:
+> The real driver default (`Off`) constructs **no recorder at all**, so the default-Off cost on
+> the hot path is zero — the `Mode::Off` row above is the upper bound for code that *did* record.
 
-| Case | Dropped | Summary | Detailed (`AZD1`) |
-|---|---|---|---|
-| Retry 429→200 | **0 B** | 480 B | 506 B |
-| Fan-out ×25 | **0 B** | **391 B (flat)** | 545 B |
+Output size — a dropped fast success serializes nothing (**0 B**); a built `DiagnosticsContext`
+serializes to the driver's standard JSON (see the examples in [§7](#7-test--bench-results)).
 
 ## 3. Comparison with .NET `CosmosDiagnostics`
 
 .NET V3 ships `CosmosDiagnostics`: a request-focused object with a top-level `Summary` histogram
 over a nested handler → transport → `StoreResult` tree. Conceptually:
 
-- Its **`Summary` block** is the aggregatable roll-up this design emits as the default summary —
-  the migration-friendly path.
-- Its **full nested tree** is the information this design ships as a compact, opt-in, on-error
-  binary blob instead of building eagerly every time.
-- Its once-per-diagnostics **Client Configuration / User-Agent** maps to the interned
-  version/User-Agent preamble (recorded once, not per request).
+- Its **per-request tree** maps onto this driver's existing
+  [`RequestDiagnostics`](crate::diagnostics::RequestDiagnostics) list inside `DiagnosticsContext` —
+  which is exactly what the gate builds, so there is no second model to reconcile.
+- Its **once-per-diagnostics Client Configuration / User-Agent** maps to the
+  context's client-level metadata, populated only when the gate builds.
+- Its **`Summary` roll-up** corresponds to `DiagnosticsContext`'s `Summary` serialization verbosity
+  (`DiagnosticsVerbosity::Summary`) — a view over the one model, not a separate object.
 
 The captured field set is seeded from the signals a support investigation branches on first:
 final/per-attempt status, error classification (incl. Cosmos sub-status), service request id
-(activity id), request charge (RU), retry/throttle counts, total elapsed, and — for fan-out — a
-child count with per-child plan-node / feed-range detail in the binary tier.
+(activity id), request charge (RU), retry/throttle counts, total elapsed, and — for hedged
+operations — per-region legs with the winning leg and terminal state.
 
 ## 4. The chosen design — Deferred Gated Capture
 
 ```text
 HOT PATH (per attempt, write-preferred, lock-free, no Mutex):
-  start   -> rent Vec<u8> from a bounded pool; write a 1-byte preamble id
-  attempt -> append TLV: status, service-request-id, RU, sub-status, request_sent, timing
-  child   -> append TLV: plan-node id, feed-range, timing      (fan-out)
+  start   -> rent Vec<u8> from a bounded pool; write the op header
+  attempt -> append TLV: exec-context, region, endpoint, status, sub-status,
+                         service-request-id, RU, request_sent, timing
+  hedge   -> append TLV: terminal state, primary/alternate/winning region   (multi-region)
   end     -> GATE: build? (Always | elapsed > latency_threshold | (error && capture_on_error))
-               no  -> clear + return buffer to pool             (~free)
-               yes -> parse log -> Summary (always)
-                                -> AZD1 binary blob              (opt-in)
+               no  -> clear + return buffer to pool                          (~free)
+               yes -> parse log once -> replay onto DiagnosticsContextBuilder
+                                     -> DiagnosticsContext  (the canonical type)
 ```
 
 Components (`azure_data_cosmos_driver::diagnostics::capture`):
 
-- **`LogPool`** — a shared, **bounded** pool of reusable buffers. Rent/return happen only at
-  operation boundaries; oversized buffers (wide fan-out) are dropped rather than pinned.
-- **`DiagnosticsRecorder`** — an operation-layer-owned, **lock-free `&mut`** append recorder.
-  It is **cancellation-safe** (its `Drop` returns the buffer if `finish` never runs) and
-  **panic-safe** (a partially written buffer is cleared, never poisoning a reused buffer). Elapsed
-  time uses `std::time::Instant`. Fan-out children are captured as plain `ChildRecord` values by
-  concurrent tasks and merged at the operation layer on join, so per-task capture stays lock-free.
-- **`DiagnosticsPolicy` / `Mode`** — the gate: `Off` (default; truly zero), `Threshold`
-  (build on error or over a latency threshold), `Always`. `finish()` drops cheaply or builds.
-- **`Summary`** — the always-built, aggregatable roll-up (status histogram, top error incl.
-  sub-status, RU as `f64`, retry/throttle counts, elapsed, final service-request-id, child count,
-  client provenance).
-- **`AZD1` wire format** (`capture::wire`) — a compact, deterministic binary: magic + version byte
-  + flags + a flat node list (varint TLV), optional DEFLATE above a size threshold. The decoder
-  **rejects unknown versions** and malformed input (checked conversions, bounded pre-allocation).
-- **Interned preamble** — process-global SDK/driver version + User-Agent, recorded as a single
-  byte on the hot path and rehydrated only when the gate builds.
+- **`LogPool`** (`pool.rs`) — a shared, **bounded** pool of reusable buffers. Rent/return happen
+  only at operation boundaries; oversized buffers (wide fan-out) are dropped rather than pinned.
+- **`DiagnosticsRecorder` / `AttemptRecord`** (`recorder.rs`) — an operation-layer-owned,
+  **lock-free `&mut`** append recorder. It is **cancellation-safe** (its `Drop` returns the buffer
+  if `finish` never runs) and **panic-safe** (a partially written buffer is cleared, never
+  poisoning a reused buffer). Elapsed time uses `std::time::Instant`. Concurrent hedge legs /
+  fan-out children are captured as plain values by their own tasks and merged at the operation
+  layer on join, so per-task capture stays lock-free.
+- **`DiagnosticsPolicy` / `Mode`** (`gate.rs`) — the gate: `Off` (default; truly zero),
+  `Threshold` (build on error or over a latency threshold), `Always`. `finish()` drops cheaply or
+  builds a `DiagnosticsContext`.
+- **`build_context`** (`context.rs`) — past the gate, parses the captured log once and replays it
+  onto the existing `DiagnosticsContextBuilder`: each attempt becomes a `RequestDiagnostics` with
+  its `ExecutionContext` (Initial / Retry / Hedging / …), region, endpoint, status, sub-status,
+  request charge and request-sent signal; a hedged operation additionally attaches a
+  `HedgeDiagnostics` describing the region legs and terminal state.
+
+There is **no parallel `Summary`/`Rendered` type and no separate binary wire format** — the gate's
+output is the same `DiagnosticsContext` the driver already returns.
 
 ## 5. Scope of this change
 
@@ -120,51 +123,72 @@ Components (`azure_data_cosmos_driver::diagnostics::capture`):
   default, no recorder is constructed and there is **no behavior change**.
 - **Re-homed under `diagnostics::capture`** so it coexists with the existing `DiagnosticsContext`
   and friends; nothing in the shipping diagnostics module is removed or altered.
-- **Additive driver wiring** at the operation executor seam (`execute_operation_direct`): when the
-  policy is enabled, an operation-level capture is recorded and attached to the response via
-  `CosmosResponse::capture_diagnostics()`. On a terminal error the summary is emitted via
-  `tracing`.
+- **Builds the canonical `DiagnosticsContext`.** When the policy is enabled, the gate materializes
+  a `DiagnosticsContext` and attaches it to the response via
+  `CosmosResponse::capture_diagnostics()`. On a terminal error the built context's JSON is emitted
+  via `tracing`.
 - **No changes to `azure_core` / `typespec_client_core`.**
-- Tests, a criterion benchmark (`benches/diagnostics_capture.rs`), and a graceful live test are
-  included.
+- Tests, two example generators (`tests/diagnostics_examples.rs`), a criterion benchmark
+  (`benches/diagnostics_capture.rs`), and a graceful live test are included.
 
-## 6. Open question / deferred
+## 6. Known nuances & next steps
 
-This subsystem currently builds a **separate** `Summary` / `Rendered`, parallel to the shipping
-[`DiagnosticsContext`]. That is deliberate for a prototype, but it is **not** the intended end
-state. The open design question is how to converge the two:
+The capture front-end and the canonical `DiagnosticsContext` are now one model — but a few items
+remain open:
 
-- **Feed/extend `DiagnosticsContext`.** The preferred direction is for the gated capture to drive
-  (or be driven by) `DiagnosticsContext` so there is a single diagnostics model, with the gate and
-  the cheap append-only hot path becoming an internal acquisition strategy rather than a second
-  surface. The per-attempt detail captured today at the operation level would move down to the
-  pipeline's existing per-request diagnostics.
-- **Threshold configuration.** The gate's latency threshold is currently a plain `Duration`. It
-  should ultimately read the driver's diagnostics configuration (verbosity / per-operation-kind
+- **Replay timing fidelity.** Rebuilding a `DiagnosticsContext` after the fact means the builder's
+  own wall-clock timer measures the (synchronous) replay, not the original request, so the
+  context's top-level `total_duration_ms` reflects replay time. The authoritative per-attempt
+  latency the hot path captured is surfaced via each request's `server_duration_ms`. The long-term
+  direction is for capture to **gate the pipeline's own live-built context** rather than rebuild
+  one, which preserves true wall-clock timing end to end.
+- **Depth of pipeline wiring.** The op-level capture hooks at the operation-executor seam and sees
+  the terminal response, so an op-level built context currently carries op-level attempts. The
+  per-leg hedging / fan-out detail (multiple `RequestDiagnostics`, winning leg, terminal state) is
+  fully modeled and exercised by driving the recorder API directly (see the hedged example and
+  tests); pushing those hooks deeper into `operation_pipeline` so live multi-leg executions
+  populate them automatically is follow-up work.
+- **Threshold configuration.** The gate's latency threshold is a plain `Duration`. It should
+  ultimately read the driver's diagnostics configuration (verbosity / per-operation-kind
   thresholds) rather than a standalone value.
-- **Wire-format & attribute governance.** The `AZD1` format, its version-evolution policy, the
-  attribute keys (e.g. service-request-id), and ownership of a shared decode tool are cross-cutting
-  and would need ratification before the format becomes a compatibility surface.
 
-Until those are settled, this PR keeps the capture subsystem **parallel and opt-in**.
+## 7. Test & bench results
 
-## 7. How to enable
+Regenerate the two example outputs (real `DiagnosticsContext` JSON):
+
+```text
+cargo test -p azure_data_cosmos_driver --all-features --test diagnostics_examples -- --nocapture --test-threads=1
+```
+
+Run the benchmark:
+
+```text
+cargo bench -p azure_data_cosmos_driver --bench diagnostics_capture
+```
+
+Run the full gate:
+
+```text
+cargo fmt -p azure_data_cosmos_driver --check
+cargo clippy -p azure_data_cosmos_driver --all-features --all-targets -- -D warnings
+cargo test -p azure_data_cosmos_driver --all-features
+```
+
+## 8. How to enable
 
 ```rust,ignore
 use azure_data_cosmos_driver::diagnostics::capture::DiagnosticsPolicy;
 use azure_data_cosmos_driver::options::DriverOptions;
 use std::time::Duration;
 
-// Build on error or when an operation exceeds 5 ms; summary only (binary off by default).
+// Build a DiagnosticsContext on error or when an operation exceeds 5 ms; otherwise drop cheaply.
 let driver_options = DriverOptions::builder(account)
     .with_capture_diagnostics_policy(DiagnosticsPolicy::threshold(Duration::from_millis(5)))
     .build();
 
 // ... run an operation ...
-if let Some(rendered) = response.capture_diagnostics() {
-    if let Some(summary) = rendered.summary() {
-        println!("{}", summary.to_json_pretty());
-    }
+if let Some(diagnostics) = response.capture_diagnostics() {
+    println!("{}", diagnostics.to_json_string(None));
 }
 ```
 

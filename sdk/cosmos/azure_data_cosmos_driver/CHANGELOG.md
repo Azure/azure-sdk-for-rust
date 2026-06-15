@@ -5,7 +5,7 @@
 ### Features Added
 
 - Added support for using a native query planning library to generate query plans locally, avoiding a Gateway round-trip on cross-partition queries. Gated behind the `__internal_native_query_plan` feature flag. ([#4554](https://github.com/Azure/azure-sdk-for-rust/pull/4554))
-- Added an opt-in, **prototype** deferred, threshold-gated diagnostics **capture** subsystem under `diagnostics::capture` (off by default; enable via `DriverOptions::with_capture_diagnostics_policy`). It captures a compact, append-only log on the hot path and builds an aggregatable summary (and opt-in `AZD1` binary detail) only when an op-end gate decides it is worth it; results are exposed via `CosmosResponse::capture_diagnostics()`. It is parallel to and independent of `DiagnosticsContext`; converging the two is a deferred follow-up. See `DIAGNOSTICS-CAPTURE.md`.
+- Added an opt-in, **prototype** deferred, threshold-gated diagnostics **capture** subsystem under `diagnostics::capture` (off by default; enable via `DriverOptions::with_capture_diagnostics_policy`). It captures a compact, append-only, lock-free log on the hot path and — only when an operation-end gate decides it is worth it (slow, errored, or `Always`) — materializes the **canonical** `DiagnosticsContext` (the same type the driver already returns), including hedging structure for multi-region operations. A fast success is dropped cheaply and builds nothing. Results are exposed via `CosmosResponse::capture_diagnostics()`. See `DIAGNOSTICS-CAPTURE.md`.
 
 ### Breaking Changes
 

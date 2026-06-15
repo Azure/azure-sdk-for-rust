@@ -5,26 +5,25 @@
 //!
 //! A [`DiagnosticsRecorder`] rents one buffer from a [`LogPool`](super::pool::LogPool) at
 //! operation start and appends a compact, tag-length-value (TLV) record stream as attempts and
-//! fan-out children complete. Appends go through `&mut self`, so there is **no lock on the
-//! per-attempt hot path**; the pool's brief lock is touched only at operation boundaries
-//! (rent / return).
+//! hedge legs complete. Appends go through `&mut self`, so there is **no lock on the per-attempt
+//! hot path**; the pool's brief lock is touched only at operation boundaries (rent / return).
 //!
 //! At operation end the recorder is handed to the gate ([`super::gate`]). On a fast success the
 //! buffer is returned to the pool for ~free; on a slow or errored operation the log is parsed and
-//! built into a summary (and, opt-in, an `AZD1` blob).
+//! materialized into the canonical [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
+//! (see [`super::context`]).
 //!
 //! ## Cancellation & panic safety
 //!
-//! The recorder owns its buffer in an [`Option`]. [`DiagnosticsRecorder::finish`] takes the
-//! buffer out and returns it to the pool. If the operation future is dropped before `finish`
-//! runs (cancellation, timeout, `select!`) or a panic unwinds through it, the [`Drop`] impl
-//! returns the still-owned buffer to the pool — so a cancelled or panicking operation never
-//! leaks a pooled buffer, and a partially written buffer is `clear()`-ed before reuse, never
-//! poisoning the next operation.
+//! The recorder owns its buffer in an [`Option`]. [`DiagnosticsRecorder::return_buffer`] takes the
+//! buffer out so the gate can return it to the pool. If the operation future is dropped before
+//! the gate runs (cancellation, timeout, `select!`) or a panic unwinds through it, the [`Drop`]
+//! impl returns the still-owned buffer to the pool — so a cancelled or panicking operation never
+//! leaks a pooled buffer, and a partially written buffer is `clear()`-ed before reuse.
 
 use super::pool::LogPool;
-use super::wire;
 use super::Outcome;
+use crate::diagnostics::ExecutionContext;
 use std::time::Instant;
 
 /// Record tags in the append-only capture log.
@@ -32,31 +31,212 @@ use std::time::Instant;
 enum Tag {
     Op = 1,
     Attempt = 2,
-    Child = 3,
+    Hedge = 3,
     End = 4,
 }
 
-/// A fan-out child captured by a concurrent task, merged at the operation layer on join.
+// --- compact varint + string TLV helpers (LEB128) ---------------------------
+
+fn write_varint(out: &mut Vec<u8>, mut value: u64) {
+    loop {
+        let mut byte = (value & 0x7f) as u8;
+        value >>= 7;
+        if value != 0 {
+            byte |= 0x80;
+        }
+        out.push(byte);
+        if value == 0 {
+            break;
+        }
+    }
+}
+
+fn read_varint(input: &[u8], pos: &mut usize) -> Option<u64> {
+    let mut result: u64 = 0;
+    let mut shift = 0;
+    loop {
+        let byte = *input.get(*pos)?;
+        *pos += 1;
+        result |= u64::from(byte & 0x7f) << shift;
+        if byte & 0x80 == 0 {
+            break;
+        }
+        shift += 7;
+        if shift >= 64 {
+            return None;
+        }
+    }
+    Some(result)
+}
+
+fn write_str(out: &mut Vec<u8>, value: &str) {
+    write_varint(out, value.len() as u64);
+    out.extend_from_slice(value.as_bytes());
+}
+
+fn read_str(input: &[u8], pos: &mut usize) -> Option<String> {
+    let len = usize::try_from(read_varint(input, pos)?).ok()?;
+    let end = pos.checked_add(len)?;
+    let bytes = input.get(*pos..end)?;
+    let s = std::str::from_utf8(bytes).ok()?.to_string();
+    *pos = end;
+    Some(s)
+}
+
+/// Maps an [`ExecutionContext`] to its wire byte.
+fn exec_context_to_u8(ctx: ExecutionContext) -> u8 {
+    match ctx {
+        ExecutionContext::Initial => 0,
+        ExecutionContext::Retry => 1,
+        ExecutionContext::TransportRetry => 2,
+        ExecutionContext::Hedging => 3,
+        ExecutionContext::RegionFailover => 4,
+        ExecutionContext::CircuitBreakerProbe => 5,
+    }
+}
+
+/// Maps a wire byte back to an [`ExecutionContext`], defaulting unknown values to `Initial`.
+fn exec_context_from_u8(value: u8) -> ExecutionContext {
+    match value {
+        1 => ExecutionContext::Retry,
+        2 => ExecutionContext::TransportRetry,
+        3 => ExecutionContext::Hedging,
+        4 => ExecutionContext::RegionFailover,
+        5 => ExecutionContext::CircuitBreakerProbe,
+        _ => ExecutionContext::Initial,
+    }
+}
+
+/// The terminal outcome of a hedging race, captured for the built `HedgeDiagnostics`.
 ///
-/// Carrying plain values (not a shared recorder) keeps per-task capture lock-free for concurrent
-/// cross-partition children. See [`DiagnosticsRecorder::merge_child`].
+/// [`HedgeDiagnostics`]: crate::diagnostics::HedgeDiagnostics
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HedgeOutcome {
+    /// The primary returned before the hedge threshold fired; no alternate spawned.
+    PrimaryWonPreThreshold,
+    /// The primary returned after the threshold, beating the spawned alternate.
+    PrimaryWonAfterHedge,
+    /// The alternate (hedge) leg won the race.
+    AlternateWon,
+    /// Both legs returned retriable failures; `deadline_elapsed` carries through.
+    BothTransient {
+        /// Whether the operation deadline had elapsed when the race concluded.
+        deadline_elapsed: bool,
+    },
+}
+
+impl HedgeOutcome {
+    fn to_u8(self) -> u8 {
+        match self {
+            HedgeOutcome::PrimaryWonPreThreshold => 0,
+            HedgeOutcome::PrimaryWonAfterHedge => 1,
+            HedgeOutcome::AlternateWon => 2,
+            HedgeOutcome::BothTransient {
+                deadline_elapsed: false,
+            } => 3,
+            HedgeOutcome::BothTransient {
+                deadline_elapsed: true,
+            } => 4,
+        }
+    }
+
+    fn from_u8(value: u8) -> Self {
+        match value {
+            1 => HedgeOutcome::PrimaryWonAfterHedge,
+            2 => HedgeOutcome::AlternateWon,
+            4 => HedgeOutcome::BothTransient {
+                deadline_elapsed: true,
+            },
+            3 => HedgeOutcome::BothTransient {
+                deadline_elapsed: false,
+            },
+            _ => HedgeOutcome::PrimaryWonPreThreshold,
+        }
+    }
+}
+
+/// Per-attempt data captured on the hot path. `start_ns`/`duration_ns` are relative to op start.
+///
+/// This is a plain value type so a concurrent fan-out / hedge task can capture its own attempt
+/// and the operation layer merges it later — keeping per-task capture lock-free.
 #[derive(Clone, Debug)]
-pub struct ChildRecord {
-    /// Query-plan node id for this child.
-    pub plan_node_id: String,
-    /// Feed range this child addresses.
-    pub feed_range: String,
-    /// Start (nanoseconds) relative to the operation start.
+pub struct AttemptRecord {
+    /// Which execution context this attempt ran under (Initial / Retry / Hedging / ...).
+    pub execution_context: ExecutionContext,
+    /// The region this attempt targeted (empty when unknown / global endpoint).
+    pub region: String,
+    /// The endpoint URL this attempt targeted.
+    pub endpoint: String,
+    /// HTTP status code (`0` for a transport failure with no response).
+    pub status: u16,
+    /// Cosmos sub-status, when present.
+    pub sub_status: Option<u16>,
+    /// Service request id / activity id from the response.
+    pub service_request_id: Option<String>,
+    /// Request charge (RU).
+    pub request_charge: Option<f64>,
+    /// Retry-safety signal on a transport failure (`sent` / `not_sent` / `unknown`).
+    pub request_sent: Option<String>,
+    /// Start relative to the operation start (nanoseconds); filled from the clock when `0`.
     pub start_ns: u64,
-    /// Child duration (nanoseconds).
+    /// Attempt duration (nanoseconds).
     pub duration_ns: u64,
 }
 
+impl AttemptRecord {
+    /// Creates an attempt record for the common success/response case.
+    pub fn new(
+        execution_context: ExecutionContext,
+        region: impl Into<String>,
+        endpoint: impl Into<String>,
+        status: u16,
+    ) -> Self {
+        Self {
+            execution_context,
+            region: region.into(),
+            endpoint: endpoint.into(),
+            status,
+            sub_status: None,
+            service_request_id: None,
+            request_charge: None,
+            request_sent: None,
+            start_ns: 0,
+            duration_ns: 0,
+        }
+    }
+
+    /// Sets the service request id / activity id (builder-style).
+    pub fn with_service_request_id(mut self, id: impl Into<String>) -> Self {
+        self.service_request_id = Some(id.into());
+        self
+    }
+
+    /// Sets the request charge (builder-style).
+    pub fn with_request_charge(mut self, ru: f64) -> Self {
+        self.request_charge = Some(ru);
+        self
+    }
+
+    /// Sets the Cosmos sub-status (builder-style).
+    pub fn with_sub_status(mut self, sub_status: u16) -> Self {
+        self.sub_status = Some(sub_status);
+        self
+    }
+
+    /// Sets the retry-safety signal for a transport failure (builder-style).
+    pub fn with_request_sent(mut self, request_sent: impl Into<String>) -> Self {
+        self.request_sent = Some(request_sent.into());
+        self
+    }
+
+    /// Sets the attempt duration in nanoseconds (builder-style).
+    pub fn with_duration_ns(mut self, duration_ns: u64) -> Self {
+        self.duration_ns = duration_ns;
+        self
+    }
+}
+
 /// A per-operation append-only capture recorder.
-///
-/// Construct one with [`DiagnosticsRecorder::start`], append per-attempt/child records as the
-/// operation runs, then call [`DiagnosticsRecorder::finish`] with the effective
-/// [`DiagnosticsPolicy`](super::DiagnosticsPolicy) to gate and (maybe) build the diagnostics.
 #[derive(Debug)]
 pub struct DiagnosticsRecorder {
     pool: LogPool,
@@ -70,17 +250,14 @@ pub struct DiagnosticsRecorder {
 impl DiagnosticsRecorder {
     /// Begins capture for an operation, renting a buffer and writing the operation header.
     ///
-    /// `operation` is the operation name (e.g. `read_item`), `endpoint` the target URL, and
-    /// `client_request_id` the client-generated correlation id. The single preamble id byte
-    /// stands in for the full SDK/driver version + User-Agent provenance, rehydrated only if the
-    /// gate later builds the diagnostics.
-    pub fn start(pool: &LogPool, operation: &str, endpoint: &str, client_request_id: &str) -> Self {
+    /// `operation` is the operation name, `endpoint` the initial target URL, and `activity_id`
+    /// the operation's activity id (used as the top-level id of the built `DiagnosticsContext`).
+    pub fn start(pool: &LogPool, operation: &str, endpoint: &str, activity_id: &str) -> Self {
         let mut buf = pool.rent();
         buf.push(Tag::Op as u8);
-        buf.push(super::preamble::PREAMBLE_ID);
-        wire::write_str(&mut buf, operation);
-        wire::write_str(&mut buf, endpoint);
-        wire::write_str(&mut buf, client_request_id);
+        write_str(&mut buf, operation);
+        write_str(&mut buf, endpoint);
+        write_str(&mut buf, activity_id);
         Self {
             pool: pool.clone(),
             buf: Some(buf),
@@ -91,112 +268,65 @@ impl DiagnosticsRecorder {
         }
     }
 
-    /// The [`Instant`] the operation started, for computing relative attempt timings.
-    pub fn started_at(&self) -> Instant {
-        self.start
-    }
-
     /// Nanoseconds elapsed since the operation started (monotonic, from [`Instant`]).
     pub fn elapsed_ns(&self) -> u64 {
         self.start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64
     }
 
-    /// Records one HTTP attempt. `start_ns` is relative to the operation start.
-    ///
-    /// `service_request_id` is read from the **response** (Cosmos `x-ms-request-id` /
-    /// activity id); `request_charge` is the per-attempt RU. Both are `None` when unavailable
-    /// (e.g. a transport failure before a response). For sub-status / request-sent detail use
-    /// [`DiagnosticsRecorder::record_attempt_ext`].
-    pub fn record_attempt(
-        &mut self,
-        attempt_index: u32,
-        status: u16,
-        service_request_id: Option<&str>,
-        request_charge: Option<f64>,
-        start_ns: u64,
-        duration_ns: u64,
-    ) {
-        self.record_attempt_ext(
-            attempt_index,
-            status,
-            service_request_id,
-            request_charge,
-            None,
-            None,
-            start_ns,
-            duration_ns,
-        );
-    }
-
-    /// Records one HTTP attempt with Cosmos detail (`sub_status`, `request_sent`).
-    ///
-    /// `sub_status` is the Cosmos `x-ms-substatus` (finer error classification, available on the
-    /// response path); `request_sent` is the retry-safety signal on a transport failure
-    /// (`"sent"` / `"not_sent"` / `"unknown"`). Both are `None`/absent when not applicable.
-    #[allow(clippy::too_many_arguments)]
-    pub fn record_attempt_ext(
-        &mut self,
-        attempt_index: u32,
-        status: u16,
-        service_request_id: Option<&str>,
-        request_charge: Option<f64>,
-        sub_status: Option<u16>,
-        request_sent: Option<&str>,
-        start_ns: u64,
-        duration_ns: u64,
-    ) {
+    /// Records one attempt (or hedge leg). `start_ns` is set from the recorder's clock if `0`.
+    pub fn record_attempt(&mut self, mut attempt: AttemptRecord) {
         let Some(buf) = self.buf.as_mut() else {
             return;
         };
+        if attempt.start_ns == 0 {
+            attempt.start_ns = self.start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64;
+        }
         buf.push(Tag::Attempt as u8);
-        wire::write_varint(buf, u64::from(attempt_index));
-        wire::write_varint(buf, u64::from(status));
-        wire::write_str(buf, service_request_id.unwrap_or_default());
-        buf.extend_from_slice(&(request_charge.unwrap_or(0.0) as f32).to_le_bytes());
-        wire::write_varint(buf, start_ns);
-        wire::write_varint(buf, duration_ns);
-        // sub_status: 0 == none, else value + 1 (sub-status 0 is a valid Cosmos code).
-        wire::write_varint(buf, sub_status.map_or(0, |s| u64::from(s) + 1));
-        wire::write_str(buf, request_sent.unwrap_or_default());
+        buf.push(exec_context_to_u8(attempt.execution_context));
+        write_str(buf, &attempt.region);
+        write_str(buf, &attempt.endpoint);
+        write_varint(buf, u64::from(attempt.status));
+        write_varint(buf, attempt.sub_status.map_or(0, |s| u64::from(s) + 1));
+        write_str(buf, attempt.service_request_id.as_deref().unwrap_or(""));
+        buf.extend_from_slice(&(attempt.request_charge.unwrap_or(0.0) as f32).to_le_bytes());
+        write_str(buf, attempt.request_sent.as_deref().unwrap_or(""));
+        write_varint(buf, attempt.start_ns);
+        write_varint(buf, attempt.duration_ns);
+        self.attempt_count += 1;
     }
 
-    /// Records one fan-out child (per partition / feed range). `start_ns` is relative to op start.
-    pub fn record_child(
+    /// Records the hedge race outcome (regions + terminal state) for the built `HedgeDiagnostics`.
+    pub fn record_hedge_outcome(
         &mut self,
-        plan_node_id: &str,
-        feed_range: &str,
-        start_ns: u64,
-        duration_ns: u64,
+        outcome: HedgeOutcome,
+        threshold: std::time::Duration,
+        primary_region: &str,
+        alternate_region: Option<&str>,
+        response_region: Option<&str>,
     ) {
         let Some(buf) = self.buf.as_mut() else {
             return;
         };
-        buf.push(Tag::Child as u8);
-        wire::write_str(buf, plan_node_id);
-        wire::write_str(buf, feed_range);
-        wire::write_varint(buf, start_ns);
-        wire::write_varint(buf, duration_ns);
-    }
-
-    /// Merges a [`ChildRecord`] captured by a concurrent fan-out task at join time.
-    ///
-    /// Per the fan-out design, concurrent cross-partition children do **not** share the
-    /// single-owner `&mut` recorder. Each child task captures its own values into a plain
-    /// [`ChildRecord`] (a `Send` value, no shared state, no lock) and the operation layer merges
-    /// them here once the children join — keeping per-task capture lock-free.
-    pub fn merge_child(&mut self, child: &ChildRecord) {
-        self.record_child(
-            &child.plan_node_id,
-            &child.feed_range,
-            child.start_ns,
-            child.duration_ns,
-        );
+        buf.push(Tag::Hedge as u8);
+        buf.push(outcome.to_u8());
+        write_varint(buf, threshold.as_nanos().min(u128::from(u64::MAX)) as u64);
+        write_str(buf, primary_region);
+        write_str(buf, alternate_region.unwrap_or(""));
+        write_str(buf, response_region.unwrap_or(""));
     }
 
     /// Records the operation outcome and finalizes the log header.
     ///
-    /// If `total_ns` is `None`, the recorder's own monotonic elapsed time is used.
-    pub fn record_end(&mut self, outcome: Outcome, attempt_count: u32, total_ns: Option<u64>) {
+    /// `final_status` / `final_sub_status` set the top-level status of the built context. If
+    /// `total_ns` is `None`, the recorder's own monotonic elapsed time is used.
+    pub fn record_end(
+        &mut self,
+        outcome: Outcome,
+        attempt_count: u32,
+        final_status: u16,
+        final_sub_status: Option<u16>,
+        total_ns: Option<u64>,
+    ) {
         let total = total_ns.unwrap_or_else(|| self.elapsed_ns());
         self.outcome = outcome;
         self.attempt_count = attempt_count;
@@ -207,8 +337,10 @@ impl DiagnosticsRecorder {
                 Outcome::Success => 0,
                 Outcome::Error => 1,
             });
-            wire::write_varint(buf, u64::from(attempt_count));
-            wire::write_varint(buf, total);
+            write_varint(buf, u64::from(attempt_count));
+            write_varint(buf, u64::from(final_status));
+            write_varint(buf, final_sub_status.map_or(0, |s| u64::from(s) + 1));
+            write_varint(buf, total);
         }
     }
 
@@ -227,14 +359,12 @@ impl DiagnosticsRecorder {
         self.buf.as_ref().map_or(0, Vec::len)
     }
 
-    /// Borrows the raw capture bytes (for parsing/building past the gate).
+    /// Borrows the raw capture bytes (for parsing past the gate).
     pub(crate) fn bytes(&self) -> &[u8] {
         self.buf.as_deref().unwrap_or(&[])
     }
 
     /// Returns the backing buffer to the pool, consuming the recorder.
-    ///
-    /// Called by the gate after a build/drop decision. After this, [`Drop`] is a no-op.
     pub(crate) fn return_buffer(mut self) {
         if let Some(buf) = self.buf.take() {
             self.pool.give_back(buf);
@@ -244,44 +374,45 @@ impl DiagnosticsRecorder {
 
 impl Drop for DiagnosticsRecorder {
     fn drop(&mut self) {
-        // Cancellation / panic safety: if the buffer was not consumed by `return_buffer`
-        // (e.g. the operation future was dropped before the gate ran), return it to the pool.
-        // `give_back` clears it, so a partially written buffer never poisons the next rent.
+        // Cancellation / panic safety: return the buffer to the pool if the gate didn't consume
+        // it. `give_back` clears it, so a partially written buffer never poisons the next rent.
         if let Some(buf) = self.buf.take() {
             self.pool.give_back(buf);
         }
     }
 }
 
-/// A parsed attempt record.
+/// A fully parsed attempt.
 pub(crate) struct ParsedAttempt {
-    pub index: u32,
+    pub execution_context: ExecutionContext,
+    pub region: String,
+    pub endpoint: String,
     pub status: u16,
+    pub sub_status: Option<u16>,
     pub service_request_id: String,
     pub request_charge: f32,
-    pub sub_status: Option<u16>,
     pub request_sent: String,
-    pub start_ns: u64,
     pub duration_ns: u64,
 }
 
-/// A parsed fan-out child record.
-pub(crate) struct ParsedChild {
-    pub plan_node_id: String,
-    pub feed_range: String,
-    pub start_ns: u64,
-    pub duration_ns: u64,
+/// The parsed hedge outcome.
+pub(crate) struct ParsedHedge {
+    pub outcome: HedgeOutcome,
+    pub threshold_ns: u64,
+    pub primary_region: String,
+    pub alternate_region: Option<String>,
 }
 
-/// A fully parsed capture log, ready to reduce to a summary or project to a wire tree.
+/// A fully parsed capture log, ready to materialize into a `DiagnosticsContext`.
 pub(crate) struct Parsed {
     pub operation: String,
-    pub endpoint: String,
-    pub client_request_id: String,
+    pub activity_id: String,
     pub attempts: Vec<ParsedAttempt>,
-    pub children: Vec<ParsedChild>,
+    pub hedge: Option<ParsedHedge>,
     pub outcome: Outcome,
     pub attempt_count: u32,
+    pub final_status: u16,
+    pub final_sub_status: Option<u16>,
     pub total_ns: u64,
 }
 
@@ -289,12 +420,13 @@ pub(crate) struct Parsed {
 pub(crate) fn parse(buf: &[u8]) -> Parsed {
     let mut p = Parsed {
         operation: String::new(),
-        endpoint: String::new(),
-        client_request_id: String::new(),
+        activity_id: String::new(),
         attempts: Vec::new(),
-        children: Vec::new(),
+        hedge: None,
         outcome: Outcome::Success,
         attempt_count: 0,
+        final_status: 0,
+        final_sub_status: None,
         total_ns: 0,
     };
     let mut pos = 0usize;
@@ -303,52 +435,59 @@ pub(crate) fn parse(buf: &[u8]) -> Parsed {
         pos += 1;
         match tag {
             t if t == Tag::Op as u8 => {
-                pos += 1; // preamble id (single global)
-                p.operation = wire::read_str(buf, &mut pos).unwrap_or_default();
-                p.endpoint = wire::read_str(buf, &mut pos).unwrap_or_default();
-                p.client_request_id = wire::read_str(buf, &mut pos).unwrap_or_default();
+                p.operation = read_str(buf, &mut pos).unwrap_or_default();
+                let _endpoint = read_str(buf, &mut pos).unwrap_or_default();
+                p.activity_id = read_str(buf, &mut pos).unwrap_or_default();
             }
             t if t == Tag::Attempt as u8 => {
-                let index = wire::read_varint(buf, &mut pos)
-                    .unwrap_or(0)
-                    .min(u64::from(u32::MAX)) as u32;
-                let status = wire::read_varint(buf, &mut pos)
+                let Some(exec) = buf.get(pos).copied() else {
+                    break;
+                };
+                pos += 1;
+                let region = read_str(buf, &mut pos).unwrap_or_default();
+                let endpoint = read_str(buf, &mut pos).unwrap_or_default();
+                let status = read_varint(buf, &mut pos)
                     .unwrap_or(0)
                     .min(u64::from(u16::MAX)) as u16;
-                let service_request_id = wire::read_str(buf, &mut pos).unwrap_or_default();
+                let raw_sub = read_varint(buf, &mut pos).unwrap_or(0);
+                let sub_status =
+                    (raw_sub != 0).then(|| (raw_sub - 1).min(u64::from(u16::MAX)) as u16);
+                let service_request_id = read_str(buf, &mut pos).unwrap_or_default();
                 let mut ru_bytes = [0u8; 4];
                 if let Some(slice) = buf.get(pos..pos + 4) {
                     ru_bytes.copy_from_slice(slice);
                 }
                 pos += 4;
                 let request_charge = f32::from_le_bytes(ru_bytes);
-                let start_ns = wire::read_varint(buf, &mut pos).unwrap_or(0);
-                let duration_ns = wire::read_varint(buf, &mut pos).unwrap_or(0);
-                let raw_sub = wire::read_varint(buf, &mut pos).unwrap_or(0);
-                let sub_status =
-                    (raw_sub != 0).then(|| (raw_sub - 1).min(u64::from(u16::MAX)) as u16);
-                let request_sent = wire::read_str(buf, &mut pos).unwrap_or_default();
+                let request_sent = read_str(buf, &mut pos).unwrap_or_default();
+                let _start_ns = read_varint(buf, &mut pos).unwrap_or(0);
+                let duration_ns = read_varint(buf, &mut pos).unwrap_or(0);
                 p.attempts.push(ParsedAttempt {
-                    index,
+                    execution_context: exec_context_from_u8(exec),
+                    region,
+                    endpoint,
                     status,
+                    sub_status,
                     service_request_id,
                     request_charge,
-                    sub_status,
                     request_sent,
-                    start_ns,
                     duration_ns,
                 });
             }
-            t if t == Tag::Child as u8 => {
-                let plan_node_id = wire::read_str(buf, &mut pos).unwrap_or_default();
-                let feed_range = wire::read_str(buf, &mut pos).unwrap_or_default();
-                let start_ns = wire::read_varint(buf, &mut pos).unwrap_or(0);
-                let duration_ns = wire::read_varint(buf, &mut pos).unwrap_or(0);
-                p.children.push(ParsedChild {
-                    plan_node_id,
-                    feed_range,
-                    start_ns,
-                    duration_ns,
+            t if t == Tag::Hedge as u8 => {
+                let Some(outcome_byte) = buf.get(pos).copied() else {
+                    break;
+                };
+                pos += 1;
+                let threshold_ns = read_varint(buf, &mut pos).unwrap_or(0);
+                let primary_region = read_str(buf, &mut pos).unwrap_or_default();
+                let alternate = read_str(buf, &mut pos).unwrap_or_default();
+                let _response = read_str(buf, &mut pos).unwrap_or_default();
+                p.hedge = Some(ParsedHedge {
+                    outcome: HedgeOutcome::from_u8(outcome_byte),
+                    threshold_ns,
+                    primary_region,
+                    alternate_region: (!alternate.is_empty()).then_some(alternate),
                 });
             }
             t if t == Tag::End as u8 => {
@@ -358,10 +497,16 @@ pub(crate) fn parse(buf: &[u8]) -> Parsed {
                     Outcome::Success
                 };
                 pos += 1;
-                p.attempt_count = wire::read_varint(buf, &mut pos)
+                p.attempt_count = read_varint(buf, &mut pos)
                     .unwrap_or(0)
                     .min(u64::from(u32::MAX)) as u32;
-                p.total_ns = wire::read_varint(buf, &mut pos).unwrap_or(0);
+                p.final_status = read_varint(buf, &mut pos)
+                    .unwrap_or(0)
+                    .min(u64::from(u16::MAX)) as u16;
+                let raw_sub = read_varint(buf, &mut pos).unwrap_or(0);
+                p.final_sub_status =
+                    (raw_sub != 0).then(|| (raw_sub - 1).min(u64::from(u16::MAX)) as u16);
+                p.total_ns = read_varint(buf, &mut pos).unwrap_or(0);
             }
             _ => break,
         }

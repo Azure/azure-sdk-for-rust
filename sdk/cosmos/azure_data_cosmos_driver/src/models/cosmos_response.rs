@@ -85,12 +85,12 @@ pub struct CosmosResponse {
     /// Full diagnostics context for this operation.
     diagnostics: Arc<DiagnosticsContext>,
 
-    /// Optional, opt-in capture-diagnostics built by the parallel
-    /// [`crate::diagnostics::capture`] prototype. `None` unless the capture policy is enabled
-    /// and the gate decided to build (a slow or errored operation). This is intentionally
-    /// separate from `diagnostics` (the shipping [`DiagnosticsContext`]) while capture is a
-    /// prototype; merging the two is the deferred next step.
-    capture: Option<Arc<crate::diagnostics::capture::Rendered>>,
+    /// Optional, opt-in diagnostics built by the gated [`crate::diagnostics::capture`] front-end.
+    /// `None` unless the capture policy is enabled and the gate decided to build (a slow or
+    /// errored operation). When present this is the **same** canonical [`DiagnosticsContext`]
+    /// type as `diagnostics` — capture is an alternative, gated acquisition path, not a parallel
+    /// model.
+    capture: Option<Arc<DiagnosticsContext>>,
 }
 
 impl CosmosResponse {
@@ -113,21 +113,23 @@ impl CosmosResponse {
         }
     }
 
-    /// Attaches opt-in capture-diagnostics to this response (builder-style).
+    /// Attaches opt-in capture diagnostics to this response (builder-style).
     pub(crate) fn with_capture_diagnostics(
         mut self,
-        capture: Option<Arc<crate::diagnostics::capture::Rendered>>,
+        capture: Option<Arc<DiagnosticsContext>>,
     ) -> Self {
         self.capture = capture;
         self
     }
 
-    /// Returns the opt-in capture-diagnostics built by the [`crate::diagnostics::capture`]
-    /// prototype, if the policy was enabled and the gate decided to build for this operation.
+    /// Returns the gated [`DiagnosticsContext`] built by the [`crate::diagnostics::capture`]
+    /// front-end, if the capture policy was enabled and the gate decided to build for this
+    /// operation.
     ///
-    /// `None` when capture is off (the default) or when the operation was a fast success the
-    /// gate dropped. This is distinct from [`CosmosResponse::diagnostics`].
-    pub fn capture_diagnostics(&self) -> Option<&crate::diagnostics::capture::Rendered> {
+    /// `None` when capture is off (the default) or when the operation was a fast success the gate
+    /// dropped. This is the same type as [`CosmosResponse::diagnostics`]; it is surfaced
+    /// separately while capture is opt-in.
+    pub fn capture_diagnostics(&self) -> Option<&DiagnosticsContext> {
         self.capture.as_deref()
     }
 

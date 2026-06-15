@@ -100,22 +100,20 @@ async fn live_capture_diagnostics_or_env_gated() {
             );
         }
         Ok(Ok(response)) => {
-            // We got a real HTTP success response — assert the parallel capture attached.
-            let rendered = response
+            // We got a real HTTP success response — assert the gated capture built a context.
+            let ctx = response
                 .capture_diagnostics()
-                .expect("Always policy must build capture diagnostics on a real response");
-            let summary = rendered.summary().expect("a summary is built");
-            assert_eq!(summary.attempt_count, 1, "operation-level capture");
+                .expect("Always policy must build a DiagnosticsContext on a real response");
+            assert_eq!(ctx.request_count(), 1, "operation-level capture");
             assert!(
-                !summary.status_counts.is_empty(),
-                "captured at least one status from the response"
+                ctx.status().is_some(),
+                "captured an operation status from the response"
             );
             eprintln!(
-                "AC-7 LIVE OK: status={:?} outcome={} ru={} activity_id_present={}",
-                summary.status_counts,
-                summary.outcome,
-                summary.total_request_charge,
-                summary.final_service_request_id.is_some()
+                "AC-7 LIVE OK: status={:?} request_count={} activity_id={}",
+                ctx.status().map(|s| u16::from(s.status_code())),
+                ctx.request_count(),
+                ctx.activity_id().as_str()
             );
         }
     }
