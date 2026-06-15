@@ -17,6 +17,7 @@ use azure_core::{
 };
 use azure_core_amqp::{
     error::AmqpErrorKind, AmqpError, AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis,
+    AmqpTransport,
 };
 use batch::{EventDataBatch, EventDataBatchOptions};
 use std::{fmt::Debug, sync::Arc};
@@ -92,6 +93,7 @@ impl From<SendEventOptions> for SendMessageOptions {
 }
 
 impl ProducerClient {
+    #[allow(clippy::too_many_arguments, reason = "private API")]
     pub(crate) fn new(
         endpoint: Url,
         eventhub: String,
@@ -100,12 +102,14 @@ impl ProducerClient {
         retry_options: RetryOptions,
         custom_endpoint: Option<Url>,
         cbs_token_type: Option<&'static str>,
+        transport: AmqpTransport,
     ) -> Self {
         Self {
             connection: RecoverableConnection::new(
                 endpoint.clone(),
                 application_id,
                 custom_endpoint,
+                transport,
                 credential,
                 retry_options,
                 cbs_token_type,
@@ -558,6 +562,7 @@ pub mod builders {
             sas_credential::SasCredential,
             SAS_TOKEN_TYPE,
         },
+        models::TransportType,
         Result, RetryOptions,
     };
     use azure_core::{http::Url, Error};
@@ -590,6 +595,9 @@ pub mod builders {
 
         /// The custom endpoint for the Event Hub.
         custom_endpoint: Option<String>,
+
+        /// The transport used to communicate with the Event Hub.
+        transport_type: Option<TransportType>,
     }
 
     impl ProducerClientBuilder {
@@ -645,6 +653,21 @@ pub mod builders {
             self
         }
 
+        /// Sets the transport used to communicate with the Event Hub.
+        ///
+        /// # Arguments
+        /// * `transport_type` - The transport to use. Defaults to
+        ///   [`TransportType::AmqpTcp`]. Use [`TransportType::AmqpWebSocket`]
+        ///   to tunnel AMQP over WebSockets (port 443) when the native AMQP
+        ///   ports are blocked.
+        ///
+        /// # Returns
+        /// The updated [`ProducerClientBuilder`].
+        pub fn with_transport_type(mut self, transport_type: TransportType) -> Self {
+            self.transport_type = Some(transport_type);
+            self
+        }
+
         /// Opens the connection to the Event Hub.
         ///
         /// # Arguments
@@ -677,6 +700,7 @@ pub mod builders {
                 self.retry_options.unwrap_or_default(),
                 custom_endpoint,
                 None,
+                self.transport_type.unwrap_or_default().into(),
             );
 
             // Open a connection to the Event Hub to ensure that the client is ready to send messages.
@@ -752,6 +776,7 @@ pub mod builders {
                 self.retry_options.unwrap_or_default(),
                 custom_endpoint,
                 Some(SAS_TOKEN_TYPE),
+                self.transport_type.unwrap_or_default().into(),
             );
 
             client.ensure_connection().await?;
